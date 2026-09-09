@@ -22,11 +22,13 @@ internal fun Collection<OnboardingCardData>.toPageUiData(
 ): List<OnboardingPageUiData> {
     // we are first filtering the cards based on Nimbus configuration
     return asSequence()
+        .filter { it.cardType != null }
         .filter { it.shouldDisplayCard(jexlEvaluator, jexlConditions) }
         // we are then filtering again based on device capabilities
         .filter { it.isCardEnabled(showDefaultBrowserPage, showNotificationPage, showAddWidgetPage, showToolbarPage) }
         .sortedBy { it.ordering }
-        .map { it.toPageUiData() }
+        // Cards that don't declare a card type are considered misconfigured so they are discarded
+        .mapNotNull { it.toPageUiData() }
         .toList()
 }
 
@@ -92,9 +94,9 @@ private fun OnboardingCardData.isCardEnabled(
         else -> enabled
     }
 
-private fun OnboardingCardData.toPageUiData() =
+private fun OnboardingCardData.toPageUiData() = cardType?.let { type ->
     OnboardingPageUiData(
-        type = cardType.toPageUiDataType(),
+        type = type.toPageUiDataType(),
         imageRes = imageRes.resourceId,
         title = title,
         description = body,
@@ -104,6 +106,7 @@ private fun OnboardingCardData.toPageUiData() =
         termsOfService = extraData?.termOfServiceData?.toOnboardingTermsOfService(),
         marketingData = extraData?.marketingData?.toOnboardingMarketingData(),
     )
+}
 
 private fun OnboardingCardType.toPageUiDataType() =
     when (this) {

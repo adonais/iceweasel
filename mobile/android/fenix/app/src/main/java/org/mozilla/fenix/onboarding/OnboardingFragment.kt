@@ -110,6 +110,7 @@ class OnboardingFragment : Fragment() {
                 it.type == OnboardingPageUiData.Type.MARKETING_DATA &&
                     !requireComponents.settings.shouldShowMarketingOnboarding
             }
+            .distinctBy { it.type }
             .toMutableStateList()
     }
 

@@ -441,6 +441,38 @@ class OnboardingMapperTest {
             ),
         )
     }
+
+    @Test
+    fun givenANullType_whenConvertingToPageUiData_thenCardIsDiscarded() {
+        // When a config contains an unsupported card type, Nimbus builds a OnboardingCardData
+        // with a null type.
+        val cardDataWithoutType =
+            OnboardingCardData(
+                cardType = null,
+                imageRes = R.drawable.ic_onboarding_search_widget,
+                title = StringHolder(null, "add search widget title"),
+                body = StringHolder(null, "add search widget body"),
+                primaryButtonLabel = StringHolder(null, "add search widget primary button text"),
+                secondaryButtonLabel = StringHolder(null, "add search widget secondary button text"),
+                ordering = 15,
+                prerequisites = listOf(),
+                disqualifiers = listOf(),
+            )
+
+        val expected = listOf(defaultBrowserPageUiData)
+        val cardData = listOf(defaultBrowserCardData, cardDataWithoutType)
+        assertEquals(
+            expected,
+            cardData.toPageUiData(
+                showDefaultBrowserPage = true,
+                showNotificationPage = true,
+                showAddWidgetPage = true,
+                showToolbarPage = false,
+                jexlConditions = jexlConditions,
+                jexlEvaluator = evalFunction,
+            ),
+        )
+    }
 }
 
 private val defaultBrowserPageUiData =
