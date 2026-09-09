@@ -626,6 +626,9 @@ LauncherResult<std::wstring> LauncherRegistryInfo::GetBlocklistFileName() {
   if (profd) {
     defaultBlocklistPath = profd;
     defaultBlocklistPath.append(L"\\blocklist-v1");
+  } else if ((profd = _wgetenv(L"APPDATA")) != NULL) {
+    defaultBlocklistPath = profd;
+    defaultBlocklistPath.append(L"\\" MOZ_APP_VENDOR L"\\" MOZ_APP_BASENAME L"\\blocklist-v1");
   }
 #else
   LauncherResult<Disposition> disposition = Open();
