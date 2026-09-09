@@ -252,30 +252,31 @@ bool WinTaskbar::GenerateAppUserModelID(nsAString& aAppUserModelId,
   // hash generation operation fails, the installer will not store a value in
   // the registry or set ids on shortcuts. A lack of an id can also occur for
   // zipped builds.
-  nsCOMPtr<nsIXULAppInfo> appInfo =
-      do_GetService("@mozilla.org/xre/app-info;1");
-  nsCString appName;
-  if (appInfo && NS_SUCCEEDED(appInfo->GetName(appName))) {
-    nsAutoString regKey;
-    regKey.AssignLiteral("Software\\Mozilla\\");
-    AppendASCIItoUTF16(appName, regKey);
-    regKey.AppendLiteral("\\TaskBarIDs");
-
-    WCHAR path[MAX_PATH];
-    if (GetModuleFileNameW(nullptr, path, MAX_PATH)) {
-      wchar_t* slash = wcsrchr(path, '\\');
-      if (!slash) return false;
-      *slash = '\0';  // no trailing slash
-
-      nsDependentString pathStr(path);
-      for (auto* rootKey : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER}) {
-        if (auto aumid = WinRegistry::GetString(rootKey, regKey, pathStr)) {
-          aAppUserModelId = std::move(*aumid);
-          break;
-        }
-      }
-    }
-  }
+  // Do not read from the registry
+  // nsCOMPtr<nsIXULAppInfo> appInfo =
+  //     do_GetService("@mozilla.org/xre/app-info;1");
+  // nsCString appName;
+  // if (appInfo && NS_SUCCEEDED(appInfo->GetName(appName))) {
+  //   nsAutoString regKey;
+  //   regKey.AssignLiteral("Software\\Mozilla\\");
+  //   AppendASCIItoUTF16(appName, regKey);
+  //   regKey.AppendLiteral("\\TaskBarIDs");
+  // 
+  //   WCHAR path[MAX_PATH];
+  //   if (GetModuleFileNameW(nullptr, path, MAX_PATH)) {
+  //     wchar_t* slash = wcsrchr(path, '\\');
+  //     if (!slash) return false;
+  //     *slash = '\0';  // no trailing slash
+  // 
+  //     nsDependentString pathStr(path);
+  //     for (auto* rootKey : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER}) {
+  //       if (auto aumid = WinRegistry::GetString(rootKey, regKey, pathStr)) {
+  //         aAppUserModelId = std::move(*aumid);
+  //         break;
+  //       }
+  //     }
+  //   }
+  // }
 
   // If we haven't found an ID yet then use the install hash. In xpcshell tests
   // the directory provider may not have been initialized so bypass in this
