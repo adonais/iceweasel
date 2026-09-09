@@ -9,6 +9,16 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">पुनः प्रयास करें</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">आर्काइव किया गया वर्ज़न चेक करें</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">आर्काइव चेक किया जा रहा है</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">कोई आर्काइव किया गया वर्ज़न नहीं मिला।</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">वेब पर सर्च करें।</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">फिर कोशिश‌ करें।</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">अनुरोध पूरा नहीं किया जा सका</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -31,6 +41,12 @@
   <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">जोखिम स्वीकारें और आगे बढ़ें</string>
   <!-- The document title and heading of the error page shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_title">इस वेबसाइट के लिए एक सुरक्षित कनेक्शन होना ज़रूरी है।</string>
+  <!-- The error message shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_message"><![CDATA[<ul>\n<li>आप जिस पेज को देखने की कोशिश कर रहे हैं उसे दिखाया नहीं जा सकता, क्योंकि इस वेबसाइट के लिए सुरक्षित कनेक्शन होना ज़रूरी है।</li>\n<li>मुमकिन है कि समस्या वेबसाइट संबंधी है, और आप इसे ठीक करने के लिए कुछ नहीं कर सकते।</li>\n<li>आप वेबसाइट के एडमिनिस्ट्रेटर को समस्या के बारे में सूचित कर सकते हैं।</li>\n</ul>]]></string>
+  <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">एडवांस…</string>
+  <!-- The advanced certificate information shown when a website uses HSTS. The %1$s will be replaced by the website URL and %2$s will be replaced by the app name. It's only shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_techInfo2"><![CDATA[<label> <b>%1$s</b> की एक सुरक्षा नीति है जिसे HTTP स्ट्रिक्ट ट्रांसपोर्ट सिक्योरिटी (HSTS) कहा जाता है, जिसका मतलब यह है कि <b>%2$s</b> को सिर्फ़ सुरक्षित रूप से ही इससे कनेक्ट किया जा सकता है। इस साइट पर जाने के लिए कोई अपवाद नहीं जोड़ा जा सकता। </label>]]></string>
   <!-- The document title and heading of the error page shown when the user's network connection is interrupted while connecting to a website. -->
   <string name="mozac_browser_errorpages_net_interrupt_title">संपर्क में बाधा उत्पन्न हुई</string>
   <!-- The error message shown when the user's network connection is interrupted while connecting to a website. -->
@@ -79,25 +95,38 @@
   <string name="mozac_browser_errorpages_invalid_content_encoding_message"><![CDATA[<p>पेज जिसे आप देखने की कोशिश कर रहे हैं नहीं दिखाया जा सकता है क्योंकि यह संकुचन का अवैध या असमर्थित प्रारूप का प्रयोग करता है।</p>\n<ul>\n<li>कृपया वेबसाइट मालिक को इस समस्या के बारे में सूचित करने के लिए संपर्क करें।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">पता नहीं मिला</string>
+  <!-- In the example, the two URLs in markup do not need to be translated. -->
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>ब्राउज़र दिए गए एड्रेस के लिए होस्ट सर्वर नहीं ढूंढ पाया।</p>\n<ul>\n<li>देखें कि एड्रेस में टाइपिंग की गड़बड़ी तो नहीं है। जैसे कि, <strong>www</strong>.example.com के बजाय <strong>ww</strong>.example.com लिखा गया हो।</li>\n<li>अगर कोई भी पेज लोड नहीं हो पा रहा है, तो अपने डिवाइस का डेटा या वाई-फ़ाई कनेक्शन देख लें।</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">लगता है आपके इंटरनेट कनेक्शन में कुछ गड़बड़ी है</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">किसी दूसरे डिवाइस से कनेक्ट करने की कोशिश करें। अपना मॉडेम या राउटर चेक करें। वाई-फ़ाई से डिस्कनेक्ट करके फिर से कनेक्ट करें।</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">एरर कोड: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">फिर से लोड करें</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title">अमान्य पता</string>
+  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>दिए गए एड्रेस का फ़ॉर्मैट सही नहीं है। कृपया लोकेशन बार में देखें कि कोई गड़बड़ी तो नहीं है और फिर से कोशिश करें।</p>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title_alternative">पता मान्य नहीं है</string>
   <!-- This string contains markup. The URL should not be localized. -->
   <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>वेब पता प्रायः इस तरह लिखा जाता है <strong>http://www.example.com/</strong></li>\n<li>सुनिश्चित करें कि आप फॉरवर्ड स्लैश का प्रयोग कर रहे हैं (यानी <strong>/</strong>)।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_protocol_title">अज्ञात प्रोटोकॉल</string>
+  <string name="mozac_browser_errorpages_unknown_protocol_message"><![CDATA[<p>एड्रेस में कोई ऐसा प्रोटोकॉल इस्तेमाल किया गया है (जैसे कि, <q>wxyz://</q>) जिसे ब्राउज़र नहीं पहचानता है, इसलिए वह साइट के साथ सही से कनेक्ट नहीं हो पा रहा है।</p>\n<ul>\n<li>मल्टीमीडिया या फिर टेक्स्ट से इतर कोई अन्य सेवा इस्तेमाल करने की कोशिश कर रहे हैं? अतिरिक्त शर्तों के लिए साइट पर जाएं।</li>\n<li>कुछ प्रोटोकॉल में, ब्राउज़र के उन्हें पहचान पाने के लिए, पहले किसी थर्ड-पार्टी सॉफ़्टवेयर या प्लग-इन की ज़रूरत हो सकती हैं।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_file_not_found_title">फ़ाइल नहीं मिला</string>
+  <string name="mozac_browser_errorpages_file_not_found_message"><![CDATA[<ul>\n<li>ऐसा तो नहीं कि आइटम का नाम बदल दिया गया है, उसे हटा दिया गया है, या उसकी लोकेशन बदल दी गई है?</li>\n<li>क्या एड्रेस में स्पेलिंग, कैपिटल अक्षरों की गड़बड़ी या टाइपिंग की कोई और गड़बड़ी तो नहीं है?</li>\n<li>जिस आइटम का अनुरोध किया गया है, आपके पास उसे एक्सेस करने की पर्याप्त अनुमतियां हैं?</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_file_access_denied_title">फ़ाइल के ऐक्सेस को रोक दिया गया</string>
   <string name="mozac_browser_errorpages_file_access_denied_message"><![CDATA[<ul>\n<li>इसे हटाया, खिसकाया जा सकता है या फाइल अनुमति पहुँच प्रतिबाधित कर सकती हैं।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_proxy_connection_refused_title">प्रॉक्सी सर्वर का कनेक्शन अस्वीकार किया गया</string>
+  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>ब्राउज़र को प्रॉक्सी सर्वर इस्तेमाल करने के लिए कॉन्फ़िगर किया गया है, मगर प्रॉक्सी ने कनेक्शन नामंज़ूर कर दिया है।</p>\n<ul>\n<li>क्या ब्राउज़र का प्रॉक्सी कॉन्फ़िगरेशन सही है? सेटिंग देखें और फिर से कोशिश करें।</li>\n<li>क्या प्रॉक्सी सेवा इस नेटवर्क वाले किसी कनेक्शन को अनुमति देती है?</li>\n<li>समस्या अबभी बनी हुई है? अपने नेटवर्क एडमिनिस्ट्रेटर से बात करें या इंटरनेट प्रोवाइडर से मदद लें।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_proxy_host_title">प्रॉक्सी सर्वर नहीं मिला</string>
+  <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>ब्राउज़र को कोई प्रॉक्सी सर्वर इस्तेमाल करने के लिए कॉन्फ़िगर किया गया है, लेकिन प्रॉक्सी नहीं मिल पाई।</p>\n<ul>\n<li>क्या ब्राउज़र की प्रॉक्सी कॉन्फ़िगरेशन सही है? सेटिंग देखें और फिर से कोशिश करें।</li>\n<li>क्या डिवाइस किसी एक्टिव नेटवर्क से जुड़ा हुआ है?</li>\n<li>समस्या बनी हुई है? मदद के लिए अपने नेटवर्क एडमिनिस्ट्रेटर या इंटरनेट प्रोवाइडर से संपर्क करें।</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">मैलवेयर साइट समस्या</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
@@ -114,8 +143,14 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">धोखादायक साइट समस्या</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s पर यह वेबपेज एक धोखादायक साइट के रूप में रिपोट किया गया है और आपकी सुरक्षा प्राथमिकताओं के आधार पर ब्लॉक किया गया हैं।</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">आपकी सुरक्षा के लिए साइट को ब्लॉक किया गया है</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s के इस वेब पेज को ब्लॉक कर दिया गया है क्योंकि आपके किसी ऐड-ऑन ने इसे खोलने की कोशिश की थी। हो सकता है कि इस साइट का इस्तेमाल आपकी जानकारी चुराने के लिए किया जा रहा हो — जैसे कि, पासवर्ड या क्रेडिट कार्ड नंबर।</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">सुरक्षित साइट उपलब्ध नहीं है</string>
+  <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
+  <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[आपने बेहतर सुरक्षा के लिए, सिर्फ़-HTTPS वाले मोड को चालू किया हुआ है, और <em>%1$s</em> का HTTPS वर्ज़न उपलब्ध नहीं है।]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">HTTP साइट को जारी रखें</string>
 </resources>

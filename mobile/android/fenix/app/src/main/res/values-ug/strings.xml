@@ -148,6 +148,12 @@
   <!--
     Recent Tabs
 
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">داۋاملاشتۇر</string>
+  <!--
+    Recent Tabs
+
     Header text for jumping back into the recent tab in the home screen
   -->
   <string name="recent_tabs_header">ئالدىنقى بەتكە قايت</string>
@@ -976,6 +982,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">شەخسىيەت دوكلاتى</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">داۋاملاشتۇر</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">كەينىگە قايت</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -2395,6 +2403,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nيوللىغۇچى %2$s 🦊 كۆچمە توركۆرگۈنى سىناڭ: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nيوللىغۇچى %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">قايتا تىزىمغا كىرسە ئۈسكۈنە ئارىسىدا بەتكۈچنى يوللىيالايدۇ</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">تىزىمغا كىرىڭ</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">ھېسابنى چىقىرىۋەت</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">ھېچقانداق ئۈسكۈنە باغلانمىدى</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">ئاز دېگەندە بىر ئۈسكۈنىدە Firefox تىزىمغا كىرگەندە ئاندىن بەتكۈچ يوللىيالايدۇ.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">ئىنتېرنېت باغلىنىشىڭىزنى تەكشۈرۈڭ</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">ئاندىن بەتكۈچنى قايتا يوللاشنى سىناڭ.</string>
   <!--
     Notifications
 
@@ -2416,6 +2438,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox نى كۆڭۈلدىكى توركۆرگۈ قىلىڭ</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">شەخسىيەت دوكلاتى</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s تور زىيارىتى جەريانىدا قانچە ئىز قوغلىغۇچنىڭ توسۇلغانلىقىنى كۆرسىتىدۇ.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">تور زىيارىتىنى داۋاملاشتۇرۇڭ. %1$s توسۇشنى داۋاملاشتۇرىدۇ.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s تور زىيارەت جەريانىدا ئىزلىغۇچنى توسىدۇ. ئۇلارنى بۇ جايدا كۆرىسىز.</string>
   <!--
     Survey
 
@@ -4520,4 +4554,18 @@
   <string name="pdf_tools_print_content_description">PDF نى باس</string>
   <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
   <string name="pdf_tools_share_content_description">PDFھەمبەھىر</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">ئىمزا قوش</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">PDF ئىمزا كۆزنەكچىسىنى ياپىدۇ</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">ئىمزا كىرگۈزۈلىدۇ</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">تازىلا</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">قوش</string>
 </resources>

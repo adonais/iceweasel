@@ -2428,7 +2428,7 @@
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nAnfonwyd o %2$s 🦊 %3$s</string>
   <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
-  <string name="sync_send_tab_error_auth_title">Mewngofnodwch yn ôl i anfon tabiau rhwng dyfeisiau</string>
+  <string name="sync_send_tab_error_auth_title">Ail fewngofnodwch i anfon tabiau rhwng dyfeisiau</string>
   <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
   <string name="sync_send_tab_error_auth_button">Mewngofnodi</string>
   <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->

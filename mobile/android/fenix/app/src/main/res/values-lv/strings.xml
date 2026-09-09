@@ -266,6 +266,8 @@
   <string name="preferences_email_masks_suggest_learn_more">Uzzināt vairāk</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">Uzzināt vairāk</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Kļūda</string>
   <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
   <string name="ip_protection_menu_try_vpn_cta">Izmēģini bez maksas</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->

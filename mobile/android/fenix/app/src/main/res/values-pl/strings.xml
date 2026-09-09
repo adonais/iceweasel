@@ -514,7 +514,7 @@
   -->
   <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">Aby pomóc w\u00a0ulepszaniu przeglądarki, Firefox wysyła dane diagnostyczne i\u00a0o\u00a0interakcjach do Mozilli. %1$s</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
-  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Zarządzaj ustawieniami</string>
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">Ustawienia</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Kontynuuj</string>
   <!-- Onboarding header for the toolbar selection card. -->
@@ -579,7 +579,7 @@
   -->
   <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Aby pomóc w\u00a0ulepszaniu przeglądarki, Firefox wysyła dane diagnostyczne i\u00a0o\u00a0interakcjach do Mozilli. %1$s</string>
   <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
-  <string name="nova_onboarding_tou_body_line_3_link_text">Zarządzaj ustawieniami</string>
+  <string name="nova_onboarding_tou_body_line_3_link_text">Ustawienia</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Pożegnaj się z\u00a0koszmarnymi elementami śledzącymi</string>
   <!-- "Set to default" onboarding title. -->
@@ -890,7 +890,7 @@
   <!-- Snackbar message shown when user shares a link -->
   <string name="link_shared_snackbar_message">Udostępniono odnośnik</string>
   <!-- Snackbar action label shown when user shares a link -->
-  <string name="link_shared_snackbar_action">Zarządzaj ustawieniami</string>
+  <string name="link_shared_snackbar_action">Ustawienia</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Otwieranie odnośników w\u00a0aplikacjach</string>
   <!-- Preference for open links in third party apps always open in apps option -->

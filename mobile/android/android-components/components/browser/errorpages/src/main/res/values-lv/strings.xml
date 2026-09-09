@@ -7,6 +7,8 @@
 -->
 
 <resources>
+  <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
+  <string name="mozac_browser_errorpages_generic_title">Nevar pabeigt pieprasījumu</string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_back">Doties atpakaļ (ieteicams)</string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
