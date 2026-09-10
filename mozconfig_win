@@ -102,8 +102,8 @@ ac_add_options --enable-update-channel=release
 ac_add_options --with-branding=browser/branding/iceweasel
 
 # crt files for vs2026
-if test "$ICEWEASEL_BITS" = "64"; then
-  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC145.CRT
-elif test "$ICEWEASEL_BITS" = "32"; then
-  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x86/Microsoft.VC145.CRT
-fi
+# if test "$ICEWEASEL_BITS" = "64"; then
+#   WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC145.CRT
+# elif test "$ICEWEASEL_BITS" = "32"; then
+#   WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x86/Microsoft.VC145.CRT
+# fi

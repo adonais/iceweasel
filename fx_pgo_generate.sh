@@ -32,7 +32,6 @@ export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
 
 if [ "$TARGETED_OS" == "Windows_NT" ]; then
   export WINSYSROOT=/builds/worker/fetches/vs
-  export VC_REDISTDIR=$WINSYSROOT/VC/Redist/MSVC/14.50.35710/
   export LIBPORTABLE_PATH=$MOZ_FETCHES_DIR/clang
   export WINE=$MOZ_FETCHES_DIR/wine/bin/wine64
   export WINEPREFIX=$MOZ_FETCHES_DIR/.wine
