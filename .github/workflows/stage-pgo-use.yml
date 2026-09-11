@@ -110,13 +110,13 @@ jobs:
         fi
         tar Jxf sccache.tar.xz -C "$MOZ_FETCHES_DIR"
         chmod -R 755 "$MOZ_FETCHES_DIR/sccache"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang21.tar.xz?viasf=1 -O clang.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang22.tar.xz?viasf=1 -O clang.tar.xz
         if [ $? -ne 0 ]; then
           echo Download clang failed
           exit 255
         fi
         tar Jxf clang.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk2026.tar.xz?viasf=1 -O diasdk.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk2026-v2.tar.xz?viasf=1 -O diasdk.tar.xz
         if [ $? -ne 0 ]; then
           echo Download diasdk2026 failed
           exit 255
@@ -140,14 +140,14 @@ jobs:
           exit 255
         fi
         tar Jxf onnxruntime_linux.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust194.tar.xz?viasf=1 -O rust.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust198.tar.xz?viasf=1 -O rust.tar.xz
         if [ $? -ne 0 ]; then
           echo Download rust194 failed
           exit 255
         fi
         tar Jxf rust.tar.xz -C "$MOZ_FETCHES_DIR"
         chmod -R 755 "$MOZ_FETCHES_DIR/rust"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs2026.tar.xz?viasf=1 -O vs.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs2026-v2.tar.xz?viasf=1 -O vs.tar.xz
         if [ $? -ne 0 ]; then
           echo Download vs2026 failed
           exit 255
@@ -171,7 +171,7 @@ jobs:
           exit 255
         fi
         tar Jxf wine.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk2026.tar.xz?viasf=1 -O winsdk.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk2026-v2.tar.xz?viasf=1 -O winsdk.tar.xz
         if [ $? -ne 0 ]; then
           echo Download winsdk26100 failed
           exit 255
