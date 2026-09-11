@@ -1215,7 +1215,7 @@ class Window extends WindowBase {
       return null;
     }
 
-    return tabManager.getWrapper(this.window.gBrowser.selectedTab);
+    return this.window.gBrowser ? tabManager.getWrapper(this.window.gBrowser.selectedTab) : null;
   }
 
   getTabAtIndex(index) {

@@ -567,8 +567,11 @@ var Impl = {
    */
   getMetadata: function getMetadata(reason) {
     const sessionStartDate = Utils.toLocalTimeISOString(
-      Utils.truncateToHours(this._sessionStartDate)
+      Utils.truncateToHours(this._sessionStartDate ? this._sessionStartDate : new Date())
     );
+    if (!this._subsessionStartDate) {
+      this._subsessionStartDate = new Date();
+    }
     const subsessionStartDate = Utils.toLocalTimeISOString(
       Utils.truncateToHours(this._subsessionStartDate)
     );
