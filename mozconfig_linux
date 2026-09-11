@@ -15,8 +15,8 @@ ac_add_options --enable-optimize="-O3"
 # setting
 export CC=clang
 export CXX=clang++
-export CFLAGS="$CFLAGS -msse3 -DTT_USE_SSE3"
-export CXXFLAGS="$CXXFLAGS -msse3 -DTT_USE_SSE3"
+export CFLAGS="$CFLAGS -msse3 -DTT_MEMUTIL"
+export CXXFLAGS="$CXXFLAGS -msse3 -DTT_MEMUTIL"
 
 # for rust
 export RUSTC_OPT_LEVEL=2
@@ -61,7 +61,7 @@ MOZ_REQUIRE_SIGNING=
 
 # for linux
 ac_add_options --disable-elf-hack
-ac_add_options --with-unsigned-addon-scopes=app
+ac_add_options --with-unsigned-addon-scopes=app,system
 ac_add_options --allow-addon-sideload
 
 # without wasm sandbo
