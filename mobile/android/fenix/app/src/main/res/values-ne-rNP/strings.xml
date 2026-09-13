@@ -59,12 +59,6 @@
   <string name="home_screen_shortcut_open_new_tab_2">नयाँ ट्याब</string>
   <!-- Shortcut action to open new private tab -->
   <string name="home_screen_shortcut_open_new_private_tab_2">नयाँ निजी ट्याब</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">मा फर्केर जानुहोस्</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">सबै देखाउनुहोस्</string>
   <!--
@@ -218,8 +212,6 @@
   <string name="customize_addon_collection_hint">सङ्कलनको नाम</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">सङ्कलन मालिक (प्रयोगकर्ता आईडी)</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">मा फर्केर जानुहोस्</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
     a section where users see a list of tabs that they have visited in the past few days

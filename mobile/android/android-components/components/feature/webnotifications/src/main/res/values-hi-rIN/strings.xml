@@ -8,5 +8,5 @@
 
 <resources>
   <!-- Default Web Notification Channel Name. -->
-  <string name="mozac_feature_notification_channel_name">साइट अधिसूचनाएं</string>
+  <string name="mozac_feature_notification_channel_name">साइट नोटिफ़िकेशन</string>
 </resources>

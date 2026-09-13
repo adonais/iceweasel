@@ -6,39 +6,86 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_downloads_notification_channel">डाउनलोड</string>
+  <!--
+    Summary text shown on an in progress download notification.
+    %1$s will be replaced with the estimated time remaining to complete the download.
+  -->
+  <string name="mozac_feature_downloads_time_remaining">%1$s में</string>
+  <!-- Summary text shown on an in progress download notification when the estimated time remaining is unknown. -->
+  <string name="mozac_feature_downloads_time_remaining_unknown">मालूम नहीं है</string>
   <!-- Text shown on the second row of a paused download notification. -->
   <string name="mozac_feature_downloads_paused_notification_text">डाउनलोड रोका गया</string>
   <!-- Text shown on the second row of an completed download notification. The filename is shown on the first row. -->
-  <string name="mozac_feature_downloads_completed_notification_text2">डाउनलोड संपन्न</string>
+  <string name="mozac_feature_downloads_completed_notification_text2">डाउनलोड पूरा हो गया</string>
   <!-- Text shown on the second row of an failed download notification. The filename is shown on the first row. -->
-  <string name="mozac_feature_downloads_failed_notification_text2">डाउनलोड विफल</string>
+  <string name="mozac_feature_downloads_failed_notification_text2">डाउनलोड नहीं हो पाया</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_again_dialog_title">फ़ाइल फिर से डाउनलोड करें? (%1$s)</string>
+  <!--
+    Alert dialog confirmation before downloading a file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_dialog_title_3">फ़ाइल डाउनलोड करें? (%1$s)</string>
+  <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_dialog_title_with_unknown_size">फ़ाइल डाउनलोड करें?</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">फ़ाइल फिर से डाउनलोड करें?</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">डाउनलोड करें</string>
+  <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->
+  <string name="mozac_feature_downloads_dialog_download_again">फिर से डाउनोलड करें</string>
   <!-- Alert dialog confirmation before download a file, this is the negative action. -->
-  <string name="mozac_feature_downloads_dialog_cancel">रद्द करें</string>
+  <string name="mozac_feature_downloads_dialog_cancel">कैंसिल करें</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the description.
+    %1$s will be replaced with the name of the file.
+  -->
+  <string name="mozac_feature_downloads_already_exists_dialog_title">%1$s पहले से मौजूद है।</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the neutral action that proposes to open the file instead. -->
+  <string name="mozac_feature_downloads_open_existing_file">मौजूदा फ़ाइल खोलें</string>
+  <!--
+    Alert dialog confirmation before downloading a file without network connection, this is the description.
+    %1$s will be replaced with the name of the file.
+  -->
+  <string name="mozac_feature_downloads_file_failure_no_connection" tools:ignore="UnusedResources">%1$s डाउनलोड नहीं हुआ था।</string>
+  <!-- Alert dialog confirmation before downloading a file without network connection, this is the description. -->
+  <string name="mozac_feature_downloads_file_check_connection" tools:ignore="UnusedResources">अपना इंटरनेट कनेक्शन चेक करें और फिर से कोशिश करें।</string>
   <!-- Error shown when the user is trying to download a invalid file. %1$s will be replaced with the name of the app. -->
-  <string name="mozac_feature_downloads_file_not_supported2">%1$s इस प्रकार के फाइल को डाउनलोड नहीं कर सकता</string>
+  <string name="mozac_feature_downloads_file_not_supported2">%1$s इस तरह की फ़ाइल डाउनलोड नहीं कर सकता</string>
   <!-- Message that appears when the downloaded file could not be opened. -->
-  <string name="mozac_feature_downloads_could_not_open_file">फ़ाइल खोला नहीं जा सका</string>
+  <string name="mozac_feature_downloads_could_not_open_file">फ़ाइल खोली नहीं जा सकी</string>
   <!-- Message that appears when the downloaded file is a specific type (%1$s) that Android doesn't support opening. -->
-  <string name="mozac_feature_downloads_open_not_supported1">%1$s फाइलें खोलने के लिए कोई ऐप नहीं मिला</string>
+  <string name="mozac_feature_downloads_open_not_supported1">%1$s फ़ाइलें खोलने के लिए कोई ऐप नहीं मिला</string>
   <!-- Button that pauses the download when pressed. -->
-  <string name="mozac_feature_downloads_button_pause">रोकें</string>
+  <string name="mozac_feature_downloads_button_pause">पॉज़ करें</string>
   <!-- Button that resumes the download when pressed. -->
-  <string name="mozac_feature_downloads_button_resume">पुनः चलाएं</string>
+  <string name="mozac_feature_downloads_button_resume">फिर शुरू करें</string>
   <!-- Button that cancels the download when pressed. -->
-  <string name="mozac_feature_downloads_button_cancel">रद्द करें</string>
+  <string name="mozac_feature_downloads_button_cancel">कैंसिल करें</string>
   <!-- Button that opens the downloaded file when pressed. -->
   <string name="mozac_feature_downloads_button_open">खोलें</string>
   <!-- Button that restarts the download after a failed attempt. -->
-  <string name="mozac_feature_downloads_button_try_again">पुनः प्रयास करें</string>
+  <string name="mozac_feature_downloads_button_try_again">फिर से कोशिश करें</string>
   <!-- Content description for close button -->
   <string name="mozac_feature_downloads_button_close">बंद करें</string>
   <!-- Title for the third party download app chooser dialog -->
-  <string name="mozac_feature_downloads_third_party_app_chooser_dialog_title">इसके उपयोग से कार्य पूरा करें</string>
+  <string name="mozac_feature_downloads_third_party_app_chooser_dialog_title">एक्शन पूरा करने के लिए इसका इस्तेमाल करें:</string>
   <!-- Message that appears when trying to download with an external app fails. %1$s will be replaced with the name the external app. -->
-  <string name="mozac_feature_downloads_unable_to_open_third_party_app">%1$s को खोलने में असमर्थ रहा</string>
+  <string name="mozac_feature_downloads_unable_to_open_third_party_app">%1$s खोलने में असमर्थ</string>
+  <!-- Text for the info dialog when write to storage permissions have been denied but user tries to download a file. -->
+  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">फ़ाइलें डाउनलोड करने के लिए, फ़ाइल और मीडिया एक्सेस करने की अनुमति चाहिए। Android सेटिंग में जाएं, अनुमतियों पर टैप करें और अनुमति दें पर टैप करें।</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
+  <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">प्राइवेट डाउनलोड कैंसिल करें?</string>
+  <!-- Alert dialog confirmation before cancelling private downloads, this is the body. %1$s will be replaced with the name of the file. -->
+  <string name="mozac_feature_downloads_cancel_active_private_downloads_warning_content_body">अगर आप सभी प्राइवेट टैब को अभी बंद करते हैं, तो %1$s का डाउनलोड कैंसिल कर दिया जाएगा। प्राइवेट ब्राउज़िंग को वाकई छोड़ना है?</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the positive action. -->
+  <string name="mozac_feature_downloads_cancel_active_downloads_accept">डाउनलोड कैंसिल करें</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the negative action. Leaves user in Private browsing -->
+  <string name="mozac_feature_downloads_cancel_active_private_downloads_deny">प्राइवेट ब्राउज़िंग में बने रहें</string>
 </resources>

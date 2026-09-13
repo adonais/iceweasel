@@ -118,16 +118,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">Scheda privata nova</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">Chiavi</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Torna â scheda</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Mustra tutti</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Buttuni pi mustrari tutti i schedi ricenti</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Vidi tutti i schedi sincrunizzati</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -612,8 +604,6 @@
   <string name="customize_addon_collection_user_hint">Prupitariu dâ ricota (ID utenti)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">A ricota dî stinneri fu canciata. L’applicazzioni s’hâ chiùjiri pi riggistrari i canci…</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Torna â scheda</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Nzingalibbra</string>
   <!--

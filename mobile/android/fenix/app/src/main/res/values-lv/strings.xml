@@ -75,6 +75,8 @@
   <string name="preferences_open_links_in_apps_always">Vienmēr</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Pārvaldīt lejupielādes ar citu lietotni</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">Šajā ierīcē nav iespējams atvērt mapju atlasītāju.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">Izdzēst vai noņemt lejupielādes</string>
   <!--
@@ -108,6 +110,8 @@
     or "Full dark" if needed.
   -->
   <string name="preference_oled_theme">Vistumšākais</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Rīkjosla jāpavelk stateniski, lai redzētu atvērtās cilnes</string>
   <!--
     Library
 
@@ -131,7 +135,7 @@
   <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
   <string name="preferences_privacy_report_title">Iespējot privātuma atskaiti</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more">Uzziniet vairāk</string>
+  <string name="studies_learn_more">Uzzināt vairāk</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">Uzzināt vairāk</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -278,6 +282,8 @@
   <string name="ip_protection_onboarding_body_link_promo">Uzzināt vairāk</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
   <string name="ip_protection_location_selection_reset_snackbar">Atlasītā VPN atrašanās vieta nav pieejama. Pārslēgts uz ieteicamo atrašanās vietu.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_open_settings_snackbar_action">Iestatījumi</string>
   <!-- Description for an unavailable VPN location in the location list. -->
   <string name="ip_protection_location_unavailable_description">Nepieejams</string>
   <!-- Preference option for adding a card -->

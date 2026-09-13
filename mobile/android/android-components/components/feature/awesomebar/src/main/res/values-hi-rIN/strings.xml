@@ -12,5 +12,5 @@
     Used to distinguish between History search suggestions from your
     browsing history and your open tabs
   -->
-  <string name="switch_to_tab_description">टैब पर जाएँ</string>
+  <string name="switch_to_tab_description">टैब पर स्विच करें</string>
 </resources>

@@ -8,11 +8,11 @@
 
 <resources>
   <!-- Text for confirmation for a positive action in dialog -->
-  <string name="mozac_feature_prompts_ok">ठीक है</string>
+  <string name="mozac_feature_prompts_ok">ओके</string>
   <!-- Text for confirmation for a negative action in dialog. -->
-  <string name="mozac_feature_prompts_cancel">रद्द करें</string>
+  <string name="mozac_feature_prompts_cancel">कैंसिल करें</string>
   <!-- When a page shows many dialogs, this checkbox will appear for letting the user choose to prevent showing more dialogs. -->
-  <string name="mozac_feature_prompts_no_more_dialogs">इस पृष्ठ को अतरिक्त सूचना प्रदान करने से रोकें</string>
+  <string name="mozac_feature_prompts_no_more_dialogs">इस पेज को और डायलॉग बनाने से रोकें</string>
   <!-- Text for a positive button, when an user selects a date in date/time picker. -->
   <string name="mozac_feature_prompts_set_date">सेट करें</string>
   <!-- Text for a button that clears the selected input in the date/time picker. -->
@@ -20,37 +20,63 @@
   <!-- Text for the title of an authentication dialog. -->
   <string name="mozac_feature_prompt_sign_in">साइन इन करें</string>
   <!-- Text for username field in an authentication dialog. -->
-  <string name="mozac_feature_prompt_username_hint">उपयोगकर्ता नाम</string>
+  <string name="mozac_feature_prompt_username_hint">यूज़रनेम</string>
   <!-- Text for password field in an authentication dialog. -->
   <string name="mozac_feature_prompt_password_hint">पासवर्ड</string>
+  <!-- Negative confirmation that we should not save the new or updated login -->
+  <string name="mozac_feature_prompt_dont_save_2">अभी नहीं</string>
   <!-- Negative confirmation that we should never save a login for this site -->
-  <string name="mozac_feature_prompt_never_save">कभी नहीं सहेजें</string>
+  <string name="mozac_feature_prompt_never_save">कभी भी सेव न करें</string>
+  <!-- Negative confirmation that we should not save a credit card for this site -->
+  <string name="mozac_feature_prompt_not_now">अभी नहीं</string>
   <!-- Positive confirmation that we should save the new or updated login -->
-  <string name="mozac_feature_prompt_save_confirmation">सहेजें</string>
+  <string name="mozac_feature_prompt_save_confirmation">सेव करें</string>
+  <!-- Negative confirmation that we should not save the updated login -->
+  <string name="mozac_feature_prompt_dont_update_2">अभी नहीं</string>
   <!-- Positive confirmation that we should save the updated login -->
-  <string name="mozac_feature_prompt_update_confirmation">अद्यतित करें</string>
+  <string name="mozac_feature_prompt_update_confirmation">अपडेट करें</string>
+  <!-- Error text displayed underneath the password field when it is in an error case -->
+  <string name="mozac_feature_prompt_error_empty_password_2">पासवर्ड डालें</string>
+  <!-- Error text displayed underneath the password field when it is in an error case -->
+  <string name="mozac_feature_prompt_error_unknown_cause_2">पासवर्ड सेव नहीं किया जा सका</string>
+  <!-- Prompt message displayed when app detects a user has entered a new username and password and user decides if app should save the new password. -->
+  <string name="mozac_feature_prompt_login_save_headline_2">पासवर्ड सेव करें?</string>
+  <!-- Prompt message displayed when app detects a user has entered a new password for an existing login and user decides if app should update the password. -->
+  <string name="mozac_feature_prompt_login_update_headline_2">पासवर्ड अपडेट करें?</string>
+  <!-- Prompt message displayed when app detects a user has entered a username for an existing login without a username and user decides if app should update the login. -->
+  <string name="mozac_feature_prompt_login_add_username_headline_2">यूज़रनेम अपडेट करें?</string>
   <!--
     Text for a label for the field when prompt requesting a text is shown.
 
     For more info take a look here https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt
   -->
-  <string name="mozac_feature_prompts_content_description_input_label">पाठ इनपुट क्षेत्र दर्ज करने के लिए लेबल</string>
+  <string name="mozac_feature_prompts_content_description_input_label">टेक्स्ट इनपुट फ़ील्ड में जानकारी डालने के लिए लेबल</string>
   <!-- Title of a color picker dialog, this text is shown above a color picker. -->
-  <string name="mozac_feature_prompts_choose_a_color">एक रंग चुनें</string>
+  <string name="mozac_feature_prompts_choose_a_color">कलर चुनें</string>
   <!-- Text of a confirm button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_allow">अनुमति दें</string>
   <!-- Text of a negative button in dialog requesting to open a new window. -->
-  <string name="mozac_feature_prompts_deny">अस्वीकार करें</string>
+  <string name="mozac_feature_prompts_deny">अनुमति न दें</string>
+  <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
+  <string name="mozac_feature_prompts_popup_dialog_title">इस साइट को खोलने की अनुमति दें?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">इस साइट पर ले जाने की अनुमति दें?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
-  <string name="mozac_feature_prompt_before_unload_dialog_title">क्या आपको यकीन है?</string>
+  <string name="mozac_feature_prompt_before_unload_dialog_title">सचमुच?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
-  <string name="mozac_feature_prompt_before_unload_dialog_body">क्या आप इस साइट को छोड़ना चाहते हैं? आपके द्वारा दर्ज किया गया डेटा सहेजा नहीं जा सकता है</string>
+  <string name="mozac_feature_prompt_before_unload_dialog_body">इस साइट को छोड़ना है? हो सकता है कि आपका दर्ज किया गया डेटा सेव न हो</string>
   <!-- Stay button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to stay in the website. -->
   <string name="mozac_feature_prompts_before_unload_stay">रुकें</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">छोड़ें</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s, %2$s के लिए एक पास-की बनाना चाहता है।</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s, %2$s के लिए एक पास-की इस्तेमाल करना चाहता है।</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">जारी रखें</string>
   <!-- Title of the month chooser dialog. -->
-  <string name="mozac_feature_prompts_set_month">एक महीना चुनें</string>
+  <string name="mozac_feature_prompts_set_month">महीना चुनें</string>
   <!-- January (short description), used on the month chooser dialog. -->
   <string name="mozac_feature_prompts_jan">जनवरी</string>
   <!-- February month of the year (short description), used on the month chooser dialog. -->
@@ -75,10 +101,103 @@
   <string name="mozac_feature_prompts_nov">नवंबर</string>
   <!-- December month of the year (short description), used on the month chooser dialog. -->
   <string name="mozac_feature_prompts_dec">दिसंबर</string>
+  <!-- Title of the time picker dialog. -->
+  <string name="mozac_feature_prompts_set_time">समय सेट करें</string>
+  <!-- Option in expanded select password prompt that links to password settings -->
+  <string name="mozac_feature_prompts_manage_logins_2">पासवर्ड मैनेज करें</string>
+  <!-- Content description for expanding the saved passwords options in the select password prompt -->
+  <string name="mozac_feature_prompts_expand_logins_content_description_2">\'सेव किए गए पासवर्ड\' को फैलाएं</string>
+  <!-- Content description for collapsing the saved passwords options in the select password prompt -->
+  <string name="mozac_feature_prompts_collapse_logins_content_description_2">\'सेव किए गए पासवर्ड\' को सिकोड़ें</string>
+  <!-- Header for the select password prompt to allow users to fill a form with a saved password -->
+  <string name="mozac_feature_prompts_saved_logins_2">सेव किए गए पासवर्ड</string>
+  <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_content_description">मज़बूत पासवर्ड सुझाएं</string>
+  <!-- Header for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_2">मज़बूत पासवर्ड का इस्तेमाल करें</string>
+  <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_message">मज़बूत पासवर्ड का इस्तेमाल करें: %1$s</string>
+  <!-- Title for using the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_title">मज़बूत पासवर्ड इस्तेमाल करें?</string>
+  <!-- Content description for the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_description_3">एक मज़बूत, रैंडम ढंग से तैयार किए गए पासवर्ड से अपना अकाउंट सुरक्षित रखें। आगे कभी इस्तेमाल किए जाने के लिए, इसे आपके अकाउंट में सेव कर लिया जाएगा।</string>
+  <!-- Pressing this will use the suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_use_password">पासवर्ड इस्तेमाल करें</string>
+  <!-- Pressing this will dismiss the suggested strong password dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_dismiss">अभी नहीं</string>
+  <!-- Title for showing the suggest strong password updated confirmation snackbar -->
+  <string name="mozac_feature_prompts_suggest_strong_password_updated_snackbar_title">पासवर्ड अपडेट किया गया</string>
   <!-- Strings shown in a dialog that appear when users try to refresh a certain kind of webpages -->
   <string name="mozac_feature_prompt_repost_title">इस साइट पर डेटा फिर से भेजें?</string>
+  <string name="mozac_feature_prompt_repost_message">यह पेज रीफ़्रेश करने से, ऐसा हो सकता है कि हाल ही में की गई कार्रवाइयों में दोहराव हो जाए। जैसे कि, पेमेंट भेजने या कमेंट पोस्ट करने में दोहराव।</string>
   <!-- Pressing this will dismiss the dialog and reload the page sending again the previous data -->
   <string name="mozac_feature_prompt_repost_positive_button_text">डेटा फिर से भेजें</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
-  <string name="mozac_feature_prompt_repost_negative_button_text">रद्द करें</string>
+  <string name="mozac_feature_prompt_repost_negative_button_text">कैंसिल करें</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">फ़ाइलें अपलोड करें?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">“%1$s” से अपलोड करने से पहले, यह पक्का कर लें कि आप इस साइट पर भरोसा करते हैं।</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">अपलोड करें</string>
+  <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">कैंसिल करें</string>
+  <!--
+    Credit Card Autofill
+
+    Header for the select card prompt to allow users to fill a form with a saved card.
+  -->
+  <string name="mozac_feature_prompts_select_credit_card_2">सेव किए गए कार्ड का इस्तेमाल करें</string>
+  <!-- Content description for expanding the saved card options in the select card prompt. -->
+  <string name="mozac_feature_prompts_expand_credit_cards_content_description_2">सेव किए गए कार्ड फैलाएं</string>
+  <!-- Content description for collapsing the saved card options in the select prompt. -->
+  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">सेव किए गए कार्ड सिकोड़ें</string>
+  <!-- Option in the expanded select card prompt that links to cards settings. -->
+  <string name="mozac_feature_prompts_manage_credit_cards_2">कार्ड मैनेज करें</string>
+  <!-- Text for the title of a save credit card dialog. -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_title">कार्ड को सुरक्षित ढंग से सेव करें?</string>
+  <!-- Text for the title of an update credit card dialog. -->
+  <string name="mozac_feature_prompts_update_credit_card_prompt_title">कार्ड एक्सपायर होने की तारीख अपडेट करें?</string>
+  <!-- Subtitle text displayed under the title of the saved card dialog. %s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_body_2">%s आपके कार्ड नंबर को एन्क्रिप्ट करता है। आपका सुरक्षा कोड सेव नहीं किया जाएगा।</string>
+  <!--
+    Address Autofill
+
+    Header for the select address prompt to allow users to fill a form with a saved address.
+  -->
+  <string name="mozac_feature_prompts_select_address_2">एड्रेस चुनें</string>
+  <!-- Content description for expanding the saved addresses options in the select address prompt. -->
+  <string name="mozac_feature_prompts_expand_address_content_description_2">सेव किए गए एड्रेस को फैलाएं</string>
+  <!-- Content description for collapsing the saved address options in the select address prompt. -->
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">सेव किए गए एड्रेस को सिकोड़ें</string>
+  <!-- Text for the manage addresses button. -->
+  <string name="mozac_feature_prompts_manage_address">एड्रेस मैनेज करें</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">एड्रेस सेव करें?</string>
+  <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
+  <string name="mozac_feature_prompts_update_address_prompt_title">एड्रेस अपेडट करें?</string>
+  <!--
+    Federated Credential Management prompts
+
+    Content description for the Account picture in the Select Account FedCM prompt
+  -->
+  <string name="mozac_feature_prompts_account_picture">अकाउंट पिक्चर</string>
+  <!-- Title of the Identity Credential provider dialog chooser. -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_provider">लॉगिन प्रोवाइर चुनें</string>
+  <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">%1$s अकाउंट से साइन इन करें</string>
+  <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">%1$s को लॉगिन प्रोवाइडर के रूप में इस्तेमाल करें</string>
+  <!-- Text for the positive button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_continue">जारी रखें</string>
+  <!-- Text for the cancel button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_cancel">कैंसिल करें</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">ईमेल मास्क का इस्तेमाल करें</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">नया अपडेट! %s वाले ईमेल मास्क अब मोबाइल पर उपलब्ध हैं।</string>
 </resources>

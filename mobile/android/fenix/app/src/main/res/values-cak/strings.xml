@@ -145,16 +145,8 @@
   <string name="home_screen_shortcut_passwords">Ewan taq tzij</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">Timeyak, ¿aruma?</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Titz\'et chik</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Tik\'ut ronojel</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Pitz\'b\'äl kek\'ut pe ri k\'ak\'a\' taq ruwi\'</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Ketz\'et ri taq ruwi\' eximon</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -976,8 +968,6 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Rutzijol ichinanem</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Titz\'et chik</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Taq yaketal</string>
   <!--
@@ -2991,7 +2981,7 @@
   <string name="ip_protection_navigate_back_button_content_description">Katok pa k\'amaya\'l titzolin</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">Tz\'aqät VPN richin %s</string>
-  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <!-- Body text for the browser VPN settings header, shown when no promo is running. %s is a learn more link using ip_protection_learn_more as text. -->
   <string name="ip_protection_promo_body_2">Katok rik\'in nïm chajinïk akuchi\' nawewaj ri ak\'ojlib\'al, achi\'el pa jaqäl Wi-Fi. %s</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">Tetamäx ch\'aqa\' chik</string>
@@ -3024,8 +3014,6 @@
   <string name="ip_protection_menu_error">Sachoj</string>
   <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
   <string name="ip_protection_menu_try_vpn_cta">Tatojtob\'ej sipan</string>
-  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
-  <string name="ip_protection_menu_auth_required">Tatojtob\'ej</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Tijaq runuk\'ulem VPN</string>
   <!--

@@ -33,5 +33,5 @@
     Description for the highlighted awesomebar element, which represents the current webpage - clicking it reloads the webpage.
     This will be interpolated into a longer message, equivalent to "Double tap to [reload the current page]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
   -->
-  <string name="mozac_browser_awesomebar_reload_website">recharger la page courante</string>
+  <string name="mozac_browser_awesomebar_reload_website">actualiser la page courante</string>
 </resources>

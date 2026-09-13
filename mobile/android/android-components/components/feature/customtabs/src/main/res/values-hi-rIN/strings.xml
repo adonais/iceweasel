@@ -8,5 +8,9 @@
 
 <resources>
   <string name="mozac_feature_customtabs_exit_button">पिछले ऐप पर वापस जाएं</string>
-  <string name="mozac_feature_customtabs_share_link">लिंक साझा करें</string>
+  <string name="mozac_feature_customtabs_share_link">लिंक शेयर करें</string>
+  <!-- Content description (not visible, for screen readers etc.): Description of the refresh button in the Custom Tabs toolbar -->
+  <string name="mozac_feature_customtabs_refresh_button">रीफ़्रेश करें</string>
+  <!-- Content description (not visible, for screen readers etc.): Description of the menu button in the Custom Tabs toolbar. -->
+  <string name="mozac_feature_customtabs_menu_button">और विकल्प</string>
 </resources>

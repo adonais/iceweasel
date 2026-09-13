@@ -114,16 +114,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">නව පෞද්. පටිත්ත</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">මුරපද</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">ආපසු පනින්න</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">සියල්ල පෙන්වන්න</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">සියළු මෑත පටිති බොත්තම පෙන්වන්න</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">සියළු සමමුහූර්ත පටිති බලන්න</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -498,8 +490,6 @@
   <string name="customize_addon_collection_hint">එකතුවෙහි නම</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">එකතුවේ හිමිකරු (පරිශ්‍රීලක හැඳු.)</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">ආපසු පනින්න</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">පොත්යොමු</string>
   <!--
