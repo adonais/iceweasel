@@ -4823,11 +4823,6 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
           }
         }
 
-        if (aVisitor.mPresContext) {
-          EventStateManager::SetActiveManager(
-              aVisitor.mPresContext->EventStateManager(), this);
-        }
-
         // OK, we're pretty sure we're going to load, so warm up a speculative
         // connection to be sure we have one ready when we open the channel.
         if (nsIDocShell* shell = OwnerDoc()->GetDocShell()) {
