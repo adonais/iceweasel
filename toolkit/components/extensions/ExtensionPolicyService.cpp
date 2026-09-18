@@ -375,7 +375,8 @@ static bool IsTabOrExtensionBrowser(dom::BrowsingContext* aBC) {
 
 #ifdef MOZ_THUNDERBIRD
   // ...unless it's Thunderbird, which has extra groups for unrelated reasons.
-  rv = rv || group == u"single-site"_ns || group == u"single-page"_ns;
+  rv = rv || group == u"mail-message"_ns || group == u"single-site"_ns ||
+       group == u"single-page"_ns;
 #endif
 
   return rv;
