@@ -12,7 +12,7 @@ currently we can't work out how this can happen.
 diff --git a/base/win/scoped_handle_verifier.cc b/base/win/scoped_handle_verifier.cc
 --- a/base/win/scoped_handle_verifier.cc
 +++ b/base/win/scoped_handle_verifier.cc
-@@ -109,17 +109,21 @@ ScopedHandleVerifier* ScopedHandleVerifi
+@@ -109,17 +109,22 @@ ScopedHandleVerifier* ScopedHandleVerifi
    if (!g_active_verifier) {
      ScopedHandleVerifier::InstallVerifier();
    }
@@ -21,10 +21,12 @@ diff --git a/base/win/scoped_handle_verifier.cc b/base/win/scoped_handle_verifie
  }
  
  bool CloseHandleWrapper(HANDLE handle) {
+-  CHECK(::CloseHandle(handle)) << "CloseHandle failed";
++  [[maybe_unused]] const bool closed = !!::CloseHandle(handle);
 +#if defined(NIGHTLY_BUILD)
-   CHECK(::CloseHandle(handle)) << "CloseHandle failed";
++  CHECK(closed) << "CloseHandle failed";
 +#else
-+  DCHECK(::CloseHandle(handle)) << "CloseHandle failed";
++  DCHECK(closed) << "CloseHandle failed";
 +#endif
    return true;
  }
