@@ -16,7 +16,7 @@ import mozilla.components.concept.base.crash.Breadcrumb as MozillaBreadcrumb
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.Before
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.never
@@ -28,8 +28,8 @@ import org.mockito.Mockito.verify
 class SentryServiceTest {
     class TestException : Exception()
 
-    @Before
-    fun setup() {
+    @After
+    fun tearDown() {
         Sentry.close()
     }
 
@@ -278,6 +278,7 @@ class SentryServiceTest {
                 SentryService(
                     testContext,
                     "https://not:real6@sentry.prod.example.net/405",
+                    sendCaughtExceptions = true,
                 )
             )
 

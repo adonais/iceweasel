@@ -4,12 +4,137 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application>
-        <meta-data
-            android:name="io.sentry.auto-init"
-            android:value="false" />
-        <provider
-            android:name="io.sentry.android.core.SentryInitProvider"
-            android:authorities="${applicationId}.SentryInitProvider"
-            tools:node="remove" />
+      <!-- This manifest fragment configures the Sentry Android library to put consumers
+           of lib-crash into a predictable state with many features disabled by default
+           to avoid data collection of things beyond the focus of lib-crash.
+
+           The [SentryAndroid.init] call in lib-crash may still override some of these
+           defaults at runtime based on lib-crash configuration.
+
+           https://docs.sentry.io/platforms/android/manual-setup/#configuration-via-androidmanifestxml
+           https://github.com/getsentry/sentry-java/blob/main/sentry-android-core/src/main/java/io/sentry/android/core/ManifestMetadataReader.java
+      -->
+
+      <!-- Remove ContentProviders from startup and require manual configuration -->
+      <provider
+        android:name="io.sentry.android.core.SentryInitProvider"
+        android:authorities="${applicationId}.SentryInitProvider"
+        tools:node="remove" />
+      <provider
+        android:name="io.sentry.android.core.SentryPerformanceProvider"
+        android:authorities="${applicationId}.SentryPerformanceProvider"
+        tools:node="remove" />
+
+      <!-- Sentry should start disabled until the component explicitly enables it. -->
+      <meta-data
+        android:name="io.sentry.enabled"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.auto-init"
+        android:value="false" />  <!-- Default: true -->
+
+      <!-- Disable various Sentry data collection features by default and require the
+           app to be specific about what it wants. This reduces surprises with Sentry
+           updates changing defaults. -->
+      <!-- Profiling and Tracing don't have an explicit enable option here but instead
+           rely on a sample-rate not being set in the app. -->
+      <meta-data
+        android:name="io.sentry.send-client-reports"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.uncaught-exception-handler.enable"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.anr.enable"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.ndk.enable"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.auto-session-tracking.enable"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.performance-v2.enable"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.traces.frames-tracking"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.metrics.enabled"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.profiling.enable-legacy-profiling"
+        android:value="false" /> <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.tombstone.enable"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.logs.enabled"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.ndk.app-hang.enable"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.standalone-app-start-tracing.enable"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.profiling.enable-app-start"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.traces.profiling.start-on-app-start"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.feedback.use-shake-gesture"
+        android:value="false" />
+
+      <!-- Disable various data enrichment sources by default and have app opt in
+           as they are needed. -->
+      <meta-data
+        android:name="io.sentry.additional-context"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.send-modules"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.enable-root-check"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.enable-scope-persistence"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.send-default-pii"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.attach-screenshot"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.attach-view-hierarchy"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.attach-threads"
+        android:value="false" />
+      <meta-data
+        android:name="io.sentry.external-storage-context"
+        android:value="false" />
+
+      <!-- Disable automatic breadcrumbs by default and let the app opt-in. -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.activity-lifecycle"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.app-lifecycle"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.app-components"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.system-events"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.network-events"
+        android:value="false" />  <!-- Default: true -->
+      <meta-data
+        android:name="io.sentry.breadcrumbs.user-interaction"
+        android:value="false" />  <!-- Default: true -->
     </application>
 </manifest>

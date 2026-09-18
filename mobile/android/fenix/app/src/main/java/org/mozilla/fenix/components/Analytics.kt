@@ -61,14 +61,6 @@ class Analytics(
         val distributionId = "Mozilla"
 
         if (isSentryEnabled()) {
-            // We treat caught exceptions similar to debug logging.
-            // On the release channel volume of these is too high for our Sentry instances, and
-            // we get most value out of nightly/beta logging anyway.
-            val shouldSendCaughtExceptions =
-                when (Config.channel) {
-                    ReleaseChannel.Release -> false
-                    else -> true
-                }
             val sentryService =
                 SentryService(
                     context,
@@ -80,7 +72,8 @@ class Analytics(
                         ),
                     environment = BuildConfig.BUILD_TYPE,
                     sendEventForNativeCrashes = false, // Do not send native crashes to Sentry
-                    sendCaughtExceptions = shouldSendCaughtExceptions,
+                    // Do not send diagnostic logs until we have a better way to toggle this from user settings.
+                    sendCaughtExceptions = false,
                     sentryProjectUrl = getSentryProjectUrl(),
                     crashMetadataEventProcessor = CrashMetadataEventProcessor(),
                 )
