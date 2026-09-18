@@ -17,11 +17,17 @@ namespace mozilla::dom::quota {
 DirtyTrackingAutoLock::DirtyTrackingAutoLock(Mutex& aLock,
                                              RefPtr<OriginInfo> aOriginInfo)
     : mLock(&aLock), mOriginInfo(std::move(aOriginInfo)), mTouched(false) {
-  if (IsValid()) {
-    Lock();
-    if (!mOriginInfo->LockedDirty()) {
-      EagerMarkAsDirty();
-    }
+  Lock();
+  if (!IsValid()) {
+    Unlock<true>();
+    return;
+  }
+
+  if (!mOriginInfo->LockedDirty()) {
+    EagerMarkAsDirty();
+  }
+  if (!IsValid()) {
+    Unlock<true>();
   }
 }
 
@@ -40,24 +46,31 @@ DirtyTrackingAutoLock::DirtyTrackingAutoLock(
   if (!mOriginInfo->LockedDirty()) {
     EagerMarkAsDirty();
   }
+  if (!IsValid()) {
+    Unlock<true>();
+  }
 }
 
 void DirtyTrackingAutoLock::EagerMarkAsDirty() {
   MOZ_ASSERT(IsValid());
 
-  auto stateMetadata = mOriginInfo->LockedFlattenToOriginStateMetadata();
-  stateMetadata.mDirty = true;
-  // The lock was acquired to set the dirty flag and timestamp above.
-  // Release it for the disk write that persists the flag, then re-acquire
-  // in RAII manner so the caller can proceed with the actual metadata
-  // modifications.
-  PauseLock pausedLock(*this);
-
   auto* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
-  quotaManager->AssertNotCurrentThreadOwnsQuotaMutex();
 
-  quotaManager->FlagOriginInfoAsDirtyOnDisk(*this, stateMetadata);
+  auto stateMetadata = mOriginInfo->LockedFlattenToOriginStateMetadata();
+  stateMetadata.mDirty = true;
+  {
+    PauseLock pausedLock(*this);
+
+    quotaManager->AssertNotCurrentThreadOwnsQuotaMutex();
+
+    quotaManager->FlagOriginInfoAsDirtyOnDisk(*this, stateMetadata);
+  }
+
+  // The origin may have been removed while the lock was paused.
+  if (!mOriginInfo->GetGroupInfo()) {
+    mOriginInfo = nullptr;
+  }
 }
 
 RefPtr<OriginInfo> DirtyTrackingAutoLock::GetOriginInfo(

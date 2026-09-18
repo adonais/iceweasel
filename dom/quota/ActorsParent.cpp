@@ -3556,10 +3556,12 @@ void QuotaManager::PersistOrigin(const OriginMetadata& aOriginMetadata) {
   AssertIsOnIOThread();
 
   DirtyTrackingAutoLock lock(mQuotaMutex, mGroupInfoPairs, aOriginMetadata);
-  RefPtr<OriginInfo> originInfo =
-      LockedGetOriginInfo(PERSISTENCE_TYPE_DEFAULT, aOriginMetadata);
+  if (!lock.IsValid()) {
+    return;
+  }
 
-  if (originInfo && !originInfo->LockedPersisted()) {
+  RefPtr<OriginInfo> originInfo = lock.GetOriginInfo();
+  if (!originInfo->LockedPersisted()) {
     originInfo->LockedPersist(lock);
   }
 }

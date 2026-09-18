@@ -155,7 +155,9 @@ void OriginInfo::LockedDecreaseUsage(Client::Type aClientType, int64_t aSize,
                                      DirtyTrackingAutoLock& aProofOfLock) {
   AssertCurrentThreadOwnsQuotaMutex();
 
-  MOZ_ASSERT(mClientUsages[aClientType].isSome());
+  if (mClientUsages[aClientType].isNothing()) {
+    return;
+  }
   QM_ASSERT_NO_UNDERFLOW_2(
       mClientUsages[aClientType].value(), aSize,
       "mClientUsages["_ns + Client::TypeToText(aClientType) + "]"_ns);
@@ -230,6 +232,10 @@ void OriginInfo::LockedPersist(DirtyTrackingAutoLock& aProofOfLock) {
 void OriginInfo::LockedTruncateUsages(Client::Type aClientType, uint64_t aDelta,
                                       DirtyTrackingAutoLock& aProofOfLock) {
   AssertCurrentThreadOwnsQuotaMutex();
+
+  if (mClientUsages[aClientType].isNothing()) {
+    return;
+  }
 
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
