@@ -51,6 +51,8 @@ support-files = ["head_unified_extensions.js"]
 
 ["browser_ext_browserAction_popup.js"]
 
+["browser_ext_browserAction_popup_confirm_dialog.js"]
+
 ["browser_ext_browserAction_popup_port.js"]
 
 ["browser_ext_browserAction_popup_preload.js"]

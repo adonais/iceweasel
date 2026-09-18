@@ -140,6 +140,9 @@ class WidgetRenderingContext;
   // Whether the drag and drop was performed.
   BOOL mPerformedDrag;
 
+  // Window zoomed state as of the most recent single click
+  BOOL mZoomStateAtLastSingleClick;
+
   // Holds our drag service across multiple drag calls. The reference to the
   // service is obtained when the mouse enters the view and is released when
   // the mouse exits or there is a drop. This prevents us from having to

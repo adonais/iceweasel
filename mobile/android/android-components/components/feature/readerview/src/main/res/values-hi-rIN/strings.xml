@@ -16,9 +16,9 @@
   <!-- Accessible description for the font option -->
   <string name="mozac_feature_readerview_serif_font_desc">Serif फ़ॉन्ट</string>
   <!-- Accessible description for decreasing the font size -->
-  <string name="mozac_feature_readerview_font_size_decrease_desc">फ़ॉन्ट आकार कम करें</string>
+  <string name="mozac_feature_readerview_font_size_decrease_desc">फ़ॉन्ट साइज़ कम</string>
   <!-- Accessible description for increasing the font size -->
-  <string name="mozac_feature_readerview_font_size_increase_desc">फ़ॉन्ट आकार बढ़ाएं</string>
+  <string name="mozac_feature_readerview_font_size_increase_desc">फ़ॉन्ट साइज़ अधिक</string>
   <!-- Color option for the background -->
   <string name="mozac_feature_readerview_dark">डार्क</string>
   <!-- Accessible description for the color option -->

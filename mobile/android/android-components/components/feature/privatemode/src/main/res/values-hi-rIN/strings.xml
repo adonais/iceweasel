@@ -8,5 +8,5 @@
 
 <resources>
   <!-- The user visible name of the "notification channel" (Android 8+ feature) for the ongoing notification shown while a browsing session is active. -->
-  <string name="mozac_feature_privatemode_notification_channel_name">निजी ब्राउज़िंग सत्र</string>
+  <string name="mozac_feature_privatemode_notification_channel_name">प्राइवेट ब्राउज़िंग सेशन</string>
 </resources>

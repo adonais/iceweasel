@@ -58,6 +58,7 @@ void XULColumnItemAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 XULListboxAccessible::XULListboxAccessible(nsIContent* aContent,
                                            DocAccessible* aDoc)
     : XULSelectControlAccessible(aContent, aDoc) {
+  mType = eXULListboxType;
   dom::Element* parentEl = mContent->GetParentElement();
   if (parentEl) {
     nsCOMPtr<nsIAutoCompletePopup> autoCompletePopupElm =

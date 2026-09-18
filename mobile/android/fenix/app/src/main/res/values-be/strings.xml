@@ -141,16 +141,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">Прыватная картка</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">Паролі</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Назад да</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Паказаць усе</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Кнопка паказу ўсіх нядаўніх картак</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Усе сінхранізаваныя карткі</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -823,8 +815,6 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Справаздача аб прыватнасці</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Пераход назад да</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Закладкі</string>
   <!--
@@ -2462,8 +2452,6 @@
   <string name="preferences_ip_protection_off">Выкл.</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Памылка</string>
-  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
-  <string name="ip_protection_menu_auth_required">Паспрабаваць</string>
   <!--
     Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
     %1$d is the total monthly allowance in GB (for example "50").

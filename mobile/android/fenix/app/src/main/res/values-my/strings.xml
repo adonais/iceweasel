@@ -75,12 +75,6 @@
   <string name="home_screen_shortcut_open_new_tab_2">တပ်ဗ် အသစ်</string>
   <!-- Shortcut action to open new private tab -->
   <string name="home_screen_shortcut_open_new_private_tab_2">တစ်ကိုယ်ရေသုံး တပ်ဗ်အသစ်</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">ပြန် ဝင်ရန်</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">အားလုံးကို ပြပါ</string>
   <!--

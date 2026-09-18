@@ -97,3 +97,37 @@ addAccessibleTask(``, async function testAddressBarTextModel() {
   const attrs = await runPython(`urlBar.attributes`);
   ok(attrs.includes("text-model:a1;"), "Address bar includes text-model:a1");
 });
+
+/**
+ * Test that HyperTextAccessible isn't used for XUL box/hbox/vbox elements;
+ * e.g. the address bar's action buttons. See bug 2069276.
+ */
+addAccessibleTask(``, async function testXulBoxNoTextInterface() {
+  info("Focusing address bar");
+  let focused = waitForEvent(EVENT_FOCUS, "urlbar-input");
+  gURLBar.inputField.focus();
+  await focused;
+
+  info("Tabbing to address bar action button");
+  focused = waitForEvent(
+    EVENT_FOCUS,
+    evt =>
+      evt.accessible.DOMNode.tagName == "hbox" &&
+      evt.accessible.DOMNode.role == "button"
+  );
+  EventUtils.synthesizeKey("KEY_Tab");
+  await focused;
+  ok(true, "Address bar action button got focus");
+
+  const hasTextInterface = await runPython(`
+    try:
+      toIa2(getDocIa2().accFocus).QueryInterface(IAccessibleText)
+      return True
+    except COMError:
+      return False
+  `);
+  ok(
+    !hasTextInterface,
+    "Address bar action button does not support IAccessibleText"
+  );
+});

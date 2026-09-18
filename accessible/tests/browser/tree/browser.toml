@@ -3,6 +3,7 @@ subsuite = "a11y"
 support-files = [
   "head.js",
   "doc_xul.xhtml",
+  "doc_xul_grid.xhtml",
   "!/accessible/tests/browser/shared-head.js",
   "!/accessible/tests/mochitest/*.js",
   "!/accessible/tests/mochitest/moz.png",
@@ -60,3 +61,5 @@ skip-if = [
 ["browser_test_nsIAccessibleDocument_URL.js"]
 
 ["browser_view_transition.js"]
+
+["browser_xul_aria_grid.js"]

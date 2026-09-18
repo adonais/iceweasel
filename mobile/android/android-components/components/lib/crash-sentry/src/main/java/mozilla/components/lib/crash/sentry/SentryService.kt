@@ -43,7 +43,7 @@ class SentryService(
     private val environment: String? = null,
     private val sendEventForNativeCrashes: Boolean = false,
     private val sentryProjectUrl: String? = null,
-    private val sendCaughtExceptions: Boolean = true,
+    private val sendCaughtExceptions: Boolean = false,
     private val crashMetadataEventProcessor: CrashMetadataEventProcessor? = null,
 ) : CrashReporterService {
 
@@ -129,17 +129,31 @@ class SentryService(
     @VisibleForTesting
     internal fun initSentry() {
         SentryAndroid.init(applicationContext) { options ->
-            // Disable uncaught non-native exceptions from being reported.
-            // We already have our own uncaught exception handler [ExceptionHandler],
-            // so we don't need Sentry's default one.
-            options.setEnableUncaughtExceptionHandler(false)
-            // Disable uncaught native exceptions from being reported.
-            // Sentry don't have a way to disable uncaught native exceptions from being reported.
-            // As a fallback we had to disable all native integrations.
-            // More info can be found https://github.com/getsentry/sentry-java/issues/1993
-            options.isEnableNdk = false
+            /* By the time this closure runs, the overrides set it lib-crash AndroidManifest.xml for Sentry have been
+               applied, and we can fine tune them here and be intentional about our desired configuration.
+
+               https://javadoc.io/doc/io.sentry/sentry-android-core/latest/io/sentry/android/core/SentryAndroidOptions.html
+            */
+
+            options.isEnabled = true
             options.dsn = dsn
             options.environment = environment
+
+            // We disable automatic data capture and upload mechanisms in sentry so that lib-crash and it's callers
+            // can ensure any data collection and user consent checks are done by the application. Events should only
+            // be sent when we explicitly ask lib-crash to do so.
+            options.setEnableUncaughtExceptionHandler(false)
+            options.isAnrEnabled = false
+            options.isEnableNdk = false
+            options.isTombstoneEnabled = false
+            options.isEnableAutoSessionTracking = false
+
+            // Metadata enrichment for our JVM crash events
+            options.isCollectAdditionalContext = true
+            options.isSendModules = true
+            options.isEnableActivityLifecycleBreadcrumbs = true
+            options.isEnableAppComponentBreadcrumbs = true
+            options.isEnableAppLifecycleBreadcrumbs = true
             options.addEventProcessor(RustCrashEventProcessor())
             options.addEventProcessor(AddMechanismEventProcessor())
             crashMetadataEventProcessor?.also {

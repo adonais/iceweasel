@@ -868,6 +868,8 @@
     <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">You don’t have permission to use this folder. Try choosing a different one.</string>
     <!-- Preference title for choosing an app to handle downloads -->
     <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
+    <!-- Message shown when no app is available to let the user pick a download folder. -->
+    <string name="preferences_downloads_no_folder_picker_available">Unable to open the folder picker on this device.</string>
 
     <!-- Preference category for deleting or removing downloads -->
     <string name="preferences_category_delete_or_remove_downloads">Delete or remove downloads</string>

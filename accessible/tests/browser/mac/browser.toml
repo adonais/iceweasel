@@ -10,6 +10,7 @@ support-files = [
   "doc_rich_listbox.xhtml",
   "doc_menulist.xhtml",
   "doc_tree.xhtml",
+  "doc_xul_grid.xhtml",
   "!/accessible/tests/browser/shared-head.js",
   "!/accessible/tests/mochitest/*.js",
   "!/accessible/tests/mochitest/letters.gif",
@@ -127,3 +128,5 @@ skip-if = [
 ["browser_toggle_radio_check.js"]
 
 ["browser_webarea.js"]
+
+["browser_xul_role_grid.js"]

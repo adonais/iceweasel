@@ -110,16 +110,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">Pestaña yu´u jíía</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">Contraseñas</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Niko íchi yata</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Kune´yá kuaiyo</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Xituvi botón daa pestañas nnune</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Kune\'ya kuaiyo daa pestañas sincronizadas</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -433,8 +425,6 @@
   <string name="customize_addon_collection_user_hint">Dueño de la colección (ID de usuario)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Colección daa colección. Nakasɨdani ka̱a̱ sa kuvi kene daa a nsama…</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Niko íchi yata</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">A ta´a ini noo´o</string>
   <!--

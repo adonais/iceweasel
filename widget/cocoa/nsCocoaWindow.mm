@@ -1651,6 +1651,7 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
   mGeckoChild = inChild;
   mBlockedLastMouseDown = NO;
   mExpectingWheelStop = NO;
+  mZoomStateAtLastSingleClick = NO;
 
   mLastMouseDownEvent = nil;
   mLastKeyDownEvent = nil;
@@ -2410,13 +2411,31 @@ NSEvent* gLastDragMouseDownEvent = nil;  // [strong]
     return;
   }
 
+  // Starting with macOS 27, a double-click in the region where the title
+  // bar would be (the upper region of the tab bar) gets zoomed natively when
+  // "Zoom" is set as the double click titlebar action. Not for "Fill" and
+  // "Minimize" actions. The zoom/unzoom state is already reflected in the
+  // window state when the second click's mouseUp is handled here. Snapshot
+  // the zoomed state on the first mouseUp and skip our own toggle if it
+  // already changed when checked in the second mouseUp.
+  if (nsCocoaFeatures::OnGoldenGateOrLater() && [theEvent clickCount] == 1) {
+    mZoomStateAtLastSingleClick = [[self window] isZoomed];
+  }
+
   // Check to see if we are double-clicking in draggable parts of the window.
   if (!defaultPrevented && [theEvent clickCount] == 2 &&
       !mGeckoChild->GetNonDraggableRegion().Contains(pos.x, pos.y)) {
-    if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
-      [[self window] performZoom:nil];
-    } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
-      [[self window] performMiniaturize:nil];
+    // Did the window state already change?
+    bool zoomStateAlreadyChanged =
+        nsCocoaFeatures::OnGoldenGateOrLater() &&
+        ([[self window] isZoomed] != mZoomStateAtLastSingleClick);
+
+    if (!zoomStateAlreadyChanged) {
+      if (nsCocoaUtils::ShouldZoomOnTitlebarDoubleClick()) {
+        [[self window] performZoom:nil];
+      } else if (nsCocoaUtils::ShouldMinimizeOnTitlebarDoubleClick()) {
+        [[self window] performMiniaturize:nil];
+      }
     }
   }
 

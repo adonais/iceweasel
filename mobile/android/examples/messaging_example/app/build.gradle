@@ -41,8 +41,12 @@ dependencies {
     implementation project(path: ':geckoview')
 
     implementation libs.androidx.annotation
+    implementation libs.androidx.annotation.experimental
     implementation libs.androidx.appcompat
+    implementation libs.androidx.collection
     implementation libs.androidx.constraintlayout
+    implementation libs.androidx.core
+    implementation libs.androidx.lifecycle.common
 
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit4

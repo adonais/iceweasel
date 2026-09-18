@@ -137,16 +137,8 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">Taba prìobhaideach ùr</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">Faclan-faire</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Till gu far an robh thu</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Seall na h-uile</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Am putan airson gach taba a bha fosgailte o chionn goirid a shealltainn</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Seall gach taba sioncronaichte</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -825,8 +817,6 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Aithisg na prìobhaideachd</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Till gu far an robh thu</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Comharran-lìn</string>
   <!--

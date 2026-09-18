@@ -10,9 +10,11 @@
   <!-- Content description (not visible, for screen readers etc.): Description for the overflow menu button in the browser toolbar. -->
   <string name="mozac_browser_menu_button">मेन्यू</string>
   <!-- Content description (not visible, for screen readers etc.): Indicates the overflow menu has a highlight -->
-  <string name="mozac_browser_menu_highlighted">दर्शाए गए</string>
+  <string name="mozac_browser_menu_highlighted">हाइलाइट किया गया</string>
   <!-- Label for extensions submenu section -->
   <string name="mozac_browser_menu_extensions">एक्सटेंशन</string>
   <!-- Label for extensions sub menu item for extensions manager -->
   <string name="mozac_browser_menu_extensions_manager">एक्सटेंशन मैनेजर</string>
+  <!-- Content description for the action bar "up" button of the extensions sub menu item -->
+  <string name="mozac_browser_menu_extensions_content_description">एक्सटेंशन, ऊपर जाएं</string>
 </resources>

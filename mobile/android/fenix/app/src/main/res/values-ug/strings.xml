@@ -151,16 +151,8 @@
     Header text on the homescreen for continuing to browse the most recent browser tab
   -->
   <string name="recent_tabs_header_2">داۋاملاشتۇر</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">ئالدىنقى بەتكە قايت</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">ھەممىنى كۆرسەت</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">يېقىنقى ھەممە بەتكۈچنى كۆرسەت توپچە</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">قەدەمداشلانغان ھەممە بەتكۈچلەرنى كۆرسەت</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -984,8 +976,6 @@
   <string name="customize_toggle_privacy_report">شەخسىيەت دوكلاتى</string>
   <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
   <string name="customize_toggle_continue">داۋاملاشتۇر</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">كەينىگە قايت</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">خەتكۈچ</string>
   <!--
@@ -3025,7 +3015,7 @@
   <string name="ip_protection_navigate_back_button_content_description">كەينىگە قايت</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s نىڭ ئىچىدىكى VPN</string>
-  <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text. -->
+  <!-- Body text for the browser VPN settings header, shown when no promo is running. %s is a learn more link using ip_protection_learn_more as text. -->
   <string name="ip_protection_promo_body_2">ھەتتا ئاممىۋى Wi-Fi بولغان تەقدىردىمۇ ئورنىڭىزنى يوشۇرۇپ تور زىيارىتىدە قوشۇمچە قوغداشقا ئېرىشىڭ. %s</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">تەپسىلاتى</string>
@@ -3058,8 +3048,6 @@
   <string name="ip_protection_menu_error">خاتالىق</string>
   <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
   <string name="ip_protection_menu_try_vpn_cta">سىناش ھەقسىز</string>
-  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
-  <string name="ip_protection_menu_auth_required">سىنا</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN تەڭشەكنى ئاچ</string>
   <!--

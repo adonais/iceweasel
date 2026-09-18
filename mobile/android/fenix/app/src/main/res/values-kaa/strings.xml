@@ -88,16 +88,8 @@
   <string name="home_screen_shortcut_open_new_tab_2">Jańa bet</string>
   <!-- Shortcut action to open new private tab -->
   <string name="home_screen_shortcut_open_new_private_tab_2">Jańa jeke bet</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Artqa qaytıw</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Hámmesin kórsetiw</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Barlıq jaqındaǵı betlerdiń túymesin kórsetiw</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Barlıq sáykeslestirilgen betlerdi kóriw</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -340,8 +332,6 @@
   <string name="customize_addon_collection_hint">Toplam ataması</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Toplam iyesi (Paydalanıwshı ID)</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Artqa qaytıw</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
     a section where users see a list of tabs that they have visited in the past few days

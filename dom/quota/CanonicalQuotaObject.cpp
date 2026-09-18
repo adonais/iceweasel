@@ -85,7 +85,8 @@ bool CanonicalQuotaObject::MaybeUpdateSize(int64_t aSize, bool aTruncate) {
 
   DirtyTrackingAutoLock lock(quotaManager->mQuotaMutex, std::move(originInfo));
   if (!lock.IsValid()) {
-    return false;
+    mSize = aSize;
+    return true;
   }
 
   return LockedMaybeUpdateSize(aSize, aTruncate, lock);
@@ -101,7 +102,9 @@ bool CanonicalQuotaObject::IncreaseSize(int64_t aDelta) {
 
   DirtyTrackingAutoLock lock(quotaManager->mQuotaMutex, std::move(originInfo));
   if (!lock.IsValid()) {
-    return false;
+    AssertNoOverflow(mSize, aDelta);
+    mSize = mSize + aDelta;
+    return true;
   }
 
   AssertNoOverflow(mSize, aDelta);

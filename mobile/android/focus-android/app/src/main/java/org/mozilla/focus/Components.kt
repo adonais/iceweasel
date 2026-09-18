@@ -328,6 +328,7 @@ private fun createCrashReporter(context: Context): CrashReporter {
                     ),
                 environment = BuildConfig.BUILD_TYPE,
                 sendEventForNativeCrashes = false, // Do not send native crashes to Sentry
+                sendCaughtExceptions = false, // Do not send diagnostic logs
             )
 
         services.add(sentryService)

@@ -22,6 +22,7 @@ class nsCocoaFeatures {
   static bool OnVenturaOrLater();
   static bool OnSonomaOrLater();
   static bool OnTahoeOrLater();
+  static bool OnGoldenGateOrLater();
 
   static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor,
                                int32_t aBugFix = 0);

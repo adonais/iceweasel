@@ -137,16 +137,8 @@
   <string name="home_screen_shortcut_passwords">Awalen uffiren</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">Kkes asbeddi, ayɣeṛ?</string>
-  <!--
-    Recent Tabs
-
-    Header text for jumping back into the recent tab in the home screen
-  -->
-  <string name="recent_tabs_header">Uɣal ɣer deffir</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Sken kullec</string>
-  <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
-  <string name="recent_tabs_show_all_content_description_2">Sken tqeffalt n meṛṛa accaren n melmi kan</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Wali akk accaren yemtawan</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
@@ -688,8 +680,6 @@
   <string name="customize_addon_collection_user_hint">Bab n tegrumma (ID n useqdac)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Tagrumma n yisiɣzaf tettwabeddel. Ffeɣ seg usnas akken ad ddun yibeddilen…</string>
-  <!-- Header text for jumping back into the recent tab in customize the home screen -->
-  <string name="customize_toggle_jump_back_in">Uɣal ɣer deffir</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Ticraḍ n yisebtar</string>
   <!--

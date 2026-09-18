@@ -8,5 +8,5 @@
 
 <resources>
   <!-- Text displayed when there are no experiments to be shown -->
-  <string name="mozac_service_nimbus_no_experiments">यहां कोई प्रयोग नहीं</string>
+  <string name="mozac_service_nimbus_no_experiments">यहां कोई एक्सपेरिमेंट मौजूद नहीं है</string>
 </resources>

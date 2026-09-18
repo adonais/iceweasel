@@ -196,7 +196,7 @@
   <!-- Short description for the personalCommunications data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_short_description">个人通信</string>
   <!-- Short description for the personallyIdentifyingInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description">个人身份信息</string>
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description">识别个人身份的信息</string>
   <!-- Short description for the searchTerms data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_searchTerms_short_description">搜索词</string>
   <!-- Short description for the technicalAndInteraction data collection permission -->
@@ -220,7 +220,7 @@
   <!-- Long description for the personalCommunications data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">与扩展开发者分享个人通信</string>
   <!-- Long description for the personallyIdentifyingInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">与扩展开发者分享个人身份信息</string>
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">与扩展开发者分享识别个人身份的信息</string>
   <!-- Long description for the searchTerms data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">与扩展开发者分享搜索词</string>
   <!-- Long description for the technicalAndInteraction data collection permission -->

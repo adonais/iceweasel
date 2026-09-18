@@ -114,10 +114,11 @@ ScopedHandleVerifier* ScopedHandleVerifier::Get() {
 }
 
 bool CloseHandleWrapper(HANDLE handle) {
+  [[maybe_unused]] const bool closed = !!::CloseHandle(handle);
 #if defined(NIGHTLY_BUILD)
-  CHECK(::CloseHandle(handle)) << "CloseHandle failed";
+  CHECK(closed) << "CloseHandle failed";
 #else
-  DCHECK(::CloseHandle(handle)) << "CloseHandle failed";
+  DCHECK(closed) << "CloseHandle failed";
 #endif
   return true;
 }

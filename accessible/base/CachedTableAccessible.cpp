@@ -69,7 +69,7 @@ static StaticAutoPtr<CachedTablesMap> sCachedTables;
 
 /* static */
 CachedTableAccessible* CachedTableAccessible::GetFrom(Accessible* aAcc) {
-  MOZ_ASSERT(aAcc->IsTable());
+  MOZ_ASSERT(aAcc->IsTable() && !aAcc->IsCustomTable());
   if (!sCachedTables) {
     sCachedTables = new CachedTablesMap();
     if (NS_IsMainThread()) {
@@ -255,18 +255,15 @@ CachedTableCellAccessible* CachedTableCellAccessible::GetFrom(
     if (parent->IsDoc()) {
       break;  // Never cross document boundaries.
     }
+    if (parent->IsCustomTable()) {
+      // This table provides its own cells, so it doesn't use
+      // CachedTableAccessible.
+      break;
+    }
     TableAccessible* table = parent->AsTable();
     if (!table) {
       continue;
     }
-    if (LocalAccessible* local = parent->AsLocal()) {
-      nsIContent* content = local->GetContent();
-      if (content && content->IsXULElement()) {
-        // XUL tables don't use CachedTableAccessible.
-        break;
-      }
-    }
-    // Non-XUL tables only use CachedTableAccessible.
     auto* cachedTable = static_cast<CachedTableAccessible*>(table);
     if (auto cellIdx = cachedTable->mAccToCellIdx.Lookup(aAcc)) {
       return &cachedTable->mCells[*cellIdx];
