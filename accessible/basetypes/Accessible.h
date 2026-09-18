@@ -605,6 +605,12 @@ class Accessible {
 
   bool IsTable() const { return HasGenericType(eTable); }
 
+  /**
+   * Return true for XUL trees and listboxes, which create their own cells
+   * rather than using CachedTableAccessible.
+   */
+  bool IsCustomTable() const { return IsXULTree() || IsXULListbox(); }
+
   bool IsHyperText() const { return HasGenericType(eHyperText); }
 
   bool IsSelect() const { return HasGenericType(eSelect); }
@@ -677,6 +683,8 @@ class Accessible {
   bool IsTextLeaf() const { return mType == eTextLeafType; }
 
   bool IsXULLabel() const { return mType == eXULLabelType; }
+
+  bool IsXULListbox() const { return mType == eXULListboxType; }
 
   bool IsXULListItem() const { return mType == eXULListItemType; }
 

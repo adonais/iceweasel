@@ -4770,14 +4770,14 @@ void LocalAccessible::StaticAsserts() const {
 }
 
 TableAccessible* LocalAccessible::AsTable() {
-  if (IsTable() && !mContent->IsXULElement()) {
+  if (IsTable() && !IsCustomTable()) {
     return CachedTableAccessible::GetFrom(this);
   }
   return nullptr;
 }
 
 TableCellAccessible* LocalAccessible::AsTableCell() {
-  if (IsTableCell() && !mContent->IsXULElement()) {
+  if (IsTableCell()) {
     return CachedTableCellAccessible::GetFrom(this);
   }
   return nullptr;
