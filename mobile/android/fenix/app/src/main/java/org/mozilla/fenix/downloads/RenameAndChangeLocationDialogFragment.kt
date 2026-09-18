@@ -5,13 +5,17 @@
 package org.mozilla.fenix.downloads
 
 import android.app.Dialog
+import android.content.ActivityNotFoundException
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.WindowManager
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -69,7 +73,8 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
 
     var onCancel: () -> Unit = {}
 
-    private val directoryLauncher =
+    @VisibleForTesting
+    internal var directoryLauncher: ActivityResultLauncher<Uri?> =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             handleSelectedDownloadDirectory(uri)
         }
@@ -154,9 +159,7 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
                         onFileNameChange = { newFileName ->
                             dialogState = dialogState.copy(fileName = newFileName)
                         },
-                        onDirectorySelect = {
-                            directoryLauncher.launch(null)
-                        },
+                        onDirectorySelect = { launchDirectoryPicker() },
                         onConfirm = {
                             if (promptAbuserDetector.areDialogsBeingAbused()) {
                                 promptAbuserDetector.updateJSDialogAbusedState()
@@ -175,6 +178,22 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
                     )
                 }
             }
+        }
+    }
+
+    /** Launches the SAF folder picker, showing an error toast if no activity can handle it. */
+    @VisibleForTesting
+    internal fun launchDirectoryPicker() {
+        try {
+            directoryLauncher.launch(null)
+        } catch (e: ActivityNotFoundException) {
+            logger.warn("No activity found to handle the folder picker intent.", e)
+            Toast.makeText(
+                    requireContext(),
+                    R.string.preferences_downloads_no_folder_picker_available,
+                    Toast.LENGTH_LONG,
+                )
+                .show()
         }
     }
 

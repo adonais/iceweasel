@@ -4,11 +4,15 @@
 
 package org.mozilla.fenix.settings.downloads
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
@@ -28,10 +32,27 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPadded
     private val args by navArgs<DownloadsSettingsFragmentArgs>()
     private lateinit var downloadLocationFormatter: DownloadLocationFormatter
 
-    private var launcher =
+    @VisibleForTesting
+    internal var launcher: ActivityResultLauncher<Uri?> =
         registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             handleSelectedDownloadDirectory(uri)
         }
+
+    /** Launches the SAF folder picker, showing an error toast if no activity can handle it. */
+    @VisibleForTesting
+    internal fun launchDirectoryPicker() {
+        try {
+            launcher.launch(null)
+        } catch (e: ActivityNotFoundException) {
+            logger.warn("No activity found to handle the folder picker intent.", e)
+            Toast.makeText(
+                    requireContext(),
+                    R.string.preferences_downloads_no_folder_picker_available,
+                    Toast.LENGTH_LONG,
+                )
+                .show()
+        }
+    }
 
     /**
      * Processes the URI returned from the SAF folder picker, takes persistable permission, and updates the relevant
@@ -61,7 +82,7 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPadded
         setPreferencesFromResource(R.xml.downloads_settings_preferences, rootKey)
         findPreference<Preference>(getString(R.string.pref_key_downloads_default_location))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                launcher.launch(null)
+                launchDirectoryPicker()
                 true
             }
         }
