@@ -132,8 +132,16 @@ HTMLImageElement::HTMLImageElement(
 
 HTMLImageElement::~HTMLImageElement() { nsImageLoadingContent::Destroy(); }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLImageElement, nsGenericHTMLElement,
-                                   mResponsiveSelector, mForm)
+NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLImageElement)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLImageElement,
+                                                nsGenericHTMLElement)
+  tmp->ClearForm(true);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mResponsiveSelector)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLImageElement,
+                                                  nsGenericHTMLElement)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mForm, mResponsiveSelector)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(HTMLImageElement,
                                              nsGenericHTMLElement,

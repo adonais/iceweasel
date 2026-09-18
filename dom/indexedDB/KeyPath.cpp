@@ -118,7 +118,9 @@ nsresult GetJSValFromKeyPathString(
         // only through getters but we still want to support them for key
         // extraction. So they need to be handled manually.
         Blob* blob;
-        if (NS_SUCCEEDED(UNWRAP_OBJECT(Blob, &obj, blob))) {
+        // UNWRAP_OBJECT calls might mutate this.
+        JS::Rooted<JSObject*> blobObj(aCx, obj);
+        if (NS_SUCCEEDED(UNWRAP_OBJECT(Blob, &blobObj, blob))) {
           if (token.EqualsLiteral("size")) {
             ErrorResult rv;
             uint64_t size = blob->GetSize(rv);

@@ -138,6 +138,8 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
     return nsIntSize(mWidth, mHeight);
   }
 
+  bool CanCreateContext() const override { return !mNeutered; }
+
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType) override;
 

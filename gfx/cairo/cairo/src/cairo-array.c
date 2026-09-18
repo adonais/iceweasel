@@ -181,6 +181,9 @@ _cairo_array_index (cairo_array_t *array, unsigned int index)
 
     assert (index < array->num_elements);
 
+    if (unlikely (index >= array->num_elements))
+	abort ();
+
     return array->elements + index * array->element_size;
 }
 
@@ -224,6 +227,9 @@ _cairo_array_index_const (const cairo_array_t *array, unsigned int index)
 	return NULL;
 
     assert (index < array->num_elements);
+
+    if (unlikely (index >= array->num_elements))
+	abort ();
 
     return array->elements + index * array->element_size;
 }

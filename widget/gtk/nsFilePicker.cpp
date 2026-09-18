@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <utility>
+
 #include "mozilla/Types.h"
 #include "nsGtkUtils.h"
 #include "nsIFileURL.h"
@@ -562,7 +564,13 @@ bool nsFilePicker::WarnForNonReadableFile(void* file_chooser) {
 }
 
 void nsFilePicker::Done(void* file_chooser, gint response) {
+  // A second call while the first is still running is re-entrant; the outer
+  // one owns the teardown.
+  if (!mRunning) {
+    return;
+  }
   mRunning = false;
+  nsCOMPtr<nsIFilePickerShownCallback> callback = std::move(mCallback);
 
   nsIFilePicker::ResultCode result;
   switch (response) {
@@ -624,9 +632,8 @@ void nsFilePicker::Done(void* file_chooser, gint response) {
     mFileChooserDelegate = nullptr;
   }
 
-  if (mCallback) {
-    mCallback->Done(result);
-    mCallback = nullptr;
+  if (callback) {
+    callback->Done(result);
   } else {
     mResult = result;
   }

@@ -126,7 +126,11 @@ void RadioGroupManager::AddToRadioGroup(const nsAString& aName,
 
 void RadioGroupManager::RemoveFromRadioGroup(const nsAString& aName,
                                              HTMLInputElement* aRadio) {
-  nsRadioGroupStruct* radioGroup = GetOrCreateRadioGroup(aName);
+  nsRadioGroupStruct* radioGroup = GetRadioGroup(aName);
+  // May be null if form has been unlinked.
+  if (!radioGroup) {
+    return;
+  }
   radioGroup->mRadioButtons.RemoveElement(aRadio);
 
   if (aRadio->IsRequired()) {

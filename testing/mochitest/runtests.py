@@ -830,10 +830,10 @@ def checkAndConfigureV4l2loopback(device):
     class v4l2_control(ctypes.Structure):
         _fields_ = [("id", ctypes.c_uint32), ("value", ctypes.c_int32)]
 
-    # These are private v4l2 control IDs, see:
-    # https://github.com/umlaeute/v4l2loopback/blob/fd822cf0faaccdf5f548cddd9a5a3dcebb6d584d/v4l2loopback.c#L131
-    KEEP_FORMAT = 0x8000000
-    SUSTAIN_FRAMERATE = 0x8000001
+    # These are v4l2loopback control IDs, see:
+    # https://github.com/v4l2loopback/v4l2loopback/blob/v0.15.4/v4l2loopback.c#L260-L262
+    KEEP_FORMAT = 0x0098F900
+    SUSTAIN_FRAMERATE = 0x0098F901
     VIDIOC_S_CTRL = 0xC008561C
 
     control = v4l2_control()
@@ -877,7 +877,7 @@ def findTestMediaDevices(log):
         log.error("Couldn't find a v4l2loopback video device")
         return None
 
-    # Feed it a frame of output so it has something to display
+    # Repeat a single frame for the duration of the tests.
     gst01 = spawn.find_executable("gst-launch-0.1")
     gst010 = spawn.find_executable("gst-launch-0.10")
     gst10 = spawn.find_executable("gst-launch-1.0")
@@ -894,6 +894,8 @@ def findTestMediaDevices(log):
             "videotestsrc",
             "pattern=green",
             "num-buffers=1",
+            "!",
+            "imagefreeze",
             "!",
             "v4l2sink",
             "device=%s" % device,

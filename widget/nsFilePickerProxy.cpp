@@ -5,6 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsFilePickerProxy.h"
+
+#include <utility>
+
 #include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
 #include "nsSimpleEnumerator.h"
@@ -186,9 +189,8 @@ mozilla::ipc::IPCResult nsFilePickerProxy::Recv__delete__(
     element->SetAsDirectory() = directory;
   }
 
-  if (mCallback) {
-    mCallback->Done(aResult);
-    mCallback = nullptr;
+  if (nsCOMPtr<nsIFilePickerShownCallback> callback = std::move(mCallback)) {
+    callback->Done(aResult);
   }
 
   return IPC_OK();
@@ -268,9 +270,8 @@ nsFilePickerProxy::GetDomFileOrDirectoryEnumerator(
 void nsFilePickerProxy::ActorDestroy(ActorDestroyReason aWhy) {
   mIPCActive = false;
 
-  if (mCallback) {
-    mCallback->Done(nsIFilePicker::returnCancel);
-    mCallback = nullptr;
+  if (nsCOMPtr<nsIFilePickerShownCallback> callback = std::move(mCallback)) {
+    callback->Done(nsIFilePicker::returnCancel);
   }
 }
 

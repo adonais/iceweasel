@@ -156,6 +156,7 @@ jobs:
         symbol: I(idx)
     funsize-update-generator:
         symbol: I(pg)
+        parent: debian11-base
     update-verify:
         symbol: I(uv)
         parent: ubuntu2004-base

@@ -1,0 +1,32 @@
+Clamp the VP8 16x16 full-pixel chroma MV instead of returning early
+
+Backport of upstream libvpx d2413e2ca11039724ca33bb4d661ca2c94cb501e.
+vp8_build_inter16x16_predictors_mb() writes the luma plane, then derives the
+chroma motion vector and applies fullpixel_mask. For a version-3 (full_pixel)
+bitstream the round-down can move the chroma MV just past the border tap window;
+the previous bounds check returned early there, leaving dst_u and dst_v
+unwritten for the macroblock. Clamp the chroma MV with clamp_uvmv_to_umv_border()
+instead, mirroring the SPLITMV path, so dst_u/dst_v are always written and the
+reference reads stay in bounds. Output is byte-identical whenever the removed
+check would not have fired.
+
+diff --git a/vp8/common/reconinter.c b/vp8/common/reconinter.c
+--- a/vp8/common/reconinter.c
++++ b/vp8/common/reconinter.c
+@@ -333,12 +333,10 @@ void vp8_build_inter16x16_predictors_mb(MACROBLOCKD *x, unsigned char *dst_y,
+   _16x16mv.as_mv.row &= x->fullpixel_mask;
+   _16x16mv.as_mv.col &= x->fullpixel_mask;
+ 
+-  if (2 * _16x16mv.as_mv.col < (x->mb_to_left_edge - (19 << 3)) ||
+-      2 * _16x16mv.as_mv.col > x->mb_to_right_edge + (18 << 3) ||
+-      2 * _16x16mv.as_mv.row < (x->mb_to_top_edge - (19 << 3)) ||
+-      2 * _16x16mv.as_mv.row > x->mb_to_bottom_edge + (18 << 3)) {
+-    return;
+-  }
++  /* Rounding to full-pel can move the chroma MV outside the border tap
++   * window even though the luma MV was already clamped, so clamp again to
++   * keep the reference read in bounds and ensure dst_u/dst_v are written. */
++  clamp_uvmv_to_umv_border(&_16x16mv.as_mv, x);
+ 
+   pre_stride >>= 1;
+   offset = (_16x16mv.as_mv.row >> 3) * pre_stride + (_16x16mv.as_mv.col >> 3);

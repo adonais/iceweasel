@@ -7,6 +7,8 @@
 
 #include <gtk/gtk.h>
 
+#include <utility>
+
 #include "nsApplicationChooser.h"
 #include "WidgetUtils.h"
 #include "nsIMIMEInfo.h"
@@ -74,6 +76,13 @@ void nsApplicationChooser::OnDestroy(GtkWidget* chooser, gpointer user_data) {
 }
 
 void nsApplicationChooser::Done(GtkWidget* chooser, gint response) {
+  // A null callback means a re-entrant call; the outer one owns the teardown.
+  nsCOMPtr<nsIApplicationChooserFinishedCallback> callback =
+      std::move(mCallback);
+  if (!callback) {
+    return;
+  }
+
   nsCOMPtr<nsILocalHandlerApp> localHandler;
   nsresult rv;
   switch (response) {
@@ -124,9 +133,6 @@ void nsApplicationChooser::Done(GtkWidget* chooser, gint response) {
                                        this);
   gtk_widget_destroy(chooser);
 
-  if (mCallback) {
-    mCallback->Done(localHandler);
-    mCallback = nullptr;
-  }
+  callback->Done(localHandler);
   NS_RELEASE_THIS();
 }

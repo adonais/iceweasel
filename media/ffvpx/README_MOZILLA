@@ -164,4 +164,4 @@ There are going to be a lot of changes in terms of symbols exported. Adjust
 `libavutil/avutil.symbols` and `libavcodec/avcodec.symbols` by removing and
 
 Finally, apply the patches in `changes.patch`, `1846703.patch`,
-and `cbs_decoder_sync.patch`.
+`cbs_decoder_sync.patch`, and `vp9-flush-unref-next-refs.patch`.

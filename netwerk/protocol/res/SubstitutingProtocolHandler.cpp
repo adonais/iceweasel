@@ -168,6 +168,33 @@ void SubstitutingJARURI::Serialize(mozilla::ipc::URIParams& aParams) {
   aParams = params;
 }
 
+/* static */
+nsresult SubstitutingJARURI::ResolveSource(nsIURI* aSource,
+                                           SubstitutingJARURI** aResult) {
+  if (!aSource) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsAutoCString spec;
+  nsresult rv = aSource->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIURI> resolved;
+  rv = NS_NewURI(getter_AddRefs(resolved), spec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  // Only a substitution carrying the RESOLVE_JAR_URI flag resolves to a
+  // SubstitutingJARURI, and ResolveJARURI has checked that it maps to a local
+  // jar file.
+  RefPtr<SubstitutingJARURI> uri;
+  rv =
+      resolved->QueryInterface(kSubstitutingJARURIImplCID, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  uri.forget(aResult);
+  return NS_OK;
+}
+
 // SubstitutingJARURI::nsISerializable
 
 NS_IMETHODIMP
@@ -181,15 +208,20 @@ SubstitutingJARURI::Read(nsIObjectInputStream* aStream) {
   rv = aStream->ReadObject(true, getter_AddRefs(source));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mSource = do_QueryInterface(source, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  // Read the resolved URI too so the stream stays in sync, but don't use it.
   nsCOMPtr<nsISupports> resolved;
   rv = aStream->ReadObject(true, getter_AddRefs(resolved));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mResolved = do_QueryInterface(resolved, &rv);
+  nsCOMPtr<nsIURI> sourceURI = do_QueryInterface(source, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  RefPtr<SubstitutingJARURI> uri;
+  rv = ResolveSource(sourceURI, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mSource = uri->mSource;
+  mResolved = uri->mResolved;
 
   return NS_OK;
 }
@@ -263,15 +295,16 @@ bool SubstitutingJARURI::Deserialize(const mozilla::ipc::URIParams& aParams) {
   const SubstitutingJARURIParams& jarUriParams =
       aParams.get_SubstitutingJARURIParams();
 
+  // The resolved URI in the params is deliberately ignored, see ResolveSource.
   nsCOMPtr<nsIURI> source = DeserializeURI(jarUriParams.source());
-  nsresult rv;
-  mSource = do_QueryInterface(source, &rv);
-  if (NS_FAILED(rv)) {
+  RefPtr<SubstitutingJARURI> uri;
+  if (NS_FAILED(ResolveSource(source, getter_AddRefs(uri)))) {
     return false;
   }
-  nsCOMPtr<nsIURI> jarUri = DeserializeURI(jarUriParams.resolved());
-  mResolved = do_QueryInterface(jarUri, &rv);
-  return NS_SUCCEEDED(rv);
+
+  mSource = uri->mSource;
+  mResolved = uri->mResolved;
+  return true;
 }
 
 nsresult SubstitutingJARURI::ReadPrivate(nsIObjectInputStream* aStream) {

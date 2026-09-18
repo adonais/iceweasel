@@ -165,14 +165,14 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::ReadSegments(
 
     // Otherwise decrypt the next chunk and loop.  Any resulting data
     // will set mPlainBytes which we check at the top of the loop.
-    uint32_t bytesRead;
+    uint32_t bytesRead = 0;
     rv = ParseNextChunk(&bytesRead);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
     // If we couldn't read anything and there is no more data to provide
-    // to the caller, then this is eof.
+    // to the caller, then this is EOF.
     if (bytesRead == 0 && mPlainBytes == 0) {
       return NS_OK;
     }
@@ -205,6 +205,15 @@ nsresult DecryptingInputStream<CipherStrategy>::ParseNextChunk(
     return rv;
   }
 
+  // Reject headers the encryptor can never produce.
+  // This also guarantees that a successful return with *aBytesReadOut == 0 only
+  // happens at EOF, which ReadSegments and Seek rely on.
+  const size_t actualPayloadLength = mEncryptedBlock->ActualPayloadLength();
+  if (NS_WARN_IF(actualPayloadLength == 0) ||
+      NS_WARN_IF(actualPayloadLength > mEncryptedBlock->MaxPayloadLength())) {
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
   // XXX Do we need to know the actual decrypted size?
   rv = mCipherStrategy.Cipher(mEncryptedBlock->MutableCipherPrefix(),
                               mEncryptedBlock->Payload(),
@@ -213,7 +222,7 @@ nsresult DecryptingInputStream<CipherStrategy>::ParseNextChunk(
     return rv;
   }
 
-  *aBytesReadOut = mEncryptedBlock->ActualPayloadLength();
+  *aBytesReadOut = actualPayloadLength;
 
   return NS_OK;
 }
@@ -246,7 +255,7 @@ nsresult DecryptingInputStream<CipherStrategy>::ReadAll(
     aCount -= bytesRead;
   }
 
-  // Reading zero bytes is not an error.  Its the expected EOF condition.
+  // Reading zero bytes is not an error.  It's the expected EOF condition.
   // Only compare to the minimum valid count if we read at least one byte.
   if (*aBytesReadOut != 0 && *aBytesReadOut < aMinValidCount) {
     return NS_ERROR_CORRUPTED_CONTENT;
@@ -269,6 +278,11 @@ bool DecryptingInputStream<CipherStrategy>::EnsureBuffers() {
                                            fallible))) {
       return false;
     }
+
+    // SetLength() does not zero POD elements. Zero-initialize the whole block
+    // so that reserved/unused bytes do not expose stale data. This follows the
+    // same rationale as EncryptedBlock (see bug 1867394 and bug 2054736).
+    std::fill(mPlainBuffer.begin(), mPlainBuffer.end(), 0);
   }
 
   return true;
@@ -363,7 +377,7 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
           mNextByte = 0;
           mPlainBytes = 0;
 
-          uint32_t bytesRead;
+          uint32_t bytesRead = 0;
           rv = ParseNextChunk(&bytesRead);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return Err(rv);

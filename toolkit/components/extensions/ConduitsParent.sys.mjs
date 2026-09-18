@@ -202,6 +202,11 @@ const Hub = {
    * @param {ConduitsParent} actor
    */
   recvConduitOpened(address, actor) {
+    if (this.remotes.has(address.id)) {
+      Cu.reportError(`Duplicate conduit id ${address.id}`);
+      return;
+    }
+
     this.fillInAddress(address, actor);
     this.remotes.set(address.id, address);
     this.byActor.get(actor).add(address);
