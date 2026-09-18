@@ -7,6 +7,7 @@ if CONFIG["MOZ_ENABLE_DBUS"]:
     SOURCES += ["PortalLocationProvider.cpp"]
     LOCAL_INCLUDES += ["/dom/geolocation"]
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
+    TEST_DIRS += ["gtest"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

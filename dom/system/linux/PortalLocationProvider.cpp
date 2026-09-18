@@ -296,7 +296,10 @@ PortalLocationProvider::Watch(nsIGeolocationUpdate* aCallback) {
    * see the first message from portal, the fallback will be
    * disabled in |Update|.
    */
-  mMLSProvider = MakeAndAddRef<MLSFallback>(12000);
+  if (!mMLSProvider) {
+    mMLSProvider = MakeAndAddRef<MLSFallback>(12000);
+  }
+  // Watch() runs once per request; reuse a fallback left from an earlier call.
   mMLSProvider->Startup(new MLSGeolocationUpdate(aCallback));
 
   return NS_OK;
