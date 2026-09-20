@@ -116,7 +116,9 @@
 #  include "cairo/cairo-features.h"
 #  include "detect_win32k_conflicts.h"
 #  include "mozilla/PreXULSkeletonUI.h"
+#  if !defined(TT_MEMUTIL)
 #  include "mozilla/DllPrefetchExperimentRegistryInfo.h"
+#  endif
 #  include "mozilla/WindowsBCryptInitialization.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/WindowsProcessMitigations.h"
@@ -2234,6 +2236,7 @@ static void RegisterApplicationRestartChanged(const char* aPref, void* aData) {
   }
 }
 
+#if !defined(TT_MEMUTIL)
 static void OnAlteredPrefetchPrefChanged(const char* aPref, void* aData) {
   int32_t prefVal = Preferences::GetInt(PREF_WIN_ALTERED_DLL_PREFETCH, 0);
 
@@ -2255,6 +2258,7 @@ static void SetupAlteredPrefetchPref() {
   Preferences::RegisterCallback(&OnAlteredPrefetchPrefChanged,
                                 PREF_WIN_ALTERED_DLL_PREFETCH);
 }
+#endif
 
 static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   Unused << aPref;
@@ -5234,12 +5238,20 @@ nsresult XREMain::XRE_mainRun() {
     }
 
 #ifdef XP_WIN
+#  if !defined(TT_MEMUTIL)
     mozilla::DllPrefetchExperimentRegistryInfo prefetchRegInfo;
     mozilla::AlteredDllPrefetchMode dllPrefetchMode =
         prefetchRegInfo.GetAlteredDllPrefetchMode();
+#  else
+    int32_t dllPrefetchMode = Preferences::GetInt(PREF_WIN_ALTERED_DLL_PREFETCH, 0);
+#  endif
 
     if (!PR_GetEnv("XRE_NO_DLL_READAHEAD") &&
+    #if !defined(TT_MEMUTIL)
         dllPrefetchMode != mozilla::AlteredDllPrefetchMode::NoPrefetch) {
+    #else
+        dllPrefetchMode != 1) {
+    #endif
       nsCOMPtr<nsIFile> greDir = mDirProvider.GetGREDir();
       nsAutoString path;
       rv = greDir->GetPath(path);
@@ -5251,7 +5263,11 @@ nsresult XREMain::XRE_mainRun() {
         // which list of Dlls to use. The old list does not need access to the
         // GRE dir, so the path argument is set to a null pointer.
         if (dllPrefetchMode ==
+        #if !defined(TT_MEMUTIL)
             mozilla::AlteredDllPrefetchMode::OptimizedPrefetch) {
+        #else
+            2) {
+        #endif
           pathRaw = new wchar_t[MAX_PATH];
           wcscpy_s(pathRaw, MAX_PATH, path.get());
         } else {
@@ -5461,7 +5477,9 @@ nsresult XREMain::XRE_mainRun() {
       Preferences::RegisterCallbackAndCall(
           RegisterApplicationRestartChanged,
           PREF_WIN_REGISTER_APPLICATION_RESTART);
+#  if !defined(TT_MEMUTIL)
       SetupAlteredPrefetchPref();
+#  endif
       SetupSkeletonUIPrefs();
 #  if defined(MOZ_LAUNCHER_PROCESS) && !defined(TT_MEMUTIL)
       SetupLauncherProcessPref();

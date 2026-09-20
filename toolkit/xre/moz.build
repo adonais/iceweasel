@@ -48,14 +48,12 @@ if CONFIG["MOZ_INSTRUMENT_EVENT_LOOP"]:
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXPORTS.mozilla += [
         "AssembleCmdLine.h",
-        "DllPrefetchExperimentRegistryInfo.h",
         "PolicyChecks.h",
         "WinTokenUtils.h",
     ]
     UNIFIED_SOURCES += [
         "/toolkit/mozapps/update/common/pathhash.cpp",
         "/toolkit/mozapps/update/common/updateutils_win.cpp",
-        "DllPrefetchExperimentRegistryInfo.cpp",
         "nsNativeAppSupportWin.cpp",
         "WinTokenUtils.cpp",
     ]
@@ -73,6 +71,13 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     DIRS += [
         "dllservices",
     ]
+    if CONFIG['MOZ_BRANDING_DIRECTORY'] != 'browser/branding/iceweasel':
+        EXPORTS.mozilla += [
+            "DllPrefetchExperimentRegistryInfo.h",
+        ]
+        UNIFIED_SOURCES += [
+            "DllPrefetchExperimentRegistryInfo.cpp",
+        ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     EXPORTS.mozilla += [
         "MacRunFromDmgUtils.h",
