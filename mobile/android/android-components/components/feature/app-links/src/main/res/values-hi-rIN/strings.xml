@@ -12,12 +12,12 @@
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">दूसरे ऐप में खोलें</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
-  <string name="mozac_feature_applinks_normal_confirm_dialog_title_2">यह लिंक दूसरे ऐप में खोलें?</string>
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_2">यह लिंक दूसरे ऐप में खोलना है?</string>
   <!--
     The title of the prompt with app suffix.
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">इस लिंक को %s ऐप में खोलें?</string>
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">इस लिंक को %s ऐप में खोलना है?</string>
   <!--
     The message of the prompt to confirm with users that they want to open the link in another app
     %s is a placeholder that will be replaced by the app name
@@ -40,7 +40,7 @@
   <!-- The label for the destination URL in the details section -->
   <string name="mozac_feature_applinks_destination_url">डेस्टिनेशन URL</string>
   <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
-  <string name="mozac_feature_applinks_firefox_url">अगर URL को %s में खोला जा रहा है</string>
+  <string name="mozac_feature_applinks_firefox_url">%s में खोलने पर URL</string>
   <!-- The label for the unique identifier in the details section -->
   <string name="mozac_feature_applinks_unique_identifier">यूनीक आइडेंटिफ़ायर</string>
   <!-- The text shown when there is no Firefox URL -->

@@ -1996,7 +1996,7 @@
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">网站要求关闭广告拦截器</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
-  <string name="webcompat_reporter_reason_notsupported_2">浏览器不受支持或被阻止</string>
+  <string name="webcompat_reporter_reason_notsupported_2">浏览器被阻止或不受支持</string>
   <!-- Broken site reason text for the site being deceptive -->
   <string name="webcompat_reporter_reason_site_is_deceptive">这是诈骗网站</string>
   <!-- Broken site reason text for something else -->

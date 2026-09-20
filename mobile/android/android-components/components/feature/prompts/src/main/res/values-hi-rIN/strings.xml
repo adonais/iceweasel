@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Text for confirmation for a positive action in dialog -->
   <string name="mozac_feature_prompts_ok">ओके</string>
   <!-- Text for confirmation for a negative action in dialog. -->
@@ -60,9 +60,9 @@
   <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
   <string name="mozac_feature_prompts_popup_dialog_title">इस साइट को खोलने की अनुमति दें?</string>
   <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
-  <string name="mozac_feature_prompts_redirect_dialog_title">इस साइट पर ले जाने की अनुमति दें?</string>
+  <string name="mozac_feature_prompts_redirect_dialog_title">इस साइट पर जाने की अनुमति देनी है?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
-  <string name="mozac_feature_prompt_before_unload_dialog_title">सचमुच?</string>
+  <string name="mozac_feature_prompt_before_unload_dialog_title">पक्का?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_body">इस साइट को छोड़ना है? हो सकता है कि आपका दर्ज किया गया डेटा सेव न हो</string>
   <!-- Stay button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to stay in the website. -->
@@ -108,7 +108,7 @@
   <!-- Content description for expanding the saved passwords options in the select password prompt -->
   <string name="mozac_feature_prompts_expand_logins_content_description_2">\'सेव किए गए पासवर्ड\' को फैलाएं</string>
   <!-- Content description for collapsing the saved passwords options in the select password prompt -->
-  <string name="mozac_feature_prompts_collapse_logins_content_description_2">\'सेव किए गए पासवर्ड\' को सिकोड़ें</string>
+  <string name="mozac_feature_prompts_collapse_logins_content_description_2">\'सेव किए गए पासवर्ड\' को छोटा करें</string>
   <!-- Header for the select password prompt to allow users to fill a form with a saved password -->
   <string name="mozac_feature_prompts_saved_logins_2">सेव किए गए पासवर्ड</string>
   <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
@@ -135,7 +135,7 @@
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">कैंसिल करें</string>
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
-  <string name="mozac_feature_prompt_folder_upload_confirm_title">फ़ाइलें अपलोड करें?</string>
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">फ़ाइलें अपलोड करनी हैं?</string>
   <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
   <string name="mozac_feature_prompt_folder_upload_confirm_message">“%1$s” से अपलोड करने से पहले, यह पक्का कर लें कि आप इस साइट पर भरोसा करते हैं।</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
@@ -151,11 +151,11 @@
   <!-- Content description for expanding the saved card options in the select card prompt. -->
   <string name="mozac_feature_prompts_expand_credit_cards_content_description_2">सेव किए गए कार्ड फैलाएं</string>
   <!-- Content description for collapsing the saved card options in the select prompt. -->
-  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">सेव किए गए कार्ड सिकोड़ें</string>
+  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">सेव किए गए कार्ड छोटा करें</string>
   <!-- Option in the expanded select card prompt that links to cards settings. -->
   <string name="mozac_feature_prompts_manage_credit_cards_2">कार्ड मैनेज करें</string>
   <!-- Text for the title of a save credit card dialog. -->
-  <string name="mozac_feature_prompts_save_credit_card_prompt_title">कार्ड को सुरक्षित ढंग से सेव करें?</string>
+  <string name="mozac_feature_prompts_save_credit_card_prompt_title">कार्ड को सुरक्षित ढंग से सेव करना है?</string>
   <!-- Text for the title of an update credit card dialog. -->
   <string name="mozac_feature_prompts_update_credit_card_prompt_title">कार्ड एक्सपायर होने की तारीख अपडेट करें?</string>
   <!-- Subtitle text displayed under the title of the saved card dialog. %s is the name of the app (for example "Firefox"). -->
@@ -167,15 +167,15 @@
   -->
   <string name="mozac_feature_prompts_select_address_2">एड्रेस चुनें</string>
   <!-- Content description for expanding the saved addresses options in the select address prompt. -->
-  <string name="mozac_feature_prompts_expand_address_content_description_2">सेव किए गए एड्रेस को फैलाएं</string>
+  <string name="mozac_feature_prompts_expand_address_content_description_2">सेव किए गए एड्रेस बड़ा करें</string>
   <!-- Content description for collapsing the saved address options in the select address prompt. -->
-  <string name="mozac_feature_prompts_collapse_address_content_description_2">सेव किए गए एड्रेस को सिकोड़ें</string>
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">सेव किए गए एड्रेस को छोटा करें</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">एड्रेस मैनेज करें</string>
   <!-- Text for the title of a save address dialog. -->
-  <string name="mozac_feature_prompts_save_address_prompt_title">एड्रेस सेव करें?</string>
+  <string name="mozac_feature_prompts_save_address_prompt_title">एड्रेस सेव करना है?</string>
   <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->
-  <string name="mozac_feature_prompts_update_address_prompt_title">एड्रेस अपेडट करें?</string>
+  <string name="mozac_feature_prompts_update_address_prompt_title">एड्रेस अपडेट करना है?</string>
   <!--
     Federated Credential Management prompts
 
@@ -188,6 +188,8 @@
   <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">%1$s अकाउंट से साइन इन करें</string>
   <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">%1$s को लॉगिन प्रोवाइडर के रूप में इस्तेमाल करें</string>
+  <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%2$s अकाउंट से %1$s में लॉग इन करते समय उसकी <a href=\"%3$s\">गोपनीयता नीति</a> और <a href=\"%4$s\">सेवा की शर्तों</a> का पालन करना होगा]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_continue">जारी रखें</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
@@ -199,5 +201,5 @@
   -->
   <string name="mozac_feature_relay_chip_text">ईमेल मास्क का इस्तेमाल करें</string>
   <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
-  <string name="mozac_feature_relay_email_masks_cfr">नया अपडेट! %s वाले ईमेल मास्क अब मोबाइल पर उपलब्ध हैं।</string>
+  <string name="mozac_feature_relay_email_masks_cfr">नया! %s वाले ईमेल मास्क अब मोबाइल पर उपलब्ध हैं।</string>
 </resources>

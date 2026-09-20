@@ -145,6 +145,12 @@
   <string name="home_screen_shortcut_passwords">Лозинке</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">Деинсталирате, зашто?</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Настави</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Прикажи све</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -809,6 +815,8 @@
   <string name="preferences_toolbar_shortcut">Пречица алатнице</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_select_shortcut">Изаберите пречицу</string>
+  <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
+  <string name="toolbar_shortcut_menu_edit_option">Измени пречицу</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Гестикулације</string>
   <!-- Preference for settings related to visual options -->
@@ -894,6 +902,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Немате дозволу за коришћење ове фасцикле. Покушајте да изаберете другу.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Управљајте преузимањима помоћу друге апликације</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">Не могу да отворим бирача фасцикле на овом уређају.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">Обришите или уклоните преузимања</string>
   <string name="preferences_downloads_delete_from_device">Обриши са уређаја</string>
@@ -967,6 +977,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Извештај о приватности</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Настави</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Обележивачи</string>
   <!--
@@ -1108,6 +1120,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Покушајте поново покренути додатке</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Наставите са онемогућеним додацима</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Покушај поново</string>
   <!--
     Account Preferences
 
@@ -1281,6 +1295,11 @@
   <string name="preference_light_theme">Светла</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Тамна</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Најтамнија</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Постави у подешавањима за штедњу батерије</string>
   <!-- Preference for using following device theme -->
@@ -1393,6 +1412,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Самостално затварај отворене језичке</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Затвори</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Пуштање медија</string>
   <!--
     Opening screen
 
@@ -1427,6 +1448,16 @@
   <string name="preferences_inactive_tabs">Премести старе језичке у неактивне</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">Језичци које нисте погледали више од две недеље се премештају у одељак неактивних језичака.</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Групе језичака</string>
+  <!--
+    Privacy report
+
+    Category header of a preference that allows a user to enable or disable the privacy report feature
+  -->
+  <string name="preferences_privacy_report">Извештај о приватности</string>
+  <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
+  <string name="preferences_privacy_report_title">Извештај о приватности</string>
   <!--
     Studies
 
@@ -1641,6 +1672,8 @@
   <string name="tab_group_three_dot_menu_ungroup">Разгрупиши</string>
   <!-- Text shown on the delete button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_delete">Обриши</string>
+  <!-- Text shown on the share button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_share">Подели</string>
   <!-- Text shown on the close button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_close">Затвори</string>
   <!-- Title for the Ungroup tab group confirmation dialog. -->
@@ -1653,6 +1686,14 @@
   <string name="ungroup_tab_group_confirmation_dialog_confirm">Разгрупиши</string>
   <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
   <string name="ungroup_tab_group_confirmation_dialog_cancel">Откажи</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Помери језичак горе</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Помери језичак улево</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Помери језичак удесно</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Помери језичак доле</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2359,6 +2400,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nПослато из апликације %2$s 🦊 Испробајте мобилни прегледач: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nПослато из апликације %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Поново се пријавите да бисте послали језичке између уређаја</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Пријави се</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Уклони налог</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Нема повезаних уређаја</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Да бисте послали језичак, пријавите се у Firefox на бар једном другом уређају.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Проверите своју интернет везу</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Затим покушајте поново да пошаљете свој језичак.</string>
   <!--
     Notifications
 
@@ -2380,6 +2435,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Поставите Firefox као подразумевани прегледач</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Извештај о приватности</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s показује колико је елемената за праћење блокирано док сте претраживали интернет.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Наставите са претраживањем. %1$s ће наставити да блокира.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s блокира елементе за праћење док претраживате интернет. Овде ћете их видети.</string>
   <!--
     Survey
 
@@ -2948,6 +3015,8 @@
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">Уграђени ВПН</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">ВПН</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">ВПН</string>
@@ -2986,6 +3055,8 @@
   <string name="ip_protection_menu_paused">Паузирано</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Грешка</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Испробај бесплатно</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Отвори подешавања ВПН-а</string>
   <!--
@@ -3002,6 +3073,10 @@
   <string name="ip_protection_toolbar_pill_label">ВПН покренут</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">ВПН је покренут.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">ВПН искључен</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">ВПН је искључен.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Започните</string>
   <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -3028,11 +3103,15 @@
   <string name="ip_protection_onboarding_not_now_button">Не сада</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Нисмо успели да се повежемо са ВПН-ом. Покушајте поново за неколико минута.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Изабрана ВПН локација је недоступна. Пребачено на препоручену локацију.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">Искоришћено је %1$d GB ВПН података. Приступ ће бити враћен следећег месеца.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_open_settings_snackbar_action">Подешавања</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_data_limit_reached_snackbar_action">Подешавања</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
@@ -3051,6 +3130,8 @@
   <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Изаберите VPN локацију</string>
   <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
   <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Firefox проналази најбржу локацију</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Недоступно</string>
   <!-- Error message shown when the selected browser VPN location is unavailable. -->
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Локација је недоступна. Изаберите другу локацију.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
@@ -3346,6 +3427,16 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Прикажи све пречице</string>
+  <!--
+    Label for the button in the shortcuts home screen section that expands the section to show
+    every shortcut.
+  -->
+  <string name="homepage_shortcuts_show_all">Прикажи све</string>
+  <!--
+    Label for the button in the shortcuts home screen section that collapses the section back
+    to showing only the first shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_less">Прикажи мање</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Додај пречицу</string>
   <!-- Title for the "Add to homepage" bottom sheet. -->
@@ -4352,6 +4443,16 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Обавештење о приватности</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Сазнајте више</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">Збирке су сада групе</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">Постоји једноставнији начин да ваши језичци буду организовани</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">Прикажи моје групе језичака</string>
   <!-- Google Lens prototype related strings -->
   <string name="preferences_debug_settings_google_lens_integration">Интеграција са Google објективом</string>
   <!-- Lens image search button content description -->
@@ -4436,4 +4537,34 @@
   <string name="firefox_labs_feature_conflict">Функција није доступна за испробавање.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Тренутно нема експерименталних могућности које можете испробати</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Изолација веб-страница</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Додатна препрека између веб-страница која помаже у заштити ваших података у различитим језичцима. Може утицати на делотворност, стабилност, усаглашеност веб-страница и начин на који се чува историјат претраживања.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">Потпиши ПДФ</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">Преузми ПДФ</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">Штампај ПДФ</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">Подели ПДФ</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">Додај потпис</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Затвори површ за ПДФ потпис</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Укуцај потпис</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Очисти</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Додај</string>
 </resources>

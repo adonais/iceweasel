@@ -234,7 +234,7 @@
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Wersja</string>
   <!-- The author of an add-on. -->
-  <string name="mozac_feature_addons_author">Autor</string>
+  <string name="mozac_feature_addons_author">Autorzy</string>
   <!-- The last date that the add-on was updated. -->
   <string name="mozac_feature_addons_last_updated">Ostatnia aktualizacja</string>
   <!-- The developer website (Homepage) of the add-on. -->

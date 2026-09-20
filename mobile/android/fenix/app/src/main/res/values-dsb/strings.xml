@@ -1413,6 +1413,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Rejtariki awtomatiski zacyniś</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Zacyniś</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Medije wótgraś</string>
   <!--
     Opening screen
 

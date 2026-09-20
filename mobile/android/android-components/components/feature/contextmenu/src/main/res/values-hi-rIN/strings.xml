@@ -38,7 +38,7 @@
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_copied">लिंक को क्लिपबोर्ड पर कॉपी किया गया</string>
   <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
-  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">लिंक वाला टेक्स्ट, क्लिपबोर्ड में कॉपी किया</string>
+  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">लिंक टेक्स्ट क्लिपबोर्ड में कॉपी हो गया</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
   <string name="mozac_feature_contextmenu_snackbar_action_switch">बदलें</string>
   <!-- Text for context menu item to open the link in an external app. -->

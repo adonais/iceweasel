@@ -16,7 +16,7 @@
     Message announced to the user when tab tray is selected used by a11y services
     The %1$s will be replaced by the number of opened tabs
   -->
-  <string name="mozac_open_tab_counter_tab_tray">खुले हुए नॉन-प्राइवेट टैब: %1$s. टैब स्विच करने के लिए टैप करें।</string>
+  <string name="mozac_open_tab_counter_tab_tray">खुले हुए नॉन-प्राइवेट टैब: %1$s। टैब स्विच करने के लिए टैप करें।</string>
   <!--
     Message announced to the user when the tab counter is selected in private browsing mode.
     Used by a11y services. The %1$s will be replaced by the number of opened tabs

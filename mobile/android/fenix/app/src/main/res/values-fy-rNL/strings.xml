@@ -145,6 +145,12 @@
   <string name="home_screen_shortcut_passwords">Wachtwurden</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">De-ynstallearje, wêrom?</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Trochgean</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Alles toane</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -281,8 +287,12 @@
   <string name="browser_menu_summarize_page">Side gearfetsje</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Nij</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Nij</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Net-wurkjende website melde</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Oan groep tafoegje</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Oerset</string>
   <!-- Browser menu label for the print feature -->
@@ -895,6 +905,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Jo hawwe gjin tastimming om dizze map te brûken. Probearje in oare te kiezen.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Downloads mei in oare app beheare</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">Kin de mappekiezer op dit apparaat net iepenje.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">Downloads fuortsmite of wiskje</string>
   <string name="preferences_downloads_delete_from_device">Fan apparaat fuortsmite</string>
@@ -968,6 +980,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Privacyrapport</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Trochgean</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Blêdwizers</string>
   <!--
@@ -1299,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Ljepblêdenbalke toane</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Lokaasje fan ljepblêdbalke</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">Boppe</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">Under</string>
   <!--
     Gestures Preferences
 
@@ -1401,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Iepen ljepblêden automatysk slute</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Slute</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Media ôfspylje</string>
   <!--
     Opening screen
 
@@ -2385,6 +2407,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nFerstjoerd fan %2$s 🦊 út. Probearje de mobile browser: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\nFerstjoerd fan %2$s 🦊 út %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Meld jo opnij oan om ljepblêden tusken apparaten te ferstjoeren</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Oanmelde</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Account fuortsmite</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Gjin apparaten ferbûn</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Meld jo oan by Firefox op op syn minst ien oar apparaat om in ljepblêd te ferstjoeren.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Kontrolearje jo ynternetferbining</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Probearje dan jo ljepblêd opnij te ferstjoeren.</string>
   <!--
     Notifications
 
@@ -2406,6 +2442,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox jo standertbrowser meitsje</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Privacyrapport</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s toant hoefolle trackers der wylst it navigearjen blokkearre binne.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Bliuw sneupe. %1$s bliuwt blokkearjen.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s blokkearret trackers wylst jo sneupe. Jo sjogge se hjir.</string>
   <!--
     Survey
 
@@ -2974,6 +3022,8 @@
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">Ynboude VPN</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
@@ -3012,6 +3062,8 @@
   <string name="ip_protection_menu_paused">Pauzearre</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Flater</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Fergees probearje</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN-ynstellingen iepenje</string>
   <!--
@@ -3058,11 +3110,15 @@
   <string name="ip_protection_onboarding_not_now_button">No net</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Koe net ferbine mei VPN. Probearje it oer in pear minuten opnij.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">Selektearre VPN-lokaasje is net beskikber. Omskeakele nei de oanrekommandearre lokaasje.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB oan VPN-gegevens brûkt. Tagong wurdt folgjende moanne opnij ynsteld.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_open_settings_snackbar_action">Ynstellingen</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_data_limit_reached_snackbar_action">Ynstellingen</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
@@ -4504,4 +4560,18 @@
   <string name="pdf_tools_print_content_description">PDF ôfdrukke</string>
   <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
   <string name="pdf_tools_share_content_description">PDF diele</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">In hantekening tafoegje</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Paniel foar PDF-ûndertekening slute</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Typ jo hantekening</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Wiskje</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Tafoegje</string>
 </resources>

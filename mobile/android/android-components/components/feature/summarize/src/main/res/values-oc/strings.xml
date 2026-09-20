@@ -9,14 +9,22 @@
 <resources>
   <!-- Link text to learn more about downloading Gemini Nano -->
   <string name="mozac_summarize_learn_more_link">Ne saber mai</string>
+  <!-- Title for the off-device shake summarization consent screen. Localization note: Asking if the user wants to use the shake gesture to summarize the page they are viewing. -->
+  <string name="mozac_summarize_shake_consent_off_device_title">Volètz resumir amb una brandida\u00a0?</string>
+  <!-- Message for the off-device shake summarization consent screen. %1$s is 'Firefox' -->
+  <string name="mozac_summarize_shake_consent_off_device_message">Brandissètz l’aparelh e obtenètz un resumit de %1$s de la pagina dins un ai.</string>
   <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
   <string name="mozac_summarize_shake_consent_off_device_button_positive">Contunhar</string>
   <!-- Button text for the off-device shake summarization consent screen denying shake consent. Localization note: "Not now" dismisses the request to turn on the shake to summarize feature. -->
   <string name="mozac_summarize_shake_consent_off_device_negative_button">Pas ara</string>
   <!-- Title for the on-device shake summarization and download consent screen -->
   <string name="mozac_summarize_shake_consent_on_device_title">Resumir aquesta pagina</string>
+  <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
+  <string name="mozac_summarize_shake_consent_on_device_message">Après un telecargament rapid e unic, %s pòt resumir de paginas quand brandissètz vòstre aparelh.</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_negative_button">Pas ara</string>
+  <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
+  <string name="mozac_summarize_download_nano_consent_message">Un telecargament unic permet a %s de crear de resumits de pagina que demòran sota vòstre contraròtle.</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">Anullar</string>
   <!-- Caption to describe the progress of the download. %1$.2f is bytes downloaded, %2$.2f is total bytes required for download to complete. -->
@@ -31,6 +39,30 @@
   <string name="mozac_summarize_download_error_positive_button">Tornar ensajar</string>
   <!-- Button for the download error screen to cancel -->
   <string name="mozac_summarize_download_error_negative_button">Anullar</string>
+  <!-- Title for the settings screen shown in the summarization bottom sheet -->
+  <string name="mozac_summarize_settings_title">Resumits de paginas</string>
+  <!-- Description for the summarize pages toggle -->
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Creatz de resumits de pagina amb l\'IA. Las paginas e los resumits demòran privats e son pas jamai emmagazinats.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Ne saber mai</string>
+  <!-- Section header for gesture settings -->
+  <string name="mozac_summarize_settings_gestures">Gèstes</string>
+  <!-- Label for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize">Brandir per resumir</string>
+  <!-- Description for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize_description">Brandissètz l’aparelh d’un costat a l’autre per resumir la pagina.</string>
+  <!-- Label for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity">Sensibilitat de la brandida</string>
+  <!-- Description for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity_description">Ajustatz la fòrça de la brandida per activar lo resumit.</string>
+  <!-- Low option label for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity_low">Febla</string>
+  <!-- Medium option label for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity_medium">Mejana</string>
+  <!-- High option label for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity_high">Fòrta</string>
+  <!-- Title for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_title">Resumits de paginas</string>
+  <!-- Description for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_description">Las paginas e los resumits son pas jamai emmagazinats.</string>
 </resources>

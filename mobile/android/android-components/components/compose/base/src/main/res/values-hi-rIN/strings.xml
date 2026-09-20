@@ -16,7 +16,7 @@
   <!-- The default content description (not visible, for screen readers etc.): Cross trailing icon button in TextField used to clear input. -->
   <string name="text_field_cross_trailing_icon_default_content_description">टेक्स्ट हटाएं</string>
   <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
-  <string name="mozac_compose_base_progress_loading">लोड किया जा रहा है</string>
+  <string name="mozac_compose_base_progress_loading">लोड हो रहा है</string>
   <!-- Content description for the dismiss icon of a Snackbar -->
   <string name="mozac_compose_base_snackbar_dismiss_content_description">मैसेज खारिज करें</string>
   <!-- Content description for the close icon of a Banner -->
@@ -32,11 +32,11 @@
 
     Action label for elements that can be collapsed if interacting with them. Talkback will append this to say "Double tap to collapse".
   -->
-  <string name="mozac_compose_base_a11y_action_label_collapse">सिकोड़ें</string>
+  <string name="mozac_compose_base_a11y_action_label_collapse">छोटा करें</string>
   <!-- Current state for elements that can be collapsed if interacting with them. Talkback will dictate this after a state change. -->
-  <string name="mozac_compose_base_a11y_state_label_collapsed">सिकोड़ दिया</string>
+  <string name="mozac_compose_base_a11y_state_label_collapsed">छोटा किया गया</string>
   <!-- Action label for elements that can be expanded if interacting with them. Talkback will append this to say "Double tap to expand". -->
-  <string name="mozac_compose_base_a11y_action_label_expand">फैलाएं</string>
+  <string name="mozac_compose_base_a11y_action_label_expand">बड़ा करें</string>
   <!-- Current state for elements that can be expanded if interacting with them. Talkback will dictate this after a state change. -->
-  <string name="mozac_compose_base_a11y_state_label_expanded">फैला दिया</string>
+  <string name="mozac_compose_base_a11y_state_label_expanded">बड़ा किया गया</string>
 </resources>

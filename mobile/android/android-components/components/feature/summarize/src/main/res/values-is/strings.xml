@@ -51,6 +51,8 @@
   <string name="mozac_summarize_download_error_negative_button">Hætta við</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Of löng síða til að gera samantekt</string>
+  <!-- Title for the error screen when the page content is behind a paywall -->
+  <string name="mozac_summarize_paywalled_content_error_title">Get ekki tekið saman efni á bakvið greiðslumúr</string>
   <!-- Title for the info error screen -->
   <string name="mozac_summarize_info_error_title">Get ekki gert samantekt núna</string>
   <!-- Generic fallback message for the info error screen -->
@@ -65,6 +67,8 @@
   <string name="mozac_summarize_settings_title">Samantekt efnis á síðu</string>
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">Gera samantekt efnis á síðum</string>
+  <!-- Description for the summarize pages toggle -->
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Búðu til síðuyfirlit með gervigreind. Síður og yfirlit eru einkamál og aldrei geymd.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Frekari upplýsingar</string>
   <!-- Section header for gesture settings -->
@@ -75,6 +79,8 @@
   <string name="mozac_summarize_settings_shake_to_summarize_description">Hristu tækið til hliðanna til að gera yfirlit úr efni síðu.</string>
   <!-- Label for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity">Næmni hristings</string>
+  <!-- Description for the shake sensitivity slider in settings -->
+  <string name="mozac_summarize_settings_shake_sensitivity_description">Stilltu hversu fast þú þarft að hrista til að virkja samantekt.</string>
   <!-- Low option label for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity_low">Lítið</string>
   <!-- Medium option label for the shake sensitivity slider in settings -->
@@ -83,10 +89,28 @@
   <string name="mozac_summarize_settings_shake_sensitivity_high">Mikið</string>
   <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
   <string name="mozac_feature_summarize_summary_model">Samantekt frá %1$s</string>
+  <!-- Disclaimer message -->
+  <string name="mozac_feature_summarize_disclaimer_message">Gervigreind getur gert mistök</string>
+  <!-- Content description for the thumbs up button used to rate a generated summary as helpful -->
+  <string name="mozac_feature_summarize_feedback_good_content_description">Góð samantekt</string>
+  <!-- Accessibility label for the action of the thumbs up button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as good]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
+  <string name="mozac_feature_summarize_feedback_good_click_label">gefðu samantekt góða einkunn</string>
+  <!-- Content description for the thumbs down button used to rate a generated summary as unhelpful -->
+  <string name="mozac_feature_summarize_feedback_bad_content_description">Slæm samantekt</string>
+  <!-- Accessibility label for the action of the thumbs down button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as bad]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
+  <string name="mozac_feature_summarize_feedback_bad_click_label">gefðu samantekt lélega einkunn</string>
+  <!-- Accessibility state of the thumbs up or thumbs down button the user picked, announced when the rating is submitted and whenever that button is focused afterwards. Buttons the user did not pick have no state. -->
+  <string name="mozac_feature_summarize_feedback_state_submitted">Einkunn send inn</string>
   <!-- Title for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_title">Samantekt efnis á síðu</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Síður og samantektir eru aldrei geymdar.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Afgreiða</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Skráðu þig inn til að gera samantekt</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Notaðu Mozilla-reikninginn þinn til að halda áfram eða stofnaðu slíkan til að byrja.</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Innskráning</string>
 </resources>
