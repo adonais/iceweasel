@@ -7,14 +7,7 @@ Cm.QueryInterface(Ci.nsIServiceManager);
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
-let firstPaintNotification = "widget-first-paint";
-// widget-first-paint fires much later than expected on Linux.
-if (
-  AppConstants.platform == "linux" ||
-  Services.prefs.getBoolPref("browser.startup.preXulSkeletonUI", false)
-) {
-  firstPaintNotification = "xul-window-visible";
-}
+let firstPaintNotification = "xul-window-visible";
 
 let win, canvas;
 let paints = [];
