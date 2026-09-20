@@ -17,6 +17,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/IPCBlobUtils.h"
+#include "nsBaseFilePicker.h"
 
 using mozilla::Unused;
 using namespace mozilla::dom;
@@ -268,7 +269,9 @@ mozilla::ipc::IPCResult FilePickerParent::RecvOpen(
     nsCOMPtr<nsIFile> localFile = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);
     if (localFile) {
       localFile->InitWithPath(aDisplayDirectory);
-      mFilePicker->SetDisplayDirectory(localFile);
+      if (nsBaseFilePicker::IsReadableDirectory(*localFile)) {
+        mFilePicker->SetDisplayDirectory(localFile);
+      }
     }
   } else if (!aDisplaySpecialDirectory.IsEmpty()) {
     mFilePicker->SetDisplaySpecialDirectory(aDisplaySpecialDirectory);

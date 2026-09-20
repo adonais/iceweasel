@@ -51,6 +51,8 @@ class nsBaseFilePicker : public nsIFilePicker {
   NS_IMETHOD GetDomFileOrDirectoryEnumerator(
       nsISimpleEnumerator** aValue) override;
 
+  static bool IsReadableDirectory(nsIFile& aDirectory);
+
  protected:
   virtual void InitNative(nsIWidget* aParent, const nsAString& aTitle) = 0;
   virtual nsresult Show(nsIFilePicker::ResultCode* _retval) = 0;

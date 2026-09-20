@@ -414,7 +414,7 @@ nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
     mPrevDisplayDirectory->Clone(getter_AddRefs(defaultPath));
   }
 
-  if (defaultPath) {
+  if (defaultPath && IsReadableDirectory(*defaultPath)) {
     if (!defaultName.IsEmpty() && mMode != nsIFilePicker::modeSave) {
       // Try to select the intended file. Even if it doesn't exist, GTK still
       // switches directories.

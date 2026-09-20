@@ -244,9 +244,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   // font face corresponding to the mFont/mFontFile *without* any DWrite
   // style simulations applied
-  RefPtr<IDWriteFontFace> mFontFace;
+  RefPtr<IDWriteFontFace> mFontFace MOZ_GUARDED_BY(mLock);
   // Extended fontface interface if supported, else null
-  RefPtr<IDWriteFontFace5> mFontFace5;
+  RefPtr<IDWriteFontFace5> mFontFace5 MOZ_GUARDED_BY(mLock);
 
   DWRITE_FONT_FACE_TYPE mFaceType;
 

@@ -494,7 +494,12 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
   // try to avoid potentially expensive DWrite call if we haven't actually
   // created the font face yet, by using the gfxFontEntry method that will
   // use CopyFontTable and then cache the data
-  if (!mFontFace) {
+  RefPtr<IDWriteFontFace> fontFace;
+  {
+    AutoReadLock lock(mLock);
+    fontFace = mFontFace;
+  }
+  if (!fontFace) {
     return gfxFontEntry::GetFontTable(aTag);
   }
 
@@ -502,10 +507,10 @@ hb_blob_t* gfxDWriteFontEntry::GetFontTable(uint32_t aTag) {
   UINT32 size;
   void* context;
   BOOL exists;
-  HRESULT hr = mFontFace->TryGetFontTable(NativeEndian::swapToBigEndian(aTag),
-                                          &data, &size, &context, &exists);
+  HRESULT hr = fontFace->TryGetFontTable(NativeEndian::swapToBigEndian(aTag),
+                                         &data, &size, &context, &exists);
   if (SUCCEEDED(hr) && exists) {
-    FontTableRec* ftr = new FontTableRec(mFontFace, context);
+    FontTableRec* ftr = new FontTableRec(fontFace, context);
     return hb_blob_create(static_cast<const char*>(data), size,
                           HB_MEMORY_MODE_READONLY, ftr, DestroyBlobFunc);
   }
@@ -613,17 +618,26 @@ bool gfxDWriteFontEntry::HasVariations() {
     return mHasVariations;
   }
 
-  if (!mFontFace) {
-    // CreateFontFace will initialize the mFontFace field, and also
-    // mFontFace5 if available on the current DWrite version.
-    RefPtr<IDWriteFontFace> fontFace;
-    if (NS_FAILED(CreateFontFace(getter_AddRefs(fontFace)))) {
+  {
+    AutoReadLock lock(mLock);
+    if (mFontFace) {
+      if (mFontFace5) {
+        mHasVariations = mFontFace5->HasVariations();
+      }
       return mHasVariations;
     }
   }
-  if (mFontFace5) {
-    mHasVariations = mFontFace5->HasVariations();
+
+  // CreateFontFace will initialize the mFontFace field, and also
+  // mFontFace5 if available on the current DWrite version.
+  RefPtr<IDWriteFontFace> fontFace;
+  if (NS_SUCCEEDED(CreateFontFace(getter_AddRefs(fontFace)))) {
+    AutoReadLock lock(mLock);
+    if (mFontFace5) {
+      mHasVariations = mFontFace5->HasVariations();
+    }
   }
+
   return mHasVariations;
 }
 
@@ -635,9 +649,12 @@ void gfxDWriteFontEntry::GetVariationAxes(
   // HasVariations() will have ensured the mFontFace5 interface is available;
   // so we can get an IDWriteFontResource and ask it for the axis info.
   RefPtr<IDWriteFontResource> resource;
-  HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
-  if (FAILED(hr) || !resource) {
-    return;
+  {
+    AutoReadLock lock(mLock);
+    HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
+    if (FAILED(hr) || !resource) {
+      return;
+    }
   }
 
   uint32_t count = resource->GetFontAxisCount();
@@ -752,6 +769,11 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
                                      (aTag >> 8) & 0xff, aTag & 0xff);
   };
 
+  // Must read this *before* taking the write lock.
+  bool hasVariations = HasVariations();
+
+  AutoWriteLock lock(mLock);
+
   MOZ_SEH_TRY {
     // initialize mFontFace if this hasn't been done before
     if (!mFontFace) {
@@ -802,7 +824,7 @@ nsresult gfxDWriteFontEntry::CreateFontFace(
 
     // If the IDWriteFontFace5 interface is available, we can try using
     // IDWriteFontResource to create a new modified face.
-    if (mFontFace5 && (HasVariations() || needSimulations)) {
+    if (mFontFace5 && (hasVariations || needSimulations)) {
       RefPtr<IDWriteFontResource> resource;
       HRESULT hr = mFontFace5->GetFontResource(getter_AddRefs(resource));
       if (SUCCEEDED(hr) && resource) {
