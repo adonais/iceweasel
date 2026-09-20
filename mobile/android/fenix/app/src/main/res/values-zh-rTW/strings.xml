@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">摘要本頁</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">新功能</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">新功能</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">回報網站問題</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">新增至群組</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">已翻譯</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">顯示分頁列</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">分頁列位置</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">頂端</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">底端</string>
   <!--
     Gestures Preferences
 
@@ -1411,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">自動關閉分頁</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">關閉</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">正在播放媒體內容</string>
   <!--
     Opening screen
 

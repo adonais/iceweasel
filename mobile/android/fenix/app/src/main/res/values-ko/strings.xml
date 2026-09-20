@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">페이지 요약</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">신규</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">신규</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">깨진 사이트 신고</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">그룹에 추가</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">번역됨</string>
   <!-- Browser menu label for the print feature -->
@@ -976,7 +980,7 @@
   -->
   <string name="customize_toggle_privacy_report">개인정보 보호 보고서</string>
   <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
-  <string name="customize_toggle_continue">계속</string>
+  <string name="customize_toggle_continue">이어하기</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">북마크</string>
   <!--
@@ -1308,6 +1312,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">탭 표시줄 표시</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">탭 표시줄 위치</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">위쪽</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">아래쪽</string>
   <!--
     Gestures Preferences
 
@@ -1410,6 +1420,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">열린 탭 자동 닫기</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">닫기</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">미디어 재생 중</string>
   <!--
     Opening screen
 
@@ -1756,7 +1768,7 @@
   <!-- Text for the snackbar action button to open a completed download. -->
   <string name="download_completed_snackbar_action_open">열기</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
-  <string name="download_undo_delete_snackbar_action">실행 취소</string>
+  <string name="download_undo_delete_snackbar_action">실행취소</string>
   <!-- Text shown when no download exists -->
   <string name="download_empty_message_2">다운로드 없음</string>
   <!-- Text description shown when no download exists -->
@@ -2464,7 +2476,7 @@
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">사생활 보호 탭 닫음</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
-  <string name="snackbar_deleted_undo">실행 취소</string>
+  <string name="snackbar_deleted_undo">실행취소</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -3002,6 +3014,8 @@
   <string name="preferences_ip_protection_title_2">내장 VPN</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">베타</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">내장 VPN</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->

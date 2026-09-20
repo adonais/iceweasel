@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">Resumir página</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Nuevo</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Nuevo</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Informar sitio roto</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Agregar a grupo</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Traducido</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Mostrar barra de pestañas</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Ubicación de la barra de pestañas</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">Parte superior</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">Parte inferior</string>
   <!--
     Gestures Preferences
 
@@ -1411,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Cerrar automáticamente pestañas abiertas</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Cerrar</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Reproduciendo medios</string>
   <!--
     Opening screen
 
@@ -2707,9 +2719,9 @@
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cryptominers_title">Criptomineros</string>
   <!-- Description of cryptominers that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_cryptominers_description">Impide que los scripts maliciosos obtengan acceso a tu dispositivo para extraer moneda digital.</string>
+  <string name="etp_cryptominers_description">Impedir que los scripts maliciosos obtengan acceso al dispositivo para minar moneda digital.</string>
   <!-- Description of fingerprinters that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_known_fingerprinters_description">Impide que se recopilen datos identificables acerca de tu dispositivo que pueden usarse para fines de rastreo.</string>
+  <string name="etp_known_fingerprinters_description">Impedir que se recopilen datos identificables acerca del dispositivo que pueden usarse para fines de rastreo.</string>
   <!-- Category of trackers (tracking content) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_tracking_content_title">Contenido de rastreo</string>
   <!-- Description of tracking content that can be blocked by Enhanced Tracking Protection -->
@@ -3921,7 +3933,7 @@
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
   -->
-  <string name="clear_site_data_dialog_description"><![CDATA[Eliminar cookies y datos del sitio para <b>%s</b> puede cerrar sesión en los sitios web y limpiar los carritos de compras.]]></string>
+  <string name="clear_site_data_dialog_description"><![CDATA[Eliminar cookies y datos del sitio para <b>%s</b> puede cerrar sesión en los sitios web y vaciar los carritos de compras.]]></string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
   <string name="clear_site_data_dialog_positive_button_text">Limpiar</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->

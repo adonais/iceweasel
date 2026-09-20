@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">Résumer la page</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Nouveau</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Nouveau</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Signaler des problèmes avec ce site</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Ajouter au groupe</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Traduit</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Afficher la barre d’onglets</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Emplacement de la barre d’onglets</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">En haut</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">En bas</string>
   <!--
     Gestures Preferences
 
@@ -1411,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Fermeture automatique des onglets ouverts</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Fermer</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Contenu multimédia en cours de lecture</string>
   <!--
     Opening screen
 

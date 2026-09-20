@@ -211,6 +211,17 @@
   <!-- A link to SUMO at the end of the summary (preference_mozilla_telemetry_summary2) of the "Send anonymous usage data" setting. -->
   <string name="preference_mozilla_telemetry_summary">نور مالومات ترلاسه کړئ</string>
   <string name="preference_search_remove">لېرې کړئ</string>
+  <string name="search_add_manually_save">خوندي کول</string>
+  <!--
+    Content description (not visible, for screen readers etc.): Clicking on the website overlay
+    while in typing mode will dismiss and go back to the browser. This text will be read when the
+    overlay if focused. See https://github.com/mozilla-mobile/focus-android/issues/50
+  -->
+  <string name="content_description_dismiss_input">ردول</string>
+  <!-- Content description (not visible, for screen readers etc.): Navigate forward (browsing history) -->
+  <string name="content_description_forward">مخته تلل</string>
+  <!-- Content description (not visible, for screen readers etc.): Navigate back (browsing history) -->
+  <string name="content_description_back">شا ته تلل</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
   <string name="download_snackbar_open">پرانېستل</string>
   <string name="error_hostLookup_title">سرور ونه موندل شو</string>
@@ -222,12 +233,16 @@
   <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">د فایرفوکس د کارولو شرایط</string>
   <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">دوام ورکړئ</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">تړونی شتون لري</string>
   <!-- New Onboarding flow second screen skip onboarding button label -->
   <string name="onboarding_second_screen_skip_button_text">پرېږدئ</string>
   <!-- Label of the action that will add the current website to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_add">اضافه کول</string>
   <!-- Label of the action that will close the dialog and not add anything to the home screen (shown in the confirmation dialog). -->
   <string name="dialog_addtohomescreen_action_cancel">لغوه کول</string>
+  <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
+  <string name="tabs_tray_action_add_new_tab">نوی ټب اضافه کول</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
@@ -241,10 +256,20 @@
   <string name="custom_tab_copy_url_action">URL کاپي شو</string>
   <!-- Title of Advanced Setting category -->
   <string name="preference_category_advanced">پرمختللی</string>
+  <!-- Preference for altering the camera access for all websites -->
+  <string name="preference_phone_feature_camera">کامره</string>
+  <!-- Preference for altering the microphone access for all websites -->
+  <string name="preference_phone_feature_microphone">مايکروفون</string>
+  <!-- Preference for altering the location access for all websites -->
+  <string name="preference_phone_feature_location">ځای</string>
+  <!-- Preference for altering the notification access for all websites -->
+  <string name="preference_phone_feature_notification">خبرتیا</string>
   <!-- Label used for the "NO button" for the prompt to enable search suggestions -->
   <string name="enable_search_suggestions_no">نه</string>
   <!-- Label used for the "YES button" for the prompt to enable search suggestions -->
   <string name="enable_search_suggestions_yes">هو</string>
+  <!-- Button to dismiss the message displayed  when using a search engine that doesn't provide suggestions -->
+  <string name="dismiss_no_suggestions_prompt_button">ردول</string>
   <!-- Menu item to remove existing exceptions. -->
   <string name="preference_exceptions_menu_remove">لیرې کول</string>
   <!-- Button to remove all websites from the exception list -->

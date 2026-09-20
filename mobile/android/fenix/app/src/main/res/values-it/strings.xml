@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">Riassumi pagina</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Novità</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Novità</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Segnala problemi con il sito</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Aggiungi a un gruppo</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Tradotto</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Mostra barra delle schede</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Posizione della barra delle schede</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">In alto</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">In basso</string>
   <!--
     Gestures Preferences
 
@@ -1411,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Chiudi automaticamente le schede aperte</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Chiudi</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Contenuto multimediale in riproduzione</string>
   <!--
     Opening screen
 

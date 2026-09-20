@@ -1411,6 +1411,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Lukk åpne faner automatisk</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Lukk</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Spiller av media</string>
   <!--
     Opening screen
 
@@ -3009,6 +3011,8 @@
   <string name="preferences_ip_protection_title_2">Innebygd VPN</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">Innebygd VPN</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->

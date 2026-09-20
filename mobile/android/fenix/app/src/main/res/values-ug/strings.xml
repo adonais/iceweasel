@@ -901,6 +901,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">بۇ قىسقۇچنى ئىشلىتىش ئىجازىتىڭىز يوق. باشقا بىرىنى تاللاپ سىناڭ.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">چۈشۈرۈشنى باشقا ئەپتە باشقۇرىدۇ</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">بۇ ئۈسكۈنىدىكى قىسقۇچ تاللىغۇچنى ئاچقىلى بولمىدى.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">چۈشۈرۈلمنى ئۆچۈرۈپ ياكى چىقىرىۋېتىدۇ</string>
   <string name="preferences_downloads_delete_from_device">ئۈسكۈنىدىن ئۆچۈر</string>
@@ -3008,6 +3010,8 @@
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">سىناق نەشرى</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">ئىچىدىكى VPN</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
@@ -3101,6 +3105,8 @@
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">مەۋھۇم شەخسىي تور ئېقىم سانلىق مەلۇماتىدىن %1$d GB ئىشلەتتى. زىيارەت ئىجازىتىڭىز كېيىنكى ئايدا ئەسلىگە قايتۇرۇلىدۇ.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_open_settings_snackbar_action">تەڭشەك</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_data_limit_reached_snackbar_action">تەڭشەك</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->

@@ -1411,6 +1411,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Cerrar automáticamente pestañas</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Cerrar</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Reproduciendo medios</string>
   <!--
     Opening screen
 

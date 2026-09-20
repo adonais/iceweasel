@@ -22,7 +22,7 @@
   <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
   <string name="mozac_summarize_shake_consent_on_device_message">एकबारगी वाले तुरंत डाउनलोड के बाद, %s आपके डिवाइस हिलाने पर पेज का सारांश दे सकता है।</string>
   <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
-  <string name="mozac_summarize_shake_consent_on_device_button_positive">सारांश देखने के लिए डाउनलोड करें</string>
+  <string name="mozac_summarize_shake_consent_on_device_button_positive">सारांश बनाने के लिए डाउनलोड करें</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_negative_button">अभी नहीं</string>
   <!-- Title for the download consent screen -->
@@ -30,7 +30,7 @@
   <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
   <string name="mozac_summarize_download_nano_consent_message">एकबारगी वाला डाउनलोड %s को पेज के सारांश बनाने की सुविधा देता है, जो आपके नियंत्रण में रहते हैं।</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
-  <string name="mozac_summarize_download_consent_button_positive">सारांश देखने के लिए डाउनलोड करें</string>
+  <string name="mozac_summarize_download_consent_button_positive">सारांश बनाने के लिए डाउनलोड करें</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">कैंसिल करें</string>
   <!-- Title for the download in progress screen -->
@@ -54,7 +54,7 @@
   <!-- Title for the error screen when the page content is behind a paywall -->
   <string name="mozac_summarize_paywalled_content_error_title">जिस कंटेंट के लिए पेमेंट ज़रूरी है, उसका सारांश नहीं बनाया जा सकता</string>
   <!-- Title for the info error screen -->
-  <string name="mozac_summarize_info_error_title">अभी सारांश नहींं बनाया जा सकता</string>
+  <string name="mozac_summarize_info_error_title">अभी सारांश नहीं बनाया जा सकता</string>
   <!-- Generic fallback message for the info error screen -->
   <string name="mozac_summarize_info_error_message">बाद में फिर से कोशिश करें।</string>
   <!-- Error code shown on long press of the error icon. %1$d is an error code. -->
@@ -74,11 +74,11 @@
   <!-- Section header for gesture settings -->
   <string name="mozac_summarize_settings_gestures">जेस्चर</string>
   <!-- Label for the shake to summarize toggle in settings -->
-  <string name="mozac_summarize_settings_shake_to_summarize">सारांश बनाने के लिए डिवाइस हिलाएं</string>
+  <string name="mozac_summarize_settings_shake_to_summarize">सारांश पाने के लिए डिवाइस हिलाएं</string>
   <!-- Description for the shake to summarize toggle in settings -->
   <string name="mozac_summarize_settings_shake_to_summarize_description">किसी पेज का सारांश बनाने के लिए, अपने डिवाइस को दाएं-बाएं हिलाएं।</string>
   <!-- Label for the shake sensitivity slider in settings -->
-  <string name="mozac_summarize_settings_shake_sensitivity">शेक सेंसिटिविटी</string>
+  <string name="mozac_summarize_settings_shake_sensitivity">डिवाइस हिलाने का स्तर</string>
   <!-- Description for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity_description">एडजस्ट करें कि सारांश बनाना शुरू करने के लिए, डिवाइस को कितनी ज़ोर से हिलाना होगा।</string>
   <!-- Low option label for the shake sensitivity slider in settings -->
@@ -100,7 +100,7 @@
   <!-- Accessibility label for the action of the thumbs down button. This will be interpolated into a longer message, equivalent to "Double tap to [rate summary as bad]" in English. Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended. -->
   <string name="mozac_feature_summarize_feedback_bad_click_label">सारांश को खराब के तौर पर रेटिंग दें</string>
   <!-- Accessibility state of the thumbs up or thumbs down button the user picked, announced when the rating is submitted and whenever that button is focused afterwards. Buttons the user did not pick have no state. -->
-  <string name="mozac_feature_summarize_feedback_state_submitted">रेटिंग सबमिट की</string>
+  <string name="mozac_feature_summarize_feedback_state_submitted">रेटिंग सबमिट की गई</string>
   <!-- Title for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_title">पेज के सारांश</string>
   <!-- Description for the page summary AI controllable feature -->

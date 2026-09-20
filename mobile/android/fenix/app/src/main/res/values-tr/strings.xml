@@ -901,6 +901,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Bu klasörü kullanma izniniz yok. Başka bir klasör seçmeyi deneyin.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">İndirmeleri başka bir uygulamadan yönet</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">Bu cihazda klasör seçici açılamıyor.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">İndirmeleri silme</string>
   <string name="preferences_downloads_delete_from_device">Cihazdan sil</string>
@@ -975,7 +977,7 @@
   -->
   <string name="customize_toggle_privacy_report">Gizlilik raporu</string>
   <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
-  <string name="customize_toggle_continue">İleri</string>
+  <string name="customize_toggle_continue">Devam et</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Yer imleri</string>
   <!--
@@ -1170,7 +1172,7 @@
 
     Name of the "receive tabs" notification channel. Displayed in the "App notifications" system settings for the app
   -->
-  <string name="fxa_received_tab_channel_name">Alınan sekmeler</string>
+  <string name="fxa_received_tab_channel_name">Gelen sekmeler</string>
   <!-- Description of the "receive tabs" notification channel. Displayed in the "App notifications" system settings for the app -->
   <string name="fxa_received_tab_channel_description" tools:ignore="BrandUsage">Diğer Firefox cihazlarından gelen sekmelerin bildirimleri.</string>
   <!-- The body for these is the URL of the tab received -->
@@ -1409,6 +1411,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Açık sekmeleri otomatik kapat</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Kapat</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Medya oynatılıyor</string>
   <!--
     Opening screen
 
@@ -2619,7 +2623,7 @@
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Koruma altındasınız</string>
   <!-- Text shown below the trackers blocked card with typing animation -->
-  <string name="help_catch_trackers">Takip kodlarını birlikte avlayalım</string>
+  <string name="help_catch_trackers">Takip kodlarını avla</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standart (varsayılan)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->

@@ -22,5 +22,5 @@
   <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
   <string name="mozac_browser_toolbar_progress_loading">लोड हो रहा है</string>
   <!-- Content description: For the autoplay toolbar icon, it is set when the auto play permission is blocking content playing. -->
-  <string name="mozac_browser_toolbar_content_description_autoplay_blocked">कुछ कंटेंट, ऑटोप्ले सेटिंग ने ब्लॉक किया हुआ है</string>
+  <string name="mozac_browser_toolbar_content_description_autoplay_blocked">ऑटोप्ले सेटिंग की वजह से कुछ कंटेंट ब्लॉक हो गया है</string>
 </resources>
