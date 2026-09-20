@@ -312,7 +312,7 @@ pref("browser.startup.couldRestoreSession.count", 0);
 
 // Show a skeleton UI window prior to loading libxul. Only visible for windows
 // users as it is not implemented anywhere else.
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
 pref("browser.startup.preXulSkeletonUI", true);
 #endif
 

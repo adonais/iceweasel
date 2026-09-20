@@ -1806,6 +1806,7 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     return NS_OK;
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   SkeletonUISettings settings;
 
   settings.screenX = aRect.X();
@@ -1815,6 +1816,7 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
 
   settings.maximized = mWindow->SizeMode() == nsSizeMode_Maximized;
   settings.cssToDevPixelScaling = UnscaledDevicePixelsPerCSSPixel().scale;
+#  endif
 
   nsCOMPtr<dom::Element> windowElement = GetWindowDOMElement();
   Document* doc = windowElement->GetComposedDoc();
@@ -1855,7 +1857,9 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
   CSSPixelSpan urlbar;
   urlbar.start = urlbarX;
   urlbar.end = urlbar.start + urlbarWidth;
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.urlbarSpan = urlbar;
+#  endif
 
   Element* navbar = doc->GetElementById(u"nav-bar"_ns);
 
@@ -1875,18 +1879,24 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     searchbar.start = 0;
     searchbar.end = 0;
   }
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.searchbarSpan = searchbar;
+#  endif
 
   nsAutoString bookmarksVisibility;
   Preferences::GetString("browser.toolbars.bookmarks.visibility",
                          bookmarksVisibility);
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.bookmarksToolbarShown =
       bookmarksVisibility.EqualsLiteral("always") ||
       bookmarksVisibility.EqualsLiteral("newtab");
+#  endif
 
   Element* menubar = doc->GetElementById(u"toolbar-menubar"_ns);
   menubar->GetAttribute(u"autohide"_ns, attributeValue);
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.menubarShown = attributeValue.EqualsLiteral("false");
+#  endif
 
   ErrorResult err;
   nsCOMPtr<nsIHTMLCollection> toolbarSprings = navbar->GetElementsByTagNameNS(
@@ -1906,12 +1916,16 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     CSSPixelSpan spring;
     spring.start = springRect->X();
     spring.end = spring.start + springRect->Width();
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     if (!settings.springs.append(spring)) {
       return NS_ERROR_FAILURE;
     }
+#  endif
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   settings.rtlEnabled = intl::LocaleService::GetInstance()->IsAppLocaleRTL();
+#  endif
 
   bool isInTabletMode = false;
   bool autoTouchModePref =
@@ -1924,6 +1938,7 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
     }
   }
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   if (isInTabletMode) {
     settings.uiDensity = SkeletonUIDensity::Touch;
   } else {
@@ -1945,6 +1960,7 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
   }
 
   Unused << PersistPreXULSkeletonUIValues(settings);
+#  endif
 #endif
 
   return NS_OK;

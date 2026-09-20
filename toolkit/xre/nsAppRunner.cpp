@@ -115,7 +115,9 @@
 #  include <math.h>
 #  include "cairo/cairo-features.h"
 #  include "detect_win32k_conflicts.h"
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
+#  endif
 #  if !defined(TT_MEMUTIL)
 #  include "mozilla/DllPrefetchExperimentRegistryInfo.h"
 #  endif
@@ -284,7 +286,7 @@ static const char kPrefSetDefaultBrowserUserChoicePref[] =
     "browser.shell.setDefaultBrowserUserChoice";
 #endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
 static const char kPrefThemeId[] = "extensions.activeThemeID";
 static const char kPrefBrowserStartupBlankWindow[] =
     "browser.startup.blankWindow";
@@ -2260,6 +2262,7 @@ static void SetupAlteredPrefetchPref() {
 }
 #endif
 
+#if defined(MOZ_DEFAULT_BROWSER_AGENT)
 static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   Unused << aPref;
   Unused << aData;
@@ -2300,6 +2303,7 @@ static void SetupSkeletonUIPrefs() {
       &ReflectSkeletonUIPrefToRegistry,
       nsDependentCString(StaticPrefs::GetPrefName_browser_tabs_inTitlebar()));
 }
+#endif
 
 #  if defined(MOZ_LAUNCHER_PROCESS) && !defined(TT_MEMUTIL)
 
@@ -5480,7 +5484,9 @@ nsresult XREMain::XRE_mainRun() {
 #  if !defined(TT_MEMUTIL)
       SetupAlteredPrefetchPref();
 #  endif
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
       SetupSkeletonUIPrefs();
+#    endif
 #  if defined(MOZ_LAUNCHER_PROCESS) && !defined(TT_MEMUTIL)
       SetupLauncherProcessPref();
 #  endif  // defined(MOZ_LAUNCHER_PROCESS)

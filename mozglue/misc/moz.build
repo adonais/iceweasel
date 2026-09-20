@@ -106,8 +106,11 @@ if CONFIG["OS_ARCH"] == "WINNT":
         SOURCES += [
             "/ipc/mscom/COMWrappers.cpp",
             "/ipc/mscom/ProcessRuntime.cpp",
-            "PreXULSkeletonUI.cpp",
         ]
+        if CONFIG["MOZ_DEFAULT_BROWSER_AGENT"]:
+            SOURCES += [
+                "PreXULSkeletonUI.cpp",
+            ]
 
 elif CONFIG["HAVE_CLOCK_MONOTONIC"]:
     SOURCES += [

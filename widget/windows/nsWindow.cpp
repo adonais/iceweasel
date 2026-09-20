@@ -1073,6 +1073,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   if (aInitData->mWindowType == WindowType::TopLevel && !aParent &&
       !sFirstTopLevelWindowCreated) {
     sFirstTopLevelWindowCreated = true;
+#if defined(MOZ_DEFAULT_BROWSER_AGENT)
     mWnd = ConsumePreXULSkeletonUIHandle();
     auto skeletonUIError = GetPreXULSkeletonUIErrorReason();
     if (skeletonUIError) {
@@ -1115,7 +1116,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                          reinterpret_cast<LONG_PTR>(
                              WinUtils::NonClientDpiScalingDefWindowProcW));
     }
-  }
+#endif
+ }
 
   if (!mWnd) {
     mWnd =
@@ -1736,6 +1738,7 @@ nsWindow* nsWindow::GetParentWindowBase(bool aIncludeOwner) {
  **************************************************************/
 
 void nsWindow::Show(bool bState) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   if (bState && mIsShowingPreXULSkeletonUI) {
     // The first time we decide to actually show the window is when we decide
     // that we've taken over the window from the skeleton UI, and we should
@@ -1754,6 +1757,7 @@ void nsWindow::Show(bool bState) {
     }
 #endif  // defined(ACCESSIBILITY)
   }
+#  endif
 
   if (mForMenupopupFrame) {
     MOZ_ASSERT(ChooseWindowClass(mWindowType, mForMenupopupFrame) ==
@@ -2086,7 +2090,11 @@ void nsWindow::Move(double aX, double aY) {
     // SetWindowPlacement. It's a little bit more of a dance, though, since we
     // need to convert the workspace coords that SetWindowPlacement uses to the
     // screen space coordinates we normally use with SetWindowPos.
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+#  else
+    if (0) {
+#  endif
       WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
       VERIFY(::GetWindowPlacement(mWnd, &pl));
 
@@ -2158,7 +2166,11 @@ void nsWindow::Resize(double aWidth, double aHeight, bool aRepaint) {
 
   if (mWnd) {
     // Refer to the comment above a similar check in nsWindow::Move
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+#  else
+    if (0) {
+#  endif
       WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
       VERIFY(::GetWindowPlacement(mWnd, &pl));
       pl.rcNormalPosition.right = pl.rcNormalPosition.left + width;
@@ -2226,7 +2238,11 @@ void nsWindow::Resize(double aX, double aY, double aWidth, double aHeight,
 
   if (mWnd) {
     // Refer to the comment above a similar check in nsWindow::Move
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
     if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
+#  else
+    if (0) {
+#  endif
       WINDOWPLACEMENT pl = {sizeof(WINDOWPLACEMENT)};
       VERIFY(::GetWindowPlacement(mWnd, &pl));
 
@@ -2330,6 +2346,7 @@ static UINT GetCurrentShowCmd(HWND aWnd) {
 
 // Maximize, minimize or restore the window.
 void nsWindow::SetSizeMode(nsSizeMode aMode) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   // If we are still displaying a maximized pre-XUL skeleton UI, ignore the
   // noise of sizemode changes. Once we have "shown" the window for the first
   // time (called nsWindow::Show(true), even though the window is already
@@ -2337,6 +2354,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   if (mIsShowingPreXULSkeletonUI && WasPreXULSkeletonUIMaximized()) {
     return;
   }
+#  endif
 
   mFrameState->EnsureSizeMode(aMode);
 }
@@ -9069,9 +9087,11 @@ bool nsWindow::SynchronouslyRepaintOnResize() {
 }
 
 void nsWindow::MaybeDispatchInitialFocusEvent() {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   if (mIsShowingPreXULSkeletonUI && ::GetActiveWindow() == mWnd) {
     DispatchFocusToTopLevelWindow(true);
   }
+#  endif
 }
 
 already_AddRefed<nsIWidget> nsIWidget::CreateTopLevelWindow() {
@@ -9535,7 +9555,9 @@ void nsWindow::FrameState::CheckInvariant() const {
 }
 
 void nsWindow::FrameState::ConsumePreXULSkeletonState(bool aWasMaximized) {
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   mSizeMode = aWasMaximized ? nsSizeMode_Maximized : nsSizeMode_Normal;
+#  endif
 }
 
 void nsWindow::FrameState::EnsureSizeMode(nsSizeMode aMode,

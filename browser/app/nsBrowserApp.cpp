@@ -28,7 +28,9 @@
 #include "nsCOMPtr.h"
 
 #ifdef XP_WIN
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
+#  endif
 #  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
 #  include "mozilla/GeckoArgs.h"
@@ -428,7 +430,9 @@ int main(int argc, char* argv[], char* envp[]) {
   // loaded.
   mozilla::freestanding::gSharedSection.ConvertToReadOnly();
 
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
   mozilla::CreateAndStorePreXULSkeletonUI(GetModuleHandle(nullptr), argc, argv);
+#  endif
 #endif
 
   nsresult rv = InitXPCOMGlue(LibLoadingStrategy::ReadAhead);
@@ -444,7 +448,7 @@ int main(int argc, char* argv[], char* envp[]) {
 
   int result = do_main(argc, argv, envp);
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
   CleanupProcessRuntime();
 #endif
 

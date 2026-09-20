@@ -164,6 +164,7 @@ enum class PreXULSkeletonUIProgress : uint32_t {
   Completed,
 };
 
+#if defined(MOZ_DEFAULT_BROWSER_AGENT)
 MFBT_API void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
                                              char** argv);
 MFBT_API void CleanupProcessRuntime();
@@ -180,6 +181,7 @@ MFBT_API void PollPreXULSkeletonUIEvents();
 MFBT_API Result<Ok, PreXULSkeletonUIError> SetPreXULSkeletonUIThemeId(
     ThemeMode theme);
 MFBT_API Result<Ok, PreXULSkeletonUIError> NotePreXULSkeletonUIRestarting();
+#endif
 
 }  // namespace mozilla
 
