@@ -425,6 +425,9 @@ LauncherRegistryInfo::EnabledState LauncherRegistryInfo::GetEnabledState(
 
 LauncherResult<LauncherRegistryInfo::EnabledState>
 LauncherRegistryInfo::IsEnabled() {
+#if defined(TT_MEMUTIL)
+  return EnabledState::Enabled;
+#else
   LauncherResult<Disposition> disposition = Open();
   if (disposition.isErr()) {
     return disposition.propagateErr();
@@ -444,6 +447,7 @@ LauncherRegistryInfo::IsEnabled() {
 
   return GetEnabledState(lastLauncherTimestamp.inspect(),
                          lastBrowserTimestamp.inspect());
+#endif
 }
 
 LauncherResult<bool> LauncherRegistryInfo::IsTelemetryEnabled() {
