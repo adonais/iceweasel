@@ -2288,13 +2288,13 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
     return IPC_FAIL(
         this,
         "Attempt to construct PDocAccessible when accessibility not in use");
-  } else if (allow ==
-             a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
+  }
+  if (allow == a11y::DocAccessibleParent::AllowConstruction::AllowButIgnore) {
     doc->MarkAsShutdown();
     return IPC_OK();
   }
 
-  if (GetBrowsingContext()->IsDiscarded()) {
+  if (GetBrowsingContext()->IsDiscarded() || !IsCurrentGlobal()) {
     // This document is about to die, so ignore it. This is particularly
     // important on Android because we must never have more than one active top
     // level DocAccessible at the same time there.
