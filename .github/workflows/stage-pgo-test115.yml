@@ -133,8 +133,10 @@ jobs:
     - name: start building libportable64
       id: libportable_building64
       run: |
-        cd "$MOZ_FETCHES_DIR/libportable"
-        ./build clean
+        cd "$MOZ_FETCHES_DIR"
+        git clone --depth=1 https://github.com/adonais/libportable.git
+        cd libportable
+        chmod +x ./build
         ./build PGO_USE=1 ESR115=1
         ./build PGO_USE=1 ESR115=1 install
         cd "$MOZ_FETCHES_DIR"
