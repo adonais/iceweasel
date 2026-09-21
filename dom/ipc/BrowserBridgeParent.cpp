@@ -74,7 +74,6 @@ nsresult BrowserBridgeParent::InitWithProcess(
   // Construct the BrowserParent object for our subframe.
   auto browserParent = MakeRefPtr<BrowserParent>(
       aContentParent, aTabId, *aParentBrowser, browsingContext, aChromeFlags);
-  browserParent->SetBrowserBridgeParent(this);
 
   // Open a remote endpoint for our PBrowser actor.
   ManagedEndpoint<PBrowserChild> childEp =
@@ -117,8 +116,10 @@ nsresult BrowserBridgeParent::InitWithProcess(
     return NS_ERROR_FAILURE;
   }
 
-  // Set our BrowserParent object to the newly created browser.
+  // Set our BrowserParent object to the newly created browser. Don't set the
+  // back pointer any earlier, as Destroy() only clears it once we own it.
   mBrowserParent = std::move(browserParent);
+  mBrowserParent->SetBrowserBridgeParent(this);
   mBrowserParent->SetOwnerElement(aParentBrowser->GetOwnerElement());
   mBrowserParent->InitRendering();
 
@@ -139,6 +140,9 @@ BrowserParent* BrowserBridgeParent::Manager() {
 
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
+    // We only ever set the back pointer together with mBrowserParent, so
+    // clearing it below cannot clobber another bridge's pointer.
+    MOZ_ASSERT(mBrowserParent->GetBrowserBridgeParent() == this);
 #ifdef ACCESSIBILITY
     if (mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()) {
       mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);

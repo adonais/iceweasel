@@ -76,6 +76,12 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvContentReceivedInputBlock(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetTargetAPZC(
     const uint64_t& aInputBlockId, nsTArray<ScrollableLayerGuid>&& aTargets) {
+  for (const auto& guid : aTargets) {
+    if (!IsGuidValid(guid)) {
+      return IPC_FAIL_NO_REASON(this);
+    }
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId,
       NewRunnableMethod<uint64_t,

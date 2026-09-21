@@ -2736,11 +2736,11 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   RefPtr<BrowserParent> nextRemoteBrowser =
       mOpenWindowInfo ? mOpenWindowInfo->GetNextRemoteBrowser() : nullptr;
   if (nextRemoteBrowser) {
-    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
-    if (nextRemoteBrowser->GetOwnerElement()) {
-      MOZ_ASSERT_UNREACHABLE("Shouldn't have an owner element before");
+    if (nextRemoteBrowser->IsEmbedded()) {
+      MOZ_ASSERT_UNREACHABLE("Shouldn't have an embedder before");
       return false;
     }
+    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
     nextRemoteBrowser->SetOwnerElement(ownerElement);
   } else {
     RefPtr<ContentParent> contentParent;
@@ -2768,11 +2768,13 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   // Grab the reference to the actor
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
 
-  MOZ_ASSERT(browserParent->CanSend(), "BrowserParent cannot send?");
-
   // We no longer need the remoteType attribute on the frame element.
   // The remoteType can be queried by asking the message manager instead.
   ownerElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, false);
+
+  if (NS_WARN_IF(!browserParent->CanSend())) {
+    return false;
+  }
 
   // Now that browserParent is set, we can initialize graphics
   browserParent->InitRendering();

@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_BrowserBridgeParent_h
 #define mozilla_dom_BrowserBridgeParent_h
 
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/PBrowserBridgeParent.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
@@ -29,7 +30,8 @@ class BrowserParent;
  * BrowserBridgeParent implements the parent actor part of the PBrowserBridge
  * protocol. See PBrowserBridge for more information.
  */
-class BrowserBridgeParent : public PBrowserBridgeParent {
+class BrowserBridgeParent : public PBrowserBridgeParent,
+                            public SupportsWeakPtr {
  public:
   NS_INLINE_DECL_REFCOUNTING(BrowserBridgeParent, final);
 
