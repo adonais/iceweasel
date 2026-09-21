@@ -64,9 +64,10 @@ static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 #define kNanosecondsPerSecond 1000000000.0
 
-#if defined(XP_WIN) && defined(MOZ_DEFAULT_BROWSER_AGENT)
+#if defined(XP_WIN)
+#  if defined(MOZ_DEFAULT_BROWSER_AGENT)
 #  include "mozilla/PreXULSkeletonUI.h"
-#endif
+#  endif
 
 #  include "mozilla/perfprobe.h"
 /**
