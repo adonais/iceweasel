@@ -149,6 +149,7 @@ jobs:
       run: |
         df -hT
         cd "$GITHUB_WORKSPACE"
+        chmod +x ./fx_pgo_use115.sh
         ./fx_pgo_use115.sh 64
         echo MY_BITS64=win64>>$GITHUB_ENV
         cd "$GITHUB_WORKSPACE/../obju64-release/dist"
