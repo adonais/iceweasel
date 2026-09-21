@@ -1055,14 +1055,6 @@ TelemetryImpl::GetCanRecordBase(bool* ret) {
 
 NS_IMETHODIMP
 TelemetryImpl::SetCanRecordBase(bool canRecord) {
-#ifndef FUZZING
-  if (canRecord != mCanRecordBase) {
-    TelemetryHistogram::SetCanRecordBase(canRecord);
-    TelemetryScalar::SetCanRecordBase(canRecord);
-    TelemetryEvent::SetCanRecordBase(canRecord);
-    mCanRecordBase = canRecord;
-  }
-#endif
   return NS_OK;
 }
 
@@ -1081,14 +1073,6 @@ TelemetryImpl::GetCanRecordExtended(bool* ret) {
 
 NS_IMETHODIMP
 TelemetryImpl::SetCanRecordExtended(bool canRecord) {
-#ifndef FUZZING
-  if (canRecord != mCanRecordExtended) {
-    TelemetryHistogram::SetCanRecordExtended(canRecord);
-    TelemetryScalar::SetCanRecordExtended(canRecord);
-    TelemetryEvent::SetCanRecordExtended(canRecord);
-    mCanRecordExtended = canRecord;
-  }
-#endif
   return NS_OK;
 }
 
@@ -1124,12 +1108,6 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   }
 
   bool useTelemetry = false;
-#ifndef FUZZING
-  if (XRE_IsParentProcess() || XRE_IsContentProcess() || XRE_IsGPUProcess() ||
-      XRE_IsRDDProcess() || XRE_IsSocketProcess() || XRE_IsUtilityProcess()) {
-    useTelemetry = true;
-  }
-#endif
 #ifdef MOZ_BACKGROUNDTASKS
   if (BackgroundTasks::IsBackgroundTaskMode()) {
     // Background tasks collect per-task metrics with Glean.

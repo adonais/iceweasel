@@ -723,6 +723,7 @@ pub extern "C" fn glean_enable_logging() {
 
 /// Sets whether upload is enabled or not.
 pub fn glean_set_upload_enabled(enabled: bool) {
+    let enabled = false;
     if !was_initialize_called() {
         return;
     }
