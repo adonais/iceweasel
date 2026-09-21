@@ -3677,6 +3677,14 @@ export class Tabbrowser {
       );
     }
 
+    if (!UserInteraction.running("browser.tabs.opening", this.documentGlobal)) {
+      UserInteraction.start(
+        "browser.tabs.opening",
+        "initting",
+        this.documentGlobal
+      );
+    }
+
     // If we're opening a foreground tab, set the owner by default.
     ownerTab ??= inBackground ? null : this.selectedTab;
 
@@ -4513,6 +4521,11 @@ export class Tabbrowser {
     this.tabContainer._unlockTabSizing();
 
     if (!animate) {
+      UserInteraction.update(
+        "browser.tabs.opening",
+        "not-animated",
+        this.documentGlobal
+      );
       t.setAttribute("fadein", "true");
 
       // Call _handleNewTab asynchronously as it needs to know if the
@@ -4523,6 +4536,12 @@ export class Tabbrowser {
         },
         0,
         this.tabContainer
+      );
+    } else {
+      UserInteraction.update(
+        "browser.tabs.opening",
+        "animated",
+        this.documentGlobal
       );
     }
 
@@ -6197,6 +6216,10 @@ export class Tabbrowser {
       metricsContext,
     } = {}
   ) {
+    if (UserInteraction.running("browser.tabs.opening", this.documentGlobal)) {
+      UserInteraction.finish("browser.tabs.opening", this.documentGlobal);
+    }
+
     // Telemetry stopwatches may already be running if removeTab gets
     // called again for an already closing tab.
     if (!aTab._closeTimeAnimTimerId && !aTab._closeTimeNoAnimTimerId) {
