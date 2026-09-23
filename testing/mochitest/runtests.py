@@ -897,6 +897,9 @@ def findTestMediaDevices(log):
             "!",
             "imagefreeze",
             "!",
+            "identity",
+            "drop-allocation=true",
+            "!",
             "v4l2sink",
             "device=%s" % device,
         ]

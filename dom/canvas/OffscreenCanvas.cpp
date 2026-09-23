@@ -207,6 +207,10 @@ void OffscreenCanvas::GetContext(
       aCx, contextType, aContextOptions, aRv);
   if (!result) {
     aResult.SetNull();
+    if (mDisplay) {
+      mDisplay->UpdateContext(this, nullptr, CanvasContextType::NoContext,
+                              Nothing());
+    }
     return;
   }
 

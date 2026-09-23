@@ -173,10 +173,9 @@ nsStorageStream::Write(const char* aBuffer, uint32_t aCount,
   LOG(("nsStorageStream [%p] Write mWriteCursor=%p mSegmentEnd=%p aCount=%d\n",
        this, mWriteCursor, mSegmentEnd, aCount));
 
+  aCount = std::min(aCount, mMaxLogicalLength - mLogicalLength);
   uint32_t remaining = aCount;
   const char* readCursor = aBuffer;
-
-  remaining = std::min(remaining, mMaxLogicalLength - mLogicalLength);
 
   auto onExit = mozilla::MakeScopeExit([&] {
     mMutex.AssertCurrentThreadOwns();

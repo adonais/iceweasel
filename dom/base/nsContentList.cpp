@@ -725,7 +725,8 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent) {
       !nsContentUtils::IsInSameAnonymousTree(mRootNode, container) ||
       !MayContainRelevantNodes(container) ||
       (!aFirstNewContent->HasChildren() &&
-       !aFirstNewContent->GetNextSibling() && !MatchSelf(aFirstNewContent))) {
+       !aFirstNewContent->GetNextSibling() &&
+       !MatchSelf<MatchSelfMode::Insertion>(aFirstNewContent))) {
     MaybeMarkDirty();
     return;
   }
@@ -755,7 +756,7 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent) {
     // The new stuff is somewhere in the middle of our list; check
     // whether we need to invalidate
     for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
-      if (MatchSelf(cur)) {
+      if (MatchSelf<MatchSelfMode::Insertion>(cur)) {
         // Uh-oh.  We're gonna have to add elements into the middle
         // of our list. That's not worth the effort.
         SetDirty();
@@ -808,7 +809,7 @@ void nsContentList::ContentInserted(nsIContent* aChild) {
   if (mState != State::Dirty &&
       MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
-      MatchSelf(aChild)) {
+      MatchSelf<MatchSelfMode::Insertion>(aChild)) {
     SetDirty();
   }
 
@@ -820,7 +821,7 @@ void nsContentList::ContentRemoved(nsIContent* aChild,
   if (mState != State::Dirty &&
       MayContainRelevantNodes(aChild->GetParentNode()) &&
       nsContentUtils::IsInSameAnonymousTree(mRootNode, aChild) &&
-      MatchSelf(aChild)) {
+      MatchSelf<MatchSelfMode::Removal>(aChild)) {
     SetDirty();
   }
 
@@ -859,6 +860,7 @@ bool nsContentList::Match(Element* aElement) {
                    : ni->Equals(mXMLMatchAtom, mMatchNameSpaceId);
 }
 
+template <nsContentList::MatchSelfMode Mode>
 bool nsContentList::MatchSelf(nsIContent* aContent) {
   MOZ_ASSERT(aContent, "Can't match null stuff, you know");
   MOZ_ASSERT(mDeep || aContent->GetParentNode() == mRootNode,
@@ -868,13 +870,26 @@ bool nsContentList::MatchSelf(nsIContent* aContent) {
     return false;
   }
 
-  if (Match(aContent->AsElement())) return true;
+  auto matches = [&](Element* aElement) {
+    if (Match(aElement)) {
+      return true;
+    }
+    if constexpr (Mode == MatchSelfMode::Removal) {
+      return mFunc == nsContentUtils::MatchClassNames &&
+             aElement->IsSVGElement() && aElement->MayHaveClass();
+    }
+    return false;
+  };
+
+  if (matches(aContent->AsElement())) {
+    return true;
+  }
 
   if (!mDeep) return false;
 
   for (nsIContent* cur = aContent->GetFirstChild(); cur;
        cur = cur->GetNextNode(aContent)) {
-    if (cur->IsElement() && Match(cur->AsElement())) {
+    if (cur->IsElement() && matches(cur->AsElement())) {
       return true;
     }
   }
