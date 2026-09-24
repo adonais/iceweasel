@@ -1204,14 +1204,6 @@ bool nsWindow::WorkspaceManagementDisabled() {
   return desktop.EqualsLiteral("bspwm") || desktop.EqualsLiteral("i3");
 }
 
-void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
-  workspaceID.Truncate();
-}
-
-void nsWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
-  LOG("  MoveToWorkspace disabled, quit");
-}
-
 void nsWindow::SetUserTimeAndStartupTokenForActivatedWindow() {
   nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
   if (!toolkit) {

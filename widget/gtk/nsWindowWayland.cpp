@@ -118,11 +118,15 @@ bool nsWindowWayland::CreateRestoreSession(bool aRestoreWindow) {
   return !!mSessionRestoreToken;
 }
 
-void nsWindowWayland::GetWorkspaceID(nsAString& workspaceID) {
+void nsWindowWayland::GetWorkspaceID(nsAString& aWorkspaceID) {
+  if (!nsAppShell::IsSessionRestoreSupported()) {
+    aWorkspaceID.Truncate();
+    return;
+  }
   if (mWorkspaceID.IsEmpty()) {
     mWorkspaceID = GenerateWorkspaceID();
   }
-  workspaceID = NS_ConvertUTF8toUTF16(mWorkspaceID);
+  aWorkspaceID = NS_ConvertUTF8toUTF16(mWorkspaceID);
 
   LOG("nsWindowWayland::GetWorkspaceID() ID %s token %p",
       mWorkspaceID.get(), mSessionRestoreToken);
@@ -158,8 +162,11 @@ void nsWindowWayland::RestoreXdgToplevel() {
   }
 }
 
-void nsWindowWayland::MoveToWorkspace(const nsAString& workspaceIDStr) {
-  mWorkspaceID = NS_ConvertUTF16toUTF8(workspaceIDStr);
+void nsWindowWayland::MoveToWorkspace(const nsAString& aWorkspaceIDStr) {
+  if (!nsAppShell::IsSessionRestoreSupported()) {
+    return;
+  }
+  mWorkspaceID = NS_ConvertUTF16toUTF8(aWorkspaceIDStr);
   LOG("nsWindowWayland::MoveToWorkspace() session ID %s "
       "mWaitingToSessionRestore %d mNeedsShow %d",
       mWorkspaceID.get(), mWaitingToSessionRestore,
