@@ -175,6 +175,11 @@ aboutaddons-themes-picker {
   }
 }
 
+/* Hide addon-card description in themes list view */
+addon-list[type="theme"] addon-card .addon-description {
+  display: none;
+}
+
 #main {
   margin-inline-start: var(--main-margin-start);
   margin-inline-end: var(--main-margin-end);
