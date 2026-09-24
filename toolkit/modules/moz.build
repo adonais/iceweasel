@@ -267,8 +267,8 @@ if "Android" != CONFIG["OS_TARGET"]:
         "GMPInstallManager.sys.mjs",
         "GMPUtils.sys.mjs",
         "LightweightThemeConsumer.sys.mjs",
-        "upcheck.sys.mjs",
         "ScheduledTask.sys.mjs",
+        "upcheck.sys.mjs",
     ]
     TESTING_JS_MODULES += [
         "tests/modules/SystemDelay.sys.mjs",
