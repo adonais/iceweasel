@@ -84,8 +84,16 @@ HTMLImageElement::~HTMLImageElement() {
   }
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLImageElement, nsGenericHTMLElement,
-                                   mResponsiveSelector, mForm)
+NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLImageElement)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLImageElement,
+                                                nsGenericHTMLElement)
+  tmp->ClearForm(true);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mResponsiveSelector)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLImageElement,
+                                                  nsGenericHTMLElement)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mForm, mResponsiveSelector)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(HTMLImageElement,
                                              nsGenericHTMLElement,
@@ -228,8 +236,7 @@ nsChangeHint HTMLImageElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLImageElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLImageElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {
       sCommonAttributeMap, sImageMarginSizeAttributeMap,
       sImageBorderAttributeMap, sImageAlignAttributeMap};

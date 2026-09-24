@@ -413,7 +413,7 @@ index 772898168a..7c0a523e00 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 618354702d..892e457911 100644
+index b2f2bf510b..fa4e117647 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -435,10 +435,10 @@ index 618354702d..892e457911 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index cb2879dd4b..ae877a0539 100644
+index 50e0d5b187..fdafd985a3 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -242,6 +242,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -243,6 +243,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
@@ -1056,7 +1056,7 @@ index c08fbe6937..a94591e25d 100644
  }  // namespace videocapturemodule
  }  // namespace webrtc
 diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index 7707608dbc..0681de3827 100644
+index fcde4cbffc..75031bf2df 100644
 --- a/modules/video_capture/video_capture.h
 +++ b/modules/video_capture/video_capture.h
 @@ -19,15 +19,44 @@
@@ -1179,10 +1179,10 @@ index 925f70349c..d52f31b12d 100644
  
  VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
 diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
-index e76af2e0ad..088747c1c8 100644
+index 39bc56d7b1..4cf8fa366e 100644
 --- a/modules/video_capture/video_capture_impl.cc
 +++ b/modules/video_capture/video_capture_impl.cc
-@@ -89,7 +89,6 @@ VideoCaptureImpl::VideoCaptureImpl(Clock* clock)
+@@ -88,7 +88,6 @@ VideoCaptureImpl::VideoCaptureImpl(Clock* clock)
        _requestedCapability(),
        _lastProcessTimeNanos(clock->TimeInMicroseconds() * 1000),
        _lastFrameRateCallbackTimeNanos(clock->TimeInMicroseconds() * 1000),
@@ -1261,7 +1261,7 @@ index e76af2e0ad..088747c1c8 100644
  
    return 0;
 diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
-index 3b0a981d98..80d961c84c 100644
+index 29e34dc3b5..a0addc53c0 100644
 --- a/modules/video_capture/video_capture_impl.h
 +++ b/modules/video_capture/video_capture_impl.h
 @@ -65,8 +65,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
@@ -1276,7 +1276,7 @@ index 3b0a981d98..80d961c84c 100644
    int32_t SetCaptureRotation(VideoRotation rotation) override;
    bool SetApplyRotation(bool enable) override;
    bool GetApplyRotation() override;
-@@ -116,7 +118,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+@@ -118,7 +120,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
    // last time the frame rate callback function was called.
    int64_t _lastFrameRateCallbackTimeNanos RTC_GUARDED_BY(capture_checker_);
  
@@ -1409,7 +1409,7 @@ index 276a878ffc..391fec9870 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index dea1035afc..22cca54623 100644
+index 0be1b8fc42..30747536fc 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
 @@ -26,6 +26,7 @@

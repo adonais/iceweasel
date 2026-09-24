@@ -4,7 +4,6 @@
 
 package mozilla.components.compose.browser.toolbar.ui
 
-import android.view.SoundEffectConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -72,7 +70,6 @@ internal fun menuItemComposable(
     return when (source) {
         is BrowserToolbarMenuButton -> {
             @Composable {
-                val view = LocalView.current
                 val contentDescription = source.contentDescription()
 
                 Row(
@@ -88,10 +85,7 @@ internal fun menuItemComposable(
                                             bounded = true,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         ),
-                                    onClick = {
-                                        view.playSoundEffect(SoundEffectConstants.CLICK)
-                                        source.onClick?.let { onInteraction(it) }
-                                    },
+                                    onClick = { source.onClick?.let { onInteraction(it) } },
                                 )
                             ) {
                                 source.onClick != null

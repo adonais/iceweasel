@@ -29,8 +29,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -40,9 +42,12 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import java.text.Collator
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.Location
 import mozilla.components.feature.ipprotection.store.state.Recommended
@@ -51,8 +56,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuTextItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 /**
  * The IP Protection location selection screen.
@@ -60,6 +63,7 @@ import org.mozilla.fenix.theme.Theme
  * @param selectedLocation The currently selected location.
  * @param locations A list of available locations for user to choose from.
  * @param snackbarHostState The [SnackbarHostState] used to display snackbars.
+ * @param isActivating Whether we are waiting on the VPN to connect. While `true` nothing in the list can be tapped,
  * @param onNavigateBack Called when the back navigation icon is tapped.
  * @param onLocationSelected Called with the user taps on a location.
  */
@@ -68,6 +72,7 @@ fun IPProtectionLocationsScreen(
     selectedLocation: Location,
     locations: List<Location>,
     snackbarHostState: SnackbarHostState,
+    isActivating: Boolean = false,
     onNavigateBack: () -> Unit,
     onLocationSelected: (Location) -> Unit,
 ) {
@@ -89,6 +94,7 @@ fun IPProtectionLocationsScreen(
             LocationList(
                 selectedLocation = selectedLocation,
                 locations = locations,
+                isActivating = isActivating,
                 onLocationSelected = onLocationSelected,
             )
         }
@@ -99,6 +105,7 @@ fun IPProtectionLocationsScreen(
 private fun LocationList(
     selectedLocation: Location,
     locations: List<Location>,
+    isActivating: Boolean,
     onLocationSelected: (Location) -> Unit,
 ) {
     val recommended = locations.filterIsInstance<Recommended>().firstOrNull()
@@ -119,23 +126,32 @@ private fun LocationList(
                     label = stringResource(R.string.ip_protection_location_recommended_label),
                     description = stringResource(R.string.ip_protection_location_fastest_description),
                     isSelected = selectedLocation == recommended,
-                    onClick = { onLocationSelected(recommended) },
+                    onClick = { onLocationSelected(recommended) }.takeIf { !isActivating },
                 )
             }
         }
 
         if (countries.isNotEmpty()) {
             MenuGroup {
-                countries.forEach { country ->
+                val locale = LocalLocale.current.platformLocale
+                val sortedCountries =
+                    remember(countries, locale) {
+                        // Kotlin compares strings by code point, so that the German letter Ö will be positioned lower
+                        // than Z, as having a higher code point. To meet the international readers' expectations,
+                        // we compare here with the help of Locale comparator.
+                        countries.sortedWith(compareBy(Collator.getInstance(locale)) { it.displayName(locale) })
+                    }
+
+                sortedCountries.forEach { country ->
                     LocationOption(
-                        label = country.displayName,
+                        label = country.displayName(locale),
                         isSelected = country == selectedLocation,
                         description =
                             stringResource(R.string.ip_protection_location_unavailable_description).takeIf {
                                 !country.available
                             },
                         enabled = country.available,
-                        onClick = { onLocationSelected(country) },
+                        onClick = { onLocationSelected(country) }.takeIf { !isActivating },
                     )
                 }
             }
@@ -194,7 +210,7 @@ private fun LocationOption(
     isSelected: Boolean,
     description: String? = null,
     enabled: Boolean = true,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
 ) {
     MenuTextItem(
         label = label,
@@ -204,6 +220,7 @@ private fun LocationOption(
                 role = Role.RadioButton
             },
         description = description,
+        maxDescriptionLines = 3,
         enabled = enabled,
         iconPainter =
             if (isSelected) {
@@ -264,6 +281,21 @@ private fun IPProtectionLocationsCountrySelectedPreview(@PreviewParameter(Previe
             selectedLocation = SAMPLE_LOCATIONS[1],
             locations = SAMPLE_LOCATIONS,
             snackbarHostState = SnackbarHostState(),
+            onNavigateBack = {},
+            onLocationSelected = {},
+        )
+    }
+}
+
+@FlexibleWindowPreview
+@Composable
+private fun IPProtectionLocationsActivatingPreview(@PreviewParameter(PreviewThemeProvider::class) theme: Theme) {
+    FirefoxTheme(theme = theme) {
+        IPProtectionLocationsScreen(
+            selectedLocation = SAMPLE_LOCATIONS[1],
+            locations = SAMPLE_LOCATIONS,
+            snackbarHostState = SnackbarHostState(),
+            isActivating = true,
             onNavigateBack = {},
             onLocationSelected = {},
         )

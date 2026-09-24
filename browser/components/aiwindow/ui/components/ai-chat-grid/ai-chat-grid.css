@@ -21,7 +21,7 @@
 
 .ai-chat-grid {
   --border-color: var(--smartwindow-ai-chat-grid-border-color);
-  --space-xsmall: var(--dimension-4);
+  --space-xsmall: 4px;
   --icon-size-medium: var(--border-radius-large);
   --icon-size-large: calc(var(--border-radius-large) * 1.5);
 

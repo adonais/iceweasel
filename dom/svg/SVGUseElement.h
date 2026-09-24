@@ -67,7 +67,7 @@ class SVGUseElement final : public SVGUseElementBase,
 
   // nsIContent interface
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   static NonCustomCSSPropertyId GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum);
 

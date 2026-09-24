@@ -559,7 +559,7 @@ static bool IsNonReplaceableElement(const CanonicalElement& aElement) {
 }
 
 // https://wicg.github.io/sanitizer-api/#sanitizerconfig-valid
-void Sanitizer::IsValid(ErrorResult& aRv) {
+void Sanitizer::IsValid(ErrorResult& aRv) const {
   // Step 1. The config has either an elements or a removeElements key, but
   // not both.
   MOZ_ASSERT(mElements || mRemoveElements,
@@ -803,7 +803,7 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   }
 }
 
-void Sanitizer::AssertIsValid() {
+void Sanitizer::AssertIsValid() const {
 #ifdef DEBUG
   IgnoredErrorResult rv;
   IsValid(rv);
@@ -1736,17 +1736,19 @@ static bool IsUnsafeElement(nsAtom* aLocalName, int32_t aNamespaceID) {
   return false;
 }
 
-// https://wicg.github.io/sanitizer-api/#sanitize-core
-// Step 2.4.9.5. If handleJavascriptNavigationUrls:
-static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
-                                                   nsAtom* aLocalName,
-                                                   int32_t aNamespaceID) {
+// aGetValue writes the attribute value and only runs once the element and
+// attribute names have matched, because reading the value is not free.
+static bool ShouldRemoveJavascriptNavigationURLAttribute(
+    nsAtom* aElementLocalName, int32_t aElementNamespaceID, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) {
+  auto isElement = [&](int32_t aNs, nsAtom* aName) {
+    return aElementNamespaceID == aNs && aElementLocalName == aName;
+  };
+
   // https://wicg.github.io/sanitizer-api/#contains-a-javascript-url
   auto containsJavascriptURL = [&]() {
     nsAutoString value;
-    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
-      return false;
-    }
+    aGetValue(value);
 
     // Step 1. Let url be the result of running the basic URL parser on
     // attribute’s value.
@@ -1763,16 +1765,19 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   // Step 1. If «[elementName, attrName]» matches an entry in the built-in
   // navigating URL attributes list, and if attribute contains a javascript:
   // URL, then remove attribute from child.
-  if ((aElement->IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area) &&
+  if (((isElement(kNameSpaceID_XHTML, nsGkAtoms::a) ||
+        isElement(kNameSpaceID_XHTML, nsGkAtoms::area)) &&
        aLocalName == nsGkAtoms::href && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsAnyOfHTMLElements(nsGkAtoms::button, nsGkAtoms::input) &&
+      ((isElement(kNameSpaceID_XHTML, nsGkAtoms::button) ||
+        isElement(kNameSpaceID_XHTML, nsGkAtoms::input)) &&
        aLocalName == nsGkAtoms::formaction &&
        aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsHTMLElement(nsGkAtoms::form) &&
+      (isElement(kNameSpaceID_XHTML, nsGkAtoms::form) &&
        aLocalName == nsGkAtoms::action && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsHTMLElement(nsGkAtoms::iframe) &&
+      (isElement(kNameSpaceID_XHTML, nsGkAtoms::iframe) &&
        aLocalName == nsGkAtoms::src && aNamespaceID == kNameSpaceID_None) ||
-      (aElement->IsSVGElement(nsGkAtoms::a) && aLocalName == nsGkAtoms::href &&
+      (isElement(kNameSpaceID_SVG, nsGkAtoms::a) &&
+       aLocalName == nsGkAtoms::href &&
        (aNamespaceID == kNameSpaceID_None ||
         aNamespaceID == kNameSpaceID_XLink))) {
     if (containsJavascriptURL()) {
@@ -1783,7 +1788,8 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   // Step 2. If child’s namespace is the MathML Namespace and attr’s local
   // name is "href" and attr’s namespace is null or the XLink namespace and
   // attr contains a javascript: URL, then remove attr.
-  if (aElement->IsMathMLElement() && aLocalName == nsGkAtoms::href &&
+  if (aElementNamespaceID == kNameSpaceID_MathML &&
+      aLocalName == nsGkAtoms::href &&
       (aNamespaceID == kNameSpaceID_None ||
        aNamespaceID == kNameSpaceID_XLink)) {
     if (containsJavascriptURL()) {
@@ -1796,17 +1802,219 @@ static bool RemoveJavascriptNavigationURLAttribute(Element* aElement,
   // then remove attr.
   if (aLocalName == nsGkAtoms::attributeName &&
       aNamespaceID == kNameSpaceID_None &&
-      aElement->IsAnyOfSVGElements(
-          nsGkAtoms::animate, nsGkAtoms::animateTransform, nsGkAtoms::set)) {
+      (isElement(kNameSpaceID_SVG, nsGkAtoms::animate) ||
+       isElement(kNameSpaceID_SVG, nsGkAtoms::animateTransform) ||
+       isElement(kNameSpaceID_SVG, nsGkAtoms::set))) {
     nsAutoString value;
-    if (!aElement->GetAttr(aNamespaceID, aLocalName, value)) {
-      return false;
-    }
-
+    aGetValue(value);
     return value.EqualsLiteral("href") || StringEndsWith(value, u":href"_ns);
   }
 
   return false;
+}
+
+// TODO(keithamus): (Clean up comments when merged)
+// https://whatpr.org/html/12756/dynamic-markup-insertion.html#sanitize
+//
+// Steps 1.-4. of "To sanitize an Element element given a SanitizerConfig
+// configuration and a boolean removeJavascriptNavigationUrls": what the
+// configuration does with the element itself, plus the element's entry in the
+// configuration's element list, which its attributes are matched against.
+template <bool IsDefaultConfig>
+SanitizerElementMatch Sanitizer::MatchElementInternal(nsAtom* aLocalName,
+                                                      int32_t aNamespaceID,
+                                                      bool aSafe) const {
+  // 1. Let elementName be a SanitizerElementNamespace with element's local name
+  //    and namespace.
+  SanitizerElementMatch match;
+  match.mSafe = aSafe;
+  match.mLocalName = aLocalName;
+  match.mNamespaceID = aNamespaceID;
+
+  if constexpr (!IsDefaultConfig) {
+    sanitizer::CanonicalElement elementName(aLocalName,
+                                            ToNamespace(aNamespaceID));
+
+    // The spec removes the unsafe elements from the configuration up front
+    // ("remove unsafe"), we check them per element instead. This has to
+    // happen _before_ the "replaceWithChildrenElements" list, because
+    // "remove an element" would implicitly remove it from that list.
+    if (aSafe && IsUnsafeElement(aLocalName, aNamespaceID)) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+
+    // 2. If configuration["replaceWithChildrenElements"] exists and contains
+    //    elementName, then return "Replace with children".
+    if (mReplaceWithChildrenElements &&
+        mReplaceWithChildrenElements->Contains(elementName)) {
+      match.mAction = SanitizerElementAction::ReplaceWithChildren;
+      return match;
+    }
+
+    // 3. If configuration["elements"] exists:
+    if (mElements) {
+      // 3.1. If configuration["elements"] does not contain elementName, return
+      //      "Remove".
+      match.mAttributes = mElements->Lookup(elementName).DataPtrOrNull();
+      if (!match.mAttributes) {
+        match.mAction = SanitizerElementAction::Remove;
+        return match;
+      }
+    }
+
+    // 4. Otherwise, if configuration["removeElements"] contains elementName,
+    //    return "Remove".
+    if (mRemoveElements && mRemoveElements->Contains(elementName)) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+
+  } else {
+    // (Step 3, for the default configuration, which has no
+    // "replaceWithChildrenElements" or "removeElements").
+    bool found = false;
+    if (aLocalName->IsStatic()) {
+      ElementsWithAttributes* elements = nullptr;
+      if (aNamespaceID == kNameSpaceID_XHTML) {
+        elements = sDefaultHTMLElements;
+      } else if (aNamespaceID == kNameSpaceID_MathML) {
+        elements = sDefaultMathMLElements;
+      } else if (aNamespaceID == kNameSpaceID_SVG) {
+        elements = sDefaultSVGElements;
+      }
+      if (elements) {
+        if (auto lookup = elements->Lookup(aLocalName->AsStatic())) {
+          found = true;
+          match.mDefaultAttributes = lookup->get();
+        }
+      }
+    }
+    if (!found) {
+      match.mAction = SanitizerElementAction::Remove;
+      return match;
+    }
+    MOZ_ASSERT(!IsUnsafeElement(aLocalName, aNamespaceID),
+               "The default config has no unsafe elements");
+  }
+
+  MOZ_ASSERT(match.mAction == SanitizerElementAction::Keep);
+  return match;
+}
+
+template <bool IsDefaultConfig>
+bool Sanitizer::MatchAllowsAttribute(const SanitizerElementMatch& aMatch,
+                                     nsAtom* aAttrLocalName,
+                                     int32_t aAttrNs) const {
+  if constexpr (IsDefaultConfig) {
+    return AttributeListsAllow(aMatch.mDefaultAttributes, aAttrLocalName,
+                               aAttrNs, aMatch.mSafe);
+  } else {
+    return AttributeListsAllow(aMatch.mAttributes, aAttrLocalName, aAttrNs,
+                               aMatch.mSafe);
+  }
+}
+
+// Step 5. of "To sanitize an Element", for a single attribute of an element
+// that MatchElementInternal() returned "Keep" for.
+template <bool IsDefaultConfig>
+bool Sanitizer::ShouldRemoveAttributeInternal(
+    const SanitizerElementMatch& aMatch, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) const {
+  // 5.1. Let attrName be a SanitizerAttributeNamespace with attribute's local
+  //      name and namespace.
+  // 5.2.-5.6. handled by MatchAllowsAttribute.
+  if (!MatchAllowsAttribute<IsDefaultConfig>(aMatch, aLocalName,
+                                             aNamespaceID)) {
+    return true;
+  }
+
+  // 5.7.-5.10. handled by ShouldRemoveJavascriptNavigationURLAttribute.
+  return aMatch.mSafe && ShouldRemoveJavascriptNavigationURLAttribute(
+                             aMatch.mLocalName, aMatch.mNamespaceID, aLocalName,
+                             aNamespaceID, aGetValue);
+}
+
+// "To sanitize an Element element given a SanitizerConfig configuration and a
+// boolean removeJavascriptNavigationUrls". This neither recurses nor touches
+// the tree, it only removes disallowed attributes and returns what the caller
+// has to do with the element itself. SanitizeChildren() drives it over an
+// existing tree.
+template <bool IsDefaultConfig>
+SanitizerElementAction Sanitizer::SanitizeElementInternal(Element* aElement,
+                                                          bool aSafe) const {
+  SanitizerElementMatch match = MatchElementInternal<IsDefaultConfig>(
+      aElement->NodeInfo()->NameAtom(), aElement->NodeInfo()->NamespaceID(),
+      aSafe);
+  if (match.mAction != SanitizerElementAction::Keep) {
+    return match.mAction;
+  }
+
+  // The "is" value was already consumed by the element creation process, so
+  // drop it when the configuration does not allow the "is" attribute.
+  if (CustomElementData* data = aElement->GetCustomElementData();
+      data && data->GetIs(aElement)) [[unlikely]] {
+    if (!MatchAllowsAttribute<IsDefaultConfig>(match, nsGkAtoms::is,
+                                               kNameSpaceID_None)) {
+      aElement->ClearCustomElementData();
+    }
+  }
+
+  // 5. For each attribute of element's attribute list:
+  for (uint32_t i = aElement->GetAttrCount(); i > 0; --i) {
+    const nsAttrName* attr = aElement->GetAttrNameAt(i - 1);
+    RefPtr<nsAtom> attrLocalName = attr->LocalName();
+    int32_t attrNs = attr->NamespaceID();
+
+    if (ShouldRemoveAttributeInternal<IsDefaultConfig>(
+            match, attrLocalName, attrNs, [&](nsAString& aValue) {
+              aElement->GetAttr(attrNs, attrLocalName, aValue);
+            })) {
+      DebugOnly<uint32_t> countBefore = aElement->GetAttrCount();
+      aElement->UnsetAttr(attrNs, attrLocalName, /* aNotify */ false);
+      MOZ_ASSERT(aElement->GetAttrCount() == countBefore - 1,
+                 "UnsetAttr() must only remove the attribute it was given");
+    }
+  }
+
+  // 6. Return "Keep".
+  return SanitizerElementAction::Keep;
+}
+
+// The action is discarded, like in the spec: an element the configuration
+// removes keeps the attributes it was given, because "to sanitize an Element"
+// returns before its attribute steps.
+void Sanitizer::SanitizeElement(Element* aElement, bool aSafe) const {
+  if (mIsDefaultConfig) {
+    AssertNoLists();
+    SanitizeElementInternal<true>(aElement, aSafe);
+    return;
+  }
+  AssertIsValid();
+  SanitizeElementInternal<false>(aElement, aSafe);
+}
+
+SanitizerElementMatch Sanitizer::MatchElement(nsAtom* aLocalName,
+                                              int32_t aNamespaceID,
+                                              bool aSafe) const {
+  if (mIsDefaultConfig) {
+    AssertNoLists();
+    return MatchElementInternal<true>(aLocalName, aNamespaceID, aSafe);
+  }
+  AssertIsValid();
+  return MatchElementInternal<false>(aLocalName, aNamespaceID, aSafe);
+}
+
+bool Sanitizer::ShouldRemoveAttribute(
+    const SanitizerElementMatch& aMatch, nsAtom* aLocalName,
+    int32_t aNamespaceID, FunctionRef<void(nsAString&)> aGetValue) const {
+  MOZ_ASSERT(aMatch.mAction == SanitizerElementAction::Keep);
+  if (mIsDefaultConfig) {
+    return ShouldRemoveAttributeInternal<true>(aMatch, aLocalName, aNamespaceID,
+                                               aGetValue);
+  }
+  return ShouldRemoveAttributeInternal<false>(aMatch, aLocalName, aNamespaceID,
+                                              aGetValue);
 }
 
 // https://wicg.github.io/sanitizer-api/#sanitize-core
@@ -1847,37 +2055,13 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
     // Step 1.5. Otherwise:
     MOZ_ASSERT(child->IsElement());
 
-    // Step 1.5.1. Let elementName be a SanitizerElementNamespace with child’s
-    // local name and namespace.
-    nsAtom* nameAtom = child->NodeInfo()->NameAtom();
-    int32_t namespaceID = child->NodeInfo()->NamespaceID();
-    // Make sure this is optimized away when using the default config.
-    Maybe<CanonicalElement> elementName;
-    std::conditional_t<IsDefaultConfig, StaticAtomSet*,
-                       CanonicalElementAttributes*>
-        elementAttributes = nullptr;
-    if constexpr (!IsDefaultConfig) {
-      elementName.emplace(nameAtom, ToNamespace(namespaceID));
-
-      // Optimization: Remove unsafe elements before doing anything else.
-      // https://wicg.github.io/sanitizer-api/#built-in-safe-baseline-configuration
-      //
-      // We have to do this _before_ handling the
-      // "replaceWithChildrenElements" list, because the "remove an element"
-      // call in removeUnsafe() would implicitly remove it from the list.
-      //
-      // The default config's "elements" allow list does not contain any
-      // unsafe elements so we can skip this.
-      if (aSafe && IsUnsafeElement(nameAtom, namespaceID)) {
+    // Steps 1.5.1.-1.5.4. and the attribute handling.
+    switch (
+        SanitizeElementInternal<IsDefaultConfig>(child->AsElement(), aSafe)) {
+      case SanitizerElementAction::Remove:
         child->Remove();
         continue;
-      }
-
-      // Step 1.5.2. If configuration["replaceWithChildrenElements"] exists
-      // and if configuration["replaceWithChildrenElements"] contains
-      // elementName:
-      if (mReplaceWithChildrenElements &&
-          mReplaceWithChildrenElements->Contains(*elementName)) {
+      case SanitizerElementAction::ReplaceWithChildren: {
         // Note: This follows nsTreeSanitizer by first inserting the
         // child's children in place of the current child and then
         // continueing the sanitization from the first inserted grandchild.
@@ -1900,64 +2084,8 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
         }
         continue;
       }
-
-      // Step 1.5.3. If configuration["removeElements"] exists and
-      // configuration["removeElements"] contains elementName:
-      if (mRemoveElements) {
-        if (mRemoveElements->Contains(*elementName)) {
-          // Step 1.5.3.1. Remove child.
-          child->Remove();
-          // Step 1.5.3.2.Continue.
-          continue;
-        }
-      }
-
-      // Step 1.5.4. If configuration["elements"] exists and
-      // configuration["elements"] does not contain elementName:
-      if (mElements) {
-        elementAttributes = mElements->Lookup(*elementName).DataPtrOrNull();
-        if (!elementAttributes) {
-          // Step 1.5.4.1. Remove child.
-          child->Remove();
-          // Step 1.5.4.2. Continue.
-          continue;
-        }
-      }
-    } else {
-      // (The default config has no replaceWithChildrenElements or
-      // removeElements)
-
-      // Step 1.5.4. If configuration["elements"] exists and
-      // configuration["elements"] does not contain elementName:
-
-      bool found = false;
-      if (nameAtom->IsStatic()) {
-        ElementsWithAttributes* elements = nullptr;
-        if (namespaceID == kNameSpaceID_XHTML) {
-          elements = sDefaultHTMLElements;
-        } else if (namespaceID == kNameSpaceID_MathML) {
-          elements = sDefaultMathMLElements;
-        } else if (namespaceID == kNameSpaceID_SVG) {
-          elements = sDefaultSVGElements;
-        }
-        if (elements) {
-          if (auto lookup = elements->Lookup(nameAtom->AsStatic())) {
-            found = true;
-            // This is the nullptr for elements without specific allowed
-            // attributes.
-            elementAttributes = lookup->get();
-          }
-        }
-      }
-      if (!found) {
-        // Step 1.5.4.1. Remove child.
-        child->Remove();
-        // Step 1.5.4.2. Continue.
-        continue;
-      }
-
-      MOZ_ASSERT(!IsUnsafeElement(nameAtom, namespaceID),
-                 "The default config has no unsafe elements");
+      case SanitizerElementAction::Keep:
+        break;
     }
 
     // Step 1.5.5. If elementName equals «[ "name" → "template", "namespace" →
@@ -1975,56 +2103,6 @@ void Sanitizer::SanitizeChildren(nsINode* aNode, bool aSafe) const {
       SanitizeChildren<IsDefaultConfig>(shadow, aSafe);
     }
 
-    // Step 1.6.7. If child’s is value is not null:
-    if (CustomElementData* data = child->AsElement()->GetCustomElementData();
-        data && data->GetIs(child->AsElement())) [[unlikely]] {
-      // Step 1.6.7.1. Let isAttrName be «[ "name" → "is", "namespace" → null
-      // ]».
-      // Step 1.6.7.2. If is attribute allowed for isAttrName given
-      // configuration, and elementName is blocked:
-      if (IsDefaultConfig ||
-          !IsAttributeAllowed(elementAttributes, nsGkAtoms::is,
-                              kNameSpaceID_None, aSafe)) {
-        // Step 1.6.7.2.1. Step Set child’s custom element state to "undefined".
-        // Step 1.6.7.2.2. Set child’s custom element definition to null.
-        // Step 1.6.7.2.3. Set child’s is value to null.
-        child->AsElement()->ClearCustomElementData();
-      }
-    }
-
-    // Step 1.6.7. For each attribute in child’s attribute list:
-    int32_t attrCount = int32_t(child->AsElement()->GetAttrCount());
-    for (int32_t i = attrCount - 1; i >= 0; --i) {
-      // Step 1.6.7.1.  Let attrName be a SanitizerAttributeNamespace with
-      // attribute’s local name and namespace.
-      const nsAttrName* attr = child->AsElement()->GetAttrNameAt(i);
-      RefPtr<nsAtom> attrLocalName = attr->LocalName();
-      int32_t attrNs = attr->NamespaceID();
-
-      // Step 1.6.7.2. If is attribute allowed for attrName given configuration,
-      // and elementName is blocked, then remove attribute.
-      bool remove =
-          !IsAttributeAllowed(elementAttributes, attrLocalName, attrNs, aSafe);
-
-      // Step 1.6.7.3. If handleJavascriptNavigationUrls:
-      if (aSafe && !remove) {
-        remove = RemoveJavascriptNavigationURLAttribute(child->AsElement(),
-                                                        attrLocalName, attrNs);
-      }
-
-      if (remove) {
-        child->AsElement()->UnsetAttr(attrNs, attrLocalName,
-                                      /* aNotify */ false);
-
-        // XXX Copied from nsTreeSanitizer.
-        // In case the attribute removal shuffled the attribute order, start the
-        // loop again.
-        --attrCount;
-        i = attrCount;  // i will be decremented immediately thanks to the for
-                        // loop
-      }
-    }
-
     // Step 1.5.10. Call sanitize core on child with configuration and
     // handleJavascriptNavigationUrls.
     // TODO: Optimization: Remove recusion similar to nsTreeSanitizer
@@ -2037,10 +2115,10 @@ static inline bool IsDataAttribute(nsAtom* aName, int32_t aNamespaceID) {
          aNamespaceID == kNameSpaceID_None;
 }
 
-// IsAttributeAllowed specialized for the default config.
-bool Sanitizer::IsAttributeAllowed(StaticAtomSet* aElementAttributes,
-                                   nsAtom* aAttrLocalName, int32_t aAttrNs,
-                                   bool) const {
+// AttributeListsAllow specialized for the default config.
+bool Sanitizer::AttributeListsAllow(StaticAtomSet* aElementAttributes,
+                                    nsAtom* aAttrLocalName, int32_t aAttrNs,
+                                    bool) const {
   MOZ_ASSERT(mIsDefaultConfig);
 
   // Step 1. Let elementWithLocalAttributes be an empty ordered map.
@@ -2093,7 +2171,7 @@ bool Sanitizer::IsAttributeAllowed(StaticAtomSet* aElementAttributes,
   return true;
 }
 
-bool Sanitizer::IsAttributeAllowed(
+bool Sanitizer::AttributeListsAllow(
     CanonicalElementAttributes* aElementAttributes, nsAtom* aAttrLocalName,
     int32_t aAttrNs, bool aSafe) const {
   MOZ_ASSERT(!mIsDefaultConfig);

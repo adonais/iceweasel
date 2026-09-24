@@ -30,8 +30,6 @@ class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
   void ChildAdopted(RefPtr<APZCTreeManager> aAPZCTreeManager,
                     RefPtr<APZUpdater> aAPZUpdater);
 
-  mozilla::ipc::IPCResult RecvSetKeyboardMap(const KeyboardMap& aKeyboardMap);
-
   mozilla::ipc::IPCResult RecvZoomToRect(const ScrollableLayerGuid& aGuid,
                                          const ZoomTarget& aZoomTarget,
                                          const uint32_t& aFlags);
@@ -46,23 +44,11 @@ class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints);
 
-  mozilla::ipc::IPCResult RecvSetDPI(const float& aDpiValue);
-
   mozilla::ipc::IPCResult RecvSetAllowedTouchBehavior(
       const uint64_t& aInputBlockId, nsTArray<TouchBehaviorFlags>&& aValues);
 
-  mozilla::ipc::IPCResult RecvSetBrowserGestureResponse(
-      const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse);
-
   mozilla::ipc::IPCResult RecvStartScrollbarDrag(
       const ScrollableLayerGuid& aGuid, const AsyncDragMetrics& aDragMetrics);
-
-  mozilla::ipc::IPCResult RecvStartAutoscroll(
-      const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation);
-
-  mozilla::ipc::IPCResult RecvStopAutoscroll(const ScrollableLayerGuid& aGuid);
-
-  mozilla::ipc::IPCResult RecvSetLongTapEnabled(const bool& aTapGestureEnabled);
 
   mozilla::ipc::IPCResult RecvNotifyApzAwareListenerAdded(
       const ScrollableLayerGuid& aGuid);
@@ -73,8 +59,6 @@ class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
   virtual ~APZCTreeManagerParent();
 
   bool IsGuidValid(const ScrollableLayerGuid& aGuid);
-
-  bool IsForRootLayer() const;
 
   LayersId mLayersId;
   RefPtr<APZCTreeManager> mTreeManager;

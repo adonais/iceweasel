@@ -53,10 +53,9 @@ async function smartbarResults(results) {
     providers: [provider.name],
     maxResults: UrlbarPrefs.get("smartbar.maxResults"),
   });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   return context.results;
 }

@@ -126,6 +126,8 @@ fx-suggest:
     Distinguishable by its `ping_type`.
     Does not contain a `client_id`, preferring a `context_id` instead.
   include_client_id: false
+  metadata:
+    include_info_sections: false
   uploader_capabilities:
     - ohttp
   bugs:
@@ -144,6 +146,8 @@ fx-suggest-api:
     Distinguishable by its `ping_type`.
     Does not contain a `client_id`.
   include_client_id: false
+  metadata:
+    include_info_sections: false
   uploader_capabilities:
     - ohttp
   bugs:

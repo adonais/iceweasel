@@ -40,6 +40,12 @@ class WebBrowserPersistDocumentParent final
   // is still in the START state (or is unconstructed).
   void SetOnReady(nsIWebBrowserPersistDocumentReceiver* aOnReady);
 
+  // True while the actor is in the START state and no callback has
+  // been attached to it yet.  Used to validate the sub-document actors
+  // that the child sends over PWebBrowserPersistResources, which are
+  // required to be freshly constructed.
+  bool IsUnclaimedStartState() const { return !mOnReady && !mReflection; }
+
   using Attrs = WebBrowserPersistDocumentAttrs;
 
   // IPDL methods:

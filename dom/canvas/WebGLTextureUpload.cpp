@@ -88,45 +88,6 @@ Maybe<TexUnpackBlobDesc> FromImageBitmap(const GLenum target, Maybe<uvec3> size,
                                 false});
 }
 
-static layers::SurfaceDescriptor Flatten(const layers::SurfaceDescriptor& sd) {
-  const auto sdType = sd.type();
-  if (sdType != layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo) {
-    return sd;
-  }
-  const auto& sdv = sd.get_SurfaceDescriptorGPUVideo();
-  const auto& sdvType = sdv.type();
-  if (sdvType !=
-      layers::SurfaceDescriptorGPUVideo::TSurfaceDescriptorRemoteDecoder) {
-    return sd;
-  }
-
-  const auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
-  const auto& subdesc = sdrd.subdesc();
-  const auto& subdescType = subdesc.type();
-  switch (subdescType) {
-    case layers::RemoteDecoderVideoSubDescriptor::T__None:
-    case layers::RemoteDecoderVideoSubDescriptor::Tnull_t:
-      return sd;
-
-    case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10:
-      return subdesc.get_SurfaceDescriptorD3D10();
-    case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorDXGIYCbCr:
-      return subdesc.get_SurfaceDescriptorDXGIYCbCr();
-    case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorDMABuf:
-      return subdesc.get_SurfaceDescriptorDMABuf();
-    case layers::RemoteDecoderVideoSubDescriptor::
-        TSurfaceDescriptorMacIOSurface:
-      return subdesc.get_SurfaceDescriptorMacIOSurface();
-    case layers::RemoteDecoderVideoSubDescriptor::
-        TSurfaceDescriptorDcompSurface:
-      return subdesc.get_SurfaceDescriptorDcompSurface();
-    case layers::RemoteDecoderVideoSubDescriptor::
-        TAndroidImageReaderImageDescriptor:
-      return subdesc.get_AndroidImageReaderImageDescriptor();
-  }
-  MOZ_CRASH("unreachable");
-}
-
 Maybe<webgl::TexUnpackBlobDesc> FromOffscreenCanvas(
     const ClientWebGLContext& webgl, const GLenum target, Maybe<uvec3> size,
     const dom::OffscreenCanvas& canvas, ErrorResult* const out_error) {
@@ -190,9 +151,6 @@ Maybe<webgl::TexUnpackBlobDesc> FromSurfaceFromElementResult(
     elemSize = *uvec2::FromSize(layersImage->GetSize());
 
     sd = layersImage->GetDesc();
-    if (sd) {
-      sd = Some(Flatten(*sd));
-    }
     if (!sd) {
       NS_WARNING("No SurfaceDescriptor for layers::Image!");
     }

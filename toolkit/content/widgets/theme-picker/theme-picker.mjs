@@ -137,6 +137,15 @@ export class ThemePicker extends MozLitElement {
     return new (getThemePickerController())(host);
   }
 
+  shown() {
+    this.dispatchEvent(
+      new CustomEvent("themepickershown", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   /**
    * @param {ThemechangeProperty} property
    * @param {string|boolean} value
@@ -198,6 +207,7 @@ export class ThemePicker extends MozLitElement {
       device: "chrome://global/skin/icons/local-host.svg",
     };
     return html`<moz-segmented-control
+      data-l10n-id="theme-picker-mode"
       .value=${this.appearance}
       @change=${this.appearanceChange}
     >

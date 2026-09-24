@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.library.history
 
-import android.text.format.DateUtils
 import java.util.Calendar
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -12,222 +11,33 @@ import org.junit.Test
 class HistoryItemTimeGroupTest {
 
     @Test
-    fun `WHEN grouping history item with future date THEN item is grouped to today`() {
-        val time = System.currentTimeMillis() + DateUtils.WEEK_IN_MILLIS
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Today, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with today's date THEN item is grouped to today`() {
-        val time = System.currentTimeMillis() + DateUtils.MINUTE_IN_MILLIS
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Today, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with today's midnight date THEN item is grouped to today`() {
+    fun `WHEN grouping history item THEN item is grouped by the start of the day`() {
         val calendar =
             Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
+                set(Calendar.HOUR_OF_DAY, 12)
+                set(Calendar.MINUTE, 30)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
+        val time = calendar.timeInMillis
 
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = calendar.timeInMillis,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(calendar.timeInMillis),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Today, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with yesterday's night date THEN item is grouped to yesterday`() {
-        val calendar =
-            Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-            }
-
-        val time = calendar.timeInMillis - DateUtils.HOUR_IN_MILLIS
-
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Yesterday, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 23 hours before midnight date THEN item is grouped to yesterday`() {
-        val calendar = Calendar.getInstance()
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
+        val expectedStartOfDay = calendar.timeInMillis
 
-        val time = calendar.timeInMillis - (DateUtils.HOUR_IN_MILLIS * 23)
+        val historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time)
 
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Yesterday, history.historyTimeGroup)
+        assertEquals(expectedStartOfDay, historyTimeGroup.timestamp)
     }
 
     @Test
-    fun `WHEN grouping history item with 25 hours before midnight date THEN item is grouped to this week`() {
+    fun `WHEN converting to ISO date string THEN return YYYY-MM-DD`() {
         val calendar =
             Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
+                set(2026, Calendar.AUGUST, 26)
             }
+        val group = HistoryItemTimeGroup(calendar.timeInMillis)
 
-        val time = calendar.timeInMillis - (DateUtils.HOUR_IN_MILLIS * 25)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.ThisWeek, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 3 days ago date THEN item is grouped to this week`() {
-        val time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 3)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.ThisWeek, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 6 days ago date THEN item is grouped to this week`() {
-        val time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 6)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.ThisWeek, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 8 days ago date THEN item is grouped to this month`() {
-        val time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 8)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.ThisMonth, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 29 days ago date THEN item is grouped to this month`() {
-        val time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 29)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.ThisMonth, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with 31 days ago date THEN item is grouped to older`() {
-        val time = System.currentTimeMillis() - (DateUtils.DAY_IN_MILLIS * 31)
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = time,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(time),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Older, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with zero date THEN item is grouped to older`() {
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = 0,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(0),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Older, history.historyTimeGroup)
-    }
-
-    @Test
-    fun `WHEN grouping history item with negative date THEN item is grouped to older`() {
-        val history =
-            History.Regular(
-                position = 1,
-                title = "test item",
-                url = "url",
-                visitedAt = -100,
-                historyTimeGroup = HistoryItemTimeGroup.timeGroupForTimestamp(-100),
-            )
-
-        assertEquals(HistoryItemTimeGroup.Older, history.historyTimeGroup)
+        assertEquals("2026-08-26", group.toIsoDateString())
     }
 }

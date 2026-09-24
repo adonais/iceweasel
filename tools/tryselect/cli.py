@@ -117,6 +117,15 @@ NO_PUSH_ARGUMENT_GROUP = [
             "selection info and not change files).",
         },
     ],
+    [
+        ["--write-task-config"],
+        {
+            "dest": "write_task_config",
+            "action": "store_true",
+            "help": "Write the calculated try_task_config.json to the root of the "
+            "source tree instead of pushing to try.",
+        },
+    ],
 ]
 
 

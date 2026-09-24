@@ -435,7 +435,7 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
       capabilities.negotiated_maximum_outgoing_streams =
           state.capabilities.negotiated_maximum_outgoing_streams;
 
-      send_queue_.RestoreFromState(state);
+      send_queue_.RestoreFromState(callbacks_.Now(), state);
 
       CreateTransmissionControlBlock(
           capabilities, my_verification_tag, TSN(state.my_initial_tsn),
@@ -968,7 +968,7 @@ bool DcSctpSocket::HandleUnrecognizedChunk(
     webrtc::StringBuilder sb;
     sb << "Received unknown chunk of type: "
        << static_cast<int>(descriptor.type) << " with report-error bit set";
-    callbacks_.OnError(ErrorKind::kParseFailed, sb.str());
+    callbacks_.OnError(ErrorKind::kParseFailed, sb.Release());
     RTC_DLOG(LS_VERBOSE)
         << log_prefix()
         << "Unknown chunk, with type indicating it should be reported.";
@@ -1109,7 +1109,7 @@ bool DcSctpSocket::ValidateHasTCB() {
 void DcSctpSocket::ReportFailedToParseChunk(int chunk_type) {
   webrtc::StringBuilder sb;
   sb << "Failed to parse chunk of type: " << chunk_type;
-  callbacks_.OnError(ErrorKind::kParseFailed, sb.str());
+  callbacks_.OnError(ErrorKind::kParseFailed, sb.Release());
 }
 
 void DcSctpSocket::HandleData(const CommonHeader& /* header */,
@@ -1908,7 +1908,7 @@ DcSctpSocket::GetHandoverStateAndClose() {
   } else if (state_ == State::kEstablished) {
     state.socket_state = DcSctpSocketHandoverState::SocketState::kConnected;
     tcb_->AddHandoverState(state);
-    send_queue_.AddHandoverState(state);
+    send_queue_.AddHandoverState(callbacks_.Now(), state);
     InternalClose(ErrorKind::kNoError, "handover");
   }
 

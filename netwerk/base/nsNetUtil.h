@@ -137,6 +137,12 @@ nsresult NS_GetURIWithoutRef(nsIURI* aInput, nsIURI** aOutput);
 nsresult NS_GetSanitizedURIStringFromURI(nsIURI* aUri,
                                          nsACString& aSanitizedSpec);
 
+// Assigns to aSanitizedSpec the spec safe to expose for aSpec: aSpec itself
+// when it carries no password, a password-hidden form when it does, and an
+// empty string if a password is present but cannot be hidden.
+void NS_GetSanitizedSpecFromSpec(const nsACString& aSpec,
+                                 nsACString& aSanitizedSpec);
+
 /*
  * How to create a new Channel, using NS_NewChannel,
  * NS_NewChannelWithTriggeringPrincipal,

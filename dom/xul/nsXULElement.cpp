@@ -884,8 +884,7 @@ nsresult nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 //----------------------------------------------------------------------
 // Implementation methods
 
-NS_IMETHODIMP_(bool)
-nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool nsXULElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   return false;
 }
 

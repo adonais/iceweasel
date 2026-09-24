@@ -10,20 +10,6 @@ fi
 
 set -v
 
-# Download the gradle-python-envs plugin
-# See https://github.com/gradle/plugin-portal-requests/issues/164
-pushd ${WORKSPACE}
-mkdir -p android-gradle-dependencies
-pushd android-gradle-dependencies
-
-PYTHON_ENVS_VERSION="0.0.31"
-
-PYTHON_ENVS_BASE_URL=https://plugins.gradle.org/m2/gradle/plugin/com/jetbrains/python/gradle-python-envs
-
-wget --no-parent --recursive --execute robots=off "${PYTHON_ENVS_BASE_URL}/${PYTHON_ENVS_VERSION}/"
-popd
-popd
-
 # Export NEXUS_WORK so that `after.sh` can use it.
 export NEXUS_WORK=${WORKSPACE}/sonatype-nexus-work
 mkdir -p ${NEXUS_WORK}/conf

@@ -80,7 +80,7 @@ fn eval_device_orientation(context: &Context, value: Option<Orientation>) -> boo
 }
 
 fn document_picture_in_picture_enabled(context: &ParserContext) -> bool {
-    static_prefs::pref!("dom.documentpip.enabled") || context.chrome_rules_enabled()
+    crate::pref!("dom.documentpip.enabled") || context.chrome_rules_enabled()
 }
 
 /// Values for the display-mode media feature.
@@ -586,7 +586,7 @@ fn eval_gtk_theme_family(_: &Context, query_value: Option<GtkThemeFamily>) -> bo
     let family = unsafe { bindings::Gecko_MediaFeatures_GtkThemeFamily() };
     match query_value {
         Some(v) => v == family,
-        None => return family != GtkThemeFamily::Unknown,
+        None => family != GtkThemeFamily::Unknown,
     }
 }
 
@@ -627,7 +627,7 @@ fn eval_moz_native_theme(context: &Context) -> bool {
     if context.device().document().mForceNonNativeTheme() {
         return false;
     }
-    static_prefs::pref!("browser.theme.native-theme")
+    crate::pref!("browser.theme.native-theme")
 }
 
 fn get_lnf_int(int_id: i32) -> i32 {
@@ -651,9 +651,7 @@ macro_rules! lnf_int_feature {
             FeatureFlags::CHROME_AND_UA_ONLY,
         )
     }};
-    ($feature_name:expr, $int_id:ident) => {{
-        lnf_int_feature!($feature_name, $int_id, get_lnf_int_as_bool)
-    }};
+    ($feature_name:expr, $int_id:ident) => {{ lnf_int_feature!($feature_name, $int_id, get_lnf_int_as_bool) }};
 }
 
 /// Adding new media features requires (1) adding the new feature to this

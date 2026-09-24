@@ -333,7 +333,7 @@ void WritableStream::MarkFirstWriteRequestInFlight() {
   MOZ_ASSERT(!mInFlightWriteRequest);
 
   // Step 2. Assert: stream.[[writeRequests]] is not empty.
-  MOZ_ASSERT(!mWriteRequests.IsEmpty());
+  MOZ_RELEASE_ASSERT(!mWriteRequests.IsEmpty());
 
   // Step 3. Let writeRequest be stream.[[writeRequests]][0].
   // Step 4. Remove writeRequest from stream.[[writeRequests]].

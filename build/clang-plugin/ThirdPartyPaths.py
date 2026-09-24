@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 
+import glob
 import json
+import os.path
+
+topsrcdir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
+# Those entry correspond to entries that only live in the dist/include
+# directory. It makes no sense to list them in ThirdPartyPaths.txt as they don't
+# exist in such paths in the topsrcdir.
+
+FORCE_LIST = ("fmt", "function2", "rlbox/rlbox_sandbox.hpp", "unicode", "mozpkix")
 
 
 def generate(output, *input_paths):
@@ -9,7 +19,7 @@ def generate(output, *input_paths):
     file in /tools/rewriting, which is used by the Clang Plugin to help identify
     sources which should be ignored.
     """
-    tpp_list = []
+    tpp_list = list(FORCE_LIST)
     lines = set()
 
     for path in input_paths:
@@ -18,9 +28,20 @@ def generate(output, *input_paths):
 
     for raw_line in lines:
         line = raw_line.strip()
+        pattern = os.path.join(topsrcdir, line)
         if line.endswith("/"):
             line = line[:-1]
-        tpp_list.append(line)
+            pattern += "**"
+
+        # Remove any line that does not ultimately expands to a location that
+        # matters for clang-tidy
+        if matches := glob.glob(pattern, recursive=True):
+            if any(
+                f.lower().endswith((".h", ".hpp", ".c", ".cxx", ".cpp", ".m"))
+                for f in matches
+            ):
+                tpp_list.append(line)
+
     tpp_strings = ",\n  ".join([json.dumps(tpp) for tpp in sorted(tpp_list)])
 
     output.write(

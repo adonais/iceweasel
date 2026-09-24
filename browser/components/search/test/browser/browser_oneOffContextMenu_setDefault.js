@@ -23,8 +23,8 @@ registerCleanupFunction(resetEngines);
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
     ],
   });
   await gCUITestUtils.addSearchBar();

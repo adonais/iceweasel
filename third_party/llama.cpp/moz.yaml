@@ -37,6 +37,7 @@ vendoring:
     - requirements.txt
     - run_parser.py
     - moz-overrides.h
+    - generate_metal_embed.py
 
   exclude:
     - "**"
@@ -63,6 +64,10 @@ vendoring:
     - ggml/src/ggml-cpu/arch/arm/
     - ggml/src/ggml-cpu/arch/x86/
     - ggml/src/ggml-cpu/CMakeLists.txt
+    - ggml/src/ggml-metal/*.cpp
+    - ggml/src/ggml-metal/*.h
+    - ggml/src/ggml-metal/*.m
+    - ggml/src/ggml-metal/ggml-metal.metal
     - ggml/src/cmake/*
     - ggml/cmake/*
     - ggml/CMakeLists.txt
@@ -70,6 +75,7 @@ vendoring:
     - ggml/include/ggml-alloc.h
     - ggml/include/ggml-backend.h
     - ggml/include/ggml-cpu.h
+    - ggml/include/ggml-metal.h
     - ggml/include/ggml-cpp.h
     - ggml/include/ggml-opt.h
     - ggml/include/gguf.h
@@ -93,4 +99,7 @@ vendoring:
      - profiler-hooks.patch # add thread callbacks for Firefox Profiler integration
      - missing-includes.patch # missing include cerrno in gguf.cpp, include mutex in llama-model-loader.cpp
      - skip-metadata-dump.patch # skip dumping metadata strings that proved costly in profiling
+     - metal-event-availability.patch # guard a macOS 12 selector, we deploy to 10.15/11.0
      - include-order.patch # include system headers before models.h, which pulls in moz-overrides.h
+     - metal-mul-mv-short-fallback.patch # macOS 15 lacks the _short mat-vec kernels, fall back to the general one
+     - metal-disable.patch # let caller decide to not attempt to use acceleration

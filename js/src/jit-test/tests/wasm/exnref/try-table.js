@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 // A try_table acts like a block label, with results
 {
   let maxResults1 = Array.from(Array(1000).keys());

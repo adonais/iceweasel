@@ -344,6 +344,10 @@ void UntrustedModulesFixture::ValidateUntrustedModules(
   }
   EXPECT_EQ(aData.mSanitizationFailures, 0U);
   EXPECT_EQ(aData.mTrustTestFailures, 0U);
+  // This fixture only exercises the parent process, which resolves its own
+  // module paths directly and so never goes through handle validation.
+  EXPECT_EQ(aData.mUnverifiableLoads, 0U);
+  EXPECT_EQ(aData.mRejectedSections, 0U);
 }
 
 BOOL CALLBACK UntrustedModulesFixture::InitialModuleLoadOnce(PINIT_ONCE, void*,
@@ -384,6 +388,7 @@ BOOL CALLBACK UntrustedModulesFixture::InitialModuleLoadOnce(PINIT_ONCE, void*,
   u"\"" TYPE u"\\." PID u"\":{" \
     u"\"processType\":\"" TYPE u"\",\"elapsed\":\\d+\\.\\d+," \
     u"\"sanitizationFailures\":0,\"trustTestFailures\":0," \
+    u"\"unverifiableLoads\":0,\"rejectedSections\":0," \
     u"\"events\":\\[{" \
       u"\"processUptimeMS\":\\d+,\"loadDurationMS\":\\d+\\.\\d+," \
       u"\"threadID\":\\d+,\"threadName\":\"Main Thread\"," \

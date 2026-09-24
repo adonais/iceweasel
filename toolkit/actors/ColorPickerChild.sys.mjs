@@ -19,8 +19,13 @@ export class ColorPickerChild extends InputPickerChildCommon {
   closeImpl(inputElement) {
     inputElement.setOpenState(false);
     if (this.initialValue !== inputElement.value) {
+      // https://html.spec.whatwg.org/multipage/input.html#common-input-element-events
+      // any time the user commits the change, the user agent must queue an element
+      // task on the user interaction task source given the input element to set its
+      // user validity to true and fire an event named change at the input element,
+      // with the bubbles attribute initialized to true.
       inputElement.dispatchEvent(
-        new inputElement.documentGlobal.Event("change")
+        new inputElement.documentGlobal.Event("change", { bubbles: true })
       );
     }
   }

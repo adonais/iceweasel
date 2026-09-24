@@ -1,0 +1,19 @@
+[DEFAULT]
+head = "../../../../../../toolkit/profile/test/xpcshell/head.js ../../../../../../browser/components/profiles/tests/unit/head.js ../head.js ./head.js"
+tags = "nimbus"
+firefox-appdir = "browser"
+skip-if = [
+  "appname == 'thunderbird'",
+  "os == 'android'",
+]
+prefs = [
+  "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings
+  "messaging-system.log=all", # Enable all Nimbus logging.
+]
+
+["test_RSEL_updateRecipes_RemoteSettingsClient_get.js"]
+["test_RSEL_updateRecipes_before_update.js"]
+["test_RSEL_updateRecipes_load_unenrolled_slugs.js"]
+["test_RSEL_updateRecipes_timer.js"]
+["test_RSEL_updateRecipes_timer_lock_held.js"]
+["test_RSEL_withUpdateLock.js"]

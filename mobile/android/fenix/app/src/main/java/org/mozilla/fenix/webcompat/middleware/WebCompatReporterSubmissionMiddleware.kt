@@ -129,7 +129,9 @@ class WebCompatReporterSubmissionMiddleware(
             return webCompatPreview
         }
 
-        return webCompatPreview.withoutNestedKey("antitracking", "blockedOrigins")
+        return webCompatPreview
+            .withoutNestedKey("antitracking", "blockedOrigins")
+            .withoutNestedKey("antitracking", "btpPurgeHistory")
     }
 
     private fun JsonObject.withoutNestedKey(

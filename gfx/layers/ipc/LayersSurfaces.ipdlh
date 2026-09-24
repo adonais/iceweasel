@@ -38,6 +38,7 @@ using mozilla::ipc::ActorId from "mozilla/ipc/ProtocolUtils.h";
 [MoveOnly] using mozilla::ipc::ReadOnlySharedMemoryHandle from "mozilla/ipc/SharedMemoryHandle.h";
 using mozilla::layers::GpuProcessAndroidImageReaderId from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::AndroidMediaCodecFrameId from "mozilla/layers/LayersTypes.h";
+using mozilla::layers::RemoteDecoderVideoType from "mozilla/layers/LayersTypes.h";
 
 namespace mozilla {
 namespace layers {
@@ -149,19 +150,9 @@ namespace layers {
   SurfaceFormat format;
 };
 
-[Comparable] union RemoteDecoderVideoSubDescriptor {
-  SurfaceDescriptorD3D10;
-  SurfaceDescriptorDXGIYCbCr;
-  SurfaceDescriptorDMABuf;
-  SurfaceDescriptorMacIOSurface;
-  SurfaceDescriptorDcompSurface;
-  AndroidImageReaderImageDescriptor;
-  null_t;
-};
-
 [Comparable] struct SurfaceDescriptorRemoteDecoder {
   uint64_t handle;
-  RemoteDecoderVideoSubDescriptor subdesc;
+  RemoteDecoderVideoType videoType;
   MaybeVideoBridgeSource source;
   SurfaceDescriptorRemoteDecoderId id;
 };

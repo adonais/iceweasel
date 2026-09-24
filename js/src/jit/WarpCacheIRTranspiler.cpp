@@ -371,9 +371,12 @@ bool WarpCacheIRTranspiler::transpile(
   // number of exceptions:
   // - MIonToWasmCall: Resumes after MInt64ToBigInt
   // - MLoadUnboxedScalar: Resumes after MInt64ToBigInt
-  // - MAtomicTypedArrayElementBinop: Resumes after MInt64ToBigInt
-  // - MAtomicExchangeTypedArrayElement: Resumes after MInt64ToBigInt
-  // - MCompareExchangeTypedArrayElement: Resumes after MInt64ToBigInt
+  // - MAtomicTypedArrayElementBinop: Resumes after
+  //   MInt64ToBigInt or MUnsignedToDouble
+  // - MAtomicExchangeTypedArrayElement: Resumes after
+  //   MInt64ToBigInt or MUnsignedToDouble
+  // - MCompareExchangeTypedArrayElement: Resumes after
+  //   MInt64ToBigInt or MUnsignedToDouble
   // - MResizableTypedArrayLength: Resumes after MPostIntPtrConversion
   // - MResizableDataViewByteLength: Resumes after MPostIntPtrConversion
   // - MGrowableSharedArrayBufferByteLength: Resumes after MPostIntPtrConversion
@@ -5241,7 +5244,7 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5254,7 +5257,10 @@ bool WarpCacheIRTranspiler::emitAtomicsCompareExchangeResult(
   if (Scalar::isBigIntType(elementType)) {
     result =
         MInt64ToBigInt::New(alloc(), cas, Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), cas);
+  }
+  if (result != cas) {
     // Make non-movable so we can attach a resume point.
     result->setNotMovable();
 
@@ -5279,7 +5285,7 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5292,7 +5298,10 @@ bool WarpCacheIRTranspiler::emitAtomicsExchangeResult(
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), exchange,
                                  Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), exchange);
+  }
+  if (result != exchange) {
     // Make non-movable so we can attach a resume point.
     result->setNotMovable();
 
@@ -5318,7 +5327,7 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   auto* elements = MArrayBufferViewElements::New(alloc(), obj);
   add(elements);
 
-  bool forceDoubleForUint32 = true;
+  bool forceDoubleForUint32 = false;
   MIRType knownType =
       MIRTypeForArrayBufferViewRead(elementType, forceDoubleForUint32);
 
@@ -5338,7 +5347,10 @@ bool WarpCacheIRTranspiler::emitAtomicsBinaryOp(
   if (Scalar::isBigIntType(elementType)) {
     result = MInt64ToBigInt::New(alloc(), binop,
                                  Scalar::isSignedIntType(elementType));
-
+  } else if (elementType == Scalar::Uint32) {
+    result = MUnsignedToDouble::New(alloc(), binop);
+  }
+  if (result != binop) {
     // Make non-movable so we can attach a resume point.
     result->setNotMovable();
 

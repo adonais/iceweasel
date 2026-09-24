@@ -101,7 +101,6 @@ class RollingNumber {
   // Normal (in)equality operators.
 
   bool operator==(const RollingNumber& aOther) const = default;
-  bool operator!=(const RollingNumber& aOther) const = default;
 
   // Modified comparison operators.
 

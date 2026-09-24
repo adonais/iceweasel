@@ -42,6 +42,7 @@ support-files = [
   "xhr_worker.js",
   "xhr2_worker.js",
   "xhrAbort_worker.js",
+  "xhrAbortDuringTerminate_worker.js",
   "test_XHR.js",
   "test_worker_xhr_parameters.js",
   "test_worker_xhr_system.js",
@@ -190,6 +191,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'win'",
 ]
+
+["test_worker_xhrAbortDuringTerminate.html"]
 
 ["test_worker_xhr_3rdparty.html"]
 support-files = ["window_worker_xhr_3rdparty.html"]

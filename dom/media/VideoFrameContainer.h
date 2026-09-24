@@ -121,6 +121,11 @@ class VideoFrameContainer {
     // size on the element, request a frame reflow and then reset this to
     // Nothing.
     Maybe<gfx::IntSize> mNewIntrinsicSize;
+    // The main thread mirror of mRotation below, in case it has changed.
+    // Set to some rotation when the rotation has changed since the last
+    // call to Invalidate(). The next call to Invalidate() will consume this
+    // to update the rotation on the element and then reset this to Nothing.
+    Maybe<VideoRotation> mNewRotation;
   } mMainThreadState;
 
   Mutex mMutex;
@@ -130,6 +135,9 @@ class VideoFrameContainer {
   // specifies that the Image should be stretched to have the correct aspect
   // ratio.
   Maybe<gfx::IntSize> mIntrinsicSize MOZ_GUARDED_BY(mMutex);
+  // The rotation of the last image passed to SetCurrentFramesLocked(), used
+  // to detect a change since the previous call.
+  Maybe<VideoRotation> mRotation MOZ_GUARDED_BY(mMutex);
   // We maintain our own mFrameID which is auto-incremented at every
   // SetCurrentFrame() or NewFrameID() call.
   ImageContainer::FrameID mFrameID;

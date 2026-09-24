@@ -5,7 +5,7 @@
 # This modules provides functionality for dealing with code completion.
 
 import os
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import mozpack.path as mozpath
 from mozshellutil import quote as shell_quote
@@ -26,7 +26,7 @@ class CompileDBBackend(CommonBackend):
         CommonBackend._init(self)
 
         # The database we're going to dump out to.
-        self._db = OrderedDict()
+        self._db = {}
 
         # The cache for per-directory flags
         self._flags = {}

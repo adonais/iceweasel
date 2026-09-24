@@ -677,10 +677,12 @@ uint64_t BackgroundParent::GetChildID(PBackgroundParent* aBackgroundActor) {
 }
 
 // static
-nsCString BackgroundParent::GetRemoteType(PBackgroundParent* aBackgroundActor) {
+mozilla::dom::RemoteType BackgroundParent::GetRemoteType(
+    PBackgroundParent* aBackgroundActor) {
   ThreadsafeContentParentHandle* handle =
       GetContentParentHandle(aBackgroundActor);
-  return handle ? handle->GetRemoteType() : NOT_REMOTE_TYPE;
+  return handle ? handle->GetRemoteType()
+                : mozilla::dom::RemoteType::NotRemote();
 }
 
 // static

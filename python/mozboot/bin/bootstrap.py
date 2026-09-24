@@ -13,7 +13,7 @@
 
 import sys
 
-MINIMUM_MINOR_VERSION = 9
+MINIMUM_MINOR_VERSION = 10
 
 major, minor = sys.version_info[:2]
 if (major < 3) or (major == 3 and minor < MINIMUM_MINOR_VERSION):

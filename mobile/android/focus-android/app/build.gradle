@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.parcelize)
-    alias(libs.plugins.python.envs.plugin)
 }
 
 if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {

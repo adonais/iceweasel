@@ -728,7 +728,7 @@ END_TEST(testBufferAllocator_reallocInPlace)
 
 namespace js::gc {
 void* TestAllocAligned(Zone* zone, size_t bytes) {
-  return zone->bufferAllocator.allocMediumAligned(bytes, false);
+  return zone->bufferAllocator.allocMediumAligned(bytes, false, false);
 }
 }  // namespace js::gc
 

@@ -91,6 +91,21 @@ def test_roll_catch_exception(lint, linters, files, capfd):
     assert "LintException" in err
 
 
+def test_roll_payload_shadowed_on_sys_path(lint, linters, files, tmp_path, monkeypatch):
+    shadow = tmp_path / "external.py"
+    shadow.write_text(
+        "def external(*args, **kwargs):\n"
+        "    raise AssertionError('shadow module was imported')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    lint.read(linters("external"))
+
+    result = lint.roll(files)
+    assert result.failed == set()
+    assert len(result.issues) == 1
+
+
 def test_roll_with_global_excluded_path(lint, linters, files):
     lint.exclude = ["**/foobar.js"]
     lint.read(linters("string", "regex", "external"))

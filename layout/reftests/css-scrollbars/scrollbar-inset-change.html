@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<!-- Loaded from chrome:// so the chrome-only -moz-scrollbar-inset-block parses.
+     Applies the inset dynamically after a forced reflow; the reference declares
+     the final value up front. If changing -moz-scrollbar-inset-block doesn't reflow
+     the scrollbar, the thumb keeps its old travel range and this won't match. -->
+<style>
+#outer {
+  overflow-y: scroll;
+  width: 200px;
+  height: 300px;
+  background: white;
+}
+#outer.inset {
+  -moz-scrollbar-inset-block: 40px 0;
+}
+#inner {
+  height: 900px;
+}
+</style>
+<div id="outer">
+  <div id="inner"></div>
+</div>
+<script>
+  // Force a reflow so the un-inset scrollbar geometry is really computed.
+  document.body.offsetHeight;
+  document.getElementById("outer").classList.add("inset");
+</script>

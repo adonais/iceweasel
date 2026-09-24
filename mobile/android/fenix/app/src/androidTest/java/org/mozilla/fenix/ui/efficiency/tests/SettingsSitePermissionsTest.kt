@@ -14,6 +14,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.mutedVideoPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.videoPageAsset
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
+import org.mozilla.fenix.ui.efficiency.helpers.RequiresDeniedRuntimePermission
 import org.mozilla.fenix.ui.efficiency.pageObjects.SystemSettingsPage
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSiteSettingsAutoplaySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSiteSettingsExceptionsSelectors
@@ -27,9 +28,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.SitePermissionsSelectors
  * own.
  */
 class SettingsSitePermissionsTest : BaseTest() {
-
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
 
     // SystemSettingsPage is not in PageContext (it is not a Fenix page); the landed UploadPermissionsTest
     // constructs it the same way.
@@ -47,7 +45,7 @@ class SettingsSitePermissionsTest : BaseTest() {
 
         on.settingsSiteSettingsAutoplay.navigateToPage()
         on.settingsSiteSettingsAutoplay
-            .mozVerifyElementsByGroup("autoplayOptions")
+            .mozVerifyElementsByGroup(SettingsSiteSettingsAutoplaySelectors.Group.AUTOPLAY_OPTIONS)
             .mozVerifyElementIsNotChecked(SettingsSiteSettingsAutoplaySelectors.ALLOW_AUDIO_AND_VIDEO_RADIO)
             .mozVerifyElementIsNotChecked(SettingsSiteSettingsAutoplaySelectors.BLOCK_AUDIO_AND_VIDEO_ON_CELLULAR_RADIO)
             .mozVerifyElementIsChecked(SettingsSiteSettingsAutoplaySelectors.BLOCK_AUDIO_ONLY_RADIO)
@@ -110,6 +108,12 @@ class SettingsSitePermissionsTest : BaseTest() {
     // The legacy test carries no TestRail link, so none is recorded here.
     @SmokeTest
     @SdkSuppress(minSdkVersion = 29)
+    @RequiresDeniedRuntimePermission(
+        Manifest.permission.CAMERA,
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.RECORD_AUDIO,
+    )
     @Test
     fun systemBlockedPermissionsRedirectToSystemAppSettingsTest() {
         on.settingsSiteSettingsPermissions.navigateToPage().verifyBlockedByAndroidSection().goBackToSiteSettings()

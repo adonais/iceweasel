@@ -43,6 +43,26 @@ struct CoalescingKey {
   nsCString mString;
 };
 
+// Where a connection info stands on HTTP/3. The three states are mutually
+// exclusive, so they live in one field rather than a flag each. Anything other
+// than Allowed also isolates the connection info into its own connection entry
+// via the hash key.
+enum class Http3Policy : uint8_t {
+  // HTTP/3 may be used, subject to the usual prefs and discovery.
+  Allowed = 0,
+  // HTTP/3 must not be used. Used for transactions that can't speak it (e.g.
+  // WebSocket upgrades) so they are never blocked by, or coalesced onto, an
+  // HTTP/3 connection opened for regular requests to the same host.
+  Disabled,
+  // Only HTTP/3 may be used; Happy Eyeballs must not race h1/h2. Used by eager
+  // Alt-Svc h3 validation so the connection it warms is guaranteed to be h3
+  // (bug 2051272). The separate entry matters: sharing the origin's entry let
+  // the speculative, TCP-less attempt be claimed by a normal transaction and
+  // let it hold the entry's single-H3 slot, wedging every other transaction to
+  // that origin (bug 2063452).
+  Only,
+};
+
 class nsHttpConnectionInfo final : public ARefBase {
  public:
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
@@ -259,12 +279,12 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetIPv6Disabled(bool aNoIPv6);
   bool GetIPv6Disabled() const { return mIPv6Disabled; }
 
-  // When set, this connection info uses a separate connection entry that never
-  // holds an HTTP/3 connection. Used for transactions that can't use HTTP/3
-  // (e.g. WebSocket upgrades) so they aren't blocked by, or coalesced onto, an
-  // HTTP/3 connection established for regular requests to the same host.
-  void SetHttp3Disabled(bool aHttp3Disabled);
-  bool GetHttp3Disabled() const { return mHttp3Disabled; }
+  void SetHttp3Policy(Http3Policy aPolicy);
+  Http3Policy GetHttp3Policy() const { return mHttp3Policy; }
+  bool GetHttp3Disabled() const {
+    return mHttp3Policy == Http3Policy::Disabled;
+  }
+  bool GetHttp3Only() const { return mHttp3Policy == Http3Policy::Only; }
 
   void SetWebTransport(bool aWebTransport);
   bool GetWebTransport() const { return mWebTransport; }
@@ -317,13 +337,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   void SetHasIPHintAddress(bool aHasIPHint) { mHasIPHintAddress = aHasIPHint; }
   bool HasIPHintAddress() const { return mHasIPHintAddress; }
 
-  // When set, Happy Eyeballs may only establish an HTTP/3 connection for this
-  // conn info -- h1/h2 are not raced. Used by eager Alt-Svc h3 validation so
-  // the connection it warms is guaranteed to be h3 (bug 2051272). Not part of
-  // the hash key, so the resulting connection still shares the origin's entry.
-  void SetHttp3Only(bool aHttp3Only) { mHttp3Only = aHttp3Only; }
-  bool GetHttp3Only() const { return mHttp3Only; }
-
   void SetEchConfig(const nsACString& aEchConfig) { mEchConfig = aEchConfig; }
   const nsCString& GetEchConfig() const { return mEchConfig; }
 
@@ -364,7 +377,8 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint16_t mIsTrrServiceChannel : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
-  uint16_t mHttp3Disabled : 1;
+
+  Http3Policy mHttp3Policy = Http3Policy::Allowed;
 
   bool mLessThanTls13;  // This will be set to true if we negotiate less than
                         // tls1.3. If the tls version is till not know or it
@@ -374,7 +388,6 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mWebTransport = false;
 
   bool mHasIPHintAddress = false;
-  bool mHttp3Only = false;
   nsCString mEchConfig;
 
   uint64_t mWebTransportId = 0;  // current dedicated Id only used for

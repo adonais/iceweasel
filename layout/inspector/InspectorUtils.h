@@ -336,7 +336,7 @@ class InspectorUtils {
   static void GetComputationSteps(GlobalObject& aGlobal,
                                   const nsAString& aExpression, Element&,
                                   const nsAString& aPseudo,
-                                  nsTArray<nsString>& aResult);
+                                  nsTArray<nsCString>& aResult);
 };
 
 }  // namespace mozilla::dom

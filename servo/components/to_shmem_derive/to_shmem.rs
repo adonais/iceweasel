@@ -19,7 +19,7 @@ pub fn derive(mut input: syn::DeriveInput) -> TokenStream {
     }
     for variant in Structure::new(&input).variants() {
         for binding in variant.bindings() {
-            let attrs = parse_field_attrs::<ShmemFieldAttrs>(&binding.ast());
+            let attrs = parse_field_attrs::<ShmemFieldAttrs>(binding.ast());
             if attrs.field_bound {
                 let ty = &binding.ast().ty;
                 add_predicate(&mut where_clause, parse_quote!(#ty: ::to_shmem::ToShmem))

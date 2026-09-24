@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_SpeechSynthesis_h
-#define mozilla_dom_SpeechSynthesis_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESIS_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESIS_H_
 
 #include "SpeechSynthesisUtterance.h"
 #include "SpeechSynthesisVoice.h"
@@ -84,4 +84,4 @@ class SpeechSynthesis final : public DOMEventTargetHelper,
 };
 
 }  // namespace mozilla::dom
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_SYNTH_SPEECHSYNTHESIS_H_

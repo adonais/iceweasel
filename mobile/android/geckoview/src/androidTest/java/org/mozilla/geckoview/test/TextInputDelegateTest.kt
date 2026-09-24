@@ -38,7 +38,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSession.TextInputDelegate
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
 
@@ -56,6 +55,8 @@ class TextInputDelegateTest : BaseSessionTest() {
                 arrayOf("#contenteditable"),
                 arrayOf("#designmode"),
             )
+
+        private const val EDITABLE_SYNC_TIMEOUT_MILLIS = 2000L
     }
 
     @field:Parameter(0) @JvmField var id: String = ""
@@ -161,7 +162,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     private fun processChildEvents() {
-        mainSession.waitForJS("new Promise(r => requestAnimationFrame(r))")
+        mainSession.waitForJS("new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
     }
 
     private fun setComposingText(ic: InputConnection, text: CharSequence, newCursorPosition: Int) {
@@ -559,8 +560,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     // For bug 2048921
-    @Test(expected = UiThreadUtils.TimeoutException::class)
-    @TimeoutMillis(2000)
+    @Test
     @NullDelegate(Autofill.Delegate::class)
     fun noDismissKeyboardAfterlostFocus() {
         assumeThat("input only", id, equalTo("#input"))
@@ -591,15 +591,13 @@ class TextInputDelegateTest : BaseSessionTest() {
                 }
             )
 
-            mainSession.evaluateJS("document.querySelector('#input').blur()")
             activity.view.clearFocus()
+            mainSession.evaluateJS("document.querySelector('#input').blur()")
 
-            UiThreadUtils.waitForCondition(
-                {
-                    dismissCount != 0
-                },
-                sessionRule.timeoutMillis,
-            )
+            // Must outlast DISMISS_VKB_DELAY_MS so HideSoftInputTask runs and hits its hasFocus() return.
+            try {
+                UiThreadUtils.waitForCondition({ dismissCount != 0 }, 2000)
+            } catch (e: UiThreadUtils.TimeoutException) {}
 
             assertThat(
                 "The keyboard should not be dismissed after losing focus.",
@@ -609,7 +607,13 @@ class TextInputDelegateTest : BaseSessionTest() {
         }
     }
 
-    private fun getText(ic: InputConnection) = ic.getExtractedText(ExtractedTextRequest(), 0).text.toString()
+    private fun getText(ic: InputConnection) = ic.getExtractedText(ExtractedTextRequest(), 0)!!.text.toString()
+
+    private fun pumpUntil(condition: () -> Boolean) {
+        try {
+            UiThreadUtils.waitForCondition({ condition() }, EDITABLE_SYNC_TIMEOUT_MILLIS)
+        } catch (e: UiThreadUtils.TimeoutException) {}
+    }
 
     private fun assertText(message: String, actual: String, expected: String) =
         // In an HTML editor, Gecko may insert an additional element that show up as a
@@ -628,6 +632,11 @@ class TextInputDelegateTest : BaseSessionTest() {
         if (checkGecko) {
             assertText(message, textContent, expected)
         }
+
+        pumpUntil {
+            val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)
+            extracted?.text?.toString()?.trimEnd('\n') == expected
+        }
         assertText(message, getText(ic), expected)
     }
 
@@ -645,7 +654,12 @@ class TextInputDelegateTest : BaseSessionTest() {
             assertThat(message, selectionOffsets, equalTo(Pair(start, end)))
         }
 
-        val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)
+        pumpUntil {
+            val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)
+            extracted != null && extracted.selectionStart == start && extracted.selectionEnd == end
+        }
+
+        val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)!!
         assertThat(message, extracted.selectionStart, equalTo(start))
         assertThat(message, extracted.selectionEnd, equalTo(end))
     }
@@ -673,7 +687,15 @@ class TextInputDelegateTest : BaseSessionTest() {
             assertThat(message, selectionOffsets, equalTo(Pair(start, end)))
         }
 
-        val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)
+        pumpUntil {
+            val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)
+            extracted != null &&
+                extracted.text?.toString()?.trimEnd('\n') == expected &&
+                extracted.selectionStart == start &&
+                extracted.selectionEnd == end
+        }
+
+        val extracted = ic.getExtractedText(ExtractedTextRequest(), 0)!!
         assertText(message, extracted.text.toString(), expected)
         assertThat(message, extracted.selectionStart, equalTo(start))
         assertThat(message, extracted.selectionEnd, equalTo(end))
@@ -699,8 +721,6 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     // Test setSelection
-    @Ignore
-    // Disable for frequent timeout for selection event.
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
     @Test
@@ -905,7 +925,7 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
-    @Ignore("Failing frequently, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1741790")
+    @Ignore("Forward selection is lost on the Java side, see bug 2067617")
     @Test
     fun inputConnection_selectionByArrowKey() {
         setupContent("")

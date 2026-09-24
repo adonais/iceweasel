@@ -34,6 +34,7 @@ class ClientInfo;
 class ClientSource;
 struct FeaturePolicyInfo;
 class PerformanceStorage;
+struct RemoteType;
 class ServiceWorkerDescriptor;
 enum class RequestMode : uint8_t;
 enum class ForceMediaDocument : uint8_t;
@@ -64,6 +65,8 @@ native OriginAttributes(mozilla::OriginAttributes);
 [ref] native const_FeaturePolicyInfoRef(const mozilla::dom::FeaturePolicyInfo);
       native MaybeRequestMode(mozilla::Maybe<mozilla::dom::RequestMode>);
       native ForceMediaDocument(mozilla::dom::ForceMediaDocument);
+[ref] native RemoteType(mozilla::dom::RemoteType);
+[ref] native const_RemoteTypeRef(const mozilla::dom::RemoteType);
 
 typedef unsigned long nsSecurityFlags;
 
@@ -339,7 +342,11 @@ interface nsILoadInfo : nsISupports
    * reset to the remote type of the sending process when sent from a content
    * process to the parent process.
    */
-  attribute AUTF8String triggeringRemoteType;
+  [binaryname(XPCOMTriggeringRemoteType)]
+  readonly attribute AUTF8String triggeringRemoteType;
+
+  [noscript] RemoteType getTriggeringRemoteType();
+  [noscript] void setTriggeringRemoteType(in const_RemoteTypeRef aTriggeringRemoteType);
 
   /**
    * For non-document loads the principalToInherit is always null. For
@@ -1629,12 +1636,6 @@ interface nsILoadInfo : nsISupports
    * element.
    */
   [infallible] attribute boolean isMediaRequest;
-
-  /**
-   * This attribute will be true if the fetch request is from object or embed
-   * elements
-   */
-  [infallible] attribute boolean isFromObjectOrEmbed;
 
   /**
    * If this is non-null, this property holds the URI as it was before query

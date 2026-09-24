@@ -29,6 +29,10 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.listentopage.ListenState
+import mozilla.components.feature.listentopage.ListenStore
+import mozilla.components.feature.listentopage.listenReducer
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
@@ -47,6 +51,7 @@ import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsMiddleware
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.integrity.FakeClientUUID
+import org.mozilla.fenix.debugsettings.listentopage.ListenToPageTools
 import org.mozilla.fenix.debugsettings.logins.FakeLoginsStorage
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerRoute
@@ -70,6 +75,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param loginsStorage [LoginsStorage] used to access logins for [LoginsTools].
  * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
  * @param tabGroupRepository [TabGroupRepository] used to access and modify tab groups for [TabGroupTools].
+ * @param listenStore Store for [ListenToPageTools]
  */
 @Composable
 fun FenixOverlay(
@@ -77,6 +83,7 @@ fun FenixOverlay(
     loginsStorage: LoginsStorage,
     inactiveTabsEnabled: Boolean,
     tabGroupRepository: TabGroupRepository,
+    listenStore: ListenStore,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -135,6 +142,8 @@ fun FenixOverlay(
         clientUUID = context.components.clientUUID,
         integrityClient = context.components.integrityClient,
         tabGroupRepository = tabGroupRepository,
+        lazyIPProtectionStore = remember { lazy { context.components.ipProtection.store } },
+        listenStore = listenStore,
     )
 }
 
@@ -151,6 +160,8 @@ fun FenixOverlay(
  * @param integrityClient used to test an [IntegrityClient].
  * @param tabGroupRepository [TabGroupRepository] used to access and modify tab groups for [TabGroupTools].
  * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
+ * @param lazyIPProtectionStore [IPProtectionStore] used by the IP protection location debug tools.
+ * @param listenStore Store for [ListenToPageTools]
  */
 @Suppress("LongParameterList")
 @Composable
@@ -165,6 +176,8 @@ private fun FenixOverlay(
     integrityClient: IntegrityClient,
     tabGroupRepository: TabGroupRepository,
     inactiveTabsEnabled: Boolean,
+    lazyIPProtectionStore: Lazy<IPProtectionStore>,
+    listenStore: ListenStore,
 ) {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
@@ -199,6 +212,8 @@ private fun FenixOverlay(
             clientUUID = clientUUID,
             integrityClient = integrityClient,
             tabGroupRepository = tabGroupRepository,
+            lazyIPProtectionStore = lazyIPProtectionStore,
+            listenStore = listenStore,
         )
     }
     val drawerStatus by remember {
@@ -247,6 +262,8 @@ private fun FenixOverlayPreview() {
 
             override suspend fun deleteTabGroupsById(ids: List<String>) {}
 
+            override suspend fun ungroupTabGroup(tabGroupId: String) {}
+
             override suspend fun addTabGroupAssignment(tabId: String, tabGroupId: String) {}
 
             override suspend fun addTabsToTabGroup(tabGroupId: String, tabIds: List<String>) {}
@@ -291,5 +308,7 @@ private fun FenixOverlayPreview() {
         clientUUID = FakeClientUUID(),
         integrityClient = IntegrityClient.testSuccess,
         tabGroupRepository = mockTabGroupRepository,
+        lazyIPProtectionStore = lazy { IPProtectionStore() },
+        listenStore = ListenStore(ListenState(), ::listenReducer),
     )
 }

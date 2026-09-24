@@ -7,39 +7,8 @@
   "box": {
     "background": {
       "color": {
-        "@base": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, currentColor 16%, transparent)",
-            "default": "{urlbarview.background.color.hover}"
-          }
-        },
-        "hover": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, currentColor 22%, transparent)",
-            "default": "{urlbarview.background.color.selected}"
-          }
-        },
-        "active": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
-            "light": "rgba(117, 102, 159, 0.6)",
-            "dark": "rgba(176, 163, 210, 0.6)"
-          }
-        },
         "focus": {
           "value": "{urlbar.box.background.color.@base}"
-        }
-      }
-    }
-  },
-  "icon": {
-    "fill": {
-      "opacity": {
-        "value": {
-          "nativeTheme": "0.9",
-          "light": "0.7",
-          "dark": "0.95",
-          "prefersContrast": "1"
         }
       }
     }

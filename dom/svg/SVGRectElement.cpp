@@ -49,9 +49,9 @@ SVGRectElement::SVGRectElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGRectElementBase(std::move(aNodeInfo)) {}
 
-bool SVGRectElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool SVGRectElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   return IsInLengthInfo(aAttribute, sLengthInfo) ||
-         SVGRectElementBase::IsAttributeMapped(aAttribute);
+         SVGRectElementBase::IsNoNamespaceAttrMapped(aAttribute);
 }
 
 namespace SVGT = SVGGeometryProperty::Tags;

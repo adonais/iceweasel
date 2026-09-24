@@ -141,6 +141,7 @@ class Perfherder(Layer):
                 should_alert=strtobool(settings.get("shouldAlert", False)),
                 application=app_info,
                 alert_threshold=float(settings.get("alertThreshold", 2.0)),
+                alert_severity=settings.get("alertSeverity"),
                 lower_is_better=strtobool(settings.get("lowerIsBetter", True)),
                 unit=settings.get("unit", "ms"),
                 summary=settings.get("value"),
@@ -202,6 +203,7 @@ class Perfherder(Layer):
         framework=None,
         application=None,
         alert_threshold=2.0,
+        alert_severity=None,
         lower_is_better=True,
         unit="ms",
         summary=None,
@@ -247,6 +249,9 @@ class Perfherder(Layer):
             is being tested. Must include name, and optionally a version.
         :param alert_threshold float: The change in percentage this
             metric must undergo to to generate an alert.
+        :param alert_severity str: The severity of the alerts produced by this
+            suite (`critical`, `subcritical`, or `normal`). Left out of the blob
+            when None, which makes Perfherder fall back to `normal`.
         :param lower_is_better bool: If True, then lower values are better
             than higher ones.
         :param unit str: The unit of the data.
@@ -300,6 +305,10 @@ class Perfherder(Layer):
             "subtests": perf_subtests,
         }
 
+        # Only set when given, otherwise Perfherder defaults it to `normal`
+        if alert_severity is not None:
+            suite["alertSeverity"] = alert_severity
+
         perfherder = {
             "suites": [suite],
             "framework": framework,
@@ -319,6 +328,7 @@ class Perfherder(Layer):
 
             # Gather extra settings specified from within a metric specification
             subtest_alert_threshold = alert_threshold
+            subtest_alert_severity = alert_severity
             subtest_lower_is_better = lower_is_better
             subtest_unit = unit
             for met in metrics_info:
@@ -332,6 +342,9 @@ class Perfherder(Layer):
                 subtest_unit = metrics_info[met].get("unit", unit)
                 subtest_lower_is_better = metrics_info[met].get(
                     "lowerIsBetter", lower_is_better
+                )
+                subtest_alert_severity = metrics_info[met].get(
+                    "alertSeverity", alert_severity
                 )
 
                 if metrics_info[met].get("shouldAlert", should_alert):
@@ -366,6 +379,11 @@ class Perfherder(Layer):
                 subtest["lowerIsBetter"] = extra_info["lowerIsBetter"]
             else:
                 subtest["lowerIsBetter"] = subtest_lower_is_better
+
+            if extra_info.get("alertSeverity") is not None:
+                subtest["alertSeverity"] = extra_info["alertSeverity"]
+            elif subtest_alert_severity is not None:
+                subtest["alertSeverity"] = subtest_alert_severity
 
             if has_callable_method(transformer_obj, "subtest_summary"):
                 subtest["value"] = transformer_obj.subtest_summary(subtest)

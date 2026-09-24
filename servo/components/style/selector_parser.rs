@@ -6,11 +6,11 @@
 
 #![deny(missing_docs)]
 
+use crate::Atom;
 use crate::derives::*;
 use crate::stylesheets::{Namespaces, Origin, UrlExtraData};
 use crate::values::serialize_atom_identifier;
-use crate::Atom;
-use cssparser::{match_ignore_ascii_case, Parser as CssParser, ParserInput};
+use cssparser::{Parser as CssParser, match_ignore_ascii_case};
 use dom::ElementState;
 use selectors::parser::{ParseRelative, SelectorList};
 use std::fmt::{self, Debug, Write};
@@ -57,8 +57,8 @@ impl<'a> SelectorParser<'a> {
     /// account namespaces.
     ///
     /// This is used for some DOM APIs like `querySelector`.
-    pub fn parse_author_origin_no_namespace<'i>(
-        input: &'i str,
+    pub fn parse_author_origin_no_namespace(
+        input: &str,
         url_data: &UrlExtraData,
     ) -> Result<SelectorList<SelectorImpl>, ParseError> {
         let namespaces = Namespaces::default();
@@ -68,8 +68,7 @@ impl<'a> SelectorParser<'a> {
             url_data,
             for_supports_rule: false,
         };
-        let mut input = ParserInput::new(input);
-        SelectorList::parse(&parser, &mut CssParser::new(&mut input), ParseRelative::No)
+        SelectorList::parse(&parser, &mut CssParser::new(input), ParseRelative::No)
     }
 
     /// Whether we're parsing selectors in a user-agent stylesheet.
@@ -278,29 +277,29 @@ mod tests {
         map.set(&PseudoElement::After, 3);
         assert_eq!(map.get(&PseudoElement::After), Some(3).as_ref());
 
-        assert_eq!(map.get(&PseudoElement::MozRubyText), None);
-        map.set(&PseudoElement::MozRubyText, 8);
-        assert_eq!(map.get(&PseudoElement::MozRubyText), Some(8).as_ref());
+        assert_eq!(map.get(&PseudoElement::Marker), None);
+        map.set(&PseudoElement::Marker, 8);
+        assert_eq!(map.get(&PseudoElement::Marker), Some(8).as_ref());
 
         assert_eq!(
-            map.get_or_insert_with(&PseudoElement::MozRubyText, || { 10 }),
+            map.get_or_insert_with(&PseudoElement::Marker, || { 10 }),
             &8
         );
-        map.set(&PseudoElement::MozRubyText, 9);
-        assert_eq!(map.get(&PseudoElement::MozRubyText), Some(9).as_ref());
+        map.set(&PseudoElement::Marker, 9);
+        assert_eq!(map.get(&PseudoElement::Marker), Some(9).as_ref());
 
         assert_eq!(
-            map.get_or_insert_with(&PseudoElement::FirstLine, || { 10 }),
+            map.get_or_insert_with(&PseudoElement::FirstLetter, || { 10 }),
             &10
         );
-        assert_eq!(map.get(&PseudoElement::FirstLine), Some(10).as_ref());
+        assert_eq!(map.get(&PseudoElement::FirstLetter), Some(10).as_ref());
     }
 
     #[test]
     fn can_iter() {
         let mut map = <PerPseudoElementMap<i32>>::default();
         map.set(&PseudoElement::After, 3);
-        map.set(&PseudoElement::MozRubyText, 8);
+        map.set(&PseudoElement::Marker, 8);
         assert_eq!(map.iter().cloned().collect::<Vec<_>>(), vec![3, 8]);
     }
 }

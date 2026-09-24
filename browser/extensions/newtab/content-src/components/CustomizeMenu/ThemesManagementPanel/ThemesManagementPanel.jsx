@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { useDispatch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 // eslint-disable-next-line no-shadow
@@ -12,23 +12,17 @@ import { CSSTransition } from "react-transition-group";
 // the customize panel row; the "See more themes" box-button opens this sliding
 // panel, which shows the full `theme-picker` (appearance chooser + all themes)
 // and a link out to the about:addons themes list.
-function ThemesManagementPanel({ onSubpanelToggle, togglePanel, showPanel }) {
+function ThemesManagementPanel({ togglePanel, showPanel }) {
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
-
-  // Notify parent menu when subpanel opens/closes
-  useEffect(() => {
-    if (onSubpanelToggle) {
-      onSubpanelToggle(showPanel);
-    }
-  }, [showPanel, onSubpanelToggle]);
 
   const handlePanelEntered = () => {
     arrowButtonRef.current?.focus();
   };
 
   const openAboutAddonsThemes = () => {
+    dispatch(ac.UserEvent({ event: "EXPLORE_MORE_THEMES_CLICK" }));
     dispatch(ac.OnlyToMain({ type: at.OPEN_ABOUT_ADDONS_THEMES }));
   };
 
@@ -57,6 +51,7 @@ function ThemesManagementPanel({ onSubpanelToggle, togglePanel, showPanel }) {
                 type="ghost"
                 className="arrow-button"
                 iconSrc={arrowIconSrc}
+                data-l10n-id="newtab-customize-panel-back-button"
                 onClick={togglePanel}
               ></moz-button>
               <h2 data-l10n-id="newtab-appearance-manage-title"></h2>

@@ -26,9 +26,6 @@ const fxaDevices = [
 ];
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
   await promiseSyncReady();
   await SearchService.init();
   // gSync.init() is called in a requestIdleCallback. Force its initialization.
@@ -605,6 +602,7 @@ add_task(async function test_page_contextmenu_fxa_disabled() {
   );
   await hideContentContextMenu();
   getter.restore();
+  document.documentElement.removeAttribute("fxadisabled");
   [...document.querySelectorAll(".sync-ui-item")].forEach(
     e => (e.hidden = false)
   );

@@ -35,6 +35,7 @@ class WindowGlobalParent;
 namespace gfx {
 
 class CrossProcessPaint;
+class SourceSurface;
 
 enum class CrossProcessPaintFlags {
   None = 0,
@@ -107,6 +108,12 @@ class CrossProcessPaint final {
   typedef nsRefPtrHashtable<nsUint64HashKey, RecordedDependentSurface>
       ResolvedFragmentMap;
   typedef MozPromise<ResolvedFragmentMap, nsresult, true> ResolvePromise;
+
+  /**
+   * A target for a screenshot, alternative to dom::ImageBitmap
+   */
+  typedef MozPromise<RefPtr<SourceSurface>, nsresult, true> SnapshotPromise;
+
   /**
    * Begin an asynchronous paint of a cross process document tree starting at
    * a WindowGlobalParent. A maybe-async paint for the root WGP will be done,
@@ -122,11 +129,10 @@ class CrossProcessPaint final {
    *   at least kMinPaintScale. See the implementation for the current
    *   minimum value.
    * @param aBackgroundColor The background color to use.
-   * @param aPromise The promise to resolve with a dom::ImageBitmap.
-   *
-   * @returns Whether the paint was able to be initiated or not.
+   * @param aPromise The promise to resolve with a dom::ImageBitmap, or reject
+   *   if the paint could not be completed.
    */
-  static bool Start(dom::WindowGlobalParent* aRoot, const dom::DOMRect* aRect,
+  static void Start(dom::WindowGlobalParent* aRoot, const dom::DOMRect* aRect,
                     float aScale, nscolor aBackgroundColor,
                     CrossProcessPaintFlags aFlags, dom::Promise* aPromise);
 
@@ -134,6 +140,14 @@ class CrossProcessPaint final {
       dom::TabId aRootTabId, uint64_t aRootWindowContextId,
       nsTHashSet<uint64_t>&& aDependencies,
       CrossProcessPaintFlags aFlags = CrossProcessPaintFlags::None);
+
+  /**
+   * For obtaining full page screenshots on mobile
+   */
+  static RefPtr<SnapshotPromise> Start(dom::WindowGlobalParent* aRoot,
+                                       const Maybe<IntRect>& aRect,
+                                       float aScale, nscolor aBackgroundColor,
+                                       CrossProcessPaintFlags aFlags);
 
   void ReceiveFragment(dom::WindowGlobalParent* aWGP,
                        PaintFragment&& aFragment);

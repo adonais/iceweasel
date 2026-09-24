@@ -10,6 +10,8 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSSkewXBinding.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -42,12 +44,16 @@ JSObject* CSSSkewX::WrapObject(JSContext* aCx,
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssskewx-cssskewx
 //
-// XXX This is not yet fully implemented!
-//
 // static
 already_AddRefed<CSSSkewX> CSSSkewX::Constructor(const GlobalObject& aGlobal,
                                                  CSSNumericValue& aAx,
                                                  ErrorResult& aRv) {
+  // Step 1.
+  if (!aAx.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ax must match <angle>");
+    return nullptr;
+  }
+
   // Step 2.
   return MakeAndAddRef<CSSSkewX>(aGlobal.GetAsSupports(), /* aIs2D */ true,
                                  &aAx);
@@ -56,10 +62,25 @@ already_AddRefed<CSSSkewX> CSSSkewX::Constructor(const GlobalObject& aGlobal,
 CSSNumericValue* CSSSkewX::Ax() const { return mAx; }
 
 void CSSSkewX::SetAx(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ax must match <angle>");
+    return;
+  }
+
+  mAx = &aArg;
 }
 
 // end of CSSSkewX Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSSkewX::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto ax = mAx->ToStyleUnitValue("deg"_ns);
+
+  matrix->SkewXSelf(ax.value);
+
+  return matrix.forget();
+}
 
 void CSSSkewX::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                      nsACString& aDest) const {

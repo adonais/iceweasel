@@ -656,6 +656,50 @@ class TrackingProtectionPolicyFactoryTest {
         assertEquals(always.cookiePurging, expected.cookiePurging)
     }
 
+    @Test
+    fun `GIVEN strict mode WHEN a policy is created THEN it enables fingerprinting protection everywhere`() {
+        val factory =
+            TrackingProtectionPolicyFactory(
+                mockSettings(useStrict = true, useTrackingProtection = true),
+                testContext.resources,
+            )
+
+        val policy = factory.createTrackingProtectionPolicy(normalMode = true, privateMode = true)
+
+        assertEquals(true, policy.fingerprintingProtection)
+        assertEquals(true, policy.fingerprintingProtectionPrivateBrowsing)
+    }
+
+    @Test
+    fun `GIVEN standard mode WHEN a policy is created THEN fingerprinting protection matches the standard defaults`() {
+        val factory =
+            TrackingProtectionPolicyFactory(
+                mockSettings(useStandard = true, useTrackingProtection = true),
+                testContext.resources,
+            )
+
+        val policy = factory.createTrackingProtectionPolicy(normalMode = true, privateMode = true)
+
+        assertEquals(false, policy.fingerprintingProtection)
+        assertEquals(true, policy.fingerprintingProtectionPrivateBrowsing)
+    }
+
+    @Test
+    fun `GIVEN custom mode WHEN suspected fingerprinters are blocked THEN the policy carries that selection`() {
+        val settings =
+            settingsForCustom(
+                shouldBlockCookiesInCustom = true,
+                blockSuspectedFingerprintersAll = true,
+                blockSuspectedFingerprintersPrivate = false,
+            )
+        val factory = TrackingProtectionPolicyFactory(settings, testContext.resources)
+
+        val policy = factory.createTrackingProtectionPolicy(normalMode = true, privateMode = true)
+
+        assertEquals(true, policy.fingerprintingProtection)
+        assertEquals(false, policy.fingerprintingProtectionPrivateBrowsing)
+    }
+
     private fun mockSettings(
         useStrict: Boolean = false,
         useCustom: Boolean = false,
@@ -665,6 +709,8 @@ class TrackingProtectionPolicyFactoryTest {
         strictConvenience: Boolean = false,
         customBaseline: Boolean = true,
         customConvenience: Boolean = false,
+        blockSuspectedFingerprintersAll: Boolean = false,
+        blockSuspectedFingerprintersPrivate: Boolean = true,
     ): Settings = mockk {
         every { useStandardTrackingProtection } returns useStandard
         every { useStrictTrackingProtection } returns useStrict
@@ -674,6 +720,8 @@ class TrackingProtectionPolicyFactoryTest {
         every { strictAllowListConvenienceTrackingProtection } returns strictConvenience
         every { customAllowListBaselineTrackingProtection } returns customBaseline
         every { customAllowListConvenienceTrackingProtection } returns customConvenience
+        every { blockSuspectedFingerprinters } returns blockSuspectedFingerprintersAll
+        every { blockSuspectedFingerprintersPrivateBrowsing } returns blockSuspectedFingerprintersPrivate
     }
 
     private fun settingsForCustom(
@@ -684,17 +732,25 @@ class TrackingProtectionPolicyFactoryTest {
         blockFingerprinters: Boolean = true,
         blockCryptominers: Boolean = true,
         blockRedirectTrackers: Boolean = true,
+        blockSuspectedFingerprintersAll: Boolean = false,
+        blockSuspectedFingerprintersPrivate: Boolean = true,
     ): Settings =
-        mockSettings(useStrict = false, useCustom = true).apply {
-            every { blockTrackingContentSelectionInCustomTrackingProtection } returns blockTrackingContentInCustom
+        mockSettings(
+                useStrict = false,
+                useCustom = true,
+                blockSuspectedFingerprintersAll = blockSuspectedFingerprintersAll,
+                blockSuspectedFingerprintersPrivate = blockSuspectedFingerprintersPrivate,
+            )
+            .apply {
+                every { blockTrackingContentSelectionInCustomTrackingProtection } returns blockTrackingContentInCustom
 
-            every { blockCookiesInCustomTrackingProtection } returns shouldBlockCookiesInCustom
-            every { blockCookiesSelectionInCustomTrackingProtection } returns blockCookiesSelection
-            every { blockTrackingContentInCustomTrackingProtection } returns blockTrackingContent
-            every { blockFingerprintersInCustomTrackingProtection } returns blockFingerprinters
-            every { blockCryptominersInCustomTrackingProtection } returns blockCryptominers
-            every { blockRedirectTrackersInCustomTrackingProtection } returns blockRedirectTrackers
-        }
+                every { blockCookiesInCustomTrackingProtection } returns shouldBlockCookiesInCustom
+                every { blockCookiesSelectionInCustomTrackingProtection } returns blockCookiesSelection
+                every { blockTrackingContentInCustomTrackingProtection } returns blockTrackingContent
+                every { blockFingerprintersInCustomTrackingProtection } returns blockFingerprinters
+                every { blockCryptominersInCustomTrackingProtection } returns blockCryptominers
+                every { blockRedirectTrackersInCustomTrackingProtection } returns blockRedirectTrackers
+            }
 
     private fun TrackingProtectionPolicy.assertPolicyEquals(
         actual: TrackingProtectionPolicy,

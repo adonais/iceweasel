@@ -1,0 +1,6 @@
+requires-python:>=3.10
+pypi:cryptography==50.0.1
+vendored:third_party/python/ecdsa
+vendored:third_party/python/pyasn1
+vendored:third_party/python/pyasn1_modules
+vendored:third_party/python/rsa

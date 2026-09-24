@@ -81,7 +81,7 @@ add_task(async function () {
   // server.
   MerinoTestUtils.server.response.body.suggestions = [];
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   for (let [index, { geolocation, expected }] of TEST_DATA.entries()) {
     info(`Test for ${JSON.stringify(geolocation)}`);

@@ -108,6 +108,12 @@ skip-if = [
 
 ["test_rustStoreShutdown.js"]
 
+["test_rust_autofill_address_adapter.js"]
+
+["test_rust_autofill_address_migration.js"]
+
+["test_rust_autofill_address_parity.js"]
+
 ["test_savedFieldNames.js"]
 
 ["test_storage_remove.js"]

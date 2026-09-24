@@ -256,6 +256,7 @@ internal object TabsTrayReducer {
                             tabGroupOnboardingImpressionCount = action.update.tabGroupOnboardingImpressionCount,
                             hasUserEverHadOneTabGroup = action.update.hasUserEverHadOneTabGroup,
                             hasViewedTabGroupsPage = action.update.hasViewedTabGroupsPage,
+                            skipUngroupConfirmation = action.update.skipUngroupConfirmation,
                         )
                 )
 

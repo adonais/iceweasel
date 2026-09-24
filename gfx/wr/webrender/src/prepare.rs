@@ -73,6 +73,7 @@ use crate::tile_cache::{SliceId, TileCacheInstance};
 use crate::prim_store::*;
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
 use crate::render_backend::DataStores;
+use crate::scene_debug::{HighlightMode, SceneDebugOverride};
 
 
 use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind};
@@ -100,11 +101,11 @@ pub fn prepare_picture(
     // memoized: take_context's only None path (invisible picture) is a cheap,
     // side-effect-free query that is stable within a frame, so re-consulting it
     // on a repeat visit is fine and avoids caching an invalid handle.
-    if let Some(handle) = frame_state.picture_scratch_handles[pic_index.0] {
+    if let Some(handle) = frame_state.picture_scratch_handles[pic_index.0 as usize] {
         return Some(handle);
     }
 
-    let pic = &mut store.pictures[pic_index.0];
+    let pic = &mut store.pictures[pic_index.0 as usize];
     let Some((pic_context, mut pic_state, mut prim_list, scratch_handle)) = pic.take_context(
         pic_index,
         surface_index,
@@ -118,7 +119,7 @@ pub fn prepare_picture(
         return None;
     };
 
-    frame_state.picture_scratch_handles[pic_index.0] = Some(scratch_handle);
+    frame_state.picture_scratch_handles[pic_index.0 as usize] = Some(scratch_handle);
     frame_state.num_pictures += 1;
 
     prepare_primitives(
@@ -135,7 +136,7 @@ pub fn prepare_picture(
     );
 
     // Restore the dependencies (borrow check dance)
-    store.pictures[pic_context.pic_index.0].restore_context(
+    store.pictures[pic_context.pic_index.0 as usize].restore_context(
         pic_context.pic_index,
         prim_list,
         pic_context,
@@ -268,6 +269,62 @@ fn prepare_prim_for_render(
 ) {
     tracy_rs::profile_scope!("prepare_prim_for_render");
 
+    match frame_context.debug_override.highlight(prim_instance_index) {
+        Some(HighlightMode::Replace) => {
+            // Stand in for the primitive with a solid quad covering its
+            // clipped local rect. Pictures are not prepared at all, so their
+            // content is not rendered either.
+            let prim_info = *scratch.frame.draw(draw_index);
+            let coverage_rect = prim_info.clip_chain.local_coverage_rect;
+            if coverage_rect.is_empty() {
+                return;
+            }
+
+            quad::prepare_quad(
+                &SceneDebugOverride::HIGHLIGHT_COLOR,
+                &QuadDescriptor {
+                    pattern_rect: coverage_rect,
+                    bounds: coverage_rect,
+                    aligned_aa_edges: EdgeMask::empty(),
+                    transformed_aa_edges: EdgeMask::all(),
+                },
+                &None,
+                &prim_info.clip_chain,
+                quad_transform,
+                frame_context,
+                pic_context,
+                targets,
+                &data_stores.clip,
+                frame_state,
+                scratch,
+            );
+
+            return;
+        }
+        Some(HighlightMode::Overlay) => {
+            // Outline only, so the primitive's own content stays visible
+            // underneath. Debug items are drawn directly onto the framebuffer,
+            // so the rect is projected from the primitive's local space to
+            // world space (the root node's space, in device pixels).
+            let local_rect = scratch.frame.draw(draw_index).clip_chain.local_coverage_rect;
+            let world_rect = frame_context
+                .spatial_tree
+                .get_world_transform(cluster.spatial_node_index)
+                .into_transform()
+                .outer_transformed_box2d(&local_rect);
+
+            if let Some(world_rect) = world_rect {
+                scratch.push_debug_rect(
+                    world_rect.cast_unit(),
+                    2,
+                    SceneDebugOverride::HIGHLIGHT_COLOR,
+                    ColorF::TRANSPARENT,
+                );
+            }
+        }
+        None => {}
+    }
+
     // If we have dependencies, we need to prepare them first, in order
     // to know the actual rect of this primitive.
     // For example, scrolling may affect the location of an item in
@@ -294,7 +351,7 @@ fn prepare_prim_for_render(
             KindScratchHandle::Picture(scratch_handle);
 
         is_passthrough = store
-            .pictures[pic_index.0]
+            .pictures[pic_index.0 as usize]
             .composite_mode
             .is_none();
     }
@@ -369,7 +426,7 @@ fn prepare_prim_for_render(
             prepare_box_shadow(
                 &prim_data.kind,
                 &prim_data.common,
-                &prim_instance.unsnapped_pattern_rect,
+                &prim_data.common.prim_rect,
                 &prim_info.clip_chain,
                 &mut quad_transform,
                 frame_context,
@@ -378,7 +435,6 @@ fn prepare_prim_for_render(
                 scratch,
                 prim_spatial_node_index,
                 device_pixel_scale,
-                draw_index,
                 targets,
                 data_stores,
             );
@@ -392,8 +448,7 @@ fn prepare_prim_for_render(
 
             let task = prim_data.kind.prepare(
                 prim_info.snapped_pattern_rect.size(),
-                prim_spatial_node_index,
-                frame_context,
+                quad_transform.scale_factors(),
                 frame_state,
             );
 
@@ -416,7 +471,6 @@ fn prepare_prim_for_render(
                     },
                     stretch_size,
                     LayoutSize::zero(),
-                    draw_index,
                     &None,
                     &prim_info.clip_chain,
                     quad_transform,
@@ -436,7 +490,6 @@ fn prepare_prim_for_render(
                         aligned_aa_edges: prim_data.common.aligned_aa_edges,
                         transformed_aa_edges: prim_data.common.transformed_aa_edges,
                     },
-                    draw_index,
                     &None,
                     &prim_info.clip_chain,
                     quad_transform,
@@ -471,7 +524,7 @@ fn prepare_prim_for_render(
             // positions in the template are stored relative to it. Use the
             // unsnapped rect so the anchor matches what the shader receives in
             // `PrimitiveHeader.local_rect`.
-            let pattern_rect = prim_instance.unsnapped_pattern_rect;
+            let pattern_rect = prim_data.common.prim_rect;
 
             let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
@@ -506,6 +559,7 @@ fn prepare_prim_for_render(
 
             let text_run_handle = prim_data.request_resources(
                 pattern_rect,
+                prim_info.clip_chain.local_clip_rect,
                 &transform.to_transform().with_destination::<_>(),
                 surface,
                 prim_spatial_node_index,
@@ -534,9 +588,6 @@ fn prepare_prim_for_render(
                     transformed_aa_edges,
                 },
                 &prim_info.clip_chain,
-                prim_spatial_node_index,
-                device_pixel_scale,
-                draw_index,
                 quad_transform,
                 frame_context,
                 pic_context,
@@ -577,7 +628,6 @@ fn prepare_prim_for_render(
                     aligned_aa_edges,
                     transformed_aa_edges,
                 },
-                draw_index,
                 &prim_info.clip_chain,
                 quad_transform,
                 frame_context,
@@ -605,7 +655,6 @@ fn prepare_prim_for_render(
                     aligned_aa_edges: prim_data.common.aligned_aa_edges,
                     transformed_aa_edges: prim_data.common.transformed_aa_edges,
                 },
-                draw_index,
                 &None,
                 &prim_info.clip_chain,
                 quad_transform,
@@ -634,7 +683,6 @@ fn prepare_prim_for_render(
                         aligned_aa_edges: common_data.aligned_aa_edges,
                         transformed_aa_edges: common_data.transformed_aa_edges,
                     },
-                    draw_index,
                     &None,
                     &prim_info.clip_chain,
                     quad_transform,
@@ -671,7 +719,6 @@ fn prepare_prim_for_render(
                     aligned_aa_edges: common_data.aligned_aa_edges,
                     transformed_aa_edges: common_data.transformed_aa_edges,
                 },
-                draw_index,
                 &None,
                 &prim_info.clip_chain,
                 quad_transform,
@@ -703,7 +750,6 @@ fn prepare_prim_for_render(
                         aligned_aa_edges: common_data.aligned_aa_edges,
                         transformed_aa_edges: common_data.transformed_aa_edges,
                     },
-                    draw_index,
                     &None,
                     &prim_info.clip_chain,
                     quad_transform,
@@ -723,7 +769,6 @@ fn prepare_prim_for_render(
                 common_data,
                 image_data,
                 &prim_info.clip_chain,
-                draw_index,
                 quad_transform,
                 frame_context,
                 pic_context,
@@ -755,7 +800,6 @@ fn prepare_prim_for_render(
                         transformed_aa_edges: prim_data.common.transformed_aa_edges,
                     },
                     stretch_size,
-                    draw_index,
                     &prim_info.clip_chain,
                     quad_transform,
                     frame_context,
@@ -821,7 +865,6 @@ fn prepare_prim_for_render(
                                 aligned_aa_edges: EdgeMask::empty(),
                                 transformed_aa_edges: edge_aa_mask,
                             },
-                            draw_index,
                             &None,
                             &prim_info.clip_chain,
                             quad_transform,
@@ -876,7 +919,6 @@ fn prepare_prim_for_render(
                 },
                 stretch_size,
                 prim_data.tile_spacing,
-                draw_index,
                 &cache_key,
                 &prim_info.clip_chain,
                 quad_transform,
@@ -910,7 +952,6 @@ fn prepare_prim_for_render(
                         transformed_aa_edges: prim_data.common.transformed_aa_edges,
                     },
                     stretch_size,
-                    draw_index,
                     &prim_info.clip_chain,
                     quad_transform,
                     frame_context,
@@ -933,7 +974,6 @@ fn prepare_prim_for_render(
                 },
                 stretch_size,
                 prim_data.tile_spacing,
-                draw_index,
                 &None,
                 &prim_info.clip_chain,
                 quad_transform,
@@ -966,7 +1006,6 @@ fn prepare_prim_for_render(
                         transformed_aa_edges: prim_data.common.transformed_aa_edges,
                     },
                     stretch_size,
-                    draw_index,
                     &prim_info.clip_chain,
                     quad_transform,
                     frame_context,
@@ -1023,7 +1062,6 @@ fn prepare_prim_for_render(
                 },
                 stretch_size,
                 prim_data.tile_spacing,
-                draw_index,
                 &cache_key,
                 &prim_info.clip_chain,
                 quad_transform,
@@ -1039,7 +1077,7 @@ fn prepare_prim_for_render(
         PrimitiveKind::Picture { pic_index, .. } => {
             tracy_rs::profile_scope!("Picture");
             let pic_scratch_handle = prim_info.kind_scratch.unwrap_picture();
-            let pic = &mut store.pictures[pic_index.0];
+            let pic = &mut store.pictures[pic_index.0 as usize];
 
             let Some(raster_config) = &pic.raster_config else {
                 return;
@@ -1048,7 +1086,6 @@ fn prepare_prim_for_render(
             let clip_task_index = prepare_picture_primitive(
                 pic,
                 raster_config,
-                draw_index,
                 prim_spatial_node_index,
                 &prim_info.clip_chain,
                 frame_context,
@@ -1075,9 +1112,9 @@ fn prepare_prim_for_render(
             frame_state.surface_builder.register_resolve_source();
 
             if frame_context.debug_flags.contains(DebugFlags::HIGHLIGHT_BACKDROP_FILTERS) {
-                if let Some(world_rect) = pic_state.map_pic_to_vis.map(&prim_info.clip_chain.pic_coverage_rect) {
+                if let Some(device_rect) = pic_state.map_pic_to_device.map(&prim_info.clip_chain.pic_coverage_rect) {
                     scratch.push_debug_rect(
-                        world_rect.cast_unit(),
+                        device_rect,
                         2,
                         crate::debug_colors::MAGENTA,
                         ColorF::TRANSPARENT,
@@ -1182,7 +1219,6 @@ fn prepare_prim_for_render(
                             aligned_aa_edges,
                             transformed_aa_edges,
                         },
-                        draw_index,
                         &None,
                         &prim_info.clip_chain,
                         quad_transform,
@@ -1210,8 +1246,16 @@ fn prepare_prim_for_render(
             panic!("bug: invalid vis state");
         }
         DrawState::Visible { .. } => {
+            // The kinds that reach here (text runs, backdrop captures) have no
+            // tighter footprint on hand than the primitive's coverage rect.
+            let device_rect = frame_state.surfaces[pic_context.surface_index.0]
+                .map_to_device_rect(
+                    &prim_info.clip_chain.pic_coverage_rect,
+                    frame_context.spatial_tree,
+                );
+
             frame_state.push_prim(
-                &PrimitiveCommand::simple(draw_index),
+                &PrimitiveCommand::simple(draw_index, device_rect),
                 prim_spatial_node_index,
                 targets,
             );

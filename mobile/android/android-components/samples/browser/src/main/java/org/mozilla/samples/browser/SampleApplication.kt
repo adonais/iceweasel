@@ -8,9 +8,10 @@ import android.app.Application
 import java.util.Calendar
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
@@ -48,9 +49,10 @@ class SampleApplication : Application() {
 
     val components by lazy { Components(this) }
 
+    val applicationScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     // Sample-only code with no injectable clock seam and no time-dependent behavior to test.
     @Suppress("NoSystemCurrentTimeMillis")
-    @OptIn(DelicateCoroutinesApi::class) // Usage of GlobalScope
     override fun onCreate() {
         super.onCreate()
 
@@ -82,7 +84,7 @@ class SampleApplication : Application() {
         components.engine.warmUp()
         restoreBrowserState()
 
-        GlobalScope.launch(Dispatchers.IO) {
+        applicationScope.launch(Dispatchers.IO) {
             components.webAppManifestStorage.warmUpScopes(System.currentTimeMillis())
         }
         components.downloadsUseCases.restoreDownloads()
@@ -122,9 +124,13 @@ class SampleApplication : Application() {
         }
     }
 
-    @DelicateCoroutinesApi
+    override fun onTerminate() {
+        super.onTerminate()
+        applicationScope.cancel()
+    }
+
     private fun restoreBrowserState() =
-        GlobalScope.launch(Dispatchers.Main) {
+        applicationScope.launch(Dispatchers.Main) {
             components.tabsUseCases.restore(components.sessionStorage)
 
             components.sessionStorage

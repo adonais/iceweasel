@@ -14,11 +14,11 @@
   overflow-y: hidden;
 
   /* Using the same colors as the Netmonitor's --table-selection-background-hover */
-  --search-result-background-hover: rgba(209, 232, 255, 0.8);
+  --search-result-background-hover: rgb(209 232 255 / 0.8);
 }
 
 .theme-dark .search-container {
-  --search-result-background-hover: rgba(53, 59, 72, 1);
+  --search-result-background-hover: rgb(53 59 72 / 1);
 }
 
 .project-text-search {

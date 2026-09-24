@@ -28,13 +28,15 @@ def migrate(ctx):
                     FTL.Attribute(
                         id=FTL.Identifier("heading"),
                         value=STRIP_PUNCTUATION(
-                            source, "about-translations-unsupported-info-message.heading"
+                            source,
+                            "about-translations-unsupported-info-message.heading",
                         ),
                     ),
                     FTL.Attribute(
                         id=FTL.Identifier("message"),
                         value=COPY_PATTERN(
-                            source, "about-translations-unsupported-info-message.message"
+                            source,
+                            "about-translations-unsupported-info-message.message",
                         ),
                     ),
                 ],
@@ -45,13 +47,15 @@ def migrate(ctx):
                     FTL.Attribute(
                         id=FTL.Identifier("heading"),
                         value=STRIP_PUNCTUATION(
-                            source, "about-translations-language-load-error-message.heading"
+                            source,
+                            "about-translations-language-load-error-message.heading",
                         ),
                     ),
                     FTL.Attribute(
                         id=FTL.Identifier("message"),
                         value=COPY_PATTERN(
-                            source, "about-translations-language-load-error-message.message"
+                            source,
+                            "about-translations-language-load-error-message.message",
                         ),
                     ),
                 ],

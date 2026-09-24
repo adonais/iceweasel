@@ -11,7 +11,97 @@
 /* Fullpage mode: row */
 :host([mode="fullpage"]) .sw-prompts-container {
   flex-direction: row;
-  justify-content: center;
+  /* "safe" falls back to start-alignment when centering would overflow -
+   * plain "center" on an overflowing flex line pushes the start past the
+   * initial scroll position, clipping the first pill. */
+  justify-content: safe center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+
+/* Keep pills at their natural width so excess pills scroll. */
+:host([mode="fullpage"]) .sw-prompt-button,
+:host([mode="fullpage"]) .sw-prompt-skeleton {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  white-space: nowrap;
+}
+
+@media not (prefers-reduced-motion) {
+  :host([mode="fullpage"]) .sw-prompts-container {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Fade the overflow edge to indicate more content, swapping sides in
+ * RTL - matches the pattern in ai-website-chip.css. */
+:host([mode="fullpage"]) {
+  --sw-prompts-fade-size: var(--space-xlarge);
+}
+
+:host([mode="fullpage"]) .sw-prompts-container.can-scroll-start {
+  mask-image: linear-gradient(to right, transparent, var(--color-black) var(--sw-prompts-fade-size));
+}
+
+:host([mode="fullpage"]) .sw-prompts-container.can-scroll-end {
+  mask-image: linear-gradient(to left, transparent, var(--color-black) var(--sw-prompts-fade-size));
+}
+
+:host([mode="fullpage"]:dir(rtl)) .sw-prompts-container.can-scroll-start {
+  mask-image: linear-gradient(to left, transparent, var(--color-black) var(--sw-prompts-fade-size));
+}
+
+:host([mode="fullpage"]:dir(rtl)) .sw-prompts-container.can-scroll-end {
+  mask-image: linear-gradient(to right, transparent, var(--color-black) var(--sw-prompts-fade-size));
+}
+
+:host([mode="fullpage"]) .sw-prompts-container.can-scroll-start.can-scroll-end {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    var(--color-black) var(--sw-prompts-fade-size),
+    var(--color-black) calc(100% - var(--sw-prompts-fade-size)),
+    transparent
+  );
+}
+
+:host([mode="fullpage"]) .sw-prompts-wrapper {
+  position: relative;
+}
+
+.sw-prompts-scroll-button {
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+:host(:dir(rtl)) .sw-prompts-scroll-button {
+  transform: translateY(-50%) scaleX(-1);
+}
+
+.sw-prompts-scroll-start {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-start: calc(-1 * (var(--size-item-medium) + var(--space-medium)));
+}
+
+.sw-prompts-scroll-end {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-end: calc(-1 * (var(--size-item-medium) + var(--space-medium)));
+}
+
+@media not (prefers-reduced-motion) {
+  .sw-prompts-scroll-button {
+    transition: opacity ease 150ms;
+  }
+}
+
+:host([mode="fullpage"]) .sw-prompts-wrapper:is(:hover, :focus-within) .sw-prompts-scroll-button {
+  opacity: 1;
 }
 
 /* Sidebar mode: column */
@@ -57,6 +147,97 @@
   box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
 }
 
+/* Keeps the dismiss button beside, rather than inside, the moz-button. */
+.sw-prompt {
+  display: inline-flex;
+  position: relative;
+}
+
+.sw-prompt-dismiss {
+  align-items: center;
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+  border: none;
+  border-radius: var(--border-radius-circle);
+  cursor: pointer;
+  display: flex;
+  height: var(--size-item-small);
+  inset-inline-end: var(--space-small);
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  padding: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--size-item-small);
+  /* Keep above the following fade overlay. */
+  z-index: 2;
+
+  &:hover {
+    /* Not the pill's own hover token: Nova sets that equal to the resting
+     * background. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: color-mix(in srgb, currentColor 14%, var(--button-background-color));
+  }
+
+  &:active {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: color-mix(in srgb, currentColor 21%, var(--button-background-color));
+  }
+}
+
+@media not (prefers-reduced-motion) {
+  .sw-prompt-dismiss,
+  .sw-prompt::after {
+    transition: opacity ease 150ms;
+  }
+}
+
+.sw-prompt:is(:hover, :focus-within) .sw-prompt-dismiss {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Masking moz-button's slotted label doesn't paint, so use an overlay.
+ * Keep its background and mask separate because the background token doesn't
+ * resolve inside linear-gradient(). */
+.sw-prompt::after {
+  content: "";
+  position: absolute;
+  /* Stay inside the pill's gradient border. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-block: var(--border-width);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  inset-inline-end: var(--border-width);
+  opacity: 0;
+  pointer-events: none;
+  width: calc(var(--size-item-large) - var(--border-width));
+  /* The overlay has no content to color; it fades the pill behind it. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+  background-color: var(--button-background-color);
+  mask-image: linear-gradient(to left, black, transparent);
+  /* Round the overlay without clipping the pill's outer border. */
+  border-start-end-radius: var(--button-border-radius);
+  border-end-end-radius: var(--button-border-radius);
+  z-index: 1;
+}
+
+:host(:dir(rtl)) .sw-prompt::after {
+  mask-image: linear-gradient(to right, black, transparent);
+}
+
+.sw-prompt:is(:hover, :focus-within)::after {
+  opacity: 1;
+}
+
+.sw-prompt-dismiss-icon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  height: var(--size-item-xsmall);
+  width: var(--size-item-xsmall);
+}
+
 .sw-prompt-favicons {
   align-items: center;
   display: inline-flex;
@@ -71,6 +252,12 @@
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-inline-end: calc(-1 * var(--space-xxsmall));
   width: var(--size-item-small);
+}
+
+/* Themes the context-fill default-favicon fallback; real favicons ignore this. */
+.sw-prompt-favicon {
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
 }
 
 .sw-prompt-favicons > :last-child {
@@ -93,6 +280,7 @@
 .sw-prompt-skeleton {
   align-items: center;
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border-radius: var(--button-border-radius);
   display: inline-flex;
   font-size: var(--button-font-size);
@@ -257,7 +445,7 @@
   }
 
   .sw-prompt-button {
-    --focus-outline-offset: var(--dimension-2);
+    --focus-outline-offset: 2px;
 
     outline: none;
   }

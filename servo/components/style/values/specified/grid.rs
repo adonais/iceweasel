@@ -7,15 +7,14 @@
 
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::values::CustomIdent;
 use crate::values::generics::grid::{
     Flex, FlexUnit, GridTemplateComponent, ImplicitGridTracks, RepeatCount,
 };
 use crate::values::generics::grid::{LineNameList, LineNameListValue, NameRepeat, TrackBreadth};
 use crate::values::generics::grid::{TrackList, TrackListValue, TrackRepeat, TrackSize};
 use crate::values::specified::{Integer, LengthPercentage};
-use crate::values::CustomIdent;
 use cssparser::{Parser, Token};
-use std::mem;
 use style_traits::{ParseError, StyleParseErrorKind};
 
 impl Flex {
@@ -104,7 +103,7 @@ impl Parse for ImplicitGridTracks<TrackSize<LengthPercentage>> {
             // A single track with the initial value is always represented by an empty slice.
             return Ok(Default::default());
         }
-        return Ok(ImplicitGridTracks(track_sizes.into()));
+        Ok(ImplicitGridTracks(track_sizes.into()))
     }
 }
 
@@ -178,17 +177,14 @@ impl TrackRepeat<LengthPercentage, Integer> {
 
                             values.push(track_size);
                             names.push(current_names);
-                        } else {
-                            if values.is_empty() {
-                                // expecting at least one <track-size>
-                                return Err(ParseError::custom(
-                                    StyleParseErrorKind::UnspecifiedError,
-                                ));
-                            }
-
-                            names.push(current_names); // final `<line-names>`
-                            break; // no more <track-size>, breaking
+                            continue;
                         }
+                        if values.is_empty() {
+                            // expecting at least one <track-size>
+                            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+                        }
+                        names.push(current_names); // final `<line-names>`
+                        break; // no more <track-size>, breaking
                     }
 
                     let repeat = TrackRepeat {
@@ -214,8 +210,7 @@ impl Parse for TrackList<LengthPercentage, Integer> {
         // assume that everything is <fixed-size>. This flag is useful when we encounter <auto-repeat>
         let mut at_least_one_not_fixed = false;
         loop {
-            current_names
-                .extend_from_slice(&mut input.try_parse(parse_line_names).unwrap_or_default());
+            current_names.extend_from_slice(&input.try_parse(parse_line_names).unwrap_or_default());
             if let Ok(track_size) = input.try_parse(|i| TrackSize::parse(context, i)) {
                 if !track_size.is_fixed() {
                     at_least_one_not_fixed = true;
@@ -225,10 +220,12 @@ impl Parse for TrackList<LengthPercentage, Integer> {
                     }
                 }
 
-                let vec = mem::replace(&mut current_names, vec![]);
+                let vec = std::mem::take(&mut current_names);
                 names.push(vec.into());
                 values.push(TrackListValue::TrackSize(track_size));
-            } else if let Ok((repeat, type_)) =
+                continue;
+            }
+            if let Ok((repeat, type_)) =
                 input.try_parse(|i| TrackRepeat::parse_with_repeat_type(context, i))
             {
                 match type_ {
@@ -249,49 +246,37 @@ impl Parse for TrackList<LengthPercentage, Integer> {
                     RepeatType::Fixed => {},
                 }
 
-                let vec = mem::replace(&mut current_names, vec![]);
+                let vec = std::mem::take(&mut current_names);
                 names.push(vec.into());
                 values.push(TrackListValue::TrackRepeat(repeat));
-            } else {
-                if values.is_empty() && auto_repeat_index.is_none() {
-                    return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
-                }
-
-                names.push(current_names.into());
-                break;
+                continue;
             }
+            if values.is_empty() && auto_repeat_index.is_none() {
+                return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+            }
+            names.push(current_names.into());
+            break;
         }
 
         Ok(TrackList {
-            auto_repeat_index: auto_repeat_index.unwrap_or(std::usize::MAX),
+            auto_repeat_index: auto_repeat_index.unwrap_or(usize::MAX),
             values: values.into(),
             line_names: names.into(),
         })
     }
 }
 
-#[cfg(feature = "gecko")]
 #[inline]
 fn allow_grid_template_subgrids() -> bool {
-    true
+    crate::pref!(
+        "layout.css.grid-template-subgrid-value.enabled",
+        gecko = true
+    )
 }
 
-#[cfg(feature = "servo")]
-#[inline]
-fn allow_grid_template_subgrids() -> bool {
-    false
-}
-
-#[cfg(feature = "gecko")]
 #[inline]
 fn allow_grid_template_masonry() -> bool {
-    static_prefs::pref!("layout.css.grid-template-masonry-value.enabled")
-}
-
-#[cfg(feature = "servo")]
-#[inline]
-fn allow_grid_template_masonry() -> bool {
-    false
+    crate::pref!("layout.css.grid-template-masonry-value.enabled")
 }
 
 impl Parse for GridTemplateComponent<LengthPercentage, Integer> {
@@ -310,18 +295,17 @@ impl GridTemplateComponent<LengthPercentage, Integer> {
         context: &ParserContext,
         input: &mut Parser,
     ) -> Result<Self, ParseError> {
-        if allow_grid_template_subgrids() {
-            if let Ok(t) = input.try_parse(|i| LineNameList::parse(context, i)) {
-                return Ok(GridTemplateComponent::Subgrid(Box::new(t)));
-            }
+        if allow_grid_template_subgrids()
+            && let Ok(t) = input.try_parse(|i| LineNameList::parse(context, i))
+        {
+            return Ok(GridTemplateComponent::Subgrid(Box::new(t)));
         }
-        if allow_grid_template_masonry() {
-            if input
+        if allow_grid_template_masonry()
+            && input
                 .try_parse(|i| i.expect_ident_matching("masonry"))
                 .is_ok()
-            {
-                return Ok(GridTemplateComponent::Masonry);
-            }
+        {
+            return Ok(GridTemplateComponent::Masonry);
         }
         let track_list = TrackList::parse(context, input)?;
         Ok(GridTemplateComponent::TrackList(Box::new(track_list)))

@@ -102,7 +102,7 @@ void UtilityMediaServiceParent::WMFPreloadForSandbox() {
 
 #  if defined(NS_FREE_PERMANENT_DATA)
   // WMF Shutdown requires this or it will badly crash
-  UtilityProcessImpl::LoadLibraryOrCrash(L"ole32.dll");
+  UtilityProcessImpl::LoadLibraryOrCrash(L"user32.dll");
 #  endif  // defined(NS_FREE_PERMANENT_DATA)
 
   auto rv = wmf::MediaFoundationInitializer::HasInitialized();

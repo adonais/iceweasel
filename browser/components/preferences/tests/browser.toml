@@ -73,6 +73,8 @@ support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
+["browser_tls_key_logging_warning.js"]
+
 ["browser_windows_launch_on_login.js"]
 run-if = ["os == 'win' && !msix"]
 

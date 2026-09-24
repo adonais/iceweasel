@@ -38,7 +38,8 @@ PacketBuffer::Packet::Packet(const RtpPacketReceived& rtp_packet,
       sequence_number(sequence_number),
       timestamp(rtp_packet.Timestamp()),
       times_nacked(-1),
-      video_header(video_header) {
+      video_header(video_header),
+      rtp_packet_info(rtp_packet) {
   // Unwrapped sequence number should match the original wrapped one.
   RTC_DCHECK_EQ(static_cast<uint16_t>(sequence_number),
                 rtp_packet.SequenceNumber());

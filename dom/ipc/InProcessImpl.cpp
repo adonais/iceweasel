@@ -136,7 +136,7 @@ InProcessParent::GetOsPid(int32_t* aOsPid) {
 }
 
 NS_IMETHODIMP InProcessParent::GetRemoteType(nsACString& aRemoteType) {
-  aRemoteType = NOT_REMOTE_TYPE;
+  aRemoteType = dom::RemoteType::NotRemote().Stringify();
   return NS_OK;
 }
 

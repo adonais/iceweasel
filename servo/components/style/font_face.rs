@@ -12,7 +12,7 @@ use crate::parser::{Parse, ParserContext};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::values::computed::FontWeight;
 use crate::values::generics::font::FontStyle as GenericFontStyle;
-use crate::values::specified::{url::SpecifiedUrl, Angle};
+use crate::values::specified::{Angle, url::SpecifiedUrl};
 use cssparser::{Parser, RuleBodyParser, SourceLocation};
 use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
@@ -53,7 +53,7 @@ impl Parse for SourceList {
                 Ok(s.ok())
             })?
             .into_iter()
-            .filter_map(|s| s)
+            .flatten()
             .collect::<Vec<Source>>();
         if list.is_empty() {
             Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError))
@@ -343,11 +343,7 @@ pub struct ComputedFontWeightRange(pub FontWeight, pub FontWeight);
 
 #[inline]
 fn sort_range<T: PartialOrd>(a: T, b: T) -> (T, T) {
-    if a > b {
-        (b, a)
-    } else {
-        (a, b)
-    }
+    if a > b { (b, a) } else { (a, b) }
 }
 
 impl FontWeightRange {
@@ -488,8 +484,8 @@ pub fn parse_font_face_block(
             context,
             descriptors: &mut rule.descriptors,
         };
-        let mut iter = RuleBodyParser::new(input, &mut parser);
-        while let Some(declaration) = iter.next() {
+        let iter = RuleBodyParser::new(input, &mut parser);
+        for declaration in iter {
             if let Err((error, slice, location)) = declaration {
                 let error = ContextualParseError::UnsupportedFontFaceDescriptor(slice, error);
                 context.log_css_error(location, error)
@@ -530,9 +526,10 @@ impl Parse for Source {
         };
 
         // Parse optional tech()
-        let tech_flags = if input
-            .try_parse(|input| input.expect_function_matching("tech"))
-            .is_ok()
+        let tech_flags = if crate::pref!("layout.css.font-tech.enabled", gecko = true)
+            && input
+                .try_parse(|input| input.expect_function_matching("tech"))
+                .is_ok()
         {
             input.parse_nested_block(|input| FontFaceSourceTechFlags::parse(context, input))?
         } else {

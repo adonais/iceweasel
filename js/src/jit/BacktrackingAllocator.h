@@ -215,7 +215,7 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
 
   // The bundle containing this range, null if liveness information is being
   // constructed and we haven't started allocating bundles yet.
-  LiveBundle* bundle_;
+  LiveBundle* bundle_ = nullptr;
 
   // The code positions in this range.
   Range range_;
@@ -223,28 +223,19 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
   // All uses of the virtual register in this range, ordered by location.
   InlineForwardList<UsePosition> uses_;
 
-  // Total spill weight that calculate from all the uses' policy. Because the
-  // use's policy can't be changed after initialization, we can update the
-  // weight whenever a use is added to or remove from this range. This way, we
-  // don't need to iterate all the uses every time computeSpillWeight() is
-  // called.
-  size_t usesSpillWeight_;
-
-  // Number of uses that have policy LUse::FIXED.
-  uint32_t numFixedUses_;
+  // Number of uses that have policy LUse::FIXED, LUse::REGISTER and LUse::ANY.
+  // Because a use's policy can't change after initialization, these are
+  // maintained as uses are added to and removed from this range, so that
+  // ::computeRequirement and ::computeSpillWeight don't have to iterate all the
+  // uses every time they're called.
+  uint32_t numFixedUses_ = 0;
+  uint32_t numRegisterUses_ = 0;
+  uint32_t numAnyUses_ = 0;
 
   // Whether this range contains the virtual register's definition.
-  bool hasDefinition_;
+  bool hasDefinition_ = false;
 
-  LiveRange(VirtualRegister* vreg, Range range)
-      : vreg_(vreg),
-        bundle_(nullptr),
-        range_(range),
-        usesSpillWeight_(0),
-        numFixedUses_(0),
-        hasDefinition_(false)
-
-  {
+  LiveRange(VirtualRegister* vreg, Range range) : vreg_(vreg), range_(range) {
     MOZ_ASSERT(!range.empty());
   }
 
@@ -308,8 +299,9 @@ class LiveRange : public TempObject, public InlineForwardListNode<LiveRange> {
     hasDefinition_ = true;
   }
 
-  size_t usesSpillWeight() { return usesSpillWeight_; }
-  uint32_t numFixedUses() { return numFixedUses_; }
+  uint32_t numFixedUses() const { return numFixedUses_; }
+  uint32_t numRegisterUses() const { return numRegisterUses_; }
+  uint32_t numAnyUses() const { return numAnyUses_; }
 
 #ifdef JS_JITSPEW
   // Return a string describing this range.

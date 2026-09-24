@@ -361,9 +361,6 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mShouldSendWebProgressEventsToParent(false),
       mRenderLayers(true),
       mIsPreservingLayers(false),
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-      mNativeWindowHandle(0),
-#endif
       mCancelContentJSEpoch(0) {
   mozilla::HoldJSObjects(this);
 
@@ -2212,7 +2209,7 @@ already_AddRefed<DataTransfer> BrowserChild::ConvertToDataTransfer(
   // the principal permits it (and dom.events.datatransfer.protected.enabled is
   // false).  Otherwise, protected DataTransfer access should only be given to
   // the system.
-  if (!aPrincipal || Manager()->GetRemoteType() != EXTENSION_REMOTE_TYPE) {
+  if (!aPrincipal || !Manager()->GetRemoteType().IsExtension()) {
     aPrincipal = nsContentUtils::GetSystemPrincipal();
   }
 
@@ -3035,16 +3032,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroyPrintClone(
   }
 #endif
   return IPC_OK();
-}
-
-mozilla::ipc::IPCResult BrowserChild::RecvUpdateNativeWindowHandle(
-    const uintptr_t& aNewHandle) {
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-  mNativeWindowHandle = aNewHandle;
-  return IPC_OK();
-#else
-  return IPC_FAIL_NO_REASON(this);
-#endif
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {

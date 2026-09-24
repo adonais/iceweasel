@@ -28,6 +28,8 @@ ChromeUtils.defineLazyGetter(lazy, "PasswordRulesManager", () => {
 });
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AutocompleteRemoveRecord:
+    "resource://gre/modules/AutocompleteRemoveRecord.sys.mjs",
   ChromeMigrationUtils: "resource:///modules/ChromeMigrationUtils.sys.mjs",
   FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
@@ -394,11 +396,6 @@ export class LoginManagerParent extends JSWindowActorParent {
         return this.doAutocompleteSearch(this.origin, data);
       }
 
-      case "PasswordManager:removeLogin": {
-        await this.#onRemoveLogin(data.login);
-        break;
-      }
-
       // Used by tests to detect that a form-fill has occurred. This redirects
       // to the top-level browsing context.
       case "PasswordManager:formProcessed": {
@@ -427,7 +424,9 @@ export class LoginManagerParent extends JSWindowActorParent {
     lazy.log("#onPasswordEditedOrGenerated: Received PasswordManager.");
     if (gListenerForTests) {
       lazy.log("#onPasswordEditedOrGenerated: Calling gListenerForTests.");
-      gListenerForTests("PasswordEditedOrGenerated", {});
+      gListenerForTests("PasswordEditedOrGenerated", {
+        browsingContext: this.browsingContext,
+      });
     }
     let browser = this.getRootBrowser();
     this._onPasswordEditedOrGenerated(browser, this.origin, data);
@@ -437,26 +436,26 @@ export class LoginManagerParent extends JSWindowActorParent {
     lazy.log("#onIgnorePasswordEdit: Received PasswordManager.");
     if (gListenerForTests) {
       lazy.log("#onIgnorePasswordEdit: Calling gListenerForTests.");
-      gListenerForTests("PasswordIgnoreEdit", {});
+      gListenerForTests("PasswordIgnoreEdit", {
+        browsingContext: this.browsingContext,
+      });
     }
   }
 
   #onShowDoorhanger(data) {
     const browser = this.getRootBrowser();
+    // Read before awaiting: the actor may be destroyed by the time the doorhanger resolves.
+    const browsingContext = this.browsingContext;
     const submitPromise = this.showDoorhanger(browser, this.origin, data);
     if (gListenerForTests) {
       submitPromise.then(() => {
         gListenerForTests("ShowDoorhanger", {
+          browsingContext,
           origin: this.origin,
           data,
         });
       });
     }
-  }
-
-  async #onRemoveLogin(login) {
-    login = lazy.LoginHelper.vanillaObjectToLogin(login);
-    Services.logins.removeLoginAsync(login);
   }
 
   #onOpenImportableLearnMore() {
@@ -1595,11 +1594,51 @@ export class LoginManagerParent extends JSWindowActorParent {
     // Logins do not show previews
   }
 
+  // The dropdown is torn down when the reauthentication or confirmation prompt
+  // takes focus, so bring it back once the flow is over.
+  #reopenAutocompletePopup() {
+    if (!this.manager || this.manager.isClosed) {
+      return;
+    }
+    this.sendAsyncMessage("PasswordManager:repopulateAutocompletePopup");
+  }
+
+  async #confirmLoginRemoval() {
+    const browser = this.getRootBrowser();
+    const chromeWindow = this.browsingContext.topChromeWindow;
+    const osAuth = await lazy.AutocompleteRemoveRecord.passwordOSAuthStrings();
+    const { isAuthorized } = await lazy.LoginHelper.requestReauth(
+      browser,
+      null,
+      osAuth.message,
+      osAuth.caption,
+      "delete_autocomplete"
+    );
+
+    if (isAuthorized && chromeWindow) {
+      await lazy.AutocompleteRemoveRecord.confirmRemoval(
+        chromeWindow,
+        "password"
+      );
+    }
+  }
+
   async onAutoCompleteEntrySelected(message, data) {
     switch (message) {
       // Called when clicking the open preference entry in the autocomplete
       case "PasswordManager:OpenPreferences": {
         this.#onOpenPreferences(data.hostname, data.entryPoint, data.loginGuid);
+        break;
+      }
+
+      case "PasswordManager:DeleteLogin": {
+        try {
+          await this.#confirmLoginRemoval();
+        } catch (ex) {
+          lazy.log("Password removal flow failed:", ex);
+        } finally {
+          this.#reopenAutocompletePopup();
+        }
         break;
       }
 

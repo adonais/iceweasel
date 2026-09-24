@@ -37,8 +37,9 @@ class MacIOSurfaceTextureData : public TextureData {
 
   bool Serialize(SurfaceDescriptor& aOutDescriptor) override;
 
-  void GetSubDescriptor(
-      RemoteDecoderVideoSubDescriptor* const aOutDesc) override;
+  RemoteDecoderVideoType GetRemoteDecoderVideoType() override {
+    return RemoteDecoderVideoType::MacIOSurface;
+  }
 
   void Deallocate(LayersIPCChannel*) override;
 

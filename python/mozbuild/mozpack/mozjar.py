@@ -6,7 +6,6 @@ import functools
 import os
 import struct
 import zlib
-from collections import OrderedDict
 from io import BytesIO, UnsupportedOperation
 from zipfile import ZIP_DEFLATED, ZIP_STORED
 
@@ -69,7 +68,7 @@ class JarStruct:
         Create an instance from the given data. Data may be omitted to create
         an instance with empty fields.
         """
-        assert self.MAGIC and isinstance(self.STRUCT, OrderedDict)
+        assert self.MAGIC and isinstance(self.STRUCT, dict)
         self.size_fields = set(
             t for t in self.STRUCT.values() if t not in JarStruct.TYPE_MAPPING
         )
@@ -197,16 +196,16 @@ class JarCdirEnd(JarStruct):
     """
 
     MAGIC = 0x06054B50
-    STRUCT = OrderedDict([
-        ("disk_num", "uint16"),
-        ("cdir_disk", "uint16"),
-        ("disk_entries", "uint16"),
-        ("cdir_entries", "uint16"),
-        ("cdir_size", "uint32"),
-        ("cdir_offset", "uint32"),
-        ("comment_size", "uint16"),
-        ("comment", "comment_size"),
-    ])
+    STRUCT = {
+        "disk_num": "uint16",
+        "cdir_disk": "uint16",
+        "disk_entries": "uint16",
+        "cdir_entries": "uint16",
+        "cdir_size": "uint32",
+        "cdir_offset": "uint32",
+        "comment_size": "uint16",
+        "comment": "comment_size",
+    }
 
 
 CDIR_END_SIZE = JarCdirEnd().size
@@ -218,27 +217,27 @@ class JarCdirEntry(JarStruct):
     """
 
     MAGIC = 0x02014B50
-    STRUCT = OrderedDict([
-        ("creator_version", "uint16"),
-        ("min_version", "uint16"),
-        ("general_flag", "uint16"),
-        ("compression", "uint16"),
-        ("lastmod_time", "uint16"),
-        ("lastmod_date", "uint16"),
-        ("crc32", "uint32"),
-        ("compressed_size", "uint32"),
-        ("uncompressed_size", "uint32"),
-        ("filename_size", "uint16"),
-        ("extrafield_size", "uint16"),
-        ("filecomment_size", "uint16"),
-        ("disknum", "uint16"),
-        ("internal_attr", "uint16"),
-        ("external_attr", "uint32"),
-        ("offset", "uint32"),
-        ("filename", "filename_size"),
-        ("extrafield", "extrafield_size"),
-        ("filecomment", "filecomment_size"),
-    ])
+    STRUCT = {
+        "creator_version": "uint16",
+        "min_version": "uint16",
+        "general_flag": "uint16",
+        "compression": "uint16",
+        "lastmod_time": "uint16",
+        "lastmod_date": "uint16",
+        "crc32": "uint32",
+        "compressed_size": "uint32",
+        "uncompressed_size": "uint32",
+        "filename_size": "uint16",
+        "extrafield_size": "uint16",
+        "filecomment_size": "uint16",
+        "disknum": "uint16",
+        "internal_attr": "uint16",
+        "external_attr": "uint32",
+        "offset": "uint32",
+        "filename": "filename_size",
+        "extrafield": "extrafield_size",
+        "filecomment": "filecomment_size",
+    }
 
 
 class JarLocalFileHeader(JarStruct):
@@ -247,20 +246,20 @@ class JarLocalFileHeader(JarStruct):
     """
 
     MAGIC = 0x04034B50
-    STRUCT = OrderedDict([
-        ("min_version", "uint16"),
-        ("general_flag", "uint16"),
-        ("compression", "uint16"),
-        ("lastmod_time", "uint16"),
-        ("lastmod_date", "uint16"),
-        ("crc32", "uint32"),
-        ("compressed_size", "uint32"),
-        ("uncompressed_size", "uint32"),
-        ("filename_size", "uint16"),
-        ("extra_field_size", "uint16"),
-        ("filename", "filename_size"),
-        ("extra_field", "extra_field_size"),
-    ])
+    STRUCT = {
+        "min_version": "uint16",
+        "general_flag": "uint16",
+        "compression": "uint16",
+        "lastmod_time": "uint16",
+        "lastmod_date": "uint16",
+        "crc32": "uint32",
+        "compressed_size": "uint32",
+        "uncompressed_size": "uint32",
+        "filename_size": "uint16",
+        "extra_field_size": "uint16",
+        "filename": "filename_size",
+        "extra_field": "extra_field_size",
+    }
 
 
 class JarFileReader:
@@ -410,7 +409,7 @@ class JarReader:
         preload = 0
         if self.is_optimized:
             preload = JarStruct.get_data("uint32", self._data)[0]
-        entries = OrderedDict()
+        entries = {}
         offset = self._cdir_end["cdir_offset"]
         for e in range(self._cdir_end["cdir_entries"]):
             entry = JarCdirEntry(self._data[offset:])
@@ -515,7 +514,7 @@ class JarWriter:
             compress = JAR_DEFLATED
         self._compress = compress
         self._compress_level = compress_level
-        self._contents = OrderedDict()
+        self._contents = {}
         self._last_preloaded = None
 
     def __enter__(self):
@@ -695,7 +694,7 @@ class JarWriter:
         the archive in Gecko. This reorders the members according to the order
         of given list.
         """
-        new_contents = OrderedDict()
+        new_contents = {}
         for f in files:
             if f not in self._contents:
                 continue

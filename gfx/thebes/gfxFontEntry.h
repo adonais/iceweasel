@@ -521,16 +521,16 @@ class gfxFontEntry {
    * Font-variation query methods. These will call through to ...Internal()
    * implementation methods if we don't have a Skrifa font to query.
    */
-  bool HasVariations();
+  bool HasVariations() MOZ_EXCLUDES(mLock);
   void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes);
   void GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances);
 
-  bool HasBoldVariableWeight();
-  bool HasItalicVariation();
-  bool HasSlantVariation();
-  bool HasOpticalSize();
+  bool HasBoldVariableWeight() MOZ_EXCLUDES(mLock);
+  bool HasItalicVariation() MOZ_EXCLUDES(mLock);
+  bool HasSlantVariation() MOZ_EXCLUDES(mLock);
+  bool HasOpticalSize() MOZ_EXCLUDES(mLock);
 
-  void CheckForVariationAxes();
+  void CheckForVariationAxes() MOZ_EXCLUDES(mLock);
 
   // Set up the entry's weight/width/style ranges according to axes found
   // by GetVariationAxes (for installed fonts; do NOT call this for user
@@ -793,7 +793,7 @@ class gfxFontEntry {
   // Caller is responsible to call hb_blob_destroy() on the returned blob
   // (if non-nullptr) when no longer required. For transient access to a
   // table, use of AutoTable (below) is generally preferred.
-  virtual hb_blob_t* GetFontTableInternal(uint32_t aTag);
+  virtual hb_blob_t* GetFontTableInternal(uint32_t aTag) MOZ_EXCLUDES(mLock);
 
   // Check for presence of a given table.
   virtual bool HasFontTableInternal(uint32_t aTableTag);

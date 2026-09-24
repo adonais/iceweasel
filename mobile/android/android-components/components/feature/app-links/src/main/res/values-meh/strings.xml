@@ -11,6 +11,13 @@
   <string name="mozac_feature_applinks_open_in">Síne jii…</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">Síne nuu inka ka̱a̱</string>
+  <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_2">¿Síne link ya\'a nuu inka ka̱a̱?</string>
+  <!--
+    The title of the prompt with app suffix.
+    %s is a placeholder that will be replaced by an app name
+  -->
+  <string name="mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2">¿Síne link ya\'a nuu ka̱a̱ ya\'a %s?</string>
   <!--
     The message of the prompt to confirm with users that they want to open the link in another app
     %s is a placeholder that will be replaced by the app name
@@ -18,6 +25,12 @@
   <string name="mozac_feature_applinks_normal_confirm_dialog_message">¿A kuvinu jia\'a %s sa kuvi kune\'yanu contenido ya\'a?</string>
   <!-- Opens the selected time -->
   <string name="mozac_feature_applinks_confirm_dialog_confirm">Síne</string>
+  <!-- Opens the selected app link -->
+  <string name="mozac_feature_applinks_confirm_dialog_confirm_2">Síne jii aplicación</string>
   <!-- Cancels the prompt -->
   <string name="mozac_feature_applinks_confirm_dialog_deny">Nkuvi-ka</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">Kune´ya detalles</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">Chiyu\'u detalles</string>
 </resources>

@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+# `cargo clippy` runs clippy-driver in place of rustc by setting
+# RUSTC_WORKSPACE_WRAPPER, which cargo only applies to workspace members. A
+# fair amount of first-party rust lives in crates that the top-level
+# Cargo.toml excludes from the workspace (servo/, gfx/wr/, ...).
+#
+# We are passed to cargo as RUSTC_WRAPPER instead, which cargo applies to every
+# crate. Cargo invokes `$RUSTC_WRAPPER $RUSTC_WORKSPACE_WRAPPER $RUSTC ...`, so
+# all we have to do is splice clippy-driver in ourselves if cargo hasn't already.
+#
+# Vendored crates are compiled with `--cap-lints allow`, which stops
+# clippy-driver from linting them, so they need no special casing here.
+
+import os
+import sys
+
+args = sys.argv[1:]
+
+workspace_wrapper = os.environ.get("RUSTC_WORKSPACE_WRAPPER")
+if workspace_wrapper and os.path.splitext(os.path.basename(args[0]))[0] != "clippy-driver":
+    args.insert(0, workspace_wrapper)
+
+if sys.platform == "win32":
+    # For some reason, os.execvp doesn't handle arguments properly on Windows.
+    # See https://github.com/python/cpython/issues/101191 and
+    # https://glandium.org/blog/?p=3051 for context.
+    import subprocess
+    sys.exit(subprocess.run(args).returncode)
+
+os.execvp(args[0], args)

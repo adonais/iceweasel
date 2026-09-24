@@ -34,6 +34,8 @@ vendoring:
 
   patches:
     - fix-includes.patch
+    - crash-reporting-messages.patch
+    - unaligned-transfer-buffers.patch
 
 updatebot:
   maintainer-phab: shravanrn

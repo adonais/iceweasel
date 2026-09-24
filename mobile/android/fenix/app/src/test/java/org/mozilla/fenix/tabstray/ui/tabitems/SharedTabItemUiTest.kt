@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray.ui.tabitems
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.mozilla.fenix.compose.swipeFadeAlpha
 
 class SharedTabItemUiTest {
     @Test

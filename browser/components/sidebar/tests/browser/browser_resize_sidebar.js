@@ -214,11 +214,19 @@ add_task(async function test_resize_after_toggling_revamp() {
   await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
   await SpecialPowers.popPrefEnv();
   await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  Assert.equal(
+    SidebarController.sidebarRevampVisibility,
+    "always-show",
+    "The round trip through horizontal tabs kept the visibility setting."
+  );
 
   info("Resize the vertical tab strip.");
   const originalWidth = getLauncherWidth();
   await dragLauncher(200, true);
   const newWidth = getLauncherWidth();
+  info(
+    `Launcher width: ${originalWidth || "(unset)"} -> ${newWidth || "(unset)"}.`
+  );
   Assert.greater(
     parseInt(newWidth),
     parseInt(originalWidth),

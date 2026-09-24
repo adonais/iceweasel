@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !wasmSimdEnabled()
+// |jit-test| skip-if: !wasmSimdEnabled(); test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // Do not include this in the preamble, it must be loaded after lib/wasm.js
 load(scriptdir + "ad-hack-preamble.js")

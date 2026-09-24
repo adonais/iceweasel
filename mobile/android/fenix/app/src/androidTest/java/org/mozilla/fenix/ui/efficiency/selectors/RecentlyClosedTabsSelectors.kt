@@ -4,29 +4,34 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object RecentlyClosedTabsSelectors {
+object RecentlyClosedTabsSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        EMPTY_RECENTLY_CLOSED_TABS_LIST
+    }
 
     // Toolbar title is present whether the list is empty or populated, so it (not the empty-state view)
     // is the reliable page-arrival signal for navigateToPage().
     val MENU_TITLE =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Recently closed tabs",
+        navigationToolbarTitle(
+            title = getStringResource(R.string.library_recently_closed_tabs),
             description = "Recently closed tabs toolbar title",
-            groups = listOf("requiredForPage"),
         )
 
-    // Only present when there are no recently-closed tabs. Regrouped out of requiredForPage so the page
+    // Only present when there are no recently-closed tabs. Kept out of readiness so the page
     // is reachable/assertable in the populated state too.
     val EMPTY_RECENTLY_CLOSED_TABS_LIST =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "recently_closed_empty_view",
             description = "Empty recently closed tabs view",
-            groups = listOf("emptyRecentlyClosedTabsList"),
+            groups = setOf(Group.EMPTY_RECENTLY_CLOSED_TABS_LIST),
         )
 
     @Suppress("FunctionName")
@@ -36,7 +41,6 @@ object RecentlyClosedTabsSelectors {
             value = "title",
             secondaryValue = title,
             description = "Recently closed tab item with title: $title",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -45,7 +49,6 @@ object RecentlyClosedTabsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = url,
             description = "Recently closed tab item with url: $url",
-            groups = listOf(),
         )
 
     val ITEM_DELETE_BUTTON =
@@ -53,15 +56,5 @@ object RecentlyClosedTabsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "overflow_menu",
             description = "Recently closed tab item delete button",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            MENU_TITLE,
-            EMPTY_RECENTLY_CLOSED_TABS_LIST,
-            RECENTLY_CLOSED_ITEM(),
-            RECENTLY_CLOSED_ITEM_URL(),
-            ITEM_DELETE_BUTTON,
         )
 }

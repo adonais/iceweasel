@@ -5,15 +5,19 @@
  */
 
 import mediaQueryNoInvalid from "./media-query-no-invalid.mjs";
+import noBackgroundWithoutTextColor from "./no-background-without-text-color.mjs";
 import noBaseDesignTokens from "./no-base-design-tokens.mjs";
 import noBrowserRefsInToolkit from "./no-browser-refs-in-toolkit.mjs";
 import noHasSelector from "./no-has-selector.mjs";
 import useDesignTokens from "./use-design-tokens.mjs";
+import usePairedColorTokens from "./use-paired-color-tokens.mjs";
 
 export default {
   "media-query-no-invalid": mediaQueryNoInvalid,
+  "no-background-without-text-color": noBackgroundWithoutTextColor,
   "no-base-design-tokens": noBaseDesignTokens,
   "no-browser-refs-in-toolkit": noBrowserRefsInToolkit,
   "no-has-selector": noHasSelector,
   "use-design-tokens": useDesignTokens,
+  "use-paired-color-tokens": usePairedColorTokens,
 };

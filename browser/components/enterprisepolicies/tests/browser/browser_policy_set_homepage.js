@@ -86,6 +86,36 @@ add_task(async function homepage_test_multiple_additional() {
   });
 });
 
+// Administrators still pipe-separate several homepages in URL, the way
+// browser.startup.homepage stores them, instead of using Additional.
+add_task(async function homepage_test_pipe_separated_url() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Homepage: {
+        URL: "http://example1.com|http://example2.com",
+      },
+    },
+  });
+  await check_homepage({
+    expectedURL: "http://example1.com/|http://example2.com/",
+  });
+});
+
+add_task(async function homepage_test_pipe_separated_url_and_additional() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Homepage: {
+        URL: "http://example1.com/|http://example2.com/",
+        Additional: ["http://example3.com/"],
+      },
+    },
+  });
+  await check_homepage({
+    expectedURL:
+      "http://example1.com/|http://example2.com/|http://example3.com/",
+  });
+});
+
 add_task(async function homepage_test_locked() {
   await setupPolicyEngineWithJson({
     policies: {

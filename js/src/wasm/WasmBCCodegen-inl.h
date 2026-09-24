@@ -67,7 +67,7 @@ void BaseCompiler::moveF32(RegF32 src, RegF32 dest) {
   }
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::moveV128(RegV128 src, RegV128 dest) {
   if (src != dest) {
     masm.moveSimd128(src, dest);
@@ -105,7 +105,7 @@ inline void BaseCompiler::move<RegPtr>(RegPtr src, RegPtr dest) {
   movePtr(src, dest);
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 template <>
 inline void BaseCompiler::move<RegV128>(RegV128 src, RegV128 dest) {
   moveV128(src, dest);
@@ -189,7 +189,7 @@ RegF64 BaseCompiler::captureReturnedF64(const FunctionCall& call) {
   return r;
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 RegV128 BaseCompiler::captureReturnedV128(const FunctionCall& call) {
   RegV128 r = RegV128(ReturnSimd128Reg);
   MOZ_ASSERT(isAvailableV128(r));

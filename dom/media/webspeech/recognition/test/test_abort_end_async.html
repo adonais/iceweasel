@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: abort()'s "end" event is not fired synchronously</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-abort
+// "The user agent must raise an end event once the speech service is no
+// longer connected." Firing "end" synchronously from inside abort() means
+// script calling abort() can observe onend having already run before
+// abort() even returns, which is not how DOM events normally work and is
+// surprising for callers relying on ordinary event-loop ordering.
+
+SimpleTest.waitForExplicitFinish();
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const sr = new SpeechRecognition();
+    await new Promise(resolve => {
+      sr.onstart = resolve;
+      sr.start();
+    });
+
+    let endFiredSync = false;
+    sr.onend = () => {
+      endFiredSync = true;
+    };
+    sr.abort();
+    ok(!endFiredSync,
+       "\"end\" must not fire synchronously from abort()");
+
+    await new Promise(resolve => {
+      sr.onend = resolve;
+    });
+    ok(true, "\"end\" eventually fires asynchronously after abort()");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

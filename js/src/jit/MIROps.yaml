@@ -844,8 +844,8 @@
 - name: ToFloat16
   gen_boilerplate: false
 
-# Converts a uint32 to a double (coming from wasm).
-- name: WasmUnsignedToDouble
+# Converts a uint32 to a double.
+- name: UnsignedToDouble
   operands:
     def: Int32
   type_policy: none
@@ -855,8 +855,10 @@
   congruent_to: if_operands_equal
   alias_set: none
   clone: true
+  can_recover: true
 
-- name: WasmUnsignedToFloat32
+# Converts a uint32 to a float32.
+- name: UnsignedToFloat32
   gen_boilerplate: false
 
 - name: WrapInt64ToInt32

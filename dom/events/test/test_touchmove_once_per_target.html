@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test for bug 2018625: a touch event is dispatched once per target</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+<style>
+#target {
+  width: 300px;
+  height: 300px;
+  touch-action: none;
+}
+</style>
+</head>
+<body>
+<div id="target"></div>
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(() => {
+  const target = document.getElementById("target");
+  const touchMoveEvents = [];
+  target.addEventListener("touchmove", event => {
+    touchMoveEvents.push({
+      touches: event.touches.length,
+      changedTouches: event.changedTouches.length,
+    });
+  });
+
+  // Both touch points are on #target and both of them move, so the widget
+  // event has two changed touch points sharing a single target.
+  synthesizeTouch(target, [10, 50], 10, { type: "touchstart" });
+  synthesizeTouch(target, [20, 60], 20, { type: "touchmove" });
+  synthesizeTouch(target, [20, 60], 20, { type: "touchend" });
+
+  is(
+    touchMoveEvents.length,
+    1,
+    "Moving two touch points on the same target should dispatch touchmove once"
+  );
+  is(
+    touchMoveEvents[0]?.changedTouches,
+    2,
+    "Both moved touch points should be reported by changedTouches"
+  );
+  is(
+    touchMoveEvents[0]?.touches,
+    2,
+    "Both touch points should be reported by touches"
+  );
+
+  SimpleTest.finish();
+});
+</script>
+</body>
+</html>

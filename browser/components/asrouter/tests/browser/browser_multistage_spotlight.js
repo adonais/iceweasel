@@ -334,3 +334,51 @@ add_task(async function test_spotlight_modal_fullsize_and_nonzero() {
 
   await win.close();
 });
+
+add_task(async function test_spotlight_modal_clipped_to_window_corners() {
+  let message = (await PanelTestProvider.getMessages()).find(
+    m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"
+  );
+  let browser = gBrowser.selectedBrowser;
+  await dialogClosed(browser);
+  let win = await showDialog({ message, browser });
+
+  let dialog = document.getElementById("window-modal-dialog");
+  let bodyStyle = getComputedStyle(document.body);
+  for (let corner of ["TopLeft", "TopRight", "BottomLeft", "BottomRight"]) {
+    let prop = `border${corner}Radius`;
+    Assert.equal(
+      getComputedStyle(dialog)[prop],
+      bodyStyle[prop],
+      `Spotlight ${prop} matches the window's own corner`
+    );
+  }
+
+  // <body> only carries a radius on platforms where we draw the window corners
+  // ourselves (GTK client-side decorations), so force one to exercise the clip
+  // everywhere.
+  const RADIUS = 60;
+  document.body.style.borderRadius = `${RADIUS}px`;
+  try {
+    Assert.equal(
+      getComputedStyle(dialog).borderTopLeftRadius,
+      `${RADIUS}px`,
+      "Spotlight follows the window's corner radius"
+    );
+    Assert.notEqual(
+      getComputedStyle(dialog).overflow,
+      "visible",
+      "Spotlight clips its contents to that radius"
+    );
+    Assert.equal(
+      document.elementFromPoint(4, 4)?.closest(".dialogBox"),
+      null,
+      "Spotlight contents don't protrude past the rounded window corner"
+    );
+  } finally {
+    document.body.style.removeProperty("border-radius");
+  }
+
+  win.close();
+  await dialogClosed(browser);
+});

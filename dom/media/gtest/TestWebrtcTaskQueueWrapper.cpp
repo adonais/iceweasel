@@ -15,7 +15,8 @@ namespace mozilla {
 
 RefPtr<TaskQueue> MakeTestWebrtcTaskQueueWrapper() {
   return CreateWebrtcTaskQueueWrapper(do_AddRef(GetCurrentSerialEventTarget()),
-                                      "TestWebrtcTaskQueueWrapper"_ns, true);
+                                      "TestWebrtcTaskQueueWrapper"_ns,
+                                      TailDispatchPolicy::ConsistentOrdering);
 }
 
 TEST(TestWebrtcTaskQueueWrapper, TestCurrent)

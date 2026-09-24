@@ -785,9 +785,9 @@ bool js::regexp_construct(JSContext* cx, unsigned argc, Value* vp) {
         shared = nullptr;
       }
 
-      if ((!flags.unicode() && flagsArg.unicode()) ||
-          (!flags.unicodeSets() && flagsArg.unicodeSets())) {
-        // Have to check syntax again when adding 'u' or 'v' flag.
+      if ((flags.unicode() != flagsArg.unicode()) ||
+          (flags.unicodeSets() != flagsArg.unicodeSets())) {
+        // Have to check syntax again when adding/removing 'u' or 'v' flag.
 
         // https://tc39.es/ecma262/#sec-regexpinitialize
         // 22.2.3.3 step 13.

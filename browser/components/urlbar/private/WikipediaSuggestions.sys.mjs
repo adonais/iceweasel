@@ -89,6 +89,12 @@ export class WikipediaSuggestions extends SuggestProvider {
     ];
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} _searchString
+   */
   onEngagement(queryContext, controller, details, _searchString) {
     let { result } = details;
 

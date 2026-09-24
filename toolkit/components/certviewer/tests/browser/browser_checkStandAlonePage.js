@@ -43,7 +43,7 @@ add_task(async function test_dbItemDisplayed() {
     Ci.nsIX509CertDB
   );
   Assert.ok(certdb, "certdb not null");
-  let certcache = certdb.getCerts();
+  let certcache = await certdb.getCerts();
   Assert.ok(certcache, "certcache not null");
 
   for (let cert of certcache) {

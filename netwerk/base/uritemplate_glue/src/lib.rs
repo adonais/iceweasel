@@ -19,9 +19,9 @@ pub struct UriTemplateWrapper {
 }
 
 impl UriTemplateWrapper {
-    fn new(input: &nsACString) -> Result<RefPtr<UriTemplateWrapper>, nsresult> {
+    fn new(input: &nsACString) -> Result<RefPtr<Self>, nsresult> {
         let template = str::from_utf8(input).map_err(|_| NS_ERROR_INVALID_ARG)?;
-        let builder: *mut UriTemplateWrapper = Box::into_raw(Box::new(Self {
+        let builder: *mut Self = Box::into_raw(Box::new(Self {
             builder: UriTemplate::new(template),
             refcnt: unsafe { AtomicRefcnt::new() },
         }));
@@ -30,11 +30,13 @@ impl UriTemplateWrapper {
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn uri_template_addref(builder: &UriTemplateWrapper) {
     builder.refcnt.inc();
 }
 
 #[no_mangle]
+#[allow(clippy::missing_safety_doc)]
 pub unsafe extern "C" fn uri_template_release(builder: &UriTemplateWrapper) {
     let rc = builder.refcnt.dec();
     if rc == 0 {

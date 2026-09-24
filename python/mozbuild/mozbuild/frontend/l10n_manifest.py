@@ -14,9 +14,11 @@ jar.mn entries are captured with AB_CD=MOZ_L10N_AB_CD_PLACEHOLDER
 so the manifest stays locale-independent, and are resolved during staging.
 """
 
+from __future__ import annotations
+
 import json
 from collections.abc import Iterator
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Optional
 
@@ -28,7 +30,7 @@ from mozbuild.frontend.reader import SandboxValidationError
 from mozbuild.jar import DeprecatedJarManifest, JarManifestParser
 from mozbuild.preprocessor import Preprocessor
 
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 MOZ_L10N_AB_CD_PLACEHOLDER = "MOZ_L10N_AB_CD_PLACEHOLDER"
 
 
@@ -91,12 +93,19 @@ class LocalizedGenScript:
 
 @dataclass
 class L10nManifestContextData:
-    """Per-moz.build-context l10n data."""
+    """Per-moz.build-context l10n data.
+
+    relsrcdir is topsrcdir-relative and locates en-US sources.
+    locale_relsrcdir is rooted at the directory the l10n repository
+    mirrors and locates merge-tree sources; the two only differ for
+    comm-central, which localizes from commtopsrcdir.
+    """
 
     relsrcdir: str
     install_subdir: str
     defines: dict[str, object]
     locale_pp_defines: dict[str, dict[str, str]]
+    locale_relsrcdir: str
     jar_sections: list[JarSection] = field(default_factory=list)
     localized_files: list[LocalizedFileGroup] = field(default_factory=list)
     localized_pp_files: list[LocalizedFileGroup] = field(default_factory=list)
@@ -132,6 +141,7 @@ def load_l10n_manifest(path: Path) -> L10nManifest:
     contexts = [
         L10nManifestContextData(
             relsrcdir=c["relsrcdir"],
+            locale_relsrcdir=c["locale_relsrcdir"],
             install_subdir=c["install_subdir"],
             defines=c["defines"],
             locale_pp_defines=c["locale_pp_defines"],
@@ -166,17 +176,45 @@ def load_l10n_manifest(path: Path) -> L10nManifest:
     )
 
 
+def _in_manifest_roots(relsrcdir: str, roots: list[str]) -> bool:
+    return not roots or mozpath.basedir(relsrcdir, roots) is not None
+
+
+def _scoped_contexts(
+    context_data_list: list[L10nManifestContextData], roots: list[str]
+) -> Iterator[L10nManifestContextData]:
+    """Drop the chrome content of contexts outside the app's roots.
+
+    The roots say which directories supply the app's chrome, so a
+    directory outside them contributes no jar.mn entries. Its localized
+    files and generated files keep their existing behavior, which is how
+    a repack still gets toolkit/locales' default.locale.
+    """
+    for data in context_data_list:
+        if _in_manifest_roots(data.relsrcdir, roots):
+            yield data
+            continue
+        scoped = replace(data, jar_sections=[])
+        if (
+            scoped.localized_files
+            or scoped.localized_pp_files
+            or scoped.localized_generated_files
+        ):
+            yield scoped
+
+
 def build_l10n_manifest_from_substs(
     substs: dict[str, object],
     context_data_list: list[L10nManifestContextData],
 ) -> L10nManifest:
+    roots = substs.get("MOZ_L10N_CHROME_ROOTS") or []
     return L10nManifest(
         version=MANIFEST_VERSION,
         moz_app_id=substs.get("MOZ_APP_ID") or "",
         moz_app_version=substs.get("MOZ_APP_VERSION") or "",
         moz_app_displayname=substs.get("MOZ_APP_DISPLAYNAME") or "",
         moz_build_app=substs.get("MOZ_BUILD_APP") or "",
-        contexts=list(context_data_list),
+        contexts=list(_scoped_contexts(context_data_list, roots)),
     )
 
 
@@ -228,6 +266,7 @@ def _extract_l10n_manifest_context_data(
 
     context_data = L10nManifestContextData(
         relsrcdir=str(context.relsrcdir),
+        locale_relsrcdir=_locale_relsrcdir(emitter.config, str(context.relsrcdir)),
         install_subdir="",
         defines=_normalize_defines(context.get("DEFINES")),
         locale_pp_defines={
@@ -270,6 +309,20 @@ def _extract_l10n_manifest_context_data(
         )
     context_data.install_subdir = mozpath.relpath(final_target, "dist/bin")
     return context_data
+
+
+def _locale_relsrcdir(config, relsrcdir: str) -> str:
+    """Return relsrcdir relative to the directory the l10n repository
+    mirrors. That is commtopsrcdir for directories under it and
+    topsrcdir for everything else, so comm paths lose the leading comm/.
+    """
+    commtopsrcdir = config.substs.get("commtopsrcdir")
+    if not commtopsrcdir:
+        return relsrcdir
+    comm_reldir = mozpath.relpath(commtopsrcdir, config.topsrcdir)
+    if mozpath.basedir(relsrcdir, [comm_reldir]) is None:
+        return relsrcdir
+    return mozpath.relpath(relsrcdir, comm_reldir)
 
 
 def _normalize_defines(defines) -> dict[str, object]:

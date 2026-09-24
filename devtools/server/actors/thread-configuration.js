@@ -24,9 +24,6 @@ const SUPPORTED_OPTIONS = {
   ignoreCaughtExceptions: true,
   // Log the event break points.
   logEventBreakpoints: true,
-  // @backward-compat { version 154 } asm.js was removed in Fx154; accepted
-  // from old clients for compatibility but no longer acted upon.
-  observeAsmJS: true,
   // Enable debugging wasm.
   observeWasm: true,
   // Enable pausing on exceptions.

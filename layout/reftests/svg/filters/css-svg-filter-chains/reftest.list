@@ -5,4 +5,5 @@
 == clip-input-css-filter.html clip-input-css-filter-ref.html
 fuzzy(0-1,0-288) == css-filter-first.html css-filter-first-ref.html
 == css-filter-last.html css-filter-last-ref.html
+fuzzy(0-1,0-5000) == css-filter-last-outside-region.html css-filter-last-outside-region-ref.html
 == css-filter-middle.html css-filter-middle-ref.html

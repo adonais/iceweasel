@@ -136,6 +136,8 @@ export const AdBanner = ({ spoc, dispatch, row, type, prefs }) => {
                 recommended_at: spoc.recommended_at,
                 received_rank: spoc.received_rank,
                 format: spoc.format,
+                // A banner row is ad-only inventory.
+                is_ad_eligible_position: true,
                 ...(spoc.shim?.impression
                   ? { shim: spoc.shim.impression }
                   : {}),

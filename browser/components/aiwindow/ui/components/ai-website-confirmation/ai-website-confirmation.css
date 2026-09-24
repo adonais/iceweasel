@@ -11,7 +11,7 @@
   display: block;
   position: relative;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  max-width: 315px;
+  max-width: min(100%, var(--size-layout-large));
 }
 
 .ai-website-confirmation-wrapper {

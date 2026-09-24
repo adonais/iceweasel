@@ -5,9 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDP_H_
 #define DOM_MEDIA_WEBRTC_SDP_SIPCCSDP_H_
 
-#include <vector>
-
-#include "sdp/Sdp.h"
+#include "sdp/SdpImpl.h"
 #include "sdp/SdpParser.h"
 #include "sdp/SipccSdpAttributeList.h"
 #include "sdp/SipccSdpMediaSection.h"
@@ -19,58 +17,35 @@ namespace mozilla {
 
 class SipccSdpParser;
 
-class SipccSdp final : public Sdp {
+class SipccSdp final : public SdpImpl {
   friend class SipccSdpParser;
 
  public:
   explicit SipccSdp(const SdpOrigin& origin)
-      : mOrigin(origin), mAttributeList(nullptr) {}
+      : SdpImpl(origin, UniquePtr<SdpAttributeListImpl>(
+                            new SipccSdpAttributeList(nullptr))) {}
   SipccSdp(const SipccSdp& aOrig);
 
   virtual UniquePtr<Sdp> Clone() const override;
 
-  virtual const SdpOrigin& GetOrigin() const override;
-
-  // Note: connection information is always retrieved from media sections
-  virtual uint32_t GetBandwidth(const std::string& type) const override;
-
-  virtual size_t GetMediaSectionCount() const override {
-    return mMediaSections.size();
-  }
-
-  virtual const SdpAttributeList& GetAttributeList() const override {
-    return mAttributeList;
-  }
-
-  virtual SdpAttributeList& GetAttributeList() override {
-    return mAttributeList;
-  }
-
-  virtual const SdpMediaSection& GetMediaSection(
-      const size_t level) const override;
-
-  virtual SdpMediaSection& GetMediaSection(const size_t level) override;
-
-  virtual SdpMediaSection& AddMediaSection(
-      const SdpMediaSection::MediaType media,
-      const SdpDirectionAttribute::Direction dir, const uint16_t port,
-      const SdpMediaSection::Protocol proto, const sdp::AddrType addrType,
-      const std::string& addr) override;
-
-  virtual void Serialize(std::ostream&) const override;
-
  private:
   using InternalResults = SdpParser::InternalResults;
 
-  SipccSdp() = default;
+  SipccSdp() : SipccSdp(SdpOrigin("", 0, 0, sdp::kIPv4, "")) {}
+
+  UniquePtr<SdpMediaSectionImpl> CreateMediaSection(
+      const size_t level) override;
+
+  // mAttributeList is always a SipccSdpAttributeList for this sdp
+  SipccSdpAttributeList& SipccAttributeList() {
+    return *static_cast<SipccSdpAttributeList*>(mAttributeList.get());
+  }
+  const SipccSdpAttributeList& SipccAttributeList() const {
+    return *static_cast<const SipccSdpAttributeList*>(mAttributeList.get());
+  }
 
   bool Load(sdp_t* sdp, InternalResults& results);
   bool LoadOrigin(sdp_t* sdp, InternalResults& results);
-
-  SdpOrigin mOrigin{"", 0, 0, sdp::kIPv4, ""};
-  SipccSdpBandwidths mBandwidths;
-  SipccSdpAttributeList mAttributeList{nullptr};
-  std::vector<UniquePtr<SipccSdpMediaSection>> mMediaSections;
 };
 
 }  // namespace mozilla

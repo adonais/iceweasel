@@ -157,6 +157,8 @@ CO01:
         # browser/preferences/preferences.ftl
         - sync-engine-addons
         - sync-mobile-promo
+        # browser/sidebar.ftl
+        - menu-view-resource-monitor
         # browser/unifiedExtensions.ftl
         - unified-extensions-mb-blocklist-error-multiple
         - unified-extensions-mb-blocklist-error-single

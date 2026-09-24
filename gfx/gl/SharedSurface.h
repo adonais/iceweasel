@@ -42,6 +42,7 @@ class LayersIPCChannel;
 class SharedSurfaceTextureClient;
 class SurfaceDescriptor;
 class TextureClient;
+class TextureHost;
 enum class TextureFlags : uint32_t;
 enum class TextureType : int8_t;
 }  // namespace layers
@@ -83,6 +84,7 @@ class SharedSurface {
  protected:
   bool mIsLocked = false;
   bool mIsProducerAcquired = false;
+  RefPtr<layers::TextureHost> mTextureHost;
 
   SharedSurface(const SharedSurfaceDesc&, UniquePtr<MozFramebuffer>);
 
@@ -98,6 +100,12 @@ class SharedSurface {
 
   // Unlocking is harmless if we're already unlocked.
   void UnlockProd();
+
+  RefPtr<layers::TextureHost> GetTextureHost();
+
+  void SetTextureHost(layers::TextureHost* aTextureHost);
+
+  void ClearTextureHost();
 
   // This surface has been moved to the front buffer and will not be locked
   // again until it is recycled. Do any finalization steps here.

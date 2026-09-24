@@ -27,9 +27,11 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/StackArray.h"
+#include "mozilla/gfx/Types.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
+#include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
 #include "mozilla/webrender/RenderDcompSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderTextureHost.h"
@@ -757,7 +759,7 @@ void DCLayerTree::PresentSwapChain(wr::NativeSurfaceId aId,
 }
 
 void DCLayerTree::Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-                       uint32_t* aFboId, wr::DeviceIntRect aDirtyRect,
+                       uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
                        wr::DeviceIntRect aValidRect) {
   MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
 }
@@ -2237,20 +2239,9 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
     const auto format = texture->GetFormat();
     nsPrintfCString str("AttachExternalImage: SurfaceFormat %d", (int)format);
     PROFILER_MARKER_TEXT("DCSurfaceVideo", GRAPHICS, {}, str);
-    switch (format) {
-      case gfx::SurfaceFormat::R10G10B10A2_UINT32:
-      case gfx::SurfaceFormat::R10G10B10X2_UINT32:
-      case gfx::SurfaceFormat::R16G16B16A16F:
-      case gfx::SurfaceFormat::P010:
-      case gfx::SurfaceFormat::P016: {
-        const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
-        mContentIsHDR = dxgiTexture && gfx::IsHDRTransferFunction(
-                                           dxgiTexture->GetTransferFunction());
-        break;
-      }
-      default:
-        break;
-    }
+    const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
+    mContentIsHDR = dxgiTexture && gfx::IsHDRTransferFunction(
+                                       dxgiTexture->GetTransferFunction());
   }
 
   // XXX if software decoded video frame format is nv12, it could be used as
@@ -3186,6 +3177,7 @@ class SavedD3D11State {
 
  public:
   explicit SavedD3D11State(RefPtr<ID3D11DeviceContext> _context) {
+    AUTO_PROFILER_MARKER("ShaderBlt::SavedD3D11State begin", GRAPHICS);
     context = _context;
     ID3D11Buffer*
         savedVertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = {};
@@ -3277,6 +3269,7 @@ class SavedD3D11State {
   }
 
   ~SavedD3D11State() {
+    AUTO_PROFILER_MARKER("ShaderBlt::SavedD3D11State end", GRAPHICS);
     ID3D11Buffer*
         savedVertexBuffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = {};
     ID3D11Buffer* savedVertexConstantBuffers
@@ -3352,90 +3345,36 @@ class SavedD3D11State {
 
 // Shader-based YUV->RGB blit, this is a fallback for VideoProcessorBlt when it
 // doesn't support certain format combinations (notably HLG to PQ).
-bool DCSurfaceVideo::ShaderBlt(DXGI_COLOR_SPACE_TYPE inputColorSpace,
-                               const RECT& sourceRect,
+bool DCSurfaceVideo::ShaderBlt(const RECT& sourceRect,
                                DXGI_COLOR_SPACE_TYPE outputColorSpace,
                                const RECT& destRect) {
   HRESULT hr;
   const auto device = mDCLayerTree->GetDevice();
   const auto texture = mRenderTextureHost->AsRenderDXGITextureHost();
-  RefPtr<ID3D11Texture2D> inputTexture = texture->GetD3D11Texture2DWithGL();
-  RefPtr<ID3D11Texture2D> outputTexture;
-  mVideoSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
-                             (void**)getter_AddRefs(outputTexture));
-  if (!inputTexture || !outputTexture) {
-    gfxCriticalNoteOnce << "Failed to get D3D11Texture2D for ShaderBlt";
-    return false;
+  auto yuvColorSpace = texture->GetYUVColorSpace();
+  auto ranged = gfx::FromYUVRangedColorSpace(yuvColorSpace);
+  // Update constant buffer with the color transforms we need,
+  // currently the P601 and P709 cases are unused because VideoProcessorBlt
+  // always succeeds for those cases, but are included for completeness.
+  uint32_t inputMode = 0;
+  uint32_t outputMode = 0;
+  float const* m;
+  switch (ranged.transferFunction) {
+    default:
+      gfxCriticalNoteOnce << "ShaderBlt: Unhandled input transfer function "
+                          << static_cast<int>(ranged.transferFunction)
+                          << ", treating as BT709 transfer function";
+      FMT_FALLTHROUGH;
+    case gfx::TransferFunction::BT709:
+      inputMode = MODE_BT709;
+      break;
+    case gfx::TransferFunction::HLG:
+      inputMode = MODE_HLG;
+      break;
+    case gfx::TransferFunction::PQ:
+      inputMode = MODE_PQ;
+      break;
   }
-  RefPtr<ID3D11DeviceContext> context;
-  device->GetImmediateContext(getter_AddRefs(context));
-  if (!context) {
-    gfxCriticalNoteOnce << "Failed to get D3D11DeviceContext for ShaderBlt";
-    return false;
-  }
-
-  if (!ShaderBltSetup()) {
-    return false;
-  }
-
-  RefPtr<ID3D11ShaderResourceView> yResourceView;
-  D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-  srvDesc.Format = DXGI_FORMAT_R16_UNORM;
-  srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-  srvDesc.Texture2D.MostDetailedMip = 0;
-  srvDesc.Texture2D.MipLevels = 1;
-  hr = device->CreateShaderResourceView(inputTexture, &srvDesc,
-                                        getter_AddRefs(yResourceView));
-  if (FAILED(hr)) {
-    gfxCriticalNoteOnce << "Failed to create Y shader resource view";
-    return false;
-  }
-
-  RefPtr<ID3D11ShaderResourceView> uvResourceView;
-  srvDesc.Format = DXGI_FORMAT_R16G16_UNORM;
-  hr = device->CreateShaderResourceView(inputTexture, &srvDesc,
-                                        getter_AddRefs(uvResourceView));
-  if (FAILED(hr)) {
-    gfxCriticalNoteOnce << "Failed to create UV shader resource view";
-    return false;
-  }
-
-  // Create and set render target view for output texture
-  RefPtr<ID3D11RenderTargetView> rtView;
-  D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
-  D3D11_TEXTURE2D_DESC outputDesc;
-  outputTexture->GetDesc(&outputDesc);
-  rtvDesc.Format = outputDesc.Format;
-  rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-  rtvDesc.Texture2D.MipSlice = 0;
-
-  hr = device->CreateRenderTargetView(outputTexture, &rtvDesc,
-                                      getter_AddRefs(rtView));
-  if (FAILED(hr)) {
-    gfxCriticalNoteOnce << "Failed to create render target view";
-    return false;
-  }
-
-  // Set up shader resources
-  D3D11_TEXTURE2D_DESC inputTextureDesc = {};
-  inputTexture->GetDesc(&inputTextureDesc);
-  float scale[2] = {
-      1.0f / static_cast<float>(inputTextureDesc.Width),
-      1.0f / static_cast<float>(inputTextureDesc.Height),
-  };
-  float offset[2] = {0.0f * scale[0], 0.0f * scale[1]};
-  float vertexData[4][6] = {
-      // position[4]    texCoord[2]
-      {-1.0f, -1.0f, 0.1f, 1.0f, sourceRect.left * scale[0] + offset[0],
-       sourceRect.bottom * scale[1] + offset[1]},
-      {1.0f, -1.0f, 0.1f, 1.0f, sourceRect.right * scale[0] + offset[0],
-       sourceRect.bottom * scale[1] + offset[1]},
-      {-1.0f, 1.0f, 0.1f, 1.0f, sourceRect.left * scale[0] + offset[0],
-       sourceRect.top * scale[1] + offset[1]},
-      {1.0f, 1.0f, 0.1f, 1.0f, sourceRect.right * scale[0] + offset[0],
-       sourceRect.top * scale[1] + offset[1]}};
-  context->UpdateSubresource(mShaderBltVertexBuffer, 0, nullptr, vertexData[0],
-                             0, 0);
 
   static const float yuvToRgbMatrixP709Studio[16] = {
       1.164384f,  -0.000000f, 1.792741f, -0.972945f, 1.164384f,  -0.213249f,
@@ -3467,52 +3406,46 @@ bool DCSurfaceVideo::ShaderBlt(DXGI_COLOR_SPACE_TYPE inputColorSpace,
       -0.571353f, 0.367959f,  1.000000f, 1.881400f,  -0.000000f, -0.940714f,
       0.000000f,  0.000000f,  0.000000f, 1.000000f};
 
-  // Update constant buffer with the color transforms we need,
-  // currently the P601 and P709 cases are unused because VideoProcessorBlt
-  // always succeeds for those cases, but are included for completeness.
-  uint32_t inputMode = 0;
-  uint32_t outputMode = 0;
-  float const* m;
-  switch (inputColorSpace) {
+  auto markerInputColorSpaceName = "unknown";
+  switch (ranged.space) {
     default:
       gfxCriticalNoteOnce << "ShaderBlt: Unhandled input color space "
-                          << static_cast<int>(inputColorSpace)
+                          << static_cast<int>(ranged.space)
                           << ", treating as BT709 limited color space";
       FMT_FALLTHROUGH;
-    case DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709:
-      inputMode = MODE_BT709;
-      m = yuvToRgbMatrixP709Studio;
+    case gfx::YUVColorSpace::BT709:
+      markerInputColorSpaceName = "BT709";
+      if (ranged.range == gfx::ColorRange::FULL) {
+        m = yuvToRgbMatrixP709Full;
+      } else {
+        m = yuvToRgbMatrixP709Studio;
+      }
       break;
-    case DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709:
-      inputMode = MODE_BT709;
-      m = yuvToRgbMatrixP709Full;
+    case gfx::YUVColorSpace::BT601:
+      markerInputColorSpaceName = "BT601";
+      if (ranged.range == gfx::ColorRange::FULL) {
+        m = yuvToRgbMatrixP601Full;
+      } else {
+        m = yuvToRgbMatrixP601Studio;
+      }
       break;
-    case DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P601:
-      inputMode = MODE_BT709;
-      m = yuvToRgbMatrixP601Studio;
-      break;
-    case DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P601:
-      inputMode = MODE_BT709;
-      m = yuvToRgbMatrixP601Full;
-      break;
-    case DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020:
-      inputMode = MODE_PQ;
-      m = yuvToRgbMatrixP2020Studio;
-      break;
-    case DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020:
-      inputMode = MODE_HLG;
-      m = yuvToRgbMatrixP2020Studio;
-      break;
-    case DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020:
-      inputMode = MODE_HLG;
-      m = yuvToRgbMatrixP2020Full;
+    case gfx::YUVColorSpace::BT2020:
+      if (inputMode == MODE_BT709) {
+        markerInputColorSpaceName = "BT2020";
+      } else if (inputMode == MODE_HLG) {
+        markerInputColorSpaceName = "BT2100HLG";
+      } else if (inputMode == MODE_PQ) {
+        markerInputColorSpaceName = "BT2100PQ";
+      }
+      if (ranged.range == gfx::ColorRange::FULL) {
+        m = yuvToRgbMatrixP2020Full;
+      } else {
+        m = yuvToRgbMatrixP2020Studio;
+      }
       break;
   }
-  color::mat4 yuvToRgb = color::mat4{{color::vec4{{m[0], m[1], m[2], m[3]}},
-                                      {{m[4], m[5], m[6], m[7]}},
-                                      {{m[8], m[9], m[10], m[11]}},
-                                      {{m[12], m[13], m[14], m[15]}}}};
 
+  auto markerOutputColorSpaceName = "unknown";
   switch (outputColorSpace) {
     default:
       gfxCriticalNoteOnce << "ShaderBlt: Unhandled output color space "
@@ -3520,13 +3453,127 @@ bool DCSurfaceVideo::ShaderBlt(DXGI_COLOR_SPACE_TYPE inputColorSpace,
                           << ", treating as BT709 output color space";
       FMT_FALLTHROUGH;
     case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709:
-    case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020:
+      markerOutputColorSpaceName = "BT709";
       outputMode = MODE_BT709;
       break;
     case DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020:
+      markerOutputColorSpaceName = "BT2100PQ";
       outputMode = MODE_PQ;
       break;
   }
+
+  if (profiler_thread_is_being_profiled_for_markers()) {
+    nsPrintfCString str("%s -> %s", markerInputColorSpaceName,
+                        markerOutputColorSpaceName);
+    PROFILER_MARKER_TEXT("DCSurfaceVideo::ShaderBlt", GRAPHICS, {}, str);
+  }
+
+  RefPtr<ID3D11Texture2D> inputTexture = texture->GetD3D11Texture2DWithGL();
+  RefPtr<ID3D11Texture2D> outputTexture;
+  mVideoSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
+                             (void**)getter_AddRefs(outputTexture));
+  if (!inputTexture || !outputTexture) {
+    gfxCriticalNoteOnce << "Failed to get D3D11Texture2D for ShaderBlt";
+    return false;
+  }
+  RefPtr<ID3D11DeviceContext> context;
+  device->GetImmediateContext(getter_AddRefs(context));
+  if (!context) {
+    gfxCriticalNoteOnce << "Failed to get D3D11DeviceContext for ShaderBlt";
+    return false;
+  }
+
+  if (!ShaderBltSetup()) {
+    return false;
+  }
+
+  D3D11_TEXTURE2D_DESC inputTextureDesc = {};
+  inputTexture->GetDesc(&inputTextureDesc);
+  RefPtr<ID3D11ShaderResourceView> yResourceView;
+  RefPtr<ID3D11ShaderResourceView> uvResourceView;
+  D3D11_SHADER_RESOURCE_VIEW_DESC ySRVDesc = {};
+  D3D11_SHADER_RESOURCE_VIEW_DESC uvSRVDesc = {};
+  ySRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  ySRVDesc.Texture2D.MostDetailedMip = 0;
+  ySRVDesc.Texture2D.MipLevels = 1;
+  uvSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  uvSRVDesc.Texture2D.MostDetailedMip = 0;
+  uvSRVDesc.Texture2D.MipLevels = 1;
+  switch (inputTextureDesc.Format) {
+    case DXGI_FORMAT_P010:
+    case DXGI_FORMAT_P016:
+      ySRVDesc.Format = DXGI_FORMAT_R16_UNORM;
+      uvSRVDesc.Format = DXGI_FORMAT_R16G16_UNORM;
+      break;
+    case DXGI_FORMAT_NV12:
+      ySRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+      uvSRVDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+      break;
+    default:
+      ySRVDesc.Format = DXGI_FORMAT_R8_UNORM;
+      uvSRVDesc.Format = DXGI_FORMAT_R8G8_UNORM;
+      gfxCriticalNoteOnce << "Unhandled inputTextureDesc.Format "
+                          << static_cast<int>(inputTextureDesc.Format);
+      break;
+  }
+  hr = device->CreateShaderResourceView(inputTexture, &ySRVDesc,
+                                        getter_AddRefs(yResourceView));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "Failed to create Y shader resource view (format "
+                        << static_cast<int>(ySRVDesc.Format)
+                        << ") for input texture (format "
+                        << static_cast<int>(inputTextureDesc.Format) << ")";
+    return false;
+  }
+  hr = device->CreateShaderResourceView(inputTexture, &uvSRVDesc,
+                                        getter_AddRefs(uvResourceView));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "Failed to create UV shader resource view (format "
+                        << static_cast<int>(uvSRVDesc.Format)
+                        << ") for input texture (format "
+                        << static_cast<int>(inputTextureDesc.Format) << ")";
+    return false;
+  }
+
+  // Create and set render target view for output texture
+  RefPtr<ID3D11RenderTargetView> rtView;
+  D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+  D3D11_TEXTURE2D_DESC outputDesc;
+  outputTexture->GetDesc(&outputDesc);
+  rtvDesc.Format = outputDesc.Format;
+  rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+  rtvDesc.Texture2D.MipSlice = 0;
+
+  hr = device->CreateRenderTargetView(outputTexture, &rtvDesc,
+                                      getter_AddRefs(rtView));
+  if (FAILED(hr)) {
+    gfxCriticalNoteOnce << "Failed to create render target view";
+    return false;
+  }
+
+  // Set up shader resources
+  float scale[2] = {
+      1.0f / static_cast<float>(inputTextureDesc.Width),
+      1.0f / static_cast<float>(inputTextureDesc.Height),
+  };
+  float offset[2] = {0.0f * scale[0], 0.0f * scale[1]};
+  float vertexData[4][6] = {
+      // position[4]    texCoord[2]
+      {-1.0f, -1.0f, 0.1f, 1.0f, sourceRect.left * scale[0] + offset[0],
+       sourceRect.bottom * scale[1] + offset[1]},
+      {1.0f, -1.0f, 0.1f, 1.0f, sourceRect.right * scale[0] + offset[0],
+       sourceRect.bottom * scale[1] + offset[1]},
+      {-1.0f, 1.0f, 0.1f, 1.0f, sourceRect.left * scale[0] + offset[0],
+       sourceRect.top * scale[1] + offset[1]},
+      {1.0f, 1.0f, 0.1f, 1.0f, sourceRect.right * scale[0] + offset[0],
+       sourceRect.top * scale[1] + offset[1]}};
+  context->UpdateSubresource(mShaderBltVertexBuffer, 0, nullptr, vertexData[0],
+                             0, 0);
+
+  color::mat4 yuvToRgb = color::mat4{{color::vec4{{m[0], m[1], m[2], m[3]}},
+                                      {{m[4], m[5], m[6], m[7]}},
+                                      {{m[8], m[9], m[10], m[11]}},
+                                      {{m[12], m[13], m[14], m[15]}}}};
 
   // This is identity for now, if converting between BT2020 and BT709 we would
   // need to set it.
@@ -3643,9 +3690,10 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   }
 
   if (texture->mFencesHolderId.isSome()) {
-    auto* fencesHolderMap = layers::CompositeProcessD3D11FencesHolderMap::Get();
+    auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
     MOZ_ASSERT(fencesHolderMap);
-    fencesHolderMap->WaitWriteFence(texture->mFencesHolderId.ref(), device);
+    auto fence = fencesHolderMap->GetWriteFence(texture->mFencesHolderId.ref());
+    layers::FenceD3D11::WaitD3D11Fence(fence, device);
   }
 
   RefPtr<IDXGISwapChain3> swapChain3;
@@ -3766,7 +3814,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
 
   if (outputColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 &&
       StaticPrefs::gfx_color_management_hdr_yuv_to_rgb_video_shader_always()) {
-    return ShaderBlt(inputColorSpace, sourceRect, outputColorSpace, destRect);
+    return ShaderBlt(sourceRect, outputColorSpace, destRect);
   }
 
   if (!mOutputView) {
@@ -3839,7 +3887,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
       outputColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
     if (StaticPrefs::
             gfx_color_management_hdr_yuv_to_rgb_video_shader_fallback()) {
-      return ShaderBlt(inputColorSpace, sourceRect, outputColorSpace, destRect);
+      return ShaderBlt(sourceRect, outputColorSpace, destRect);
     }
     if (inputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020 ||
         inputColorSpace == DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020) {

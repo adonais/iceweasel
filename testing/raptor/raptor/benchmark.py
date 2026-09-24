@@ -325,6 +325,42 @@ class Benchmark:
 
         return benchmark_dest
 
+    def _setup_fetched_benchmark(self, benchmark_dest, run_local=True):
+        """Setup a benchmark downloaded by a taskcluster fetch task.
+
+        Returns None when the test doesn't declare a `fetch_path`, or when the
+        fetch isn't present (e.g. running locally), so the caller can fall back
+        to cloning the benchmark repository.
+        """
+        fetch_path = self.test.get("fetch_path", None)
+        if not fetch_path:
+            return None
+
+        fetches_dir = os.environ.get("MOZ_FETCHES_DIR", None)
+        if not fetches_dir:
+            LOG.info("MOZ_FETCHES_DIR is unset, falling back to cloning the benchmark")
+            return None
+
+        benchmark_path = pathlib.Path(fetches_dir, fetch_path)
+        if not benchmark_path.is_dir():
+            LOG.info(
+                f"No fetched benchmark at {benchmark_path}, "
+                f"falling back to cloning the benchmark"
+            )
+            return None
+
+        LOG.info(f"Using the fetched benchmark found at {benchmark_path}")
+        benchmark_dest = pathlib.Path(
+            self._get_benchmark_folder(benchmark_dest, run_local), self.test["name"]
+        )
+
+        return self._copy_or_link_files(
+            benchmark_path,
+            benchmark_dest,
+            skip_files_and_hidden=False,
+            host_from_parent=self.test.get("host_from_parent", True),
+        )
+
     def _setup_in_tree_benchmarks(self, topsrc_path, benchmark_dest, run_local=True):
         """Setup a benchmakr that is found in-tree.
 
@@ -364,7 +400,14 @@ class Benchmark:
             # 'here' is that path, we can start with that
             bench_dir = pathlib.Path(here)
 
-        if self.test.get("repository", None) is not None:
+        fetched_bench_dir = self._setup_fetched_benchmark(
+            bench_dir, run_local=run_local
+        )
+
+        if fetched_bench_dir is not None:
+            # Setup benchmarks that a fetch task already downloaded for us
+            bench_dir = fetched_bench_dir
+        elif self.test.get("repository", None) is not None:
             # Setup benchmarks that are found on Github
             bench_dir = self._setup_git_benchmarks(
                 mozbuild_path, bench_dir, run_local=run_local

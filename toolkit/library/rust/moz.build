@@ -66,6 +66,36 @@ if CONFIG["TARGET_CPU"] != "x86":
 if CONFIG["MOZ_BITS_DOWNLOAD"]:
     RUST_TESTS += ["bits_client"]
 
+# Rust tests can't reference `libxul`, but code coverage builds and MSVC's
+# linker don't eliminate the dead references to `libxul` from `kvstore` in
+# `lockstore` tests.
+if not CONFIG["MOZ_CODE_COVERAGE"] and CONFIG["OS_TARGET"] != "WINNT":
+    RUST_TESTS += ["lockstore_rs"]
+
+# The `lockstore` tests link NSS, and the `tools/rusttests` project has no
+# `compile` tier that would otherwise build it. These USE_LIBS are only for
+# build ordering; Cargo does the linking, through the `mozbuild` crate.
+# USE_LIBS also applies to `gkrust` above, so restrict it to the project that
+# runs the tests rather than making every Rust compilation in a Firefox build
+# wait on NSS.
+if CONFIG["MOZ_BUILD_APP"] == "tools/rusttests":
+    USE_LIBS += [
+        "mozglue",
+        "nss",
+    ]
+
+    # NSS loads these dynamically while initializing, so the tests need them in
+    # dist/bin even though nothing links against them.
+    USE_LIBS += [
+        "freebl3",
+        "softokn3",
+    ]
+
+    if CONFIG["OS_TARGET"] == "Linux":
+        USE_LIBS += [
+            "freeblpriv3",
+        ]
+
 # Export the `rure` crate's included .h file. The symbols defined in that file
 # will be exported from the `gkrust-shared` crate.
 EXPORTS += [

@@ -20,6 +20,7 @@ import { InterestPicker } from "../InterestPicker/InterestPicker";
 import { InterestPicker as NovaInterestPicker } from "content-src/components/Nova/InterestPicker/InterestPicker";
 import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { CardCarousel } from "../CardCarousel/CardCarousel";
+import { TopicNavigation } from "../TopicNavigation/TopicNavigation";
 import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
 import { FollowSectionButtonHighlight } from "../FeatureHighlight/FollowSectionButtonHighlight";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
@@ -44,6 +45,8 @@ const PREF_SPOCS_STARTUPCACHE_ENABLED =
   "discoverystream.spocs.startupCache.enabled";
 const PREF_CAROUSEL_ENABLED = "discoverystream.carousel.enabled";
 const PREF_CAROUSEL_SLIDE_COUNT = "discoverystream.carousel.slideCount";
+const PREF_TOPIC_NAVIGATION_ENABLED =
+  "discoverystream.sections.topicNavigation.enabled";
 // @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
 const PREF_NOVA_ENABLED = "nova.enabled";
 
@@ -444,6 +447,7 @@ function CardSection({
         recommended_at={rec.recommended_at}
         received_rank={rec.received_rank}
         format={rec.format}
+        is_ad_eligible_position={rec.is_ad_eligible_position}
         alt_text={rec.alt_text}
         mayHaveSectionsCards={mayHaveSectionsCards}
         selectedTopics={selectedTopics}
@@ -735,6 +739,11 @@ function CardSections({
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
   // @nova-cleanup(remove-conditional): Remove novaEnabled check once classic path is gone
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
+  // @nova-cleanup(remove-conditional): Drop the novaEnabled check
+  const topicNavigationEnabled =
+    (prefs.trainhopConfig?.topicNavigation?.enabled ||
+      prefs[PREF_TOPIC_NAVIGATION_ENABLED]) &&
+    novaEnabled;
   const gridRef = useRef(null);
   const [activeColumnLayout, setActiveColumnLayout] = useState(() =>
     getActiveColumnLayout(window.innerWidth)
@@ -921,7 +930,12 @@ function CardSections({
       <DSEmptyState status={data.status} dispatch={dispatch} feed={feed} />
     </div>
   ) : (
-    <div className="ds-section-wrapper">{sectionsToRender}</div>
+    <div className="ds-section-wrapper">
+      {topicNavigationEnabled && !spocsLoading && (
+        <TopicNavigation sections={filteredSections} dispatch={dispatch} />
+      )}
+      {sectionsToRender}
+    </div>
   );
 }
 

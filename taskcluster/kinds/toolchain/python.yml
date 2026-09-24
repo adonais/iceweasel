@@ -16,7 +16,7 @@ task-defaults:
             - 'build/psutil_requirements.txt'
             - 'build/zstandard_requirements.txt'
 
-linux64-python-3.9:
+linux64-python-3.10:
     treeherder:
         symbol: TL(python)
     run:
@@ -24,12 +24,12 @@ linux64-python-3.9:
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:
-            - cpython-3.9.13
+            - cpython-3.10.11
     worker:
         docker-image: {in-tree: ubuntu1804-build-python}
 
-linux64-aarch64-python-3.9:
-    description: "cpython 3.9.13 AArch64/ARM64"
+linux64-aarch64-python-3.10:
+    description: "cpython 3.10.11 AArch64/ARM64"
     worker-type: b-linux-aarch64
     treeherder:
         symbol: TLA64(python)
@@ -38,7 +38,7 @@ linux64-aarch64-python-3.9:
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:
-            - cpython-3.9.13
+            - cpython-3.10.11
     worker:
         docker-image: {in-tree: ubuntu2204-arm64-build-python}
 
@@ -54,8 +54,8 @@ linux64-aarch64-python-3.11:
     worker:
         docker-image: {in-tree: ubuntu2204-arm64-build-python}
 
-win64-python-3.9:
-    description: "cpython 3.9.13"
+win64-python-3.10:
+    description: "cpython 3.10.11"
     treeherder:
         symbol: TW64(python)
     run:
@@ -66,9 +66,9 @@ win64-python-3.9:
         toolchain:
             - linux64-wine
         fetch:
-            - cpython-3.9.13.exe
+            - cpython-3.10.11.exe
 
-macosx64-python-3.9:
+macosx64-python-3.10:
     treeherder:
         symbol: TM(python)
     worker-type: b-osx-1015
@@ -77,11 +77,27 @@ macosx64-python-3.9:
         toolchain-artifact: public/build/python.tar.zst
     fetches:
         fetch:
-            - cpython-3.9.13
+            - cpython-3.10.11
         toolchain:
             - macosx64-clang-toolchain
             - macosx64-sdk-toolchain
             - macosx64-xz
+
+macosx64-aarch64-python-3.10:
+    treeherder:
+        symbol: TMA64(python)
+    worker-type: b-osx-arm64
+    run:
+        toolchain-alias: macosx64-aarch64-python
+        toolchain-artifact: public/build/python.tar.zst
+    fetches:
+        fetch:
+            - cpython-3.10.11
+        toolchain:
+            - macosx64-aarch64-clang
+            - macosx64-sdk-toolchain
+            - macosx64-aarch64-xz
+            - macosx64-aarch64-openssl
 
 ###
 
@@ -122,3 +138,18 @@ macosx64-python-3.11:
             - macosx64-clang-toolchain
             - macosx64-sdk-toolchain
             - macosx64-xz
+
+macosx64-aarch64-python-3.11:
+    treeherder:
+        symbol: TMA64(python3.11)
+    worker-type: b-osx-arm64
+    run:
+        toolchain-artifact: public/build/python.tar.zst
+    fetches:
+        fetch:
+            - cpython-3.11.7
+        toolchain:
+            - macosx64-aarch64-clang
+            - macosx64-sdk-toolchain
+            - macosx64-aarch64-xz
+            - macosx64-aarch64-openssl

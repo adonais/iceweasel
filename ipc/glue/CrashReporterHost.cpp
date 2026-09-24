@@ -22,12 +22,21 @@
 
 namespace mozilla::ipc {
 
+ChildThreadId GetChildThreadIdFromArgs(
+    const CrashReporter::CrashReporterInitArgs& aInitArgs) {
+#if defined(XP_DARWIN)
+  return RetainMachSendRight(aInitArgs.threadId().get());
+#else
+  return aInitArgs.threadId();
+#endif  // defined(XP_DARWIN)
+}
+
 CrashReporterHost::CrashReporterHost(
     GeckoProcessType aProcessType, GeckoChildID aChildID,
     const CrashReporter::CrashReporterInitArgs& aInitArgs)
     : mProcessType(aProcessType),
       mChildID(aChildID),
-      mThreadId(aInitArgs.threadId()),
+      mThreadId(GetChildThreadIdFromArgs(aInitArgs)),
       mStartTime(::time(nullptr)),
       mFinalized(false) {
 #if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \

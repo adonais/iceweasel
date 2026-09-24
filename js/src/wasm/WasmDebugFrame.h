@@ -52,7 +52,7 @@ class DebugFrame {
     int64_t i64_;
     float f32_;
     double f64_;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     V128 v128_;
 #endif
     AnyRef anyref_;
@@ -108,7 +108,7 @@ class DebugFrame {
   // alignment.
   uint32_t padding_;
 #endif
-#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
+#if defined(ENABLE_JIT_SIMD) && defined(JS_CODEGEN_ARM64)
   uint64_t padding_;
 #endif
 

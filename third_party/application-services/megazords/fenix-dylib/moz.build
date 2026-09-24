@@ -6,10 +6,6 @@
 # build file to create the final dyib .so
 # See the comments in megazords/full/moz.build.
 
-UNIFIED_SOURCES += [
-    "megazord_stub.c",
-]
-
 # This name confusion is a reflection of the 2 megazord parts. It should be
 # fixed after we land in m-c.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android" or CONFIG["MOZ_LIBMEGAZORD_ARTIFACTS"]:
@@ -19,6 +15,39 @@ else:
 SHARED_LIBRARY_NAME = "megazord"
 
 USE_LIBS += ["megazord", "mozpkix", "nspr"]
+
+megazord_symbols = "/toolkit/components/uniffi-bindgen-gecko-js/megazord.symbols"
+megazord_profile = "dev-megazord" if CONFIG["MOZ_DEBUG_RUST"] else "release-megazord"
+megazord_archive = (
+    f"!/{CONFIG['RUST_TARGET']}/{megazord_profile}"
+    f"/{CONFIG['LIB_PREFIX']}megazord.{CONFIG['LIB_SUFFIX']}"
+)
+megazord_generator = "/python/mozbuild/mozbuild/action/generate_archive_symbols.py"
+
+if CONFIG["OS_TARGET"] == "WINNT":
+    GeneratedFile(
+        "megazord.def",
+        script=megazord_generator,
+        inputs=[megazord_archive, megazord_symbols],
+        flags=["--format=def"],
+    )
+
+    SYMBOLS_FILE = "!megazord.def"
+else:
+    # The version script below controls what the shared library exports, which
+    # on these targets does not make the linker keep the archive members that
+    # define those symbols. Naming each one as an undefined root does.
+    GeneratedFile(
+        "megazord.rsp",
+        script=megazord_generator,
+        inputs=[megazord_archive, megazord_symbols],
+        flags=[f"--format={'macho' if CONFIG['OS_TARGET'] == 'Darwin' else 'elf'}"],
+    )
+
+    LDFLAGS += ["-Wl,@megazord.rsp"]
+    EXTRA_LINK_DEPS += ["!megazord.rsp"]
+
+    SYMBOLS_FILE = megazord_symbols
 
 # copy-pasta from other moz.build files.
 if CONFIG["OS_TARGET"] == "Darwin":

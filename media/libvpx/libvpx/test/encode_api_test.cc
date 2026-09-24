@@ -306,12 +306,13 @@ TEST(EncodeAPI, HighBitDepthCapability) {
 TEST(EncodeAPI, ImageSizeSetting) {
   const int width = 711;
   const int height = 360;
-  const int bps = 12;
+  const int uv_width = (width + 1) / 2;
+  const int uv_height = (height + 1) / 2;
   vpx_image_t img;
   vpx_codec_ctx_t enc;
   vpx_codec_enc_cfg_t cfg;
   uint8_t *img_buf = reinterpret_cast<uint8_t *>(
-      calloc(width * height * bps / 8, sizeof(*img_buf)));
+      calloc(width * height + 2 * uv_width * uv_height, sizeof(*img_buf)));
   vpx_codec_enc_config_default(vpx_codec_vp8_cx(), &cfg, 0);
 
   cfg.g_w = width;
@@ -479,7 +480,7 @@ TEST(EncodeAPI, ChangeToL1T3AndSetBitrateVp8) {
   ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_CPUUSED, -6), VPX_CODEC_OK);
 
   // Generate random frame data and encode
-  uint8_t img[1 * 64 * 3 / 2];
+  uint8_t img[128];  // 1x64 with UV width == 1.
   libvpx_test::ACMRandom rng;
   for (size_t i = 0; i < sizeof(img); ++i) {
     img[i] = rng.Rand8();
@@ -1079,6 +1080,33 @@ TEST(EncodeAPI, Vp8DenoiserResolutionChange) {
             VPX_CODEC_OK);
   vpx_img_free(image);
 
+  ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+
+// Test VP8 SSIM tuning with multiple frames.
+TEST(EncodeAPI, Vp8SSIMMultipleFrames) {
+  vpx_codec_iface_t *const iface = vpx_codec_vp8_cx();
+  vpx_codec_ctx_t enc;
+  vpx_codec_enc_cfg_t cfg;
+  ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+  ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+  // Set VP8_TUNE_SSIM.
+  ASSERT_EQ(vpx_codec_control(&enc, VP8E_SET_TUNING, VP8_TUNE_SSIM),
+            VPX_CODEC_OK);
+
+  vpx_image_t *const img =
+      CreateImage(VPX_BITS_8, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h);
+  ASSERT_NE(img, nullptr);
+
+  // Encode multiple frames with GOOD_QUALITY to enable coefficient
+  // optimization.
+  for (int frame = 0; frame < 2; ++frame) {
+    ASSERT_EQ(vpx_codec_encode(&enc, img, frame, 1, 0, VPX_DL_GOOD_QUALITY),
+              VPX_CODEC_OK);
+  }
+
+  vpx_img_free(img);
   ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
 }
 #endif  // CONFIG_VP8_ENCODER

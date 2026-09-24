@@ -216,7 +216,7 @@ PLDHashTable::~PLDHashTable() {
   AutoDestructorOp op(mChecker);
 #endif
 
-  if (IsEmpty()) {
+  if (!mEntryStore.IsAllocated()) {
     return;
   }
 
@@ -492,7 +492,10 @@ void PLDHashTable::Remove(const void* aKey) {
   AutoWriteOp op(mChecker);
 #endif
 
-  if (IsEmpty()) {
+  // Unlike Search(), Remove() mutates mEntryCount. Checking IsEmpty() here
+  // introduces a dependency between consecutive removals, which hurts
+  // removal-heavy workloads.
+  if (!mEntryStore.IsAllocated()) {
     return;
   }
 

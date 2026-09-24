@@ -116,6 +116,15 @@ class FakeTabGroupRepository(
         )
     }
 
+    override suspend fun ungroupTabGroup(tabGroupId: String) {
+        mutableTabGroupFlow.emit(
+            mutableTabGroupFlow.value.copy(
+                tabGroups = mutableTabGroupFlow.value.tabGroups.filterNot { it.id == tabGroupId },
+                tabGroupAssignments = mutableTabGroupFlow.value.tabGroupAssignments.filterValues { it != tabGroupId },
+            )
+        )
+    }
+
     override suspend fun addTabGroupAssignment(
         tabId: String,
         tabGroupId: String,

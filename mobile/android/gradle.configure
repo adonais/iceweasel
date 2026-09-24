@@ -96,9 +96,7 @@ def gradle_android_apilint_folder(build_config):
     )
 
 
-set_config(
-    "GRADLE_ANDROID_GECKOVIEW_APILINT_FOLDER", gradle_android_apilint_folder
-)
+set_config("GRADLE_ANDROID_GECKOVIEW_APILINT_FOLDER", gradle_android_apilint_folder)
 
 
 @depends(gradle_android_build_config)

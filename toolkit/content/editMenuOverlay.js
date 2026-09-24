@@ -116,18 +116,22 @@ var EditContextMenu = {
    * @param {() => DocumentFragment} itemSet.createItems
    *   Creates the items. Called once per menu, which may be built more than
    *   once in the lifetime of a document.
-   * @param {(input: Element, items: Element[]) => void} [itemSet.onShowing]
+   * @param {(input: Element, items: Element[], event: MouseEvent) => void} [itemSet.onShowing]
    *   Called before the menu opens on a matching input, to update the items'
    *   state. `items` is the set's live membership: amend it to claim items
    *   created outside createItems(), so they're hidden along with the rest when
-   *   the menu opens on another input.
+   *   the menu opens on another input. `event` is the contextmenu event, which
+   *   carries the position a spellchecker resolves the clicked word from.
    * @param {string} [itemSet.after]
    *   Id of the item to insert the items after. They go last by default.
+   * @param {string} [itemSet.before]
+   *   Id of the item to insert the items before, for a set that belongs above
+   *   the standard items. Ignored when `after` is given.
    * @returns {object}
    *   The set, to pass to removeItems().
    */
-  addItems({ matches, createItems, onShowing, after }) {
-    let itemSet = { matches, createItems, onShowing, after, items: [] };
+  addItems({ matches, createItems, onShowing, after, before }) {
+    let itemSet = { matches, createItems, onShowing, after, before, items: [] };
     this._itemSets.push(itemSet);
 
     let popup = document.getElementById("textbox-contextmenu");
@@ -175,7 +179,7 @@ var EditContextMenu = {
         item.hidden = !matches;
       }
       if (matches) {
-        itemSet.onShowing?.(input, itemSet.items);
+        itemSet.onShowing?.(input, itemSet.items, event);
       }
     }
 
@@ -219,6 +223,8 @@ var EditContextMenu = {
     itemSet.items = [...fragment.children];
     if (itemSet.after) {
       popup.querySelector(`#${itemSet.after}`).after(fragment);
+    } else if (itemSet.before) {
+      popup.querySelector(`#${itemSet.before}`).before(fragment);
     } else {
       popup.appendChild(fragment);
     }

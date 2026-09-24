@@ -177,26 +177,6 @@ const nsIID kDEBUGWorkerEventTargetIID = {
 
 #endif
 
-template <class T>
-class UniquePtrComparator {
-  using A = UniquePtr<T>;
-  using B = T*;
-
- public:
-  bool Equals(const A& a, const A& b) const {
-    return (a && b) ? (*a == *b) : (!a && !b);
-  }
-  bool LessThan(const A& a, const A& b) const {
-    return (a && b) ? (*a < *b) : !!b;
-  }
-};
-
-template <class T>
-inline UniquePtrComparator<T> GetUniquePtrComparator(
-    const nsTArray<UniquePtr<T>>&) {
-  return UniquePtrComparator<T>();
-}
-
 // This class is used to wrap any runnables that the worker receives via the
 // nsIEventTarget::Dispatch() method (either from NS_DispatchToCurrentThread or
 // from the worker's EventTarget).

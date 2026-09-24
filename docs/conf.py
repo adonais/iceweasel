@@ -50,6 +50,7 @@ extensions = [
     "sphinx_design",
     "bzlink",
     "etp_matrix",
+    "staging_paths",
 ]
 
 myst_enable_extensions = [
@@ -59,6 +60,23 @@ myst_enable_extensions = [
     "html_admonition",
     "fieldlist",
 ]
+
+# sphinxcontrib-mermaid defaults to forcing every diagram into a 100% x 500px
+# box. Tall diagrams get scaled down to fit and their labels become unreadable,
+# while stretching to the full width blows short ones up. Sizing to the content
+# keeps each diagram at its natural size, still shrinking on narrow screens.
+mermaid_width = "fit-content"
+mermaid_height = "auto"
+
+# startOnLoad must stay off: the extension renders via mermaid.run() itself.
+# Only theme-neutral values belong here, as this config is shared by the light
+# and dark themes.
+mermaid_init_config = {
+    "startOnLoad": False,
+    "themeVariables": {
+        "fontSize": "18px",
+    },
+}
 
 # The paths are loaded from config.yml so they can be shared with a CI
 # optimization strategy that ensures the doc task runs when these files change.
@@ -70,7 +88,7 @@ root_for_relative_js_paths = ".."
 jsdoc_config_path = "jsdoc.json"
 
 templates_path = ["_templates"]
-source_suffix = [".rst", ".md"]
+source_suffix = [".md"]
 master_doc = "index"
 project = "Firefox Source Docs"
 
@@ -163,11 +181,11 @@ def add_github_source_link(app, pagename, templatename, context, doctree):
     # manager.trees maps staging prefixes to source prefixes,
     # e.g. {"gfx": "gfx/docs", "js": "js/src/doc"}.
     # Replace the staging prefix with the original source prefix to recover
-    # the real repo path, e.g. "gfx/Silk.rst" -> "gfx/docs/Silk.rst".
+    # the real repo path, e.g. "gfx/Silk.md" -> "gfx/docs/Silk.md".
     for staging_prefix, original_prefix in manager.trees.items():
         if staging_relpath.startswith(staging_prefix + "/"):
             # Strip the staging prefix and re-attach the original source prefix.
-            # e.g. "gfx/Silk.rst" -> strip "gfx" -> "Silk.rst" -> "gfx/docs/Silk.rst"
+            # e.g. "gfx/Silk.md" -> strip "gfx" -> "Silk.md" -> "gfx/docs/Silk.md"
             rel = staging_relpath[len(staging_prefix) + 1 :]
             context["github_source_path"] = original_prefix + "/" + rel
             return

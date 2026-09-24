@@ -278,6 +278,11 @@ void nsBlockReflowContext::ReflowBlock(const LogicalRect& aSpace,
       aFrameRI.mBlockDelta =
           mOuterReflowInput.mBlockDelta + mBCoord - aLine->BStart();
     }
+    const ReflowInput* parentRI = aFrameRI.mParentReflowInput;
+    if (aFrameRI.mFlags.mIsInLineClampContainer) {
+      aFrameRI.mBOffsetToLineClampRoot =
+          parentRI ? parentRI->mBOffsetToLineClampRoot + mBCoord : mBCoord;
+    }
   }
 
 #ifdef DEBUG

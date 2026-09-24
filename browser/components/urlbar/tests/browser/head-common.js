@@ -67,6 +67,22 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
 });
 
 /**
+ * Adds enough visits to a URL for it to become a top site, and waits for the
+ * top sites to carry it.
+ *
+ * @param {string} url
+ *   The URL to make a top site.
+ */
+async function addTopSites(url) {
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits(url);
+  }
+  await updateTopSites(sites => {
+    return sites && sites[0] && sites[0].url == url;
+  });
+}
+
+/**
  * Initializes an HTTP Server, and runs a task with it.
  *
  * @param {object} details {scheme, host, port}
@@ -402,4 +418,91 @@ function waitForLoadStartOrTimeout(win = window, timeoutMs = 1000) {
     win.gBrowser.removeTabsProgressListener(listener);
     win.clearTimeout(timeout);
   });
+}
+
+// The engagement, abandonment, exposure, and bounce events can be recorded
+// parent-side after an async actor round-trip, so these wait for the events
+// before asserting (see waitForGleanTelemetry). Disable is recorded when the
+// pref flips, in the process that flips it, so it stays synchronous.
+function assertAbandonmentTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("abandonment", expectedExtraList);
+}
+
+function assertEngagementTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("engagement", expectedExtraList);
+}
+
+function assertExposureTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("exposure", expectedExtraList);
+}
+
+function assertDisableTelemetry(expectedExtraList) {
+  assertGleanTelemetry("disable", expectedExtraList);
+}
+
+function assertBounceTelemetry(expectedExtraList) {
+  return waitForGleanTelemetry("bounce", expectedExtraList);
+}
+
+/**
+ * Waits for the expected number of events to be recorded, then asserts on them
+ * with `assertGleanTelemetry`. The New Tab search bar, and the address bar with
+ * `browser.urlbar.ipc.chromeMessagePassing`, record telemetry parent-side after
+ * an async actor round-trip, so a test that asserts synchronously right after
+ * the triggering action can race it. The
+ * `assert{Abandonment,Engagement,Exposure,Bounce}Telemetry` helpers go through
+ * here; where the recording is in-process the events are already there, so the
+ * wait resolves immediately.
+ *
+ * An empty `expectedExtraList` has nothing to wait for, so it asserts that no
+ * event has been recorded *yet*. The caller has to have awaited the point at
+ * which the event would have been recorded for that to mean anything.
+ *
+ * @param {string} telemetryName The Glean metric name.
+ * @param {object[]} expectedExtraList The expected events' extra keys.
+ */
+async function waitForGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  await TestUtils.waitForCondition(
+    () =>
+      (Glean.urlbar[camelName].testGetValue() ?? []).length >=
+      expectedExtraList.length,
+    `Waiting for ${expectedExtraList.length} ${telemetryName} telemetry event(s)`
+  ).catch(() => {
+    // Fall through to assertGleanTelemetry for a precise assertion failure.
+  });
+  assertGleanTelemetry(telemetryName, expectedExtraList);
+}
+
+function assertGleanTelemetry(telemetryName, expectedExtraList) {
+  const camelName = telemetryName.replaceAll(/_(.)/g, (match, p1) =>
+    p1.toUpperCase()
+  );
+  const telemetries = Glean.urlbar[camelName].testGetValue() ?? [];
+  info(
+    "Asserting Glean telemetry is correct, actual events are: " +
+      JSON.stringify(telemetries)
+  );
+  Assert.equal(
+    telemetries.length,
+    expectedExtraList.length,
+    "Telemetry event length matches expected event length."
+  );
+
+  for (let i = 0; i < telemetries.length; i++) {
+    const telemetry = telemetries[i];
+    Assert.equal(telemetry.category, "urlbar");
+    Assert.equal(telemetry.name, telemetryName);
+
+    const expectedExtra = expectedExtraList[i];
+    for (const key of Object.keys(expectedExtra)) {
+      Assert.equal(
+        telemetry.extra[key],
+        expectedExtra[key],
+        `${key} is correct`
+      );
+    }
+  }
 }

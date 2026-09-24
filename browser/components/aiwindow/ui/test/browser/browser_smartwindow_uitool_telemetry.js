@@ -7,6 +7,14 @@ const { ToolUITelemetry } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs"
 );
 
+function assertGleanEvent(metric, expected, message) {
+  const events = metric.testGetValue();
+  const expectedString = Object.fromEntries(
+    Object.entries(expected).map(([key, value]) => [key, String(value)])
+  );
+  Assert.deepEqual(events[0].extra, expectedString, `${message}: extras match`);
+}
+
 add_task(async function test_recordBrowserActionPrompt() {
   Services.fog.testResetFOG();
 
@@ -14,7 +22,7 @@ add_task(async function test_recordBrowserActionPrompt() {
     location: "sidebar",
     chat_id: "test-chat-123",
     message_seq: 5,
-    action_type: "close_tabs",
+    action: "close_tabs",
     prompt_type: "safety_confirmation",
     reason: "pinned_tab",
     candidates: 3,
@@ -23,292 +31,92 @@ add_task(async function test_recordBrowserActionPrompt() {
 
   ToolUITelemetry.recordBrowserActionPrompt(testData);
 
-  const events = Glean.smartWindow.browserActionPrompt.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action prompt event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.location,
-    testData.location,
-    "Location matches expected value"
-  );
-  Assert.equal(
-    event.extra.chat_id,
-    testData.chat_id,
-    "Chat ID matches expected value"
-  );
-  Assert.equal(
-    event.extra.message_seq,
-    String(testData.message_seq),
-    "Message sequence matches expected value"
-  );
-  Assert.equal(
-    event.extra.action_type,
-    testData.action_type,
-    "Action type matches expected value"
-  );
-  Assert.equal(
-    event.extra.prompt_type,
-    testData.prompt_type,
-    "Prompt type matches expected value"
-  );
-  Assert.equal(
-    event.extra.reason,
-    testData.reason,
-    "Reason matches expected value"
-  );
-  Assert.equal(
-    event.extra.candidates,
-    String(testData.candidates),
-    "Candidates count matches expected value"
-  );
-  Assert.equal(
-    event.extra.preselected,
-    String(testData.preselected),
-    "Preselected count matches expected value"
-  );
+  assertGleanEvent(Glean.smartWindow.browserActionPrompt, testData, "prompt");
 });
 
-add_task(async function test_recordBrowserActionPromptResponse_confirm() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+const PROMPT_RESPONSE_CASES = [
+  {
+    name: "confirm",
     location: "fullpage",
     chat_id: "test-chat-456",
     message_seq: 2,
-    action_type: "close_tabs",
+    action: "close_tabs",
     prompt_type: "safety_confirmation",
     response: "confirm",
     selected: 2,
     reason: "user_action",
-  };
-
-  ToolUITelemetry.recordBrowserActionPromptResponse(testData);
-
-  const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action prompt response event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.location,
-    testData.location,
-    "Location matches expected value"
-  );
-  Assert.equal(
-    event.extra.chat_id,
-    testData.chat_id,
-    "Chat ID matches expected value"
-  );
-  Assert.equal(
-    event.extra.message_seq,
-    String(testData.message_seq),
-    "Message sequence matches expected value"
-  );
-  Assert.equal(
-    event.extra.action_type,
-    testData.action_type,
-    "Action type matches expected value"
-  );
-  Assert.equal(
-    event.extra.prompt_type,
-    testData.prompt_type,
-    "Prompt type matches expected value"
-  );
-  Assert.equal(
-    event.extra.response,
-    testData.response,
-    "Response matches expected value"
-  );
-  Assert.equal(
-    event.extra.selected,
-    String(testData.selected),
-    "Selected count matches expected value"
-  );
-  Assert.equal(
-    event.extra.reason,
-    testData.reason,
-    "Reason matches expected value"
-  );
-});
-
-add_task(async function test_recordBrowserActionPromptResponse_cancel() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+  },
+  {
+    name: "cancel",
     location: "sidebar",
     chat_id: "test-chat-789",
     message_seq: 1,
-    action_type: "close_tabs",
+    action: "close_tabs",
     prompt_type: "safety_confirmation",
     response: "cancel",
     selected: 0,
     reason: "user_action",
-  };
+  },
+];
 
-  ToolUITelemetry.recordBrowserActionPromptResponse(testData);
-
-  const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action prompt response (cancel) event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.response,
-    "cancel",
-    "Response is cancel as expected"
-  );
-  Assert.equal(
-    event.extra.selected,
-    "0",
-    "Selected count is 0 for cancellation"
-  );
+add_task(async function test_recordBrowserActionPromptResponse() {
+  for (const { name, ...testData } of PROMPT_RESPONSE_CASES) {
+    Services.fog.testResetFOG();
+    ToolUITelemetry.recordBrowserActionPromptResponse(testData);
+    assertGleanEvent(
+      Glean.smartWindow.browserActionPromptResponse,
+      testData,
+      `prompt response ${name}`
+    );
+  }
 });
 
-add_task(async function test_recordBrowserActionUndo_success() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+const UNDO_CASES = [
+  {
+    name: "success",
     location: "fullpage",
     chat_id: "test-chat-undo-123",
     message_seq: 3,
-    action_type: "close_tabs",
+    action: "close_tabs",
     tabs_restored: 2,
     time_delta: 5000,
     result: "success",
     error: "",
-  };
-
-  ToolUITelemetry.recordBrowserActionUndo(testData);
-
-  const events = Glean.smartWindow.browserActionUndo.testGetValue();
-  Assert.equal(events?.length, 1, "One browser action undo event was recorded");
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.location,
-    testData.location,
-    "Location matches expected value"
-  );
-  Assert.equal(
-    event.extra.chat_id,
-    testData.chat_id,
-    "Chat ID matches expected value"
-  );
-  Assert.equal(
-    event.extra.message_seq,
-    String(testData.message_seq),
-    "Message sequence matches expected value"
-  );
-  Assert.equal(
-    event.extra.action_type,
-    testData.action_type,
-    "Action type matches expected value"
-  );
-  Assert.equal(
-    event.extra.tabs_restored,
-    String(testData.tabs_restored),
-    "Tabs restored count matches expected value"
-  );
-  Assert.equal(
-    event.extra.time_delta,
-    String(testData.time_delta),
-    "Time delta matches expected value"
-  );
-  Assert.equal(
-    event.extra.result,
-    testData.result,
-    "Result matches expected value"
-  );
-  Assert.equal(
-    event.extra.error,
-    testData.error,
-    "Error field matches expected value"
-  );
-});
-
-add_task(async function test_recordBrowserActionUndo_error() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+  },
+  {
+    name: "error",
     location: "sidebar",
     chat_id: "test-chat-undo-error",
     message_seq: 4,
-    action_type: "close_tabs",
+    action: "close_tabs",
     tabs_restored: 0,
     time_delta: 2000,
     result: "error",
     error: "invalid_window",
-  };
-
-  ToolUITelemetry.recordBrowserActionUndo(testData);
-
-  const events = Glean.smartWindow.browserActionUndo.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action undo error event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(event.extra.result, "error", "Result is error as expected");
-  Assert.equal(
-    event.extra.tabs_restored,
-    "0",
-    "Tabs restored is 0 for error case"
-  );
-  Assert.equal(
-    event.extra.error,
-    "invalid_window",
-    "Error code matches expected value"
-  );
-});
-
-add_task(async function test_recordBrowserActionUndo_partial_success() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+  },
+  {
+    name: "partial success",
     location: "fullpage",
     chat_id: "test-chat-partial",
     message_seq: 6,
-    action_type: "close_tabs",
+    action: "close_tabs",
     tabs_restored: 1,
     time_delta: 3500,
     result: "partial_success",
     error: "one_or_more_tabs_failed_to_restore",
-  };
+  },
+];
 
-  ToolUITelemetry.recordBrowserActionUndo(testData);
-
-  const events = Glean.smartWindow.browserActionUndo.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action undo partial success event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.result,
-    "partial_success",
-    "Result is partial_success as expected"
-  );
-  Assert.equal(event.extra.tabs_restored, "1", "Some tabs were restored");
-  Assert.equal(
-    event.extra.error,
-    "one_or_more_tabs_failed_to_restore",
-    "Error code indicates partial failure"
-  );
+add_task(async function test_recordBrowserActionUndo() {
+  for (const { name, ...testData } of UNDO_CASES) {
+    Services.fog.testResetFOG();
+    ToolUITelemetry.recordBrowserActionUndo(testData);
+    assertGleanEvent(
+      Glean.smartWindow.browserActionUndo,
+      testData,
+      `undo ${name}`
+    );
+  }
 });
 
 add_task(async function test_recordBrowserActionSubmit() {
@@ -321,113 +129,72 @@ add_task(async function test_recordBrowserActionSubmit() {
     model: "test-model",
     prompt_version: "6",
     submit_type: "enter",
-    action_type: "tab_mention",
+    action: "close_tabs",
+    trigger: "tab_mention",
     tabs_open: 5,
     mentions: 2,
   };
 
   ToolUITelemetry.recordBrowserActionSubmit(testData);
 
-  const events = Glean.smartWindow.browserActionSubmit.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action submit event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(event.extra.location, testData.location);
-  Assert.equal(event.extra.chat_id, testData.chat_id);
-  Assert.equal(event.extra.message_seq, String(testData.message_seq));
-  Assert.equal(event.extra.model, testData.model);
-  Assert.equal(event.extra.prompt_version, testData.prompt_version);
-  Assert.equal(event.extra.submit_type, testData.submit_type);
-  Assert.equal(event.extra.action_type, testData.action_type);
-  Assert.equal(event.extra.tabs_open, String(testData.tabs_open));
-  Assert.equal(event.extra.mentions, String(testData.mentions));
+  assertGleanEvent(Glean.smartWindow.browserActionSubmit, testData, "submit");
 });
 
-add_task(async function test_recordBrowserActionComplete_success() {
-  Services.fog.testResetFOG();
-
-  const testData = {
+const COMPLETE_CASES = [
+  {
+    name: "success",
     location: "fullpage",
     chat_id: "test-chat-complete",
     message_seq: 3,
     model: "test-model",
     prompt_version: "6",
-    action_type: "description",
+    action: "close_tabs",
+    trigger: "description",
     result: "success",
     tabs_affected: 2,
     undo_available: true,
     error: "",
-  };
-
-  ToolUITelemetry.recordBrowserActionComplete(testData);
-
-  const events = Glean.smartWindow.browserActionComplete.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action complete event was recorded"
-  );
-
-  const event = events[0];
-  Assert.equal(event.extra.location, testData.location);
-  Assert.equal(event.extra.chat_id, testData.chat_id);
-  Assert.equal(event.extra.message_seq, String(testData.message_seq));
-  Assert.equal(event.extra.model, testData.model);
-  Assert.equal(event.extra.prompt_version, testData.prompt_version);
-  Assert.equal(event.extra.action_type, testData.action_type);
-  Assert.equal(event.extra.result, testData.result);
-  Assert.equal(event.extra.tabs_affected, String(testData.tabs_affected));
-  Assert.equal(event.extra.undo_available, String(testData.undo_available));
-  Assert.equal(event.extra.error, testData.error);
-});
-
-add_task(async function test_recordBrowserActionComplete_cancelled() {
-  Services.fog.testResetFOG();
-
-  ToolUITelemetry.recordBrowserActionComplete({
+  },
+  {
+    name: "cancelled",
     location: "sidebar",
     chat_id: "test-chat-cancelled",
     message_seq: 1,
     model: "test-model",
     prompt_version: "6",
-    action_type: "tab_mention",
+    action: "close_tabs",
+    trigger: "tab_mention",
     result: "cancelled",
     tabs_affected: 0,
     undo_available: false,
     error: "",
-  });
-
-  const events = Glean.smartWindow.browserActionComplete.testGetValue();
-  Assert.equal(events?.length, 1);
-  Assert.equal(events[0].extra.result, "cancelled");
-  Assert.equal(events[0].extra.tabs_affected, "0");
-  Assert.equal(events[0].extra.undo_available, "false");
-});
-
-add_task(async function test_recordBrowserActionComplete_no_match() {
-  Services.fog.testResetFOG();
-
-  ToolUITelemetry.recordBrowserActionComplete({
+  },
+  {
+    name: "no match",
     location: "fullpage",
     chat_id: "test-chat-nomatch",
     message_seq: 4,
     model: "test-model",
     prompt_version: "6",
-    action_type: "description",
+    action: "close_tabs",
+    trigger: "description",
     result: "no_match",
     tabs_affected: 0,
     undo_available: false,
     error: "no_open_tab_match",
-  });
+  },
+];
 
-  const events = Glean.smartWindow.browserActionComplete.testGetValue();
-  Assert.equal(events?.length, 1);
-  Assert.equal(events[0].extra.result, "no_match");
-  Assert.equal(events[0].extra.error, "no_open_tab_match");
+add_task(async function test_recordBrowserActionComplete() {
+  for (const { name, ...testData } of COMPLETE_CASES) {
+    Services.fog.testResetFOG();
+    ToolUITelemetry.recordBrowserActionComplete(testData);
+    assertGleanEvent(
+      Glean.smartWindow.browserActionComplete,
+      testData,
+      `complete ${name}`
+    );
+  }
 });
 
 add_task(async function test_multiple_events_recorded_separately() {
@@ -438,7 +205,7 @@ add_task(async function test_multiple_events_recorded_separately() {
     location: "sidebar",
     chat_id: "multi-test-1",
     message_seq: 1,
-    action_type: "close_tabs",
+    action: "close_tabs",
     prompt_type: "safety_confirmation",
     reason: "user_action",
     candidates: 1,
@@ -449,7 +216,7 @@ add_task(async function test_multiple_events_recorded_separately() {
     location: "fullpage",
     chat_id: "multi-test-2",
     message_seq: 2,
-    action_type: "close_tabs",
+    action: "close_tabs",
     prompt_type: "safety_confirmation",
     reason: "pinned_tab",
     candidates: 3,
@@ -487,197 +254,94 @@ add_task(async function test_multiple_events_recorded_separately() {
 
 // Tab Group Tests
 
-add_task(async function test_recordBrowserActionPrompt_group_tabs() {
-  Services.fog.testResetFOG();
-
-  const testData = {
-    location: "sidebar",
-    chat_id: "test-chat-group-123",
-    message_seq: 5,
-    action_type: "group_tabs",
-    prompt_type: "safety_confirmation",
-    reason: "user_action",
-    candidates: 5,
-    preselected: 0,
-  };
-
-  ToolUITelemetry.recordBrowserActionPrompt(testData);
-
-  const events = Glean.smartWindow.browserActionPrompt.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action prompt event was recorded for group_tabs"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.action_type,
-    "group_tabs",
-    "Action type is group_tabs"
-  );
-  Assert.equal(
-    event.extra.candidates,
-    String(testData.candidates),
-    "Candidates matches expected value"
-  );
-  Assert.equal(
-    event.extra.reason,
-    testData.reason,
-    "Reason matches expected value"
-  );
-});
-
-add_task(
-  async function test_recordBrowserActionPromptResponse_group_tabs_confirm() {
-    Services.fog.testResetFOG();
-
-    const testData = {
+// group_tabs reuses the same record functions as close_tabs, so these only
+// pin the per-action payload rather than re-testing each function's wiring.
+const GROUP_TABS_CASES = [
+  {
+    name: "prompt",
+    record: d => ToolUITelemetry.recordBrowserActionPrompt(d),
+    metric: () => Glean.smartWindow.browserActionPrompt,
+    data: {
+      location: "sidebar",
+      chat_id: "test-chat-group-123",
+      message_seq: 5,
+      action: "group_tabs",
+      prompt_type: "safety_confirmation",
+      reason: "user_action",
+      candidates: 5,
+      preselected: 0,
+    },
+  },
+  {
+    name: "prompt response confirm",
+    record: d => ToolUITelemetry.recordBrowserActionPromptResponse(d),
+    metric: () => Glean.smartWindow.browserActionPromptResponse,
+    data: {
       location: "sidebar",
       chat_id: "test-chat-group-confirm",
       message_seq: 10,
-      action_type: "group_tabs",
+      action: "group_tabs",
       prompt_type: "safety_confirmation",
       response: "confirm",
       selected: 4,
       reason: "user_action",
-    };
-
-    ToolUITelemetry.recordBrowserActionPromptResponse(testData);
-
-    const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
-    Assert.equal(
-      events?.length,
-      1,
-      "One browser action prompt response event was recorded for group_tabs"
-    );
-
-    const event = events[0];
-    Assert.equal(
-      event.extra.action_type,
-      "group_tabs",
-      "Action type is group_tabs"
-    );
-    Assert.equal(event.extra.response, "confirm", "Response is confirm");
-    Assert.equal(
-      event.extra.selected,
-      String(testData.selected),
-      "Selected count matches expected value"
-    );
-  }
-);
-
-add_task(
-  async function test_recordBrowserActionPromptResponse_group_tabs_cancel() {
-    Services.fog.testResetFOG();
-
-    const testData = {
+    },
+  },
+  {
+    name: "prompt response cancel",
+    record: d => ToolUITelemetry.recordBrowserActionPromptResponse(d),
+    metric: () => Glean.smartWindow.browserActionPromptResponse,
+    data: {
       location: "fullpage",
       chat_id: "test-chat-group-cancel",
       message_seq: 7,
-      action_type: "group_tabs",
+      action: "group_tabs",
       prompt_type: "safety_confirmation",
       response: "cancel",
       selected: 0,
       reason: "user_action",
-    };
+    },
+  },
+  {
+    name: "undo success",
+    record: d => ToolUITelemetry.recordBrowserActionUndo(d),
+    metric: () => Glean.smartWindow.browserActionUndo,
+    data: {
+      location: "sidebar",
+      chat_id: "test-chat-undo-group-success",
+      message_seq: 3,
+      action: "group_tabs",
+      tabs_restored: 5,
+      time_delta: 3000,
+      result: "success",
+      error: "",
+    },
+  },
+  {
+    name: "undo error",
+    record: d => ToolUITelemetry.recordBrowserActionUndo(d),
+    metric: () => Glean.smartWindow.browserActionUndo,
+    data: {
+      location: "fullpage",
+      chat_id: "test-chat-undo-group-error",
+      message_seq: 4,
+      action: "group_tabs",
+      tabs_restored: 0,
+      time_delta: 2000,
+      result: "error",
+      error: "ungroup_failed",
+    },
+  },
+];
 
-    ToolUITelemetry.recordBrowserActionPromptResponse(testData);
-
-    const events = Glean.smartWindow.browserActionPromptResponse.testGetValue();
-    Assert.equal(
-      events?.length,
-      1,
-      "One browser action prompt response event was recorded for group_tabs cancellation"
-    );
-
-    const event = events[0];
-    Assert.equal(
-      event.extra.action_type,
-      "group_tabs",
-      "Action type is group_tabs"
-    );
-    Assert.equal(event.extra.response, "cancel", "Response is cancel");
-    Assert.equal(
-      event.extra.selected,
-      "0",
-      "Selected count is 0 for cancellation"
+add_task(async function test_group_tabs_events() {
+  for (const testCase of GROUP_TABS_CASES) {
+    Services.fog.testResetFOG();
+    testCase.record(testCase.data);
+    assertGleanEvent(
+      testCase.metric(),
+      testCase.data,
+      `group_tabs ${testCase.name}`
     );
   }
-);
-
-add_task(async function test_recordBrowserActionUndo_group_tabs_success() {
-  Services.fog.testResetFOG();
-
-  const testData = {
-    location: "sidebar",
-    chat_id: "test-chat-undo-group-success",
-    message_seq: 3,
-    action_type: "group_tabs",
-    tabs_restored: 5,
-    time_delta: 3000,
-    result: "success",
-    error: "",
-  };
-
-  ToolUITelemetry.recordBrowserActionUndo(testData);
-
-  const events = Glean.smartWindow.browserActionUndo.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action undo event was recorded for group_tabs"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.action_type,
-    "group_tabs",
-    "Action type is group_tabs"
-  );
-  Assert.equal(
-    event.extra.tabs_restored,
-    String(testData.tabs_restored),
-    "Tabs restored (ungrouped) count matches expected value"
-  );
-  Assert.equal(event.extra.result, "success", "Result is success");
-  Assert.equal(event.extra.error, "", "Error field is empty for success");
-});
-
-add_task(async function test_recordBrowserActionUndo_group_tabs_error() {
-  Services.fog.testResetFOG();
-
-  const testData = {
-    location: "fullpage",
-    chat_id: "test-chat-undo-group-error",
-    message_seq: 4,
-    action_type: "group_tabs",
-    tabs_restored: 0,
-    time_delta: 2000,
-    result: "error",
-    error: "ungroup_failed",
-  };
-
-  ToolUITelemetry.recordBrowserActionUndo(testData);
-
-  const events = Glean.smartWindow.browserActionUndo.testGetValue();
-  Assert.equal(
-    events?.length,
-    1,
-    "One browser action undo event was recorded for group_tabs error"
-  );
-
-  const event = events[0];
-  Assert.equal(
-    event.extra.action_type,
-    "group_tabs",
-    "Action type is group_tabs"
-  );
-  Assert.equal(event.extra.tabs_restored, "0", "Tabs restored is 0 for error");
-  Assert.equal(event.extra.result, "error", "Result is error");
-  Assert.equal(
-    event.extra.error,
-    "ungroup_failed",
-    "Error field contains the error message"
-  );
 });

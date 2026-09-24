@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
+use gleam::gl;
+use std::rc::Rc;
 use crate::blob;
 use crossbeam::sync::chase_lev;
 #[cfg(windows)]
@@ -222,6 +224,9 @@ impl WrenchThing for CapturedSequence {
 pub struct Wrench {
     window_size: DeviceIntSize,
 
+    /// The GL context the renderer draws with, shared so that wrench can
+    /// create GL textures to hand to the renderer as external images.
+    gl: Rc<dyn gl::Gl>,
     pub renderer: webrender::Renderer,
     pub api: RenderApi,
     pub document_id: DocumentId,
@@ -266,6 +271,10 @@ pub struct Wrench {
 }
 
 impl Wrench {
+    pub fn gl(&self) -> &dyn gl::Gl {
+        &*self.gl
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         window: &mut WindowWrapper,
@@ -341,8 +350,9 @@ impl Wrench {
             Box::new(Notifier(data))
         });
 
+        let gl = window.clone_gl();
         let (renderer, sender) = webrender::create_webrender_instance(
-            window.clone_gl(),
+            gl.clone(),
             notifier,
             opts,
             None,
@@ -355,6 +365,7 @@ impl Wrench {
 
         let mut wrench = Wrench {
             window_size: size,
+            gl,
 
             renderer,
             api,

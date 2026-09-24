@@ -18,7 +18,7 @@ import functools
 import itertools
 import operator
 import os
-from collections import Counter, OrderedDict
+from collections import Counter
 from types import FunctionType
 
 import mozpack.path as mozpath
@@ -285,14 +285,14 @@ class SubContext(Context, ContextDerivedValue):
         self._sandbox().pop_subcontext(self)
 
 
-class InitializedDefines(ContextDerivedValue, OrderedDict):
+class InitializedDefines(ContextDerivedValue, dict):
     def __init__(self, context, value=None):
-        OrderedDict.__init__(self)
+        dict.__init__(self)
         for define in context.config.substs.get("MOZ_DEBUG_DEFINES", ()):
             self[define] = 1
         if value:
-            if not isinstance(value, OrderedDict):
-                raise ValueError("Can only initialize with another OrderedDict")
+            if not isinstance(value, dict):
+                raise ValueError("Can only initialize with another dict")
             self.update(value)
 
     def update(self, *other, **kwargs):
@@ -305,8 +305,8 @@ class InitializedDefines(ContextDerivedValue, OrderedDict):
         if kwargs:
             raise ValueError("Cannot call update() with kwargs")
         if other:
-            if not isinstance(other[0], OrderedDict):
-                raise ValueError("Can only call update() with another OrderedDict")
+            if not isinstance(other[0], dict):
+                raise ValueError("Can only call update() with another dict")
             return super().update(*other, **kwargs)
         raise ValueError("No arguments passed to update()")
 
@@ -1279,7 +1279,7 @@ class Files(SubContext):
             """The bug component that tracks changes to these files.
 
             Values are a 2-tuple of unicode describing the Bugzilla product and
-            component. e.g. ``('Firefox Build System', 'General')``.
+            component. e.g. `('Firefox Build System', 'General')`.
             """,
         ),
         "FINAL": (
@@ -1289,14 +1289,14 @@ class Files(SubContext):
 
             During normal processing, values from newer Files contexts
             overwrite previously set values. Last write wins. This behavior is
-            not always desired. ``FINAL`` provides a mechanism to prevent
+            not always desired. `FINAL` provides a mechanism to prevent
             further updates to a variable.
 
-            When ``FINAL`` is set, the value of all variables defined in this
+            When `FINAL` is set, the value of all variables defined in this
             context are marked as frozen and all subsequent writes to them
             are ignored during metadata reading.
 
-            See :ref:`mozbuild_files_metadata_finalizing` for more info.
+            See {ref}`mozbuild-files-metadata-finalizing` for more info.
             """,
         ),
         "SCHEDULES": (
@@ -1305,13 +1305,13 @@ class Files(SubContext):
             """Maps source files to the CI tasks that should be scheduled when
             they change.  The tasks are grouped by named components, and those
             names appear again in the taskgraph configuration
-            (``$topsrcdir/taskgraph/``).
+            (`$topsrcdir/taskgraph/`).
 
             Some components are "inclusive", meaning that changes to most files
             do not schedule them, aside from those described in a Files
             subcontext.  For example, py-lint tasks need not be scheduled for
             most changes, but should be scheduled when any Python file changes.
-            Such components are named by appending to ``SCHEDULES.inclusive``:
+            Such components are named by appending to `SCHEDULES.inclusive`:
 
             with Files('**.py'):
                 SCHEDULES.inclusive += ['py-lint']
@@ -1320,12 +1320,12 @@ class Files(SubContext):
             files schedule them, but some files affect only one or two
             components. For example, most files schedule builds and tests of
             Firefox for Android, OS X, Windows, and Linux, but files under
-            ``mobile/android/`` affect Android builds and tests exclusively, so
+            `mobile/android/` affect Android builds and tests exclusively, so
             builds for other operating systems are not needed.  Test suites
             provide another example: most files schedule reftests, but changes
             to reftest scripts need only schedule reftests and no other suites.
 
-            Exclusive components are named by setting ``SCHEDULES.exclusive``:
+            Exclusive components are named by setting `SCHEDULES.exclusive`:
 
             with Files('mobile/android/**'):
                 SCHEDULES.exclusive = ['android']
@@ -1384,8 +1384,8 @@ class Files(SubContext):
         Note: the intent of this function is to operate on the result of
         :py:func:`mozbuild.frontend.reader.BuildReader.files_info`. The
         :py:func:`mozbuild.frontend.context.Files` instances passed in are
-        thus the "collapsed" (``__iadd__``ed) results of all ``Files`` from all
-        moz.build files relevant to a specific path, not individual ``Files``
+        thus the "collapsed" (`__iadd__`ed) results of all `Files` from all
+        moz.build files relevant to a specific path, not individual `Files`
         instances from a single moz.build file.
         """
         d = {}
@@ -1544,68 +1544,72 @@ VARIABLES = {
 
         Unless you have a reason not to, use the GeneratedFile template rather
         than referencing GENERATED_FILES directly. The GeneratedFile template
-        has all the same arguments as the attributes listed below (``script``,
-        ``inputs``, ``extra_deps``, ``flags``, ``force``), plus an additional
-        ``entry_point`` argument to specify a particular function to run in
+        has all the same arguments as the attributes listed below (`script`,
+        `inputs`, `extra_deps`, `flags`, `force`), plus an additional
+        `entry_point` argument to specify a particular function to run in
         the given script.
 
         This variable contains a list of files for the build system to
         generate at export time. The generation method may be declared
-        with optional ``script``, ``inputs``, ``extra_deps``, ``flags``,
-        and ``force`` attributes on individual entries.
-        If the optional ``script`` attribute is not present on an entry, it
+        with optional `script`, `inputs`, `extra_deps`, `flags`,
+        and `force` attributes on individual entries.
+        If the optional `script` attribute is not present on an entry, it
         is assumed that rules for generating the file are present in
         the associated Makefile.in.
 
-        Example::
+        Example:
 
-           GENERATED_FILES += ['bar.c', 'baz.c', 'foo.c']
-           bar = GENERATED_FILES['bar.c']
-           bar.script = 'generate.py'
-           bar.inputs = ['datafile-for-bar']
-           foo = GENERATED_FILES['foo.c']
-           foo.script = 'generate.py'
-           foo.inputs = ['datafile-for-foo']
+        ```python
+        GENERATED_FILES += ['bar.c', 'baz.c', 'foo.c']
+        bar = GENERATED_FILES['bar.c']
+        bar.script = 'generate.py'
+        bar.inputs = ['datafile-for-bar']
+        foo = GENERATED_FILES['foo.c']
+        foo.script = 'generate.py'
+        foo.inputs = ['datafile-for-foo']
+        ```
 
         This definition will generate bar.c by calling the main method of
         generate.py with a open (for writing) file object for bar.c, and
-        the string ``datafile-for-bar``. In a similar fashion, the main
+        the string `datafile-for-bar`. In a similar fashion, the main
         method of generate.py will also be called with an open
         (for writing) file object for foo.c and the string
-        ``datafile-for-foo``. Please note that only string arguments are
+        `datafile-for-foo`. Please note that only string arguments are
         supported for passing to scripts, and that all arguments provided
         to the script should be filenames relative to the directory in which
         the moz.build file is located.
 
         To enable using the same script for generating multiple files with
         slightly different non-filename parameters, alternative entry points
-        into ``script`` can be specified::
+        into `script` can be specified:
 
-          GENERATED_FILES += ['bar.c']
-          bar = GENERATED_FILES['bar.c']
-          bar.script = 'generate.py:make_bar'
+        ```python
+        GENERATED_FILES += ['bar.c']
+        bar = GENERATED_FILES['bar.c']
+        bar.script = 'generate.py:make_bar'
+        ```
 
         The chosen script entry point may optionally return a set of strings,
         indicating extra files the output depends on.
 
-        When the ``flags`` attribute is present, the given list of flags is
+        When the `flags` attribute is present, the given list of flags is
         passed as extra arguments following the inputs.
 
-        When the ``extra_deps`` attribute is present, the listed paths are
+        When the `extra_deps` attribute is present, the listed paths are
         added as build-graph prerequisites for the generation step but are
-        not passed to ``script`` as positional arguments. Use this when the
+        not passed to `script` as positional arguments. Use this when the
         script opens additional files itself at runtime (e.g. via the
         preprocessor's #include @TOPOBJDIR@/...) and those files must
         therefore exist on disk before the step runs. An objdir-relative
-        path like ``"!/source-repo.h"`` resolves against ``$topobjdir``,
+        path like `"!/source-repo.h"` resolves against `$topobjdir`,
         and a plain path resolves relative to the directory containing the
         moz.build file.
 
-        When the ``force`` attribute is present, the file is generated every
+        When the `force` attribute is present, the file is generated every
         build, regardless of whether it is stale.  This is special to the
         RecursiveMake backend and intended for special situations only (e.g.,
         localization).  Please consult a build peer (on the #build channel at
-        https://chat.mozilla.org) before using ``force``.
+        https://chat.mozilla.org) before using `force`.
         """,
     ),
     "DEFINES": (
@@ -1613,26 +1617,28 @@ VARIABLES = {
         dict,
         """Dictionary of compiler defines to declare.
 
-        These are passed in to the compiler as ``-Dkey='value'`` for string
-        values, ``-Dkey=value`` for numeric values, or ``-Dkey`` if the
+        These are passed in to the compiler as `-Dkey='value'` for string
+        values, `-Dkey=value` for numeric values, or `-Dkey` if the
         value is True. Note that for string values, the outer-level of
         single-quotes will be consumed by the shell. If you want to have
         a string-literal in the program, the value needs to have
         double-quotes.
 
-        Example::
+        Example:
 
-           DEFINES['NS_NO_XPCOM'] = True
-           DEFINES['MOZ_EXTENSIONS_DB_SCHEMA'] = 15
-           DEFINES['DLL_SUFFIX'] = '".so"'
+        ```python
+        DEFINES['NS_NO_XPCOM'] = True
+        DEFINES['MOZ_EXTENSIONS_DB_SCHEMA'] = 15
+        DEFINES['DLL_SUFFIX'] = '".so"'
+        ```
 
-        This will result in the compiler flags ``-DNS_NO_XPCOM``,
-        ``-DMOZ_EXTENSIONS_DB_SCHEMA=15``, and ``-DDLL_SUFFIX='".so"'``,
+        This will result in the compiler flags `-DNS_NO_XPCOM`,
+        `-DMOZ_EXTENSIONS_DB_SCHEMA=15`, and `-DDLL_SUFFIX='".so"'`,
         respectively.
 
         Note that these entries are not necessarily passed to the assembler.
         Whether they are depends on the type of assembly file. As an
-        alternative, you may add a ``-DKEY=value`` entry to ``ASFLAGS``.
+        alternative, you may add a `-DKEY=value` entry to `ASFLAGS`.
         """,
     ),
     "DELAYLOAD_DLLS": (
@@ -1649,14 +1655,14 @@ VARIABLES = {
         list,
         """Child directories to descend into looking for build frontend files.
 
-        This works similarly to the ``DIRS`` variable in make files. Each str
+        This works similarly to the `DIRS` variable in make files. Each str
         value in the list is the name of a child directory. When this file is
         done parsing, the build reader will descend into each listed directory
         and read the frontend file there. If there is no frontend file, an error
         is raised.
 
         Values are relative paths. They can be multiple directory levels
-        above or below. Use ``..`` for parent directories and ``/`` for path
+        above or below. Use `..` for parent directories and `/` for path
         delimiters.
         """,
     ),
@@ -1665,22 +1671,24 @@ VARIABLES = {
         list,
         """List of files to be installed into the application directory.
 
-        ``FINAL_TARGET_FILES`` will copy (or symlink, if the platform supports it)
+        `FINAL_TARGET_FILES` will copy (or symlink, if the platform supports it)
         the contents of its files to the directory specified by
-        ``FINAL_TARGET`` (typically ``dist/bin``). Files that are destined for a
+        `FINAL_TARGET` (typically `dist/bin`). Files that are destined for a
         subdirectory can be specified by accessing a field, or as a dict access.
-        For example, to export ``foo.png`` to the top-level directory and
-        ``bar.svg`` to the directory ``images/do-not-use``, append to
-        ``FINAL_TARGET_FILES`` like so::
+        For example, to export `foo.png` to the top-level directory and
+        `bar.svg` to the directory `images/do-not-use`, append to
+        `FINAL_TARGET_FILES` like so:
 
-           FINAL_TARGET_FILES += ['foo.png']
-           FINAL_TARGET_FILES.images['do-not-use'] += ['bar.svg']
+        ```python
+        FINAL_TARGET_FILES += ['foo.png']
+        FINAL_TARGET_FILES.images['do-not-use'] += ['bar.svg']
+        ```
         """,
     ),
     "FINAL_TARGET_PP_FILES": (
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
-        """Like ``FINAL_TARGET_FILES``, with preprocessing.
+        """Like `FINAL_TARGET_FILES`, with preprocessing.
         """,
     ),
     "LOCALIZED_FILES": (
@@ -1689,78 +1697,81 @@ VARIABLES = {
         """List of locale-dependent files to be installed into the application
         directory.
 
-        This functions similarly to ``FINAL_TARGET_FILES``, but the files are
+        This functions similarly to `FINAL_TARGET_FILES`, but the files are
         sourced from the locale directory and will vary per localization.
         For an en-US build, this is functionally equivalent to
-        ``FINAL_TARGET_FILES``. For a build with ``--enable-ui-locale``,
-        the file will be taken from ``$LOCALE_SRCDIR``, with the leading
-        ``en-US`` removed. For a l10n repack of an en-US build, the file
+        `FINAL_TARGET_FILES`. For a build with `--enable-ui-locale`,
+        the file will be taken from `$LOCALE_SRCDIR`, with the leading
+        `en-US` removed. For a l10n repack of an en-US build, the file
         will be taken from the first location where it exists from:
+
         * the merged locale directory if it exists
-        * ``$LOCALE_SRCDIR`` with the leading ``en-US`` removed
+        * `$LOCALE_SRCDIR` with the leading `en-US` removed
         * the in-tree en-US location
 
-        Source directory paths specified here must must include a leading ``en-US``.
+        Source directory paths specified here must must include a leading `en-US`.
         Wildcards are allowed, and will be expanded at the time of locale packaging to match
         files in the locale directory.
 
         Object directory paths are allowed here only if the path matches an entry in
-        ``LOCALIZED_GENERATED_FILES``.
+        `LOCALIZED_GENERATED_FILES`.
 
         Files that are missing from a locale will typically have the en-US
         version used, but for wildcard expansions only files from the
         locale directory will be used, even if that means no files will
         be copied.
 
-        Example::
+        Example:
 
-           LOCALIZED_FILES.foo += [
-             'en-US/foo.js',
-             'en-US/things/*.ini',
-           ]
+        ```python
+        LOCALIZED_FILES.foo += [
+          'en-US/foo.js',
+          'en-US/things/*.ini',
+        ]
+        ```
 
-        If this was placed in ``toolkit/locales/moz.build``, it would copy
-        ``toolkit/locales/en-US/foo.js`` and
-        ``toolkit/locales/en-US/things/*.ini`` to ``$(DIST)/bin/foo`` in an
+        If this was placed in `toolkit/locales/moz.build`, it would copy
+        `toolkit/locales/en-US/foo.js` and
+        `toolkit/locales/en-US/things/*.ini` to `$(DIST)/bin/foo` in an
         en-US build, and in a build of a different locale (or a repack),
-        it would copy ``$(LOCALE_SRCDIR)/toolkit/foo.js`` and
-        ``$(LOCALE_SRCDIR)/toolkit/things/*.ini``.
+        it would copy `$(LOCALE_SRCDIR)/toolkit/foo.js` and
+        `$(LOCALE_SRCDIR)/toolkit/things/*.ini`.
         """,
     ),
     "LOCALIZED_PP_FILES": (
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
-        """Like ``LOCALIZED_FILES``, with preprocessing.
+        """Like `LOCALIZED_FILES`, with preprocessing.
 
-        Note that the ``AB_CD`` define is available and expands to the current
+        Note that the `AB_CD` define is available and expands to the current
         locale being packaged, as with preprocessed entries in jar manifests.
         """,
     ),
     "LOCALIZED_GENERATED_FILES": (
         GeneratedFilesList,
         list,
-        """Like ``GENERATED_FILES``, but for files whose content varies based on the locale in use.
+        """Like `GENERATED_FILES`, but for files whose content varies based on the locale in use.
 
-        For simple cases of text substitution, prefer ``LOCALIZED_PP_FILES``.
+        For simple cases of text substitution, prefer `LOCALIZED_PP_FILES`.
 
-        Refer to the documentation of ``GENERATED_FILES``; for the most part things work the same.
+        Refer to the documentation of `GENERATED_FILES`; for the most part things work the same.
         The two major differences are:
 
         1. The function in the Python script will be passed an additional keyword argument `locale`
-           which provides the locale in use, i.e. ``en-US``.
-        2. The ``inputs`` list may contain paths to files that will be taken from the locale
-           source directory (see ``LOCALIZED_FILES`` for a discussion of the specifics). Paths
-           in ``inputs`` starting with ``en-US/`` or containing ``locales/en-US/`` are considered
+           which provides the locale in use, i.e. `en-US`.
+        2. The `inputs` list may contain paths to files that will be taken from the locale
+           source directory (see `LOCALIZED_FILES` for a discussion of the specifics). Paths
+           in `inputs` starting with `en-US/` or containing `locales/en-US/` are considered
            localized files.
 
         To place the generated output file in a specific location, list its objdir path in
-        ``LOCALIZED_FILES``.
+        `LOCALIZED_FILES`.
 
-        In addition, ``LOCALIZED_GENERATED_FILES`` can use the special substitutions ``{AB_CD}``
-        and ``{AB_rCD}`` in their output paths.  ``{AB_CD}`` expands to the current locale during
-        multi-locale builds and single-locale repacks and ``{AB_rCD}`` expands to an
+        In addition, `LOCALIZED_GENERATED_FILES` can use the special substitutions `{AB_CD}`
+        and `{AB_rCD}` in their output paths.  `{AB_CD}` expands to the current locale during
+        multi-locale builds and single-locale repacks and `{AB_rCD}` expands to an
         Android-specific encoding of the current locale.  Both expand to the empty string when the
-        current locale is ``en-US``.
+        current locale is `en-US`.
         """,
     ),
     "WINCONSOLE": (
@@ -1782,10 +1793,10 @@ VARIABLES = {
         list,
         """List of files to include in the JS shell zip archive.
 
-        Each entry is a Path, typically of the form ``!/dist/bin/<basename>``
-        for files built into ``$(DIST)/bin``, or ``%/absolute/path`` for files
+        Each entry is a Path, typically of the form `!/dist/bin/<basename>`
+        for files built into `$(DIST)/bin`, or `%/absolute/path` for files
         outside the build tree. The build backend writes the basenames to
-        <topobjdir>/jsshell-archive.list; the packager reads it via
+        `<topobjdir>/jsshell-archive.list`; the packager reads it via
         --files-from when producing the archive named by JSSHELL_NAME (from
         package-name.mk).
         """,
@@ -1795,11 +1806,11 @@ VARIABLES = {
         list,
         """macOS application bundles to assemble from a skeleton directory.
 
-        Use the ``MACOS_BUNDLE`` template rather than appending to this
-        directly. Each entry describes one ``.app`` bundle: a skeleton
-        directory copied into ``Contents``, an optional generated
-        ``Info.plist`` and ``InfoPlist.strings``, and binaries to install
-        into ``Contents/MacOS``.
+        Use the `MACOS_BUNDLE` template rather than appending to this
+        directly. Each entry describes one `.app` bundle: a skeleton
+        directory copied into `Contents`, an optional generated
+        `Info.plist` and `InfoPlist.strings`, and binaries to install
+        into `Contents/MacOS`.
         """,
     ),
     "OBJDIR_FILES": (
@@ -1807,7 +1818,7 @@ VARIABLES = {
         list,
         """List of files to be installed anywhere in the objdir. Use sparingly.
 
-        ``OBJDIR_FILES`` is similar to FINAL_TARGET_FILES, but it allows copying
+        `OBJDIR_FILES` is similar to FINAL_TARGET_FILES, but it allows copying
         anywhere in the object directory. This is intended for various one-off
         cases, not for general use. If you wish to add entries to OBJDIR_FILES,
         please consult a build peer (on the #build channel at https://chat.mozilla.org).
@@ -1816,7 +1827,7 @@ VARIABLES = {
     "OBJDIR_PP_FILES": (
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
-        """Like ``OBJDIR_FILES``, with preprocessing. Use sparingly.
+        """Like `OBJDIR_FILES`, with preprocessing. Use sparingly.
         """,
     ),
     "PP_FILES_EXTRA_DEPS": (
@@ -1824,16 +1835,16 @@ VARIABLES = {
         list,
         """Extra build-graph dependencies for preprocessed files in this directory.
 
-        Applies to every entry in ``FINAL_TARGET_PP_FILES``,
-        ``OBJDIR_PP_FILES``, ``LOCALIZED_PP_FILES``, and the
-        ``EXTRA_PP_*`` variants in this moz.build. Use this when those
+        Applies to every entry in `FINAL_TARGET_PP_FILES`,
+        `OBJDIR_PP_FILES`, `LOCALIZED_PP_FILES`, and the
+        `EXTRA_PP_*` variants in this moz.build. Use this when those
         entries reference generated files via
-        ``#include @TOPOBJDIR@/...``: the preprocessor opens those files
+        `#include @TOPOBJDIR@/...`: the preprocessor opens those files
         at build time, so they must exist before the preprocess step runs.
 
-        Path syntax matches ``GENERATED_FILES``'s ``extra_deps``: an
-        objdir-relative path like ``"!/source-repo.h"`` resolves against
-        ``$topobjdir``; a plain path resolves against the source tree.
+        Path syntax matches `GENERATED_FILES`'s `extra_deps`: an
+        objdir-relative path like `"!/source-repo.h"` resolves against
+        `$topobjdir`; a plain path resolves against the source tree.
         """,
     ),
     "FINAL_LIBRARY": (
@@ -1842,7 +1853,7 @@ VARIABLES = {
         """Library in which the objects of the current directory will be linked.
 
         This variable contains the name of a library, defined elsewhere with
-        ``LIBRARY_NAME``, in which the objects of the current directory will be
+        `LIBRARY_NAME`, in which the objects of the current directory will be
         linked.
         """,
     ),
@@ -1854,9 +1865,9 @@ VARIABLES = {
         Each name in this variable corresponds to an executable built from the
         corresponding source file with the same base name.
 
-        If the configuration token ``BIN_SUFFIX`` is set, its value will be
+        If the configuration token `BIN_SUFFIX` is set, its value will be
         automatically appended to each name. If a name already ends with
-        ``BIN_SUFFIX``, the name will remain unchanged.
+        `BIN_SUFFIX`, the name will remain unchanged.
         """,
     ),
     "FORCE_SHARED_LIB": (
@@ -1902,7 +1913,7 @@ VARIABLES = {
         """,
     ),
     "LIBRARY_DEFINES": (
-        OrderedDict,
+        dict,
         dict,
         """Dictionary of compiler defines to declare for the entire library.
 
@@ -1916,12 +1927,14 @@ VARIABLES = {
         """The code name of the library generated for a directory.
 
         By default STATIC_LIBRARY_NAME and SHARED_LIBRARY_NAME take this name.
-        In ``example/components/moz.build``,::
+        In `example/components/moz.build`:
 
-           LIBRARY_NAME = 'xpcomsample'
+        ```python
+        LIBRARY_NAME = 'xpcomsample'
+        ```
 
-        would generate ``example/components/libxpcomsample.so`` on Linux, or
-        ``example/components/xpcomsample.lib`` on Windows.
+        would generate `example/components/libxpcomsample.so` on Linux, or
+        `example/components/xpcomsample.lib` on Windows.
         """,
     ),
     "SHARED_LIBRARY_NAME": (
@@ -2071,9 +2084,9 @@ VARIABLES = {
         Each name in this variable corresponds to an executable built from the
         corresponding source file with the same base name.
 
-        If the configuration token ``BIN_SUFFIX`` is set, its value will be
+        If the configuration token `BIN_SUFFIX` is set, its value will be
         automatically appended to each name. If a name already ends with
-        ``BIN_SUFFIX``, the name will remain unchanged.
+        `BIN_SUFFIX`, the name will remain unchanged.
         """,
     ),
     "SONAME": (
@@ -2094,9 +2107,9 @@ VARIABLES = {
         Each name in this variable corresponds to a hosst executable built
         from the corresponding source file with the same base name.
 
-        If the configuration token ``HOST_BIN_SUFFIX`` is set, its value will
+        If the configuration token `HOST_BIN_SUFFIX` is set, its value will
         be automatically appended to each name. If a name already ends with
-        ``HOST_BIN_SUFFIX``, the name will remain unchanged.
+        `HOST_BIN_SUFFIX`, the name will remain unchanged.
         """,
     ),
     "RUST_PROGRAMS": (
@@ -2122,11 +2135,11 @@ VARIABLES = {
         list,
         """Output files that will be generated using configure-like substitution.
 
-        This is a substitute for ``AC_OUTPUT`` in autoconf. For each path in this
+        This is a substitute for `AC_OUTPUT` in autoconf. For each path in this
         list, we will search for a file in the srcdir having the name
-        ``{path}.in``. The contents of this file will be read and variable
-        patterns like ``@foo@`` will be substituted with the values of the
-        ``AC_SUBST`` variables declared during configure.
+        `{path}.in`. The contents of this file will be read and variable
+        patterns like `@foo@` will be substituted with the values of the
+        `AC_SUBST` variables declared during configure.
         """,
     ),
     "CONFIGURE_DEFINE_FILES": (
@@ -2134,9 +2147,9 @@ VARIABLES = {
         list,
         """Output files generated from configure/config.status.
 
-        This is a substitute for ``AC_CONFIG_HEADER`` in autoconf. This is very
-        similar to ``CONFIGURE_SUBST_FILES`` except the generation logic takes
-        into account the values of ``AC_DEFINE`` instead of ``AC_SUBST``.
+        This is a substitute for `AC_CONFIG_HEADER` in autoconf. This is very
+        similar to `CONFIGURE_SUBST_FILES` except the generation logic takes
+        into account the values of `AC_DEFINE` instead of `AC_SUBST`.
         """,
     ),
     "EXPORTS": (
@@ -2144,20 +2157,22 @@ VARIABLES = {
         list,
         """List of files to be exported, and in which subdirectories.
 
-        ``EXPORTS`` is generally used to list the include files to be exported to
-        ``dist/include``, but it can be used for other files as well. This variable
+        `EXPORTS` is generally used to list the include files to be exported to
+        `dist/include`, but it can be used for other files as well. This variable
         behaves as a list when appending filenames for export in the top-level
         directory. Files can also be appended to a field to indicate which
         subdirectory they should be exported to. For example, to export
-        ``foo.h`` to the top-level directory, and ``bar.h`` to ``mozilla/dom/``,
-        append to ``EXPORTS`` like so::
+        `foo.h` to the top-level directory, and `bar.h` to `mozilla/dom/`,
+        append to `EXPORTS` like so:
 
-           EXPORTS += ['foo.h']
-           EXPORTS.mozilla.dom += ['bar.h']
+        ```python
+        EXPORTS += ['foo.h']
+        EXPORTS.mozilla.dom += ['bar.h']
+        ```
 
-        Entries in ``EXPORTS`` are paths, so objdir paths may be used, but
+        Entries in `EXPORTS` are paths, so objdir paths may be used, but
         any files listed from the objdir must also be listed in
-        ``GENERATED_FILES``.
+        `GENERATED_FILES`.
         """,
     ),
     "PROGRAM": (
@@ -2165,9 +2180,9 @@ VARIABLES = {
         str,
         """Compiled executable name.
 
-        If the configuration token ``BIN_SUFFIX`` is set, its value will be
-        automatically appended to ``PROGRAM``. If ``PROGRAM`` already ends with
-        ``BIN_SUFFIX``, ``PROGRAM`` will remain unchanged.
+        If the configuration token `BIN_SUFFIX` is set, its value will be
+        automatically appended to `PROGRAM`. If `PROGRAM` already ends with
+        `BIN_SUFFIX`, `PROGRAM` will remain unchanged.
         """,
     ),
     "HOST_PROGRAM": (
@@ -2175,9 +2190,9 @@ VARIABLES = {
         str,
         """Compiled host executable name.
 
-        If the configuration token ``HOST_BIN_SUFFIX`` is set, its value will be
-        automatically appended to ``HOST_PROGRAM``. If ``HOST_PROGRAM`` already
-        ends with ``HOST_BIN_SUFFIX``, ``HOST_PROGRAM`` will remain unchanged.
+        If the configuration token `HOST_BIN_SUFFIX` is set, its value will be
+        automatically appended to `HOST_PROGRAM`. If `HOST_PROGRAM` already
+        ends with `HOST_BIN_SUFFIX`, `HOST_PROGRAM` will remain unchanged.
         """,
     ),
     "DIST_INSTALL": (
@@ -2206,7 +2221,7 @@ VARIABLES = {
         list,
         """Scripts to run during check phase.
 
-        This variable holds scripts that used to be part of ``make check`` rule
+        This variable holds scripts that used to be part of `make check` rule
         and which should probably migrate to another test target.
 
         Please don't add new values to it.
@@ -2219,7 +2234,7 @@ VARIABLES = {
 
         JAR manifests are files in the tree that define how to package files
         into JARs and how chrome registration is performed. For more info,
-        see :ref:`jar_manifests`.
+        see {ref}`jar-manifests`.
         """,
     ),
     "LOCALE_PP_DEFINES": (
@@ -2253,7 +2268,7 @@ VARIABLES = {
         """XPCOM Interface Definition Files (xpidl).
 
         This is a list of files that define XPCOM interface definitions.
-        Entries must be files that exist. Entries are almost certainly ``.idl``
+        Entries must be files that exist. Entries are almost certainly `.idl`
         files.
         """,
     ),
@@ -2262,9 +2277,9 @@ VARIABLES = {
         str,
         """XPCOM Interface Definition Module Name.
 
-        This is the name of the ``.xpt`` file that is created by linking
-        ``XPIDL_SOURCES`` together. If unspecified, it defaults to be the same
-        as ``MODULE``.
+        This is the name of the `.xpt` file that is created by linking
+        `XPIDL_SOURCES` together. If unspecified, it defaults to be the same
+        as `MODULE`.
         """,
     ),
     "XPCOM_MANIFESTS": (
@@ -2282,7 +2297,7 @@ VARIABLES = {
         """Preprocessed IPDL source files.
 
         These files will be preprocessed, then parsed and converted to
-        ``.cpp`` files.
+        `.cpp` files.
         """,
     ),
     "IPDL_SOURCES": (
@@ -2290,8 +2305,8 @@ VARIABLES = {
         list,
         """IPDL source files.
 
-        These are ``.ipdl`` files that will be parsed and converted to
-        ``.cpp`` files.
+        These are `.ipdl` files that will be parsed and converted to
+        `.cpp` files.
         """,
     ),
     "WEBIDL_FILES": (
@@ -2299,7 +2314,7 @@ VARIABLES = {
         list,
         """WebIDL source files.
 
-        These will be parsed and converted to ``.cpp`` and ``.h`` files.
+        These will be parsed and converted to `.cpp` and `.h` files.
         """,
     ),
     "GENERATED_EVENTS_WEBIDL_FILES": (
@@ -2307,7 +2322,7 @@ VARIABLES = {
         list,
         """WebIDL source files for generated events.
 
-        These will be parsed and converted to ``.cpp`` and ``.h`` files.
+        These will be parsed and converted to `.cpp` and `.h` files.
         """,
     ),
     "TEST_WEBIDL_FILES": (
@@ -2315,7 +2330,7 @@ VARIABLES = {
         list,
         """Test WebIDL source files.
 
-         These will be parsed and converted to ``.cpp`` and ``.h`` files
+         These will be parsed and converted to `.cpp` and `.h` files
          if tests are enabled.
          """,
     ),
@@ -2333,7 +2348,7 @@ VARIABLES = {
         """Preprocessed test WebIDL source files.
 
          These will be preprocessed, then parsed and converted to .cpp
-         and ``.h`` files if tests are enabled.
+         and `.h` files if tests are enabled.
          """,
     ),
     "PREPROCESSED_WEBIDL_FILES": (
@@ -2491,7 +2506,7 @@ VARIABLES = {
         """Controls the name of the manifest for JAR files.
 
         By default, the name of the manifest is ${JAR_MANIFEST}.manifest.
-        Setting this variable to ``True`` changes the name of the manifest to
+        Setting this variable to `True` changes the name of the manifest to
         chrome.manifest.
         """,
     ),
@@ -2514,37 +2529,39 @@ VARIABLES = {
         (GYP_DIRS[foo]). The object this returns has attributes that need to be
         set to further specify gyp processing:
 
-            - input, gives the path to the root gyp configuration file for that
-              object directory.
-            - variables, a dictionary containing variables and values to pass
-              to the gyp processor.
-            - sandbox_vars, a dictionary containing variables and values to
-              pass to the mozbuild processor on top of those derived from gyp
-              configuration.
-            - no_chromium, a boolean which if set to True disables some
-              special handling that emulates gyp_chromium.
-            - no_unified, a boolean which if set to True disables source
-              file unification entirely.
-            - non_unified_sources, a list containing sources files, relative to
-              the current moz.build, that should be excluded from source file
-              unification.
-            - action_overrides, a dict of action_name to values of the `script`
-              attribute to use for GENERATED_FILES for the specified action.
-            - install_static_libs, a list of gyp ``static_library`` target names
-              whose output should be installed to ``$(DIST)/lib``. Equivalent
-              to setting ``BUILD_STATIC_LIB_ARCHIVE = True`` and
-              ``DIST_INSTALL = True`` on those targets, but selective rather
-              than affecting every target in the gyp directory.
+        - input, gives the path to the root gyp configuration file for that
+          object directory.
+        - variables, a dictionary containing variables and values to pass
+          to the gyp processor.
+        - sandbox_vars, a dictionary containing variables and values to
+          pass to the mozbuild processor on top of those derived from gyp
+          configuration.
+        - no_chromium, a boolean which if set to True disables some
+          special handling that emulates gyp_chromium.
+        - no_unified, a boolean which if set to True disables source
+          file unification entirely.
+        - non_unified_sources, a list containing sources files, relative to
+          the current moz.build, that should be excluded from source file
+          unification.
+        - action_overrides, a dict of action_name to values of the `script`
+          attribute to use for GENERATED_FILES for the specified action.
+        - install_static_libs, a list of gyp `static_library` target names
+          whose output should be installed to `$(DIST)/lib`. Equivalent
+          to setting `BUILD_STATIC_LIB_ARCHIVE = True` and
+          `DIST_INSTALL = True` on those targets, but selective rather
+          than affecting every target in the gyp directory.
 
-        Typical use looks like::
+        Typical use looks like:
 
-            GYP_DIRS += ['foo', 'bar']
-            GYP_DIRS['foo'].input = 'foo/foo.gyp'
-            GYP_DIRS['foo'].variables = {
-                'foo': 'bar',
-                (...)
-            }
+        ```python
+        GYP_DIRS += ['foo', 'bar']
+        GYP_DIRS['foo'].input = 'foo/foo.gyp'
+        GYP_DIRS['foo'].variables = {
+            'foo': 'bar',
             (...)
+        }
+        (...)
+        ```
         """,
     ),
     "SPHINX_TREES": (
@@ -2624,7 +2641,7 @@ VARIABLES = {
         InitializedDefines,
         dict,
         """Dictionary of compiler defines to declare for host compilation.
-        See ``DEFINES`` for specifics.
+        See `DEFINES` for specifics.
         """,
     ),
     "HOST_LINK_FLAGS": (
@@ -2660,7 +2677,7 @@ VARIABLES = {
         InitializedDefines,
         dict,
         """Dictionary of compiler defines to declare for wasm compilation.
-        See ``DEFINES`` for specifics.
+        See `DEFINES` for specifics.
         """,
     ),
     "WASM_LIBS": (
@@ -2788,18 +2805,22 @@ VARIABLES = {
         list,
         """List of files to be installed for test harnesses.
 
-        ``TEST_HARNESS_FILES`` can be used to install files to any directory
+        `TEST_HARNESS_FILES` can be used to install files to any directory
         under $objdir/_tests. Files can be appended to a field to indicate
         which subdirectory they should be exported to. For example,
-        to export ``foo.py`` to ``_tests/foo``, append to
-        ``TEST_HARNESS_FILES`` like so::
+        to export `foo.py` to `_tests/foo`, append to
+        `TEST_HARNESS_FILES` like so:
 
-           TEST_HARNESS_FILES.foo += ['foo.py']
+        ```python
+        TEST_HARNESS_FILES.foo += ['foo.py']
+        ```
 
         Files from topsrcdir and the objdir can also be installed by prefixing
-        the path(s) with a '/' character and a '!' character, respectively::
+        the path(s) with a '/' character and a '!' character, respectively:
 
-           TEST_HARNESS_FILES.path += ['/build/bar.py', '!quux.py']
+        ```python
+        TEST_HARNESS_FILES.path += ['/build/bar.py', '!quux.py']
+        ```
         """,
     ),
     "NO_EXPAND_LIBS": (
@@ -2826,7 +2847,7 @@ VARIABLES = {
 
         By default, the build will use the toolchain assembler, $(AS), to
         assemble source files in assembly language (.s or .asm files). Setting
-        this value to ``True`` will cause it to use nasm instead.
+        this value to `True` will cause it to use nasm instead.
 
         If nasm is not available on this system, or does not support the
         current target architecture, an error will be raised.
@@ -2887,7 +2908,7 @@ FUNCTIONS = {
         (SourcePath,),
         """Include another mozbuild file in the context of this one.
 
-        This is similar to a ``#include`` in C languages. The filename passed to
+        This is similar to a `#include` in C languages. The filename passed to
         the function will be read and its contents will be evaluated within the
         context of the calling file.
 
@@ -2895,20 +2916,23 @@ FUNCTIONS = {
         currently being processed. If there is a chain of multiple include(),
         the relative path computation is from the most recent/active file.
 
-        If an absolute path is given, it is evaluated from ``TOPSRCDIR``. In
-        other words, ``include('/foo')`` references the path
-        ``TOPSRCDIR + '/foo'``.
+        If an absolute path is given, it is evaluated from `TOPSRCDIR`. In
+        other words, `include('/foo')` references the path
+        `TOPSRCDIR + '/foo'`.
 
-        Example usage
-        ^^^^^^^^^^^^^
+        #### Example usage
 
-        Include ``sibling.build`` from the current directory.::
+        Include `sibling.build` from the current directory:
 
-           include('sibling.build')
+        ```python
+        include('sibling.build')
+        ```
 
-        Include ``foo.build`` from a path within the top source directory::
+        Include `foo.build` from a path within the top source directory:
 
-           include('/elsewhere/foo.build')
+        ```python
+        include('/elsewhere/foo.build')
+        ```
         """,
     ),
     "export": (
@@ -2931,13 +2955,14 @@ FUNCTIONS = {
         NOTE: Please consult with a build peer (on the #build channel at
         https://chat.mozilla.org) before adding a new use of this function.
 
-        Example usage
-        ^^^^^^^^^^^^^
+        #### Example usage
 
-        To make all children directories install as the given extension::
+        To make all children directories install as the given extension:
 
-          XPI_NAME = 'cool-extension'
-          export('XPI_NAME')
+        ```python
+        XPI_NAME = 'cool-extension'
+        export('XPI_NAME')
+        ```
         """,
     ),
     "warning": (
@@ -2971,39 +2996,43 @@ FUNCTIONS = {
            - return values from template functions are ignored,
            - template functions don't have access to the global scope.
 
-        Example template
-        ^^^^^^^^^^^^^^^^
+        #### Example template
 
-        The following ``Program`` template sets two variables ``PROGRAM`` and
-        ``USE_LIBS``. ``PROGRAM`` is set to the argument given on the template
-        invocation, and ``USE_LIBS`` to contain "mozglue"::
+        The following `Program` template sets two variables `PROGRAM` and
+        `USE_LIBS`. `PROGRAM` is set to the argument given on the template
+        invocation, and `USE_LIBS` to contain "mozglue":
 
-           @template
-           def Program(name):
-               PROGRAM = name
-               USE_LIBS += ['mozglue']
+        ```python
+        @template
+        def Program(name):
+            PROGRAM = name
+            USE_LIBS += ['mozglue']
+        ```
 
-        Template invocation
-        ^^^^^^^^^^^^^^^^^^^
+        #### Template invocation
 
-        A template is invoked in the form of a function call::
+        A template is invoked in the form of a function call:
 
-           Program('myprog')
+        ```python
+        Program('myprog')
+        ```
 
         The result of the template, being all the uppercase variable it sets
         is mixed to the existing set of variables defined in the mozbuild file
-        invoking the template::
+        invoking the template:
 
-           FINAL_TARGET = 'dist/other'
-           USE_LIBS += ['mylib']
-           Program('myprog')
-           USE_LIBS += ['otherlib']
+        ```python
+        FINAL_TARGET = 'dist/other'
+        USE_LIBS += ['mylib']
+        Program('myprog')
+        USE_LIBS += ['otherlib']
+        ```
 
         The above mozbuild results in the following variables set:
 
-           - ``FINAL_TARGET`` is 'dist/other'
-           - ``USE_LIBS`` is ['mylib', 'mozglue', 'otherlib']
-           - ``PROGRAM`` is 'myprog'
+           - `FINAL_TARGET` is 'dist/other'
+           - `USE_LIBS` is ['mylib', 'mozglue', 'otherlib']
+           - `PROGRAM` is 'myprog'
 
         """,
     ),
@@ -3045,8 +3074,8 @@ SPECIAL_VARIABLES = {
         str,
         """Constant defining the relative path of this file.
 
-        The relative path is from ``TOPSRCDIR``. When a file is included using
-        ``include()``, this variable reflects the relative path of the current
+        The relative path is from `TOPSRCDIR`. When a file is included using
+        `include()`, this variable reflects the relative path of the current
         file being processed, not the main file that initiated the inclusion.
         """,
     ),
@@ -3055,8 +3084,8 @@ SPECIAL_VARIABLES = {
         str,
         """Constant defining the source directory of this file.
 
-        This is the path inside ``TOPSRCDIR`` where this file is located. It
-        is the same as ``TOPSRCDIR + RELATIVEDIR``.
+        This is the path inside `TOPSRCDIR` where this file is located. It
+        is the same as `TOPSRCDIR + RELATIVEDIR`.
         """,
     ),
     "OBJDIR": (
@@ -3064,7 +3093,7 @@ SPECIAL_VARIABLES = {
         str,
         """The path to the object directory for this file.
 
-        Is is the same as ``TOPOBJDIR + RELATIVEDIR``.
+        Is is the same as `TOPOBJDIR + RELATIVEDIR`.
         """,
     ),
     "CONFIG": (
@@ -3073,7 +3102,7 @@ SPECIAL_VARIABLES = {
         """Dictionary containing the current configuration variables.
 
         All the variables defined by the configuration system are available
-        through this object. e.g. ``ENABLE_TESTS``, ``CFLAGS``, etc.
+        through this object. e.g. `ENABLE_TESTS`, `CFLAGS`, etc.
 
         Values in this container are read-only. Attempts at changing values
         will result in a run-time error.
@@ -3087,7 +3116,7 @@ SPECIAL_VARIABLES = {
         """Additional component files to distribute.
 
        This variable contains a list of files to copy into
-       ``$(FINAL_TARGET)/components/``.
+       `$(FINAL_TARGET)/components/`.
         """,
     ),
     "EXTRA_PP_COMPONENTS": (
@@ -3096,7 +3125,7 @@ SPECIAL_VARIABLES = {
         """Javascript XPCOM files.
 
        This variable contains a list of files to preprocess.  Generated
-       files will be installed in the ``/components`` directory of the distribution.
+       files will be installed in the `/components` directory of the distribution.
         """,
     ),
     "JS_PREFERENCE_FILES": (
@@ -3119,16 +3148,18 @@ SPECIAL_VARIABLES = {
         list,
         """List of resources to be exported, and in which subdirectories.
 
-        ``RESOURCE_FILES`` is used to list the resource files to be exported to
-        ``dist/bin/res``, but it can be used for other files as well. This variable
+        `RESOURCE_FILES` is used to list the resource files to be exported to
+        `dist/bin/res`, but it can be used for other files as well. This variable
         behaves as a list when appending filenames for resources in the top-level
         directory. Files can also be appended to a field to indicate which
         subdirectory they should be exported to. For example, to export
-        ``foo.res`` to the top-level directory, and ``bar.res`` to ``fonts/``,
-        append to ``RESOURCE_FILES`` like so::
+        `foo.res` to the top-level directory, and `bar.res` to `fonts/`,
+        append to `RESOURCE_FILES` like so:
 
-           RESOURCE_FILES += ['foo.res']
-           RESOURCE_FILES.fonts += ['bar.res']
+        ```python
+        RESOURCE_FILES += ['foo.res']
+        RESOURCE_FILES.fonts += ['bar.res']
+        ```
         """,
     ),
     "CONTENT_ACCESSIBLE_FILES": (
@@ -3136,8 +3167,8 @@ SPECIAL_VARIABLES = {
         list,
         """List of files which can be accessed by web content through resource:// URIs.
 
-        ``CONTENT_ACCESSIBLE_FILES`` is used to list the files to be exported
-        to ``dist/bin/contentaccessible``. Files can also be appended to a
+        `CONTENT_ACCESSIBLE_FILES` is used to list the files to be exported
+        to `dist/bin/contentaccessible`. Files can also be appended to a
         field to indicate which subdirectory they should be exported to.
         """,
     ),
@@ -3147,7 +3178,7 @@ SPECIAL_VARIABLES = {
         """Additional JavaScript files to distribute.
 
         This variable contains a list of files to copy into
-        ``$(FINAL_TARGET)/modules.
+        `$(FINAL_TARGET)/modules`.
         """,
     ),
     "EXTRA_PP_JS_MODULES": (
@@ -3156,7 +3187,7 @@ SPECIAL_VARIABLES = {
         """Additional JavaScript files to distribute.
 
         This variable contains a list of files to copy into
-        ``$(FINAL_TARGET)/modules``, after preprocessing.
+        `$(FINAL_TARGET)/modules`, after preprocessing.
         """,
     ),
     "TESTING_JS_MODULES": (
@@ -3170,7 +3201,7 @@ SPECIAL_VARIABLES = {
         To install modules in a subdirectory, use properties of this
         variable to control the final destination. e.g.
 
-        ``TESTING_JS_MODULES.foo += ['module.sys.mjs']``.
+        `TESTING_JS_MODULES.foo += ['module.sys.mjs']`.
         """,
     ),
     "TEST_DIRS": (

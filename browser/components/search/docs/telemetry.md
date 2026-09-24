@@ -96,6 +96,7 @@ SAP names can be:
 > - `errorpage` Used when a DNS error occurs
 > - `newtab`
 > - `newtab-searchbar` Used when searching from the New Tab search bar.
+> - `newtab-search-widget` Used when searching from the New Tab search widget.
 > - `searchbar`
 > - `smartbar` Used when searching from Smart Window.
 > - `smartwindow_assistant` Used when searching from Smart Window assistant.
@@ -121,6 +122,7 @@ Possible SAPs are:
 > - `contextmenu`
 > - `errorpage` Used when a DNS error occurs
 > - `newtab_searchbar` Used when searching from the New Tab search bar.
+> - `newtab_search_widget` Used when searching from the New Tab search widget.
 > - `searchbar`
 > - `smartbar` Used when searching from Smart Window.
 > - `smartwindow_assistant` Used when searching from Smart Window assistant.

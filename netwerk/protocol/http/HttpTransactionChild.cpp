@@ -421,13 +421,13 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
       HttpVersion version = head->Version();
       mProtocolVersion.Assign(nsHttp::GetProtocolVersion(version));
     }
-    optionalHead = Some(*head);
-
     if (GetOpaqueResponseBlockedReason(*head) ==
         OpaqueResponseBlockedReason::BLOCKED_SHOULD_SNIFF) {
       RefPtr<nsInputStreamPump> pump = do_QueryObject(mTransactionPump);
       pump->PeekStream(GetDataForSniffer, &dataForSniffer);
     }
+
+    optionalHead.emplace(std::move(*head));
   }
 
   Maybe<nsCString> optionalAltSvcUsed;

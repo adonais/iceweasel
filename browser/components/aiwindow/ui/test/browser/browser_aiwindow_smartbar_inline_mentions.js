@@ -464,6 +464,43 @@ add_task(async function test_inline_mention_available_via_getAllMentions() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+// select() must cover a mention chip at the end of the input, even without the
+// trailing space that @-typing normally inserts. Regression test for the
+// selection walk skipping leaf/atom nodes.
+add_task(async function test_select_covers_trailing_inline_mention() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const result = await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const editor = smartbar.querySelector("moz-multiline-editor");
+
+    editor.value = "hello";
+    editor.insertMention({ type: "default", id: "1", label: "World" }, 5);
+    editor.select();
+
+    const mention = editor.getAllMentions()[0];
+    const sel = editor.view.state.selection;
+    return {
+      mentionPos: mention.pos,
+      from: sel.from,
+      to: sel.to,
+      coversChip: sel.from <= mention.pos && sel.to >= mention.pos + 1,
+    };
+  });
+
+  Assert.ok(
+    result.coversChip,
+    `select() should cover a trailing mention chip (from=${result.from}, ` +
+      `to=${result.to}, mentionPos=${result.mentionPos})`
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(
   async function test_deleted_inline_mention_excluded_from_getAllMentions() {
     const win = await openAIWindow();

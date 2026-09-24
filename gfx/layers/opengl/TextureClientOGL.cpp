@@ -368,13 +368,6 @@ bool AndroidImageReaderImageTextureData::Serialize(
   return true;
 }
 
-void AndroidImageReaderImageTextureData::GetSubDescriptor(
-    RemoteDecoderVideoSubDescriptor* const aOutDesc) {
-  *aOutDesc = AndroidImageReaderImageDescriptor(
-      mImageReaderId, mFrameId, mSize,
-      mHasAlpha ? gfx::SurfaceFormat::R8G8B8A8 : gfx::SurfaceFormat::R8G8B8X8);
-}
-
 #endif  // MOZ_WIDGET_ANDROID
 
 }  // namespace layers

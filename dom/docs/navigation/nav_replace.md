@@ -67,7 +67,7 @@ a browsing context group switch](https://html.spec.whatwg.org/multipage/origin.h
 
 These types of switches may or may not cause the process to change, but will
 finish within a different `BrowsingContextGroup` than they started with.
-Like {ref}`cross-process navigations`, these navigations are triggered using
+Like [cross-process navigations](#cross-process-navigations), these navigations are triggered using
 the process switching logic in `DocumentLoadListener`.
 
 As the parent of a content browsing context cannot change due to a navigation,

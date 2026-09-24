@@ -17,7 +17,7 @@
     "pass."
   ],
 
-  "version": 1,
+  "version": 3,
 
   "console": {
     "_comment": "The human stream, on logcat tag 'Eff'. effpretty parses `^(\\s*)\\[([A-Z]+)\\](.*)$`, so the tag, the glyph and four-space-per-level indentation are all load-bearing.",
@@ -37,18 +37,85 @@
 
   "structured": {
     "_comment": "The machine stream, one JSON object per line on logcat tag 'EffJson'. Demuxed by `effpretty --events` into run-events.jsonl.",
+    "event_envelope": {
+      "_comment": "Every record carries one eventEnvelope object containing these fields. Existing top-level type, ts, testId, and payload fields remain for version-1 consumers; eventType and wallTimeMs are their typed envelope equivalents. unassigned/fallback is explicit compatibility evidence, not a generated run identity.",
+      "container_field": "eventEnvelope",
+      "version_field": "eventSchemaVersion",
+      "version": 1,
+      "required": [
+        "eventSchemaVersion",
+        "runId",
+        "shardId",
+        "testId",
+        "attemptId",
+        "dispatchAttemptId",
+        "providerAttemptOrdinal",
+        "sequence",
+        "wallTimeMs",
+        "monotonicTimeNs",
+        "eventType",
+        "executionPath",
+        "isolation",
+        "identitySource",
+        "processId"
+      ],
+      "identity_sources": ["dispatcher", "fallback"]
+    },
     "tag": "EffJson",
     "record_types": {
       "testStart": ["testId"],
       "testEnd": ["testId", "status"],
-      "stepEnd": ["type", "outcome", "elapsedMs"],
+      "attemptEnd": [
+        "terminalSchemaVersion",
+        "testId",
+        "outcome",
+        "bodyOutcome",
+        "cleanupOutcome",
+        "complete",
+        "failureOrigins",
+        "failedCleanupStages"
+      ],
+      "stepEnd": ["scopeType", "outcome", "elapsedMs"],
       "dump": ["dump", "layer"],
       "dumpNode": ["dump", "layer"],
       "state": ["phase", "testId"],
-      "cleanup": ["phase", "testId", "failed"]
+      "stateSnapshot": ["schemaVersion", "phase", "testId", "contributors"],
+      "cleanup": ["phase", "testId", "failed", "failureDetails"],
+      "runtimeCleanup": [
+        "phase",
+        "testId",
+        "searchActiveBefore",
+        "searchActiveAfter"
+      ],
+      "inputCleanup": ["phase", "testId", "visibleBefore", "visibleAfter"],
+      "activityCleanup": [
+        "phase",
+        "testId",
+        "taskId",
+        "taskRemovalRequested",
+        "activityDestroyed",
+        "taskPresentAfter",
+        "verified"
+      ],
+      "environmentPreflight": ["testId", "requirements", "before", "after"],
+      "environmentRestore": ["testId", "requirements", "before", "after"],
+      "activityEnvironment": [
+        "phase",
+        "testId",
+        "requiredOrientation",
+        "beforeOrientation",
+        "afterOrientation"
+      ],
+      "isolation": ["phase", "testId", "verified", "violations"],
+      "activityLifecycle": ["testId", "sequence", "event", "processId"]
     },
-    "_state_comment": "state: one sample of the app's own stores, written by StateProbe. `phase` is arrival|start|end --- arrival is taken outside every cleanup rule and is the only one that shows what the device inherited, start is taken after the harness has cleared what it clears, end is taken when the test finishes. and consumers pair by testId and diff --- the harness deliberately does not compute the diff itself. The remaining keys are counts (tabs, tabsPrivate, history, bookmarks, logins, addresses, creditCards, topSites, downloads) plus launcherIcon, which is a name. A value that is a string beginning 'unreadable:' could not be sampled; treat it as absent rather than as a change.",
-    "_cleanup_comment": "cleanup: emitted by AppDataCleaner once per phase. `phase` is before|after and `failed` is a comma-separated list of the clears that errored, empty when all succeeded. A failed clear and a genuine state leak otherwise look identical --- both present as a later test starting with state it did not create --- so this is what distinguishes them.",
+    "_state_comment": "state: compatibility projection of the typed stateSnapshot, written by StateProbe. `phase` is arrival|afterSetup|start|end|afterCleanup. Arrival is outside every cleanup rule; afterSetup is the enforced app/runtime isolation boundary before Activity launch; start is after Activity setup; end is after the test body; afterCleanup is the verified handoff when the process survives. Consumers pair them by testId and compute transitions. The remaining keys are counts (tabs, tabsPrivate, pendingUndoTabs, recentlyClosedStoreTabs, history, bookmarks, logins, addresses, creditCards, sitePermissions, savedSessions, collections, tabGroups, tabGroupAssignments, recentlyClosedTabs, topSites, downloads, preferenceOverrideCount), allowlisted preference identity (preferenceOverrideIds), execution identity/runtime state (processId, searchActive, voiceInputRequested, voiceInputResult), and launcherIcon. A string beginning 'unreadable:' is a failed observation and makes an enforced isolation boundary unverifiable.",
+    "_state_snapshot_comment": "stateSnapshot: the versioned capture-only state contract. Each contributor declares a stable name, schemaVersion, captureCost, sensitivity, completeness, compatibility projection, legacy boundaryPolicy, resourcePolicy (OBSERVE, RESTORE, PRESERVE, or UNSUPPORTED), boundaryBaseline, controlDrivers, and values. Capture never restores or mutates state. The flat state record remains during consumer migration and contains only contributors whose values preserve its existing baseline semantics.",
+    "_cleanup_comment": "cleanup: emitted by AppDataCleaner once per phase. `phase` is before|after, `failed` is a comma-separated list of the clears that errored, and `failureDetails` maps those stable step names to exception type and message. A failed clear and a genuine state leak otherwise look identical --- both present as a later test starting with state it did not create --- so this is what distinguishes them.",
+    "_attempt_end_comment": "attemptEnd is the only atomic terminal record. It is emitted by the outermost BaseTest rule after the body, efficiency cleanup, isolation verification, and environment restoration return or throw. testEnd remains the compatibility body-result event and is not evidence that cleanup completed. A host collector synthesizes an incomplete or crash outcome when this record is absent.",
+    "_environment_comment": "environmentPreflight and environmentRestore record the declared device, permission, notification, shared-artifact, and mock-server requirements together with allowlisted observations from both sides of the operation. activityEnvironment records orientation application after the Activity exists, because pre-launch target Resources can be stale.",
+    "_activity_lifecycle_comment": "activityLifecycle: a monotonic per-test trace from Application.ActivityLifecycleCallbacks. created records whether Android supplied saved instance state; every activity record carries process, activity-instance, task, intent-flag, lifecycle, and process-global search/voice state. This distinguishes an expected same-task restore from a fresh task inheriting stale process state.",
+    "_scope_type_comment": "Step records use scopeType for STEP/CMD/LOC. The top-level type remains the domain record identity stepEnd; using type for both fields caused the scope to overwrite the record identity before version 3.",
     "scope_types": ["STEP", "CMD", "LOC"],
     "outcomes": ["OK", "FAIL", "SKIP"],
     "test_statuses": ["PASS", "FAIL", "SKIP"],
@@ -66,7 +133,12 @@
         "collection_unsatisfied",
         "unsupported_strategy",
         "condition_timeout",
+        "condition_error",
         "not_arrived",
+        "empty_selector_group",
+        "empty_readiness_contract",
+        "resolution_error",
+        "predicate_error",
         "no_path"
       ]
     },
@@ -76,12 +148,24 @@
       "verb": "the verb that produced the record, e.g. click, verify, navigate",
       "selector": "the selector's human description",
       "strategy": "SelectorStrategy name",
+      "selectorId": "stable selector identity, when declared",
+      "backend": "UI tree used for the observation",
+      "tree": "merged or unmerged Compose semantics tree, when applicable",
+      "semanticRoles": "readiness roles the selector contributes to",
       "value": "what the selector searched for --- efftriage T20 matches this against dump nodes",
       "expectation": "what was asked of the element, e.g. 'is selected'",
       "cause": "stack trace of whatever threw",
       "dump": "label of the screen dump taken for this failure, pairing it with the dumpNode records",
       "page": "page name, on navigate and arrival records",
-      "attempts": "how many times a driveUntil-style verb tried"
+      "attempts": "number of fresh observations made by the verb",
+      "actionAttempts": "number of bounded actions performed by a driveUntil-style verb",
+      "waitPolicy": "immediate, poll, or action_bounded",
+      "timeoutMs": "configured polling deadline",
+      "timedOut": "whether the expected condition missed its deadline",
+      "lastObservation": "typed summary of the final fresh observation",
+      "failureCategory": "assertion, harness, infrastructure, timeout, or inapplicable",
+      "screen": "page tracked when the verb ran",
+      "navigationEdge": "route executing when the verb ran, when applicable"
     }
   },
 

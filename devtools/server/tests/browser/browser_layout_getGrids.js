@@ -118,7 +118,7 @@ add_task(async function () {
   );
   const grids = await layout.getGrids(walker.rootNode);
   const grid = grids[0];
-  const { gridFragments } = grid;
+  const gridFragments = await grid.getFragments();
 
   is(grids.length, 1, "One grid was returned.");
   is(gridFragments.length, 1, "One grid fragment was returned.");

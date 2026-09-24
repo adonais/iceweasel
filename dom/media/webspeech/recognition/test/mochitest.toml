@@ -1,48 +1,117 @@
 [DEFAULT]
 tags = "mtg"
 subsuite = "media"
+prefs = ["media.navigator.streams.fake=true"]
+scheme = "https"
 support-files = [
   "head.js",
   "hello.ogg",
   "hello.ogg^headers^",
-  "http_requesthandler.sjs",
+  # One minute excerpt from
+  # https://www.jfklibrary.org/learn/about-jfk/historic-speeches/address-at-rice-university-on-the-nations-space-effort,
+  # public domain speech that isn't too clean and contains a few proper names.
+  "kennedy-appolo.opus",
+  # Two pangrams separated by ~4s of silence, recorded for
+  # test_parakeet_eou_flush.html. Original recording, no third-party rights.
+  "pangrams.opus",
   "sinoid+hello.ogg",
   "sinoid+hello.ogg^headers^",
   "silence.ogg",
   "silence.ogg^headers^",
 ]
 
-["test_abort.html"]
+["test_abort_end_async.html"]
 
-["test_audio_capture_error.html"]
+["test_ai_controls_gate.html"]
+scheme = "https"
 
-["test_call_start_from_end_handler.html"]
-tags = "capturestream"
-
-["test_nested_eventloop.html"]
+["test_concurrent_session.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
 skip-if = [
-  "os == 'android'",
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
 ]
 
-["test_online_400_response.html"]
+["test_fuzz_availability_install.html"]
 
-["test_online_empty_result_handling.html"]
+["test_fuzz_iframe_teardown.html"]
 
-["test_online_hangup.html"]
+["test_fuzz_session_lifecycle.html"]
 
-["test_online_http.html"]
+["test_install_on_start.html"]
 
-["test_online_http_webkit.html"]
+["test_install_overlap.html"]
 
-["test_online_malformed_result_handling.html"]
+["test_model_available_after_install.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+
+# Fuzz-style stress tests that interleave Web Speech API calls in randomized
+# order, using the in-process mock backend (no real model hub/microphone
+# needed). These are nets for concurrency bugs in the IPC/session lifecycle
+# (see bug 1940906), not targeted regression tests for a single bug.
+
+["test_parakeet_e2e.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
+["test_parakeet_eou_flush.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
+["test_parakeet_multilingual.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+# Audio capture doesn't produce real signal under Wayland in CI, so
+# recognition always returns an empty transcript there.
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
 
 ["test_preference_enable.html"]
 
-["test_recognition_service_error.html"]
-
-["test_success_without_recognition_service.html"]
-
-["test_timeout.html"]
+["test_result_item_out_of_range.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1307991 - low frequency on try pushes
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
 ]
+
+# The parakeet tests run in their own subsuite (mochitest-speech-recognition) so
+# the large model artifacts are fetched only for this task. The parakeet-asr tag
+# makes runtests.py start the local model hub (serve_model.py) for them.
+
+["test_start_after_error.html"]
+
+["test_stop_returns_result_or_nomatch.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2053116
+  "verify", # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+]
+
+["test_stress_init_abort_race.html"]
+subsuite = "speech-recognition"
+tags = "mtg parakeet-asr"
+skip-if = ["verify"]  # skip under test-verify: it runs outside the subsuite, so serve_model.py (the model hub) is never started
+
+["test_unsupported_language.html"]

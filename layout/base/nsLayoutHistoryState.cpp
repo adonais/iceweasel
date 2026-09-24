@@ -168,8 +168,6 @@ UniquePtr<PresState> NewPresState() {
       /* resolution */ 1.0,
       /* disabledSet */ false,
       /* disabled */ false,
-      /* droppedDown */ false,
-      /* horizontalOverflow */ false,
-      /* verticalOverflow */ false);
+      /* droppedDown */ false);
 }
 }  // namespace mozilla

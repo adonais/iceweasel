@@ -49,33 +49,45 @@ struct EngineMapping {
   const char* mPBMPref;
 };
 
+// The order here is the order the engines land in the derived pref, which is
+// the order ContentClassifierService evaluates them in, and MaybeCancelChannel
+// blocks on the first matched engine. So it must mirror the blocking-feature
+// order of UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel, or a
+// URL on more than one list gets cancelled by a different feature (and reports
+// a different error code and state bit) than under the classic classifier.
 constexpr EngineMapping kProtectionMappings[] = {
-    {"trackers", "privacy.trackingprotection.enabled",
-     "privacy.trackingprotection.pbmode.enabled"},
-    {"fingerprinters", "privacy.trackingprotection.fingerprinting.enabled",
-     "privacy.trackingprotection.fingerprinting.enabled"},
-    {"cryptominers", "privacy.trackingprotection.cryptomining.enabled",
-     "privacy.trackingprotection.cryptomining.enabled"},
-    {"social-trackers", "privacy.trackingprotection.socialtracking.enabled",
-     "privacy.trackingprotection.socialtracking.enabled"},
     {"email-trackers", "privacy.trackingprotection.emailtracking.enabled",
      "privacy.trackingprotection.emailtracking.pbmode.enabled"},
+    {"cryptominers", "privacy.trackingprotection.cryptomining.enabled",
+     "privacy.trackingprotection.cryptomining.enabled"},
+    {"fingerprinters", "privacy.trackingprotection.fingerprinting.enabled",
+     "privacy.trackingprotection.fingerprinting.enabled"},
+    {"social-trackers", "privacy.trackingprotection.socialtracking.enabled",
+     "privacy.trackingprotection.socialtracking.enabled"},
     {"harmful-addon", "privacy.trackingprotection.harmfuladdon.enabled",
      "privacy.trackingprotection.harmfuladdon.enabled"},
+    {"trackers", "privacy.trackingprotection.enabled",
+     "privacy.trackingprotection.pbmode.enabled"},
 };
 
+// Mirrors UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel.
+// Annotation engines are evaluated independently and every match is annotated,
+// so order is not load-bearing the way it is for kProtectionMappings, but we
+// keep the two in sync to avoid surprises.
 constexpr EngineMapping kAnnotationMappings[] = {
+    {"cryptominers", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    {"social-trackers", "privacy.trackingprotection.annotate_channels",
+     "privacy.trackingprotection.annotate_channels"},
+    // trackers and trackers-content are one feature (TrackingAnnotation) in
+    // url-classifier, split in two here.
     {"trackers", "privacy.trackingprotection.annotate_channels",
      "privacy.trackingprotection.annotate_channels"},
     // Content trackers are annotated only when the strict list is in use.
     {"trackers-content", "privacy.annotate_channels.strict_list.enabled",
      "privacy.annotate_channels.strict_list.pbmode.enabled"},
-    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"cryptominers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"social-trackers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
 };
 
 // ETP source prefs the mirror observes; a change to any of these recomputes

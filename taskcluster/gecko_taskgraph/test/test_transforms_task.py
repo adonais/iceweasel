@@ -4,11 +4,13 @@
 
 import pytest
 from mozunit import main
+from taskgraph.config import GraphConfig
 
 from gecko_taskgraph.test.conftest import FakeParameters, FakeTransformConfig
 from gecko_taskgraph.transforms import job  # noqa: F401
 from gecko_taskgraph.transforms.task import (
     TREEHERDER_ROOT_URL,
+    get_default_priority,
     get_treeherder_link,
     get_treeherder_project,
     try_task_config_env,
@@ -254,6 +256,47 @@ def test_try_task_config_env_overrides_unrestricted_test_paths(run_transform):
     result = list(run_transform(try_task_config_env, task, params=params))[0]
 
     assert result["worker"]["env"]["MOZHARNESS_TEST_PATHS"] == '{"suite": ["dir"]}'
+
+
+TASK_PRIORITY_CONFIG = {
+    "by-project": {
+        "mozilla-release": "highest",
+        "mozilla-esr.*": {
+            "by-shipping": {"true": "very-high", "default": "low"},
+        },
+        "mozilla-beta": {
+            "by-shipping": {"true": "very-high", "default": "low"},
+        },
+        "mozilla-central": "medium",
+        "autoland": "low",
+        "default": "very-low",
+    }
+}
+
+
+@pytest.mark.parametrize(
+    "project,shipping,expected",
+    [
+        # Beta and ESR are integration branches by default, and are only
+        # raised when the push is flagged as shipping.
+        pytest.param("mozilla-beta", False, "low", id="beta"),
+        pytest.param("mozilla-beta", True, "very-high", id="beta-shipping"),
+        pytest.param("mozilla-esr140", False, "low", id="esr"),
+        pytest.param("mozilla-esr140", True, "very-high", id="esr-shipping"),
+        # Every other project ignores the shipping flag.
+        pytest.param("mozilla-release", True, "highest", id="release-shipping"),
+        pytest.param("mozilla-central", True, "medium", id="central-shipping"),
+        pytest.param("autoland", True, "low", id="autoland-shipping"),
+        pytest.param("try", True, "very-low", id="try-shipping"),
+        pytest.param("mozilla-central", False, "medium", id="central"),
+        pytest.param("autoland", False, "low", id="autoland"),
+        pytest.param("try", False, "very-low", id="try"),
+    ],
+)
+def test_get_default_priority(project, shipping, expected):
+    # GraphConfig is hashable, which get_default_priority requires as it is cached.
+    graph_config = GraphConfig({"task-priority": TASK_PRIORITY_CONFIG}, root_dir=".")
+    assert get_default_priority(graph_config, project, shipping) == expected
 
 
 if __name__ == "__main__":

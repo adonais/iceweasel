@@ -7,28 +7,36 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationArrival
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.selectors.AddToHomeScreenSelectors
 
 class AddToHomeScreenComponent(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
     BasePage(composeRule) {
     override val pageName = "AddToHomeScreenComponent"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = pageName,
             to = "BrowserPage",
             steps = listOf(),
+            arrival = NavigationArrival.EDGE_COMPLETION,
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): AddToHomeScreenComponent {
-        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): AddToHomeScreenComponent {
+        super.navigateToPage(
+            url = url.ifBlank { "example.com" },
+            forceNavigation = forceNavigation,
+            navigationOptions = navigationOptions,
+        )
         return this
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return AddToHomeScreenSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = AddToHomeScreenSelectors
 }

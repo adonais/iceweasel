@@ -405,8 +405,8 @@ bool ImportNameValueTypeFilter(JSContext* cx, JS::Handle<JS::Value> raw,
     case js::ImportNameValueType::Source:
       name = "source";
       break;
-    case js::ImportNameValueType::AllButDefault:
-      name = "all-but-default";
+    case js::ImportNameValueType::All:
+      name = "all";
       break;
   }
   MOZ_ASSERT(name, "unexpected ImportNameValueType");

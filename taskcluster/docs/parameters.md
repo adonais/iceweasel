@@ -127,6 +127,12 @@ topic.
 
 : Set (to `true`) when the commit message requested that no tasks run on this push.
 
+`shipping`
+
+: Set (to `true`) when the commit message contains `SHIPPING`, indicating the push
+  is intended to be shipped. This can be used to alter properties of tasks, such as
+  their priority.
+
 ## Tree Information
 
 `project`

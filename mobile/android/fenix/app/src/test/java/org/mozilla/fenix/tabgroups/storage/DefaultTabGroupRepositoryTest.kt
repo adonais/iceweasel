@@ -495,6 +495,38 @@ class DefaultTabGroupRepositoryTest {
         }
 
     @Test
+    fun `WHEN a tab group is ungrouped THEN the group and its assignments are removed and other groups are untouched`() =
+        runTest {
+            val tabGroupId = "1"
+            val tabGroup1 =
+                TabGroup(
+                    id = tabGroupId,
+                    title = "tabGroup1",
+                    theme = "theme",
+                    lastModified = 10L,
+                )
+            val tabGroup2 =
+                TabGroup(
+                    id = "2",
+                    title = "tabGroup2",
+                    theme = "theme",
+                    lastModified = 10L,
+                )
+            val ungroupedAssignments = List(size = 10) { "$it" to tabGroupId }
+            val remainingTabGroupAssignments = List(size = 10) { "1$it" to "2" }
+            initializeDatabase(
+                initialTabGroups = listOf(tabGroup1, tabGroup2),
+                initialTabGroupAssignments = ungroupedAssignments + remainingTabGroupAssignments,
+            )
+
+            repository.ungroupTabGroup(tabGroupId = tabGroup1.id)
+
+            advanceUntilIdle()
+            assertEquals(listOf(tabGroup2), repository.tabGroupDataFlow.first().tabGroups)
+            assertEquals(remainingTabGroupAssignments.toMap(), repository.tabGroupDataFlow.first().tabGroupAssignments)
+        }
+
+    @Test
     fun `WHEN a subset of tab groups are deleted via ID THEN all of the matching entries and their associated assignments are removed from the database`() =
         runTest {
             val tabGroup1 =

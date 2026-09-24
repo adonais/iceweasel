@@ -503,6 +503,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     .card-stp-button-hover-background {
       border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
       background-color: var(--button-background-color-ghost);
+      color: var(--button-text-color-ghost);
     }
 
     .ds-card-link:focus {
@@ -656,11 +657,13 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       inset-block-end: var(--space-xsmall);
       inset-inline-end: var(--space-large);
       background: var(--button-background-color-ghost);
+      color: var(--button-text-color-ghost);
     }
   }
 
   .context-menu-button {
     background-color: var(--button-background-color-ghost);
+    color: var(--button-text-color-ghost);
 
     @media (forced-colors: active) {
       border: var(--border-width) solid var(--button-border-color-ghost);

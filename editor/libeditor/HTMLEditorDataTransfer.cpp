@@ -2791,119 +2791,21 @@ nsresult HTMLEditor::HandlePasteTransferable(
   return rv;
 }
 
-nsresult HTMLEditor::PasteNoFormattingAsAction(
-    nsIClipboard::ClipboardType aClipboardType,
-    DispatchPasteEvent aDispatchPasteEvent,
-    DataTransfer* aDataTransfer /* = nullptr */,
-    nsIPrincipal* aPrincipal /* = nullptr */) {
-  if (IsReadonly()) {
-    return NS_OK;
-  }
-  // Create the same DataTransfer object here so we can share it between
-  // the clipboard event and its data with the call to
-  // InsertFromTransferableWithSelection below. This prevents
-  // race conditions with Content Analysis on like we see in bug 1918027.
-  RefPtr<DataTransfer> dataTransfer =
-      aDataTransfer ? RefPtr<DataTransfer>(aDataTransfer)
-                    : RefPtr<DataTransfer>(CreateDataTransferForPaste(
-                          ePasteNoFormatting, aClipboardType));
-
-  auto clearDataTransfer = MakeScopeExit([&] {
-    // If the caller passed in aDataTransfer, they are responsible for clearing
-    // this.
-    if (!aDataTransfer && dataTransfer) {
-      dataTransfer->ClearForPaste();
-    }
-  });
-
-  AutoEditActionDataSetter editActionData(*this, EditAction::ePaste,
-                                          aPrincipal);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-  editActionData.InitializeDataTransferWithClipboard(
-      SettingDataTransfer::eWithoutFormat, dataTransfer, aClipboardType);
-
-  if (aDispatchPasteEvent == DispatchPasteEvent::Yes) {
-    RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
-    if (NS_WARN_IF(!focusManager)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-    const RefPtr<Element> focusedElement = focusManager->GetFocusedElement();
-
-    Result<ClipboardEventResult, nsresult> ret = Err(NS_ERROR_FAILURE);
-    {
-      // This method is not set up to pass back the new aDataTransfer
-      // if it changes. If we need this in the future, we can change
-      // aDataTransfer to be a RefPtr<DataTransfer>*.
-      MOZ_ASSERT(!aDataTransfer);
-      AutoTrackDataTransferForPaste trackDataTransfer(*this, dataTransfer);
-
-      ret = DispatchClipboardEventAndUpdateClipboard(
-          ePasteNoFormatting, Some(aClipboardType), dataTransfer);
-      if (MOZ_UNLIKELY(ret.isErr())) {
-        NS_WARNING(
-            "EditorBase::DispatchClipboardEventAndUpdateClipboard("
-            "ePasteNoFormatting) failed");
-        return EditorBase::ToGenericNSResult(ret.unwrapErr());
-      }
-    }
-    switch (ret.inspect()) {
-      case ClipboardEventResult::DoDefault:
-        break;
-      case ClipboardEventResult::DefaultPreventedOfPaste:
-      case ClipboardEventResult::IgnoredOrError:
-        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
-      case ClipboardEventResult::CopyOrCutHandled:
-        MOZ_ASSERT_UNREACHABLE("Invalid result for ePaste");
-    }
-
-    // If focus is changed by a "paste" event listener, we should keep handling
-    // the "pasting" in new focused editor because Chrome works as so.
-    const RefPtr<Element> newFocusedElement = focusManager->GetFocusedElement();
-    if (MOZ_UNLIKELY(focusedElement != newFocusedElement)) {
-      // For the privacy reason, let's top handling it if new focused element is
-      // in different document.
-      if (focusManager->GetFocusedWindow() != GetWindow()) {
-        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
-      }
-      RefPtr<EditorBase> editorBase =
-          nsContentUtils::GetActiveEditor(GetPresContext());
-      if (!editorBase || (editorBase->IsHTMLEditor() &&
-                          !editorBase->AsHTMLEditor()->IsActiveInDOMWindow())) {
-        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_ACTION_CANCELED);
-      }
-      if (editorBase != this) {
-        if (editorBase->IsHTMLEditor()) {
-          nsresult rv = MOZ_KnownLive(editorBase->AsHTMLEditor())
-                            ->PasteNoFormattingAsAction(
-                                aClipboardType, DispatchPasteEvent::No,
-                                dataTransfer, aPrincipal);
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "HTMLEditor::PasteNoFormattingAsAction("
-                               "DispatchPasteEvent::No) failed");
-          return EditorBase::ToGenericNSResult(rv);
-        }
-        nsresult rv = editorBase->PasteAsAction(
-            aClipboardType, DispatchPasteEvent::No, dataTransfer, aPrincipal);
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "EditorBase::PasteAsAction(DispatchPasteEvent::No) failed");
-        return EditorBase::ToGenericNSResult(rv);
-      }
-    }
-  }
-
+nsresult HTMLEditor::HandlePasteNoFormatting(
+    AutoEditActionDataSetter& aEditActionData,
+    nsIClipboard::ClipboardType aClipboardType, DataTransfer* aDataTransfer) {
   const RefPtr<Element> editingHost =
       ComputeEditingHost(LimitInBodyElement::No);
   if (NS_WARN_IF(!editingHost)) {
     return NS_ERROR_FAILURE;
   }
 
+  aEditActionData.InitializeDataTransferWithClipboard(
+      SettingDataTransfer::eWithoutFormat, aDataTransfer, aClipboardType);
   // Dispatch "beforeinput" event after "paste" event.  And perhaps, before
   // committing composition because if pasting is canceled, we don't need to
   // commit the active composition.
-  nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+  nsresult rv = aEditActionData.MaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "MaybeDispatchBeforeInputEvent(), failed");
@@ -2933,7 +2835,7 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(
         "ignored");
     return NS_OK;
   }
-  rv = GetDataFromDataTransferOrClipboard(dataTransfer, transferable,
+  rv = GetDataFromDataTransferOrClipboard(aDataTransfer, transferable,
                                           aClipboardType);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::GetDataFromDataTransferOrClipboard() failed");
@@ -2945,7 +2847,7 @@ nsresult HTMLEditor::PasteNoFormattingAsAction(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::InsertFromTransferableAtSelection("
                        "HavePrivateHTMLFlavor::No) failed");
-  return EditorBase::ToGenericNSResult(rv);
+  return rv;
 }
 
 // The following arrays contain the MIME types that we can paste. The arrays

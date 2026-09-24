@@ -62,15 +62,31 @@ void VideoCaptureFake::SetTrackingId(uint32_t aTrackingIdProcId) {
 }
 
 void VideoCaptureFake::OnGeneratedImage(const RefPtr<Image>& aImage,
-                                        TimeStamp aTime) {
+                                        TimeStamp aTime,
+                                        mozilla::VideoRotation aRotation) {
   webrtc::scoped_refptr<ImageBuffer> buffer(
       new webrtc::RefCountedObject<ImageBuffer>(RefPtr(aImage)));
   if (!mStart) {
     mStart = Some(aTime);
   }
+  webrtc::VideoRotation rotation = webrtc::kVideoRotation_0;
+  switch (aRotation) {
+    case mozilla::VideoRotation::kDegree_90:
+      rotation = webrtc::kVideoRotation_90;
+      break;
+    case mozilla::VideoRotation::kDegree_180:
+      rotation = webrtc::kVideoRotation_180;
+      break;
+    case mozilla::VideoRotation::kDegree_270:
+      rotation = webrtc::kVideoRotation_270;
+      break;
+    default:
+      break;
+  }
   auto videoFrame = webrtc::VideoFrame::Builder()
                         .set_video_frame_buffer(buffer)
                         .set_timestamp_us((aTime - *mStart).ToMicroseconds())
+                        .set_rotation(rotation)
                         .build();
   webrtc::MutexLock lock(&api_lock_);
   DeliverCapturedFrame(videoFrame);

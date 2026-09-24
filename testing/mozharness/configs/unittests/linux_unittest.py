@@ -155,6 +155,7 @@ config = {
         "mochitest-plain-gpu": ["--subsuite=gpu"],
         "mochitest-plain-coverage": ["--timeout=1200"],
         "mochitest-media": ["--subsuite=media"],
+        "mochitest-speech-recognition": ["--subsuite=speech-recognition"],
         "mochitest-chrome": ["--flavor=chrome", "--disable-e10s"],
         "mochitest-chrome-gpu": ["--flavor=chrome", "--subsuite=gpu", "--disable-e10s"],
         "mochitest-browser-chrome": ["--flavor=browser"],

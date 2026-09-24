@@ -2,22 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "APZCTreeManagerTester.h"
+#include "APZCBasicTester.h"
 #include "APZTestCommon.h"
 #include "InputUtils.h"
-#include "mozilla/layers/ScrollableLayerGuid.h"
 
 // Test of scenario described in bug 1269067 - that a continuing mouse drag
 // doesn't interrupt a wheel scrolling animation
-TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
+TEST_F(APZCBasicTester, WheelInterruptedByMouseDrag) {
   // Needed because the test uses SmoothWheel()
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
 
-  // Set up a scrollable layer
-  CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
-  UpdateHitTestingTree();
-  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  // SmoothWheel() takes a delta denominated in lines, so the line scroll
+  // amount is what determines how far a one-line wheel event scrolls.
+  apzc->GetScrollMetadata().SetLineScrollAmount({5, 10});
 
   // First start the mouse drag
   uint64_t dragBlockId =
@@ -51,23 +48,17 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
 // content is only scrollable in the vertical direction, then an input
 // block starting with a wheel event with a horizontal can prevent the
 // entire input block from causing any scrolling.
-TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
-  ViewID rootScrollId = START_SCROLL_ID;
-  const char* treeShape = "x";
-  LayerIntRect layerVisibleRect[] = {
-      LayerIntRect(0, 0, 100, 100),
-  };
-  CreateScrollData(treeShape, layerVisibleRect);
+TEST_F(APZCBasicTester, HorizontalDeltaInterferesWithVerticalScrolling) {
   // Only vertically scrollable
-  SetScrollableFrameMetrics(layers[0], rootScrollId, CSSRect(0, 0, 100, 1000));
-
-  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
-  UpdateHitTestingTree();
-  RefPtr<TestAsyncPanZoomController> apzc = ApzcOf(root);
+  FrameMetrics fm;
+  fm.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  fm.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  fm.SetIsRootContent(true);
+  apzc->SetFrameMetrics(fm);
 
   // Configure the APZC to wait for main-thread confirmations before
   // processing events. (This is needed to trigger the buggy codepath.)
-  apzc->SetWaitForMainThread();
+  MakeApzcWaitForMainThread();
 
   // Send a wheel event with a horizontal delta.
   ScreenIntPoint cursorLocation(50, 50);
@@ -85,8 +76,8 @@ TEST_F(APZCTreeManagerTester, HorizontalDeltaInterferesWithVerticalScrolling) {
   EXPECT_EQ(wheelBlockId1, wheelBlockId2);
 
   // Confirm the input block.
-  manager->ContentReceivedInputBlock(wheelBlockId1, false);
-  manager->SetTargetAPZC(wheelBlockId1, {apzc->GetGuid()});
+  apzc->ContentReceivedInputBlock(wheelBlockId1, false);
+  apzc->ConfirmTarget(wheelBlockId1);
 
   // We should have scrolled vertically.
   EXPECT_EQ(ParentLayerPoint(0, 10),

@@ -18,6 +18,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,10 +48,32 @@ import org.mozilla.focus.utils.AppConstants
 /** Focus application class. */
 open class FocusApplication : Application(), Provider {
 
-    protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    /**
+     * A [CoroutineScope] tied to the application's lifecycle.
+     *
+     * This scope is used for launching long-running or global asynchronous tasks that should survive the destruction of
+     * individual activities. It uses [Dispatchers.Main] as the default dispatcher and a [SupervisorJob] to ensure that
+     * a failure in one child coroutine does not cancel others.
+     *
+     * Note: Tasks should be scoped to the container which holds their UI. If necessary, applicationScope can be used
+     * for top-level background work that must remain active for the whole duration of the application.
+     */
+    private val applicationScope: CoroutineScope =
+        CoroutineScope(
+            SupervisorJob() +
+                Dispatchers.Main +
+                CoroutineExceptionHandler { _, throwable ->
+                    Log.log(
+                        priority = Log.Priority.ERROR,
+                        tag = "ApplicationScope",
+                        message = "Unhandled error: ${throwable.message}",
+                        throwable = throwable,
+                    )
+                }
+        )
     protected val ioDispatcher = Dispatchers.IO
 
-    open val components: Components by lazy { Components(this) }
+    open val components: Components by lazy { Components(this, applicationScope = applicationScope) }
 
     var visibilityLifeCycleCallback: VisibilityLifeCycleCallback? = null
         private set

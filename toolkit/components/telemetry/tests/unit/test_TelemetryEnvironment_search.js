@@ -122,11 +122,11 @@ add_setup(async function setup() {
 async function checkDefaultSearch(privateOn, reInitSearchService) {
   // Start off with separate default engine for private browsing turned off.
   Services.prefs.setBoolPref(
-    "browser.search.separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     privateOn
   );
   Services.prefs.setBoolPref(
-    "browser.search.separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     privateOn
   );
 

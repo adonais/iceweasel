@@ -95,9 +95,7 @@ class TestExecuteAsyncContent(MarionetteTestCase):
                 """
             this.testvar = '{}';
             return this.testvar;
-            """.format(
-                    var1
-                )
+            """.format(var1)
             ),
             var1,
         )
@@ -163,9 +161,7 @@ arguments[0](4);
 
     def test_sandbox_reuse(self):
         # Sandboxes between `execute_script()` invocations are shared.
-        self.marionette.execute_async_script(
-            "this.foobar = [23, 42];" "arguments[0]();"
-        )
+        self.marionette.execute_async_script("this.foobar = [23, 42];arguments[0]();")
         self.assertEqual(
             self.marionette.execute_async_script(
                 "arguments[0](this.foobar);", new_sandbox=False

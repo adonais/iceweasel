@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsFakeSynthServices_h
-#define nsFakeSynthServices_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_TEST_NSFAKESYNTHSERVICES_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_TEST_NSFAKESYNTHSERVICES_H_
 
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
@@ -37,4 +37,4 @@ class nsFakeSynthServices : public nsIObserver {
 
 }  // namespace mozilla::dom
 
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_SYNTH_TEST_NSFAKESYNTHSERVICES_H_

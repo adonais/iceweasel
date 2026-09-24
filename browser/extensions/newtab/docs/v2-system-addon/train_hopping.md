@@ -207,9 +207,9 @@ which fetches the channel definitions and writes the JSON to `browser/extensions
 
 ## Region compatibility
 
-As of this writing, Firefox is translated into 129 different locales. Many of these localizations are provided by our vibrant and dedicated volunteer contributor community of localizers. Part of the social contract that we have with this community is that we give them at least 3 weeks of "string stability" on the Beta channel for each region to have an honest chance to get their strings translated. Any strings that don't happen to be translated after that 3 week window will fall back to other languages that *did* get translated, or in the worst-case scenario, will fallback to *en-US* strings which always exist.
+As of this writing, Firefox is translated into 129 different locales. Many of these localizations are provided by our vibrant and dedicated volunteer contributor community of localizers. Part of the social contract that we have with this community is that we give them at least 2 weeks of "string stability" on the Beta channel for each region to have an honest chance to get their strings translated. Any strings that don't happen to be translated after that 2 week window will fall back to other languages that *did* get translated, or in the worst-case scenario, will fallback to *en-US* strings which always exist.
 
-Typically, strings ride the trains \- they land in Nightly, and once the code in Nightly merges to the Beta channel, localizers have those 3 weeks to complete the localization. After that, a release candidate is built and tested \- and then a week later, the release goes to the Release channel.
+Typically, strings ride the trains \- they land in Nightly, and once the code in Nightly merges to the Beta channel, localizers have those 2 weeks to complete the localization. After that, a release candidate is built and tested \- and then a week later, the release goes to the Release channel.
 
 Similar to the `FeatureManifest.yaml` problem, this process would seem to go against the goals of New Tab train-hopping. How do we move faster, without upending or violating the social contract that we have with our localization community?
 
@@ -226,7 +226,7 @@ The caveat to landing strings early is that localizers *must have the right cont
 
 When the XPI is built, New Tab's localized `newtab.ftl` files are generated into the objdir and packaged into the XPI. The English `newtab.ftl` always comes from the in-tree copy. Every other locale is copied from a clone of the `firefox-l10n` repository, and is only included for shipped builds, which set the `MOZ_BROWSER_NEWTAB_LOCALES_ALL` environment variable. Local and try builds package en-US only.
 
-It is still useful to inspect the localization status. You can generate a report to show how many strings per locale are "pending" or "missing". A "pending" string is one that hasn't been localized yet, and has not had its 3 week opportunity on the Beta channel to be localized. A "missing" string is one that hasn't been localized, but has been on the Beta channel for more than 3 weeks, and therefore can safely fall back.
+It is still useful to inspect the localization status. You can generate a report to show how many strings per locale are "pending" or "missing". A "pending" string is one that hasn't been localized yet, and has not had its 2 week opportunity on the Beta channel to be localized. A "missing" string is one that hasn't been localized, but has been on the Beta channel for more than 2 weeks, and therefore can safely fall back.
 
 The report is produced by:
 
@@ -244,7 +244,7 @@ would show the pending and missing Fluent string IDs for the Polish locale, as w
 
 It is the responsibility of the New Tab team to ensure that a train-hop that aims to enable a feature for a particular region has the necessary strings translated for that feature.
 
-For example, if there was a new `StockTicketWidget` UI component that happened to use some Fluent strings, and we aimed to enable it for the English, Italian and German locales, we'd want to ensure the Italian and German strings had either been localized, or had their 3 week opportunity. Running `./mach newtab update-locales` locally is the way to check this.
+For example, if there was a new `StockTicketWidget` UI component that happened to use some Fluent strings, and we aimed to enable it for the English, Italian and German locales, we'd want to ensure the Italian and German strings had either been localized, or had their 2 week opportunity. Running `./mach newtab update-locales` locally is the way to check this.
 
 It helps to understand when the translations are captured. The train-hop XPI is built through ShipIt off a chosen Nightly revision, and during that build the current `firefox-l10n` translations are pulled in and frozen into the XPI. Nothing is fetched afterwards, since when Firefox loads the XPI it only registers the packaged files. So a locale's translations track `firefox-l10n` as it stands at XPI build time, independent of the Nightly revision: if a translation lands later, rebuilding the XPI picks it up.
 

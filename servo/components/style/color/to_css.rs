@@ -5,11 +5,11 @@
 //! Write colors into CSS strings.
 
 use super::{
-    parsing::{NumberOrAngleComponent, NumberOrPercentageComponent},
     AbsoluteColor, ColorFlags, ColorSpace,
+    parsing::{NumberOrAngleComponent, NumberOrPercentageComponent},
 };
 use crate::values::normalize;
-use cssparser::color::{clamp_unit_f32, serialize_color_alpha, OPAQUE};
+use cssparser::color::{OPAQUE, clamp_unit_f32, serialize_color_alpha};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -174,9 +174,7 @@ impl AbsoluteColor {
         W: Write,
     {
         macro_rules! precision {
-            ($v:expr) => {{
-                ($v * 100.0).round() / 100.0
-            }};
+            ($v:expr) => {{ ($v * 100.0).round() / 100.0 }};
         }
         macro_rules! number {
             ($c:expr) => {{

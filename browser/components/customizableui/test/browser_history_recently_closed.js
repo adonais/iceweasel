@@ -241,6 +241,8 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
   const closedTabGroupInClosedWindowUrls = ["about:robots", "about:robots"];
   const closedTabGroupInClosedWindowId = "1234567890-2";
 
+  const closedTabInClosedWindowUrls = ["https://example.net/"];
+
   await SessionStoreTestUtils.promiseBrowserState({
     windows: [
       {
@@ -262,7 +264,7 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
     _closedWindows: [
       {
         tabs: [makeTabState("about:mozilla")],
-        _closedTabs: [],
+        _closedTabs: closedTabInClosedWindowUrls.map(makeClosedTabState),
         closedGroups: [
           {
             collapsed: false,
@@ -327,7 +329,8 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
     initialTabCount +
       closedTabUrls.length +
       closedTabGroupInOpenWindowUrls.length +
-      closedTabGroupInClosedWindowUrls.length,
+      closedTabGroupInClosedWindowUrls.length +
+      closedTabInClosedWindowUrls.length,
     "The expected number of closed tabs were restored"
   );
   is(
@@ -352,6 +355,14 @@ add_task(async function testRecentlyClosedRestoreAllTabs() {
       gBrowser.tabGroups[1].tabs[index].linkedBrowser.currentURI.spec,
       expectedUrl,
       `Closed tab group in closed window tab #${index} has correct URL`
+    );
+  });
+  closedTabInClosedWindowUrls.forEach(expectedUrl => {
+    ok(
+      gBrowser.tabs.some(
+        tab => tab.linkedBrowser.currentURI.spec == expectedUrl
+      ),
+      `Closed tab in closed window with URL ${expectedUrl} was restored`
     );
   });
 

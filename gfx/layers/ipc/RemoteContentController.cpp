@@ -11,11 +11,11 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/APZCTreeManagerParent.h"  // for APZCTreeManagerParent
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/MatrixMessage.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"
 #endif
@@ -27,18 +27,21 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
-RemoteContentController::RemoteContentController()
-    : mCompositorThread(NS_GetCurrentThread()), mCanSend(true) {
+RemoteContentController::RemoteContentController(const LayersId& aLayersId)
+    : mLayersId(aLayersId),
+      mCompositorThread(NS_GetCurrentThread()),
+      mCanSend(true) {
   MOZ_ASSERT(CompositorThread()->IsOnCurrentThread());
 }
 
 RemoteContentController::~RemoteContentController() = default;
 
+// Note APZInputBridgeParent is bound to the main thread (See
+// PAPZInputBridge.ipdl).
 void RemoteContentController::NotifyLayerTransforms(
     nsTArray<MatrixMessage>&& aTransforms) {
-  if (!mCompositorThread->IsOnCurrentThread()) {
-    // We have to send messages from the compositor thread
-    mCompositorThread->Dispatch(
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(
         NewRunnableMethod<StoreCopyPassByRRef<nsTArray<MatrixMessage>>>(
             "layers::RemoteContentController::NotifyLayerTransforms", this,
             &RemoteContentController::NotifyLayerTransforms,
@@ -46,8 +49,10 @@ void RemoteContentController::NotifyLayerTransforms(
     return;
   }
 
-  if (mCanSend) {
-    (void)SendLayerTransforms(aTransforms);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(mLayersId);
+  if (apzib) {
+    (void)apzib->SendLayerTransforms(aTransforms);
   }
 }
 
@@ -149,19 +154,19 @@ void RemoteContentController::HandleTap(
   }
 }
 
-void RemoteContentController::NotifyPinchGestureOnCompositorThread(
+// Note APZInputBridgeParent is bound to the main thread (See
+// PAPZInputBridge.ipdl).
+void RemoteContentController::NotifyPinchGestureOnGPUProcessMainThread(
     PinchGestureInput::PinchGestureType aType, const ScrollableLayerGuid& aGuid,
     const LayoutDevicePoint& aFocusPoint, LayoutDeviceCoord aSpanChange,
     Modifiers aModifiers) {
-  MOZ_ASSERT(mCompositorThread->IsOnCurrentThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
-  // The raw pointer to APZCTreeManagerParent is ok here because we are on
-  // the compositor thread.
-  auto apzctmp =
-      CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
-  if (apzctmp) {
-    (void)apzctmp->SendNotifyPinchGesture(aType, aGuid, aFocusPoint,
-                                          aSpanChange, aModifiers);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendNotifyPinchGesture(aType, aGuid, aFocusPoint, aSpanChange,
+                                        aModifiers);
   }
 }
 
@@ -171,25 +176,25 @@ void RemoteContentController::NotifyPinchGesture(
     Modifiers aModifiers) {
   APZThreadUtils::AssertOnControllerThread();
 
-  // For now we only ever want to handle this NotifyPinchGesture message in
-  // the parent process, even if the APZ is sending it to a content process.
+  // For now we handle this NotifyPinchGesture message only in
+  // the parent process.
 
   // If we're in the GPU process, try to find a handle to the parent process
   // and send it there.
   if (XRE_IsGPUProcess()) {
-    if (mCompositorThread->IsOnCurrentThread()) {
-      NotifyPinchGestureOnCompositorThread(aType, aGuid, aFocusPoint,
-                                           aSpanChange, aModifiers);
+    if (NS_IsMainThread()) {
+      NotifyPinchGestureOnGPUProcessMainThread(aType, aGuid, aFocusPoint,
+                                               aSpanChange, aModifiers);
     } else {
-      mCompositorThread->Dispatch(
-          NewRunnableMethod<PinchGestureInput::PinchGestureType,
-                            ScrollableLayerGuid, LayoutDevicePoint,
-                            LayoutDeviceCoord, Modifiers>(
-              "layers::RemoteContentController::"
-              "NotifyPinchGestureOnCompositorThread",
-              this,
-              &RemoteContentController::NotifyPinchGestureOnCompositorThread,
-              aType, aGuid, aFocusPoint, aSpanChange, aModifiers));
+      NS_DispatchToMainThread(NewRunnableMethod<
+                              PinchGestureInput::PinchGestureType,
+                              ScrollableLayerGuid, LayoutDevicePoint,
+                              LayoutDeviceCoord, Modifiers>(
+          "layers::RemoteContentController::"
+          "NotifyPinchGestureOnGPUProcessMainThread",
+          this,
+          &RemoteContentController::NotifyPinchGestureOnGPUProcessMainThread,
+          aType, aGuid, aFocusPoint, aSpanChange, aModifiers));
     }
     return;
   }
@@ -260,8 +265,10 @@ void RemoteContentController::UpdateOverscrollVelocity(
       rootController->UpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
     }
   } else if (XRE_IsGPUProcess()) {
-    if (!mCompositorThread->IsOnCurrentThread()) {
-      mCompositorThread->Dispatch(
+    // Note APZInputBridgeParent is bound to the main thread (See
+    // PAPZInputBridge.ipdl).
+    if (!NS_IsMainThread()) {
+      NS_DispatchToMainThread(
           NewRunnableMethod<ScrollableLayerGuid, float, float, bool>(
               "layers::RemoteContentController::UpdateOverscrollVelocity", this,
               &RemoteContentController::UpdateOverscrollVelocity, aGuid, aX, aY,
@@ -269,14 +276,10 @@ void RemoteContentController::UpdateOverscrollVelocity(
       return;
     }
 
-    MOZ_RELEASE_ASSERT(mCompositorThread->IsOnCurrentThread());
-    GeckoContentController* rootController =
-        CompositorBridgeParent::GetGeckoContentControllerForRoot(
-            aGuid.mLayersId);
-    if (rootController) {
-      MOZ_RELEASE_ASSERT(rootController->IsRemote());
-      (void)static_cast<RemoteContentController*>(rootController)
-          ->SendUpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
+    auto apzib =
+        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+    if (apzib) {
+      (void)apzib->SendUpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
     }
   }
 }
@@ -304,8 +307,10 @@ void RemoteContentController::UpdateOverscrollOffset(
       rootController->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
     }
   } else if (XRE_IsGPUProcess()) {
-    if (!mCompositorThread->IsOnCurrentThread()) {
-      mCompositorThread->Dispatch(
+    // Note APZInputBridgeParent is bound to the main thread (See
+    // PAPZInputBridge.ipdl).
+    if (!NS_IsMainThread()) {
+      NS_DispatchToMainThread(
           NewRunnableMethod<ScrollableLayerGuid, float, float, bool>(
               "layers::RemoteContentController::UpdateOverscrollOffset", this,
               &RemoteContentController::UpdateOverscrollOffset, aGuid, aX, aY,
@@ -313,14 +318,10 @@ void RemoteContentController::UpdateOverscrollOffset(
       return;
     }
 
-    MOZ_RELEASE_ASSERT(mCompositorThread->IsOnCurrentThread());
-    GeckoContentController* rootController =
-        CompositorBridgeParent::GetGeckoContentControllerForRoot(
-            aGuid.mLayersId);
-    if (rootController) {
-      MOZ_RELEASE_ASSERT(rootController->IsRemote());
-      (void)static_cast<RemoteContentController*>(rootController)
-          ->SendUpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
+    auto apzib =
+        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+    if (apzib) {
+      (void)apzib->SendUpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
     }
   }
 }
@@ -347,21 +348,19 @@ void RemoteContentController::HideDynamicToolbar(
       rootController->HideDynamicToolbar(aGuid);
     }
   } else if (XRE_IsGPUProcess()) {
-    if (!mCompositorThread->IsOnCurrentThread()) {
-      mCompositorThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid>(
+    // Note APZInputBridgeParent is bound to the main thread (See
+    // PAPZInputBridge.ipdl).
+    if (!NS_IsMainThread()) {
+      NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid>(
           "layers::RemoteContentController::HideDynamicToolbar", this,
           &RemoteContentController::HideDynamicToolbar, aGuid));
       return;
     }
 
-    MOZ_RELEASE_ASSERT(mCompositorThread->IsOnCurrentThread());
-    GeckoContentController* rootController =
-        CompositorBridgeParent::GetGeckoContentControllerForRoot(
-            aGuid.mLayersId);
-    if (rootController) {
-      MOZ_RELEASE_ASSERT(rootController->IsRemote());
-      (void)static_cast<RemoteContentController*>(rootController)
-          ->SendHideDynamicToolbar();
+    auto apzib =
+        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+    if (apzib) {
+      (void)apzib->SendHideDynamicToolbar();
     }
   }
 }
@@ -460,20 +459,23 @@ void RemoteContentController::CancelAutoscrollInProcess(
       aGuid.mScrollId));
 }
 
+// Note APZInputBridgeParent is bound to the main thread (See
+// PAPZInputBridge.ipdl).
 void RemoteContentController::CancelAutoscrollCrossProcess(
     const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsGPUProcess());
 
-  if (!mCompositorThread->IsOnCurrentThread()) {
-    mCompositorThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid>(
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid>(
         "layers::RemoteContentController::CancelAutoscrollCrossProcess", this,
         &RemoteContentController::CancelAutoscrollCrossProcess, aGuid));
     return;
   }
 
-  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-          aGuid.mLayersId)) {
-    (void)parent->SendCancelAutoscroll(aGuid.mScrollId);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendCancelAutoscroll(aGuid.mScrollId);
   }
 }
 
@@ -509,12 +511,14 @@ void RemoteContentController::NotifyScaleGestureCompleteInProcess(
   }
 }
 
+// Note APZInputBridgeParent is bound to the main thread (See
+// PAPZInputBridge.ipdl).
 void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     const ScrollableLayerGuid& aGuid, float aScale) {
   MOZ_ASSERT(XRE_IsGPUProcess());
 
-  if (!mCompositorThread->IsOnCurrentThread()) {
-    mCompositorThread->Dispatch(NewRunnableMethod<ScrollableLayerGuid, float>(
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid, float>(
         "layers::RemoteContentController::"
         "NotifyScaleGestureCompleteCrossProcess",
         this, &RemoteContentController::NotifyScaleGestureCompleteCrossProcess,
@@ -522,9 +526,10 @@ void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     return;
   }
 
-  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-          aGuid.mLayersId)) {
-    (void)parent->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
+  auto apzib =
+      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+  if (apzib) {
+    (void)apzib->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
   }
 }
 

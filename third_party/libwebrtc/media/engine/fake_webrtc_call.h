@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <utility>
@@ -117,9 +118,8 @@ class FakeAudioSendStream final : public AudioSendStream {
 
 class FakeAudioReceiveStream final : public AudioReceiveStreamInterface {
  public:
-  explicit FakeAudioReceiveStream(
-      int id,
-      const AudioReceiveStreamInterface::Config& config);
+  explicit FakeAudioReceiveStream(int id,
+                                  AudioReceiveStreamInterface::Config config);
 
   int id() const { return id_; }
   const AudioReceiveStreamInterface::Config& GetConfig() const;
@@ -336,6 +336,10 @@ class FakeVideoReceiveStream final : public VideoReceiveStreamInterface {
         std::move(associated_payload_types);
   }
 
+  void SetRawPayloadTypes(std::set<int> raw_payload_types) override {
+    config_.rtp.raw_payload_types = std::move(raw_payload_types);
+  }
+
   void Start() override;
   void Stop() override;
 
@@ -443,7 +447,7 @@ class FakeCall final : public Call, public PacketReceiver {
   void DestroyAudioSendStream(AudioSendStream* send_stream) override;
 
   AudioReceiveStreamInterface* CreateAudioReceiveStream(
-      const AudioReceiveStreamInterface::Config& config) override;
+      AudioReceiveStreamInterface::Config config) override;
   void DestroyAudioReceiveStream(
       AudioReceiveStreamInterface* receive_stream) override;
 

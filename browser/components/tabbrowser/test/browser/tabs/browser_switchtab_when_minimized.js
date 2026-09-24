@@ -32,9 +32,6 @@ async function doTest() {
 }
 
 add_task(async function tab_switch_while_minimized_TabSwitchDone() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
   await doTest();
   await SpecialPowers.popPrefEnv();
 });

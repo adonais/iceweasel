@@ -1,0 +1,51 @@
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Bug 2034287 - Terminate a worker while its XHR is being aborted</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<script>
+  SimpleTest.waitForExplicitFinish();
+  SimpleTest.requestFlakyTimeout("Waiting for the worker's abort() to unwind.");
+
+  // abort()'s dispatch only completes when the main thread runs its runnable,
+  // so as long as we never yield, the worker stays parked inside abort().
+  function blockMainThread(ms) {
+    const deadline = performance.now() + ms;
+    while (performance.now() < deadline) {
+      // Intentionally blocking.
+    }
+  }
+
+  const worker = new Worker("xhrAbortDuringTerminate_worker.js");
+
+  worker.onmessage = event => {
+    is(event.data, "SENT", "Worker opened and sent the request");
+
+    worker.postMessage("ABORT");
+    blockMainThread(500);
+    // Cancel while parked: this releases the XHR's proxy underneath abort().
+    worker.terminate();
+    blockMainThread(200);
+
+    setTimeout(() => {
+      ok(true, "No assertion while aborting a terminating worker's XHR");
+      SimpleTest.finish();
+    }, 1000);
+  };
+
+  worker.onerror = event => {
+    ok(false, "Unexpected error: " + event.message);
+    SimpleTest.finish();
+  };
+
+  worker.postMessage("SEND");
+</script>
+</body>
+</html>

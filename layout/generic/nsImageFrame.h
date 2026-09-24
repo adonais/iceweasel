@@ -470,11 +470,10 @@ class nsDisplayImage final : public nsPaintedDisplayItem {
 
   nsRegion GetOpaqueRegion(nsDisplayListBuilder*, bool* aSnap) const final;
 
-  bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder&,
-                               mozilla::wr::IpcResourceUpdateQueue&,
-                               const StackingContextHelper&,
-                               mozilla::layers::RenderRootStateManager*,
-                               nsDisplayListBuilder*) final;
+  WebRenderCommandsResult CreateWebRenderCommands(
+      mozilla::wr::DisplayListBuilder&, mozilla::wr::IpcResourceUpdateQueue&,
+      const StackingContextHelper&, mozilla::layers::RenderRootStateManager*,
+      nsDisplayListBuilder*) final;
 
   void MaybeCreateWebRenderCommandsForViewTransition(
       mozilla::wr::DisplayListBuilder&, mozilla::wr::IpcResourceUpdateQueue&,

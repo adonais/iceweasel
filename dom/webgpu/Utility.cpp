@@ -60,7 +60,7 @@ ffi::WGPUCompareFunction ConvertCompareFunction(
 
 ffi::WGPUTextureFormat ConvertTextureFormat(
     const dom::GPUTextureFormat& aFormat) {
-  ffi::WGPUTextureFormat result = {ffi::WGPUTextureFormat_Sentinel};
+  ffi::WGPUTextureFormat result = {};
   switch (aFormat) {
     case dom::GPUTextureFormat::R8unorm:
       result.tag = ffi::WGPUTextureFormat_R8Unorm;
@@ -405,17 +405,12 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
       break;
   }
 
-  // Clang will check for us that the switch above is exhaustive,
-  // but not if we add a 'default' case. So, check this here.
-  MOZ_RELEASE_ASSERT(result.tag != ffi::WGPUTextureFormat_Sentinel,
-                     "unexpected texture format enum");
-
   return result;
 }
 
 ffi::WGPUTextureAspect ConvertTextureAspect(
     const dom::GPUTextureAspect& aAspect) {
-  ffi::WGPUTextureAspect result = ffi::WGPUTextureAspect_Sentinel;
+  ffi::WGPUTextureAspect result;
   switch (aAspect) {
     case dom::GPUTextureAspect::All:
       result = ffi::WGPUTextureAspect_All;
@@ -427,11 +422,6 @@ ffi::WGPUTextureAspect ConvertTextureAspect(
       result = ffi::WGPUTextureAspect_StencilOnly;
       break;
   }
-
-  // Clang will check for us that the switch above is exhaustive,
-  // but not if we add a 'default' case. So, check this here.
-  MOZ_RELEASE_ASSERT(result != ffi::WGPUTextureAspect_Sentinel,
-                     "unexpected texture aspect enum");
 
   return result;
 }
@@ -466,7 +456,7 @@ ConvertTextureDescriptor::ConvertTextureDescriptor(
 }
 
 ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat) {
-  ffi::WGPUVertexFormat result = ffi::WGPUVertexFormat_Sentinel;
+  ffi::WGPUVertexFormat result;
   switch (aFormat) {
     case dom::GPUVertexFormat::Uint8:
       result = ffi::WGPUVertexFormat_Uint8;
@@ -593,11 +583,6 @@ ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat) {
       break;
   }
 
-  // Clang will check for us that the switch above is exhaustive,
-  // but not if we add a 'default' case. So, check this here.
-  MOZ_RELEASE_ASSERT(result != ffi::WGPUVertexFormat_Sentinel,
-                     "unexpected texture format enum");
-
   return result;
 }
 
@@ -663,7 +648,7 @@ ffi::WGPUDepthStencilState ConvertDepthStencilState(
 
 ffi::WGPUPredefinedColorSpace ConvertPredefinedColorSpace(
     const dom::PredefinedColorSpace& aColorSpace) {
-  ffi::WGPUPredefinedColorSpace result = ffi::WGPUPredefinedColorSpace_Sentinel;
+  ffi::WGPUPredefinedColorSpace result;
   switch (aColorSpace) {
     case dom::PredefinedColorSpace::Srgb:
       result = ffi::WGPUPredefinedColorSpace_Srgb;
@@ -672,11 +657,6 @@ ffi::WGPUPredefinedColorSpace ConvertPredefinedColorSpace(
       result = ffi::WGPUPredefinedColorSpace_DisplayP3;
       break;
   }
-
-  // Clang will check for us that the switch above is exhaustive,
-  // but not if we add a 'default' case. So, check this here.
-  MOZ_RELEASE_ASSERT(result != ffi::WGPUPredefinedColorSpace_Sentinel,
-                     "unexpected predefined color space enum");
 
   return result;
 }

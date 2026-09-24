@@ -236,7 +236,7 @@ export default class MozMessageBar extends MozLitElement {
                     ${this.message}
                   </span>
                 </slot>
-                <span class="link"> ${this.supportLinkTemplate()} </span>
+                <span class="link">${this.supportLinkTemplate()}</span>
               </div>
             </div>
           </div>

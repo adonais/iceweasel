@@ -3,6 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "GPUVideoImage.h"
 #include "ImageContainer.h"
 #include "gtest/gtest.h"
 #include "mozilla/RemoteImageHolder.h"
@@ -17,6 +18,45 @@ using namespace mozilla::gfx;
 using namespace mozilla::ipc;
 using namespace mozilla::layers;
 
+class TestGPUVideoSurfaceManager final : public IGPUVideoSurfaceManager {
+ public:
+  struct ColorMetadata {
+    ColorDepth mColorDepth;
+    YUVColorSpace mYUVColorSpace;
+    ColorSpace2 mColorPrimaries;
+    TransferFunction mTransferFunction;
+    ColorRange mColorRange;
+  };
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestGPUVideoSurfaceManager, override)
+
+  already_AddRefed<SourceSurface> Readback(
+      const SurfaceDescriptorGPUVideo&) override {
+    return nullptr;
+  }
+
+  already_AddRefed<Image> TransferToImage(const SurfaceDescriptorGPUVideo&,
+                                          const IntSize&,
+                                          const ColorDepth& aColorDepth,
+                                          YUVColorSpace aYUVColorSpace,
+                                          ColorSpace2 aColorPrimaries,
+                                          TransferFunction aTransferFunction,
+                                          ColorRange aColorRange) override {
+    mColorMetadata =
+        Some(ColorMetadata{aColorDepth, aYUVColorSpace, aColorPrimaries,
+                           aTransferFunction, aColorRange});
+    return nullptr;
+  }
+
+  void DeallocateSurfaceDescriptor(const SurfaceDescriptorGPUVideo&) override {}
+  void OnSetCurrent(const SurfaceDescriptorGPUVideo&) override {}
+
+  Maybe<ColorMetadata> mColorMetadata;
+
+ private:
+  ~TestGPUVideoSurfaceManager() = default;
+};
+
 static YCbCrDescriptor MakeInvalidDescriptor() {
   return YCbCrDescriptor(IntRect(0, 0, 4, 4), IntSize(1, 1), 4u, IntSize(1, 1),
                          4u, 8192u, 1u, 9192u, StereoMode::MONO,
@@ -30,6 +70,23 @@ static YCbCrDescriptor MakeValidDescriptor() {
                          2u, 0u, 16u, 20u, StereoMode::MONO,
                          ColorDepth::COLOR_8, YUVColorSpace::BT601,
                          ColorRange::LIMITED, TransferFunction::BT709,
+                         ChromaSubsampling::HALF_WIDTH_AND_HEIGHT, Nothing());
+}
+
+static YCbCrDescriptor MakeHDRMetadataDescriptor(
+    const gfx::HDRMetadata& aHDRMetadata) {
+  return YCbCrDescriptor(
+      IntRect(0, 0, 4, 4), IntSize(4, 4), 4u, IntSize(2, 2), 2u, 0u, 16u, 20u,
+      StereoMode::MONO, ColorDepth::COLOR_8, YUVColorSpace::BT2020,
+      ColorRange::LIMITED, TransferFunction::PQ,
+      ChromaSubsampling::HALF_WIDTH_AND_HEIGHT, Some(aHDRMetadata));
+}
+
+static YCbCrDescriptor MakeColorMetadataDescriptor() {
+  return YCbCrDescriptor(IntRect(0, 0, 4, 4), IntSize(4, 4), 4u, IntSize(2, 2),
+                         2u, 0u, 16u, 20u, StereoMode::MONO,
+                         ColorDepth::COLOR_8, YUVColorSpace::BT2020,
+                         ColorRange::FULL, TransferFunction::PQ,
                          ChromaSubsampling::HALF_WIDTH_AND_HEIGHT, Nothing());
 }
 
@@ -132,8 +189,97 @@ TEST(TestRemoteImageHolder, AcceptsValidShmemDescriptor)
 
   RefPtr<layers::Image> image = holder.TransferToImage(recycleBin);
 
-  EXPECT_TRUE(image != nullptr) << "RemoteImageHolder::TransferToImage should "
-                                   "return a valid image for valid descriptors";
+  ASSERT_TRUE(image);
+  const PlanarYCbCrImage* planarImage = image->AsPlanarYCbCrImage();
+  ASSERT_TRUE(planarImage);
+  const PlanarYCbCrData* data = planarImage->GetData();
+  ASSERT_TRUE(data);
+  // HDR metadata is absent by default.
+  EXPECT_EQ(data->mHDRMetadata, Nothing());
+  EXPECT_EQ(data->mYUVColorSpace, YUVColorSpace::BT601);
+  EXPECT_EQ(data->mColorPrimaries, ColorSpace2::UNKNOWN);
+  EXPECT_EQ(data->mTransferFunction, TransferFunction::BT709);
+  EXPECT_EQ(data->mColorRange, ColorRange::LIMITED);
+}
+
+TEST(TestRemoteImageHolder, PreservesShmemHDRMetadata)
+{
+  auto shmemBuilder = Shmem::Builder(128);
+  ASSERT_TRUE(shmemBuilder);
+
+  auto [msg, shmem] = shmemBuilder.Build(5, false, 0);
+  ASSERT_TRUE(shmem.IsWritable());
+
+  gfx::HDRMetadata hdrMetadata;
+  hdrMetadata.mContentLightLevel = Some(gfx::ContentLightLevel{1000, 400});
+  BufferDescriptor bufferDesc(MakeHDRMetadataDescriptor(hdrMetadata));
+  MemoryOrShmem memOrShmem(shmem);
+  SurfaceDescriptorBuffer sdBuffer(bufferDesc, memOrShmem);
+  SurfaceDescriptor sd(sdBuffer);
+
+  RemoteImageHolder holder(std::move(sd));
+  RefPtr<BufferRecycleBin> recycleBin = new BufferRecycleBin();
+  RefPtr<layers::Image> image = holder.TransferToImage(recycleBin);
+
+  ASSERT_TRUE(image);
+  const PlanarYCbCrImage* planarImage = image->AsPlanarYCbCrImage();
+  ASSERT_TRUE(planarImage);
+  const PlanarYCbCrData* data = planarImage->GetData();
+  ASSERT_TRUE(data);
+  EXPECT_EQ(data->mHDRMetadata, Some(hdrMetadata));
+}
+
+TEST(TestRemoteImageHolder, PreservesShmemColorMetadata)
+{
+  auto shmemBuilder = Shmem::Builder(128);
+  ASSERT_TRUE(shmemBuilder);
+
+  auto [msg, shmem] = shmemBuilder.Build(6, false, 0);
+  ASSERT_TRUE(shmem.IsWritable());
+
+  BufferDescriptor bufferDesc(MakeColorMetadataDescriptor());
+  MemoryOrShmem memOrShmem(shmem);
+  SurfaceDescriptorBuffer sdBuffer(bufferDesc, memOrShmem);
+  SurfaceDescriptor sd(sdBuffer);
+
+  RemoteImageHolder holder(nullptr, VideoBridgeSource::RddProcess,
+                           IntSize(4, 4), ColorDepth::COLOR_8, sd,
+                           YUVColorSpace::BT2020, ColorSpace2::BT2020,
+                           TransferFunction::PQ, ColorRange::FULL);
+  RefPtr<BufferRecycleBin> recycleBin = new BufferRecycleBin();
+  RefPtr<layers::Image> image = holder.TransferToImage(recycleBin);
+
+  ASSERT_TRUE(image);
+  const PlanarYCbCrImage* planarImage = image->AsPlanarYCbCrImage();
+  ASSERT_TRUE(planarImage);
+  const PlanarYCbCrData* data = planarImage->GetData();
+  ASSERT_TRUE(data);
+  EXPECT_EQ(data->mYUVColorSpace, YUVColorSpace::BT2020);
+  EXPECT_EQ(data->mColorPrimaries, ColorSpace2::BT2020);
+  EXPECT_EQ(data->mTransferFunction, TransferFunction::PQ);
+  EXPECT_EQ(data->mColorRange, ColorRange::FULL);
+}
+
+TEST(TestRemoteImageHolder, ForwardsTextureColorMetadata)
+{
+  RefPtr<TestGPUVideoSurfaceManager> manager = new TestGPUVideoSurfaceManager();
+  SurfaceDescriptorGPUVideo gpuDescriptor{SurfaceDescriptorRemoteDecoder()};
+  SurfaceDescriptor sd(gpuDescriptor);
+
+  RemoteImageHolder holder(manager, VideoBridgeSource::RddProcess,
+                           IntSize(4, 4), ColorDepth::COLOR_10, sd,
+                           YUVColorSpace::BT2020, ColorSpace2::BT2020,
+                           TransferFunction::PQ, ColorRange::FULL);
+  RefPtr<layers::Image> image = holder.TransferToImage();
+
+  EXPECT_FALSE(image);
+  ASSERT_TRUE(manager->mColorMetadata);
+  const auto& metadata = manager->mColorMetadata.ref();
+  EXPECT_EQ(metadata.mColorDepth, ColorDepth::COLOR_10);
+  EXPECT_EQ(metadata.mYUVColorSpace, YUVColorSpace::BT2020);
+  EXPECT_EQ(metadata.mColorPrimaries, ColorSpace2::BT2020);
+  EXPECT_EQ(metadata.mTransferFunction, TransferFunction::PQ);
+  EXPECT_EQ(metadata.mColorRange, ColorRange::FULL);
 }
 
 TEST(TestRemoteImageHolder, RejectsOversizedDisplayRect)

@@ -57,7 +57,7 @@ static UniqueContentParentKeepAlive GetLaunchingContentParentForDecode(
   // We use the extension process as a fallback, because
   // it is usually running, and should be OK to parse images.
   return ContentParent::GetNewOrUsedLaunchingBrowserProcess(
-      EXTENSION_REMOTE_TYPE,
+      dom::RemoteType(dom::RemoteType::Kind::Extension),
       /* aGroup */ nullptr,
       /* aPriority */ hal::PROCESS_PRIORITY_FOREGROUND,
       /* aPreferUsed */ true);
@@ -91,6 +91,7 @@ static nsresult EncodeImage(const dom::IPCImage& aImage,
 }
 
 static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
+                               bool aStretch,
                                const Maybe<ContentParentId> aContentParentId,
                                ColorScheme aColorScheme,
                                nsIAsyncOutputStream* aOutputStream) {
@@ -104,9 +105,9 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
   cp->WaitForLaunchAsync()
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [remoteURI = nsCOMPtr{aRemoteURI}, aSize,
+          [remoteURI = nsCOMPtr{aRemoteURI}, aSize, aStretch,
            aColorScheme](UniqueContentParentKeepAlive&& aCp) {
-            return aCp->SendDecodeImage(WrapNotNull(remoteURI), aSize,
+            return aCp->SendDecodeImage(WrapNotNull(remoteURI), aSize, aStretch,
                                         aColorScheme);
           },
           [](nsresult aError) {
@@ -115,9 +116,9 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
           })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [cp = std::move(cp), outputStream = nsCOMPtr{aOutputStream},
-           aSize](const std::tuple<nsresult, mozilla::Maybe<dom::IPCImage>>&
-                      aResult) {
+          [cp = std::move(cp), outputStream = nsCOMPtr{aOutputStream}, aSize,
+           aStretch](const std::tuple<nsresult, mozilla::Maybe<dom::IPCImage>>&
+                         aResult) {
             nsresult rv = std::get<0>(aResult);
             const mozilla::Maybe<dom::IPCImage>& image = std::get<1>(aResult);
 
@@ -133,7 +134,8 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
 
             // Make sure the image size matches if a specific size was
             // requested.
-            if (aSize.Width() && aSize.Height() && image->size() != aSize) {
+            if (aStretch && aSize.Width() && aSize.Height() &&
+                image->size() != aSize) {
               outputStream->CloseWithStatus(NS_ERROR_UNEXPECTED);
               return;
             }
@@ -151,6 +153,7 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
 
 // Parse out the relevant parts of the moz-remote-image URL
 static nsresult ParseURI(nsIURI* aURI, nsIURI** aRemoteURI, ImageIntSize* aSize,
+                         bool* aStretch,
                          Maybe<ContentParentId>& aContentParentId,
                          ColorScheme* aColorScheme) {
   MOZ_ASSERT(aURI->SchemeIs("moz-remote-image"));
@@ -161,6 +164,8 @@ static nsresult ParseURI(nsIURI* aURI, nsIURI** aRemoteURI, ImageIntSize* aSize,
   bool hasURL;
   int32_t width = 0;
   int32_t height = 0;
+
+  *aStretch = false;
 
   bool ok = URLParams::Parse(
       query, true, [&](const nsACString& aName, const nsACString& aValue) {
@@ -181,6 +186,8 @@ static nsresult ParseURI(nsIURI* aURI, nsIURI** aRemoteURI, ImageIntSize* aSize,
           if (NS_FAILED(rv) || height < 0) {
             return false;
           }
+        } else if (aName.EqualsLiteral("stretch")) {
+          *aStretch = !aValue.EqualsLiteral("false");
         } else if (aName.EqualsLiteral("contentParentId")) {
           int64_t id = aValue.ToInteger(&rv);
           if (NS_FAILED(rv) || id < 0) {
@@ -219,10 +226,11 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
 
   nsCOMPtr<nsIURI> remoteURI;
   ImageIntSize size;
+  bool stretch;
   Maybe<ContentParentId> contentParentId;
   ColorScheme colorScheme = ColorScheme::Light;
-  MOZ_TRY(ParseURI(aURI, getter_AddRefs(remoteURI), &size, contentParentId,
-                   &colorScheme));
+  MOZ_TRY(ParseURI(aURI, getter_AddRefs(remoteURI), &size, &stretch,
+                   contentParentId, &colorScheme));
 
   nsCOMPtr<nsIAsyncInputStream> pipeIn;
   nsCOMPtr<nsIAsyncOutputStream> pipeOut;
@@ -234,7 +242,8 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
       /* aContentType */ nsLiteralCString(IMAGE_PNG),
       /* aContentCharset */ ""_ns, aLoadInfo));
 
-  AsyncReEncodeImage(remoteURI, size, contentParentId, colorScheme, pipeOut);
+  AsyncReEncodeImage(remoteURI, size, stretch, contentParentId, colorScheme,
+                     pipeOut);
 
   channel.forget(aOutChannel);
   return NS_OK;
@@ -243,25 +252,50 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
 /* static */
 already_AddRefed<gfx::SourceSurface>
 RemoteImageProtocolHandler::GetImageSurface(imgIContainer* aContainer,
-                                            gfx::IntSize aSize,
+                                            gfx::IntSize aSize, bool aStretch,
                                             ColorScheme aColorScheme) {
-  const int32_t kFlags =
-      imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
+  const int32_t kFlags = imgIContainer::FLAG_SYNC_DECODE |
+                         imgIContainer::FLAG_ASYNC_NOTIFY |
+                         imgIContainer::FLAG_HIGH_QUALITY_SCALING;
 
-  if (aContainer->GetType() == imgIContainer::TYPE_VECTOR) {
-    gfx::IntSize size = aSize;
-    if (!size.Width() || !size.Height()) {
-      int32_t width, height;
-      if (NS_FAILED(aContainer->GetWidth(&width)) ||
-          NS_FAILED(aContainer->GetHeight(&height)) || width <= 0 ||
-          height <= 0) {
-        NS_ERROR("SVG missing intrinsic size");
-        return nullptr;
+  gfx::IntSize size = aSize;
+  if (aStretch && size.IsEmpty()) {
+    NS_ERROR("Can't stretch without a desired image size");
+    return nullptr;
+  }
+
+  if (!aStretch) {
+    ImageIntrinsicSize intrinsicSize;
+    aContainer->GetIntrinsicSize(&intrinsicSize);
+    if (size.IsEmpty()) {
+      // No desired size. Use the intrinsic size if the image has one.
+      size = gfx::IntSize(intrinsicSize.mWidth.valueOr(0),
+                          intrinsicSize.mHeight.valueOr(0));
+    } else {
+      // Preserve the image's intrinsic ratio and use the smaller of `aSize` or
+      // the intrinsic size as the maximum bounds. Note that images may have an
+      // intrinsic ratio but no intrinsic size.
+      AspectRatio ratio = aContainer->GetIntrinsicRatio();
+      if (ratio) {
+        auto finalMaxWidth =
+            std::min(size.Width(), intrinsicSize.mWidth.valueOr(size.Width()));
+        auto finalMaxHeight = std::min(
+            size.Height(), intrinsicSize.mHeight.valueOr(size.Height()));
+        auto sizeAtMaxWidth = ImageIntSize::Ceil(
+            finalMaxWidth, ratio.Inverted().ApplyToFloat(finalMaxWidth));
+        auto sizeAtMaxHeight = ImageIntSize::Ceil(
+            ratio.ApplyToFloat(finalMaxHeight), finalMaxHeight);
+        size = Min(sizeAtMaxWidth, sizeAtMaxHeight).ToUnknownSize();
       }
-
-      size = gfx::IntSize(width, height);
     }
 
+    if (size.IsEmpty()) {
+      NS_ERROR("Image has no intrinsic size and no desired size was given");
+      return nullptr;
+    }
+  }
+
+  if (aContainer->GetType() == imgIContainer::TYPE_VECTOR) {
     RefPtr<gfx::DrawTarget> drawTarget =
         gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
             size, gfx::SurfaceFormat::B8G8R8A8);
@@ -287,15 +321,12 @@ RemoteImageProtocolHandler::GetImageSurface(imgIContainer* aContainer,
     return drawTarget->Snapshot();
   }
 
-  if (!aSize.Width() || !aSize.Height()) {
-    return aContainer->GetFrame(imgIContainer::FRAME_FIRST, kFlags);
+  RefPtr<gfx::SourceSurface> surface =
+      aContainer->GetFrameAtSize(size, imgIContainer::FRAME_FIRST, kFlags);
+  if (surface && surface->GetSize() != size) {
+    surface = gfxUtils::ScaleSourceSurface(*surface, size);
   }
 
-  RefPtr<gfx::SourceSurface> surface =
-      aContainer->GetFrameAtSize(aSize, imgIContainer::FRAME_FIRST, kFlags);
-  if (surface && surface->GetSize() != aSize) {
-    surface = gfxUtils::ScaleSourceSurface(*surface, aSize);
-  }
   return surface.forget();
 }
 

@@ -31,7 +31,7 @@ TEST(TestURLStripOnShare, NoGlobalRule)
 
   nsTArray<nsString> rules;
   rules.AppendElement(
-      u"{\"origins\":[\"example.com\"],\"queryParams\":[\"testparam\"]}"_ns);
+      u"{\"hosts\":[\"example.com\"],\"queryParams\":[\"testparam\"]}"_ns);
   rv = listObserver->OnStripOnShareUpdate(rules, nullptr);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 

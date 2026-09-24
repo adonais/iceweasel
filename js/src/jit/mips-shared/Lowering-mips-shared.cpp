@@ -410,20 +410,6 @@ void LIRGeneratorMIPSShared::lowerUMod(MMod* mod) {
   define(lir, mod);
 }
 
-void LIRGenerator::visitWasmUnsignedToDouble(MWasmUnsignedToDouble* ins) {
-  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
-  LWasmUint32ToDouble* lir =
-      new (alloc()) LWasmUint32ToDouble(useRegisterAtStart(ins->input()));
-  define(lir, ins);
-}
-
-void LIRGenerator::visitWasmUnsignedToFloat32(MWasmUnsignedToFloat32* ins) {
-  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
-  LWasmUint32ToFloat32* lir =
-      new (alloc()) LWasmUint32ToFloat32(useRegisterAtStart(ins->input()));
-  define(lir, ins);
-}
-
 void LIRGenerator::visitSubstr(MSubstr* ins) {
   LSubstr* lir = new (alloc())
       LSubstr(useRegister(ins->string()), useRegister(ins->begin()),
@@ -455,17 +441,9 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
   const LAllocation oldval = useRegister(ins->oldval());
   const LAllocation newval = useRegister(ins->newval());
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
-
-  LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
   LDefinition maskTemp = LDefinition::BogusTemp();
-
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    outTemp = temp();
-  }
 
   if (Scalar::byteSize(ins->arrayType()) < 4) {
     valueTemp = temp();
@@ -473,11 +451,8 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
     maskTemp = temp();
   }
 
-  LCompareExchangeTypedArrayElement* lir = new (alloc())
-      LCompareExchangeTypedArrayElement(elements, index, oldval, newval,
-                                        outTemp, valueTemp, offsetTemp,
-                                        maskTemp);
-
+  auto* lir = new (alloc()) LCompareExchangeTypedArrayElement(
+      elements, index, oldval, newval, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -499,22 +474,13 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
     return;
   }
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
-
   MOZ_ASSERT(ins->arrayType() <= Scalar::Uint32);
 
   const LAllocation value = useRegister(ins->value());
 
-  LDefinition outTemp = LDefinition::BogusTemp();
   LDefinition valueTemp = LDefinition::BogusTemp();
   LDefinition offsetTemp = LDefinition::BogusTemp();
   LDefinition maskTemp = LDefinition::BogusTemp();
-
-  if (ins->arrayType() == Scalar::Uint32) {
-    MOZ_ASSERT(ins->type() == MIRType::Double);
-    outTemp = temp();
-  }
 
   if (Scalar::byteSize(ins->arrayType()) < 4) {
     valueTemp = temp();
@@ -522,10 +488,8 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
     maskTemp = temp();
   }
 
-  LAtomicExchangeTypedArrayElement* lir =
-      new (alloc()) LAtomicExchangeTypedArrayElement(
-          elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
-
+  auto* lir = new (alloc()) LAtomicExchangeTypedArrayElement(
+      elements, index, value, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -679,25 +643,14 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
   }
 
   if (ins->isForEffect()) {
-    LAtomicTypedArrayElementBinopForEffect* lir =
-        new (alloc()) LAtomicTypedArrayElementBinopForEffect(
-            elements, index, value, valueTemp, offsetTemp, maskTemp);
+    auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect(
+        elements, index, value, valueTemp, offsetTemp, maskTemp);
     add(lir, ins);
     return;
   }
 
-  // For a Uint32Array with a known double result we need a temp for
-  // the intermediate output.
-
-  LDefinition outTemp = LDefinition::BogusTemp();
-
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    outTemp = temp();
-  }
-
-  LAtomicTypedArrayElementBinop* lir =
-      new (alloc()) LAtomicTypedArrayElementBinop(
-          elements, index, value, outTemp, valueTemp, offsetTemp, maskTemp);
+  auto* lir = new (alloc()) LAtomicTypedArrayElementBinop(
+      elements, index, value, valueTemp, offsetTemp, maskTemp);
   define(lir, ins);
 }
 
@@ -758,7 +711,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   MOZ_CRASH("binary SIMD NYI");
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
     int8_t shuffle[16]) {
   return false;

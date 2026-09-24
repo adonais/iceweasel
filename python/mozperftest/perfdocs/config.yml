@@ -70,7 +70,6 @@ suites:
             "browser_ml_smart_tab_perf.js": ""
             "browser_ml_llama_smollm2_smoke.js": ""
             "browser_ml_llama_summarizer_perf.js": ""
-            "ML Security Orchestrator Performance Tests": ""
 
     intl/benchmarks/test/xpcshell:
         description: "Performance tests running through XPCShell for Intl code"
@@ -106,3 +105,8 @@ suites:
         description: "Performance tests for Toolkit: Places"
         tests:
             "Calculate Frecency Speed": ""
+
+    browser/components/aiwindow/ui/test/browser_perf:
+        description: "Performance tests for Smart Window on Firefox Desktop"
+        tests:
+            "browser_smartwindow_perf.js": ""

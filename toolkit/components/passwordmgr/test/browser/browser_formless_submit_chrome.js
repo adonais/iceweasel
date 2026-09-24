@@ -122,10 +122,12 @@ add_task(async function test_backButton_forwardButton() {
     await TestUtils.waitForCondition(() => {
       return !forwardButton.disabled;
     });
+    formProcessedPromise = listenForTestNotification("FormProcessed");
     let forwardPromise = BrowserTestUtils.browserStopped(aBrowser);
     info("click the forward button");
     EventUtils.synthesizeMouseAtCenter(forwardButton, {});
     await forwardPromise;
+    await formProcessedPromise;
     info("done");
   });
 });
@@ -138,19 +140,21 @@ add_task(async function test_reloadButton() {
       false,
       "https://example.com" + DIRECTORY_PATH + "formless_basic.html"
     );
+    const formProcessedPromise = listenForTestNotification("FormProcessed");
 
     await TestUtils.waitForCondition(() => {
       return !reloadButton.disabled;
     });
     EventUtils.synthesizeMouseAtCenter(reloadButton, {});
     await loadPromise;
+    await formProcessedPromise;
   });
 });
 
 add_task(async function test_back_keyboard_shortcut() {
   await withTestPage(async aBrowser => {
     // Load a new page in the tab so we can test going back
-    const formProcessedPromise = listenForTestNotification("FormProcessed");
+    let formProcessedPromise = listenForTestNotification("FormProcessed");
     BrowserTestUtils.startLoadingURIString(
       aBrowser,
       "https://example.com" + DIRECTORY_PATH + "formless_basic.html?second"
@@ -163,6 +167,7 @@ add_task(async function test_back_keyboard_shortcut() {
     await formProcessedPromise;
     await fillTestPage(aBrowser);
 
+    formProcessedPromise = listenForTestNotification("FormProcessed");
     let backPromise = BrowserTestUtils.browserStopped(aBrowser);
 
     const goBackKeyModifier =
@@ -170,5 +175,6 @@ add_task(async function test_back_keyboard_shortcut() {
     EventUtils.synthesizeKey("KEY_ArrowLeft", goBackKeyModifier);
 
     await backPromise;
+    await formProcessedPromise;
   });
 });

@@ -3,15 +3,15 @@
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .editor-wrapper {
-  --debug-expression-background: rgba(202, 227, 255, 0.5);
-  --debug-line-error-border: rgb(255, 0, 0);
-  --debug-expression-error-background: rgba(231, 116, 113, 0.3);
-  --line-exception-background: hsl(344, 73%, 97%);
+  --debug-expression-background: rgb(202 227 255 / 0.5);
+  --debug-line-error-border: rgb(255 0 0);
+  --debug-expression-error-background: rgb(231 116 113 / 0.3);
+  --line-exception-background: hsl(344 73% 97%);
 }
 
 .theme-dark .editor-wrapper {
-  --debug-expression-background: rgba(202, 227, 255, 0.3);
-  --line-exception-background: hsl(345, 23%, 24%);
+  --debug-expression-background: rgb(202 227 255 / 0.3);
+  --line-exception-background: hsl(345 23% 24%);
 }
 
 .editor-wrapper .CodeMirror-linewidget {

@@ -7,16 +7,17 @@
 
 #include <set>
 
-// Heuristically identifies enumerator names used as sentinel or boundary values.
+// Heuristically identifies enumerator names used as sentinel or boundary
+// values.
 static bool isSentinelName(StringRef Name) {
   std::string Lower = Name.lower();
   StringRef L(Lower);
-  static constexpr StringRef ContainsPatterns[] = {"count", "invalid",
-                                                   "sentinel", "bound",
-                                                   "limit", "num", "max", "_end", "end_"};
+  static constexpr StringRef ContainsPatterns[] = {
+      "count", "invalid", "sentinel", "bound", "limit",
+      "num",   "max",     "_end",     "end_"};
   return llvm::any_of(ContainsPatterns,
                       [L](StringRef P) { return L.contains(P); }) ||
-          L == "end";
+         L == "end";
 }
 
 void EnumSerializerChecker::registerMatchers(MatchFinder *AstMatcher) {
@@ -29,8 +30,7 @@ void EnumSerializerChecker::registerMatchers(MatchFinder *AstMatcher) {
                         hasName("ContiguousEnumSerializerInclusive")),
                   templateArgumentCountIs(3),
                   hasTemplateArgument(
-                      0,
-                      refersToType(hasDeclaration(enumDecl().bind("enum")))),
+                      0, refersToType(hasDeclaration(enumDecl().bind("enum")))),
                   hasTemplateArgument(1, isIntegral()),
                   hasTemplateArgument(2, isIntegral()))
                   .bind("serializer"))))
@@ -57,8 +57,7 @@ void EnumSerializerChecker::check(const MatchFinder::MatchResult &Result) {
   // Collect all enumerators with their values.
   SmallVector<std::pair<int64_t, const EnumConstantDecl *>, 32> Enumerators;
   for (const auto *Enumerator : ED->enumerators()) {
-    Enumerators.push_back(
-        {Enumerator->getInitVal().getExtValue(), Enumerator});
+    Enumerators.push_back({Enumerator->getInitVal().getExtValue(), Enumerator});
   }
 
   if (Enumerators.empty()) {
@@ -109,8 +108,7 @@ void EnumSerializerChecker::check(const MatchFinder::MatchResult &Result) {
          "(value %3); the range excludes valid enum values",
          DiagnosticIDs::Warning)
         << Name << (MinEnumerator ? MinEnumerator->getName() : StringRef("?"))
-        << Enumerators.front().second->getName()
-        << static_cast<int>(FirstVal);
+        << Enumerators.front().second->getName() << static_cast<int>(FirstVal);
   }
 
   // Check 3: Bound value doesn't match the last (highest) enumerator.
@@ -130,8 +128,8 @@ void EnumSerializerChecker::check(const MatchFinder::MatchResult &Result) {
   // Count unique enumerator values that fall within the accepted range.
   std::set<int64_t> UniqueValsInRange;
   for (const auto &[Val, ECD] : Enumerators) {
-    bool InRange =
-        IsInclusive ? (Val >= MinI && Val <= BoundI) : (Val >= MinI && Val < BoundI);
+    bool InRange = IsInclusive ? (Val >= MinI && Val <= BoundI)
+                               : (Val >= MinI && Val < BoundI);
     if (InRange) {
       UniqueValsInRange.insert(Val);
     }

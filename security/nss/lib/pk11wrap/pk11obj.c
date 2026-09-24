@@ -30,24 +30,27 @@ SECItem *
 PK11_BlockData(SECItem *data, unsigned long size)
 {
     SECItem *newData;
+    unsigned long long blockedLen;
 
-    if (size == 0u)
+    if (size == 0u || size > UINT_MAX)
         return NULL;
 
-    newData = (SECItem *)PORT_Alloc(sizeof(SECItem));
+    blockedLen = ((unsigned long long)data->len + (size - 1)) / size * size;
+    if (blockedLen > UINT_MAX)
+        return NULL;
+
+    newData = SECITEM_AllocItem(NULL, NULL, (unsigned int)blockedLen);
     if (newData == NULL)
         return NULL;
 
-    newData->len = (data->len + (size - 1)) / size;
-    newData->len *= size;
-
-    newData->data = (unsigned char *)PORT_ZAlloc(newData->len);
-    if (newData->data == NULL) {
-        PORT_Free(newData);
-        return NULL;
+    /* SECITEM_AllocItem leaves data NULL for a zero length, which only
+     * happens if the caller handed us an empty item. */
+    if (newData->len) {
+        /* Pad with the pad length, PKCS#7 style, then overwrite the head of
+         * the buffer with the caller's data. */
+        PORT_Memset(newData->data, newData->len - data->len, newData->len);
+        PORT_Memcpy(newData->data, data->data, data->len);
     }
-    PORT_Memset(newData->data, newData->len - data->len, newData->len);
-    PORT_Memcpy(newData->data, data->data, data->len);
     return newData;
 }
 

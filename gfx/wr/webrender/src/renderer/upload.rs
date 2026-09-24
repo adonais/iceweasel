@@ -9,7 +9,7 @@
 //! each hardware/driver configuration:
 //! - direct upload,
 //! - staged upload via a pixel buffer object,
-//! - staged upload via a direct upload to a staging texture where PBO's aren't supported,
+//! - staged upload via a direct upload to a staging texture where pixel buffer objects aren't supported,
 //! - copy from the staging to destination textures, either via blits or batched draw calls.
 //!
 //! Conceptually a lot of this logic should probably be in the device module, but some code
@@ -33,7 +33,7 @@ use crate::internal_types::{
 };
 use crate::device::{
     Device, UploadMethod, Texture, DrawTarget, UploadStagingBuffer, TextureFlags, TextureUploader,
-    TextureFilter,
+    TextureFilter, LoadOp, RenderPassDescriptor, StoreOp,
 };
 use crate::gpu_types::CopyInstance;
 use crate::batch::BatchTextures;
@@ -81,7 +81,7 @@ pub fn upload_to_texture_cache(
     // For best performance we use a single TextureUploader for all uploads.
     // This allows us to fill PBOs more efficiently and therefore allocate fewer PBOs.
     let mut uploader = renderer.device.upload_texture(
-        &mut renderer.texture_upload_pbo_pool,
+        &mut renderer.texture_upload_buffer_pool,
     );
 
     let num_updates = update_list.len();
@@ -126,12 +126,17 @@ pub fn upload_to_texture_cache(
                         texture,
                         false,
                     );
-                    renderer.device.bind_draw_target(draw_target);
+                    renderer.device.begin_render_pass(&RenderPassDescriptor {
+                        target: draw_target,
+                        render_area: None,
+                        color_load: LoadOp::Load,
+                    });
                     renderer.device.clear_target(
                         Some(TEXTURE_CACHE_DBG_CLEAR_COLOR),
                         None,
                         Some(draw_target.to_framebuffer_rect(update.rect.to_i32()))
                     );
+                    renderer.device.end_render_pass(StoreOp::Store);
 
                     continue;
                 }
@@ -207,7 +212,7 @@ pub fn upload_to_texture_cache(
     for batch_buffer in batch_upload_buffers.into_iter().map(|(_, (_, buffers))| buffers).flatten() {
         let texture = &batch_upload_textures[batch_buffer.texture_index];
         match batch_buffer.staging_buffer {
-            StagingBufferKind::Pbo(pbo) => {
+            StagingBufferKind::TransferBuffer(pbo) => {
                 stats.bytes_uploaded += uploader.upload_staged(
                     &mut renderer.device,
                     texture,
@@ -394,7 +399,7 @@ fn copy_into_staging_buffer<'a>(
                         texture.get_format(),
                         BATCH_UPLOAD_TEXTURE_SIZE,
                     ) {
-                        Ok(pbo) => StagingBufferKind::Pbo(pbo),
+                        Ok(pbo) => StagingBufferKind::TransferBuffer(pbo),
                         Err(_) => StagingBufferKind::CpuBuffer {
                             bytes: staging_texture_pool.get_temporary_buffer(),
                         },
@@ -437,7 +442,7 @@ fn copy_into_staging_buffer<'a>(
 
         let src: &[mem::MaybeUninit<u8>] = std::slice::from_raw_parts(data.as_ptr() as *const _, src_size);
         let (dst_stride, dst) = match &mut buffer.staging_buffer {
-            StagingBufferKind::Pbo(buffer) => (
+            StagingBufferKind::TransferBuffer(buffer) => (
                 buffer.get_stride(),
                 buffer.get_mapping(),
             ),
@@ -568,11 +573,19 @@ fn copy_from_staging_to_cache_using_draw_calls(
         }
 
         if dst_changed {
+            if prev_dst.is_some() {
+                renderer.device.end_render_pass(StoreOp::Store);
+            }
+
             let dest_texture = &renderer.texture_resolver.texture_cache_map[&copy.dest_texture_id].texture;
             dst_texture_size = dest_texture.get_dimensions().to_f32();
 
             let draw_target = DrawTarget::from_texture(dest_texture, false);
-            renderer.device.bind_draw_target(draw_target);
+            renderer.device.begin_render_pass(&RenderPassDescriptor {
+                target: draw_target,
+                render_area: None,
+                color_load: LoadOp::Load,
+            });
 
             renderer.shaders
                 .borrow_mut()
@@ -625,6 +638,10 @@ fn copy_from_staging_to_cache_using_draw_calls(
         );
 
         stats.num_draw_calls += 1;
+    }
+
+    if prev_dst.is_some() {
+        renderer.device.end_render_pass(StoreOp::Store);
     }
 }
 
@@ -827,7 +844,7 @@ struct UploadStats {
 
 #[derive(Debug)]
 enum StagingBufferKind<'a> {
-    Pbo(UploadStagingBuffer<'a>),
+    TransferBuffer(UploadStagingBuffer<'a>),
     CpuBuffer { bytes: Vec<mem::MaybeUninit<u8>> },
     Image { bytes: Arc<Vec<u8>>, stride: Option<i32> },
 }

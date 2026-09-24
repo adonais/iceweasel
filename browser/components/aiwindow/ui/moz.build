@@ -5,7 +5,10 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "Machine Learning: Frontend")
 
-BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser/browser.toml",
+    "test/browser_perf/perftest.toml",
+]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
@@ -14,8 +17,12 @@ MOZ_SRC_FILES += [
     "actors/AIChatContentParent.sys.mjs",
     "actors/AISmartBarChild.sys.mjs",
     "actors/AISmartBarParent.sys.mjs",
+    "actors/AITabChild.sys.mjs",
+    "actors/AITabParent.sys.mjs",
     "actors/SmartFormFillChild.sys.mjs",
     "actors/SmartFormFillParent.sys.mjs",
+    "actors/SmartFormFillReviewChild.sys.mjs",
+    "actors/SmartFormFillReviewParent.sys.mjs",
     "actors/SmartWindowTasksChild.sys.mjs",
     "actors/SmartWindowTasksParent.sys.mjs",
     "modules/AgentUI.sys.mjs",
@@ -39,11 +46,17 @@ MOZ_SRC_FILES += [
     "modules/ChatSql.sys.mjs",
     "modules/ChatStore.sys.mjs",
     "modules/ChatUtils.sys.mjs",
+    "modules/ConversationMigrations.sys.mjs",
+    "modules/ConversationSql.sys.mjs",
+    "modules/ConversationStore.sys.mjs",
     "modules/FeedbackModal.sys.mjs",
+    "modules/MonitorAttention.sys.mjs",
     "modules/MonitorUIUtils.sys.mjs",
+    "modules/ResumeActivityDismissals.sys.mjs",
     "modules/SmartFormFillAutocomplete.sys.mjs",
     "modules/SmartFormFillController.sys.mjs",
     "modules/SmartFormFillDocument.sys.mjs",
+    "modules/SmartFormFillReviewSession.sys.mjs",
     "modules/SmartFormFillTelemetry.sys.mjs",
     "modules/SmartFormFillUtils.sys.mjs",
     "modules/SmartWindowTelemetry.sys.mjs",

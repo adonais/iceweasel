@@ -1,0 +1,23 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+[DEFAULT]
+prefs = [
+  "browser.newtab.preload=false",
+  "browser.search.suggest.enabled=false",
+  "browser.urlbar.suggest.searches=false",
+  "browser.smartwindow.endpoint=http://localhost:0/v1",
+  "browser.smartwindow.enabled=true",
+  "browser.smartwindow.firstrun.hasCompleted=true",
+  "browser.smartwindow.chat.interactionCount=0",
+  # The on-device models are downloaded, unless MOZ_MODELS_HUB points at a
+  # local hub. Mirrors python/mozperftest/mozperftest/system/ml_services.py.
+  "network.socket.allowed_nonlocal_domains=model-hub.mozilla.org,firefox.settings.services.mozilla.com,firefox-settings-attachments.cdn.mozilla.net,content-signature-2.cdn.mozilla.net",
+]
+support-files = [
+  "head.js",
+]
+
+["browser_smartwindow_perf.js"]
+disabled = "Runs as a perftest only, not in regular CI"

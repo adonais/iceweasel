@@ -53,12 +53,16 @@ impl PingUploader for ViaductUploader {
 
         // Localhost-destined pings are sent without OHTTP,
         // even if configured to use OHTTP.
-        let result =
-            if localhost_port == 0 && requires_ohttp && should_ohttp_upload(&upload_request) {
-                ohttp_upload(upload_request)
-            } else {
-                viaduct_upload(upload_request)
-            };
+        let result = if localhost_port == 0 && requires_ohttp {
+            // This ping requires OHTTP, but Firefox has additional requirements that may make
+            // us unwilling to.
+            if !should_ohttp_upload(&upload_request) {
+                return UploadResult::unrecoverable_failure();
+            }
+            ohttp_upload(upload_request)
+        } else {
+            viaduct_upload(upload_request)
+        };
 
         log::trace!(
             "FOG Ping Uploader completed uploading (Result {:?})",

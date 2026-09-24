@@ -70,6 +70,10 @@ using mozilla::ipc::PrincipalInfo;
 using mozilla::places::PageIconProtocolHandler;
 #endif
 
+#ifdef MOZ_THUNDERBIRD
+#  include "MailMessageParent.h"
+#endif
+
 namespace mozilla {
 namespace net {
 
@@ -754,20 +758,22 @@ mozilla::ipc::IPCResult NeckoParent::RecvEnsureHSTSData(
 mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetPageThumbStreamResolver&& aResolver) {
+  const dom::RemoteType& remoteType =
+      ContentParent::Cast(Manager())->GetRemoteType();
+
   // Only the privileged about content process is allowed to access
   // things over the moz-page-thumb protocol. Any other content process
   // that tries to send this should have been blocked via the
   // ScriptSecurityManager, but if somehow the process has been tricked into
   // sending this message, we send IPC_FAIL in order to crash that
   // likely-compromised content process.
-  if (mozilla::ipc::ActorCast<ContentParent>(Manager())->GetRemoteType() !=
-      PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
-  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      aLoadInfoArgs, PRIVILEGEDABOUT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     return IPC_FAIL(this, "moz-page-thumb request must include loadInfo");
   }
@@ -806,20 +812,22 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
 mozilla::ipc::IPCResult NeckoParent::RecvGetMozNewTabWallpaperStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetMozNewTabWallpaperStreamResolver&& aResolver) {
+  const dom::RemoteType& remoteType =
+      ContentParent::Cast(Manager())->GetRemoteType();
+
   // Only the privileged about content process is allowed to access
   // things over the moz-newtab-wallpaper protocol. Any other content process
   // that tries to send this should have been blocked via the
   // ScriptSecurityManager, but if somehow the process has been tricked into
   // sending this message, we send IPC_FAIL in order to crash that
   // likely-compromised content process.
-  if (mozilla::ipc::ActorCast<ContentParent>(Manager())->GetRemoteType() !=
-      PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
-  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
-      aLoadInfoArgs, PRIVILEGEDABOUT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     return IPC_FAIL(this, "moz-newtab-wallpaper request must include loadInfo");
   }
@@ -856,11 +864,21 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetMozNewTabWallpaperStream(
   return IPC_OK();
 }
 
+#ifdef MOZ_THUNDERBIRD
+mozilla::ipc::IPCResult NeckoParent::RecvGetMailMessageStream(
+    nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+    GetMailMessageStreamResolver&& aResolve) {
+  return MailMessageParent::RecvGetMailMessageStream(
+      aURI, aLoadInfoArgs,
+      std::forward<GetMailMessageStreamResolver>(aResolve));
+}
+#endif
+
 mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
     nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
     GetPageIconStreamResolver&& aResolver) {
 #ifdef MOZ_PLACES
-  const nsACString& remoteType =
+  const dom::RemoteType& remoteType =
       ContentParent::Cast(Manager())->GetRemoteType();
 
   // Only the privileged about content process is allowed to access
@@ -869,7 +887,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetPageIconStream(
   // ScriptSecurityManager, but if somehow the process has been tricked into
   // sending this message, we send IPC_FAIL in order to crash that
   // likely-compromised content process.
-  if (remoteType != PRIVILEGEDABOUT_REMOTE_TYPE) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return IPC_FAIL(this, "Wrong process type");
   }
 

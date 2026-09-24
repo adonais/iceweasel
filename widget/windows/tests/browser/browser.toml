@@ -1,0 +1,6 @@
+[DEFAULT]
+
+["browser_test_raise_disabled_window.js"]
+skip-if = [
+  "headless", # Needs real HWNDs and window activation.
+]

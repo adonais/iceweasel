@@ -37,9 +37,9 @@ SVGCircleElement::SVGCircleElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGCircleElementBase(std::move(aNodeInfo)) {}
 
-bool SVGCircleElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool SVGCircleElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   return IsInLengthInfo(aAttribute, sLengthInfo) ||
-         SVGCircleElementBase::IsAttributeMapped(aAttribute);
+         SVGCircleElementBase::IsNoNamespaceAttrMapped(aAttribute);
 }
 
 namespace SVGT = SVGGeometryProperty::Tags;

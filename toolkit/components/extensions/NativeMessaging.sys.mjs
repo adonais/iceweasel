@@ -33,6 +33,10 @@ const lazy = XPCOMUtils.declareLazy({
     service: "@mozilla.org/extensions/native-messaging-portal;1",
     iid: Ci.nsINativeMessagingPortal,
   },
+  nmproxy: {
+    service: "@mozilla.org/extensions/native-messaging-proxy;1",
+    iid: Ci.nsINativeMessagingProxy,
+  },
 });
 
 const { ExtensionError, promiseTimeout } = ExtensionUtils;
@@ -68,16 +72,30 @@ export class NativeApp extends EventEmitter {
     this.writePromise = null;
     this.cleanupStarted = false;
     this.portalSessionHandle = null;
+    this.portalImp = null;
 
-    if ("@mozilla.org/extensions/native-messaging-portal;1" in Cc) {
-      if (lazy.portal.shouldUse()) {
-        this.startupPromise = this._doInitPortal().catch(err => {
-          this.startupPromise = null;
-          Cu.reportError(err instanceof Error ? err : err.message);
-          this._cleanup(err);
-        });
-        return;
+    if ("@mozilla.org/extensions/native-messaging-proxy;1" in Cc) {
+      if (lazy.nmproxy.shouldUse()) {
+        this.portalImp = lazy.nmproxy;
       }
+    }
+
+    if (
+      !this.portalImp &&
+      "@mozilla.org/extensions/native-messaging-portal;1" in Cc
+    ) {
+      if (lazy.portal.shouldUse()) {
+        this.portalImp = lazy.portal;
+      }
+    }
+
+    if (this.portalImp) {
+      this.startupPromise = this._doInitPortalOrNMProxy().catch(err => {
+        this.startupPromise = null;
+        Cu.reportError(err instanceof Error ? err : err.message);
+        this._cleanup(err);
+      });
+      return;
     }
 
     this.startupPromise = lazy.NativeManifests.lookupManifest(
@@ -133,24 +151,37 @@ export class NativeApp extends EventEmitter {
       });
   }
 
-  async _doInitPortal() {
-    let available = await lazy.portal.available;
+  async _doInitPortalOrNMProxy() {
+    let available = await this.portalImp.available;
     if (!available) {
-      Cu.reportError("Native messaging portal is not available");
+      if (this.portalImp === lazy.nmproxy && lazy.portal.shouldUse()) {
+        this.portalImp = lazy.portal;
+        return this._doInitPortalOrNMProxy();
+      }
+      Cu.reportError("Native messaging proxy/portal is not available");
       this._throwGenericError(this.name);
     }
 
-    let handle = await lazy.portal.createSession(this.name);
-    this.portalSessionHandle = handle;
+    if (this.portalImp === lazy.portal) {
+      this.portalSessionHandle = await lazy.portal.createSession(this.name);
+    }
 
     let hostInfo = null;
     let path;
     try {
-      let manifest = await lazy.portal.getManifest(
-        handle,
-        this.name,
-        this.context.extension.id
-      );
+      let manifest;
+      if (this.portalImp === lazy.portal) {
+        manifest = await lazy.portal.getManifest(
+          this.portalSessionHandle,
+          this.name,
+          this.context.extension.id
+        );
+      } else {
+        manifest = await lazy.nmproxy.getManifest(
+          this.name,
+          this.context.extension.id
+        );
+      }
       path = manifest.substring(0, 30) + "...";
       hostInfo = await lazy.NativeManifests.parseManifest(
         "stdio",
@@ -163,19 +194,26 @@ export class NativeApp extends EventEmitter {
       if (ex instanceof SyntaxError && ex.message.startsWith("JSON.parse:")) {
         Cu.reportError(`Error parsing native manifest ${path}: ${ex.message}`);
         this._throwGenericError(this.name);
+      } else {
+        Cu.reportError(ex);
       }
     }
     if (!hostInfo) {
       this._throwGenericError(this.name);
     }
 
-    let pipes;
+    let result;
     try {
-      pipes = await lazy.portal.start(
-        handle,
-        this.name,
-        this.context.extension.id
-      );
+      if (this.portalImp === lazy.portal) {
+        result = await lazy.portal.start(
+          this.portalSessionHandle,
+          this.name,
+          this.context.extension.id
+        );
+      } else {
+        result = await lazy.nmproxy.start(this.name, this.context.extension.id);
+        this.portalSessionHandle = result.handle;
+      }
     } catch (err) {
       if (err.name == "NotFoundError") {
         this._throwGenericError(this.name);
@@ -184,9 +222,9 @@ export class NativeApp extends EventEmitter {
       }
     }
     this.proc = await lazy.Subprocess.connectRunning([
-      pipes.stdin,
-      pipes.stdout,
-      pipes.stderr,
+      result.stdin,
+      result.stdout,
+      result.stderr,
     ]);
     this.startupPromise = null;
     this._startRead();
@@ -224,7 +262,7 @@ export class NativeApp extends EventEmitter {
 
   /**
    * @param {BaseContext} context The scope from where `message` originates.
-   * @param {*} message A message from the extension, meant for a native app.
+   * @param {any} message A message from the extension, meant for a native app.
    * @returns {ArrayBufferLike} An ArrayBuffer that can be sent to the native app.
    */
   static encodeMessage(context, message) {
@@ -374,10 +412,10 @@ export class NativeApp extends EventEmitter {
       if (this.writePromise) {
         await this.writePromise.catch(Cu.reportError);
       }
-      // When using the WebExtensions portal, we don't control the external
-      // process, the portal does. So let the portal handle waiting/killing the
-      // external process as it sees fit.
-      await lazy.portal
+      // When using the WebExtensions portal or native messaging proxy,
+      // we don't control the external process, the portal does.
+      // So let the portal handle waiting/killing the external process as it sees fit.
+      await this.portalImp
         .closeSession(this.portalSessionHandle)
         .catch(Cu.reportError);
       this.portalSessionHandle = null;

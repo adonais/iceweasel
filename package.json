@@ -26,6 +26,7 @@
     "eslint-plugin-sdl": "file:tools/lint/eslint/eslint-plugin-sdl-vendored",
     "eslint-plugin-spidermonkey-js": "file:tools/lint/eslint/eslint-plugin-spidermonkey-js",
     "globals": "17.9.0",
+    "jest": "30.4.2",
     "jsdoc": "4.0.5",
     "license-checker-rseidelsohn": "4.4.2",
     "lit": "3.3.3",

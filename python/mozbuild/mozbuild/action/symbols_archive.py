@@ -20,7 +20,7 @@ def make_archive(archive_name, base, exclude, include):
     def fill_archive(add_file):
         for pat in include:
             for p, f in finder.find(pat):
-                print('  Adding to "%s":\n\t"%s"' % (archive_basename, p))
+                print(f'  Adding to "{archive_basename}":\n\t"{p}"')
                 add_file(p, f)
 
     with open(archive_name, "wb") as fh:

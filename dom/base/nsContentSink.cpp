@@ -968,6 +968,15 @@ void nsContentSink::NotifyDocElementCreated(Document* aDoc) {
   // This process just created a document. Ensure it's been marked as untrusted.
   mozilla::dom::ContentChild::MaybeBecomeUntrusted();
 
+  // Data documents with a content principal (DOMParser, XHR responseXML,
+  // createDocument) are never displayed, cannot run scripts and have no
+  // window. None of the observers of these notifications act on them, so
+  // skip the notification overhead. Only CustomElementListener with
+  // SystemPrincipals actually make use of this.
+  if (aDoc->IsLoadedAsData() && !aDoc->NodePrincipal()->IsSystemPrincipal()) {
+    return;
+  }
+
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
   MOZ_ASSERT(observerService);

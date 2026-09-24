@@ -131,21 +131,22 @@ nsCString VideoDecoderConfigInternal::ToString() const {
 
   rv.Append(NS_ConvertUTF16toUTF8(mCodec));
   if (mCodedWidth.isSome()) {
-    rv.AppendPrintf("coded: %dx%d", mCodedWidth.value(), mCodedHeight.value());
+    rv.AppendPrintf(", coded: %dx%d", mCodedWidth.value(),
+                    mCodedHeight.value());
   }
   if (mDisplayAspectWidth.isSome()) {
-    rv.AppendPrintf("display %dx%d", mDisplayAspectWidth.value(),
+    rv.AppendPrintf(", display %dx%d", mDisplayAspectWidth.value(),
                     mDisplayAspectHeight.value());
   }
   if (mColorSpace.isSome()) {
-    rv.AppendPrintf("colorspace %s", "todo");
+    rv.AppendPrintf(", %s", mColorSpace->ToString().get());
   }
   if (mDescription) {
-    rv.AppendPrintf("extradata: %zu bytes", mDescription->Length());
+    rv.AppendPrintf(", extradata: %zu bytes", mDescription->Length());
   }
-  rv.AppendPrintf("hw accel: %s", GetEnumString(mHardwareAcceleration).get());
+  rv.AppendPrintf(", hw accel: %s", GetEnumString(mHardwareAcceleration).get());
   if (mOptimizeForLatency.isSome()) {
-    rv.AppendPrintf("optimize for latency: %s",
+    rv.AppendPrintf(", optimize for latency: %s",
                     mOptimizeForLatency.value() ? "true" : "false");
   }
 
@@ -573,8 +574,6 @@ bool VideoDecoderTraits::IsSupported(
 /* static */
 Result<UniquePtr<TrackInfo>, nsresult> VideoDecoderTraits::CreateTrackInfo(
     const VideoDecoderConfigInternal& aConfig) {
-  LOG("Create a VideoInfo from {} config", aConfig.ToString().get());
-
   nsTArray<UniquePtr<TrackInfo>> tracks = GetTracksInfo(aConfig);
   if (tracks.Length() != 1 || tracks[0]->GetType() != TrackInfo::kVideoTrack) {
     LOGE("Failed to get TrackInfo");
@@ -917,6 +916,7 @@ nsTArray<RefPtr<VideoFrame>> VideoDecoder::DecodedDataToOutputType(
     MOZ_RELEASE_ASSERT(data->mType == MediaData::Type::VIDEO_DATA);
     RefPtr<const VideoData> d(data->As<const VideoData>());
     VideoColorSpaceInternal colorSpace;
+    bool useConfigColorSpace = false;
     // Determine which color space to use: prefer the color space as configured
     // at the decoder level, if it has one, otherwise look at the underlying
     // image and make a guess.
@@ -925,9 +925,13 @@ nsTArray<RefPtr<VideoFrame>> VideoDecoder::DecodedDataToOutputType(
         aConfig.mColorSpace->mTransfer.isSome() &&
         aConfig.mColorSpace->mMatrix.isSome()) {
       colorSpace = aConfig.mColorSpace.value();
+      useConfigColorSpace = true;
     } else {
       colorSpace = GuessColorSpace(d->mImage.get());
     }
+    LOGV("Resolved decoded frame color space from {}: {}",
+         useConfigColorSpace ? "decoder configuration" : "decoded image",
+         colorSpace.ToString().get());
     frames.AppendElement(CreateVideoFrame(
         aGlobalObject, d.get(), d->mTime.ToMicroseconds(),
         static_cast<uint64_t>(d->mDuration.ToMicroseconds()),

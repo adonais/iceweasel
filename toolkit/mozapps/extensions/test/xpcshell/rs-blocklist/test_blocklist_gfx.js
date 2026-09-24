@@ -31,6 +31,26 @@ add_task(async function test_sends_serialized_data() {
   equal(received, expected);
 });
 
+add_task(async function test_sends_serialized_adapter_match() {
+  const expected =
+    "adapterMatch:SECONDARY\tblockID:g36\tdevices:0x0a6c,geforce\t" +
+    "driverVersion:8.17.12.5896\t" +
+    "driverVersionComparator:LESS_THAN_OR_EQUAL\tfeature:DIRECT3D_9_LAYERS\t" +
+    "featureStatus:BLOCKED_DRIVER_VERSION\tos:WINNT 6.1\tvendor:0x10de\t" +
+    "versionRange:0,*";
+  let received;
+  const observe = (subject, topic, data) => {
+    received = data;
+  };
+  Services.obs.addObserver(observe, EVENT_NAME);
+  let clonedItem = Cu.cloneInto(SAMPLE_GFX_RECORD, this);
+  clonedItem.adapterMatch = " SECONDARY ";
+  await mockGfxBlocklistItems([clonedItem]);
+  Services.obs.removeObserver(observe, EVENT_NAME);
+
+  equal(received, expected);
+});
+
 add_task(async function test_parsing_skips_devices_with_comma() {
   let clonedItem = Cu.cloneInto(SAMPLE_GFX_RECORD, this);
   clonedItem.devices[0] = "0x2,582";

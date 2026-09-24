@@ -34,7 +34,7 @@ When submitting pings on shutdown, they should not be submitted after Telemetry 
 Pings should be submitted at the latest within:
 
 - the [observer notification](https://developer.mozilla.org/docs/Observer_Notifications#Application_shutdown) `"profile-before-change"`
-- the {ref}`AsyncShutdown phase <AsyncShutdown_phases>` `sendTelemetry`
+- the {ref}`AsyncShutdown phase <asyncshutdown-phases>` `sendTelemetry`
 
 There are other constraints that can lead to a ping submission getting dropped:
 

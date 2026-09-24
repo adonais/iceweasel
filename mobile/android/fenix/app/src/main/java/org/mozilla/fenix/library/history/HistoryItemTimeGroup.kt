@@ -5,60 +5,44 @@
 package org.mozilla.fenix.library.history
 
 import android.content.Context
+import android.os.Parcelable
+import android.text.format.DateUtils
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Calendar
-import java.util.Date
-import org.mozilla.fenix.R
+import kotlinx.parcelize.Parcelize
 
-enum class HistoryItemTimeGroup {
-    Today,
-    Yesterday,
-    ThisWeek,
-    ThisMonth,
-    Older;
+/**
+ * Represents a group of history items for a specific date.
+ *
+ * @property timestamp The timestamp representing the start of the day for this group.
+ */
+@Parcelize
+data class HistoryItemTimeGroup(val timestamp: Long) : Parcelable {
+
+    /** Returns the date in ISO 8601 format (YYYY-MM-DD). */
+    fun toIsoDateString(): String {
+        return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate().toString()
+    }
 
     fun humanReadable(context: Context): String =
-        when (this) {
-            Today -> context.getString(R.string.history_today)
-            Yesterday -> context.getString(R.string.history_yesterday)
-            ThisWeek -> context.getString(R.string.history_7_days)
-            ThisMonth -> context.getString(R.string.history_30_days)
-            Older -> context.getString(R.string.history_older)
-        }
+        DateUtils.formatDateTime(
+            context,
+            timestamp,
+            DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR,
+        )
 
     companion object {
-        private const val ZERO_DAYS = 0
-        private const val ONE_DAY = 1
-        private const val SEVEN_DAYS = 7
-        private const val THIRTY_DAYS = 30
-        private val today = getDaysAgo(ZERO_DAYS).time
-        private val yesterday = getDaysAgo(ONE_DAY).time
-        private val sevenDaysAgo = getDaysAgo(SEVEN_DAYS).time
-        private val thirtyDaysAgo = getDaysAgo(THIRTY_DAYS).time
-        private val todayRange = LongRange(today, Long.MAX_VALUE) // all future time is considered today
-        private val yesterdayRange = LongRange(yesterday, today)
-        private val lastWeekRange = LongRange(sevenDaysAgo, yesterday)
-        private val lastMonthRange = LongRange(thirtyDaysAgo, sevenDaysAgo)
-
-        private fun getDaysAgo(daysAgo: Int): Date {
-            return Calendar.getInstance()
-                .apply {
+        internal fun timeGroupForTimestamp(timestamp: Long): HistoryItemTimeGroup {
+            val calendar =
+                Calendar.getInstance().apply {
+                    timeInMillis = timestamp
                     set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
                     set(Calendar.SECOND, 0)
                     set(Calendar.MILLISECOND, 0)
-                    add(Calendar.DAY_OF_YEAR, -daysAgo)
                 }
-                .time
-        }
-
-        internal fun timeGroupForTimestamp(timestamp: Long): HistoryItemTimeGroup {
-            return when {
-                todayRange.contains(timestamp) -> Today
-                yesterdayRange.contains(timestamp) -> Yesterday
-                lastWeekRange.contains(timestamp) -> ThisWeek
-                lastMonthRange.contains(timestamp) -> ThisMonth
-                else -> Older
-            }
+            return HistoryItemTimeGroup(calendar.timeInMillis)
         }
     }
 }

@@ -132,7 +132,7 @@ add_setup(async function setup() {
     clientAuthDialogService
   );
 
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   ok(!!cert, "Got self-signed cert");
   server = startServer(cert);
 

@@ -2023,6 +2023,7 @@ var gUnifiedExtensions = {
   // buttonAlwaysVisible: true, -- based on pref, declared later.
   _buttonShownBeforeButtonOpen: null,
   _buttonBarHasMouse: false,
+  _panelShownCount: 0,
 
   // We use a `<deck>` in the extension items to show/hide messages below each
   // extension name. We have a default message for origin controls, and
@@ -2432,6 +2433,8 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewShowing(panelview) {
+    const currentShowCount = ++this._panelShownCount;
+    const isStillShowing = () => currentShowCount === this._panelShownCount;
     const policies = this.getActivePolicies();
 
     // Only add extensions that do not have a browser action in this list since
@@ -2461,7 +2464,7 @@ var gUnifiedExtensions = {
         descriptionL10nId: "unified-extensions-empty-content-explain-enable2",
       });
       this.isAtLeastOneExtensionWithPBMOptIn().then(result => {
-        if (!result) {
+        if (!result && isStillShowing()) {
           this._updateEmptyStateBox({
             panelview,
             hidden: false,
@@ -2478,6 +2481,9 @@ var gUnifiedExtensions = {
     } else {
       this._updateEmptyStateBox({ panelview, hidden: true });
       this.getDisabledExtensionsInfo().then(disabledExtensionsInfo => {
+        if (!isStillShowing()) {
+          return;
+        }
         if (disabledExtensionsInfo.isAnyDisabled) {
           this._updateEmptyStateBox({
             panelview,
@@ -2510,7 +2516,7 @@ var gUnifiedExtensions = {
           // Replace the "Manage Extensions" button with "Discover Extensions".
           // We add the "Discover Extensions" button, and "Manage Extensions"
           // button (#unified-extensions-manage-extensions) is hidden by CSS.
-          const discoverButton = this._createDiscoverButton(panelview);
+          const discoverButton = this._createDiscoverButton();
 
           const manageExtensionsButton = panelview.querySelector(
             "#unified-extensions-manage-extensions"
@@ -2573,6 +2579,7 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewHiding(panelview) {
+    ++this._panelShownCount;
     if (window.closed) {
       return;
     }

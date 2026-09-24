@@ -7,8 +7,21 @@ import { connect } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
-import { calculateTheme } from "lib/Wallpapers/WallpaperThemeUtils.mjs";
+import {
+  calculateTheme,
+  createThumbnail,
+} from "lib/Wallpapers/WallpaperThemeUtils.mjs";
 import { WALLPAPER_CATEGORIES } from "content-src/lib/constants.mjs";
+import { isWallpaperLibraryEnabled } from "lib/Wallpapers/WallpaperLibraryPref.mjs";
+
+// A second save can start before the first one's reply arrives. The id keeps
+// that older reply from moving focus to the wrong image.
+let uploadRequestSeq = 0;
+
+// Tiles per row in "Your images". The stylesheet reads it through
+// --your-images-columns, the way Top Sites sizes its grid from
+// --top-sites-max-per-row, so the layout and the arrow keys share one number.
+const YOUR_IMAGES_COLUMNS = 3;
 
 const PREF_WALLPAPER_UPLOADED_PREVIOUSLY =
   "newtabWallpapers.customWallpaper.uploadedPreviously";
@@ -87,17 +100,25 @@ export class _WallpaperCategories extends React.PureComponent {
     this.prefersDarkQuery = null;
     this.categoryRef = []; // store references for wallpaper category list
     this.wallpaperRef = []; // store reference for wallpaper selection list
+    this.savedWallpaperRef = []; // store references for the "Your images" list
+    this.scaledThumbnails = new Set(); // library images already scaled here
+    this.unmounted = false;
+    this.pendingUploadId = null;
+    this.uploadStartedFromTile = false;
     this.arrowButtonRef = React.createRef(); // Used to focus arrow button when category opens
     this.customColorPickerRef = React.createRef(); // Used to determine contrast icon color for custom color picker
     this.customColorInput = React.createRef(); // Used to determine contrast icon color for custom color picker
     this.wallpaperListRef = React.createRef(); // Used for CSSTransition nodeRef
     this.state = {
-      activeCategory: null,
-      activeCategoryFluentID: null,
       inputType: "radio",
       activeId: null,
       customWallpaperErrorType: null,
       focusedCategoryIndex: 0,
+      pendingRemoveIndex: null,
+      pendingRemoveFilename: null,
+      savedFocusIndex: 0,
+      // Object URLs for the picker thumbnails, keyed by filename.
+      thumbnailUrls: {},
     };
   }
 
@@ -105,15 +126,53 @@ export class _WallpaperCategories extends React.PureComponent {
     this.prefersDarkQuery = globalThis.matchMedia(
       "(prefers-color-scheme: dark)"
     );
+    this.requestThumbnails();
+    this.syncThumbnailUrls();
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true;
+    this.revokeThumbnailUrls(this.state.thumbnailUrls);
   }
 
   componentDidUpdate(prevProps) {
-    // Walllpaper category subpanel should close when parent menu is closed
+    this.focusAfterRemoval();
+    this.focusAfterUpload();
+
+    const wantsThumbnails = !!this.props.panelShowing && this.libraryEnabled;
+    const wantedThumbnails =
+      !!prevProps.panelShowing &&
+      isWallpaperLibraryEnabled(prevProps.Prefs.values);
+
+    if (wantsThumbnails !== wantedThumbnails) {
+      if (wantsThumbnails) {
+        this.requestThumbnails();
+      } else {
+        this.dropThumbnails();
+      }
+    }
+
     if (
-      this.props.exitEventFired &&
-      this.props.exitEventFired !== prevProps.exitEventFired
+      this.props.Wallpapers.customWallpaperThumbnails !==
+      prevProps.Wallpapers.customWallpaperThumbnails
     ) {
-      this.handleBack();
+      this.syncThumbnailUrls();
+    }
+
+    // An upload or a removal changes the library, so the thumbnails for it are
+    // stale. Compared by filename, so a fresh array holding the same images
+    // does not ask forever. The applied pref is the second trigger: a page
+    // restored from the startup cache never sees the library broadcast.
+    const appliedFilename =
+      this.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
+    const prevAppliedFilename =
+      prevProps.Prefs.values["newtabWallpapers.customWallpaper.uuid"] || "";
+    if (
+      appliedFilename !== prevAppliedFilename ||
+      this.libraryFilenames(this.props.Wallpapers.customWallpapers) !==
+        this.libraryFilenames(prevProps.Wallpapers.customWallpapers)
+    ) {
+      this.requestThumbnails();
     }
 
     // A CTA can deep-link into a specific wallpaper category by dispatching
@@ -304,8 +363,9 @@ export class _WallpaperCategories extends React.PureComponent {
     const selectedWallpaper =
       this.props.Prefs.values["newtabWallpapers.wallpaper"];
 
-    // If a custom wallpaper is set, remove it
-    if (selectedWallpaper === "custom") {
+    // With the library off there is nowhere to see or delete a saved image, so
+    // resetting still removes it, the way it did before the library existed.
+    if (selectedWallpaper === "custom" && !this.libraryEnabled) {
       this.props.dispatch(
         ac.OnlyToMain({
           type: at.WALLPAPER_REMOVE_UPLOAD,
@@ -340,26 +400,379 @@ export class _WallpaperCategories extends React.PureComponent {
           : "newtab-wallpaper-category-title-colors";
       case WALLPAPER_CATEGORIES.Firefox:
         return "newtab-wallpaper-category-title-firefox";
+      case WALLPAPER_CATEGORIES.CustomWallpaper:
+        return "newtab-wallpaper-your-images";
       default:
         return undefined;
     }
   }
 
+  // Which images the library holds, as one comparable string.
+  libraryFilenames(wallpapers) {
+    return (wallpapers || []).map(wallpaper => wallpaper.filename).join("|");
+  }
+
+  // The library lives in a folder the page cannot load from, so the picker asks
+  // for the thumbnail bytes and turns them into object URLs here.
+  requestThumbnails() {
+    // The picker is mounted on every new tab, so asking on mount would read the
+    // whole library once per tab, for a panel nobody opened.
+    if (!this.props.panelShowing || !this.libraryEnabled) {
+      return;
+    }
+    this.props.dispatch(
+      ac.OnlyToMain({ type: at.WALLPAPERS_CUSTOM_THUMBNAILS_REQUEST })
+    );
+  }
+
+  revokeThumbnailUrls(urls) {
+    for (const url of Object.values(urls || {})) {
+      globalThis.URL?.revokeObjectURL(url);
+    }
+  }
+
+  syncThumbnailUrls() {
+    if (!this.props.panelShowing || !this.libraryEnabled) {
+      this.dropThumbnails();
+      return;
+    }
+    const thumbnails = this.props.Wallpapers.customWallpaperThumbnails || [];
+    const next = {};
+    for (const { filename, file } of thumbnails) {
+      // A startup cache restore rebuilds these from JSON, where a Blob comes
+      // back as a plain object that createObjectURL rejects.
+      if (file instanceof globalThis.Blob) {
+        next[filename] = globalThis.URL.createObjectURL(file);
+      }
+    }
+    const previous = this.state.thumbnailUrls;
+    this.setState({ thumbnailUrls: next }, () =>
+      this.revokeThumbnailUrls(previous)
+    );
+    this.scaleMissingThumbnails(thumbnails);
+  }
+
+  // Anything saved without a page to scale it, a migrated wallpaper or one
+  // rescued when it was retired, arrives full size and marked. Scaling runs
+  // here and the result goes back to be stored.
+  async scaleMissingThumbnails(thumbnails) {
+    for (const { filename, file, needsThumbnail } of thumbnails) {
+      if (
+        !needsThumbnail ||
+        this.scaledThumbnails.has(filename) ||
+        !(file instanceof globalThis.Blob)
+      ) {
+        continue;
+      }
+      // Checked again after the await. This component stays mounted on every
+      // new tab, so closing the panel is the only signal that the work is no
+      // longer wanted, and a large library takes many turns to get through.
+      if (this.unmounted || !this.props.panelShowing || !this.libraryEnabled) {
+        return;
+      }
+      // The set means done or in flight. Anything that does not finish has to
+      // come back out, or reopening the panel would skip it for good.
+      this.scaledThumbnails.add(filename);
+      let sent = false;
+      try {
+        const thumbnail = await createThumbnail(globalThis, file);
+        if (
+          this.unmounted ||
+          !this.props.panelShowing ||
+          !this.libraryEnabled
+        ) {
+          return;
+        }
+        this.props.dispatch(
+          ac.OnlyToMain({
+            type: at.WALLPAPERS_CUSTOM_THUMBNAILS_MADE,
+            data: { filename, thumbnail },
+          })
+        );
+        sent = true;
+      } catch (e) {
+        console.error("Failed to make a thumbnail for a saved image", e);
+      } finally {
+        if (!sent) {
+          this.scaledThumbnails.delete(filename);
+        }
+      }
+    }
+  }
+
+  dropThumbnails() {
+    if (!(this.props.Wallpapers.customWallpaperThumbnails || []).length) {
+      return;
+    }
+    // Local dispatch, so the bytes leave this tab's state as well. Nothing
+    // renders them again until the panel is reopened.
+    this.props.dispatch({
+      type: at.WALLPAPERS_CUSTOM_THUMBNAILS_SET,
+      data: [],
+    });
+    const previous = this.state.thumbnailUrls;
+    this.setState({ thumbnailUrls: {} }, () =>
+      this.revokeThumbnailUrls(previous)
+    );
+  }
+
+  thumbnailUrl(filename) {
+    return this.state.thumbnailUrls[filename];
+  }
+
+  get libraryEnabled() {
+    return isWallpaperLibraryEnabled(this.props.Prefs.values);
+  }
+
+  get savedWallpapers() {
+    const saved = this.props.Wallpapers.customWallpapers || [];
+
+    if (this.libraryEnabled) {
+      return saved;
+    }
+
+    // Without the library this is the one custom wallpaper someone has, which
+    // is what the picker showed before "Your images" existed.
+    const applied =
+      this.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"];
+    return saved.filter(wallpaper => wallpaper.filename === applied);
+  }
+
+  get appliedSavedWallpaper() {
+    const filename =
+      this.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"];
+    const isCustomSelected =
+      this.props.Prefs.values["newtabWallpapers.wallpaper"] === "custom";
+    if (!isCustomSelected || !filename) {
+      return null;
+    }
+    return this.savedWallpapers.find(
+      wallpaper => wallpaper.filename === filename
+    );
+  }
+
+  handleSavedWallpaper(wallpaper, index) {
+    // Assistive technology can activate a radio without focusing it first, so
+    // the roving tab stop moves here as well as on focus.
+    if (index !== undefined) {
+      this.setState({ savedFocusIndex: index });
+    }
+    const uploadedPreviously =
+      this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
+
+    // The parent copies the image out of the library and sets every pref that
+    // names it, including the selection. It can refuse, for an image another
+    // tab deleted, and setting them here would leave the page pointing at one
+    // it cannot show.
+    this.props.dispatch(
+      ac.OnlyToMain({
+        type: at.WALLPAPERS_CUSTOM_APPLY,
+        data: { filename: wallpaper.filename },
+      })
+    );
+
+    this.handleUserEvent(at.WALLPAPER_CLICK, {
+      selected_wallpaper: "custom",
+      had_previous_wallpaper: !!this.props.activeWallpaper,
+      had_uploaded_previously: !!uploadedPreviously,
+    });
+  }
+
+  handleRemoveSavedWallpaper(wallpaper, index) {
+    // The name rather than the slot: the dialog has no cancel callback, so a
+    // canceled removal is told apart by its image still being there.
+    this.setState({
+      pendingRemoveIndex: index,
+      pendingRemoveFilename: wallpaper.filename,
+    });
+
+    this.props.dispatch({
+      type: at.DIALOG_OPEN,
+      data: {
+        onConfirm: [
+          ac.OnlyToMain({
+            type: at.WALLPAPER_REMOVE_UPLOAD,
+            data: { filename: wallpaper.filename },
+          }),
+          ac.AlsoToMain({ type: at.DIALOG_CLOSE }),
+        ],
+        eventSource: "WALLPAPERS",
+        body_string_id: [
+          "newtab-wallpaper-remove-image-title",
+          "newtab-wallpaper-remove-image-body",
+        ],
+        confirm_button_string_id: "newtab-wallpaper-remove-image-confirm",
+        confirm_button_type: "primary",
+        cancel_button_string_id: "newtab-wallpaper-remove-image-cancel",
+      },
+    });
+  }
+
+  // What a screen reader calls this image. A kept Picture of the Day carries
+  // its description and a rescued Firefox wallpaper its name. An image someone
+  // added has neither and goes by its number, which every saved image has.
+  renderSavedWallpaperLabel(id, { number, fallbackName }) {
+    // The name goes through Fluent like every other one in the picker, so it
+    // picks up the same bidi isolation the remove button's copy of it gets.
+    return (
+      <label
+        htmlFor={id}
+        className="sr-only"
+        data-l10n-id={
+          fallbackName
+            ? "newtab-wallpaper-your-images-item"
+            : "newtab-wallpaper-your-images-item-numbered"
+        }
+        data-l10n-args={JSON.stringify(
+          fallbackName ? { name: fallbackName } : { number }
+        )}
+      ></label>
+    );
+  }
+
+  // The answer to one upload, so it is stale once acted on. Local dispatch, the
+  // same way the thumbnail bytes leave this tab.
+  clearUploadResult() {
+    this.props.dispatch({ type: at.WALLPAPER_UPLOAD_RESULT, data: null });
+  }
+
+  // An upload lands at the top of the list and becomes the applied image, so the
+  // tab stop moves to it. Focus follows only if it was already in this folder.
+  focusAfterUpload() {
+    const result = this.props.Wallpapers.uploadResult;
+    if (!this.pendingUploadId || result?.requestId !== this.pendingUploadId) {
+      return;
+    }
+
+    if (!result.filename) {
+      this.pendingUploadId = null;
+      this.clearUploadResult();
+      return;
+    }
+
+    // The folder is not open on a first save, since the tile that started it
+    // was still "Add an image". Focus the tile that replaced it.
+    if (this.props.activeCategory !== WALLPAPER_CATEGORIES.CustomWallpaper) {
+      this.pendingUploadId = null;
+      this.clearUploadResult();
+      if (this.uploadStartedFromTile) {
+        this.uploadStartedFromTile = false;
+        document.querySelector("#custom-wallpaper")?.focus();
+      }
+      return;
+    }
+
+    const addedIndex = this.savedWallpapers.findIndex(
+      wallpaper => wallpaper.filename === result.filename
+    );
+    if (addedIndex === -1) {
+      return;
+    }
+
+    this.pendingUploadId = null;
+    this.clearUploadResult();
+
+    const hadFocus = this.savedWallpaperRef.some(
+      element => element && element === element.ownerDocument.activeElement
+    );
+
+    this.setState({ savedFocusIndex: addedIndex }, () => {
+      if (hadFocus) {
+        this.savedWallpaperRef[addedIndex]?.focus();
+      }
+    });
+  }
+
+  // The removed tile is gone, so focus whatever took its place. The tile that
+  // adds an image is always last, so there is always something to focus.
+  focusAfterRemoval() {
+    const { pendingRemoveIndex, pendingRemoveFilename } = this.state;
+    if (
+      pendingRemoveIndex === null ||
+      this.props.activeCategory !== WALLPAPER_CATEGORIES.CustomWallpaper
+    ) {
+      return;
+    }
+
+    const current = this.savedWallpapers;
+    // Still listed means the dialog was canceled, or something else was
+    // removed. Either way this is not the removal that was asked for here.
+    if (current.some(w => w.filename === pendingRemoveFilename)) {
+      return;
+    }
+    const nextIndex = Math.min(pendingRemoveIndex, current.length);
+    this.setState(
+      {
+        pendingRemoveIndex: null,
+        pendingRemoveFilename: null,
+        savedFocusIndex: nextIndex,
+      },
+      () => {
+        this.savedWallpaperRef[nextIndex]?.focus();
+      }
+    );
+  }
+
+  // Arrow key navigation for "Your images". The last tile adds an image, so it
+  // is focused rather than activated.
+  handleSavedWallpaperKeyDown(event, index) {
+    const isRTL = document.dir === "rtl";
+    let eventKey = event.key;
+
+    if (eventKey === "ArrowRight" || eventKey === "ArrowLeft") {
+      if (isRTL) {
+        eventKey = eventKey === "ArrowRight" ? "ArrowLeft" : "ArrowRight";
+      }
+    }
+
+    const columnCount = YOUR_IMAGES_COLUMNS;
+    let nextIndex = index;
+
+    if (eventKey === "ArrowRight") {
+      nextIndex = Math.min(index + 1, this.savedWallpaperRef.length - 1);
+    } else if (eventKey === "ArrowLeft") {
+      nextIndex = Math.max(index - 1, 0);
+    } else if (eventKey === "ArrowDown") {
+      // Only ever straight down. Clamping to the last tile would move sideways
+      // as well, whenever the bottom row is short.
+      const below = index + columnCount;
+      nextIndex = below < this.savedWallpaperRef.length ? below : index;
+    } else if (eventKey === "ArrowUp") {
+      const above = index - columnCount;
+      nextIndex = above >= 0 ? above : index;
+    } else {
+      return;
+    }
+
+    // Consume it either way. Left at the grid edge the native radio group would
+    // wrap around and apply a different wallpaper.
+    event.preventDefault();
+
+    const next = this.savedWallpaperRef[nextIndex];
+    if (!next || nextIndex === index) {
+      return;
+    }
+
+    this.setState({ savedFocusIndex: nextIndex }, () => {
+      next.focus();
+      if (next.tagName === "INPUT") {
+        next.click();
+      }
+    });
+  }
+
   // Open a wallpaper category subpanel. `fromUser` distinguishes a real category
   // click (records telemetry) from a programmatic deep-link via a CTA.
   openCategory(categoryId, { fromUser = true } = {}) {
-    this.setState({
-      activeCategory: categoryId,
-      activeCategoryFluentID: this.categoryFluentID(categoryId),
-    });
+    // Entering "Your images" starts the tab stop on the applied image.
+    const applied = this.appliedSavedWallpaper;
+    const appliedIndex = applied ? this.savedWallpapers.indexOf(applied) : 0;
+
+    this.setState({ savedFocusIndex: Math.max(appliedIndex, 0) });
+    this.props.openPanel(categoryId);
 
     if (fromUser) {
       this.handleUserEvent(at.WALLPAPER_CATEGORY_CLICK, categoryId);
-    }
-
-    // Notify parent menu when subpanel opens
-    if (this.props.onSubpanelToggle) {
-      this.props.onSubpanelToggle(true);
     }
   }
 
@@ -384,7 +797,7 @@ export class _WallpaperCategories extends React.PureComponent {
     fileInput.accept = "image/*"; // only allow image files
 
     // Catch cancel events
-    fileInput.oncancel = async () => {
+    fileInput.oncancel = () => {
       this.setState({ customWallpaperErrorType: null });
     };
 
@@ -423,10 +836,28 @@ export class _WallpaperCategories extends React.PureComponent {
           return;
         }
 
+        // Scaled here; the parent stores the result it receives. A failure only
+        // costs the tile its preview, so the save goes on.
+        let thumbnail;
+        try {
+          thumbnail = await createThumbnail(globalThis, file);
+        } catch (e) {
+          console.error("Failed to make a wallpaper thumbnail", e);
+        }
+
+        const requestId = String(++uploadRequestSeq);
+        this.pendingUploadId = requestId;
+        // The first save turns the "Add an image" tile into the folder, and the
+        // two use different keys, so React replaces the node and focus lands on
+        // the body. Remember where it was so it can be put back.
+        const tile = document.querySelector("#custom-wallpaper");
+        this.uploadStartedFromTile =
+          !!tile && tile === tile.ownerDocument.activeElement;
+
         this.props.dispatch(
           ac.OnlyToMain({
             type: at.WALLPAPER_UPLOAD,
-            data: { file, theme },
+            data: { file, theme, thumbnail, requestId },
           })
         );
 
@@ -451,16 +882,10 @@ export class _WallpaperCategories extends React.PureComponent {
   }
 
   handleBack() {
-    this.setState({ activeCategory: null }, () => {
-      // Notify parent menu when subpanel closes
-      if (this.props.onSubpanelToggle) {
-        this.props.onSubpanelToggle(false);
-      }
-
-      // Wait for the category grid to be back in the DOM
-      requestAnimationFrame(() => {
-        this.focusCategory(this.state.focusedCategoryIndex);
-      });
+    this.props.closePanel();
+    // Wait for the parent's state update before moving focus back to the category tile.
+    requestAnimationFrame(() => {
+      this.focusCategory(this.state.focusedCategoryIndex);
     });
   }
 
@@ -493,6 +918,128 @@ export class _WallpaperCategories extends React.PureComponent {
     return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 110;
   }
 
+  renderCustomWallpaperError(id) {
+    if (!this.state.customWallpaperErrorType) {
+      return null;
+    }
+
+    const wallpaperUploadMaxFileSize =
+      this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
+
+    return (
+      <div className="custom-wallpaper-error" id={id} role="alert">
+        <span className="icon icon-info"></span>
+        {this.state.customWallpaperErrorType === "fileSize" ? (
+          <span
+            data-l10n-id="newtab-wallpaper-error-max-file-size"
+            data-l10n-args={`{"file_size": ${wallpaperUploadMaxFileSize}}`}
+          ></span>
+        ) : (
+          <span data-l10n-id="newtab-wallpaper-error-upload-file-type"></span>
+        )}
+      </div>
+    );
+  }
+
+  // The "Your images" folder: everything saved, then a tile to add another.
+  renderYourImages() {
+    const applied = this.appliedSavedWallpaper;
+    const { savedWallpapers } = this;
+    this.savedWallpaperRef.length = savedWallpapers.length + 1;
+
+    return (
+      <fieldset
+        className="your-images"
+        style={{ "--your-images-columns": YOUR_IMAGES_COLUMNS }}
+      >
+        <legend
+          className="sr-only"
+          data-l10n-id="newtab-wallpaper-your-images"
+        ></legend>
+        {savedWallpapers.map((wallpaper, index) => {
+          const { filename, position, number, fallbackName } = wallpaper;
+          // Named the same way as the tile it belongs to.
+          const removeId = fallbackName
+            ? "newtab-wallpaper-remove-image"
+            : "newtab-wallpaper-remove-image-numbered";
+          const removeArgs = JSON.stringify(
+            fallbackName ? { name: fallbackName } : { number }
+          );
+          const url = this.thumbnailUrl(filename);
+          const id = `your-images-${filename}`;
+          const isApplied = applied?.filename === filename;
+          return (
+            <div className="your-images-item" key={filename}>
+              <input
+                ref={el => {
+                  if (el) {
+                    this.savedWallpaperRef[index] = el;
+                  }
+                }}
+                onChange={() => this.handleSavedWallpaper(wallpaper, index)}
+                onFocus={() => this.setState({ savedFocusIndex: index })}
+                onKeyDown={e => this.handleSavedWallpaperKeyDown(e, index)}
+                style={
+                  url
+                    ? {
+                        backgroundImage: `url(${url})`,
+                        backgroundPosition: position,
+                      }
+                    : {}
+                }
+                type="radio"
+                name="wallpaper-your-images"
+                id={id}
+                value={filename}
+                checked={isApplied}
+                className="wallpaper-input"
+                tabIndex={index === this.state.savedFocusIndex ? 0 : -1}
+              />
+              {this.renderSavedWallpaperLabel(id, wallpaper)}
+              <moz-button
+                type="ghost"
+                size="small"
+                className="your-images-remove"
+                iconSrc="chrome://global/skin/icons/close.svg"
+                data-l10n-id={removeId}
+                data-l10n-args={removeArgs}
+                tabIndex={index === this.state.savedFocusIndex ? 0 : -1}
+                onClick={() =>
+                  this.handleRemoveSavedWallpaper(wallpaper, index)
+                }
+              ></moz-button>
+            </div>
+          );
+        })}
+        <div className="your-images-item">
+          <button
+            ref={el => {
+              if (el) {
+                this.savedWallpaperRef[savedWallpapers.length] = el;
+              }
+            }}
+            id="your-images-add"
+            className="wallpaper-input theme-custom-wallpaper"
+            onFocus={() =>
+              this.setState({ savedFocusIndex: savedWallpapers.length })
+            }
+            onClick={this.handleUpload}
+            onKeyDown={e =>
+              this.handleSavedWallpaperKeyDown(e, savedWallpapers.length)
+            }
+            tabIndex={
+              savedWallpapers.length === this.state.savedFocusIndex ? 0 : -1
+            }
+          />
+          <label
+            htmlFor="your-images-add"
+            data-l10n-id="newtab-wallpaper-add-an-image"
+          ></label>
+        </div>
+      </fieldset>
+    );
+  }
+
   sortWallpapersByOrder(wallpapers) {
     return wallpapers.sort((a, b) => {
       const aOrder = a.order || 0;
@@ -515,9 +1062,13 @@ export class _WallpaperCategories extends React.PureComponent {
     // @nova-cleanup(remove-conditional): Remove novaEnabled once Nova ships
     const novaEnabled = prefs["nova.enabled"];
     const { wallpaperList, categories } = this.props.Wallpapers;
-    const { activeWallpaper } = this.props;
-    const { activeCategory } = this.state;
-    const { activeCategoryFluentID } = this.state;
+    const { savedWallpapers } = this;
+    const hasSavedWallpapers = !!savedWallpapers.length;
+    // Without the library the tile stays the single upload button it was, so
+    // there is no folder to browse and no folder to put an error in.
+    const showYourImagesFolder = hasSavedWallpapers && this.libraryEnabled;
+    const { activeWallpaper, activeCategory, showPanel } = this.props;
+    const activeCategoryFluentID = this.categoryFluentID(activeCategory);
     // @nova-cleanup(remove-conditional): Remove novaEnabled check, keep arrowIconSrc computation
     let arrowIconSrc;
     if (novaEnabled) {
@@ -532,9 +1083,6 @@ export class _WallpaperCategories extends React.PureComponent {
         wallpaper.category === activeCategory &&
         isWallpaperOffered(wallpaper, activeGroups)
     );
-    const wallpaperUploadMaxFileSize =
-      this.props.Prefs.values[PREF_WALLPAPER_UPLOAD_MAX_FILE_SIZE];
-
     function reduceColorsToFitCustomColorInput(arr) {
       // Reduce the amount of custom colors to make space for the custom color picker
       while (arr.length && arr.length % 3 !== 2) {
@@ -653,17 +1201,48 @@ export class _WallpaperCategories extends React.PureComponent {
                 category === "solid-colors" &&
                 activeWallpaper.startsWith("solid-color-picker");
               const thumbnail = activeWallpaperObj || sortedList[0];
+              // The custom wallpaper tile adds an image until something is
+              // saved, and is the "Your images" folder after that.
+              const isYourImagesFolder =
+                category === WALLPAPER_CATEGORIES.CustomWallpaper &&
+                showYourImagesFolder;
               let fluent_id;
               if (category === WALLPAPER_CATEGORIES.CustomWallpaper) {
                 // @nova-cleanup(remove-conditional): Remove novaEnabled conditional and always use newtab-wallpaper-add-an-image
-                fluent_id = novaEnabled
+                const addImageFluentID = novaEnabled
                   ? "newtab-wallpaper-add-an-image"
                   : "newtab-wallpaper-upload-image";
+                fluent_id = isYourImagesFolder
+                  ? "newtab-wallpaper-your-images"
+                  : addImageFluentID;
               } else {
                 fluent_id = this.categoryFluentID(category);
               }
               let style = {};
-              if (thumbnail?.wallpaperUrl) {
+              // Thumbnails arrive from the parent after the panel opens, so the
+              // folder has nothing to show for a moment on the first open.
+              let folderHasPreview = false;
+              if (isYourImagesFolder) {
+                // The applied image and its URL reach the page ahead of the
+                // library, so prefer them. A library thumbnail can still be the
+                // previous image, which would show the wrong picture entirely.
+                const appliedUrl =
+                  prefs["newtabWallpapers.wallpaper"] === "custom"
+                    ? this.props.Wallpapers.uploadedWallpaper
+                    : null;
+                const preview =
+                  this.appliedSavedWallpaper || savedWallpapers[0];
+                const previewUrl =
+                  appliedUrl || this.thumbnailUrl(preview.filename);
+                if (previewUrl) {
+                  folderHasPreview = true;
+                  style.backgroundImage = `url(${previewUrl})`;
+                  style.backgroundPosition = appliedUrl
+                    ? prefs["newtabWallpapers.customWallpaper.position"] ||
+                      "center"
+                    : preview.position;
+                }
+              } else if (thumbnail?.wallpaperUrl) {
                 style.backgroundImage = `url(${thumbnail?.thumbnail || thumbnail?.wallpaperUrl})`;
                 style.backgroundPosition =
                   thumbnail.background_position || "center";
@@ -678,10 +1257,17 @@ export class _WallpaperCategories extends React.PureComponent {
               }
               const isCategorySelected =
                 wallpapersUserEnabled &&
-                (activeWallpaperObj || isCustomSolidColor);
+                (activeWallpaperObj ||
+                  isCustomSolidColor ||
+                  (isYourImagesFolder && this.appliedSavedWallpaper));
               return (
                 <div key={category}>
                   <button
+                    // Fluent only tidies the attributes of elements it is still
+                    // translating, so dropping data-l10n-id when this stops
+                    // being the folder would strand its aria-label on the node.
+                    // A new key means a new element with nothing left over.
+                    key={isYourImagesFolder ? "your-images" : "add-an-image"}
                     ref={el => {
                       if (el) {
                         this.categoryRef[index] = el;
@@ -693,21 +1279,35 @@ export class _WallpaperCategories extends React.PureComponent {
                     // Add overrides for custom wallpaper upload UI
                     onClick={event => {
                       this.setState({ focusedCategoryIndex: index });
-                      if (category !== "custom-wallpaper") {
+                      if (
+                        category !== WALLPAPER_CATEGORIES.CustomWallpaper ||
+                        isYourImagesFolder
+                      ) {
                         this.handleCategory(event);
                       } else {
                         this.handleUpload();
                       }
                     }}
                     className={`wallpaper-input
-                      ${category === "custom-wallpaper" ? "theme-custom-wallpaper" : ""}
+                      ${category === WALLPAPER_CATEGORIES.CustomWallpaper && (!isYourImagesFolder || !folderHasPreview) ? "theme-custom-wallpaper" : ""}
+                      ${isYourImagesFolder ? "your-images-folder" : ""}
                       ${isCategorySelected ? "selected" : ""}`}
                     tabIndex={
                       this.state.focusedCategoryIndex === index ? 0 : -1
                     }
-                    {...(category === "custom-wallpaper"
-                      ? { "aria-errormessage": "customWallpaperError" }
-                      : {})}
+                    data-l10n-id={
+                      isYourImagesFolder
+                        ? "newtab-wallpaper-your-images-folder"
+                        : undefined
+                    }
+                    aria-expanded={
+                      // The upload tile opens a file picker rather than the
+                      // subpanel, so it is the one tile this does not describe.
+                      isYourImagesFolder ||
+                      category !== WALLPAPER_CATEGORIES.CustomWallpaper
+                        ? activeCategory === category
+                        : undefined
+                    }
                   />
                   <label htmlFor={category} data-l10n-id={fluent_id}>
                     {fluent_id}
@@ -716,33 +1316,13 @@ export class _WallpaperCategories extends React.PureComponent {
               );
             })}
           </fieldset>
-          {this.state.customWallpaperErrorType && (
-            <div className="custom-wallpaper-error" id="customWallpaperError">
-              <span className="icon icon-info"></span>
-              {(() => {
-                switch (this.state.customWallpaperErrorType) {
-                  case "fileSize":
-                    return (
-                      <span
-                        data-l10n-id="newtab-wallpaper-error-max-file-size"
-                        data-l10n-args={`{"file_size": ${wallpaperUploadMaxFileSize}}`}
-                      ></span>
-                    );
-                  case "fileType":
-                    return (
-                      <span data-l10n-id="newtab-wallpaper-error-upload-file-type"></span>
-                    );
-                  default:
-                    return null;
-                }
-              })()}
-            </div>
-          )}
+          {!showYourImagesFolder &&
+            this.renderCustomWallpaperError("customWallpaperError")}
         </div>
 
         <CSSTransition
           nodeRef={this.wallpaperListRef}
-          in={!!activeCategory}
+          in={!!showPanel}
           timeout={300}
           classNames="wallpaper-list"
           unmountOnExit={true}
@@ -755,14 +1335,17 @@ export class _WallpaperCategories extends React.PureComponent {
             {
               // @nova-cleanup(remove-conditional): Remove novaEnabled check and the else branch, keep the nova branch
               novaEnabled ? (
-                <moz-button
-                  ref={this.arrowButtonRef}
-                  type="ghost"
-                  className="wallpapers-arrow-button"
-                  iconSrc={arrowIconSrc}
-                  data-l10n-id={activeCategoryFluentID}
-                  onClick={this.handleBack}
-                />
+                <div className="arrow-wrapper">
+                  <moz-button
+                    ref={this.arrowButtonRef}
+                    type="ghost"
+                    className="arrow-button"
+                    iconSrc={arrowIconSrc}
+                    data-l10n-id="newtab-customize-panel-back-button"
+                    onClick={this.handleBack}
+                  />
+                  <h2 data-l10n-id={activeCategoryFluentID}></h2>
+                </div>
               ) : (
                 <button
                   ref={this.arrowButtonRef}
@@ -776,67 +1359,75 @@ export class _WallpaperCategories extends React.PureComponent {
               role="grid"
               aria-label="Wallpaper selection. Use arrow keys to navigate."
             >
-              <fieldset>
-                {this.sortWallpapersByOrder(filteredWallpapers).map(
-                  (
-                    {
-                      background_position,
-                      fluent_id,
-                      solid_color,
-                      theme,
-                      title,
-                      thumbnail,
-                      wallpaperUrl,
-                    },
-                    index
-                  ) => {
-                    let style = {};
-                    if (wallpaperUrl) {
-                      style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
-                      style.backgroundPosition =
-                        background_position || "center";
-                    } else {
-                      style.backgroundColor = solid_color || "";
-                    }
-                    return (
-                      <React.Fragment key={title}>
-                        <input
-                          ref={el => {
-                            if (el) {
-                              this.wallpaperRef[index] = el;
+              {activeCategory === WALLPAPER_CATEGORIES.CustomWallpaper ? (
+                this.renderYourImages()
+              ) : (
+                <fieldset>
+                  {this.sortWallpapersByOrder(filteredWallpapers).map(
+                    (
+                      {
+                        background_position,
+                        fluent_id,
+                        solid_color,
+                        theme,
+                        title,
+                        thumbnail,
+                        wallpaperUrl,
+                      },
+                      index
+                    ) => {
+                      let style = {};
+                      if (wallpaperUrl) {
+                        style.backgroundImage = `url(${thumbnail || wallpaperUrl})`;
+                        style.backgroundPosition =
+                          background_position || "center";
+                      } else {
+                        style.backgroundColor = solid_color || "";
+                      }
+                      return (
+                        <React.Fragment key={title}>
+                          <input
+                            ref={el => {
+                              if (el) {
+                                this.wallpaperRef[index] = el;
+                              }
+                            }}
+                            onChange={this.handleChange}
+                            onKeyDown={e =>
+                              this.handleWallpaperKeyDown(e, title)
                             }
-                          }}
-                          onChange={this.handleChange}
-                          onKeyDown={e => this.handleWallpaperKeyDown(e, title)}
-                          style={style}
-                          type="radio"
-                          name={`wallpaper-${title}`}
-                          id={title}
-                          value={title}
-                          checked={
-                            wallpapersUserEnabled && title === activeWallpaper
-                          }
-                          aria-checked={
-                            wallpapersUserEnabled && title === activeWallpaper
-                          }
-                          className={`wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`}
-                          onClick={() => this.setActiveId(title)} //
-                          tabIndex={index === 0 ? 0 : -1} //the first wallpaper in the array will have a tabindex of 0 so we can tab into it. The rest will have a tabindex of -1
-                        />
-                        <label
-                          htmlFor={title}
-                          className="sr-only"
-                          data-l10n-id={fluent_id}
-                        >
-                          {fluent_id}
-                        </label>
-                      </React.Fragment>
-                    );
-                  }
-                )}
-                {colorPickerInput}
-              </fieldset>
+                            style={style}
+                            type="radio"
+                            name={`wallpaper-${title}`}
+                            id={title}
+                            value={title}
+                            checked={
+                              wallpapersUserEnabled && title === activeWallpaper
+                            }
+                            aria-checked={
+                              wallpapersUserEnabled && title === activeWallpaper
+                            }
+                            className={`wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`}
+                            onClick={() => this.setActiveId(title)} //
+                            tabIndex={index === 0 ? 0 : -1} //the first wallpaper in the array will have a tabindex of 0 so we can tab into it. The rest will have a tabindex of -1
+                          />
+                          <label
+                            htmlFor={title}
+                            className="sr-only"
+                            data-l10n-id={fluent_id}
+                          >
+                            {fluent_id}
+                          </label>
+                        </React.Fragment>
+                      );
+                    }
+                  )}
+                  {colorPickerInput}
+                </fieldset>
+              )}
             </div>
+            {activeCategory === WALLPAPER_CATEGORIES.CustomWallpaper &&
+              this.renderCustomWallpaperError("yourImagesWallpaperError")}
           </section>
         </CSSTransition>
       </div>

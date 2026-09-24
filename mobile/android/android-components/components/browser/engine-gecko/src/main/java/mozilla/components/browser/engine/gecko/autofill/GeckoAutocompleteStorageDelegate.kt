@@ -4,9 +4,8 @@
 
 package mozilla.components.browser.engine.gecko.autofill
 
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.engine.gecko.ext.toAddress
 import mozilla.components.browser.engine.gecko.ext.toAutocompleteAddress
@@ -28,17 +27,20 @@ import org.mozilla.geckoview.GeckoResult
  *   retrieving [CreditCard]s from the underlying storage.
  * @param loginStorageDelegate An instance of [LoginStorageDelegate]. Provides read/write methods for the [Login]
  *   storage.
+ * @param applicationScope The [CoroutineScope] used for launching storage operations. These callbacks are invoked by
+ *   Gecko and must complete even if a specific component's lifecycle has ended. Callers should pass an
+ *   application-scoped coroutine scope when possible.
  */
 class GeckoAutocompleteStorageDelegate(
     private val creditCardsAddressesStorageDelegate: CreditCardsAddressesStorageDelegate,
     private val loginStorageDelegate: LoginStorageDelegate,
+    private val applicationScope: CoroutineScope,
 ) : Autocomplete.StorageDelegate {
 
     override fun onAddressFetch(): GeckoResult<Array<Autocomplete.Address>>? {
         val result = GeckoResult<Array<Autocomplete.Address>>()
 
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             val addresses =
                 creditCardsAddressesStorageDelegate.onAddressesFetch().map { it.toAutocompleteAddress() }.toTypedArray()
 
@@ -51,8 +53,7 @@ class GeckoAutocompleteStorageDelegate(
     override fun onCreditCardFetch(): GeckoResult<Array<Autocomplete.CreditCard>> {
         val result = GeckoResult<Array<Autocomplete.CreditCard>>()
 
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             val key = creditCardsAddressesStorageDelegate.getOrGenerateKey()
 
             val creditCards =
@@ -83,15 +84,13 @@ class GeckoAutocompleteStorageDelegate(
     }
 
     override fun onCreditCardSave(creditCard: Autocomplete.CreditCard) {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             creditCardsAddressesStorageDelegate.onCreditCardSave(creditCard.toCreditCardEntry())
         }
     }
 
     override fun onAddressSave(address: Autocomplete.Address) {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             creditCardsAddressesStorageDelegate.onAddressSave(address.toAddress())
         }
     }
@@ -103,8 +102,7 @@ class GeckoAutocompleteStorageDelegate(
     override fun onLoginFetch(domain: String): GeckoResult<Array<Autocomplete.LoginEntry>> {
         val result = GeckoResult<Array<Autocomplete.LoginEntry>>()
 
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             val storedLogins = loginStorageDelegate.onLoginFetch(domain)
 
             val logins = storedLogins.await().map { it.toLoginEntry() }.toTypedArray()

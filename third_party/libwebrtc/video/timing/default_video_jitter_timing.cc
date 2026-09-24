@@ -26,21 +26,16 @@
 namespace webrtc {
 
 DefaultVideoJitterTiming::DefaultVideoJitterTiming(const Environment& env)
-    : DefaultVideoJitterTiming(&env.clock(), env.field_trials()) {}
-
-DefaultVideoJitterTiming::DefaultVideoJitterTiming(
-    Clock* clock,
-    const FieldTrialsView& field_trials)
-    : clock_(clock),
-      ts_extrapolator_(clock_->CurrentTime(), field_trials),
-      jitter_estimator_(clock_, field_trials),
-      update_on_every_frame_(
-          field_trials.IsDisabled("WebRTC-IncomingTimestampOnMarkerBitOnly")) {}
+    : env_(env),
+      ts_extrapolator_(env_.clock().CurrentTime(), env_.field_trials()),
+      jitter_estimator_(&env_.clock(), env_.field_trials()),
+      update_on_every_frame_(env_.field_trials().IsDisabled(
+          "WebRTC-IncomingTimestampOnMarkerBitOnly")) {}
 
 DefaultVideoJitterTiming::~DefaultVideoJitterTiming() = default;
 
 void DefaultVideoJitterTiming::Reset() {
-  ts_extrapolator_.Reset(clock_->CurrentTime());
+  ts_extrapolator_.Reset(env_.clock().CurrentTime());
   jitter_estimator_.Reset();
 }
 

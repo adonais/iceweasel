@@ -100,6 +100,13 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy,
                             bool disallowHttp3);
 
+  // Move an established h3 connection out of an Http3Policy::Only entry (eager
+  // Alt-Svc h3 validation) and into the origin's entry, re-keying it onto an
+  // Http3Policy::Allowed connection info. Returns the entry the connection now
+  // lives in, or nullptr if it was left where it was.
+  already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase* aConn, ConnectionEntry* aFromEnt);
+
   void ReportHttp3Connection(HttpConnectionBase* conn,
                              ConnectionEntry* entry = nullptr);
 

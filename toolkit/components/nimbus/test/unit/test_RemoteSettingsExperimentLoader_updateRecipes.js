@@ -1688,13 +1688,12 @@ add_task(async function test_updateRecipes_secure() {
 
   const multiFeatureRecipe = NimbusTestUtils.factories.recipe("multi-feature", {
     branches: [
-      {
-        ...NimbusTestUtils.factories.recipe.branches[0],
+      NimbusTestUtils.factories.branch("control", {
         features: [
           prefFlipRecipe.branches[0].features[0],
           testFeatureRecipe.branches[0].features[0],
         ],
-      },
+      }),
     ],
   });
 
@@ -2184,10 +2183,9 @@ add_task(async function test_updateRecipes_enrollmentStatus_notEnrolled() {
     },
     {
       ...recipe("targeting-only", "test-feature-2"),
-      bucketConfig: {
-        ...NimbusTestUtils.factories.recipe.bucketConfig,
+      bucketConfig: NimbusTestUtils.factories.bucketConfig({
         count: 0,
-      },
+      }),
     },
     {
       ...recipe("already-enrolled-rollout", "test-feature-3"),
@@ -3764,6 +3762,38 @@ add_task(async function testUpdateRecipesOnlyFeatureIdsLabs() {
   Assert.deepEqual(
     manager.optIns.toSorted(orderByRecipePublishedDate).map(r => r.recipe.slug),
     ["updated-separately", "no-feature-firefox-desktop"]
+  );
+
+  await cleanup();
+});
+
+add_task(async function testFinishedUpdatingResolvesAfterException() {
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest();
+
+  // We need just need to trigger an exception inside #updateImpl.
+  sandbox.stub(loader, "_partitionRecipes").throws(new Error("uh oh"));
+
+  // This will only progress to the first await.
+  const updatePromise = loader.updateRecipes("test");
+  // This promise should resolve after updatePromise rejects.
+  const finishedUpdatingPromise = loader.finishedUpdating();
+
+  await Assert.rejects(updatePromise, /uh oh/);
+  await finishedUpdatingPromise;
+
+  Assert.ok(!loader._updating, "No longer updating");
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.updateError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        error: "Error",
+        trigger: "test",
+        during_shutdown: "false",
+      },
+    ]
   );
 
   await cleanup();

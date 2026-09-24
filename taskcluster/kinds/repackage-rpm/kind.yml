@@ -18,7 +18,7 @@ kind-dependencies:
     # We're not going to generate tasks based on these.  But we are going to `depend` on and fetch
     # langpacks from these.
     - l10n
-    - shippable-l10n-signing
+    - l10n-signing
     - toolchain
 
 task-defaults:

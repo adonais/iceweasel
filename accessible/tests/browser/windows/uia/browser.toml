@@ -33,6 +33,8 @@ prefs = [
 
 ["browser_liveRegions.js"]
 
+["browser_miscCustomProps.js"]
+
 ["browser_notificationEvent.js"]
 
 ["browser_relationProps.js"]

@@ -18,11 +18,9 @@ CK_ML_KEM_PARAMETER_SET_TYPE
 sftk_kyber_InternalToPK11Param(KyberParams params)
 {
     switch (params) {
-#ifndef NSS_DISABLE_KYBER
-        case params_kyber768_round3:
-        case params_kyber768_round3_test_mode:
-            return CKP_NSS_KYBER_768_ROUND3;
-#endif
+        case params_ml_kem512:
+        case params_ml_kem512_test_mode:
+            return CKP_ML_KEM_512;
         case params_ml_kem768:
         case params_ml_kem768_test_mode:
             return CKP_ML_KEM_768;
@@ -37,10 +35,8 @@ KyberParams
 sftk_kyber_PK11ParamToInternal(CK_ML_KEM_PARAMETER_SET_TYPE pk11ParamSet)
 {
     switch (pk11ParamSet) {
-#ifndef NSS_DISABLE_KYBER
-        case CKP_NSS_KYBER_768_ROUND3:
-            return params_kyber768_round3;
-#endif
+        case CKP_ML_KEM_512:
+            return params_ml_kem512;
         case CKP_NSS_ML_KEM_768:
         case CKP_ML_KEM_768:
             return params_ml_kem768;
@@ -55,10 +51,9 @@ size_t
 sftk_kyber_pubKeyLen(KyberParams params)
 {
     switch (params) {
-#ifndef NSS_DISABLE_KYBER
-        case params_kyber768_round3:
-        case params_kyber768_round3_test_mode:
-#endif
+        case params_ml_kem512:
+        case params_ml_kem512_test_mode:
+            return MLKEM512_PUBLIC_KEY_BYTES;
         case params_ml_kem768:
         case params_ml_kem768_test_mode:
             return KYBER768_PUBLIC_KEY_BYTES;
@@ -84,10 +79,9 @@ SECItem *
 sftk_kyber_AllocPrivKeyItem(KyberParams params, SECItem *privkey)
 {
     switch (params) {
-#ifndef NSS_DISABLE_KYBER
-        case params_kyber768_round3:
-        case params_kyber768_round3_test_mode:
-#endif
+        case params_ml_kem512:
+        case params_ml_kem512_test_mode:
+            return SECITEM_AllocItem(NULL, privkey, MLKEM512_PRIVATE_KEY_BYTES);
         case params_ml_kem768:
         case params_ml_kem768_test_mode:
             return SECITEM_AllocItem(NULL, privkey, KYBER768_PRIVATE_KEY_BYTES);
@@ -106,9 +100,6 @@ sftk_kem_ValidateMechanism(CK_MECHANISM_PTR pMechanism)
         return PR_FALSE;
     }
     switch (pMechanism->mechanism) {
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER:
-#endif
         case CKM_NSS_ML_KEM:
         case CKM_ML_KEM:
             return PR_TRUE;
@@ -128,13 +119,9 @@ sftk_kem_getParamSet(CK_MECHANISM_PTR pMechanism, SFTKObject *key,
     CK_RV crv = CKR_MECHANISM_INVALID;
 
     switch (pMechanism->mechanism) {
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER:
-#endif
         case CKM_NSS_ML_KEM:
-            /* CKM_NSS_KYBER and CKM_NSS_ML_KEM has cases were we were
-             * given parameters form the application. Retain that symantic for
-             * compatibility */
+            /* CKM_NSS_ML_KEM has cases were we were given parameters from the
+             * application. Retain that semantic for compatibility */
             if ((pMechanism->pParameter) &&
                 pMechanism->ulParameterLen == sizeof(CK_ML_KEM_PARAMETER_SET_TYPE)) {
                 PR_STATIC_ASSERT(sizeof(CK_ML_KEM_PARAMETER_SET_TYPE) == sizeof(CK_LONG));
@@ -170,15 +157,11 @@ sftk_kem_CiphertextLen(CK_MECHANISM_PTR pMechanism, CK_ULONG paramSet)
      * is not overlap between the Vendor specific mechanisms here
      * and the stand ones, we'll just accept them all here. */
     switch (pMechanism->mechanism) {
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER:
-#endif
         case CKM_NSS_ML_KEM:
         case CKM_ML_KEM:
             switch (paramSet) {
-#ifndef NSS_DISABLE_KYBER
-                case CKP_NSS_KYBER_768_ROUND3:
-#endif
+                case CKP_ML_KEM_512:
+                    return MLKEM512_CIPHERTEXT_BYTES;
                 case CKP_NSS_ML_KEM_768:
                 case CKP_ML_KEM_768:
                     return KYBER768_CIPHERTEXT_BYTES;
@@ -304,9 +287,6 @@ NSC_EncapsulateKey(CK_SESSION_HANDLE hSession,
                                            encapsulationKeyObject, 0));
     key->source = SFTK_SOURCE_KEA;
     switch (pMechanism->mechanism) {
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER:
-#endif
         case CKM_NSS_ML_KEM:
         case CKM_ML_KEM:
             PORT_Assert(secret.len >= KYBER_SHARED_SECRET_BYTES);
@@ -467,9 +447,6 @@ NSC_DecapsulateKey(CK_SESSION_HANDLE hSession,
                                            decapsulationKeyObject, 0));
     key->source = SFTK_SOURCE_KEA;
     switch (pMechanism->mechanism) {
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER:
-#endif
         case CKM_NSS_ML_KEM:
         case CKM_ML_KEM:
             kyberParams = sftk_kyber_PK11ParamToInternal(paramSet);

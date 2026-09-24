@@ -1,9 +1,12 @@
 #include "gtest/gtest.h"
+#include "mozilla/ipc/URIUtils.h"
+#include "nsAboutProtocolHandler.h"
 #include "nsCOMPtr.h"
 #include "nsIURIMutator.h"
 #include "nsIURL.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsSimpleNestedURI.h"
 #include "nsThreadPool.h"
 
 TEST(TestURIMutator, Mutator)
@@ -125,6 +128,46 @@ TEST(TestURIMutator, Mutator)
   rv = uri->GetPort(&port);
   ASSERT_EQ(rv, NS_OK);
   ASSERT_EQ(port, 123);
+}
+
+TEST(TestURIMutator, NestedURIRejectsForgedInnerURI)
+{
+  using namespace mozilla::ipc;
+
+  nsCOMPtr<nsIURI> forgedInner;
+  ASSERT_EQ(
+      NS_NewURI(getter_AddRefs(forgedInner), "https://forged.example/"_ns),
+      NS_OK);
+  URIParams forgedInnerParams;
+  SerializeURI(forgedInner, forgedInnerParams);
+
+  nsCOMPtr<nsIURI> viewSource;
+  ASSERT_EQ(NS_NewURI(getter_AddRefs(viewSource),
+                      "view-source:http://inner.example/"_ns),
+            NS_OK);
+  URIParams viewSourceParams;
+  SerializeURI(viewSource, viewSourceParams);
+
+  RefPtr<nsIURIMutator> mutator =
+      new mozilla::net::nsSimpleNestedURI::Mutator();
+  EXPECT_EQ(mutator->Deserialize(viewSourceParams), NS_OK);
+
+  viewSourceParams.get_SimpleNestedURIParams().innerURI() = forgedInnerParams;
+  mutator = new mozilla::net::nsSimpleNestedURI::Mutator();
+  EXPECT_TRUE(NS_FAILED(mutator->Deserialize(viewSourceParams)));
+
+  nsCOMPtr<nsIURI> about;
+  ASSERT_EQ(NS_NewURI(getter_AddRefs(about), "about:blank"_ns), NS_OK);
+  URIParams aboutParams;
+  SerializeURI(about, aboutParams);
+
+  mutator = new mozilla::net::nsNestedAboutURI::Mutator();
+  EXPECT_EQ(mutator->Deserialize(aboutParams), NS_OK);
+
+  aboutParams.get_NestedAboutURIParams().nestedParams().innerURI() =
+      forgedInnerParams;
+  mutator = new mozilla::net::nsNestedAboutURI::Mutator();
+  EXPECT_TRUE(NS_FAILED(mutator->Deserialize(aboutParams)));
 }
 
 extern MOZ_THREAD_LOCAL(uint32_t) gTlsURLRecursionCount;

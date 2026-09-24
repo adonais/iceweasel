@@ -10,6 +10,8 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSSkewBinding.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -45,13 +47,21 @@ JSObject* CSSSkew::WrapObject(JSContext* aCx,
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssskew-cssskew
 //
-// XXX This is not yet fully implemented!
-//
 // static
 already_AddRefed<CSSSkew> CSSSkew::Constructor(const GlobalObject& aGlobal,
                                                CSSNumericValue& aAx,
                                                CSSNumericValue& aAy,
                                                ErrorResult& aRv) {
+  // Step 1.
+  if (!aAx.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ax must match <angle>");
+    return nullptr;
+  }
+  if (!aAy.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ay must match <angle>");
+    return nullptr;
+  }
+
   // Step 2.
   return MakeAndAddRef<CSSSkew>(aGlobal.GetAsSupports(), /* aIs2D */ true, &aAx,
                                 &aAy);
@@ -60,16 +70,38 @@ already_AddRefed<CSSSkew> CSSSkew::Constructor(const GlobalObject& aGlobal,
 CSSNumericValue* CSSSkew::Ax() const { return mAx; }
 
 void CSSSkew::SetAx(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ax must match <angle>");
+    return;
+  }
+
+  mAx = &aArg;
 }
 
 CSSNumericValue* CSSSkew::Ay() const { return mAy; }
 
 void CSSSkew::SetAy(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ay must match <angle>");
+    return;
+  }
+
+  mAy = &aArg;
 }
 
 // end of CSSSkew Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSSkew::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto ax = mAx->ToStyleUnitValue("deg"_ns);
+
+  auto ay = mAy->ToStyleUnitValue("deg"_ns);
+
+  matrix->SkewSelf(ax.value, ay.value);
+
+  return matrix.forget();
+}
 
 void CSSSkew::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                     nsACString& aDest) const {

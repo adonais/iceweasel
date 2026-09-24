@@ -30,6 +30,45 @@ static const char kQueryStrippingEnabledPBMPref[] =
 static const char kQueryStrippingOnShareEnabledPref[] =
     "privacy.query_stripping.strip_on_share.enabled";
 
+struct QueryParam {
+  nsCString mName;
+  nsCString mValue;
+  bool mHasEquals = false;
+};
+
+// Splits a raw (still percent-encoded) query string into QueryParam segments,
+// preserving the '='-vs-no-'=' distinction.
+void SplitQueryPreservingEquals(const nsACString& aQuery,
+                                nsTArray<QueryParam>& aOutParams) {
+  mozilla::URLParams::ParseWithEquals(
+      aQuery, /* aShouldDecode = */ false,
+      [&](nsCString&& aName, nsCString&& aValue, bool aHasEquals) {
+        QueryParam* param = aOutParams.AppendElement();
+        param->mName = std::move(aName);
+        param->mValue = std::move(aValue);
+        param->mHasEquals = aHasEquals;
+        return true;
+      });
+}
+
+// Rejoins params into a query string, emitting '=' for segments that
+// originally had one.
+void SerializeQueryPreservingEquals(const nsTArray<QueryParam>& aParams,
+                                    nsACString& aOutQuery) {
+  aOutQuery.Truncate();
+  bool first = true;
+  for (const QueryParam& param : aParams) {
+    if (!first) {
+      aOutQuery.Append('&');
+    }
+    first = false;
+    aOutQuery.Append(param.mName);
+    if (param.mHasEquals) {
+      aOutQuery.Append('=');
+      aOutQuery.Append(param.mValue);
+    }
+  }
+}
 }  // namespace
 
 namespace mozilla {
@@ -235,7 +274,7 @@ nsresult URLQueryStringStripper::ManageObservers() {
     if (!StaticPrefs::privacy_query_stripping_strip_on_share_enabled()) {
       // Clean up strip-on-share list
       mStripOnShareGlobal.reset();
-      mStripOnShareOriginMap.Clear();
+      mStripOnShareHostMap.Clear();
       mStripOnShareSchemelessSiteMap.Clear();
       rv = mListService->UnregisterStripOnShareObserver(this);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -276,27 +315,25 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
     return NS_OK;
   }
 
-  URLParams params;
+  nsTArray<QueryParam> params;
+  SplitQueryPreservingEquals(query, params);
 
-  URLParams::Parse(query, false, [&](nsCString&& name, nsCString&& value) {
+  params.RemoveElementsBy([&](const QueryParam& aParam) {
     nsAutoCString lowerCaseName;
-    ToLowerCase(name, lowerCaseName);
-
-    if (mList.Contains(lowerCaseName)) {
-      *aStripCount += 1;
-
-      // Count how often a specific query param is stripped. For privacy reasons
-      // this will only count query params listed in the Histogram definition.
-      // Calls for any other query params will be discarded.
-      nsAutoCString telemetryLabel("param_");
-      telemetryLabel.Append(lowerCaseName);
-      glean::contentblocking::query_stripping_count_by_param.Get(telemetryLabel)
-          .Add();
-
-      return true;
+    ToLowerCase(aParam.mName, lowerCaseName);
+    if (!mList.Contains(lowerCaseName)) {
+      return false;
     }
 
-    params.Append(name, value);
+    *aStripCount += 1;
+
+    // Count how often a specific query param is stripped. For privacy reasons
+    // this will only count query params listed in the Histogram definition.
+    // Calls for any other query params will be discarded.
+    nsAutoCString telemetryLabel("param_");
+    telemetryLabel.Append(lowerCaseName);
+    glean::contentblocking::query_stripping_count_by_param.Get(telemetryLabel)
+        .Add();
     return true;
   });
 
@@ -306,8 +343,7 @@ nsresult URLQueryStringStripper::StripQueryString(nsIURI* aURI,
   }
 
   nsAutoCString newQuery;
-  params.Serialize(newQuery, false);
-
+  SerializeQueryPreservingEquals(params, newQuery);
   (void)NS_MutateURI(uri).SetQuery(newQuery).Finalize(aOutput);
   return NS_OK;
 }
@@ -356,8 +392,8 @@ URLQueryStringStripper::OnQueryStrippingListUpdate(
 NS_IMETHODIMP
 URLQueryStringStripper::OnStripOnShareUpdate(const nsTArray<nsString>& aArgs,
                                              JSContext* aCx) {
-  mStripOnShareOriginMap.Clear();
-  mStripOnShareOriginMap.Clear();
+  mStripOnShareHostMap.Clear();
+  mStripOnShareSchemelessSiteMap.Clear();
   mStripOnShareGlobal.reset();
 
   for (const auto& ruleString : aArgs) {
@@ -369,8 +405,8 @@ URLQueryStringStripper::OnStripOnShareUpdate(const nsTArray<nsString>& aArgs,
     if (rule.mIsGlobal) {
       mStripOnShareGlobal = Some(rule);
     } else {
-      for (const auto& origin : rule.mOrigins) {
-        mStripOnShareOriginMap.InsertOrUpdate(origin, rule);
+      for (const auto& host : rule.mHosts) {
+        mStripOnShareHostMap.InsertOrUpdate(host, rule);
       }
       for (const auto& schemelessSite : rule.mSchemelessSites) {
         mStripOnShareSchemelessSiteMap.InsertOrUpdate(schemelessSite, rule);
@@ -416,7 +452,7 @@ bool URLQueryStringStripper::ShouldStripParam(const nsACString& aHost,
     return true;
   }
   // Check for site specific rules.
-  if (auto entry = mStripOnShareOriginMap.Lookup(aHost);
+  if (auto entry = mStripOnShareHostMap.Lookup(aHost);
       entry && matches(entry.Data())) {
     return true;
   }
@@ -498,15 +534,19 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
   rv = eTLDService->GetSchemelessSite(aURI, schemelessSite);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  URLParams params;
+  nsTArray<QueryParam> inParams;
+  SplitQueryPreservingEquals(query, inParams);
 
-  URLParams::Parse(query, false, [&](nsCString&& aName, nsCString&& aValue) {
-    if (ShouldStripParam(host, schemelessSite, aName)) {
+  nsTArray<QueryParam> outParams;
+  for (QueryParam& param : inParams) {
+    if (ShouldStripParam(host, schemelessSite, param.mName)) {
       aStripCount++;
-      // If we found a query param to strip in dry mode, skip iterating over the
-      // remaining ones (we return greedily). Otherwise don't add the param to
-      // the new list and continue with the next one.
-      return !aDry;
+      // If we found a query param to strip in dry mode, skip iterating over
+      // the remaining ones (we return greedily).
+      if (aDry) {
+        break;
+      }
+      continue;
     }
 
     // Only if it is top layer of the recursion then it checks if the value of
@@ -514,15 +554,18 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
     // query, if it is then it gets passed back into this method but with the
     // recursive stripping flag set to true
     if (!aStripNestedURIs) {
-      aStripCount += TryStripValue(host, aValue, aDry);
-    }
-    if (aDry) {
-      return aStripCount == 0;
+      aStripCount += TryStripValue(host, param.mValue, aDry);
     }
 
-    params.Append(aName, aValue);
-    return true;
-  });
+    if (aDry) {
+      if (aStripCount == 0) {
+        continue;
+      }
+      break;
+    }
+
+    outParams.AppendElement(std::move(param));
+  }
 
   // Returns null for aStrippedURI if no query params have been stripped
   // or in dry mode.
@@ -531,7 +574,7 @@ nsresult URLQueryStringStripper::StripForCopyOrShareInternal(
   }
 
   nsAutoCString newQuery;
-  params.Serialize(newQuery, false);
+  SerializeQueryPreservingEquals(outParams, newQuery);
   return NS_MutateURI(aURI).SetQuery(newQuery).Finalize(aStrippedURI);
 }
 }  // namespace mozilla

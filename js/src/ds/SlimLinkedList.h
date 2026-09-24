@@ -264,7 +264,6 @@ class SlimLinkedList {
     }
 
     bool operator==(const Iterator& other) const = default;
-    bool operator!=(const Iterator& other) const = default;
   };
 
   SlimLinkedList() = default;

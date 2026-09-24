@@ -72,52 +72,6 @@ class FrecencyComparator {
 
 }  // namespace
 
-// used to dispatch a wrapper deletion the caller's thread
-// cannot be used on IOThread after shutdown begins
-class DeleteCacheIndexRecordWrapper : public Runnable {
-  CacheIndexRecordWrapper* mWrapper;
-
- public:
-  explicit DeleteCacheIndexRecordWrapper(CacheIndexRecordWrapper* wrapper)
-      : Runnable("net::CacheIndex::DeleteCacheIndexRecordWrapper"),
-        mWrapper(wrapper) {}
-  NS_IMETHOD Run() override {
-    StaticMutexAutoLock lock(CacheIndex::sLock);
-
-    // if somehow the item is still in the frecency storage, remove it
-    RefPtr<CacheIndex> index = CacheIndex::gInstance;
-    if (index) {
-      bool found = index->mFrecencyStorage.RecordExistedUnlocked(mWrapper);
-      if (found) {
-        LOG(
-            ("DeleteCacheIndexRecordWrapper::Run() - \
-            record wrapper found in frecency storage during deletion"));
-        index->mFrecencyStorage.RemoveRecord(mWrapper, lock);
-      }
-    }
-
-    delete mWrapper;
-    return NS_OK;
-  }
-};
-
-void CacheIndexRecordWrapper::DispatchDeleteSelfToCurrentThread() {
-  // Dispatch during shutdown will not trigger DeleteCacheIndexRecordWrapper
-  nsCOMPtr<nsIRunnable> event = new DeleteCacheIndexRecordWrapper(this);
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToCurrentThread(event));
-}
-
-CacheIndexRecordWrapper::~CacheIndexRecordWrapper() {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  CacheIndex::sLock.AssertCurrentThreadOwns();
-  RefPtr<CacheIndex> index = CacheIndex::gInstance;
-  if (index) {
-    bool found = index->mFrecencyStorage.RecordExistedUnlocked(this);
-    MOZ_DIAGNOSTIC_ASSERT(!found);
-  }
-#endif
-}
-
 /**
  * This helper class is responsible for keeping CacheIndex::mIndexStats and
  * CacheIndex::mFrecencyStorage up to date.
@@ -3496,7 +3450,8 @@ void CacheIndex::FrecencyStorage::AppendRecord(
        "hash=%08x%08x%08x"
        "%08x%08x]",
        aRecord, LOGSHA1(aRecord->Get()->mHash)));
-  MOZ_DIAGNOSTIC_ASSERT(!mRecs.Contains(aRecord));
+  MOZ_RELEASE_ASSERT(!mRecs.Contains(aRecord),
+                     "Record is already in the frecency storage");
   mRecs.PutEntry(aRecord);
 }
 

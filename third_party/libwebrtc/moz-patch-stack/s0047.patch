@@ -8,7 +8,7 @@ Subject: Bug 1766646 - (fix-a0bb2ef2dc) add back VideoType enum values
  2 files changed, 12 insertions(+)
 
 diff --git a/common_video/libyuv/include/webrtc_libyuv.h b/common_video/libyuv/include/webrtc_libyuv.h
-index 7d504bcb04..b18957b6be 100644
+index 8ac2151c18..a1899dba88 100644
 --- a/common_video/libyuv/include/webrtc_libyuv.h
 +++ b/common_video/libyuv/include/webrtc_libyuv.h
 @@ -35,11 +35,14 @@ enum class VideoType {
@@ -27,10 +27,10 @@ index 7d504bcb04..b18957b6be 100644
    kNV12,
  };
 diff --git a/common_video/libyuv/webrtc_libyuv.cc b/common_video/libyuv/webrtc_libyuv.cc
-index 916acafe4f..9dd12b42f2 100644
+index 056f5613d1..8527f34163 100644
 --- a/common_video/libyuv/webrtc_libyuv.cc
 +++ b/common_video/libyuv/webrtc_libyuv.cc
-@@ -33,6 +33,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
+@@ -36,6 +36,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
    RTC_DCHECK_GE(height, 0);
    switch (type) {
      case VideoType::kI420:
@@ -38,7 +38,7 @@ index 916acafe4f..9dd12b42f2 100644
      case VideoType::kIYUV:
      case VideoType::kYV12:
      case VideoType::kNV12: {
-@@ -40,7 +41,9 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
+@@ -43,7 +44,9 @@ size_t CalcBufferSize(VideoType type, int width, int height) {
        int half_height = (height + 1) >> 1;
        return width * height + half_width * half_height * 2;
      }
@@ -48,7 +48,7 @@ index 916acafe4f..9dd12b42f2 100644
      case VideoType::kYUY2:
      case VideoType::kUYVY:
        return width * height * 2;
-@@ -113,10 +116,16 @@ int ConvertVideoType(VideoType video_type) {
+@@ -116,10 +119,16 @@ int ConvertVideoType(VideoType video_type) {
        return libyuv::FOURCC_UYVY;
      case VideoType::kMJPEG:
        return libyuv::FOURCC_MJPG;

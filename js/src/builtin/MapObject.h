@@ -92,7 +92,7 @@ struct HashableValueHasher {
   }
   static bool match(const Key& k, const Lookup& l) { return k.get().equals(l); }
   static bool isEmpty(const Key& v) {
-    return v.get().get().isMagic(JS_HASH_KEY_EMPTY);
+    return v.get().get().isMagicNoReleaseCheck(JS_HASH_KEY_EMPTY);
   }
   static void makeEmpty(Key* vp) { vp->set(HashableValue(JS_HASH_KEY_EMPTY)); }
 };

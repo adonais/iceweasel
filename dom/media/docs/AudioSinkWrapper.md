@@ -32,12 +32,14 @@ The reported position comes from one of three sources:
 
 ### Output latency: play cursor vs write cursor
 
-An audio backend reports its *play cursor* (frames the device has actually
-output) which lags its *write cursor* (frames handed to the backend) by the
-device's output latency. On built-in speakers this is small (tens of
-milliseconds); on Bluetooth or a remoted backend it can be hundreds of
-milliseconds. The audio-stream clock follows the play cursor, so it reflects
-what is *heard*, not what has merely been written.
+A backend's *play cursor* lags its *write cursor* by the device's output
+latency, and the gap between them is audio handed over but not yet heard. The
+audio-stream clock follows the play cursor, so it reflects what is *heard*, not
+what has merely been written. On built-in speakers the latency is tens of
+milliseconds; on Bluetooth or a remoted backend it can be hundreds.
+
+[AudioStream](AudioStream.md) defines both cursors and that gap in full, and
+owns the arithmetic that maps a play-cursor value to a media time.
 
 ## Invariants
 

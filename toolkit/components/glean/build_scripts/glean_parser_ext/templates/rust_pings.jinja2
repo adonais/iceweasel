@@ -37,6 +37,10 @@ pub static {{ obj.name|snake_case }}: Lazy<Ping> = Lazy::new(|| {
 ///                 assigned to the identified application.
 #[doc(hidden)]
 pub fn register_pings(application_id: Option<&str>) {
+    extern "C" {
+        fn JOG_MaybeReload();
+    }
+
     match application_id {
         {% for id, ping_names in ping_names_by_app_id.items() %}
         Some("{{id}}") => {
@@ -51,9 +55,6 @@ pub fn register_pings(application_id: Option<&str>) {
             let _ = &*{{ obj.name|snake_case }};
             {% endfor %}
         }
-    }
-    extern "C" {
-        fn JOG_MaybeReload();
     }
     unsafe {
       JOG_MaybeReload();
@@ -84,7 +85,7 @@ pub(crate) fn submit_ping_by_id(id: u32, reason: Option<&str>) {
             ping.submit(reason);
         } else {
             // TODO: instrument this error.
-            log::error!("Cannot submit unknown dynamic ping {} by id.", id);
+            log::error!("Cannot submit unknown dynamic ping {id} by id.");
         }
         return;
     }
@@ -94,7 +95,7 @@ pub(crate) fn submit_ping_by_id(id: u32, reason: Option<&str>) {
 {% endfor %}
         _ => {
             // TODO: instrument this error.
-            log::error!("Cannot submit unknown ping {} by id.", id);
+            log::error!("Cannot submit unknown ping {id} by id.");
         }
     }
 }
@@ -109,7 +110,7 @@ pub(crate) fn set_ping_enabled_by_id(id: u32, enabled: bool) {
             ping.set_enabled(enabled);
         } else {
             // TODO: instrument this error.
-            log::error!("Cannot set_enabled on unknown dynamic ping {} by id.", id);
+            log::error!("Cannot set_enabled on unknown dynamic ping {id} by id.");
         }
         return;
     }
@@ -119,7 +120,7 @@ pub(crate) fn set_ping_enabled_by_id(id: u32, enabled: bool) {
 {% endfor %}
         _ => {
             // TODO: instrument this error.
-            log::error!("Cannot set_enabled on unknown ping {} by id.", id);
+            log::error!("Cannot set_enabled on unknown ping {id} by id.");
         }
     }
 }

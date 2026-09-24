@@ -205,37 +205,35 @@ static int nr_turn_stun_ctx_destroy(nr_turn_stun_ctx **ctxp)
 static int nr_turn_stun_set_auth_params(nr_turn_stun_ctx *ctx,
                                         char *realm, char *nonce)
 {
-  int _status;
+  assert(realm);
+  assert(nonce);
+  if (!realm || !nonce) {
+    return R_BAD_ARGS;
+  }
+
+  char* new_realm = strdup(realm);
+  char* new_realm_2 = strdup(realm);
+  char* new_nonce = strdup(nonce);
+
+  if (!new_realm || !new_realm_2 || !new_nonce) {
+    free(new_realm);
+    free(new_realm_2);
+    free(new_nonce);
+    return R_NO_MEMORY;
+  }
 
   free(ctx->realm);
+  ctx->realm = new_realm;
   free(ctx->nonce);
-
-  assert(realm);
-  if (!realm)
-    ABORT(R_BAD_ARGS);
-  ctx->realm=strdup(realm);
-  if (!ctx->realm)
-    ABORT(R_NO_MEMORY);
-
-  assert(nonce);
-  if (!nonce)
-    ABORT(R_BAD_ARGS);
-  ctx->nonce=strdup(nonce);
-  if (!ctx->nonce)
-    ABORT(R_NO_MEMORY);
-
+  ctx->nonce = new_nonce;
   free(ctx->stun->realm);
-  ctx->stun->realm = strdup(ctx->realm);
-  if (!ctx->stun->realm)
-    ABORT(R_NO_MEMORY);
+  ctx->stun->realm = new_realm_2;
 
   ctx->stun->auth_params.realm = ctx->realm;
   ctx->stun->auth_params.nonce = ctx->nonce;
   ctx->stun->auth_params.authenticate = 1;  /* May already be 1 */
 
-  _status=0;
-abort:
-  return(_status);
+  return 0;
 }
 
 static int nr_turn_stun_ctx_start(nr_turn_stun_ctx *ctx)

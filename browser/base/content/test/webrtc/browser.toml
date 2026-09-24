@@ -23,19 +23,12 @@ skip-if = [
 ]
 
 ["browser_device_controls_menus.js"]
-# Simplified to "true".. previous bug tracking:
-# "debug", # bug 1369731
-# "os == 'linux' && os_version == '24.04' && asan", # Bug 1981050
-# "os == 'linux' && os_version == '24.04' && tsan", # Bug 1981050
-# "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1775940
-# "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
-# "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Bug 1707735
-# "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869787
-# "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1707735
-# "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1981050
-# "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1981050
 skip-if = [
-  "true",
+  "debug", # bug 1369731
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2063469
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # platform migration
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1869787
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1707735
 ]
 
 ["browser_devices_get_user_media.js"]

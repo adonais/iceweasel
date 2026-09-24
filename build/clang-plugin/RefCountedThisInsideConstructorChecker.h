@@ -10,7 +10,7 @@
 class RefCountedThisInsideConstructorChecker : public BaseCheck {
 public:
   RefCountedThisInsideConstructorChecker(StringRef CheckName,
-                                        ContextType *Context = nullptr)
+                                         ContextType *Context = nullptr)
       : BaseCheck(CheckName, Context) {}
   void registerMatchers(MatchFinder *AstMatcher) override;
   void check(const MatchFinder::MatchResult &Result) override;

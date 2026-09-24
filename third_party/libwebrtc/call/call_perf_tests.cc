@@ -327,13 +327,13 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
         {test::VideoTestConstants::kAudioSendPayloadType, {"OPUS", 48000, 2}}};
 
     if (create_first == CreateOrder::kAudioFirst) {
-      audio_receive_stream =
-          receiver_call_->CreateAudioReceiveStream(audio_recv_config);
+      audio_receive_stream = receiver_call_->CreateAudioReceiveStream(
+          std::move(audio_recv_config));
       CreateVideoStreams();
     } else {
       CreateVideoStreams();
-      audio_receive_stream =
-          receiver_call_->CreateAudioReceiveStream(audio_recv_config);
+      audio_receive_stream = receiver_call_->CreateAudioReceiveStream(
+          std::move(audio_recv_config));
     }
     EXPECT_EQ(1u, video_receive_streams_.size());
     observer->set_receive_stream(video_receive_streams_[0]);

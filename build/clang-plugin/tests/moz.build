@@ -11,6 +11,7 @@ SOURCES += [
     "TestCanRunScript.cpp",
     "TestCustomHeap.cpp",
     "TestDanglingOnTemporary.cpp",
+    "TestDefaultEqual.cpp",
     "TestEnumSerializer.cpp",
     "TestExplicitOperatorBool.cpp",
     "TestFinalCycleCollectingIsupports.cpp",

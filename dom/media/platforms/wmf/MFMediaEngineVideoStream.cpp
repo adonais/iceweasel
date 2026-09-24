@@ -37,8 +37,6 @@ MFMediaEngineVideoStream* MFMediaEngineVideoStream::Create(
       GetStreamTypeFromMimeType(aInfo.GetAsVideoInfo()->mMimeType);
   MOZ_ASSERT(StreamTypeIsVideo(stream->mStreamType));
   stream->mHasReceivedInitialCreateDecoderConfig = false;
-  stream->mHasClearLead =
-      aIsEncryptedCustomInit && !aInfo.GetAsVideoInfo()->mCrypto.IsEncrypted();
   stream->SetDCompSurfaceHandle(INVALID_HANDLE_VALUE, gfx::IntSize{});
   return stream;
 }
@@ -94,9 +92,6 @@ HRESULT MFMediaEngineVideoStream::CreateMediaType(const TrackInfo& aInfo,
                                                   IMFMediaType** aMediaType) {
   auto& videoInfo = *aInfo.GetAsVideoInfo();
   mIsEncrypted = videoInfo.mCrypto.IsEncrypted();
-  if (mHasClearLead && mIsEncrypted) {
-    mSwitchedClearToEncrypted = true;
-  }
 
   GUID subType = VideoMimeTypeToMediaFoundationSubtype(videoInfo.mMimeType);
   NS_ENSURE_TRUE(subType != GUID_NULL, MF_E_TOPO_CODEC_NOT_FOUND);
@@ -115,6 +110,11 @@ HRESULT MFMediaEngineVideoStream::CreateMediaType(const TrackInfo& aInfo,
 
   UINT32 displayWidth = videoInfo.mDisplay.Width();
   UINT32 displayHeight = videoInfo.mDisplay.Height();
+  LOG("Media type: image=[{}x{}], display=[{}x{}], mime={}, encrypted={}, "
+      "clearlead={}",
+      imageWidth, imageHeight, displayWidth, displayHeight,
+      videoInfo.mMimeType.get(), mIsEncrypted,
+      mIsEncryptedCustomInit && !mIsEncrypted);
   {
     MutexAutoLock lock(mMutex);
     mDisplay = videoInfo.mDisplay;
@@ -457,9 +457,6 @@ bool MFMediaEngineVideoStream::IsEnded() const {
 }
 
 bool MFMediaEngineVideoStream::IsEncrypted() const {
-  if (mHasClearLead) {
-    return mSwitchedClearToEncrypted;
-  }
   return mIsEncrypted || mIsEncryptedCustomInit;
 }
 

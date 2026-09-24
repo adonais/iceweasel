@@ -11,11 +11,15 @@
   --urlbarView-small-font-size: 0.85em;
 
   /* The purpose of the gutter is to create a visible gap between adjacent hovered
-     and selected rows while keeping the view's entire hover area contiguous. */
+     and selected rows while keeping the view's entire hover area contiguous. It's
+     row padding that `background-clip: content-box` keeps out of the background. */
   --urlbarView-row-gutter: var(--space-xsmall);
-  --urlbarView-row-border: var(--urlbarView-row-gutter) solid transparent;
+  /* The view's own margin, which urlbar.css also derives the joint
+     background's outsets from. Negative here so the selection rect is flush
+     with the input container's border edge, compensating the row's gutter. */
+  --urlbarView-margin-block: calc(-1 * var(--urlbarView-row-gutter));
+  --urlbarView-margin-inline: calc(-1 * var(--urlbarView-row-gutter));
   --urlbarView-row-border-radius: var(--urlbarview-border-radius);
-  --urlbarView-row-background-clip: padding-box;
 
   --urlbarView-row-padding-inline: var(--urlbar-icon-padding);
   --urlbarView-row-inner-min-height: calc(var(--urlbarview-row-min-height) - var(--urlbarview-row-padding-block) * 2);
@@ -42,6 +46,10 @@
 
   --urlbarView-favicon-mask-size: 24px;
   --urlbarView-favicon-mask-position: calc((var(--urlbarview-favicon-size) - var(--urlbarView-favicon-mask-size)) / 2);
+
+  /* The flex-basis of the URL and no-wrap are set such that the title can take up
+     most of the space but the URL will remain at least partially visible. */
+  --urlbarView-url-flex-basis: 30%;
 
   --urlbarView-result-button-size: 24px;
   --urlbarView-result-button-background-opacity: 60%;
@@ -71,7 +79,7 @@
   --urlbarView-separator-margin-inline: 0.6em;
 
   --urlbarView-action-slide-in-distance: 200px;
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     --urlbarView-action-slide-in-distance: -200px;
   }
 
@@ -93,9 +101,7 @@
 }
 
 .urlbarView {
-  /* Compensate for the row's transparent border (gutter), so the selection rect
-     is flush with the input container's border edge. */
-  margin: calc(-1 * var(--urlbarView-row-gutter));
+  margin: var(--urlbarView-margin-block) var(--urlbarView-margin-inline);
 
   /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
@@ -103,22 +109,6 @@
   display: none;
   text-shadow: none;
   overflow: clip;
-
-  .urlbar[breakout][open] > & {
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* When hosted in content, let the view scroll when there's limited space
-     below the input due to small viewport size or page scroll position. */
-  .urlbar[in-page] > & {
-    min-height: 0;
-
-    > .urlbarView-body-outer {
-      min-height: 0;
-      overflow-y: auto;
-    }
-  }
 
   /* The gap under the input sits outside the scrollport, so a row scrolling
      past it doesn't paint over the input's border edge. */
@@ -131,9 +121,22 @@
   }
 }
 
+.urlbarView-body-outer,
+.urlbarView-body-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .urlbarView-results {
   white-space: nowrap;
   container-type: inline-size;
+
+  /* Let the view scroll when there's limited space below the input due to
+     small viewport size or page scroll position. */
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 /* Row structure */
@@ -144,13 +147,22 @@
   --urlbarView-icon-margin-start: max(0px, (var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2);
   --urlbarView-icon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-icon-margin-start));
 
+  /* Block padding that belongs inside the row's background. It goes on the row's
+     children, since the row's own padding is the gutter, which is outside it. */
+  --urlbarView-row-extra-padding-block: 0px;
+
   display: flex;
   align-items: center;
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
-  border: var(--urlbarView-row-border);
+  padding: var(--urlbarView-row-gutter);
   border-radius: var(--urlbarView-row-border-radius);
-  background-clip: var(--urlbarView-row-background-clip);
+  background-clip: content-box;
+
+  /* The row is the containing block for everything positioned within it,
+     including the favicon's type badge. The view scrolls, so a containing
+     block outside the scrollport would leave those boxes behind. */
+  position: relative;
 
   /* Must hide the overflowing rows while the view is updating */
   &[hidden] {
@@ -169,10 +181,10 @@
 
   &:not([type="tip"], [type="dynamic"]) {
     :root:not([uidensity="compact"]) & {
-      min-height: var(--urlbarview-row-min-height);
+      min-height: calc(var(--urlbarview-row-min-height) + 2 * var(--urlbarView-row-extra-padding-block));
     }
     :root[uidensity="touch"] & {
-      padding-block: 11px;
+      --urlbarView-row-extra-padding-block: 11px;
     }
   }
 
@@ -181,10 +193,10 @@
     --urlbarView-icon-border-radius: var(--urlbarView-rich-search-suggestion-icon-border-radius);
 
     :root:not([uidensity="compact"]) & {
-      min-height: 46px;
+      min-height: calc(46px + 2 * var(--urlbarView-row-extra-padding-block));
     }
     :root[uidensity="touch"] & {
-      padding-block: 4px;
+      --urlbarView-row-extra-padding-block: 4px;
     }
   }
 }
@@ -197,7 +209,7 @@
   flex: auto;
   overflow: hidden;
   padding-inline: var(--urlbarView-row-padding-inline);
-  padding-block: var(--urlbarview-row-padding-block);
+  padding-block: calc(var(--urlbarview-row-padding-block) + var(--urlbarView-row-extra-padding-block));
 
   :root:not([uidensity="compact"]) & {
     min-height: var(--urlbarView-row-inner-min-height);
@@ -217,14 +229,9 @@
 .urlbarView-row-body-top-no-wrap {
   display: flex;
   align-items: baseline;
-  max-width: 100%;
-
-  /* For rows with result explanations but no URL (e.g., "Visit" actions like
-     bookmark keywords), let the title start to overflow more quickly than usual
-     so there's room for the explanation. Normally the URL overflows instead. */
-  .urlbarView-row[has-explanation]:not([has-url]) & {
-    min-width: 0;
-  }
+  flex: 1 1 calc(100% - var(--urlbarView-url-flex-basis));
+  min-width: 0;
+  max-width: max-content;
 }
 
 .urlbarView-row-body-description,
@@ -246,17 +253,6 @@
 }
 
 /* For rows that show a URL: Row width and wrapping */
-
-.urlbarView-row-body-top-no-wrap {
-  /* When wrapping is not enabled, show the URL next to the title and give the
-     title and other elements in the no-wrap a max width to ensure the URL is at
-     least partially visible. */
-  .urlbarView[action-override] .urlbarView-row[has-url][type="switchtab"] &,
-  .urlbarView-row[has-url]:not([type$="tab"]) &,
-  .urlbarView-row[has-url]:is([type="remotetab"], [sponsored]):is(:hover, [selected]) & {
-    max-width: 70%;
-  }
-}
 
 @media screen and (min-height: 600px) {
   /* Enable wrapping when the window is narrow (the "wrap" attribute, set in JS)
@@ -312,7 +308,9 @@
   mask-image: linear-gradient(to left, transparent, black 2em);
 }
 
-.urlbarView-overflowable[overflow]:not(.urlbarView-title[is-url]):-moz-locale-dir(rtl) {
+/* Titles that are not URLs carry dir="auto", so anchor on the view, whose
+   direction is the one the row is laid out in. */
+.urlbarView:dir(rtl) .urlbarView-overflowable[overflow]:not(.urlbarView-title[is-url]) {
   mask-image: linear-gradient(to right, transparent, black 2em);
 }
 
@@ -365,6 +363,7 @@
       display: flex;
       position: absolute;
       background-color: var(--button-background-color);
+      color: var(--button-text-color);
       justify-content: center;
       align-items: center;
       border-radius: var(--border-radius-circle);
@@ -386,13 +385,13 @@
 .urlbarView-row:is([type="bookmark"], [type^="bookmark_"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-bookmark.svg#rtl-icon);
     }
   }
@@ -401,13 +400,13 @@
 .urlbarView-row:is([type="adaptive-history"], [type="history"], [type^="history_"], [type="semantic-history"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-history.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-history.svg#rtl-icon);
     }
   }
@@ -416,13 +415,13 @@
 .urlbarView-row:is([type="remotetab"], [type="switchtab"], [type="tab"], [type^="tab_"]) > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-tab.svg#rtl-icon);
     }
   }
@@ -431,13 +430,13 @@
 .urlbarView-row[pinned] > .urlbarView-row-inner {
   > .urlbarView-favicon {
     mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-mask);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       mask-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-mask);
     }
   }
   > .urlbarView-type-icon {
     background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#ltr-icon);
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       background-image: url(chrome://browser/skin/urlbar/badge-pin.svg#rtl-icon);
     }
   }
@@ -450,6 +449,7 @@
   align-items: center;
   justify-content: end;
   flex-wrap: wrap;
+  padding-block: var(--urlbarView-row-extra-padding-block);
 }
 
 .urlbarView-button {
@@ -530,7 +530,7 @@
       background-position-x: right 4px;
       font-size: var(--urlbarView-small-font-size);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         background-position-x: left 4px;
       }
     }
@@ -565,6 +565,7 @@
 
   &:not(:hover, [aria-expanded="true"]) {
     background-color: var(--button-background-color);
+    color: var(--button-text-color);
   }
 
   &:is([selected], [primary]) {
@@ -609,7 +610,6 @@
 /* Row label (a.k.a. group label) */
 
 .urlbarView-row[label] {
-  position: relative;
   /* `margin-block-start` controls how far the main part of the row is from the
      main part of the previous row. */
   margin-block-start: var(--urlbarView-labeled-row-margin-top);
@@ -620,8 +620,9 @@
     /* Remove the label from the document flow so it doesn't affect the row
        selection and hover states. */
     position: absolute;
-    /* `top` controls how far the label is from the main part of the row. */
-    top: var(--urlbarView-labeled-row-label-top);
+    /* `top` controls how far the label is from the main part of the row. It is
+       measured from the row's padding box, hence the gutter. */
+    top: calc(var(--urlbarView-row-gutter) + var(--urlbarView-labeled-row-label-top));
     margin-inline-start: var(--urlbarView-row-padding-inline);
     font-size: 0.8em;
     /* The color and opacity of labels is the same as the "This time, search with"
@@ -651,7 +652,6 @@
 /* Feedback acknowledgment */
 
 .urlbarView-row[feedback-acknowledgment] {
-  position: relative;
   padding-bottom: 1.94em;
 
   &::after {
@@ -747,7 +747,7 @@
       background-position-x: var(--space-medium);
       background-size: var(--urlbarview-favicon-size);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         background-position-x: right var(--space-medium);
       }
     }
@@ -844,7 +844,11 @@
 }
 
 .urlbarView-url {
-  flex: 1 1 auto;
+  /* The large flex-grow ensures the URL grows more quickly than the explanation
+     so that the explanation doesn't cause the URL to overflow unnecessarily. */
+  flex: 100 1 var(--urlbarView-url-flex-basis);
+  min-width: 0;
+  max-width: max-content;
 
   .urlbarView-row:not([has-url]) &,
   .urlbarView:not([action-override]) .urlbarView-row[type="switchtab"] &,
@@ -859,26 +863,27 @@
   display: flex;
   align-items: baseline;
   margin-inline: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-icon-margin-start));
-  flex: 1 0 auto;
+  flex: 1 0;
   justify-content: end;
-
-  /* For rows with no URL (e.g., "Visit" actions like bookmark keywords), add
-     plenty of space between the explanation and action or title. In this case
-     the separator character doesn't appear like it does when the explanation is
-     next to an overflowed URL. Even `--space-xxlarge` is too small, so we use a
-     larger literal value. */
-  .urlbarView-url:empty + & {
-    margin-inline-start: 3em;
-  }
 
   .urlbarView-row[has-menu-button] & {
     margin-inline-end: 0;
   }
 
-  .urlbarView-url[overflow] ~ &::before,
-  > .urlbarView-explanation-bookmarked:not(:empty) + .urlbarView-explanation-last-visited:not(:empty)::before {
+  /* Give both parts of the explanation a leading separator. Make it opaque if
+     it's next to an overflowed URL or both explanation parts are non-empty.
+     Otherwise, the first separator will be transparent, which ensures there
+     will be enough space between the explanation and the prior visible element,
+     whether that's a non-overflowed URL or action text. */
+  > .urlbarView-explanation-bookmarked:not(:empty)::before,
+  > .urlbarView-explanation-last-visited:not(:empty)::before {
     content: var(--urlbarView-separator-char);
     margin: 0 var(--urlbarView-separator-margin-inline);
+    opacity: 0;
+  }
+  .urlbarView-url[overflow] ~ & > .urlbarView-explanation-bookmarked::before,
+  .urlbarView-url[overflow] ~ & > .urlbarView-explanation-last-visited::before,
+  > .urlbarView-explanation-bookmarked:not(:empty) + .urlbarView-explanation-last-visited::before {
     opacity: var(--opacity-deemphasized-strong);
   }
 
@@ -894,13 +899,15 @@
   }
 }
 
-.urlbarView-title[is-url]:-moz-locale-dir(rtl),
-.urlbarView-url:-moz-locale-dir(rtl) {
+/* An [is-url] title carries no dir attribute, and the view sets dir="auto" on
+   the other titles alone, so both of these take the row's direction. */
+.urlbarView-title[is-url]:dir(rtl),
+.urlbarView-url:dir(rtl) {
   direction: ltr !important;
 }
 
-.urlbarView-url:-moz-locale-dir(rtl),
-.urlbarView-explanation:-moz-locale-dir(rtl) {
+.urlbarView-url:dir(rtl),
+.urlbarView-explanation:dir(rtl) {
   /* .urlbarView-url can grow due to `flex: auto`, so without `text-align: right`,
      the URL text would be left-aligned within .urlbarView-url for RTL due to
      the `direction: ltr` rule. .urlbarView-title does not have this problem
@@ -929,8 +936,9 @@
 
 .urlbarView-row[type="tip"] {
   padding-block: 18px;
-  border-block: 0;
   border-radius: 0;
+  /* A tip has no block gutter, so its block padding is part of the background. */
+  background-clip: padding-box;
 
   &:not(:last-child) {
     border-bottom: 1px solid var(--urlbarview-separator-color);
@@ -1194,7 +1202,6 @@
   font-size: smaller;
   font-weight: var(--font-weight-semibold);
   border-radius: var(--urlbar-border-radius);
-  border: 1px solid transparent;
   padding: 0.4em 0.6em;
   display: inline-flex;
   align-items: center;
@@ -1256,11 +1263,12 @@
      row label in the next row. */
   margin-block: var(--urlbarview-row-padding-block) calc(5 * var(--urlbarview-row-padding-block));
   padding-block: 0;
-  border-block: none;
   border-radius: var(--border-radius-medium);
+  background-clip: content-box;
 
   @media not (prefers-contrast) {
     background-color: color-mix(in srgb, var(--button-background-color) 30%, transparent);
+    color: var(--button-text-color);
   }
 
   > .urlbarView-row-inner {
@@ -1314,13 +1322,14 @@
 
 .urlbarView-row[dynamicType^="realtime-"]:not([row-selectable]) {
   /* When a realtime row contains multiple items, each item is individually
-     selectable rather than the row. Set borders on the items so that the gutter
-     and selection styling applies to them and not the row. */
-  border: none;
-  > .urlbarView-realtime-root > .urlbarView-realtime-item {
-    border: var(--urlbarView-row-border);
-    border-radius: var(--urlbarView-row-border-radius);
-    background-clip: var(--urlbarView-row-background-clip);
+     selectable rather than the row. Space the items apart by twice the gutter so
+     that the gap and the selection styling apply to them and not to the row. */
+  > .urlbarView-realtime-root {
+    gap: calc(2 * var(--urlbarView-row-gutter));
+
+    > .urlbarView-realtime-item {
+      border-radius: var(--urlbarView-row-border-radius);
+    }
   }
 }
 
@@ -1374,7 +1383,9 @@
       width: var(--urlbarView-top-pick-icon-size);
       height: var(--urlbarView-top-pick-icon-size);
       margin-inline-end: var(--space-medium);
-      border: 1px solid transparent;
+      /* Row types that draw a border on the container give up this padding for
+         it, so the padding takes the snapped width a 1px border resolves to. */
+      padding: var(--urlbar-snapped-1px-border-width);
       border-radius: var(--urlbarView-top-pick-icon-border-radius);
 
       fill: currentColor;
@@ -1456,7 +1467,8 @@
     background-color: var(--market-image-bg-color);
 
     &[is-arrow] {
-      border-color: color-mix(in srgb, currentColor 10%, transparent);
+      padding: 0;
+      border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
 
       .urlbarView-realtime-item[change="down"] > & {
         fill: var(--red-status-color);
@@ -1576,7 +1588,8 @@
   > .urlbarView-realtime-image-container {
     --airline-fallback-icon-color: #bac2ca;
 
-    border-color: color-mix(in srgb, currentColor 10%, transparent);
+    padding: 0;
+    border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
     background-color: var(--urlbar-box-background-color-focus);
 
     &[backgroundImageId] {
@@ -1587,7 +1600,7 @@
       fill: var(--airline-color, currentColor);
       stroke: var(--airline-color, currentColor);
 
-      &:-moz-locale-dir(rtl) {
+      &:dir(rtl) {
         /* Flip the background image, an in-progress flight path, and then flip the
            inner foreground image, an airline logo, so it's oriented correctly. */
         transform: scaleX(-1);
@@ -1694,7 +1707,8 @@
     background-color: var(--violet-bg-color);
     background-position: center;
     background-repeat: no-repeat;
-    border-color: color-mix(in srgb, currentColor 10%, transparent);
+    padding: 0;
+    border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
     color: var(--violet-fg-color);
     fill: var(--violet-fg-color);
     -moz-context-properties: fill;

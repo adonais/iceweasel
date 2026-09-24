@@ -572,13 +572,13 @@ class SimpleChannelListener {
 // available. xpcshell tests can import the test file "client-cert.p12" using
 // the password "password", resulting in a certificate with the common name
 // "Test End-entity" being available with a corresponding private key.
-function getTestServerCertificate() {
+async function getTestServerCertificate() {
   const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
   const certFile = do_get_file("client-cert.p12");
   certDB.importPKCS12File(certFile, "password");
-  for (const cert of certDB.getCerts()) {
+  for (const cert of await certDB.getCerts()) {
     if (cert.commonName == "Test End-entity") {
       return cert;
     }

@@ -62,9 +62,6 @@ const tests = {
     logStart("bundles");
 
     const items = {
-      "Activity Stream bundle": {
-        path: path.join("data", "content", "activity-stream.bundle.js"),
-      },
       "activity-stream.html": {
         path: path.join("prerendered", "activity-stream.html"),
       },
@@ -73,9 +70,6 @@ const tests = {
       },
       "activity-stream-noscripts.html": {
         path: path.join("prerendered", "activity-stream-noscripts.html"),
-      },
-      "activity-stream.css": {
-        path: path.join("css", "activity-stream.css"),
       },
     };
     const errors = [];

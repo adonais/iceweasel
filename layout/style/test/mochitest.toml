@@ -1,5 +1,6 @@
 [DEFAULT]
 prefs = [
+  "dom.navigation.navigationRateLimit.count=0",
   "gfx.omta.background-color=true",
   "gfx.font_loader.delay=0",
   "layout.css.motion-path-url.enabled=true",
@@ -17,7 +18,7 @@ prefs = [
   "layout.css.text-decoration-inset-percentage.enabled=true",
   "layout.css.link-parameters.enabled=true",
   "layout.css.ellipse-corners.enabled=true",
-  "layout.css.calc-typed-arithmetic.enabled=true"
+  "layout.css.calc-typed-arithmetic.enabled=true",
 ]
 support-files = [
   "animation_utils.js",

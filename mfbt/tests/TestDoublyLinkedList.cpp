@@ -33,6 +33,7 @@ static void TestDoublyLinkedList() {
   SomeClass one(1), two(2), three(3);
 
   MOZ_RELEASE_ASSERT(list.isEmpty());
+  MOZ_RELEASE_ASSERT(!list.isSingle());
   MOZ_RELEASE_ASSERT(!list.begin());
   MOZ_RELEASE_ASSERT(!list.end());
 
@@ -52,6 +53,7 @@ static void TestDoublyLinkedList() {
   MOZ_RELEASE_ASSERT(!list.contains(three));
 
   MOZ_RELEASE_ASSERT(!list.isEmpty());
+  MOZ_RELEASE_ASSERT(list.isSingle());
   MOZ_RELEASE_ASSERT(list.begin()->mValue == 1);
   MOZ_RELEASE_ASSERT(!list.end());
 
@@ -61,6 +63,7 @@ static void TestDoublyLinkedList() {
     CheckListValues(list, check);
   }
 
+  MOZ_RELEASE_ASSERT(!list.isSingle());
   MOZ_RELEASE_ASSERT(list.begin()->mValue == 2);
   MOZ_RELEASE_ASSERT(!list.end());
   MOZ_RELEASE_ASSERT(!list.contains(three));
@@ -71,6 +74,7 @@ static void TestDoublyLinkedList() {
     CheckListValues(list, check);
   }
 
+  MOZ_RELEASE_ASSERT(!list.isSingle());
   MOZ_RELEASE_ASSERT(list.begin()->mValue == 2);
   MOZ_RELEASE_ASSERT(!list.end());
 
@@ -134,14 +138,18 @@ static void TestDoublyLinkedList() {
     CheckListValues(list, check);
   }
 
+  MOZ_RELEASE_ASSERT(list.isSingle());
   list.remove(&two);
   MOZ_RELEASE_ASSERT(list.isEmpty());
+  MOZ_RELEASE_ASSERT(!list.isSingle());
 
   list.pushBack(&three);
   {
     unsigned int check[]{3};
     CheckListValues(list, check);
   }
+  MOZ_RELEASE_ASSERT(!list.isEmpty());
+  MOZ_RELEASE_ASSERT(list.isSingle());
 
   list.pushFront(&two);
   {
@@ -149,6 +157,8 @@ static void TestDoublyLinkedList() {
     CheckListValues(list, check);
   }
 
+  MOZ_RELEASE_ASSERT(!list.isEmpty());
+  MOZ_RELEASE_ASSERT(!list.isSingle());
   // This should modify the values of |two| and |three| as pointers to them are
   // stored in the list, not copies.
   for (SomeClass& x : list) {

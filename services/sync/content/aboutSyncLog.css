@@ -6,33 +6,33 @@
   max-width: 72em;
   margin-inline: auto;
   padding: var(--space-large);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
 }
 
-moz-page-header {
-  margin-block-end: var(--space-xlarge);
-}
-
-.toolbar {
+/* The filters and the actions each own a row rather than competing for one, so a
+   long translation adds a line instead of reflowing the header (bug 2066009). */
+.filters,
+.actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: end;
   gap: var(--space-medium);
-  padding-block-end: var(--space-medium);
+}
+
+.filters moz-input-search {
+  flex: 1 1 var(--size-layout-medium);
+}
+
+.actions {
+  padding-block-end: var(--space-large);
   border-block-end: 1px solid var(--border-color);
-
-  .filter-search {
-    flex: 1;
-    min-inline-size: var(--size-layout-small);
-  }
-
-  .toolbar-actions {
-    margin-inline-start: auto;
-  }
 }
 
 .log-count {
+  margin: 0;
   color: var(--text-color-deemphasized);
-  margin-block: var(--space-medium);
 }
 
 .log-list {
@@ -41,69 +41,50 @@ moz-page-header {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xsmall);
+  gap: var(--space-small);
 }
 
 .log-row {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-medium);
-  overflow: hidden;
-
-  .log-row-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-medium);
-    padding: var(--space-small) var(--space-medium);
-    list-style: none;
-    cursor: pointer;
-
-    &:hover {
-      background-color: var(--background-color-list-item-hover);
-    }
-  }
-
-  .log-open-raw {
-    flex: none;
-    margin-inline-start: var(--space-small);
-  }
-
-  .log-contents {
-    margin: 0;
-    padding: var(--space-medium);
-    max-block-size: 30em;
-    overflow: auto;
-    border-block-start: 1px solid var(--border-color);
-    background-color: var(--background-color-canvas);
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-family: monospace;
-  }
-}
-
-.log-badge {
-  flex: none;
-  padding: var(--space-xxsmall) var(--space-small);
-  border-radius: var(--border-radius-small);
-  font-weight: var(--font-weight-semibold);
-
   &.success {
-    background-color: var(--background-color-success);
+    --log-status-icon: url("chrome://global/skin/icons/check-filled.svg");
+    --log-status-icon-fill: var(--icon-color-success);
   }
 
   &.error {
-    background-color: var(--background-color-critical);
-    color: var(--text-color-error);
+    --log-status-icon: url("chrome://global/skin/icons/error.svg");
+    --log-status-icon-fill: var(--icon-color-critical);
+  }
+
+  &::part(heading) {
+    padding-inline-start: calc(var(--icon-size) + var(--space-small));
+    background: var(--log-status-icon) left center / var(--icon-size) no-repeat;
+    -moz-context-properties: fill;
+    fill: var(--log-status-icon-fill);
+  }
+
+  &:dir(rtl)::part(heading) {
+    background-position-x: right;
   }
 }
 
-.log-date {
-  flex: 1;
+.log-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-medium);
+  color: var(--text-color-deemphasized);
 }
 
-.log-size {
-  flex: none;
-  color: var(--text-color-deemphasized);
-  font-variant-numeric: tabular-nums;
+.log-contents {
+  margin-block: var(--space-small) 0;
+  max-block-size: 30em;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  unicode-bidi: plaintext;
+  text-align: start;
 }
 
 .log-line {
@@ -118,7 +99,7 @@ moz-page-header {
 }
 
 .empty-state {
-  margin-block: var(--space-xlarge);
+  margin: 0;
   text-align: center;
   color: var(--text-color-deemphasized);
 }

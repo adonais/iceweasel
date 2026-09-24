@@ -17,10 +17,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "nsGtkUtils.h"
 #include "nsWindow.h"
-#ifdef MOZ_LOGGING
-#  include "EncoderConfig.h"
-#endif
-
 #undef LOG
 #ifdef MOZ_LOGGING
 #  include "Units.h"
@@ -1519,156 +1515,6 @@ static const struct wp_image_description_v1_listener
         WaylandSurface::ImageDescriptionReady,
 };
 
-bool WaylandSurface::EnableColorManagementLocked(
-    const WaylandSurfaceLock& aProofOfLock, gfx::YUVColorSpace aColorSpace,
-    gfx::TransferFunction aTransferFunction,
-    const mozilla::gfx::HDRMetadata& aHDRMetadata, GdkWindow* aGdkWindow) {
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
-  MOZ_DIAGNOSTIC_ASSERT(!mColorSurface);
-
-  auto* colorManager = WaylandDisplayGet()->GetColorManager();
-  if (!colorManager || !WaylandDisplayGet()->IsHDREnabled()) {
-    return false;
-  }
-
-  LOGWAYLAND("WaylandSurface::EnableColorManagementLocked()");
-
-  mColorSurface = WUniquePtr<wp_color_management_surface_v1>(
-      wp_color_manager_v1_get_surface(colorManager, mSurface.get()));
-
-  auto* params = wp_color_manager_v1_create_parametric_creator(colorManager);
-  switch (aColorSpace) {
-    case gfx::YUVColorSpace::BT2020:
-      wp_image_description_creator_params_v1_set_primaries_named(
-          params, WP_COLOR_MANAGER_V1_PRIMARIES_BT2020);
-      break;
-    case gfx::YUVColorSpace::BT709:
-      wp_image_description_creator_params_v1_set_primaries_named(
-          params, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB);
-      break;
-    case gfx::YUVColorSpace::BT601:
-      // Hopefully if this os actually BT601_625 then it was turned into BT709
-      // already by this point...
-      wp_image_description_creator_params_v1_set_primaries_named(
-          params, WP_COLOR_MANAGER_V1_PRIMARIES_NTSC);
-      break;
-    case gfx::YUVColorSpace::Identity:
-      wp_image_description_creator_params_v1_set_primaries_named(
-          params, WP_COLOR_MANAGER_V1_PRIMARIES_SRGB);
-      break;
-  }
-
-  uint32_t requiredTF = 0;
-  switch (aTransferFunction) {
-    case gfx::TransferFunction::PQ:
-      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ;
-      break;
-    case gfx::TransferFunction::HLG:
-      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG;
-      break;
-    case gfx::TransferFunction::BT709:
-      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886;
-      break;
-    case gfx::TransferFunction::SRGB:
-      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB;
-      break;
-    case gfx::TransferFunction::LINEAR:
-      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR;
-      break;
-  }
-
-  if (requiredTF == 0 || !WaylandDisplayGet()->IsTFSupported(requiredTF)) {
-    LOGWAYLAND("Transfer function %u isn't supported.", requiredTF);
-
-    wp_image_description_creator_params_v1_destroy(params);
-    mColorSurface = nullptr;
-
-    return false;
-  }
-
-  wp_image_description_creator_params_v1_set_tf_named(params, requiredTF);
-
-  if (aTransferFunction == gfx::TransferFunction::PQ) {
-    if (aHDRMetadata.mContentLightLevel.isSome()) {
-      LOGWAYLAND(
-          "aHDRMetadata.mContentLightLevel -> MaxCLL=%u cd/m^2, MaxFALL=%u "
-          "cd/m^2",
-          aHDRMetadata.mContentLightLevel->maxContentLightLevel,
-          aHDRMetadata.mContentLightLevel->maxFrameAverageLightLevel);
-
-      SetContentLightLevel(params, aHDRMetadata.mContentLightLevel.value());
-    }
-    if (aHDRMetadata.mSmpte2086.isSome()) {
-      LOGWAYLAND(
-          "aHDRMetadata.mSmpte2086 -> Primaries: R(%f, %f) G(%f, %f) B(%f, %f) "
-          "W(%f, %f)",
-          aHDRMetadata.mSmpte2086->displayPrimaryRed.x,
-          aHDRMetadata.mSmpte2086->displayPrimaryRed.y,
-          aHDRMetadata.mSmpte2086->displayPrimaryGreen.x,
-          aHDRMetadata.mSmpte2086->displayPrimaryGreen.y,
-          aHDRMetadata.mSmpte2086->displayPrimaryBlue.x,
-          aHDRMetadata.mSmpte2086->displayPrimaryBlue.y,
-          aHDRMetadata.mSmpte2086->whitePoint.x,
-          aHDRMetadata.mSmpte2086->whitePoint.y);
-      LOGWAYLAND(
-          "aHDRMetadata.mSmpte2086 -> minLuminance=%f cd/m^2, maxLuminance=%f "
-          "cd/m^2",
-          aHDRMetadata.mSmpte2086->minLuminance,
-          aHDRMetadata.mSmpte2086->maxLuminance);
-
-      if (WaylandDisplayGet()->IsSetMDCVSupported()) {
-        SetMasteringDisplayColorVolume(params, aHDRMetadata.mSmpte2086.value());
-      } else {
-        LOGWAYLAND("SetMDCV feature not supported.");
-      }
-    }
-
-    if (!aHDRMetadata.mContentLightLevel.isSome() &&
-        !aHDRMetadata.mSmpte2086.isSome()) {
-      // w/o hdr metadata we default luminances in the range [0, 1000] nits
-      const float minLuminance = 0;
-      const float maxLuminance = 1000;
-
-      RefPtr<widget::Screen> screen =
-          aGdkWindow ? ScreenHelperGTK::GetScreenForGdkWindow(aGdkWindow)
-                     : nullptr;
-
-      // if we don't have a screen we fallback at 80 nits for SDR white
-      float sdrContentBrightness =
-          screen ? screen->GetSDRContentBrightness() : 80.f;
-
-      uint16_t maxCLL = std::lround(std::max(0.0f, sdrContentBrightness));
-      uint16_t maxFALL = maxCLL;
-
-      LOGWAYLAND("HDR w/o metadata -> MaxCLL=%u cd/m^2, MaxFALL=%u cd/m^2",
-                 maxCLL, maxFALL);
-
-      wp_image_description_creator_params_v1_set_max_cll(params, maxCLL);
-      wp_image_description_creator_params_v1_set_max_fall(params, maxFALL);
-
-      if (WaylandDisplayGet()->IsSetLuminancesSupported()) {
-        LOGWAYLAND("HDR w/o metadata -> Luminances=(%f, %f, %f) cd/m^2",
-                   minLuminance, maxLuminance, sdrContentBrightness);
-        SetLuminances(params, minLuminance, maxLuminance, sdrContentBrightness);
-      } else {
-        LOGWAYLAND("SetLuminances feature not supported.");
-      }
-    }
-  }
-
-  mImageDescription = WUniquePtr<wp_image_description_v1>(
-      wp_image_description_creator_params_v1_create(params));
-  // wp_image_description_creator_params_v1_create() consumes params
-  params = nullptr;
-
-  // AddRef this to keep it live until callback
-  AddRef();
-  wp_image_description_v1_add_listener(mImageDescription.get(),
-                                       &image_description_listener, this);
-
-  return true;
-}
-
 static int YUVColorSpaceToWLColorCoeficients(
     mozilla::gfx::YUVColorSpace aColorSpace) {
   switch (aColorSpace) {
@@ -1698,7 +1544,7 @@ void WaylandSurface::SetColorRepresentationLocked(
       "WaylandSurface::SetColorRepresentationLocked() colorspace %s full "
       "range "
       "%d",
-      YUVColorSpaceToString(aColorSpace), aFullRange);
+      mozilla::ToString(aColorSpace).c_str(), aFullRange);
 
   MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
   mColorRepresentationSurface = WUniquePtr<wp_color_representation_surface_v1>(
@@ -1719,6 +1565,26 @@ void WaylandSurface::SetColorRepresentationLocked(
 
 void WaylandSurface::AssertCurrentThreadOwnsMutex() {
   mMutex.AssertCurrentThreadOwns();
+}
+
+void WaylandSurface::SetColorManagementLocked(
+    const WaylandSurfaceLock& aProofOfLock, wp_color_manager_v1* aColorManager,
+    wp_image_description_creator_params_v1* aParams) {
+  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
+  MOZ_DIAGNOSTIC_ASSERT(!mColorSurface);
+
+  LOGWAYLAND("WaylandSurface::SetColorManagementLocked()");
+
+  mColorSurface = WUniquePtr<wp_color_management_surface_v1>(
+      wp_color_manager_v1_get_surface(aColorManager, mSurface.get()));
+
+  mImageDescription = WUniquePtr<wp_image_description_v1>(
+      wp_image_description_creator_params_v1_create(aParams));
+
+  // AddRef this to keep it live until callback
+  AddRef();
+  wp_image_description_v1_add_listener(mImageDescription.get(),
+                                       &image_description_listener, this);
 }
 
 void WaylandSurface::SetLuminances(
@@ -1776,6 +1642,145 @@ void WaylandSurface::SetMasteringDisplayColorVolume(
 
   wp_image_description_creator_params_v1_set_mastering_luminance(
       aParams, minLuminance, maxLuminance);
+}
+
+bool WaylandSurface::SetPrimaries(
+    wp_image_description_creator_params_v1* aParams,
+    mozilla::gfx::YUVColorSpace aColorSpace) {
+  uint32_t requiredPrimaries = 0;
+
+  switch (aColorSpace) {
+    case gfx::YUVColorSpace::BT2020:
+      requiredPrimaries = WP_COLOR_MANAGER_V1_PRIMARIES_BT2020;
+      break;
+    case gfx::YUVColorSpace::BT709:
+      requiredPrimaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB;
+      break;
+    case gfx::YUVColorSpace::BT601:
+      // Hopefully if this is actually BT601_625 then it was turned into BT709
+      // already by this point...
+      requiredPrimaries = WP_COLOR_MANAGER_V1_PRIMARIES_NTSC;
+      break;
+    case gfx::YUVColorSpace::Identity:
+      requiredPrimaries = WP_COLOR_MANAGER_V1_PRIMARIES_SRGB;
+      break;
+  }
+
+  if (requiredPrimaries == 0 ||
+      !WaylandDisplayGet()->IsPrimariesSupported(requiredPrimaries)) {
+    return false;
+  }
+
+  wp_image_description_creator_params_v1_set_primaries_named(aParams,
+                                                             requiredPrimaries);
+
+  return true;
+}
+
+bool WaylandSurface::SetTransferFunction(
+    wp_image_description_creator_params_v1* aParams,
+    gfx::TransferFunction aTransferFunction) {
+  uint32_t requiredTF = 0;
+  switch (aTransferFunction) {
+    case gfx::TransferFunction::PQ:
+      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_ST2084_PQ;
+      break;
+    case gfx::TransferFunction::HLG:
+      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_HLG;
+      break;
+    case gfx::TransferFunction::BT709:
+      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_BT1886;
+      break;
+    case gfx::TransferFunction::SRGB:
+      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_SRGB;
+      break;
+    case gfx::TransferFunction::LINEAR:
+      requiredTF = WP_COLOR_MANAGER_V1_TRANSFER_FUNCTION_EXT_LINEAR;
+      break;
+  }
+
+  if (requiredTF == 0 || !WaylandDisplayGet()->IsTFSupported(requiredTF)) {
+    return false;
+  }
+
+  wp_image_description_creator_params_v1_set_tf_named(aParams, requiredTF);
+
+  return true;
+}
+
+void WaylandSurface::SetHDRMetadata(
+    wp_image_description_creator_params_v1* aParams,
+    gfx::TransferFunction aTransferFunction, GdkWindow* aGdkWindow,
+    const mozilla::gfx::HDRMetadata& aHDRMetadata) {
+  // PQ metadata
+  if (aTransferFunction == gfx::TransferFunction::PQ) {
+    if (aHDRMetadata.mContentLightLevel.isSome()) {
+      LOGWAYLAND(
+          "aHDRMetadata.mContentLightLevel -> MaxCLL=%u cd/m^2, MaxFALL=%u "
+          "cd/m^2",
+          aHDRMetadata.mContentLightLevel->maxContentLightLevel,
+          aHDRMetadata.mContentLightLevel->maxFrameAverageLightLevel);
+
+      SetContentLightLevel(aParams, aHDRMetadata.mContentLightLevel.value());
+    }
+    if (aHDRMetadata.mSmpte2086.isSome()) {
+      LOGWAYLAND(
+          "aHDRMetadata.mSmpte2086 -> Primaries: R(%f, %f) G(%f, %f) "
+          "B(%f, %f) W(%f, %f)",
+          aHDRMetadata.mSmpte2086->displayPrimaryRed.x,
+          aHDRMetadata.mSmpte2086->displayPrimaryRed.y,
+          aHDRMetadata.mSmpte2086->displayPrimaryGreen.x,
+          aHDRMetadata.mSmpte2086->displayPrimaryGreen.y,
+          aHDRMetadata.mSmpte2086->displayPrimaryBlue.x,
+          aHDRMetadata.mSmpte2086->displayPrimaryBlue.y,
+          aHDRMetadata.mSmpte2086->whitePoint.x,
+          aHDRMetadata.mSmpte2086->whitePoint.y);
+      LOGWAYLAND(
+          "aHDRMetadata.mSmpte2086 -> minLuminance=%f cd/m^2, "
+          "maxLuminance=%f cd/m^2",
+          aHDRMetadata.mSmpte2086->minLuminance,
+          aHDRMetadata.mSmpte2086->maxLuminance);
+
+      if (WaylandDisplayGet()->IsSetMDCVSupported()) {
+        SetMasteringDisplayColorVolume(aParams,
+                                       aHDRMetadata.mSmpte2086.value());
+      } else {
+        LOGWAYLAND("SetMDCV feature not supported.");
+      }
+    }
+    if (!aHDRMetadata.mContentLightLevel.isSome() &&
+        !aHDRMetadata.mSmpte2086.isSome()) {
+      // w/o hdr metadata we default luminances in the range [0, 1000] nits
+      const float minLuminance = 0;
+      const float maxLuminance = 1000;
+
+      RefPtr<widget::Screen> screen =
+          aGdkWindow ? ScreenHelperGTK::GetScreenForGdkWindow(aGdkWindow)
+                     : nullptr;
+
+      // if we don't have a screen we fallback at 80 nits for SDR white
+      float sdrContentBrightness =
+          screen ? screen->GetSDRContentBrightness() : 80.f;
+
+      uint16_t maxCLL = std::lround(std::max(0.0f, sdrContentBrightness));
+      uint16_t maxFALL = maxCLL;
+
+      LOGWAYLAND("HDR w/o metadata -> MaxCLL=%u cd/m^2, MaxFALL=%u cd/m^2",
+                 maxCLL, maxFALL);
+
+      wp_image_description_creator_params_v1_set_max_cll(aParams, maxCLL);
+      wp_image_description_creator_params_v1_set_max_fall(aParams, maxFALL);
+
+      if (WaylandDisplayGet()->IsSetLuminancesSupported()) {
+        LOGWAYLAND("HDR w/o metadata -> Luminances=(%f, %f, %f) cd/m^2",
+                   minLuminance, maxLuminance, sdrContentBrightness);
+        SetLuminances(aParams, minLuminance, maxLuminance,
+                      sdrContentBrightness);
+      } else {
+        LOGWAYLAND("SetLuminances feature not supported.");
+      }
+    }
+  }
 }
 
 }  // namespace mozilla::widget

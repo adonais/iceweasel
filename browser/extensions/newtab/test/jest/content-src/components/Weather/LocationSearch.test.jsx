@@ -45,6 +45,14 @@ describe("<LocationSearch>", () => {
     expect(container.querySelector(".location-search")).toBeInTheDocument();
   });
 
+  it("adds an explicit accessible name to the input field's cancel button", () => {
+    const { container } = renderLocationSearch();
+    expect(container.querySelector(".close-icon")).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-weather-cancel-input"
+    );
+  });
+
   describe("use current location button", () => {
     it("hides the button when nova is disabled", () => {
       const { container } = renderLocationSearch();

@@ -214,6 +214,21 @@ During a browsing session it keeps track of visits to unique urls that can be us
 visitsCount >= 3
 ```
 
+`isAddressBarUrlNavigation` is true when the navigation was a direct
+navigation to a URL via the address bar — typed, pasted, autofilled, or picked
+from the dropdown as a bookmark/history/top-site match — as opposed to a
+search query submitted through the address bar, a synced-device (remote tab)
+pick, a link click, a redirect, or other programmatic navigation. This is
+only known for the
+navigation immediately following an address bar interaction; it's `false` for
+navigations that happen any other way, including ones that just look similar
+(e.g. a search redirecting to a URL that was also separately bookmarked).
+
+```javascript
+// Only match when the address bar resolved directly to a URL, not a search
+isAddressBarUrlNavigation
+```
+
 Supports filtering with `params`, [`patterns`](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns), and `regexPatterns`.
 
 ```javascript
@@ -251,6 +266,27 @@ let regexPatterns: string[];
   ...
 }
 ```
+
+The trigger context exposes two counters. `visitsCount` is per unique URL, so
+it only grows when the same URL is loaded again. `totalVisitsCount` counts
+every matched visit, so it grows on each matching page load regardless of the
+URL. Pair `totalVisitsCount` with a broad pattern to count all page loads:
+
+```javascript
+{
+  ...
+  trigger: { id: "openURL", patterns: ["*://*/*"] },
+  // Show the message on the third page load of the session.
+  targeting: "totalVisitsCount >= 3"
+  ...
+}
+```
+
+Note that the `openURL` listener is shared by every active `openURL` message,
+and `totalVisitsCount` counts matches against the combined `params`,
+`patterns`, and `regexPatterns` of all of them, not just those of the message
+being evaluated. Only use it with a trigger broad enough that the distinction
+does not matter; prefer `visitsCount` for narrowly scoped triggers.
 
 ### `newSavedLogin`
 

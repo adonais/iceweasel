@@ -4,7 +4,6 @@
 
 package mozilla.components.compose.base.button
 
-import android.view.SoundEffectConstants
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -37,16 +35,12 @@ import mozilla.components.compose.base.modifier.rightClickable
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
-// Temporary workaround to Compose buttons not having click sounds
-// see https://issuetracker.google.com/issues/219984415
-
 private val RippleRadius = 24.dp
 
 /**
  * A button with the following functionalities:
  * - it has a minimum touch target size of 48dp
  * - it will perform a haptic feedback for long clicks or right clicks
- * - it will play a sound effect for clicks
  * - it will use the [AcornTheme] ripple color.
  *
  * @param onClick Callback for when this button is clicked.
@@ -85,7 +79,6 @@ fun LongPressIconButton(
 
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         val haptic = LocalHapticFeedback.current
-        val view = LocalView.current
 
         Box(
             modifier =
@@ -103,10 +96,7 @@ fun LongPressIconButton(
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onLongClick()
                         },
-                        onClick = {
-                            view.playSoundEffect(SoundEffectConstants.CLICK)
-                            onClick()
-                        },
+                        onClick = { onClick() },
                     )
                     .rightClickable(
                         interactionSource = interactionSource,

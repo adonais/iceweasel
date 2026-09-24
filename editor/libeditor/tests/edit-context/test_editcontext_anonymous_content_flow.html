@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>EditContext anonymous content should not be in-flow with other document-level anonymous content</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <style>
+  body { margin: 0; }
+  </style>
+</head>
+<body>
+<div></div>
+
+<script>
+'use strict';
+const host = document.querySelector('div');
+host.editContext = new EditContext({text: 'test'});
+const anonymousDiv = document.createElement('div');
+const anonymousContent = SpecialPowers.wrap(document).insertAnonymousContent();
+anonymousContent.root.append(anonymousDiv);
+const rect = anonymousDiv.getBoundingClientRect();
+is(`${rect.x},${rect.y}`, '0,0',
+   'EditContext anonymous content should not be in-flow with other document-level anonymous content.');
+</script>
+
+</body>
+</html>

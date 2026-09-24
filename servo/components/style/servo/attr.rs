@@ -16,18 +16,18 @@ use selectors::attr::AttrSelectorOperation;
 use servo_arc::Arc;
 
 use super::shadow_parts::ShadowParts;
-use crate::color::parsing::parse_color_keyword;
 use crate::color::AbsoluteColor;
+use crate::color::parsing::parse_color_keyword;
 use crate::derives::*;
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::str::{
-    read_exponent, read_fraction, read_numbers, split_commas, split_html_space_chars, str_join,
-    HTML_SPACE_CHARACTERS,
+    HTML_SPACE_CHARACTERS, read_exponent, read_fraction, read_numbers, split_commas,
+    split_html_space_chars, str_join,
 };
-use crate::values::specified::color::Color;
-use crate::values::specified::LengthPercentage;
 use crate::values::AtomString;
+use crate::values::specified::LengthPercentage;
+use crate::values::specified::color::Color;
 use crate::{Atom, LocalName, Namespace, Prefix};
 
 // Duplicated from script::dom::values.

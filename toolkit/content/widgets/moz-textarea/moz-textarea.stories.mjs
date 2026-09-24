@@ -42,6 +42,7 @@ const Template = ({
   iconSrc,
   disabled,
   readonly,
+  required,
   l10nId,
   description,
   supportPage,
@@ -56,6 +57,7 @@ const Template = ({
     iconsrc=${ifDefined(iconSrc || null)}
     ?disabled=${disabled}
     ?readonly=${readonly}
+    ?required=${required}
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
@@ -75,6 +77,7 @@ Default.args = {
   iconSrc: "",
   disabled: false,
   readonly: false,
+  required: false,
   l10nId: "moz-textarea-label",
   supportPage: "",
   accessKey: "",
@@ -119,6 +122,13 @@ Readonly.args = {
   ...Default.args,
   l10nId: "moz-textarea-description",
   readonly: true,
+};
+
+export const Required = Template.bind({});
+Required.args = {
+  ...Default.args,
+  l10nId: "moz-textarea-description",
+  required: true,
 };
 
 export const WithRows = Template.bind({});

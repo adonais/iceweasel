@@ -8,4 +8,14 @@ support-files = [
 
 ["browser_command_line_urls.js"]
 
+["browser_disable_devtools_live.js"]
+
+["browser_disable_devtools_live_browser_console.js"]
+
+["browser_disable_devtools_live_browser_toolbox.js"]
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1937225
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1937225, Bug 2028047
+]
+
 ["browser_shim_disable_devtools.js"]

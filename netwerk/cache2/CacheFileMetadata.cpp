@@ -552,12 +552,18 @@ nsresult CacheFileMetadata::SetElement(const char* aKey, const char* aValue) {
 
   mLock->Lock().AssertCurrentThreadOwns();
 
-  MarkDirty();
-
   nsresult rv;
 
   const uint32_t keySize = strlen(aKey) + 1;
   char* pos = const_cast<char*>(GetElement(aKey));
+
+  // Storing the value an element already has (or removing one that isn't there)
+  // changes nothing, so it must not dirty the metadata.
+  if (!aValue ? !pos : (pos && strcmp(pos, aValue) == 0)) {
+    return NS_OK;
+  }
+
+  MarkDirty();
 
   if (!aValue) {
     // No value means remove the key/value pair completely, if existing
@@ -1197,7 +1203,11 @@ nsresult CacheFileMetadata::ParseMetadata(uint32_t aLogicalDataSize,
     memcpy(mHashArray, mBuf + hashesOffset, mHashArraySize);
   }
 
-  MarkDirty();
+  // Parsing doesn't change the entry, only the header version upgraded above,
+  // which needs writing out but isn't a content change (so no mLastModified).
+  if (version != kCacheEntryVersion) {
+    MarkDirty(false);
+  }
 
   mElementsSize = metaposOffset - elementsOffset;
   memmove(mBuf, mBuf + elementsOffset, mElementsSize);

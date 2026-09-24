@@ -7,6 +7,7 @@
 #include "DOMMediaStream.h"
 #include "MediaSegment.h"
 #include "MediaStreamError.h"
+#include "MediaTrackGraph.h"
 #include "MediaTrackGraphImpl.h"
 #include "MediaTrackListener.h"
 #include "mozilla/BasePrincipal.h"
@@ -41,6 +42,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MediaStreamTrackSource)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrincipal)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+MediaStreamTrackSource::CloneResult::~CloneResult() = default;
 
 auto MediaStreamTrackSource::Clone() -> CloneResult { return {}; }
 

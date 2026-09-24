@@ -37,6 +37,8 @@ support-files = [
   "html_json-malformed-test-page.html",
   "html_json-text-mime-test-page.html",
   "html_json-xssi-protection.html",
+  "html_jsonl-post-test-page.html",
+  "html_jsonl-test-page.html",
   "html_jsonp-test-page.html",
   "html_maps-test-page.html",
   "html_module-script-cache.html",
@@ -253,6 +255,8 @@ skip-if = [
 ["browser_net_sort-02.js"]
 
 ["browser_net_sort-reset.js"]
+
+["browser_net_source-preview-search.js"]
 
 ["browser_net_speculation-rules-prefetch-requests.js"]
 

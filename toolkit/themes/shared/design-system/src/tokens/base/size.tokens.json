@@ -1,56 +1,56 @@
 {
   "image": {
     "xsmall": {
-      "value": "{dimension.40}"
+      "value": "40px"
     },
     "small": {
-      "value": "{dimension.48}"
+      "value": "48px"
     },
     "medium": {
-      "value": "{dimension.56}"
+      "value": "56px"
     },
     "large": {
-      "value": "{dimension.64}"
+      "value": "64px"
     },
     "xlarge": {
-      "value": "{dimension.80}"
+      "value": "80px"
     },
     "xxlarge": {
-      "value": "{dimension.96}"
+      "value": "96px"
     }
   },
   "item": {
     "xsmall": {
-      "value": "{dimension.12}"
+      "value": "12px"
     },
     "small": {
-      "value": "{dimension.16}"
+      "value": "16px"
     },
     "medium": {
-      "value": "{dimension.24}"
+      "value": "24px"
     },
     "large": {
-      "value": "{dimension.32}"
+      "value": "32px"
     },
     "xlarge": {
-      "value": "{dimension.48}"
+      "value": "48px"
     }
   },
   "layout": {
     "xsmall": {
-      "value": "{dimension.100}"
+      "value": "100px"
     },
     "small": {
-      "value": "{dimension.200}"
+      "value": "200px"
     },
     "medium": {
-      "value": "{dimension.300}"
+      "value": "300px"
     },
     "large": {
-      "value": "{dimension.400}"
+      "value": "400px"
     },
     "xlarge": {
-      "value": "{dimension.500}"
+      "value": "500px"
     }
   },
   "sidebar": {

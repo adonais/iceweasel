@@ -264,6 +264,8 @@ skip-if = [
 
 ["test_rate_limit_location_change.html"]
 
+["test_rate_limit_same_document_navigation.html"]
+
 ["test_recursive_frames.html"]
 skip-if = [
   "http2",

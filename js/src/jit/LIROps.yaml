@@ -2211,9 +2211,7 @@
     newval: WordSized
   # Needs additional temps on LL/SC platforms to extract/insert bits of word.
 #if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
-  num_temps: 4
-#else
-  num_temps: 1
+  num_temps: 3
 #endif
   mir_op: true
 
@@ -2225,9 +2223,7 @@
     value: WordSized
   # Needs additional temps on LL/SC platforms to extract/insert bits of word.
 #if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
-  num_temps: 4
-#else
-  num_temps: 1
+  num_temps: 3
 #endif
   mir_op: true
 
@@ -2239,9 +2235,9 @@
     value: WordSized
   # Needs additional temps on LL/SC platforms to extract/insert bits of word.
 #if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
-  num_temps: 4
+  num_temps: 3
 #else
-  num_temps: 2
+  num_temps: 1
 #endif
   mir_op: true
 
@@ -3676,22 +3672,16 @@
   mir_op: Unbox
 
 # Convert a 32-bit unsigned integer to a double.
-- name: WasmUint32ToDouble
+- name: Uint32ToDouble
   result_type: WordSized
   operands:
     input: WordSized
-#ifdef JS_CODEGEN_X86
-  num_temps: 1
-#endif
 
 # Convert a 32-bit unsigned integer to a float32.
-- name: WasmUint32ToFloat32
+- name: Uint32ToFloat32
   result_type: WordSized
   operands:
     input: WordSized
-#ifdef JS_CODEGEN_X86
-  num_temps: 1
-#endif
 
 - name: DivI
   result_type: WordSized

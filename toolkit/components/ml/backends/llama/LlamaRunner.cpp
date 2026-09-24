@@ -205,9 +205,7 @@ nsresult LlamaGenerateTask::Run() {
     LOGE_RUNNER("{} Error during generation {}", __PRETTY_FUNCTION__,
                 result.inspectErr().mMessage);
 
-    mErrorMessage = result.inspectErr().mMessage;
-    mState = TaskState::CompletedFailure;
-
+    FailTask(result.inspectErr().mMessage);
     return NS_ERROR_FAILURE;
   }
 
@@ -220,10 +218,7 @@ nsresult LlamaGenerateTask::Run() {
           "full",
           __PRETTY_FUNCTION__);
       LOGE_RUNNER("{}", msg);
-
-      mErrorMessage = std::move(msg);
-      mState = TaskState::CompletedFailure;
-
+      FailTask(std::move(msg));
       return NS_ERROR_FAILURE;
     }
   }
@@ -237,9 +232,8 @@ nsresult LlamaGenerateTask::Run() {
         "completion status as the queue is full",
         __PRETTY_FUNCTION__);
     LOGE_RUNNER("{}", msg);
-
-    mErrorMessage = std::move(msg);
-    mState = TaskState::CompletedFailure;
+    FailTask(std::move(msg));
+    return NS_ERROR_FAILURE;
   }
 
   LOGV_RUNNER("{} LlamaGenerateTask Completed.", __PRETTY_FUNCTION__);
@@ -260,11 +254,22 @@ nsresult LlamaGenerateTask::Cancel() {
   return NS_OK;
 }
 
+void LlamaGenerateTask::FailTask(nsCString aMessage) {
+  MutexAutoLock lock(mMutex);
+  mErrorMessage = std::move(aMessage);
+  mState = TaskState::CompletedFailure;
+  if (mHasPendingConsumer) {
+    mHasPendingConsumer = false;
+    mPromiseHolders[mCurrentPromiseHolderIdx].Reject(mErrorMessage, __func__);
+  }
+}
+
 bool LlamaGenerateTask::PushMessage(
     mozilla::Maybe<LlamaChatResponse> aMessage) {
   LOGV_RUNNER("Entered {}", __PRETTY_FUNCTION__);
 
-  if (MaybePushMessage(aMessage)) {
+  MutexAutoLock lock(mMutex);
+  if (MaybePushMessageLocked(aMessage, lock)) {
     return true;
   }
 
@@ -277,6 +282,13 @@ bool LlamaGenerateTask::PushMessage(
 
 bool LlamaGenerateTask::MaybePushMessage(
     mozilla::Maybe<LlamaChatResponse> aMessage) {
+  MutexAutoLock lock(mMutex);
+  return MaybePushMessageLocked(std::move(aMessage), lock);
+}
+
+bool LlamaGenerateTask::MaybePushMessageLocked(
+    mozilla::Maybe<LlamaChatResponse> aMessage,
+    const MutexAutoLock& aProofOfLock) {
   LOGV_RUNNER("Entered {}", __PRETTY_FUNCTION__);
 
   // One producer (thread this function is running from), one consumer thread.
@@ -338,6 +350,7 @@ bool LlamaGenerateTask::MaybePushMessage(
 
 RefPtr<LlamaGenerateTaskPromise> LlamaGenerateTask::GetMessage() {
   LOGV_RUNNER("Entered {}", __PRETTY_FUNCTION__);
+  MutexAutoLock lock(mMutex);
   if (mState == TaskState::CompletedFailure) {
     LOGE_RUNNER("{}: {}", __PRETTY_FUNCTION__, mErrorMessage);
     return LlamaGenerateTaskPromise::CreateAndReject(mErrorMessage, __func__);
@@ -684,8 +697,7 @@ bool LlamaRunner::InInferenceProcess(JSContext*, JSObject*) {
   if (!ContentChild::GetSingleton()) {
     return false;
   }
-  return ContentChild::GetSingleton()->GetRemoteType().Equals(
-      INFERENCE_REMOTE_TYPE);
+  return ContentChild::GetSingleton()->GetRemoteType().IsInference();
 }
 
 class MetadataCallback final : public nsIFileMetadataCallback {

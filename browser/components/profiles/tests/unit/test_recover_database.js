@@ -56,6 +56,24 @@ add_task(async function test_recover_database() {
     "Should have created the current profile"
   );
 
+  let missingEvents = Glean.profiles.currentMissing.testGetValue();
+  Assert.equal(
+    missingEvents.length,
+    1,
+    "Should have recorded a profiles.current_missing event"
+  );
+  Assert.equal(
+    missingEvents[0].extra.profile_count,
+    "1",
+    "profiles.current_missing should report 1 existing profile"
+  );
+
+  Assert.equal(
+    Glean.profiles.profileCount.testGetValue(),
+    2,
+    "profiles.profile_count should be 2 after recovery created the current profile"
+  );
+
   let profiles = await SelectableProfileService.getAllProfiles();
   Assert.equal(profiles.length, 2, "Should be two profiles in the database");
 

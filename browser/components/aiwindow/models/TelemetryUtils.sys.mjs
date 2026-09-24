@@ -135,6 +135,7 @@ export class TelemetryPromptEngine {
       serviceType: promptRecord.service_type ?? "ai",
       purpose: promptRecord.purpose ?? "chat",
       extraHeaders,
+      maxRetries: 0,
     });
 
     return engine;

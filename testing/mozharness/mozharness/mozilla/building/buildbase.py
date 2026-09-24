@@ -273,6 +273,7 @@ class BuildOptionParser:
         "x86-lite": path_base + "%s_x86_lite.py",
         "x86-profile-generate": path_base + "%s_x86_profile_generate.py",
         "x86_64": path_base + "%s_x86_64.py",
+        "x86_64-ccov": path_base + "%s_x86_64_ccov.py",
         "x86_64-lite": path_base + "%s_x86_64_lite.py",
         "x86_64-debug": path_base + "%s_x86_64_debug.py",
         "x86_64-debug-isolated-process": path_base
@@ -718,16 +719,6 @@ items from that key's value."
         self._run_mach_command_in_build_env(args)
 
         self._generate_build_stats()
-
-    def static_analysis_autotest(self):
-        """Run mach static-analysis autotest, in order to make sure we dont regress"""
-        self.preflight_build()
-        self._run_mach_command_in_build_env(["configure"])
-        self._run_mach_command_in_build_env([
-            "static-analysis",
-            "autotest",
-            "--intree-tool",
-        ])
 
     def _query_mach(self):
         return [sys.executable, "mach"]

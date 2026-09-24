@@ -615,6 +615,35 @@ class GeckoEngineSession(
     }
 
     /**
+     * When on a PDF, this will ask the PDF viewer to add a signature. If not on a PDF, then an exception will occur.
+     *
+     * @param text The signature the user typed.
+     * @param onResult Callback invoked once the PDF viewer has been given the signature.
+     * @param onException Callback invoked if the signature could not be handed to the PDF viewer, which includes the
+     *   session not displaying a PDF.
+     */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    override fun addSignatureToPdf(
+        text: String,
+        onResult: () -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        geckoSession.pdfViewerEditor
+            .addSignature(text)
+            .then(
+                {
+                    onResult()
+                    GeckoResult<Void>()
+                },
+                { throwable ->
+                    logger.error("Request for adding a signature to the PDF failed: ", throwable)
+                    onException(throwable)
+                    GeckoResult()
+                },
+            )
+    }
+
+    /**
      * Send the broken site report using Glean.
      *
      * @param details The {@link JSONObject} returned by getBrokenSiteReport.

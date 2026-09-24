@@ -263,6 +263,13 @@ AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
                                                     AbstractFramePtr frame);
 
 /**
+ * Return the top-level-await generator object of `module`, or nullptr if
+ * `module` has no top-level await, or it is not linked yet, or its generator
+ * object hasn't been created yet.
+ */
+AbstractGeneratorObject* GetGeneratorObjectForModule(ModuleObject* module);
+
+/**
  * If `env` or any enclosing environment is a `CallObject` associated with a
  * generator object, return the generator.
  *

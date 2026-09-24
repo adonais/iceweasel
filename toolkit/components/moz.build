@@ -162,6 +162,9 @@ if CONFIG["MOZ_UNIFFI_FIXTURES"]:
 if CONFIG["NIGHTLY_BUILD"]:
     DIRS += ["aboutinference"]
 
+if CONFIG["OS_ARCH"] == "WINNT":
+    DIRS += ["push"]
+
 UNIFIED_SOURCES += [
     "/toolkit/components/antitracking/ContentBlockingAllowList.cpp",
 ]

@@ -332,6 +332,17 @@ add_task(async function comprehensive() {
   }
 });
 
+add_task(async function nullMessage() {
+  let l10n = {
+    formatMessages: async () => [null],
+  };
+  let cache = new L10nCache(l10n);
+
+  await cache.add({ id: "unknown" });
+
+  Assert.equal(cache.size(), 0, "A null message should not be cached");
+});
+
 // Tests cache eviction.
 add_task(async function eviction() {
   // Set up a mock localization.

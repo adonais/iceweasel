@@ -7,16 +7,21 @@ package org.mozilla.fenix.ui.efficiency.selectors
 import mozilla.components.feature.summarize.R as summarizeR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsPageSummariesSelectors {
+object SettingsPageSummariesSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        PAGE_SUMMARIES_VIEW
+    }
+
     val PAGE_SUMMARIES_TOOLBAR_TITLE =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
-            value = getStringResource(R.string.preferences_page_summaries),
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_page_summaries),
             description = "the Page summaries toolbar title",
-            groups = listOf("requiredForPage"),
         )
 
     val SUMMARIZE_PAGES_OPTION =
@@ -24,7 +29,7 @@ object SettingsPageSummariesSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(summarizeR.string.mozac_summarize_settings_summarize_pages),
             description = "the Summarize pages option",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val LEARN_MORE_LINK =
@@ -32,7 +37,7 @@ object SettingsPageSummariesSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(summarizeR.string.mozac_summarize_settings_learn_more),
             description = "the Learn more link",
-            groups = listOf("pageSummariesView"),
+            groups = setOf(Group.PAGE_SUMMARIES_VIEW),
         )
 
     val GESTURES_SUB_HEADER =
@@ -40,7 +45,7 @@ object SettingsPageSummariesSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(summarizeR.string.mozac_summarize_settings_gestures),
             description = "the Gestures sub header",
-            groups = listOf("pageSummariesView"),
+            groups = setOf(Group.PAGE_SUMMARIES_VIEW),
         )
 
     val SHAKE_TO_SUMMARIZE_OPTION =
@@ -48,15 +53,6 @@ object SettingsPageSummariesSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(summarizeR.string.mozac_summarize_settings_shake_to_summarize),
             description = "the Shake to summarize option",
-            groups = listOf("pageSummariesView"),
-        )
-
-    val all =
-        listOf(
-            PAGE_SUMMARIES_TOOLBAR_TITLE,
-            SUMMARIZE_PAGES_OPTION,
-            LEARN_MORE_LINK,
-            GESTURES_SUB_HEADER,
-            SHAKE_TO_SUMMARIZE_OPTION,
+            groups = setOf(Group.PAGE_SUMMARIES_VIEW),
         )
 }

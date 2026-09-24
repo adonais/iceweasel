@@ -305,6 +305,7 @@ export default [
       "uriloader/**",
     ],
     ignores: [
+      "browser/components/sessionstore/SessionStore.sys.mjs",
       "browser/components/tabbrowser/Tabbrowser.sys.mjs",
       "browser/modules/URILoadingHelper.sys.mjs",
       "devtools/shared/css/parsing-utils.js",
@@ -477,6 +478,7 @@ export default [
       "widget/tests/window_composition_text_querycontent.xhtml",
     ],
     ignores: [
+      "browser/components/sessionstore/SessionStore.sys.mjs",
       "browser/components/tabbrowser/Tabbrowser.sys.mjs",
       "browser/modules/URILoadingHelper.sys.mjs",
       "devtools/shared/css/parsing-utils.js",

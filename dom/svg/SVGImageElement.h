@@ -63,7 +63,7 @@ class SVGImageElement final : public SVGImageElementBase,
 
   void DestroyContent() override;
 
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* name) const override;
 
   // SVGSVGElement methods:
   bool HasValidDimensions() const override;

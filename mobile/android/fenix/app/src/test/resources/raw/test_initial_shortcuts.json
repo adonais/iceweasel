@@ -46,7 +46,6 @@
       "url": "https://www.example6.com/",
       "order": 5,
       "schema": 1,
-      "include_experiments": ["firefox-jp-guide-default-site"],
       "last_modified": 1
     },
     {

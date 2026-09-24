@@ -10,22 +10,22 @@ use crate::custom_properties::CssEnvironment;
 use crate::font_metrics::FontMetrics;
 use crate::logical_geometry::WritingMode;
 use crate::media_queries::MediaType;
-use crate::properties::style_structs::Font;
 use crate::properties::ComputedValues;
+use crate::properties::style_structs::Font;
 use crate::queries::values::PrefersColorScheme;
 use crate::servo::media_features::PointerCapabilities;
+use crate::values::KeyframesName;
 use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::{
     CSSPixelLength, Length, LineHeight, LinkParameters, NonNegativeLength,
 };
+use crate::values::specified::ViewportVariant;
 use crate::values::specified::color::{ColorSchemeFlags, ForcedColors, SystemColor};
 use crate::values::specified::font::{
-    QueryFontMetricsFlags, FONT_MEDIUM_CAP_PX, FONT_MEDIUM_CH_PX, FONT_MEDIUM_EX_PX,
-    FONT_MEDIUM_IC_PX, FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX,
+    FONT_MEDIUM_CAP_PX, FONT_MEDIUM_CH_PX, FONT_MEDIUM_EX_PX, FONT_MEDIUM_IC_PX,
+    FONT_MEDIUM_LINE_HEIGHT_PX, FONT_MEDIUM_PX, QueryFontMetricsFlags,
 };
-use crate::values::specified::ViewportVariant;
-use crate::values::KeyframesName;
-use app_units::{Au, AU_PER_PX};
+use app_units::{AU_PER_PX, Au};
 use euclid::default::Size2D as UntypedSize2D;
 use euclid::{Scale, SideOffsets2D, Size2D};
 use malloc_size_of_derive::MallocSizeOf;
@@ -111,7 +111,7 @@ impl Device {
             used_dynamic_viewport_size: AtomicBool::new(false),
             environment: CssEnvironment,
             default_values,
-            body_text_color: AtomicU32::new(AbsoluteColor::BLACK.to_nscolor()),
+            body_text_color: RwLock::new(AbsoluteColor::BLACK),
             extra: ExtraDeviceData {
                 media_type,
                 viewport_size,
@@ -333,8 +333,20 @@ impl Device {
         self.extra.all_pointer_capabilities
     }
 
-    pub(crate) fn is_dark_color_scheme(&self, _: ColorSchemeFlags) -> bool {
-        false
+    pub(crate) fn is_dark_color_scheme(&self, color_scheme_flags: ColorSchemeFlags) -> bool {
+        // Inspired by
+        // https://searchfox.org/firefox-main/rev/0a7f146ccac85b8f413264042dcd764028d419ec/widget/nsXPLookAndFeel.cpp#1296
+        let supports_dark_mode = color_scheme_flags.contains(ColorSchemeFlags::DARK);
+        let supports_light_mode = color_scheme_flags.contains(ColorSchemeFlags::LIGHT);
+
+        // If only one is supported, then use dark mode if it was the supported one.
+        if supports_dark_mode != supports_light_mode {
+            return supports_dark_mode;
+        }
+
+        // If either both or none are supported, then use the preferred color scheme
+        // to determine whether the user wants dark mode.
+        return self.color_scheme() == PrefersColorScheme::Dark;
     }
 
     pub(crate) fn system_color(
@@ -349,7 +361,6 @@ impl Device {
         // Refer to spec
         // <https://www.w3.org/TR/css-color-4/#css-system-colors>
         if self.is_dark_color_scheme(color_scheme_flags) {
-            // Note: is_dark_color_scheme always returns true, so this code is dead code.
             match system_color {
                 SystemColor::Accentcolor => srgb(10, 132, 255),
                 SystemColor::Accentcolortext => srgb(255, 255, 255),

@@ -174,6 +174,25 @@ export class SyncedTabsController {
     this.host.requestUpdate();
   }
 
+  /**
+   * @typedef {object} ActionMapping
+   * @property {string} [asset]
+   *   URL for an illustration to accompany the action card
+   * @property {string} header
+   *   Fluent ID for header string
+   * @property {string} description
+   *   Fluent ID for description string
+   * @property {string} [buttonLabel]
+   *   Fluent ID for button string (if this state has a button)
+   * @property {{name: string, url: string}} [descriptionLink]
+   *   Additional localization properties for the `description` string if it
+   *   has an inline link; `name` should match the `data-l10n-name` of the
+   *   <a> tag and `url` will be used as the href of the <a> tag.
+   */
+
+  /** @typedef {"sign-in"|"add-device"|"sync-tabs-disabled"|"loading"} Action */
+
+  /** @type {{[A in Action]: ActionMapping}} */
   actionMappings = {
     "sign-in": {
       header: "firefoxview-syncedtabs-signin-header-2",
@@ -200,6 +219,7 @@ export class SyncedTabsController {
     },
   };
 
+  /** @type {{[A in Action]: ActionMapping}} */
   novaActionMappings = {
     "sign-in": {
       asset: "chrome://browser/skin/sidebar/kit-tabs-devices.svg",
@@ -223,6 +243,7 @@ export class SyncedTabsController {
       buttonLabel: "firefoxview-tabpickup-synctabs-primarybutton-2",
     },
     loading: {
+      asset: "chrome://browser/skin/sidebar/kit-tabs-devices.svg",
       header: "firefoxview-syncedtabs-loading-header-2",
       description: "firefoxview-syncedtabs-loading-description-2",
     },

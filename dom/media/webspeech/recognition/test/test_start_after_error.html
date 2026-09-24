@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: start() must be allowed again after an error event</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#start-session-algorithm step 2:
+// "If [[started]] is true and no error event or end event has fired on it,
+// throw an InvalidStateError and abort these steps." So once "error" has
+// fired, a fresh start() must be allowed, even though the object was never
+// explicitly stop()/abort()ed by script.
+//
+// Uses the mock backend's single-active-session limit to force a genuine
+// "error" event (mapped from "concurrent-session"): sr1 holds the slot, sr2's
+// start() is rejected with an error while sr2 is still [[started]].
+
+SimpleTest.waitForExplicitFinish();
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const sr1 = new SpeechRecognition();
+    sr1.onerror = e => ok(false, "sr1 unexpected error: " + e.error);
+    await new Promise(resolve => {
+      sr1.onstart = resolve;
+      sr1.start();
+    });
+    ok(true, "sr1 holds the single session slot");
+
+    const sr2 = new SpeechRecognition();
+    const { error, endFired } = await new Promise(resolve => {
+      let error;
+      sr2.onerror = e => {
+        error = e.error;
+      };
+      sr2.onend = () => resolve({ error, endFired: true });
+      sr2.start();
+    });
+    is(error, "service-not-allowed",
+       "sr2 rejected with the concurrent-session error, mapped to service-not-allowed");
+    ok(endFired, "\"end\" fired on sr2 after \"error\", per spec: end must " +
+       "always fire when the session ends, regardless of the reason");
+
+    // Bug: calling start() again used to throw InvalidStateError here, since
+    // mStarted was never cleared on error. Per spec this must be allowed,
+    // since an error event has now fired on sr2.
+    let threw = null;
+    try {
+      sr2.start();
+    } catch (e) {
+      threw = e;
+    }
+    ok(!threw, "start() after an error event must not throw: " + threw);
+
+    // sr1 still holds the slot, so this second start() also errors out; end
+    // it cleanly.
+    await new Promise(resolve => {
+      sr2.onerror = () => {};
+      sr2.onend = resolve;
+    });
+
+    sr1.abort();
+    ok(true, "start() after error is allowed again, per spec");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

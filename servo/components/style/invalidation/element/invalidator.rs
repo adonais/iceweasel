@@ -15,7 +15,7 @@ use selectors::matching::matches_compound_selector_from;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::parser::{Combinator, Component, Selector, SelectorVisitor};
 use selectors::{OpaqueElement, SelectorImpl};
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 use std::fmt;
 use std::fmt::Write;
 
@@ -70,20 +70,20 @@ where
 
     /// Get the element's previous sibling element.
     pub fn next_sibling_for(&self, element: &E) -> Option<E> {
-        if let Some(ref info) = self.info {
-            if *element == info.affected {
-                return info.next_sibling;
-            }
+        if let Some(ref info) = self.info
+            && *element == info.affected
+        {
+            return info.next_sibling;
         }
         element.next_sibling_element()
     }
 
     /// Get the element's previous sibling element.
     pub fn prev_sibling_for(&self, element: &E) -> Option<E> {
-        if let Some(ref info) = self.info {
-            if *element == info.affected {
-                return info.prev_sibling;
-            }
+        if let Some(ref info) = self.info
+            && *element == info.affected
+        {
+            return info.prev_sibling;
         }
         element.prev_sibling_element()
     }
@@ -499,13 +499,8 @@ impl SelectorVisitor for NegationScopeVisitor {
     }
 
     fn visit_simple_selector(&mut self, component: &Component<Self::Impl>) -> bool {
-        if self.in_negation {
-            match component {
-                Component::Scope => {
-                    self.found_scope_in_negation = true;
-                },
-                _ => {},
-            }
+        if self.in_negation && component == &Component::Scope {
+            self.found_scope_in_negation = true;
         }
         true
     }
@@ -744,13 +739,6 @@ where
     ) -> bool {
         let mut sibling_invalidations = InvalidationVector::new();
 
-        let result = self.invalidate_child(
-            child,
-            invalidations,
-            &mut sibling_invalidations,
-            DescendantInvalidationKind::Dom,
-        );
-
         // Roots of NAC subtrees can indeed generate sibling invalidations, but
         // they can be just ignored, since they have no siblings.
         //
@@ -758,7 +746,12 @@ where
         // matching due to this being NAC, like those coming from document
         // rules, but we overinvalidate instead of checking this.
 
-        result
+        self.invalidate_child(
+            child,
+            invalidations,
+            &mut sibling_invalidations,
+            DescendantInvalidationKind::Dom,
+        )
     }
 
     /// Invalidate a child and recurse down invalidating its descendants if
@@ -879,10 +872,10 @@ where
                 );
             }
 
-            if let Some(shadow) = element.shadow_root() {
-                if element.exports_any_part() {
-                    any |= self.invalidate_parts_in_shadow_tree(shadow, invalidations)
-                }
+            if let Some(shadow) = element.shadow_root()
+                && element.exports_any_part()
+            {
+                any |= self.invalidate_parts_in_shadow_tree(shadow, invalidations)
             }
         }
 
@@ -997,11 +990,11 @@ where
             return false;
         }
 
-        if let Some(checker) = self.stack_limit_checker {
-            if checker.limit_exceeded() {
-                self.processor.recursion_limit_exceeded(self.element);
-                return true;
-            }
+        if let Some(checker) = self.stack_limit_checker
+            && checker.limit_exceeded()
+        {
+            self.processor.recursion_limit_exceeded(self.element);
+            return true;
         }
 
         let mut any_descendant = false;
@@ -1217,7 +1210,7 @@ where
                 ));
             }
         }
-        return (result, next_invalidations);
+        (result, next_invalidations)
     }
 
     /// Processes a given invalidation, potentially invalidating the style of
@@ -1247,7 +1240,7 @@ where
                     &invalidation.dependency.selector,
                     invalidation.offset,
                     ctx,
-                    &self.element,
+                    self.element,
                 )
             })
         };
@@ -1257,7 +1250,7 @@ where
                 return ProcessInvalidationResult {
                     invalidated_self: false,
                     matched: false,
-                }
+                };
             },
             CompoundSelectorMatchingResult::FullyMatched => self.handle_fully_matched(invalidation),
             CompoundSelectorMatchingResult::Matched {

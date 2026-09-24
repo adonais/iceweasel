@@ -4,6 +4,7 @@
 
 //! Specified types for CSS values related to borders.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{ToTyped, TypedValue};
@@ -17,7 +18,6 @@ use crate::values::generics::rect::Rect;
 use crate::values::generics::size::Size2D;
 use crate::values::specified::length::{Length, NonNegativeLength, NonNegativeLengthPercentage};
 use crate::values::specified::{AllowQuirks, NonNegativeNumber, NonNegativeNumberOrPercentage};
-use crate::Zero;
 use app_units::Au;
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -274,7 +274,7 @@ impl ToComputedValue for BorderSideOffset {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         let offset = Au::from_f32_px(self.0.to_computed_value(context).px());
-        let should_snap = match static_prefs::pref!("layout.css.outline-offset.snapping") {
+        let should_snap = match crate::pref!("layout.css.outline-offset.snapping") {
             1 => true,
             2 => context.device().chrome_rules_enabled_for_document(),
             _ => false,

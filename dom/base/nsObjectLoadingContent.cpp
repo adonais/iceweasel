@@ -51,7 +51,6 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentChild.h"
@@ -228,7 +227,6 @@ nsObjectLoadingContent::nsObjectLoadingContent()
     : mType(ObjectType::Loading),
       mChannelLoaded(false),
       mNetworkCreated(true),
-      mContentBlockingEnabled(false),
       mIsStopping(false),
       mIsLoading(false),
       mScriptRequested(false),
@@ -320,12 +318,10 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
               u" since it was found on an internal Firefox blocklist.");
       console->LogStringMessage(message.get());
     }
-    mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
 
   if (ChannelClassifierUtils::IsClassifierBlockingErrorCode(status)) {
-    mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
 
@@ -1222,13 +1218,6 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
     mType = type;
   }
 
-  // Items resolved as Image/Document are not candidates for content blocking,
-  // as well as invalid plugins (they will not have the mContentType set).
-  if (mType == ObjectType::Fallback && ShouldBlockContent()) {
-    LOG(("OBJLC [%p]: Enable content blocking", this));
-    mType = ObjectType::Loading;
-  }
-
   // Sanity check: We shouldn't have any loaded resources, pending events, or
   // a final listener at this point
   if (mFrameLoader || mFinalListener) {
@@ -1785,11 +1774,6 @@ nsObjectLoadingContent::UpgradeLoadToDocument(
 
   bc.forget(aBrowsingContext);
   return NS_OK;
-}
-
-bool nsObjectLoadingContent::ShouldBlockContent() {
-  return mContentBlockingEnabled && mURI && IsFlashMIME(mContentType) &&
-         StaticPrefs::browser_safebrowsing_blockedURIs_enabled();
 }
 
 Document* nsObjectLoadingContent::GetContentDocument(

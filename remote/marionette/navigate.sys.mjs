@@ -154,14 +154,14 @@ navigate.isLoadEventExpected = function (current, options = {}) {
 };
 
 /**
- * Load the given URL in the specified browsing context.
+ * Load the given URI in the specified browsing context.
  *
  * @param {CanonicalBrowsingContext} browsingContext
- *     Browsing context to load the URL into.
- * @param {URL} url
- *     URL to navigate to.
+ *     Browsing context to load the URI into.
+ * @param {nsIURI} uri
+ *     URI to navigate to.
  */
-navigate.navigateTo = function (browsingContext, url) {
+navigate.navigateTo = function (browsingContext, uri) {
   const opts = {
     loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_IS_LINK,
     // Fake user activation.
@@ -171,7 +171,7 @@ navigate.navigateTo = function (browsingContext, url) {
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   };
 
-  browsingContext.fixupAndLoadURIString(url.href, opts);
+  browsingContext.loadURI(uri, opts);
 };
 
 /**
@@ -216,7 +216,11 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
   options = {}
 ) {
   const {
-    browsingContextFn = driver.getBrowsingContext.bind(driver),
+    // Skip the privilege check because observing a navigation needs to work
+    // regardless of the current page. Callers are responsible for restricting
+    // the navigation itself.
+    browsingContextFn = () =>
+      driver.getBrowsingContext({ skipPrivilegeCheck: true }),
     loadEventExpected = true,
     requireBeforeUnload = true,
   } = options;

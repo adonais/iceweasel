@@ -9,6 +9,7 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.CloseTabAndDeleteGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.UngroupTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -54,6 +55,10 @@ object TabGroupActionReducer {
             is TabGroupAction.DeleteClicked ->
                 state.copy(backStack = state.backStack + DeleteTabGroupConfirmationDialog(group = action.group))
             is TabGroupAction.DeleteConfirmed -> state.copy(backStack = state.backStack.popDeleteTabGroupFlow())
+            is TabGroupAction.UngroupRequested -> state
+            is TabGroupAction.UngroupConfirmationRequested ->
+                state.copy(backStack = state.backStack + UngroupTabGroupConfirmationDialog(group = action.group))
+            is TabGroupAction.UngroupConfirmed -> state.copy(backStack = state.backStack.popUngroupTabGroupFlow())
             is TabGroupAction.EditTabGroupClicked -> reduceEditTabGroupClicked(state, action)
             is TabGroupAction.NewGroupCreated ->
                 state.copy(tabGroupState = state.tabGroupState.copy(enteringGroupId = action.id))
@@ -176,6 +181,10 @@ object TabGroupActionReducer {
         it is DeleteTabGroupConfirmationDialog ||
             it is CloseTabAndDeleteGroupConfirmationDialog ||
             it is ExpandedTabGroup
+    }
+
+    private fun List<TabManagerNavDestination>.popUngroupTabGroupFlow(): List<TabManagerNavDestination> = filterNot {
+        it is UngroupTabGroupConfirmationDialog || it is ExpandedTabGroup
     }
 
     private fun TabsTrayState.navigateToEditTabGroup(): List<TabManagerNavDestination> =

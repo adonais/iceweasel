@@ -37,6 +37,7 @@
 #ifdef XP_WIN
 #  include "GLContextEGL.h"
 #  include "GLLibraryEGL.h"
+#  include "mozilla/WindowsUserHandleValidation.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/webrender/DCLayerTree.h"
 #  include "mozilla/widget/WinCompositorWindowThread.h"
@@ -75,7 +76,7 @@ LazyLogModule gRenderThreadLog("RenderThread");
 #define LOG(...) MOZ_LOG(gRenderThreadLog, LogLevel::Debug, (__VA_ARGS__))
 
 static StaticRefPtr<RenderThread> sRenderThread;
-static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
+[[maybe_unused]] static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 #ifdef DEBUG
 static bool sRenderThreadEverStarted = false;
 #endif
@@ -197,6 +198,9 @@ void RenderThread::Start(uint32_t aNamespace) {
             nsThread* nsthread = static_cast<nsThread*>(thread.get());
             nsthread->SetUseHangMonitor(true);
             nsthread->SetPriority(nsISupportsPriority::PRIORITY_HIGH);
+#ifdef XP_WIN
+            mozilla::ForceToGuiThreadAndFixTebValidateHandlesFlag();
+#endif
           }),
       {.stackSize = stackSize});
 

@@ -38,6 +38,9 @@ class HTMLLabelElement final : public nsGenericHTMLElement {
   }
   nsGenericHTMLElement* GetControlForBindings() const;
 
+  nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
+                                      AttrModType aModType) const override;
+
   using nsGenericHTMLElement::Focus;
   virtual void Focus(const FocusOptions& aOptions,
                      const mozilla::dom::CallerType aCallerType,

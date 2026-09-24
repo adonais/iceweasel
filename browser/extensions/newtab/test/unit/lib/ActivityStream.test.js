@@ -7,6 +7,9 @@ import {
 } from "lib/ActivityStream.sys.mjs";
 import { GlobalOverrider } from "test/unit/utils";
 
+const STORIES_REGION_LOCALE_PREF =
+  "browser.newtabpage.activity-stream.discoverystream.stories-region-locale-config";
+
 import { DEFAULT_SITES } from "lib/DefaultSites.sys.mjs";
 import { AboutPreferences } from "lib/AboutPreferences.sys.mjs";
 import { DefaultPrefs } from "lib/ActivityStreamPrefs.sys.mjs";
@@ -610,6 +613,7 @@ describe("ActivityStream", () => {
   describe("_updateDynamicPrefs topstories default value", () => {
     let getVariableStub;
     let getBoolPrefStub;
+    let getStringPrefStub;
     let appLocaleAsBCP47Stub;
     beforeEach(() => {
       getVariableStub = sandbox.stub(
@@ -621,6 +625,7 @@ describe("ActivityStream", () => {
         "appLocaleAsBCP47"
       );
 
+      getStringPrefStub = sandbox.stub(global.Services.prefs, "getStringPref");
       getBoolPrefStub = sandbox.stub(global.Services.prefs, "getBoolPref");
       getBoolPrefStub
         .withArgs("browser.newtabpage.activity-stream.feeds.section.topstories")
@@ -630,7 +635,12 @@ describe("ActivityStream", () => {
 
       sandbox.stub(global.Region, "home").get(() => "US");
 
-      getVariableStub.withArgs("regionStoriesConfig").returns("US,CA");
+      getStringPrefStub.withArgs(STORIES_REGION_LOCALE_PREF).returns(
+        JSON.stringify([
+          ["US", ["en-*"]],
+          ["CA", ["en-*"]],
+        ])
+      );
     });
     it("should be false with no geo/locale", () => {
       appLocaleAsBCP47Stub.get(() => "");
@@ -641,17 +651,8 @@ describe("ActivityStream", () => {
       assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
     });
     it("should be false with no geo but an allowed locale", () => {
-      appLocaleAsBCP47Stub.get(() => "");
-      sandbox.stub(global.Region, "home").get(() => "");
       appLocaleAsBCP47Stub.get(() => "en-US");
-      getVariableStub
-        .withArgs("localeListConfig")
-        .returns("en-US,en-CA,en-GB")
-        // We only have this pref set to trigger a close to real situation.
-        .withArgs(
-          "browser.newtabpage.activity-stream.discoverystream.region-stories-block"
-        )
-        .returns("FR");
+      sandbox.stub(global.Region, "home").get(() => "");
 
       as._updateDynamicPrefs();
 
@@ -691,16 +692,253 @@ describe("ActivityStream", () => {
     it("should be true with updated pref change", () => {
       appLocaleAsBCP47Stub.get(() => "en-GB");
       sandbox.stub(global.Region, "home").get(() => "GB");
-      getVariableStub.withArgs("regionStoriesConfig").returns("GB");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["GB", ["en-*"]]]));
 
       as._updateDynamicPrefs();
 
       assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
     });
-    it("should be true with allowed locale in non US region", () => {
-      appLocaleAsBCP47Stub.get(() => "en-CA");
+    it("should be true with a locale matched by a pattern", () => {
+      appLocaleAsBCP47Stub.get(() => "en-GB");
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be true in any region with a wildcard region entry", () => {
+      appLocaleAsBCP47Stub.get(() => "en-US");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["*", ["en-*"]]]));
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false for a locale the wildcard region does not list", () => {
+      appLocaleAsBCP47Stub.get(() => "es-MX");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["*", ["en-*"]]]));
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be true for a region added alongside a wildcard entry", () => {
+      appLocaleAsBCP47Stub.get(() => "es-MX");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      getStringPrefStub.withArgs(STORIES_REGION_LOCALE_PREF).returns(
+        JSON.stringify([
+          ["*", ["en-*"]],
+          ["MX", ["es-*"]],
+        ])
+      );
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false with a blocked region despite a wildcard entry", () => {
+      appLocaleAsBCP47Stub.get(() => "en-US");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["*", ["en-*"]]]));
+      getVariableStub.withArgs("regionStoriesBlock").returns("MX");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should not match a variant against an exact pattern", () => {
+      appLocaleAsBCP47Stub.get(() => "es-MX");
+      sandbox.stub(global.Region, "home").get(() => "ES");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["ES", ["es-ES"]]]));
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should ignore casing in regions and locales", () => {
+      appLocaleAsBCP47Stub.get(() => "EN-us");
+      sandbox.stub(global.Region, "home").get(() => "us");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["us", ["EN-*"]]]));
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should keep only the last entry for a region", () => {
+      appLocaleAsBCP47Stub.get(() => "de");
+      sandbox.stub(global.Region, "home").get(() => "BE");
+      getStringPrefStub.withArgs(STORIES_REGION_LOCALE_PREF).returns(
+        JSON.stringify([
+          ["BE", ["de"]],
+          ["BE", ["fr"]],
+        ])
+      );
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false with a geo but no locale", () => {
+      appLocaleAsBCP47Stub.get(() => "");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should fall back when the config parses to something else", () => {
+      appLocaleAsBCP47Stub.get(() => "es-MX");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify({ MX: ["es-*"] }));
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false everywhere with an emptied config", () => {
+      getStringPrefStub.withArgs(STORIES_REGION_LOCALE_PREF).returns("");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should fall back to the built-in list with an invalid config", () => {
+      getStringPrefStub
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns("not json");
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be true for a trainhop region/locale pair", () => {
+      appLocaleAsBCP47Stub.get(() => "es-MX");
+      sandbox.stub(global.Region, "home").get(() => "MX");
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([
+          {
+            value: {
+              type: "multi-payload",
+              payload: [
+                {
+                  type: "storiesRegionLocale",
+                  payload: { config: [["MX", ["es-*"]]] },
+                },
+              ],
+            },
+            meta: { isRollout: true },
+          },
+        ]);
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should let the trainhop payload replace the shipped pairs", () => {
+      appLocaleAsBCP47Stub.get(() => "en-US");
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([
+          {
+            value: {
+              type: "storiesRegionLocale",
+              payload: { config: [["MX", ["es-*"]]] },
+            },
+            meta: { isRollout: true },
+          },
+        ]);
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should prefer an experiment payload over a rollout payload", () => {
+      appLocaleAsBCP47Stub.get(() => "en-US");
+      sandbox
+        .stub(global.NimbusFeatures.newtabTrainhop, "getAllEnrollments")
+        .returns([
+          {
+            value: {
+              type: "storiesRegionLocale",
+              payload: { config: [["MX", ["es-*"]]] },
+            },
+            meta: { isRollout: true },
+          },
+          {
+            value: {
+              type: "storiesRegionLocale",
+              payload: { config: [["US", ["en-*"]]] },
+            },
+            meta: { isRollout: false },
+          },
+        ]);
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be true for a legacy region/locale pair", () => {
+      appLocaleAsBCP47Stub.get(() => "pl");
+      sandbox.stub(global.Region, "home").get(() => "PL");
+      getVariableStub
+        .withArgs("regionStoriesConfig")
+        .returns("US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES,PL");
+
+      as._updateDynamicPrefs();
+
+      assert.isTrue(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false for a legacy region without its locale", () => {
+      appLocaleAsBCP47Stub.get(() => "en-US");
+      sandbox.stub(global.Region, "home").get(() => "PL");
+      getVariableStub
+        .withArgs("regionStoriesConfig")
+        .returns("US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES,PL");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false for a legacy region left out of the config", () => {
+      appLocaleAsBCP47Stub.get(() => "pl");
+      sandbox.stub(global.Region, "home").get(() => "PL");
+      getVariableStub
+        .withArgs("regionStoriesConfig")
+        .returns("US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should be false with a blocked region in the legacy config", () => {
+      appLocaleAsBCP47Stub.get(() => "pl");
+      sandbox.stub(global.Region, "home").get(() => "PL");
+      getVariableStub.withArgs("regionStoriesConfig").returns("PL");
+      getVariableStub.withArgs("regionStoriesBlock").returns("PL");
+
+      as._updateDynamicPrefs();
+
+      assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
+    });
+    it("should use the built-in list with no config set", () => {
+      getStringPrefStub.withArgs(STORIES_REGION_LOCALE_PREF).returns(undefined);
+      appLocaleAsBCP47Stub.get(() => "de");
       sandbox.stub(global.Region, "home").get(() => "DE");
-      getVariableStub.withArgs("localeListConfig").returns("en-US,en-CA,en-GB");
 
       as._updateDynamicPrefs();
 
@@ -722,10 +960,7 @@ describe("ActivityStream", () => {
     afterEach(() => clock.restore());
 
     it("should set false with unexpected geo", () => {
-      sandbox
-        .stub(global.Services.prefs, "getStringPref")
-        .withArgs("browser.search.region")
-        .returns("NOGEO");
+      sandbox.stub(global.Region, "home").get(() => "NOGEO");
 
       as._updateDynamicPrefs();
 
@@ -735,9 +970,9 @@ describe("ActivityStream", () => {
     });
     it("should set true with expected geo and locale", () => {
       sandbox
-        .stub(global.NimbusFeatures.pocketNewtab, "getVariable")
-        .withArgs("regionStoriesConfig")
-        .returns("US");
+        .stub(global.Services.prefs, "getStringPref")
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["US", ["en-*"]]]));
 
       sandbox.stub(global.Services.prefs, "getBoolPref").returns(true);
       sandbox
@@ -753,10 +988,8 @@ describe("ActivityStream", () => {
       as._defaultPrefs.set("feeds.system.topstories", false);
       sandbox
         .stub(global.Services.prefs, "getStringPref")
-        .withArgs(
-          "browser.newtabpage.activity-stream.discoverystream.region-stories-config"
-        )
-        .returns("US");
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["US", ["en-*"]]]));
 
       sandbox
         .stub(global.Services.locale, "appLocaleAsBCP47")
@@ -768,16 +1001,15 @@ describe("ActivityStream", () => {
       assert.isFalse(PREFS_CONFIG.get("feeds.system.topstories").value);
     });
     it("should set false with geo blocked", () => {
+      const getVariableStub = sandbox.stub(
+        global.NimbusFeatures.pocketNewtab,
+        "getVariable"
+      );
       sandbox
         .stub(global.Services.prefs, "getStringPref")
-        .withArgs(
-          "browser.newtabpage.activity-stream.discoverystream.region-stories-config"
-        )
-        .returns("US")
-        .withArgs(
-          "browser.newtabpage.activity-stream.discoverystream.region-stories-block"
-        )
-        .returns("US");
+        .withArgs(STORIES_REGION_LOCALE_PREF)
+        .returns(JSON.stringify([["US", ["en-*"]]]));
+      getVariableStub.withArgs("regionStoriesBlock").returns("US");
 
       sandbox.stub(global.Services.prefs, "getBoolPref").returns(true);
       sandbox

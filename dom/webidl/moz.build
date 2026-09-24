@@ -1191,20 +1191,27 @@ if CONFIG["MOZ_WEBRTC"]:
 
 if CONFIG["MOZ_WEBSPEECH"]:
     WEBIDL_FILES += [
-        "SpeechGrammar.webidl",
-        "SpeechGrammarList.webidl",
-        "SpeechRecognition.webidl",
-        "SpeechRecognitionAlternative.webidl",
-        "SpeechRecognitionError.webidl",
-        "SpeechRecognitionEvent.webidl",
-        "SpeechRecognitionResult.webidl",
-        "SpeechRecognitionResultList.webidl",
         "SpeechSynthesis.webidl",
         "SpeechSynthesisErrorEvent.webidl",
         "SpeechSynthesisEvent.webidl",
         "SpeechSynthesisUtterance.webidl",
         "SpeechSynthesisVoice.webidl",
     ]
+
+    # The speech recognition backend (mudler/parakeet.cpp, backends/llama)
+    # isn't built on Android; see dom/media/webspeech/moz.build.
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+        WEBIDL_FILES += [
+            "SpeechGrammar.webidl",
+            "SpeechGrammarList.webidl",
+            "SpeechRecognition.webidl",
+            "SpeechRecognitionAlternative.webidl",
+            "SpeechRecognitionErrorEvent.webidl",
+            "SpeechRecognitionEvent.webidl",
+            "SpeechRecognitionPhrase.webidl",
+            "SpeechRecognitionResult.webidl",
+            "SpeechRecognitionResultList.webidl",
+        ]
 
 WEBIDL_FILES += [
     "CustomEvent.webidl",
@@ -1323,10 +1330,14 @@ if CONFIG["MOZ_WEBRTC"]:
 
 if CONFIG["MOZ_WEBSPEECH"]:
     GENERATED_EVENTS_WEBIDL_FILES += [
-        "SpeechRecognitionEvent.webidl",
         "SpeechSynthesisErrorEvent.webidl",
         "SpeechSynthesisEvent.webidl",
     ]
+
+    if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+        GENERATED_EVENTS_WEBIDL_FILES += [
+            "SpeechRecognitionEvent.webidl",
+        ]
 
 if CONFIG["ACCESSIBILITY"]:
     WEBIDL_FILES += [

@@ -40,7 +40,6 @@ skip-if = [
 ]
 
 ["browser_f11_fullscreen_sidebar.js"]
-run-if = ["os != 'mac'"] # F11 fullscreen autohide is not used on macOS
 
 ["browser_glean_sidebar.js"]
 
@@ -63,6 +62,9 @@ skip-if = [
 tags = "vertical-tabs"
 
 ["browser_launcher_hidden_restore.js"]
+tags = "vertical-tabs"
+
+["browser_launcher_splitter_drag_release.js"]
 tags = "vertical-tabs"
 
 ["browser_launcher_splitter_expand_on_hover.js"]
@@ -130,10 +132,6 @@ skip-if = [
 ["browser_tools_migration.js"]
 
 ["browser_tools_overflow.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1971922
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1971922
-]
 
 ["browser_verticalTabs_widget_placements.js"]
 

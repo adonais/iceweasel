@@ -340,8 +340,7 @@ void RecordPowerMetrics() {
   if (XRE_IsContentProcess()) {
     auto* cc = mozilla::dom::ContentChild::GetSingleton();
     if (cc) {
-      type.Assign(mozilla::dom::RemoteTypePrefix(cc->GetRemoteType()));
-      if (StringBeginsWith(type, WEB_REMOTE_TYPE)) {
+      if (cc->GetRemoteType().IsWeb()) {
         type.AssignLiteral("web");
         switch (cc->GetProcessPriority()) {
           case hal::PROCESS_PRIORITY_BACKGROUND:
@@ -364,9 +363,11 @@ void RecordPowerMetrics() {
             MOZ_ASSERT_UNREACHABLE("Unsuppored process type for cpu time");
             break;
         }
-      } else if (type == INFERENCE_REMOTE_TYPE) {
+      } else if (cc->GetRemoteType().IsInference()) {
         type.AssignLiteral("inference");
         gThisProcessType = ProcessType::eInferenceProcess;
+      } else {
+        type = cc->GetRemoteType().StringifyKind();
       }
       GetTrackerType(trackerType);
     } else {

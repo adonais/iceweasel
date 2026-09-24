@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: abort() raced against parakeet thread init must not hang</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// Regression test for a deadlock in SpeechRecognitionParent::ActorDestroy():
+// it used to take mLock and then call mRecognitionThread->Shutdown() (a
+// blocking join) while still holding it. InitializeParakeetContext(), which
+// runs on that recognition thread, also acquires mLock early on. If abort()
+// tears the actor down while the recognition thread is starting up, the
+// utility-process side hangs forever: the main thread blocks in Shutdown()
+// holding mLock, and the recognition thread blocks trying to acquire mLock,
+// so neither ever makes progress.
+//
+// media.webspeech.recognition.testing.parakeet_init_delay_ms makes this
+// deterministic instead of scheduling-dependent: it delays the recognition
+// thread right before it would acquire mLock, so start() followed by abort()
+// after Init has reached the utility process reliably lands ActorDestroy()
+// first every run.
+//
+// Requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+const INIT_DELAY_MS = 5000;
+// How long to wait after start() before calling abort(). Must be long enough
+// that the content-side IPC thread has actually dispatched Init to the
+// utility process (otherwise Stop()'s mStopRequested flag beats
+// StartSpeechRecognitionSession to the IPC thread and the whole session,
+// actor included, is a no-op -- there is nothing for ActorDestroy() to race
+// against), but well under INIT_DELAY_MS.
+const ABORT_DELAY_MS = 2000;
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("racing session init against abort() by design");
+
+function withTimeout(promise, timeoutMs, msg) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(msg)), timeoutMs)
+    ),
+  ]);
+}
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+    ["media.webspeech.recognition.testing.parakeet_init_delay_ms", INIT_DELAY_MS],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const installed = await ensureModelInstalled(["en-US"]);
+    ok(installed, "Model installed successfully");
+    if (!installed) {
+      SimpleTest.finish();
+      return;
+    }
+
+    const ctx = await createResumedAudioContext();
+
+    const kick = ctx.createBufferSource();
+    kick.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+    kick.loop = true;
+    kick.connect(ctx.destination);
+    kick.start(0);
+
+    const audio = document.createElement("audio");
+    audio.src = "kennedy-appolo.opus";
+    document.getElementById("content").appendChild(audio);
+
+    const src = ctx.createMediaElementSource(audio);
+    const dst = ctx.createMediaStreamDestination();
+    src.connect(dst);
+
+    await new Promise((resolve, reject) => {
+      audio.addEventListener("canplaythrough", resolve, { once: true });
+      audio.addEventListener("error", () => reject(new Error("Audio load failed")), { once: true });
+      audio.load();
+    });
+
+    audio.loop = true;
+    audio.currentTime = 0;
+    await audio.play().catch(e => info("play() error: " + e));
+
+    const track = dst.stream.getAudioTracks()[0];
+    ok(track, "Got the shared audio track");
+    await waitForAudioFlowing(ctx, dst.stream);
+
+    // start(), wait for Init to actually reach the utility process and the
+    // recognition thread to be created, then abort() while that thread is
+    // guaranteed (by the delay pref above) to still be INIT_DELAY_MS away
+    // from acquiring mLock. ActorDestroy() therefore wins the race to the
+    // lock deterministically.
+    const sr = new SpeechRecognition();
+    sr.lang = "en-US";
+    sr.onerror = () => {};
+    sr.onresult = () => {};
+    sr.start(track);
+    await new Promise(r => setTimeout(r, ABORT_DELAY_MS));
+    sr.abort();
+    info("Started and aborted a session while init is deliberately delayed");
+
+    // If the deadlock above regressed, the utility process' actor-handling
+    // thread is now wedged and this never resolves; bound it explicitly so
+    // the failure is attributed to this test rather than the harness timeout.
+    // Must exceed INIT_DELAY_MS: the wedged thread only surfaces once the
+    // delayed InitializeParakeetContext() actually tries to acquire mLock.
+    const probe = new SpeechRecognition();
+    probe.continuous = true;
+    probe.lang = "en-US";
+    const result = await withTimeout(
+      new Promise(resolve => {
+        probe.onaudiostart = () => resolve({ kind: "audiostart" });
+        probe.onerror = e => resolve({ kind: "error", error: e.error });
+        probe.start(track);
+      }),
+      INIT_DELAY_MS + 15000,
+      "A session after the raced abort() must not hang (utility-process " +
+        "actor teardown likely deadlocked)"
+    );
+
+    isnot(result.kind, "error",
+          "Follow-up session must not fail; got " +
+          (result.kind === "error" ? result.error : result.kind));
+
+    probe.abort();
+    audio.pause();
+    await ctx.close();
+
+    SimpleTest.finish();
+  } catch (e) {
+    ok(false, "Test threw: " + e + "\n" + e.stack);
+    SimpleTest.finish();
+  }
+});
+</script>
+</pre>
+</body>
+</html>

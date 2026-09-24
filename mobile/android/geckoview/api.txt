@@ -109,6 +109,7 @@ import org.mozilla.geckoview.OrientationController;
 import org.mozilla.geckoview.OverscrollEdgeEffect;
 import org.mozilla.geckoview.PageExtractionController;
 import org.mozilla.geckoview.PanZoomController;
+import org.mozilla.geckoview.PdfViewerController;
 import org.mozilla.geckoview.RuntimeSettings;
 import org.mozilla.geckoview.ScreenLength;
 import org.mozilla.geckoview.SessionAccessibility;
@@ -1307,6 +1308,7 @@ package org.mozilla.geckoview {
     method @UiThread public void getPageToSurfaceMatrix(@NonNull Matrix);
     method @NonNull @UiThread public PanZoomController getPanZoomController();
     method @AnyThread @NonNull public SessionPdfFileSaver getPdfFileSaver();
+    method @AnyThread @NonNull public PdfViewerController.SessionEditor getPdfViewerEditor();
     method @Nullable @UiThread public GeckoSession.PermissionDelegate getPermissionDelegate();
     method @AnyThread @Nullable public GeckoSession.PrintDelegate getPrintDelegate();
     method @Nullable @UiThread public GeckoSession.ProgressDelegate getProgressDelegate();
@@ -2560,6 +2562,24 @@ package org.mozilla.geckoview {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface PanZoomController.ScrollableDirections {
+  }
+
+  public class PdfViewerController {
+    ctor public PdfViewerController();
+  }
+
+  public static class PdfViewerController.PdfViewerException extends Exception {
+    ctor public PdfViewerException(int);
+    field public static final int ERROR_NOT_A_PDF = -2;
+    field public static final int ERROR_UNKNOWN = -1;
+    field public final int code;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface PdfViewerController.PdfViewerException.Code {
+  }
+
+  public static class PdfViewerController.SessionEditor {
+    method @HandlerThread @NonNull public GeckoResult<Void> addSignature(@NonNull String);
   }
 
   @UiThread public class ProfilerController {

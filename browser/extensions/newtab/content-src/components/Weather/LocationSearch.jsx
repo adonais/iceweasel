@@ -131,6 +131,7 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
         />
         <moz-button
           className="close-icon"
+          data-l10n-id="newtab-weather-cancel-input"
           type="icon ghost"
           size="small"
           iconSrc="chrome://global/skin/icons/close.svg"

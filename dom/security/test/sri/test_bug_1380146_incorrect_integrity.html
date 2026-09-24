@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+<head>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+  <script type="application/javascript">
+      SimpleTest.waitForExplicitFinish();
+
+      window.onload = function() {
+        const o1 = document.createElement('script');
+        document.documentElement.appendChild(o1);
+        o1.integrity = "\?\-=";
+        o1.src = "#b";
+        ok(true, "Invalid integrity did not crash the browser");
+        SimpleTest.finish();
+      }
+
+    </script>
+</head>
+<body>
+    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1364262">Bug 1364262</a>
+    <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1380146">Bug 1380146</a>
+</body>
+</html>
+
+

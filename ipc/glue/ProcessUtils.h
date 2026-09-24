@@ -6,6 +6,7 @@
 #define mozilla_ipc_ProcessUtils_h
 
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
@@ -27,8 +28,9 @@ class SharedPreferenceSerializer final {
   SharedPreferenceSerializer(SharedPreferenceSerializer&& aOther);
   ~SharedPreferenceSerializer();
 
-  bool SerializeToSharedMemory(const GeckoProcessType aDestinationProcessType,
-                               const nsACString& aDestinationRemoteType);
+  bool SerializeToSharedMemory(
+      const GeckoProcessType aDestinationProcessType,
+      const mozilla::dom::RemoteType& aDestinationRemoteType);
 
   const ReadOnlySharedMemoryHandle& GetPrefsHandle() const {
     return mPrefsHandle;

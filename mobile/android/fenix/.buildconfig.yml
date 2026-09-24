@@ -18,6 +18,7 @@ projects:
     - components:compose-base
     - components:compose-browser-toolbar
     - components:compose-cfr
+    - components:compose-menu
     - components:concept-accelerometer
     - components:concept-ai-controls
     - components:concept-awesomebar
@@ -52,6 +53,7 @@ projects:
     - components:feature-importer
     - components:feature-intent
     - components:feature-ipprotection
+    - components:feature-listentopage
     - components:feature-logins
     - components:feature-media
     - components:feature-password-importer

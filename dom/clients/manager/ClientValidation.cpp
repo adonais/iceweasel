@@ -8,6 +8,7 @@
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/LoadedOriginSet.h"
 #include "mozilla/dom/ProcessIsolation.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/MozURL.h"
 

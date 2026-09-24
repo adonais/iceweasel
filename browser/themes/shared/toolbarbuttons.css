@@ -768,7 +768,7 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 }
 
 /* Smart Window monitor button */
-#smartwindow-monitor-button[aria-expanded="true"] > .toolbarbutton-icon {
+#smartwindow-monitor-button[aria-expanded="true"] .toolbarbutton-icon {
   background-color: var(--toolbarbutton-background-color-active);
 }
 

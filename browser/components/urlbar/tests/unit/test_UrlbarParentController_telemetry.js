@@ -64,7 +64,7 @@ function getHistogramReportsCount(results) {
 }
 
 add_setup(function () {
-  controller = UrlbarTestUtils.newMockController();
+  controller = UrlbarTestUtils.mockChildController();
 
   firstHistogram = Services.telemetry.getHistogramById(TELEMETRY_1ST_RESULT);
   sixthHistogram = Services.telemetry.getHistogramById(

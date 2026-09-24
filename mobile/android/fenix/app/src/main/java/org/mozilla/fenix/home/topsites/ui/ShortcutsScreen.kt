@@ -7,6 +7,7 @@ package org.mozilla.fenix.home.topsites.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,8 @@ import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.topsites.AddShortcutSource
+import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.home.topsites.getMenuItems
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.store.DialogState
 import org.mozilla.fenix.home.topsites.store.PopularSite
@@ -140,9 +143,27 @@ private fun ShortcutsScreenContent(
     ) {
         Shortcuts(
             topSites = state.topSites,
-            interactor = interactor,
+            topSiteColors = TopSiteColors.colors(),
             showAddShortcut = state.showAddShortcut,
+            scrollable = true,
+            menuItems = { topSite ->
+                getMenuItems(
+                    topSite = topSite,
+                    onOpenInPrivateTabClicked = interactor::onOpenInPrivateTabClicked,
+                    onEditTopSiteClicked = interactor::onEditTopSiteClicked,
+                    onRemoveTopSiteClicked = interactor::onRemoveTopSiteClicked,
+                    onSettingsClicked = interactor::onSettingsClicked,
+                    onSponsorPrivacyClicked = interactor::onSponsorPrivacyClicked,
+                )
+            },
+            onTopSiteClick = { topSite ->
+                interactor.onSelectTopSite(topSite = topSite, position = state.topSites.indexOf(topSite))
+            },
+            onTopSiteLongClick = interactor::onTopSiteLongClicked,
+            onTopSiteImpression = interactor::onTopSiteImpression,
+            onTopSitesItemBound = {},
             onAddShortcutClicked = onAddShortcutClicked,
+            modifier = Modifier.fillMaxSize().padding(FirefoxTheme.layout.space.static200),
         )
     }
 }

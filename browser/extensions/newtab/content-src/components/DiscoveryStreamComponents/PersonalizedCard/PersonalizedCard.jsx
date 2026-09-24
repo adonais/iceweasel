@@ -4,7 +4,7 @@
 
 import React, { useCallback } from "react";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 
 export const PersonalizedCard = ({
   dispatch,
@@ -23,7 +23,6 @@ export const PersonalizedCard = ({
   const onToggleClick = useCallback(
     elementId => {
       dispatch({ type: at.SHOW_PERSONALIZE });
-      dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
       handleClick(elementId);
     },
     [dispatch, handleClick]

@@ -276,7 +276,9 @@ class TextureData {
   virtual void Forget(LayersIPCChannel* aAllocator) {}
 
   virtual bool Serialize(SurfaceDescriptor& aDescriptor) = 0;
-  virtual void GetSubDescriptor(RemoteDecoderVideoSubDescriptor* aOutDesc) {}
+  virtual RemoteDecoderVideoType GetRemoteDecoderVideoType() {
+    return RemoteDecoderVideoType::TypeNone;
+  }
 
   virtual void OnForwardedToHost() {}
 

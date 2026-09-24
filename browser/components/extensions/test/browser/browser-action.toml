@@ -19,6 +19,8 @@ support-files = [
   "ctxmenu-image.png",
 ]
 
+["browser_ext_action_openPopup_tabPreview.js"]
+
 ["browser_ext_action_popup_allowed_urls.js"]
 
 ["browser_ext_browserAction_activeTab.js"]
@@ -63,7 +65,7 @@ support-files = ["head_unified_extensions.js"]
 
 ["browser_ext_browserAction_popup_resize_bottom.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && debug && nova", # Bug 2057843
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2057843 (perma-fails on linux 22.04 wayland jobs)
 ]
 
 ["browser_ext_browserAction_simple.js"]
@@ -88,6 +90,8 @@ https_first_disabled = true
 ["browser_ext_pageAction_contextMenu.js"]
 
 ["browser_ext_pageAction_popup.js"]
+
+["browser_ext_pageAction_popup_anchor.js"]
 
 ["browser_ext_pageAction_popup_resize.js"]
 

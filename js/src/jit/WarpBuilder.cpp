@@ -1672,6 +1672,8 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
   // Create the generator resume index dispatch for the new loop header. After
   // this, |current| is the normal non-resume loop body.
   if (!entries.empty()) {
+    current->setHasGeneratorResumeEntry();
+
     MBasicBlock* body = nullptr;
     if (!startResumePath(current, loc, &body)) {
       return false;

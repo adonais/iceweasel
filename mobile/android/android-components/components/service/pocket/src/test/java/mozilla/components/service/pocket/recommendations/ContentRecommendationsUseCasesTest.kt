@@ -5,12 +5,15 @@
 package mozilla.components.service.pocket.recommendations
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.helpers.PocketTestResources
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsEndpoint
+import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsProvider
+import mozilla.components.service.pocket.recommendations.api.MerinoContentRecommendationsProvider
 import mozilla.components.service.pocket.stories.api.PocketResponse
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
@@ -39,11 +42,11 @@ class ContentRecommendationsUseCasesTest {
             )
         )
     private val repository: ContentRecommendationsRepository = mock()
-    private val endPoint: ContentRecommendationsEndpoint = mock()
+    private val provider: ContentRecommendationsProvider = mock()
 
     @Before
     fun setup() {
-        doReturn(endPoint).`when`(useCases).getContentRecommendationsEndpoint(any(), any())
+        doReturn(provider).`when`(useCases).getContentRecommendationsProvider(any(), any())
         doReturn(repository).`when`(useCases).getContentRecommendationsRepository(any())
     }
 
@@ -64,12 +67,12 @@ class ContentRecommendationsUseCasesTest {
         runTest {
             val fetchUseCase = useCases.FetchContentRecommendations()
             val response = getSuccessContentRecommendationsResponse()
-            doReturn(response).`when`(endPoint).getContentRecommendations()
+            doReturn(response).`when`(provider).getContentRecommendations()
 
             val result = fetchUseCase.invoke()
 
             assertTrue(result)
-            verify(endPoint).getContentRecommendations()
+            verify(provider).getContentRecommendations()
             verify(repository).updateContentRecommendations((response as PocketResponse.Success).data)
         }
 
@@ -78,12 +81,12 @@ class ContentRecommendationsUseCasesTest {
         runTest {
             val fetchUseCase = useCases.FetchContentRecommendations()
             val response = getFailResponse()
-            doReturn(response).`when`(endPoint).getContentRecommendations()
+            doReturn(response).`when`(provider).getContentRecommendations()
 
             val result = fetchUseCase.invoke()
 
             assertFalse(result)
-            verify(endPoint).getContentRecommendations()
+            verify(provider).getContentRecommendations()
             verify(repository, never()).updateContentRecommendations(any())
         }
 
@@ -97,6 +100,26 @@ class ContentRecommendationsUseCasesTest {
 
             verify(repository).updateContentRecommendationsImpressions(recommendationsShown)
         }
+
+    @Test
+    fun `GIVEN the Merino client is disabled WHEN the content recommendations provider is retrieved THEN return the endpoint`() {
+        val config = ContentRecommendationsRequestConfig(useMerinoClient = false)
+        val useCases = ContentRecommendationsUseCases(appContext = testContext, client = client, config = config)
+
+        val provider = useCases.getContentRecommendationsProvider(client, config)
+
+        assertIs<ContentRecommendationsEndpoint>(provider)
+    }
+
+    @Test
+    fun `GIVEN the Merino client is enabled WHEN the content recommendations provider is retrieved THEN return the Merino provider`() {
+        val config = ContentRecommendationsRequestConfig(useMerinoClient = true)
+        val useCases = ContentRecommendationsUseCases(appContext = testContext, client = client, config = config)
+
+        val provider = useCases.getContentRecommendationsProvider(client, config)
+
+        assertIs<MerinoContentRecommendationsProvider>(provider)
+    }
 
     private fun getSuccessContentRecommendationsResponse() =
         PocketResponse.wrap(PocketTestResources.contentRecommendationsResponse)

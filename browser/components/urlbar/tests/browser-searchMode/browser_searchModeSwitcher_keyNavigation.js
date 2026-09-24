@@ -187,26 +187,34 @@ async function test_dont_open_switcher(dontOpenKey) {
  * Test we can navigate the SearchModeSwitcher with various keys
  *
  * @param {string} navKey - The keyboard character used to navigate.
- * @param {Int} navTimes - The number of times we press that key.
+ * @param {string} activateKey - The keyboard character used to activate items.
+ * @param {number} navTimes - The number of times we press that key.
  * @param {object} searchMode - The searchMode that we expect to select.
  */
-async function test_navigate_switcher(navKey, navTimes, searchMode) {
+async function test_navigate_switcher(
+  navKey,
+  activateKey,
+  navTimes,
+  searchMode
+) {
+  let initialValue = gURLBar.value;
   let popup = UrlbarTestUtils.searchModeSwitcherPopup(window).parentElement;
   let promiseMenuOpen = BrowserTestUtils.waitForEvent(popup, "popupshown");
 
-  info("Open the urlbar and open the switcher via Enter key");
+  info(`Open the urlbar and open the switcher via '${activateKey}'`);
   await focusSearchModeSwitcher();
-  EventUtils.synthesizeKey("KEY_Enter");
+  EventUtils.synthesizeKey(activateKey);
   await promiseMenuOpen;
 
   info("Select first result and enter search mode");
   for (let i = 0; i < navTimes; i++) {
     EventUtils.synthesizeKey(navKey);
   }
-  EventUtils.synthesizeKey("KEY_Enter");
+  EventUtils.synthesizeKey(activateKey);
   await UrlbarTestUtils.promiseSearchComplete(window);
 
   await UrlbarTestUtils.assertSearchMode(window, searchMode);
+  Assert.equal(gURLBar.value, initialValue, "Value didn't change");
 
   info("Exit the search mode");
   await UrlbarTestUtils.promisePopupClose(window, () => {
@@ -231,15 +239,15 @@ add_task(async function test_keyboard_nav() {
     source: 3,
   };
 
-  await test_navigate_switcher("KEY_ArrowDown", 0, {
+  await test_navigate_switcher("KEY_ArrowDown", "KEY_Enter", 0, {
     engineName: "engine1",
     ...searchModeTemplate,
   });
-  await test_navigate_switcher("KEY_ArrowDown", 1, {
+  await test_navigate_switcher("KEY_ArrowDown", "KEY_Enter", 1, {
     engineName: "engine2",
     ...searchModeTemplate,
   });
-  await test_navigate_switcher("KEY_ArrowDown", 2, {
+  await test_navigate_switcher("KEY_ArrowDown", " ", 2, {
     engineName: "engine3",
     ...searchModeTemplate,
   });

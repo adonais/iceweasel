@@ -29,8 +29,6 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
   void SetInputBridge(RefPtr<APZInputBridgeChild>&& aInputBridge);
   void Destroy();
 
-  void SetKeyboardMap(const KeyboardMap& aKeyboardMap) override;
-
   void ZoomToRect(const ScrollableLayerGuid& aGuid,
                   const ZoomTarget& aZoomTarget,
                   const uint32_t aFlags = DEFAULT_BEHAVIOR) override;
@@ -45,41 +43,18 @@ class APZCTreeManagerChild final : public IAPZCTreeManager,
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) override;
 
-  void SetDPI(float aDpiValue) override;
-
   void SetAllowedTouchBehavior(
       uint64_t aInputBlockId,
       const nsTArray<TouchBehaviorFlags>& aValues) override;
 
-  void SetBrowserGestureResponse(uint64_t aInputBlockId,
-                                 BrowserGestureResponse aResponse) override;
-
   void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                           const AsyncDragMetrics& aDragMetrics) override;
-
-  bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
-                       const ScreenPoint& aAnchorLocation) override;
-
-  void StopAutoscroll(const ScrollableLayerGuid& aGuid) override;
-
-  void SetLongTapEnabled(bool aTapGestureEnabled) override;
 
   void NotifyApzAwareListenerAdded(const ScrollableLayerGuid& aGuid) override;
 
   APZInputBridge* InputBridge() override;
 
  protected:
-  mozilla::ipc::IPCResult RecvNotifyPinchGesture(
-      const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
-      const LayoutDevicePoint& aFocusPoint,
-      const LayoutDeviceCoord& aSpanChange, const Modifiers& aModifiers);
-
-  mozilla::ipc::IPCResult RecvCancelAutoscroll(
-      const ScrollableLayerGuid::ViewID& aScrollId);
-
-  mozilla::ipc::IPCResult RecvNotifyScaleGestureComplete(
-      const ScrollableLayerGuid::ViewID& aScrollId, float aScale);
-
   virtual ~APZCTreeManagerChild();
 
  private:

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<!-- Inner document for the -moz-scrollbar-inset-block forwarding tests. Scrolls
+     vertically so its viewport scrollbar is present and painted. -->
+<style>
+  html {
+    background: white;
+    scrollbar-color: black white;
+  }
+  body {
+    margin: 0;
+    /* Sized in vh, not px, so the scroll ratio - and therefore the thumb's
+       size in device pixels - is the same at any full zoom. That leaves the
+       inset as the only variable in the zoom test. */
+    height: 300vh;
+  }
+</style>
+<body></body>

@@ -365,5 +365,3 @@ def buildtokens(command_context, import_figma, remote, fetch_figma, match, impor
         "npm",
         args=["run", "build", "--prefix=toolkit/themes/shared/design-system"],
     )
-    run_mach(command_context, "newtab", subcommand="install")
-    run_mach(command_context, "newtab", subcommand="bundle")

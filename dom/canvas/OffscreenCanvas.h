@@ -139,6 +139,8 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
 
   CSSIntSize GetWidthHeight() override { return CSSIntSize(mWidth, mHeight); }
 
+  bool CanCreateContext() const override { return !mNeutered; }
+
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType) override;
 

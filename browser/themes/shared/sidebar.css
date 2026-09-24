@@ -297,6 +297,15 @@ sidebar-main,
   @media -moz-pref("browser.nova.enabled") and (not -moz-pref("sidebar.verticalTabs")) {
     --sidebar-launcher-button-padding-inline: 4px;
   }
+
+  /* The launcher buttons share a column with the vertical tab strip, so they
+   * take the same inline margin the tabs do. That keeps the collapsed sidebar
+   * at the fixed width tabs.css pins the strip to. */
+  @media -moz-pref("browser.nova.enabled") and -moz-pref("sidebar.verticalTabs") {
+    &:not([uidensity="touch"]) {
+      --sidebar-launcher-button-padding-inline: var(--tab-inner-inline-margin);
+    }
+  }
 }
 
 /* Dividers between sections of the sidebar launcher (below the pinned tabs and
@@ -514,22 +523,29 @@ sidebar-main,
     }
 
     /* Only the edge facing the content area survives once the launcher is
-     * gone: the other one then meets the window. */
-    #sidebar-container[hidden] ~ &:not([sidebar-positionend]) {
+     * gone: the other one then meets the window. Fullscreen collapses the
+     * launcher along with the rest of the chrome, so it counts as gone there
+     * too. */
+    #sidebar-container[hidden] ~ &:not([sidebar-positionend]),
+    :root[fullscreenNavToolboxHidden] &:not([sidebar-positionend]) {
       --sidebar-box-start-start-radius: 0;
       border-inline-start: none;
     }
 
-    #sidebar-container[hidden] ~ &[sidebar-positionend] {
+    #sidebar-container[hidden] ~ &[sidebar-positionend],
+    :root[fullscreenNavToolboxHidden] &[sidebar-positionend] {
       --sidebar-box-start-end-radius: 0;
       border-inline-end: none;
     }
 
-    /* Nothing to separate from once the content covers the window. */
-    :root:is([inDOMFullscreen], [inFullscreen]) & {
+    /* Fullscreen slides the toolbox off-screen (and DOM fullscreen hides the
+     * chrome outright), so the block-start edge then meets the screen and the
+     * corners on it have nothing left to round away from. The edge facing the
+     * content area stays: the panel itself remains visible in fullscreen. */
+    :root:is([inDOMFullscreen], [fullscreenNavToolboxHidden]) & {
       --sidebar-box-start-start-radius: 0;
       --sidebar-box-start-end-radius: 0;
-      border: none;
+      border-block-start: none;
     }
   }
 
@@ -551,7 +567,7 @@ sidebar-main,
 /* History Menu */
 #sidebar-history-clear,
 #sidebar-history-sort-by-heading {
-  padding: var(--menuitem-padding);
+  padding: var(--menuitem-padding-block) var(--menuitem-padding-inline);
   &::before {
     content: unset;
   }

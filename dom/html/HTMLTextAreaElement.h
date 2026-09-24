@@ -108,7 +108,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                       AttrModType aModType) const override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   void GetEventTargetParent(EventChainPreVisitor&) override;
   MOZ_CAN_RUN_SCRIPT nsresult PreHandleEvent(EventChainVisitor&) override;

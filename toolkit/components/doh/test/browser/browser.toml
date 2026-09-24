@@ -13,8 +13,6 @@ skip-if = [
 
 ["browser_doh_region.js"]
 
-["browser_doorhangerUserReject.js"]
-
 ["browser_platformDetection.js"]
 
 ["browser_policyOverride.js"]
@@ -37,3 +35,5 @@ skip-if = [
 ["browser_trrSelection_disable.js"]
 
 ["browser_userInterference.js"]
+
+["browser_userOptOut.js"]

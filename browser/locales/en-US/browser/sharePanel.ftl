@@ -12,39 +12,44 @@ urlbar-share-button =
 share-panel-heading = Share Page
 
 share-panel-copy-link =
-  .label = Copy link
+  .label = Copy Link
 # Confirmation hint shown near the share button after the user copies the
 # current page URL from the share panel.
 confirmation-hint-link-copied = Link copied
-share-panel-os-share =
-  .label = Share with…
+
+# Share with Windows/Mac means to pass a given link to the native OS sharing
+# system so that a given link can be shared with native apps
+share-panel-os-share-2 =
+  .label = { PLATFORM() ->
+    [windows] Share with Windows…
+    [macos] Share with Mac…
+    *[other] Share with…
+  }
+
 share-panel-mail =
-  .label = Send email
+  .label = Send Email
 share-panel-screenshot =
-  .label = Take a screenshot
-share-panel-qr-code =
-  .label = Share QR code
+  .label = Take a Screenshot
+share-panel-qr-code-2 =
+  .label = Create QR Code
 
 # This string is shown when the user has more than 1 device signed in to their account.
 # Clicking this will bring them to a subview where all of their devices are listed.
 share-panel-send-to-device =
-  .label = Send to device
+  .label = Send to Device
 # This string is shown when the user has no other devices signed in to their account.
 # Clicking this will bring them to a place where they can connect other devices.
 share-panel-send-to-mobile =
-  .label = Send to mobile
+  .label = Send to Mobile
 
 share-panel-device-subview =
   .title = All Devices
 
 # Shown below the device list in the share panel's device subview. Clicking it
 # opens the flow to connect another device to the user's account.
-share-panel-connect-device =
-  .label = Connect another device
+share-panel-connect-device-2 =
+  .label = Add a Device
 # Shown below the device list in the share panel's device subview. Clicking it
 # opens a support article about devices missing from the list.
 share-panel-missing-device =
-  .label = Don’t see your device?
-
-share-panel-os-share-subview =
-  .title = Share With…
+  .label = Don’t See Your Device?

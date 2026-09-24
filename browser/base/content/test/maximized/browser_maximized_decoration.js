@@ -24,19 +24,6 @@ function getCustomPropertyPx(win, el, name) {
 }
 
 /**
- * The nova chrome-block radius is platform-dependent. Get the actual value rather
- * than assuming a non-zero value, so the "corner stays rounded" assertions only run
- * when necessary.
- */
-function getBlockRadius(win) {
-  return getCustomPropertyPx(
-    win,
-    win.document.documentElement,
-    "--chrome-block-radius"
-  );
-}
-
-/**
  * The corner where the content area meets the sidebar and the toolbox uses the
  * same radius with and without nova.
  */
@@ -51,7 +38,8 @@ function getContentCornerRadius(win) {
 function getChromeBlocks(win, extraSelectors = "") {
   // although deeply nested inside #browser, the .browserContainer elements
   // are where borders and corners live, so we measure those.
-  let selector = ".chrome-block, .browserContainer";
+  let selector =
+    "#navigator-toolbox, #sidebar-box, #sidebar-container, .browserContainer";
   if (extraSelectors) {
     selector += ", " + extraSelectors;
   }
@@ -269,8 +257,7 @@ const CORNER_RADIUS_PROPS = [
 /**
  * Split-view panels are inset cards rather than window-edge blocks. In both
  * pref states they intentionally keep an inline margin and a fully rounded
- * .browserContainer (--border-radius-medium without nova,
- * --chrome-block-radius with it), so maximizing must not square those corners
+ * .browserContainer so maximizing must not square those corners
  * or pull the panels flush against the window.
  */
 function assertSplitViewPanels(win, label) {
@@ -294,9 +281,11 @@ function assertSplitViewPanels(win, label) {
   for (let panel of panels) {
     let container = panel.querySelector(".browserContainer");
     let style = win.getComputedStyle(container);
-    let expected = NOVA_ENABLED
-      ? getBlockRadius(win)
-      : getCustomPropertyPx(win, container, "--border-radius-medium");
+    let expected = getCustomPropertyPx(
+      win,
+      container,
+      "--border-radius-medium"
+    );
     for (let prop of CORNER_RADIUS_PROPS) {
       Assert.equal(
         parseFloat(style[prop]) || 0,

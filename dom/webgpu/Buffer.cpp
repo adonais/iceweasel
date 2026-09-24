@@ -116,7 +116,7 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
     return nullptr;
   }
 
-  ffi::WGPUBufferDescriptor desc = {};
+  ffi::WGPUFfiBufferDescriptor desc = {};
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
   desc.size = aDesc.mSize;
@@ -406,6 +406,8 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
   AbortMapRequest();
 
   if (!mMapped) {
+    ffi::wgpu_client_buffer_unmap(GetClient(), mParent->GetId(), GetId(),
+                                  false);
     return;
   }
 

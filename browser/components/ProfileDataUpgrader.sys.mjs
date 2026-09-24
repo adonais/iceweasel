@@ -1101,6 +1101,46 @@ export let ProfileDataUpgrader = {
       }
     }
 
+    if (existingDataVersion < 182) {
+      // Bug 2031836 - Rename preferences related to a separate search engine
+      // in default private browsing mode.
+      const OLD_ENABLED_PREF = "browser.search.separatePrivateDefault";
+      const OLD_UI_ENABLED_PREF =
+        "browser.search.separatePrivateDefault.ui.enabled";
+
+      const uiEnabled = Services.prefs.getBoolPref(OLD_UI_ENABLED_PREF, false);
+
+      Services.prefs.setBoolPref(
+        "browser.search.separatePrivateDefault.featureGate",
+        uiEnabled
+      );
+      if (uiEnabled && Services.prefs.getBoolPref(OLD_ENABLED_PREF, true)) {
+        Services.prefs.setBoolPref(
+          "browser.search.separatePrivateDefault.enabled",
+          true
+        );
+      }
+
+      Services.prefs.clearUserPref(OLD_ENABLED_PREF);
+      Services.prefs.clearUserPref(OLD_UI_ENABLED_PREF);
+    }
+
+    if (existingDataVersion < 183) {
+      // Migrate old sidebar users to the switcher visibility setting
+      // We have two cases we can address: old sidebar users in beta & release who never switched/tried
+      // out the new sidebar OR users in Nightly who have flipped the pref to revert to the old one
+      if (
+        Services.prefs.getBoolPref("sidebar.old-sidebar.has-used") &&
+        (!Services.prefs.getBoolPref("sidebar.new-sidebar.has-used") ||
+          !Services.prefs.getBoolPref("sidebar.revamp", true))
+      ) {
+        Services.prefs.setCharPref("sidebar.visibility", "hide-launcher");
+      }
+
+      // We need to override this in order to roll the new sidebar out to everyone
+      Services.prefs.clearUserPref("sidebar.revamp");
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

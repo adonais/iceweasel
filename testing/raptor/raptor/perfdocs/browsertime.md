@@ -291,6 +291,7 @@ Raptor can also support profiling Browsertime tests with the following native (O
 - Simpleperf (Android)
 - Xperf (Windows)
 - Samply (macOS)
+- perf (Linux)
 
 To use native profiling in CI, run `./mach try` with the `--full` flag and select any test with the `-native-profiling` suffix. Currently, the following tests support native profiling:
 

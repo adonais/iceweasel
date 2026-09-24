@@ -668,12 +668,9 @@ class TestAgent {
       if (rv != SECSuccess) {
         return false;
       }
-      // Xyber768 and ML-KEM-1024 are disabled by policy by default, so if
-      // they're requested we need to update the policy flags as well.
+      // ML-KEM-1024 is disabled by policy by default, so if it's requested we
+      // need to update the policy flags as well.
       for (auto group : groups) {
-        if (group == ssl_grp_kem_xyber768d00) {
-          NSS_SetAlgorithmPolicy(SEC_OID_XYBER768D00, NSS_USE_ALG_IN_SSL_KX, 0);
-        }
         if (group == ssl_grp_kem_mlkem1024) {
           NSS_SetAlgorithmPolicy(SEC_OID_ML_KEM_1024, NSS_USE_ALG_IN_SSL_KX, 0);
         }

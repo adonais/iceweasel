@@ -9,6 +9,16 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">Nakivɨ tuku</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">Nánuku versión nchuva\'a</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">Nánuku nuu archivo</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">Ntu nnani\'i da versión nchuva\'a.</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">Nánuku nuu Web</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">Nachu\'u tuku</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Ntu nkuvi sá´á ya´a</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -79,6 +89,8 @@
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Ka̱a̱ nánuku ntu kuvi nani\'i ka̱a̱ servidor jíí nuu ntajinu</p>\n<ul>\n<li>Kune\'ya de nuu ntu kumi error, kua: <strong>ww</strong>.ejemplo.com nejika kachi kua <strong>www</strong>.ejemplo.com.</li>\n<li>De ntu kuvi síne ni\'i página, kune\'ya conexión Wifi a xíín datos ka̱a̱ noo\'o.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_title_2">Nkene iin tixi jii conexión Internet</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">Error Code: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Nachu\'un tuku</string>
   <!-- The document title and heading of an error page. -->

@@ -124,7 +124,7 @@ add_task(async function () {
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
 
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   // Start a server and trust its certificate.
   let server = startServer(cert);
   certOverrideService.rememberValidityOverride(

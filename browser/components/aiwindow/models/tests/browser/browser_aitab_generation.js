@@ -39,6 +39,9 @@ const { ChatConversation } = ChromeUtils.importESModule(
 const { MLTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/MLTestUtils.sys.mjs"
 );
+const { PlacesTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PlacesTestUtils.sys.mjs"
+);
 
 add_setup(async function () {
   // Raise AITab's log verbosity for the duration of this file so a failing run
@@ -49,16 +52,19 @@ add_setup(async function () {
 });
 
 // What the mocked model returns. Schema coverage is browser_aitab_validation.js'
-// job, so this is the smallest page the packaged schemas accept.
-const GENERATED_PAGE = Object.freeze({
-  header: { type: "header", title: "Hotels in Lisbon" },
-  blocks: [
+// job, so this is the smallest surface the packaged catalog accepts: a root
+// Page, a Header (for the title), and one TextBlock.
+const GENERATED_SURFACE = Object.freeze({
+  components: [
+    { id: "root", component: "Page", header: "hdr", children: ["lead"] },
+    { id: "hdr", component: "Header", title: "Hotels in Lisbon" },
     {
-      type: "text",
-      layout: "summary",
+      id: "lead",
+      component: "TextBlock",
       lead: "Budget Central Hostel is $72 / night.",
     },
   ],
+  dataModel: {},
 });
 
 // Serve a page for generation to read. The URL is not open in a tab, so
@@ -102,7 +108,7 @@ add_task(async function test_generateAITab_honors_aborted_signal() {
     newConversation()
   );
   Assert.ok(result.error, "an aborted signal cancels generation");
-  Assert.ok(!result.page, "no page config is returned when canceled");
+  Assert.ok(!result.surface, "no surface is returned when canceled");
 });
 
 add_task(async function test_generateAITab_success() {
@@ -128,20 +134,20 @@ add_task(async function test_generateAITab_success() {
       serializedRequest.includes("hotels in Lisbon"),
       "the requested focus reaches the model prompt"
     );
-    respond(JSON.stringify(GENERATED_PAGE));
+    respond(JSON.stringify(GENERATED_SURFACE));
 
     const result = await genPromise;
 
     Assert.ok(!result.error, `generation should succeed: ${result.error}`);
     Assert.deepEqual(
-      result.page,
-      GENERATED_PAGE,
-      "the validated page config is returned unchanged"
+      result.surface,
+      GENERATED_SURFACE,
+      "the validated surface is returned unchanged"
     );
     Assert.equal(
       result.metadata.title,
-      GENERATED_PAGE.header.title,
-      "metadata title comes from the page header"
+      "Hotels in Lisbon",
+      "metadata title comes from the Header component"
     );
     Assert.equal(
       result.metadata.id,
@@ -151,8 +157,8 @@ add_task(async function test_generateAITab_success() {
     Assert.equal(result.metadata.howCreated, "chat", "howCreated is chat");
     Assert.deepEqual(
       result.metadata.components,
-      GENERATED_PAGE.blocks,
-      "metadata components mirror the page blocks"
+      GENERATED_SURFACE.components,
+      "metadata components mirror the surface components"
     );
     Assert.deepEqual(
       result.metadata.context.urlsUsed.map(u => u.url),
@@ -171,22 +177,122 @@ add_task(async function test_generateAITab_success() {
   }
 });
 
+add_task(async function test_generateAITab_includes_page_image() {
+  // A page's cached preview image (og:image in Places) should reach the model
+  // prompt as an `Image:` line and be recorded on its urlsUsed entry.
+  const mockEngine = new MockEngineManager();
+  const { url: GEN_URL, cleanup: stopServing } = servePage();
+  const IMAGE_URL = "https://example.com/lisbon-hero.jpg";
+  // Seed the preview image in Places for the page that generation will read.
+  await PlacesTestUtils.addVisits(GEN_URL);
+  await PlacesUtils.history.update({
+    url: GEN_URL,
+    previewImageURL: IMAGE_URL,
+  });
+  try {
+    const genPromise = generateAITab(
+      { urlList: [GEN_URL], focus: "hotels in Lisbon" },
+      newConversation()
+    );
+
+    const { request, respond } = await mockEngine.captureRequest({
+      purpose: MODEL_FEATURES.AITAB,
+    });
+    Assert.ok(
+      JSON.stringify(request.args).includes(`Image: ${IMAGE_URL}`),
+      "the page's preview image URL reaches the model prompt"
+    );
+    respond(JSON.stringify(GENERATED_SURFACE));
+
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    Assert.equal(
+      result.metadata.context.urlsUsed[0].imageUrl,
+      IMAGE_URL,
+      "the preview image URL is recorded on the urlsUsed entry"
+    );
+  } finally {
+    await stopServing();
+    mockEngine.cleanupMocks();
+    await PlacesUtils.history.clear();
+  }
+});
+
+add_task(async function test_generateAITab_omits_image_for_denied_url() {
+  // Threat model: a prompt injection could ask AITab to build a page from an
+  // attacker-chosen URL. When the conversation holds both untrusted input and
+  // private data, get_page_content refuses to fetch unmentioned, non-SERP URLs
+  // headlessly to block that exfiltration channel. This test asserts the image
+  // path honors the same refusal — the denied URL's cached og:image must reach
+  // neither the model prompt nor the urlsUsed metadata — so it cannot become a
+  // side channel around the existing block.
+  const mockEngine = new MockEngineManager();
+  const DENIED_URL = "https://example.com/denied-private-untrusted-page";
+  const IMAGE_URL = "https://example.com/denied-hero.jpg";
+  await PlacesTestUtils.addVisits(DENIED_URL);
+  await PlacesUtils.history.update({
+    url: DENIED_URL,
+    previewImageURL: IMAGE_URL,
+  });
+  const conversation = newConversation();
+  // Mark the conversation as holding private data and untrusted input;
+  // commit() makes the staged flags visible to the security getters.
+  conversation.securityProperties.setPrivateData();
+  conversation.securityProperties.setUntrustedInput();
+  conversation.securityProperties.commit();
+  try {
+    const genPromise = generateAITab({ urlList: [DENIED_URL] }, conversation);
+
+    const { request, respond } = await mockEngine.captureRequest({
+      purpose: MODEL_FEATURES.AITAB,
+    });
+    const serializedRequest = JSON.stringify(request.args);
+    Assert.ok(
+      serializedRequest.includes("Access is not allowed"),
+      "the denied URL surfaces the refusal message, not page content"
+    );
+    Assert.ok(
+      !serializedRequest.includes(IMAGE_URL),
+      "the denied URL's preview image does not reach the model prompt"
+    );
+    respond(JSON.stringify(GENERATED_SURFACE));
+
+    const result = await genPromise;
+    Assert.ok(!result.error, `generation should succeed: ${result.error}`);
+    Assert.equal(
+      result.metadata.context.urlsUsed[0].imageUrl,
+      null,
+      "no preview image URL is recorded for a denied URL"
+    );
+  } finally {
+    mockEngine.cleanupMocks();
+    await PlacesUtils.history.clear();
+  }
+});
+
 add_task(async function test_generateAITab_rejects_invalid_page() {
   const mockEngine = new MockEngineManager();
   const { url: GEN_URL, cleanup: stopServing } = servePage();
   try {
     const genPromise = generateAITab({ urlList: [GEN_URL] }, newConversation());
 
-    // A structurally valid JSON object that does not match the page schema
-    // (unknown block type) must fail validation rather than be returned.
+    // A structurally valid JSON object that does not match the catalog (a root
+    // Page referencing an unknown component type) must fail validation rather
+    // than be returned.
     await mockEngine.respondTo({
       purpose: MODEL_FEATURES.AITAB,
-      response: JSON.stringify({ blocks: [{ type: "banner" }] }),
+      response: JSON.stringify({
+        components: [
+          { id: "root", component: "Page", header: "hdr", children: ["b"] },
+          { id: "hdr", component: "Header", title: "Hotels in Lisbon" },
+          { id: "b", component: "Banner" },
+        ],
+      }),
     });
 
     const result = await genPromise;
-    Assert.ok(result.error, "a page that fails schema validation is an error");
-    Assert.ok(!result.page, "no page config is returned on validation failure");
+    Assert.ok(result.error, "a surface that fails validation is an error");
+    Assert.ok(!result.surface, "no surface is returned on validation failure");
   } finally {
     await stopServing();
     mockEngine.cleanupMocks();
@@ -204,11 +310,23 @@ add_task(async function test_generateAITab_default_title_is_localized() {
       newConversation()
     );
 
-    // No header title from the model and no focus from the user, so the title
-    // falls all the way through to the localized default.
+    // The model bound the Header title to data that is not a string, so no
+    // title can be derived from the surface; with no focus from the user
+    // either, it falls all the way through to the localized default.
     await mockEngine.respondTo({
       purpose: MODEL_FEATURES.AITAB,
-      response: JSON.stringify({ blocks: GENERATED_PAGE.blocks }),
+      response: JSON.stringify({
+        components: [
+          { id: "root", component: "Page", header: "hdr", children: ["lead"] },
+          { id: "hdr", component: "Header", title: { path: "/nights" } },
+          {
+            id: "lead",
+            component: "TextBlock",
+            lead: "Budget Central Hostel is $72 / night.",
+          },
+        ],
+        dataModel: { nights: 3 },
+      }),
     });
 
     const result = await genPromise;
@@ -246,7 +364,7 @@ add_task(async function test_createAITab_link_loads_config_in_a_tab() {
     );
     await mockEngine.respondTo({
       purpose: MODEL_FEATURES.AITAB,
-      response: JSON.stringify(GENERATED_PAGE),
+      response: JSON.stringify(GENERATED_SURFACE),
     });
     const toolResult = await toolPromise;
 
@@ -272,8 +390,8 @@ add_task(async function test_createAITab_link_loads_config_in_a_tab() {
       Assert.equal(title, "AITab viewer stub", "the viewer page loaded");
       Assert.deepEqual(
         JSON.parse(decodeURIComponent(hash.slice(1))),
-        GENERATED_PAGE,
-        "the page config round-trips through the hash of the loaded URL"
+        GENERATED_SURFACE,
+        "the surface round-trips through the hash of the loaded URL"
       );
     } finally {
       BrowserTestUtils.removeTab(tab);

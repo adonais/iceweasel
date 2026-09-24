@@ -89,6 +89,34 @@ add_task(async function switcherEntersSearchMode() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function switcherOpensSearchSettings() {
+  let tab = await NewtabSearchbarTestUtils.openNewTabPage();
+  let locationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    "about:preferences#search"
+  );
+
+  await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
+    let popup =
+      await NewtabSearchbarContentTestUtils.openSearchModeSwitcher(content);
+    // The settings page replaces the page this task runs in, taking the actor
+    // with it, so the click can't be awaited here.
+    popup.querySelector("panel-item[data-action=openpreferences]").click();
+  });
+  await locationChange;
+
+  Assert.equal(
+    gBrowser.selectedBrowser.currentURI.spec,
+    "about:preferences#search",
+    "the settings page opened"
+  );
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  if (gBrowser.tabs.includes(tab)) {
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
 add_task(async function shiftClickSearchesInTheSameTab() {
   let tab = await NewtabSearchbarTestUtils.openNewTabPage();
   let loaded = BrowserTestUtils.browserLoaded(
@@ -187,3 +215,39 @@ add_task(async function tabReachesTheSwitcher() {
 
   BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_icon() {
+  let icon = "data:image/png;base64,bm90IGFuIGljb24=";
+  let engine = await SearchService.addUserEngine({
+    name: "Engine with icon",
+    url: "https://example.com/user?q={searchTerms}",
+  });
+  await engine.changeIcon(icon);
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
+
+  info("Check the icon in a new tab.");
+  let tab = await NewtabSearchbarTestUtils.openNewTabPage();
+  await assertIcon(tab, icon);
+
+  info("Change the icon and check if it's updated.");
+  icon = "data:image/gif;base64,bm90IGFuIGljb24y";
+  await engine.changeIcon(icon);
+  await assertIcon(tab, icon);
+
+  BrowserTestUtils.removeTab(tab);
+  await SearchService.removeEngine(engine);
+});
+
+function assertIcon(tab, expectedIcon) {
+  return NewtabSearchbarTestUtils.spawn(
+    tab.linkedBrowser,
+    [expectedIcon],
+    async icon => {
+      let utils = NewtabSearchbarContentTestUtils;
+      await ContentTaskUtils.waitForCondition(
+        () => utils.searchModeSwitcherIconIs(content, icon),
+        "waiting for the switcher to show the engine icon"
+      );
+    }
+  );
+}

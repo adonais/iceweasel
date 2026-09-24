@@ -236,6 +236,8 @@ scheme = "http"
 
 ["test_peerConnection_disabledVideoPreNegotiation.html"]
 
+["test_peerConnection_earlyMediaReoffer.html"]
+
 ["test_peerConnection_encodingsNegotiation.html"]
 
 ["test_peerConnection_errorCallbacks.html"]
@@ -552,6 +554,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # 1974205
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # 1974205
 ]
+
+["test_peerConnection_videoOrientation.html"]
 
 ["test_peerConnection_videoRenegotiationInactiveAnswer.html"]
 

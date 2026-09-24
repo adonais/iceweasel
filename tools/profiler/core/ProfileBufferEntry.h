@@ -109,7 +109,6 @@ struct JITFrameInfoForBufferRange final {
 
   struct JITFrameKey {
     bool operator==(const JITFrameKey& aOther) const = default;
-    bool operator!=(const JITFrameKey& aOther) const = default;
 
     void* mCanonicalAddress;
     uint32_t mDepth;

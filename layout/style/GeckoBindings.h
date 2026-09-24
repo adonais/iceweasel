@@ -152,8 +152,6 @@ bool Gecko_MatchLang(const mozilla::dom::Element*, nsAtom* override_lang,
 bool Gecko_MatchViewTransitionClass(const mozilla::dom::Element*,
                                     const nsTArray<mozilla::StyleAtom>*);
 
-nsAtom* Gecko_GetXMLLangValue(const mozilla::dom::Element*);
-
 const mozilla::PreferenceSheet::Prefs* Gecko_GetPrefSheetPrefs(
     const mozilla::dom::Document*);
 
@@ -196,8 +194,7 @@ const mozilla::StyleLockedDeclarationBlock* Gecko_GetViewTransitionDynamicRule(
     const mozilla::dom::Element* element);
 
 const mozilla::StyleLockedDeclarationBlock*
-Gecko_GetHTMLPresentationAttrDeclarationBlock(
-    const mozilla::dom::Element* element);
+Gecko_GetMappedAttributeDeclarations(const mozilla::dom::Element* element);
 
 const mozilla::StyleLockedDeclarationBlock*
 Gecko_GetExtraContentStyleDeclarations(const mozilla::dom::Element* element);

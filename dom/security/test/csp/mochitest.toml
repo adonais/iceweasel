@@ -253,6 +253,7 @@ support-files = [
 ]
 prefs = [
   "security.mixed_content.upgrade_display_content=false",
+  "dom.navigation.navigationRateLimit.count=0",
 ]
 
 ["test_301_redirect.html"]

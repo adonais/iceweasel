@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui.efficiency.logging
 
 import android.util.Log
 import java.io.File
-import java.util.Date
 import org.json.JSONObject
 
 /**
@@ -24,35 +23,46 @@ import org.json.JSONObject
  * That indirection exists because triage over prose breaks silently: a reworded message leaves every test passing and
  * the rules quietly matching nothing.
  */
-class JsonSink(private val file: File?) {
+class JsonSink(
+    private val file: File?,
+    private val envelope: EventEnvelope = ProcessEventEnvelope.current,
+    private val providerEvidence: ProviderStructuredEventSink = ProcessProviderEvidence,
+) {
 
     /**
      * Serializes [map], injects `ts`, and appends a line to both transports.
      *
      * Exceptions are caught and logged: logging must never interrupt a test.
      */
-    @Synchronized
     fun event(map: Map<String, Any?>) {
-        val line =
+        envelope.withEnrichedEvent(map) { event ->
+            val line =
+                try {
+                    JSONObject(event.filterValues { it != null }).toString()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to serialize event: ${t.message}")
+                    return@withEnrichedEvent
+                }
+
+            // Logcat drops a message over roughly 4k, and a stack trace is the field that gets there.
+            // Better a truncated record than a silently missing one.
             try {
-                JSONObject(map.filterValues { it != null } + mapOf("ts" to Date().time)).toString()
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed to serialize event: ${t.message}")
-                return
+                Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(event, line.length))
+            } catch (_: Throwable) {
+                // Rare logcat failures (buffer full) are not worth failing a test over.
             }
 
-        // Logcat drops a message over roughly 4k, and a stack trace is the field that gets there.
-        // Better a truncated record than a silently missing one.
-        try {
-            Log.i(TAG, if (line.length <= MAX_LINE) line else truncated(map, line.length))
-        } catch (_: Throwable) {
-            // Rare logcat failures (buffer full) are not worth failing a test over.
-        }
+            try {
+                file?.appendText(line + "\n")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to write JSON event: ${t.message}")
+            }
 
-        try {
-            file?.appendText(line + "\n")
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to write JSON event: ${t.message}")
+            try {
+                providerEvidence.event(event)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Failed to spool provider evidence: ${t.message}")
+            }
         }
     }
 
@@ -61,7 +71,6 @@ class JsonSink(private val file: File?) {
         JSONObject(
                 map.filterValues { it != null } - "cause" +
                     mapOf(
-                        "ts" to Date().time,
                         "causeTruncated" to true,
                         "originalLength" to was,
                         "cause" to (map["cause"] as? String)?.take(CAUSE_BUDGET),

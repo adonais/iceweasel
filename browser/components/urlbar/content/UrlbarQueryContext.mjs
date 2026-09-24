@@ -276,6 +276,16 @@ export class UrlbarQueryContext {
   }
 
   /**
+   * Whether a string that is a URL may be navigated to.
+   *
+   * @see {UrlbarShared.navigationEnabled}
+   * @type {boolean}
+   */
+  get navigationEnabled() {
+    return UrlbarShared.navigationEnabled(this.sapName);
+  }
+
+  /**
    * @type {UrlbarSearchModeData}
    *   Details about the search mode associated with this context.
    */
@@ -347,6 +357,9 @@ export class UrlbarQueryContext {
       let flags =
         Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
         Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+      if (this.isSearchbarSAP) {
+        flags |= Ci.nsIURIFixup.FIXUP_FLAG_FORCE_KEYWORD_LOOKUP;
+      }
       if (this.isPrivate) {
         flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
@@ -425,9 +438,10 @@ export class UrlbarQueryContext {
 
     // Disallow remote results for strings containing tokens that look like URIs
     // to avoid disclosing information about networks and passwords.
-    // (Unless the search is happening in the searchbar.)
+    // A SAP that can't navigate has nothing to disclose: a URL typed there is
+    // only ever a search string.
     if (
-      this.sapName != "searchbar" &&
+      this.navigationEnabled &&
       this.fixupInfo?.href &&
       !this.fixupInfo?.isSearch
     ) {
@@ -466,7 +480,7 @@ export class UrlbarQueryContext {
    */
   static fromWire(wire) {
     Object.setPrototypeOf(wire, UrlbarQueryContext.prototype);
-    wire.results = wire.results?.map(UrlbarResult.fromWire) ?? [];
+    wire.results = wire.results?.map(r => UrlbarResult.fromWire(r)) ?? [];
     if (wire.heuristicResult) {
       wire.heuristicResult = UrlbarResult.fromWire(wire.heuristicResult);
     }

@@ -6,7 +6,6 @@ import functools
 import json
 import os
 import sys
-from collections import OrderedDict
 from collections.abc import Iterable
 from pathlib import Path
 from types import ModuleType
@@ -341,9 +340,7 @@ class PartialConfigEnvironment:
         ])
         substs["ACDEFINES"] = acdefines
 
-        all_defines = OrderedDict()
-        for k in global_defines:
-            all_defines[k] = config["defines"][k]
+        all_defines = {k: config["defines"][k] for k in global_defines}
         defines["ALLDEFINES"] = all_defines
 
         self.substs._fill_group(substs)

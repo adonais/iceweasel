@@ -48,7 +48,7 @@ add_setup(async function () {
 // keyword.  It should be treated as part of the search string.
 add_task(async function nonTokenAlias_noTrailingSpace() {
   Services.prefs.setBoolPref(
-    "browser.search.separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
 
@@ -67,7 +67,7 @@ add_task(async function nonTokenAlias_noTrailingSpace() {
     ],
   });
   Services.prefs.clearUserPref(
-    "browser.search.separatePrivateDefault.ui.enabled"
+    "browser.search.separatePrivateDefault.featureGate"
   );
 });
 

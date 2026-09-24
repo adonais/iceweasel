@@ -4,7 +4,9 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 156.0 (In Development)
+# 157.0 (In Development)
+
+# 156.0
 * **browser-domains**
     * ⚠️ **Breaking change**: Removed the deprecated `DomainAutoCompleteProvider` class. Use `ShippedDomainsProvider` or `CustomDomainsProvider` instead.
 * **browser-state**
@@ -18,6 +20,7 @@ permalink: /changelog/
     * Add-on and identity credential icons are now decoded at the size they are displayed at. [Bug 2061502](https://bugzilla.mozilla.org/show_bug.cgi?id=2061502)
 * **compose-base**
     * 🆕 Added `Modifier.debouncedToggleable`to prevent rapid successive toggles from calling `onValueChange`. [Bug 2064179](https://bugzilla.mozilla.org/show_bug.cgi?id=2064179)
+    * 🆕 `Modifier.debouncedClickable` now accepts a `Role` for accessibility services. [Bug 2064181](https://bugzilla.mozilla.org/show_bug.cgi?id=2064181)
 
 # 155.0
 

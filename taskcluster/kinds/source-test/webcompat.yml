@@ -15,7 +15,6 @@ task-defaults:
             - target.tar.xz
         toolchain:
             - linux64-geckodriver
-    run-on-repo-type: [hg]
     run-on-projects: []
     treeherder:
         kind: test
@@ -32,7 +31,6 @@ interventions:
         symbol: wc(I)
         tier: 3
     run:
-        clone-with: hg
         using: mach
         # Need to start Xvfb if we remove --headless
         mach: test-interventions --headless --binary $MOZ_FETCHES_DIR/firefox/firefox --webdriver-binary $MOZ_FETCHES_DIR/geckodriver --log-tbpl -

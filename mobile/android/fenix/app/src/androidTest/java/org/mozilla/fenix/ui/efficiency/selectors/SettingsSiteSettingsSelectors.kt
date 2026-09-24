@@ -6,17 +6,22 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsSiteSettingsSelectors {
+object SettingsSiteSettingsSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        EXCEPTIONS,
+        AUTOPLAY,
+    }
 
     val TOOLBAR_TITLE =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-            value = "Site settings",
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_site_settings),
             description = "Site settings toolbar title",
-            groups = listOf("requiredForPage"),
         )
 
     val EXCEPTIONS_BUTTON =
@@ -24,7 +29,7 @@ object SettingsSiteSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Exceptions",
             description = "Site settings Exceptions button",
-            groups = listOf("exceptions"),
+            groups = setOf(Group.EXCEPTIONS),
         )
 
     val AUTOPLAY_BUTTON =
@@ -32,7 +37,7 @@ object SettingsSiteSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preference_browser_feature_autoplay),
             description = "Site settings Autoplay button",
-            groups = listOf("autoplay"),
+            groups = setOf(Group.AUTOPLAY),
         )
 
     val CAMERA_BUTTON =
@@ -40,7 +45,7 @@ object SettingsSiteSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preference_phone_feature_camera),
             description = "Site settings Camera button",
-            groups = listOf(),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val LOCATION_BUTTON =
@@ -48,7 +53,6 @@ object SettingsSiteSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preference_phone_feature_location),
             description = "Site settings Location button",
-            groups = listOf(),
         )
 
     val MICROPHONE_BUTTON =
@@ -56,16 +60,5 @@ object SettingsSiteSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preference_phone_feature_microphone),
             description = "Site settings Microphone button",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            TOOLBAR_TITLE,
-            EXCEPTIONS_BUTTON,
-            AUTOPLAY_BUTTON,
-            CAMERA_BUTTON,
-            LOCATION_BUTTON,
-            MICROPHONE_BUTTON,
         )
 }

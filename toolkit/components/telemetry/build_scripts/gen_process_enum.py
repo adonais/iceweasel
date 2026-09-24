@@ -5,7 +5,6 @@
 # Write out processes data for C++. The processes are defined
 # in a file provided as a command-line argument.
 
-import collections
 import sys
 
 from mozparsers.shared_telemetry_utils import ParserError, load_yaml_file
@@ -38,8 +37,6 @@ def to_enum_label(name):
 def write_processes_enum(processes, output):
     def p(line):
         print(line, file=output)
-
-    processes = collections.OrderedDict(processes)
 
     p("enum class ProcessID : uint32_t {")
     for i, (name, _) in enumerate(sorted(processes.items())):

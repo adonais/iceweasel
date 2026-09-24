@@ -258,6 +258,14 @@ class Logger {
     this._level = level;
   }
 
+  get debugEnabled() {
+    return this.level <= Log.Level.Debug;
+  }
+
+  get traceEnabled() {
+    return this.level <= Log.Level.Trace;
+  }
+
   get parent() {
     return this._parent;
   }

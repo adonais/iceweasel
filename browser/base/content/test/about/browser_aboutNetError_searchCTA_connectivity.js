@@ -21,6 +21,7 @@ const FAILED_URL = "https://foo.connectivity-cta.com/";
 
 add_setup(async function () {
   stubSearchCTASupportedEngine();
+  pinSearchCTADecisionDeadline();
   await SearchTestUtils.installSearchExtension(
     {
       name: "MozSearchCTAConnectivity",

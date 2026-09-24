@@ -27,14 +27,14 @@ impl Deref for OwnedStr {
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        unsafe { std::str::from_utf8_unchecked(&*self.0) }
+        unsafe { std::str::from_utf8_unchecked(&self.0) }
     }
 }
 
 impl DerefMut for OwnedStr {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { std::str::from_utf8_unchecked_mut(&mut *self.0) }
+        unsafe { std::str::from_utf8_unchecked_mut(&mut self.0) }
     }
 }
 

@@ -770,7 +770,7 @@ impl<'a> From<&'a SdpAttributeRtcpFb> for RustSdpAttributeRtcpFb {
     fn from(other: &SdpAttributeRtcpFb) -> Self {
         RustSdpAttributeRtcpFb {
             payload_type: match other.payload_type {
-                SdpAttributePayloadType::Wildcard => u32::max_value(),
+                SdpAttributePayloadType::Wildcard => u32::MAX,
                 SdpAttributePayloadType::PayloadType(x) => x as u32,
             },
             feedback_type: other.feedback_type.clone() as u32,
@@ -947,7 +947,7 @@ impl<'a> From<&'a SdpAttributeImageAttr> for RustSdpAttributeImageAttr {
     fn from(other: &SdpAttributeImageAttr) -> Self {
         RustSdpAttributeImageAttr {
             pt: match other.pt {
-                SdpAttributePayloadType::Wildcard => u32::max_value(),
+                SdpAttributePayloadType::Wildcard => u32::MAX,
                 SdpAttributePayloadType::PayloadType(x) => x as u32,
             },
             send: RustSdpAttributeImageAttrSetList::from(&other.send),

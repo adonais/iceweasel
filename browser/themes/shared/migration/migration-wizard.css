@@ -38,6 +38,7 @@ div[name="page-loading"] > .buttons > button {
 
 .loading-block {
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border-radius: var(--border-radius-small);
   opacity: 0.4;
   margin-block-start: 16px;
@@ -412,6 +413,19 @@ div[name="page-selection"][show-import-all] .resource-selection-details {
     "a b"
     "c b";
   margin-block: 16px 0;
+}
+
+.resource-selection-details > summary:focus-visible {
+  outline: none;
+}
+
+/**
+ * :has() is needed to check the summary child for focus,
+ * before adding the outline to the details container
+ */
+/* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
+.resource-selection-details:has(> summary:focus-visible) {
+  outline: 1px auto;
 }
 
 :host([hide-option-expander-subtitle]) .selected-data {

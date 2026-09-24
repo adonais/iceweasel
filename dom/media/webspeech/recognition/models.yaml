@@ -1,0 +1,255 @@
+# Speech recognition model manifest.
+#
+# Ordered list of models that can perform speech recognition. The first model
+# matching a BCP-47 tag is selected.
+#
+# Fields
+# ------
+# id         : short identifier used in generated symbol names and in the pref
+#              media.webspeech.recognition.model.<locale_prefix>
+# supported_locales : Locale tags this artifact recognizes, spelled as the model
+#              expects them; SpeechModelFor() negotiates a request against
+#              them, returning the model id the utility process passes around
+#              plus that locale (SpeechRecognitionModelMapping.h).
+# streaming  : true  = cache-aware streaming RNN-T/transducer (parakeet_capi_stream_*)
+#              false = offline CTC batch path (parakeet_capi_transcribe_pcm)
+# repo       : ModelHub repository (org/name)
+# filename   : GGUF file name inside the repository
+# revision   : ModelHub revision tag
+# size_mb    : Approximate download size shown in the permission prompt (integer MB)
+# quant      : Quantization identifier (informational)
+# latency_ms : Approximate per-chunk inference latency in ms; 0 = not yet measured
+# display_name : Human-readable model name shown in about:addons' "Manage
+#              On-Device AI Models" panel. Several distinct upstream models are
+#              rehosted under the single "speech-recognition/parakeet" ModelHub
+#              bucket (repo), so that bucket's path cannot be used to derive a
+#              precise name; this is the real per-artifact name instead.
+# hf_url     : Upstream Hugging Face model card for this artifact, shown as the
+#              "View on Hugging Face" link. Not derivable from repo/revision
+#              (see display_name) since the ModelHub bucket path and the real
+#              upstream Hugging Face repo path differ for this feature.
+
+models:
+  # --- English streaming model (EOU-aware, RNN-T transducer) ---
+  - id: english
+    supported_locales:
+      - en
+    streaming: true
+    repo: "speech-recognition/parakeet"
+    filename: "realtime_eou_120m-v1-q5_k.gguf"
+    revision: "main"
+    size_mb: 141
+    quant: "q5_k"
+    latency_ms: 0
+    display_name: "Parakeet Realtime EOU 120M v1"
+    hf_url: "https://huggingface.co/nvidia/parakeet_realtime_eou_120m-v1"
+
+  # --- English TDT-CTC 110m (offline CTC; multiple quants) ---
+  - id: english_tdt_ctc_q4_k
+    supported_locales:
+      - en
+    streaming: false
+    repo: "speech-recognition/parakeet"
+    filename: "tdt_ctc-110m-q4_k.gguf"
+    revision: "main"
+    size_mb: 131
+    quant: "q4_k"
+    latency_ms: 0
+    display_name: "Parakeet TDT-CTC 110M"
+    hf_url: "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m"
+
+  - id: english_tdt_ctc_q5_k
+    supported_locales:
+      - en
+    streaming: false
+    repo: "speech-recognition/parakeet"
+    filename: "tdt_ctc-110m-q5_k.gguf"
+    revision: "main"
+    size_mb: 143
+    quant: "q5_k"
+    latency_ms: 0
+    display_name: "Parakeet TDT-CTC 110M"
+    hf_url: "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m"
+
+  - id: english_tdt_ctc_q6_k
+    supported_locales:
+      - en
+    streaming: false
+    repo: "speech-recognition/parakeet"
+    filename: "tdt_ctc-110m-q6_k.gguf"
+    revision: "main"
+    size_mb: 156
+    quant: "q6_k"
+    latency_ms: 0
+    display_name: "Parakeet TDT-CTC 110M"
+    hf_url: "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m"
+
+  - id: english_tdt_ctc_q8_0
+    supported_locales:
+      - en
+    streaming: false
+    repo: "speech-recognition/parakeet"
+    filename: "tdt_ctc-110m-q8_0.gguf"
+    revision: "main"
+    size_mb: 178
+    quant: "q8_0"
+    latency_ms: 0
+    display_name: "Parakeet TDT-CTC 110M"
+    hf_url: "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m"
+
+  - id: english_tdt_ctc_f16
+    supported_locales:
+      - en
+    streaming: false
+    repo: "speech-recognition/parakeet"
+    filename: "tdt_ctc-110m-f16.gguf"
+    revision: "main"
+    size_mb: 268
+    quant: "f16"
+    latency_ms: 0
+    display_name: "Parakeet TDT-CTC 110M"
+    hf_url: "https://huggingface.co/nvidia/parakeet-tdt_ctc-110m"
+
+  # --- Multilingual (nemotron, streaming RNN-T) ---
+  # Last, so English goes to the English models above even though this one
+  # also lists en-US/en-GB.
+  - id: multilingual
+    # Straight from the model's own prompt dictionary
+    # (parakeet.prompt.dictionary.keys), minus its malformed keys (enGB, esES) and
+    # its "auto" default, which is what passing no locale at all selects.
+    # The model card claims quality for a subset, in decreasing order:
+    #   core:             en-US en-GB es-US es-ES fr-FR fr-CA it-IT pt-BR
+    #                     pt-PT nl-NL de-DE tr-TR ru-RU ar-AR hi-IN ja-JP
+    #                     ko-KR vi-VN uk-UA
+    #   broad coverage:   pl-PL sv-SE cs-CZ nb-NO da-DK bg-BG fi-FI hr-HR
+    #                     sk-SK zh-CN hu-HU ro-RO et-EE
+    #   adaptation-ready: el-GR lt-LT lv-LV mt-MT sl-SI he-IL th-TH nn-NO
+    # the rest the model accepts but the card does not claim.
+    supported_locales:
+      - en-US
+      - en
+      - en-GB
+      - es-ES
+      - es-US
+      - es
+      - zh-CN
+      - zh-ZH
+      - zh-TW
+      - hi-IN
+      - hi
+      - hi-HI
+      - ar-AR
+      - ar
+      - fr-FR
+      - fr
+      - de-DE
+      - de
+      - ja-JP
+      - ja-JA
+      - ru-RU
+      - ru
+      - pt-BR
+      - pt-PT
+      - pt
+      - ko-KR
+      - ko
+      - ko-KO
+      - it-IT
+      - it
+      - nl-NL
+      - nl
+      - pl-PL
+      - pl
+      - tr-TR
+      - tr
+      - uk-UA
+      - uk
+      - ro-RO
+      - ro
+      - el-GR
+      - el
+      - cs-CZ
+      - cs
+      - hu-HU
+      - hu
+      - sv-SE
+      - sv
+      - da-DK
+      - da
+      - fi-FI
+      - fi
+      - no-NO
+      - no
+      - nb-NO
+      - nb
+      - nn-NO
+      - nn
+      - sk-SK
+      - sk
+      - hr-HR
+      - hr
+      - bg-BG
+      - bg
+      - lt-LT
+      - lt
+      - et-EE
+      - et
+      - lv-LV
+      - lv
+      - sl-SI
+      - sl
+      - th-TH
+      - vi-VN
+      - id-ID
+      - ms-MY
+      - bn-IN
+      - ur-PK
+      - fa-IR
+      - ta-IN
+      - te-IN
+      - mr-IN
+      - gu-IN
+      - kn-IN
+      - ml-IN
+      - si-LK
+      - ne-NP
+      - km-KH
+      - sw-KE
+      - am-ET
+      - ha-NG
+      - zu-ZA
+      - yo-NG
+      - ig-NG
+      - af-ZA
+      - rw-RW
+      - so-SO
+      - ny-MW
+      - ln-CD
+      - or-KE
+      - he-IL
+      - ku-TR
+      - az-AZ
+      - ka-GE
+      - hy-AM
+      - uz-UZ
+      - tg-TJ
+      - ky-KG
+      - qu-PE
+      - ay-BO
+      - gn-PY
+      - nah-MX
+      - mi-NZ
+      - haw-US
+      - sm-WS
+      - to-TO
+      - fr-CA
+      - mt-MT
+    streaming: true
+    repo: "speech-recognition/parakeet"
+    filename: "nemotron-3.5-asr-streaming-0.6b-q5_k.gguf"
+    revision: "main"
+    size_mb: 785
+    quant: "q5_k"
+    latency_ms: 0
+    display_name: "Nemotron 3.5 ASR Streaming 0.6B"
+    hf_url: "https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b"

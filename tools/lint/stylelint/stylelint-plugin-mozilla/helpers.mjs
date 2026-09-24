@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+import valueParser from "postcss-value-parser";
+
 import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/semantic-categories.mjs";
 
 /**
@@ -130,3 +132,128 @@ export const trimValue = value => String(value).trim();
  */
 export const isSystemColor = value =>
   SYSTEM_COLORS.includes(value.toLowerCase());
+
+/**
+ * Every semantic token name in the tokens table.
+ */
+const TOKEN_NAMES = new Set(
+  Object.values(tokensTable)
+    .flat()
+    .map(token => token.name)
+);
+
+/**
+ * Tokens that style a background and a text color for the same surface share a
+ * name apart from the `background-color` / `text-color` part, e.g.
+ * `--button-background-color-primary-hover` and
+ * `--button-text-color-primary-hover`. A token only counts as paired when its
+ * counterpart exists: plenty of background tokens have no text token (and vice
+ * versa) because they are meant to combine with whatever the surface inherits.
+ */
+const buildColorTokenPairs = () => {
+  let backgroundToText = new Map();
+  let textToBackground = new Map();
+
+  for (let tokenName of TOKEN_NAMES) {
+    let match = tokenName.match(
+      /^--(?<prefix>.*?)background-color(?<suffix>.*)$/
+    );
+    if (!match) {
+      continue;
+    }
+    let counterpart = `--${match.groups.prefix}text-color${match.groups.suffix}`;
+    if (TOKEN_NAMES.has(counterpart)) {
+      backgroundToText.set(tokenName, counterpart);
+      textToBackground.set(counterpart, tokenName);
+    }
+  }
+
+  return { backgroundToText, textToBackground };
+};
+
+export const { backgroundToText, textToBackground } = buildColorTokenPairs();
+
+/**
+ * Whether a custom property name is a semantic design token.
+ *
+ * @param {string} tokenName
+ * @returns {boolean}
+ */
+export const isDesignToken = tokenName => TOKEN_NAMES.has(tokenName);
+
+/**
+ * Whether a declaration defines a custom property (or a Sass variable) rather
+ * than using one.
+ *
+ * @param {object} decl - A PostCSS Declaration.
+ * @returns {boolean}
+ */
+export const isCustomPropertyDefinition = decl =>
+  decl.prop.startsWith("--") || decl.prop.startsWith("$");
+
+const BACKGROUND_PROPERTIES = new Set(["background", "background-color"]);
+
+/**
+ * Finds the background color and text color declarations of one declaration
+ * block that win the cascade within it. Defining a custom property is not
+ * using a color, so those declarations are skipped.
+ *
+ * @param {object} block - A PostCSS Rule or AtRule.
+ * @returns {{background: ?object, text: ?object}}
+ */
+export const findColorDeclarations = block => {
+  let background = null;
+  let text = null;
+
+  for (let node of block.nodes) {
+    if (node.type != "decl" || isCustomPropertyDefinition(node)) {
+      continue;
+    }
+    let property = node.prop.toLowerCase();
+    if (BACKGROUND_PROPERTIES.has(property)) {
+      background = node;
+    } else if (property == "color") {
+      text = node;
+    }
+  }
+
+  return { background, text };
+};
+
+/**
+ * Collects the names of the custom properties a declaration value reads,
+ * including the ones a var() fallback reads.
+ *
+ * @param {string} value - A CSS declaration value.
+ * @returns {string[]}
+ */
+export const customPropertiesRead = value => {
+  let names = [];
+  valueParser(value).walk(node => {
+    if (isFunction(node) && node.value === "var") {
+      let [first] = node.nodes;
+      if (first?.value?.startsWith("--")) {
+        names.push(first.value);
+      }
+    }
+  });
+  return names;
+};
+
+/**
+ * Splits a background or text color token name into the component family it
+ * belongs to and the variant within that family, e.g.
+ * `--button-text-color-primary-hover` is the `button-` family's
+ * `-primary-hover` variant. Returns null for a name that is neither.
+ *
+ * @param {string} tokenName
+ * @returns {?{family: string, variant: string}}
+ */
+export const parseColorTokenName = tokenName => {
+  let match = tokenName.match(
+    /^--(?<family>.*?)(?:background|text)-color(?<variant>.*)$/
+  );
+  return match
+    ? { family: match.groups.family, variant: match.groups.variant }
+    : null;
+};

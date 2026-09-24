@@ -13241,7 +13241,7 @@ bool InitOptionParser(OptionParser& op) {
           '\0', "no-sse42",
           "Pretend CPU does not support SSE4.2 instructions "
           "to test JIT codegen (no-op on platforms other than x86 and x64).") ||
-#ifdef ENABLE_WASM_AVX
+#ifdef ENABLE_JIT_AVX
       !op.addBoolOption('\0', "enable-avx",
                         "No-op. AVX is enabled by default, if available.") ||
       !op.addBoolOption(
@@ -13446,6 +13446,8 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-atomics-pause", "Enable Atomics pause") ||
       !op.addBoolOption('\0', "enable-temporal", "Enable Temporal") ||
       !op.addBoolOption('\0', "enable-import-bytes", "Enable import bytes") ||
+      !op.addBoolOption('\0', "enable-export-star-default",
+                        "Include default in export * declarations") ||
       !op.addBoolOption('\0', "enable-import-text", "Enable import text") ||
       !op.addBoolOption('\0', "enable-promise-allkeyed",
                         "Enable Promise.allKeyed") ||
@@ -13565,6 +13567,9 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   }
   if (op.getBoolOption("enable-import-bytes")) {
     JS::Prefs::setAtStartup_experimental_import_bytes(true);
+  }
+  if (op.getBoolOption("enable-export-star-default")) {
+    JS::Prefs::setAtStartup_experimental_export_star_default(true);
   }
   if (op.getBoolOption("enable-promise-allkeyed")) {
     JS::Prefs::setAtStartup_experimental_promise_allkeyed(true);
@@ -14341,12 +14346,6 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
   if (op.getBoolOption("trace-regexp-peephole")) {
     jit::JitOptions.trace_regexp_peephole_optimization = true;
   }
-
-#ifdef NIGHTLY_BUILD
-  if (op.getBoolOption("enable-regexp-buffer-boundaries")) {
-    jit::JitOptions.js_regexp_buffer_boundaries = true;
-  }
-#endif
 
   if (op.getBoolOption("less-debug-code")) {
     jit::JitOptions.lessDebugCode = true;

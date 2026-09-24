@@ -78,7 +78,7 @@ class Call {
   virtual void DestroyAudioSendStream(AudioSendStream* send_stream) = 0;
 
   virtual AudioReceiveStreamInterface* CreateAudioReceiveStream(
-      const AudioReceiveStreamInterface::Config& config) = 0;
+      AudioReceiveStreamInterface::Config config) = 0;
   virtual void DestroyAudioReceiveStream(
       AudioReceiveStreamInterface* receive_stream) = 0;
 

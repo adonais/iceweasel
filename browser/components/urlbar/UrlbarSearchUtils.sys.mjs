@@ -26,11 +26,11 @@ const lazy = XPCOMUtils.declareLazy({
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   separatePrivateDefaultUIEnabled: {
-    pref: "browser.search.separatePrivateDefault.ui.enabled",
+    pref: "browser.search.separatePrivateDefault.featureGate",
     default: false,
   },
   separatePrivateDefault: {
-    pref: "browser.search.separatePrivateDefault",
+    pref: "browser.search.separatePrivateDefault.enabled",
     default: false,
   },
 });

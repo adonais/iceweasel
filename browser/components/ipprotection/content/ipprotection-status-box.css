@@ -75,6 +75,10 @@
     background-color: light-dark(var(--color-gray-0), var(--color-black-alpha-50));
     border: var(--border-width) solid var(--border-color-deemphasized);
   }
+
+  @media (prefers-contrast) {
+    background-color: var(--background-color-box);
+  }
 }
 
 #header {

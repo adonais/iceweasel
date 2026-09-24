@@ -12,6 +12,8 @@ import mozilla.components.lib.state.State
  * @property items List of [FileItem] to display.
  * @property mode Current [Mode] of the Download screen.
  * @property pendingDeletionIds Set of [FileItem] IDs that are waiting to be deleted.
+ * @property unconfirmedDeletionIds Set of [FileItem] IDs that were swiped away and are visually hidden but not yet in
+ *   the pending deletion set.
  * @property searchQuery The search query entered by the user. This is used to filter the list of items.
  * @property fileToRename FileItem if there is a file to rename.
  * @property renameFileError [RenameFileError] indicating if there is an error when renaming a file.
@@ -26,6 +28,7 @@ data class DownloadUIState(
     val items: List<FileItem>,
     val mode: Mode,
     val pendingDeletionIds: Set<String>,
+    val unconfirmedDeletionIds: Set<String> = emptySet(),
     val searchQuery: String = "",
     val fileToRename: FileItem? = null,
     val renameFileError: RenameFileError? = null,
@@ -37,8 +40,10 @@ data class DownloadUIState(
     private val userSelectedContentTypeFilter: FileItem.ContentTypeFilter = FileItem.ContentTypeFilter.All,
 ) : State {
 
-    /** The ungrouped list of items, excluding any items that are pending deletion. */
-    private val itemsNotPendingDeletion = items.filter { it.id !in pendingDeletionIds }
+    /** Items that are neither pending deletion nor swiped away. */
+    private val visibleItems = items.filter {
+        it.id !in pendingDeletionIds && it.id !in unconfirmedDeletionIds
+    }
 
     /**
      * The content type filter that is actually used to filter the items. This overrides the user selected content type
@@ -47,7 +52,7 @@ data class DownloadUIState(
     val selectedContentTypeFilter: FileItem.ContentTypeFilter
         get() {
             val selectedTypeContainsItems =
-                itemsNotPendingDeletion
+                visibleItems
                     .filter {
                         userSelectedContentTypeFilter == FileItem.ContentTypeFilter.All ||
                             it.status == FileItem.Status.Completed
@@ -67,7 +72,7 @@ data class DownloadUIState(
      * query.
      */
     val itemsMatchingFilters =
-        itemsNotPendingDeletion
+        visibleItems
             .filter {
                 selectedContentTypeFilter == FileItem.ContentTypeFilter.All || it.status == FileItem.Status.Completed
             }
@@ -85,7 +90,7 @@ data class DownloadUIState(
 
     /** The list of content type filters that have at least one item that matches the filter. */
     private val matchingFilters: List<FileItem.ContentTypeFilter> =
-        itemsNotPendingDeletion
+        visibleItems
             .filter { it.status == FileItem.Status.Completed }
             .map { it.matchingContentTypeFilter }
             .distinct()
@@ -110,7 +115,7 @@ data class DownloadUIState(
         get() = isSearchFieldRequested && mode is Mode.Normal
 
     val isSearchIconVisible: Boolean
-        get() = itemsNotPendingDeletion.isNotEmpty() && !isSearchFieldVisible && mode is Mode.Normal
+        get() = visibleItems.isNotEmpty() && !isSearchFieldVisible && mode is Mode.Normal
 
     val isSettingsIconVisible: Boolean
         get() = !isSearchFieldVisible && mode is Mode.Normal
@@ -125,6 +130,7 @@ data class DownloadUIState(
                 items = emptyList(),
                 mode = Mode.Normal,
                 pendingDeletionIds = emptySet(),
+                unconfirmedDeletionIds = emptySet(),
                 userSelectedContentTypeFilter = FileItem.ContentTypeFilter.All,
             )
     }

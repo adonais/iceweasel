@@ -2046,9 +2046,10 @@ class WebRtcVoiceReceiveChannel::WebRtcAudioReceiveStream {
  public:
   WebRtcAudioReceiveStream(AudioReceiveStreamInterface::Config config,
                            Call* call)
-      : call_(call), stream_(call_->CreateAudioReceiveStream(config)) {
-    RTC_DCHECK(call);
-    RTC_DCHECK(stream_);
+      : call_(call),
+        stream_(call_->CreateAudioReceiveStream(std::move(config))) {
+    RTC_DCHECK(call != nullptr);
+    RTC_DCHECK(stream_ != nullptr);
   }
 
   WebRtcAudioReceiveStream() = delete;

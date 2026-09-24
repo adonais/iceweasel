@@ -5,7 +5,6 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import {
   SettingElement,
-  bumpHeadingLevelForSrd,
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 import { SettingControl } from "chrome://browser/content/preferences/widgets/setting-control.mjs";
@@ -21,7 +20,6 @@ import { SettingGroupManager } from "chrome://browser/content/preferences/config
 /**
  * @typedef {object} SettingGroupConfigExtensions
  * @property {SettingControlConfig[]} items Array of SettingControlConfigs to render.
- * @property {number} [headingLevel] A heading level to create the legend as (1-6).
  * @property {boolean} [inProgress]
  * Hide this section unless the browser.settings-redesign.enabled or
  * browser.settings-redesign.<groupid>.enabled prefs are true.
@@ -293,20 +291,23 @@ export class SettingGroup extends SettingElement {
     if (!this.config) {
       return "";
     }
-    let headingLevel = this.config.headingLevel;
+    /**
+     * setting-groups always render a heading, so fall back to h2 (which gets
+     * bumped to h3) when the config doesn't set one.
+     */
+    let config = { ...this.config };
     if (this.srdEnabled) {
-      headingLevel = bumpHeadingLevelForSrd(headingLevel ?? 2, true);
+      config.headingLevel ??= 2;
     }
     return this.containerTemplate(
       html`<moz-fieldset
-        .headingLevel=${headingLevel}
         @change=${this.onChange}
         @toggle=${this.onChange}
         @click=${this.onClick}
         @message-bar:user-dismissed=${this.onMessageBarDismiss}
         @reorder=${this.onReorder}
         @visibility-change=${this.handleVisibilityChange}
-        ${spread(this.getCommonPropertyMapping(this.config))}
+        ${spread(this.getCommonPropertyMapping(config))}
         >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset
       >`
     );

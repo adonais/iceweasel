@@ -38,8 +38,8 @@
 :root {
   --theme-arrowpanel-border-radius: 3.5px;
 
-  --bezier-diagonal-color: light-dark(rgba(0, 0, 0, 0.2), #eee);
-  --timing-function-grid-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+  --bezier-diagonal-color: light-dark(rgb(0 0 0 / 0.2), #eee);
+  --timing-function-grid-color: light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.1));
   --timing-function-line-color: #4c9ed9;
   --timing-function-preview-scale: light-dark(var(--grey-43), var(--grey-40));
   --timing-function-preview-dot-border: white;
@@ -47,18 +47,18 @@
 
   /* Tooltips */
   --theme-tooltip-color: light-dark(var(--theme-body-color), var(--theme-text-color-strong));
-  --theme-tooltip-background: light-dark(rgb(255, 255, 255), var(--theme-popup-background));
-  --theme-tooltip-shadow-color: light-dark(var(--grey-90-a10), rgba(25, 25, 25, 0.76));
+  --theme-tooltip-background: light-dark(rgb(255 255 255), var(--theme-popup-background));
+  --theme-tooltip-shadow-color: light-dark(var(--grey-90-a10), rgb(25 25 25 / 0.76));
 
   /* Doorhangers */
   /* These colors are based on the colors used for doorhangers elsewhere in Firefox. */
   --theme-arrowpanel-background: var(--theme-popup-background);
   --theme-arrowpanel-color: var(--theme-popup-color);
   --theme-arrowpanel-border-color: var(--theme-popup-border-color);
-  --theme-arrowpanel-separator: light-dark(ThreeDShadow, rgba(249, 249, 250, 0.1));
-  --theme-arrowpanel-active-background: light-dark(hsla(0, 0%, 80%, 0.45), rgba(249, 249, 250, 0.15));
+  --theme-arrowpanel-separator: light-dark(ThreeDShadow, rgb(249 249 250 / 0.1));
+  --theme-arrowpanel-active-background: light-dark(hsl(0 0% 80% / 0.45), rgb(249 249 250 / 0.15));
   --theme-arrowpanel-active-outline-color: transparent;
-  --theme-arrowpanel-disabled-color: light-dark(GrayText, rgba(249, 249, 250, 0.5));
+  --theme-arrowpanel-disabled-color: light-dark(GrayText, rgb(249 249 250 / 0.5));
 
   &[forced-colors-active] {
     /* The active state have a different background but with an outline in HCM */
@@ -87,7 +87,7 @@
 }
 
 :root[platform="mac"].theme-light {
-  --theme-arrowpanel-separator: hsla(210, 4%, 10%, 0.14);
+  --theme-arrowpanel-separator: hsl(210 4% 10% / 0.14);
 }
 
 /*
@@ -564,7 +564,7 @@ strong {
     background: var(--theme-arrowpanel-background);
     border: 1px solid var(--theme-arrowpanel-border-color);
     border-radius: var(--theme-arrowpanel-border-radius);
-    box-shadow: 0 0 4px hsla(210, 4%, 10%, 0.2);
+    box-shadow: 0 0 4px hsl(210 4% 10% / 0.2);
   }
 
   > .tooltip-arrow {
@@ -678,7 +678,7 @@ strong {
     &:not([disabled]):is([open], :hover:active) {
       background-color: var(--theme-arrowpanel-active-background);
       color: var(--theme-arrowpanel-active-color);
-      box-shadow: 0 1px 0 hsla(210, 4%, 10%, 0.03) inset;
+      box-shadow: 0 1px 0 hsl(210 4% 10% / 0.03) inset;
       outline: 1px solid var(--theme-arrowpanel-active-outline-color);
     }
 
@@ -715,7 +715,7 @@ strong {
   }
 
   /* Use :where to avoid having a high specificity that would take over the rule above */
-  .menuitem > button.command:where([role="menuitem"], [role="menuitemcheckbox"], [role="link"]) {
+  .menuitem > button.command:where([role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="link"]) {
     appearance: none;
     border: none;
     background-color: transparent;
@@ -1005,7 +1005,7 @@ strong {
 
 .invoke-confirm {
   color: var(--theme-popup-color);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgb(0 0 0 / 0.1);
   max-width: 212px;
 }
 

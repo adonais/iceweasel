@@ -22,26 +22,26 @@
   --timing-marker-load-color: rgb(from var(--theme-highlight-red) r g b / var(--timing-marker-color-opacity));
 
   --table-splitter-color: light-dark(var(--grey-20), var(--grey-70));
-  --table-zebra-inline-icons-background: light-dark(rgba(247, 247, 247), rgb(49, 47, 47));
-  --table-selection-background-hover: light-dark(rgba(209, 232, 255, 0.8), rgba(53, 59, 72, 1));
-  --table-selection-inline-icons-background-hover: light-dark(rgba(209, 232, 255), rgba(53, 59, 72, 1));
+  --table-zebra-inline-icons-background: light-dark(rgb(247 247 247), rgb(49 47 47));
+  --table-selection-background-hover: light-dark(rgb(209 232 255 / 0.8), rgb(53 59 72 / 1));
+  --table-selection-inline-icons-background-hover: light-dark(rgb(209 232 255), rgb(53 59 72 / 1));
 
   --timing-blocked-color: light-dark(var(--red-70), var(--red-20));
-  --timing-dns-color: rgba(223, 128, 255, 0.8); /* pink */
-  --timing-ssl-color: rgba(217, 102, 41, 0.8); /* orange */
-  --timing-connect-color: rgba(217, 102, 41, 0.8); /* orange */
+  --timing-dns-color: rgb(223 128 255 / 0.8); /* pink */
+  --timing-ssl-color: rgb(217 102 41 / 0.8); /* orange */
+  --timing-connect-color: rgb(217 102 41 / 0.8); /* orange */
   /* prettier-ignore */
   --timing-send-color: light-dark(
-      rgba(0, 136, 204, 0.8), /* blue */
-      rgba(70, 175, 227, 0.8) /* light blue */
+      rgb(0 136 204 / 0.8), /* blue */
+      rgb(70 175 227 / 0.8) /* light blue */
     );
-  --timing-wait-color: light-dark(rgba(95, 136, 176, 0.8), rgba(94, 136, 176, 0.8)); /* blue grey */
-  --timing-receive-color: light-dark(rgba(44, 187, 15, 0.8), rgba(112, 191, 83, 0.8)); /* green */
+  --timing-wait-color: light-dark(rgb(95 136 176 / 0.8), rgb(94 136 176 / 0.8)); /* blue grey */
+  --timing-receive-color: light-dark(rgb(44 187 15 / 0.8), rgb(112 191 83 / 0.8)); /* green */
 
-  --timing-server-color-1: light-dark(rgba(104, 195, 179, 0.8), rgba(74, 228, 201, 0.8)); /* teal */
-  --timing-server-color-2: light-dark(rgba(123, 102, 167, 0.8), rgba(156, 119, 233, 0.8)); /* purple */
-  --timing-server-color-3: light-dark(rgba(233, 236, 130, 0.8), rgba(234, 239, 73, 0.8)); /* yellow */
-  --timing-server-color-total: light-dark(rgba(186, 90, 140, 0.8), rgba(186, 74, 133, 0.8)); /* pink */
+  --timing-server-color-1: light-dark(rgb(104 195 179 / 0.8), rgb(74 228 201 / 0.8)); /* teal */
+  --timing-server-color-2: light-dark(rgb(123 102 167 / 0.8), rgb(156 119 233 / 0.8)); /* purple */
+  --timing-server-color-3: light-dark(rgb(233 236 130 / 0.8), rgb(234 239 73 / 0.8)); /* yellow */
+  --timing-server-color-total: light-dark(rgb(186 90 140 / 0.8), rgb(186 74 133 / 0.8)); /* pink */
 
   &[forced-colors-active] {
     --timing-marker-color-opacity: 1;

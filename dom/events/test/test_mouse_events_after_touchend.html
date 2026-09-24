@@ -221,18 +221,24 @@ SimpleTest.waitForFocus(async () => {
       await promiseFlushingAPZGestureState();
       events = [];
       info("test_multi_touch: testing...");
+      // Both touch points are on the same target, so they are reported by a
+      // single touchend whose changedTouches contains both of them.
+      let endedTouches = 0;
       const waitForTouchEnd = new Promise(resolve => {
-        let count = 0;
         function onTouchEnd(event) {
-          if (++count == 2) {
-            removeEventListener("touchend", onTouchEnd, {capture: true});
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-          }
+          endedTouches = event.changedTouches.length;
+          removeEventListener("touchend", onTouchEnd, {capture: true});
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
         }
         addEventListener("touchend", onTouchEnd, {capture: true});
       });
       synthesizeTouch(child, [5, 25], 5);
       await waitForTouchEnd;
+      is(
+        endedTouches,
+        2,
+        `Both touch points should be reported by the touchend ${desc}`
+      );
       is(
         stringifyEvents(shiftEventsBefore(events)),
         stringifyEvents([]),
@@ -241,7 +247,6 @@ SimpleTest.waitForFocus(async () => {
       is(
         stringifyEvents(events),
         stringifyEvents([
-          { type: "touchend", target: child },
           { type: "touchend", target: child },
         ]),
         `Multiple touch should not cause mouse events ${desc}`

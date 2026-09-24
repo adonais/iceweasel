@@ -4,13 +4,13 @@
 
 package mozilla.components.service.pocket.recommendations.api
 
-import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
+import mozilla.components.service.pocket.recommendations.utils.reformatImageUrl
 import mozilla.components.service.pocket.stories.api.PocketResponse
 
 /**
@@ -19,7 +19,8 @@ import mozilla.components.service.pocket.stories.api.PocketResponse
  * @see [newInstance] to retrieve an instance.
  */
 internal class ContentRecommendationsEndpoint
-internal constructor(@get:VisibleForTesting internal val rawEndpoint: ContentRecommendationEndpointRaw) {
+internal constructor(@get:VisibleForTesting internal val rawEndpoint: ContentRecommendationEndpointRaw) :
+    ContentRecommendationsProvider {
     /**
      * Returns a response containing the content recommendations from the provided endpoint on success.
      *
@@ -27,7 +28,7 @@ internal constructor(@get:VisibleForTesting internal val rawEndpoint: ContentRec
      *   [PocketResponse.Failure] on error.
      */
     @WorkerThread
-    fun getContentRecommendations(): PocketResponse<ContentRecommendationsResponse> {
+    override fun getContentRecommendations(): PocketResponse<ContentRecommendationsResponse> {
         val response =
             rawEndpoint.getContentRecommendations()?.let {
                 try {
@@ -46,24 +47,7 @@ internal constructor(@get:VisibleForTesting internal val rawEndpoint: ContentRec
         return PocketResponse.wrap(response)
     }
 
-    /**
-     * Reformat the image URL to be able to request a size tailored for the parent container width and height.
-     *
-     * See
-     * https://searchfox.org/mozilla-central/rev/7fb746f0be47ce0135af7bca9fffdb5cd1c4b1d5/browser/components/newtab/content-src/components/DiscoveryStreamComponents/DSImage/DSImage.jsx#120
-     */
-    private fun reformatImageUrl(url: String): String {
-        return IMAGE_URL + Uri.encode(url)
-    }
-
     companion object {
-        /**
-         * Image URL to request a size tailored for the parent container width and height. Also: force JPEG, quality 60,
-         * no upscaling, no EXIF data. Uses Thumbor: https://thumbor.readthedocs.io/en/latest/usage.html
-         */
-        private const val IMAGE_URL =
-            "https://img-getpocket.cdn.mozilla.net/{wh}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/"
-
         /**
          * Returns a new instance of [ContentRecommendationsEndpoint].
          *

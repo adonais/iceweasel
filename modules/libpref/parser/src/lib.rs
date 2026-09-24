@@ -432,7 +432,7 @@ impl<'t> Parser<'t> {
                 ),
                 Token::Int(u) => {
                     // Accept u <= 2147483647; anything larger will overflow i32.
-                    if u <= std::i32::MAX as u32 {
+                    if u <= i32::MAX as u32 {
                         (PrefType::Int, PrefValue { int_val: u as i32 })
                     } else {
                         token =
@@ -444,18 +444,18 @@ impl<'t> Parser<'t> {
                     token = self.get_token(&mut none_str);
                     if let Token::Int(u) = token {
                         // Accept u <= 2147483648; anything larger will overflow i32 once negated.
-                        if u <= std::i32::MAX as u32 {
+                        if u <= i32::MAX as u32 {
                             (
                                 PrefType::Int,
                                 PrefValue {
                                     int_val: -(u as i32),
                                 },
                             )
-                        } else if u == std::i32::MAX as u32 + 1 {
+                        } else if u == i32::MAX as u32 + 1 {
                             (
                                 PrefType::Int,
                                 PrefValue {
-                                    int_val: std::i32::MIN,
+                                    int_val: i32::MIN,
                                 },
                             )
                         } else {
@@ -472,7 +472,7 @@ impl<'t> Parser<'t> {
                     token = self.get_token(&mut none_str);
                     if let Token::Int(u) = token {
                         // Accept u <= 2147483647; anything larger will overflow i32.
-                        if u <= std::i32::MAX as u32 {
+                        if u <= i32::MAX as u32 {
                             (PrefType::Int, PrefValue { int_val: u as i32 })
                         } else {
                             token = self

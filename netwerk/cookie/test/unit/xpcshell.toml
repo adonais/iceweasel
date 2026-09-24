@@ -24,6 +24,8 @@ prefs = ["dom.security.https_first=false"]
 
 ["test_parser_0019.js"]
 
+["test_purge_expired_on_idle_daily.js"]
+
 ["test_schemeMap.js"]
 
 ["test_timestamp_fixup.js"]

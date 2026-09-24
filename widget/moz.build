@@ -209,6 +209,7 @@ EXPORTS.mozilla += [
 
 EXPORTS.mozilla.widget += [
     "CompositorWidget.h",
+    "GfxInfoAdapterMatchDefs.inc",
     "GfxInfoDeviceVendorDefs.inc",
     "GfxInfoDriverVendorDefs.inc",
     "GfxInfoDriverVersionCmpDefs.inc",

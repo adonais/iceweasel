@@ -402,6 +402,9 @@ skip-if = [
 
 ["browser_ua_emulation.js"]
 
+["browser_unknownProtocolFound_redirect.js"]
+support-files = ["redirect_to_unknown_protocol.sjs"]
+
 ["browser_uriFixupAlternateRedirects.js"]
 https_first_disabled = true
 support-files = ["redirect_to_example.sjs"]

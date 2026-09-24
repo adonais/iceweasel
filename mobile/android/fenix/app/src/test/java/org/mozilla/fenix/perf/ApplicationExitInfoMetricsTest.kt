@@ -4,8 +4,13 @@
 
 package org.mozilla.fenix.perf
 
+import android.app.ActivityManager
 import android.app.ApplicationExitInfo
+import android.content.Context
 import android.os.Build
+import androidx.test.filters.SdkSuppress
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,6 +47,22 @@ class ApplicationExitInfoMetricsTest {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             assertTrue(ApplicationExitInfoMetrics.TRACKED_REASONS.contains(ApplicationExitInfo.REASON_FREEZER))
         }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    fun `GIVEN AMS getHistoricalProcessExitReasons throws WHEN getProcessExitsForDisplay is called THEN we do not crash and return an empty list`() {
+        val throwingContext = mockk<Context>(relaxed = true)
+        val throwingActivityManager = mockk<ActivityManager>()
+        every { throwingContext.getSystemService(Context.ACTIVITY_SERVICE) } returns throwingActivityManager
+        every {
+            throwingActivityManager.getHistoricalProcessExitReasons(any(), any(), any())
+        } throws IllegalArgumentException("simulated OEM AMS bug 2072086")
+
+        // Must not throw — this is the crash under bug 2072086.
+        val result = ApplicationExitInfoMetrics.getProcessExitsForDisplay(throwingContext)
+
+        assertTrue(result.isEmpty())
     }
 
     @Test

@@ -353,7 +353,7 @@
 }
 
 .boxmodel-editable:hover {
-  border-bottom-color: hsl(0, 0%, 50%);
+  border-bottom-color: hsl(0 0% 50%);
 }
 
 .boxmodel-editable:active {

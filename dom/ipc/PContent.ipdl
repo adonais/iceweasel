@@ -42,7 +42,7 @@ include protocol PURLClassifierLocalByName;
 include protocol PVRManager;
 include protocol PRemoteMediaManager;
 #ifndef ANDROID
-include protocol PHWInferenceManager;
+include protocol PSpeechRecognition;
 #endif  // !ANDROID
 include protocol PRemoteWorkerDebuggerManager;
 include protocol PRemoteWorkerService;
@@ -103,7 +103,6 @@ using struct SubstitutionMapping from "mozilla/chrome/RegistryMessageUtils.h";
 using struct OverrideMapping from "mozilla/chrome/RegistryMessageUtils.h";
 using base::ProcessId from "base/process.h";
 using struct IPC::Permission from "mozilla/net/NeckoMessageUtils.h";
-using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 using mozilla::hal::ProcessPriority from "mozilla/HalTypes.h";
 using mozilla::gfx::IntSize from "mozilla/gfx/2D.h";
 using mozilla::gfx::SurfaceFormat from "mozilla/gfx/Types.h";
@@ -138,7 +137,7 @@ using mozilla::dom::PermissionState from "mozilla/dom/PermissionMessageUtils.h";
 
 #if defined(XP_WIN)
 [MoveOnly] using mozilla::UntrustedModulesData from "mozilla/UntrustedModulesData.h";
-[MoveOnly] using mozilla::ModulePaths from "mozilla/UntrustedModulesData.h";
+[MoveOnly] using mozilla::ModuleIdentifiers from "mozilla/UntrustedModulesData.h";
 [MoveOnly] using mozilla::ModulesMapResult from "mozilla/UntrustedModulesData.h";
 #endif  // defined(XP_WIN)
 
@@ -187,6 +186,7 @@ using mozilla::dom::UserActivation::Modifiers from "mozilla/dom/UserActivation.h
 using nsIClipboard::ClipboardType from "nsIClipboard.h";
 using nsIUrlClassifierFeature::listType from "nsIUrlClassifierFeature.h";
 using mozilla::dom::ReferrerPolicy from "mozilla/dom/ReferrerPolicyBinding.h";
+using struct mozilla::dom::RemoteType from "mozilla/dom/RemoteType.h";
 
 #ifdef MOZ_WMF_CDM
 using nsIOriginStatusEntry from "nsIWindowsMediaFoundationCDMOriginsListService.h";
@@ -642,7 +642,11 @@ child:
                               FileDescriptor? DMDFile)
         returns (uint32_t aGeneration);
 
-    async DecodeImage(nsIURI aURI, ImageIntSize aSize, ColorScheme aColorScheme) returns (nsresult rv, IPCImage? image);
+    async DecodeImage(nsIURI aURI,
+                      ImageIntSize aSize,
+                      bool aStretch,
+                      ColorScheme aColorScheme)
+        returns (nsresult rv, IPCImage? image);
 
 #if defined(XP_WIN)
     /**
@@ -831,7 +835,7 @@ child:
     /**
      * Send the remote type associated with the content process.
      */
-    async RemoteType(nsCString aRemoteType, nsCString aProfile);
+    async SetRemoteType(RemoteType aRemoteType, nsCString aProfile);
 
     /**
      * Record an origin which is being loaded in this content process.
@@ -1197,9 +1201,10 @@ parent:
     async CreateAudioIPCConnection() returns (FileDescOrError fd);
 
 #ifndef ANDROID
-    async RequestHWInferenceConnection(Endpoint<PHWInferenceManagerParent> endpoint);
+    async AcquireHWInferenceProcess();
+    async CreateSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint);
 
-    // One call per RequestHWInferenceConnection. The process is shut down once
+    // One call per AcquireHWInferenceProcess. The process is shut down once
     // nothing holds it anymore.
     async ReleaseHWInferenceConnection();
 #endif  // !ANDROID
@@ -1784,8 +1789,12 @@ parent:
      * obtain enough information about a DLL file to determine its
      * trustworthiness. This API asks the chrome process to perform that
      * evaluation.
+     *
+     * Each entry carries a handle to the file backing the module, captured by
+     * the DLL blocklist from the handle the loader opened. The parent derives
+     * the module's path from the handle and evaluates the module it targets.
      */
-    async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
+    async GetModulesTrust(ModuleIdentifiers aModIdents, bool aRunAtNormalPriority)
         returns (ModulesMapResult? modMapResult);
 #endif  // defined(XP_WIN)
 

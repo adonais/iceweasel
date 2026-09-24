@@ -5,7 +5,9 @@
 package org.mozilla.fenix.tabhistory
 
 import androidx.navigation.NavController
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.session.SessionUseCases
+import org.mozilla.fenix.home.navigateFromHomeFragmentToBrowserFragment
 
 interface TabHistoryController {
     fun handleGoToHistoryItem(item: TabHistoryItem)
@@ -24,6 +26,10 @@ class DefaultTabHistoryController(
             goToHistoryIndexUseCase.invoke(item.index, customTabId)
         } else {
             goToHistoryIndexUseCase.invoke(item.index)
+
+            if (item.url != ABOUT_HOME_URL) {
+                navigateFromHomeFragmentToBrowserFragment(navController)
+            }
         }
     }
 }

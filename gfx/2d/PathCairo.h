@@ -31,6 +31,8 @@ class PathBuilderCairo : public PathBuilder {
            float aEndAngle, bool aAntiClockwise = false) override;
   already_AddRefed<Path> Finish() override;
 
+  bool Reset(FillRule aFillRule) override;
+
   BackendType GetBackendType() const override { return BackendType::CAIRO; }
 
   bool IsActive() const override { return !mPathData.empty(); }

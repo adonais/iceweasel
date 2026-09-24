@@ -15,6 +15,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/LayersSurfaces.h"
@@ -90,11 +91,11 @@ class AndroidImageWrapper {
                                AHardwareBuffer* aHardwareBuffer,
                                const gfx::IntSize aSize,
                                const gfx::SurfaceFormat aFormat,
-                               mozilla::UniqueFileHandle&& aFence);
+                               mozilla::UniqueFileHandle&& aWriteFenceFd);
 
-  mozilla::detail::FileHandleType GetHandle() { return mFence.get(); }
+  mozilla::UniqueFileHandle CloneWriteFenceFd();
 
-  mozilla::UniqueFileHandle CloneFence();
+  void SetReadFenceFd(UniqueFileHandle&& aFenceFd);
 
   const AHardwareBuffer* mHardwareBuffer;
   const gfx::IntSize mSize;
@@ -103,9 +104,12 @@ class AndroidImageWrapper {
  protected:
   ~AndroidImageWrapper();
 
+  Mutex mMutex;
+
   const RefPtr<AndroidImageReader> mImageReader;
   AImage* mImage;
-  const mozilla::UniqueFileHandle mFence;
+  const mozilla::UniqueFileHandle mWriteFenceFd MOZ_GUARDED_BY(mMutex);
+  mozilla::UniqueFileHandle mReadFenceFd MOZ_GUARDED_BY(mMutex);
 };
 
 /**

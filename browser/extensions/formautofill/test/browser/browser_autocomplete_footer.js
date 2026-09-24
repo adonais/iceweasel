@@ -54,7 +54,7 @@ add_task(async function test_smart_form_fill_with_address_results() {
   const item = {
     style: "smartFormFill",
     value: "",
-    image: "chrome://browser/content/aiwindow/assets/sff-autofill-icon.svg",
+    image: "chrome://browser/skin/smart-window-simplified.svg",
     label: "Smart Form Fill",
     comment: JSON.stringify({
       type: "smartFormFill",

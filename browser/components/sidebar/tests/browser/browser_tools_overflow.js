@@ -60,6 +60,11 @@ function getToolsHeight({ SidebarController } = window) {
 }
 
 async function resetToolsHeight() {
+  // An expanded launcher lays the tools out as a row, where they overflow on
+  // the inline axis and no splitter drag can clear it.
+  await SidebarController.updateUIState({ launcherExpanded: false });
+  await SidebarController.sidebarMain.updateComplete;
+
   // Reset tools height
   await resizeTools(-500);
   await SidebarController.sidebarMain.requestUpdate();
@@ -126,6 +131,8 @@ add_task(async function test_resize_of_tools() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(async function test_overflow_menu() {
@@ -198,6 +205,8 @@ add_task(async function test_overflow_menu() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(async function test_overflow_menu_with_keyboard() {
@@ -299,6 +308,8 @@ add_task(async function test_overflow_menu_with_keyboard() {
   while (gBrowser.tabs.length > 1) {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
+
+  SidebarTestUtils.restoreToolsHeights(window);
 });
 
 add_task(
@@ -379,6 +390,8 @@ add_task(
     while (gBrowser.tabs.length > 1) {
       BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
     }
+
+    SidebarTestUtils.restoreToolsHeights(window);
   }
 );
 

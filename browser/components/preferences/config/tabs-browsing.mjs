@@ -101,7 +101,6 @@ Preferences.addAll([
 
   // Browser layout
   { id: "sidebar.verticalTabs", type: "bool" },
-  { id: "sidebar.revamp", type: "bool" },
 ]);
 
 if (lazy.AppConstants.platform === "win") {
@@ -560,18 +559,6 @@ Preferences.addSetting({
   set: value => value === "true",
 });
 
-Preferences.addSetting({
-  id: "browserLayoutShowSidebar",
-  pref: "sidebar.revamp",
-  onUserChange(checked) {
-    if (checked) {
-      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
-        true
-      );
-    }
-  },
-});
-
 SettingGroupManager.registerGroups({
   browserLayout: {
     subcategory: "layout",
@@ -604,10 +591,6 @@ SettingGroupManager.registerGroups({
             },
           },
         ],
-      },
-      {
-        id: "browserLayoutShowSidebar",
-        l10nId: "browser-layout-show-sidebar2",
       },
     ],
   },

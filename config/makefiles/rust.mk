@@ -138,6 +138,10 @@ ifneq (,$(or $(MOZ_USING_SCCACHE),$(MOZ_USING_BUILDCACHE)))
 export RUSTC_WRAPPER=$(CCACHE)
 endif
 
+# `cargo clippy` only lints workspace members, which leaves out every crate the
+# top-level Cargo.toml excludes from the workspace. See build/cargo-clippy-wrapper.
+force-cargo-%-clippy: export RUSTC_WRAPPER := $(MOZ_CARGO_CLIPPY_WRAPPER)
+
 ifeq (WINNT,$(HOST_OS_ARCH))
 # //?/ is the long path prefix which seems to confuse make, so we remove it
 # (things should work without it).
@@ -294,8 +298,12 @@ endif
 export RUSTC_BOOTSTRAP
 endif
 
-target_rust_ltoable := force-cargo-library-build $(ADD_RUST_LTOABLE)
-target_rust_nonltoable := force-cargo-test-run force-cargo-program-build
+# `cargo` subcommands other than `build` that `mach cargo` can drive and need
+# build scripts to run.
+other_cargo_subcommands := check clippy fix udeps
+
+target_rust_ltoable := force-cargo-library-build $(addprefix force-cargo-library-,$(other_cargo_subcommands))
+target_rust_nonltoable := force-cargo-test-run force-cargo-program-build $(addprefix force-cargo-program-,$(other_cargo_subcommands))
 
 # Work around https://github.com/rust-lang/rust/issues/112480
 ifdef MOZ_DEBUG_RUST
@@ -318,7 +326,7 @@ $(target_rust_nonltoable): RUSTFLAGS:=$(rustflags_override) $(RUST_SANCOV_FLAGS)
 TARGET_RECIPES := $(target_rust_ltoable) $(target_rust_nonltoable)
 
 HOST_RECIPES := \
-  $(foreach a,library program,$(foreach b,build check udeps clippy,force-cargo-host-$(a)-$(b)))
+  $(foreach a,library program,$(foreach b,build $(other_cargo_subcommands),force-cargo-host-$(a)-$(b)))
 
 $(HOST_RECIPES): RUSTFLAGS:=$(rustflags_override)
 
@@ -555,11 +563,6 @@ rust_test_features_flag := --features '$(addsuffix $(COMMA),$(RUST_TEST_FEATURES
 # Don't stop at the first failure. We want to list all failures together.
 rust_test_flag := --no-fail-fast
 
-# Test executables need their shared library dependencies from dist/bin at
-# run time. Linux and macOS set an rpath (run-time search path). Windows has
-# no rpath and searches the exe's own directory, so stage the libraries next
-# to the test binaries instead.
-ifeq ($(OS_TARGET),WINNT)
 # Cargo writes the test binaries under the profile directory selected in
 # cargo_build_flags above.
 ifneq (,$(findstring megazord,$(RUST_LIBRARY_FILE)))
@@ -568,9 +571,25 @@ else
 rust_test_profile_dir := $(if $(MOZ_DEBUG_RUST),debug,release)
 endif
 rust_test_bindir := $(CARGO_TARGET_DIR)/$(RUST_TARGET)/$(rust_test_profile_dir)/deps
-stage_test_libs = mkdir -p $(rust_test_bindir)$(if $(wildcard $(ABS_DIST)/bin/*$(DLL_SUFFIX)), && cp $(ABS_DIST)/bin/*$(DLL_SUFFIX) $(rust_test_bindir)/)
-else
+
+# Test executables need their shared library dependencies from dist/bin at
+# run time.
+#
+# Linux and macOS set an rpath (run-time search path). Windows doesn't have an
+# rpath, and searches the test binary's directory and the PATH by default.
+ifneq ($(OS_TARGET),WINNT) 
 force-cargo-test-run: RUSTFLAGS += -C link-arg=-Wl,-rpath,$(ABS_DIST)/bin
+endif
+
+# Linux only applies rpath to direct dependencies of the test binary. Transitive 
+# dependencies are optimized out by the linker, which is an issue for NSS.
+#
+# `cargo test` inserts the test binary's directory into the library search path
+# on all platforms, so we can copy potential transitive dependencies for 
+# non-macOS platforms there.
+ifneq ($(OS_ARCH),Darwin)
+stage_test_libs = mkdir -p $(rust_test_bindir)$(if $(wildcard $(ABS_DIST)/bin/$(DLL_PREFIX)*$(DLL_SUFFIX)), && cp $(ABS_DIST)/bin/$(DLL_PREFIX)*$(DLL_SUFFIX) $(rust_test_bindir)/)
+else
 stage_test_libs = :
 endif
 

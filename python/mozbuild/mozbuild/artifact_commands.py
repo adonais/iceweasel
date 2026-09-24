@@ -10,7 +10,6 @@ import logging
 import os
 import pathlib
 import shutil
-from collections import OrderedDict
 
 import mozversioncontrol
 from mach.decorators import Command, CommandArgument, SubCommand
@@ -379,7 +378,7 @@ def artifact_toolchain(
                 )
             super().__init__(artifact_url, name, None, digest, algorithm, unpack=True)
 
-    records = OrderedDict()
+    records = {}
     downloaded = []
 
     if tooltool_manifest:

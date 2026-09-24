@@ -4,6 +4,7 @@
 
 //! Computed types for CSS values related to borders.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::properties::{LogicalGroupId, LonghandId};
 use crate::typed_om::{ToTyped, TypedValue};
@@ -12,15 +13,14 @@ use crate::values::computed::length::{
     CSSPixelLength, NonNegativeLength, NonNegativeLengthPercentage,
 };
 use crate::values::computed::{NonNegativeNumber, NonNegativeNumberOrPercentage};
+use crate::values::generics::NonNegative;
 use crate::values::generics::border::{
     GenericBorderCornerRadius, GenericBorderImageSideWidth, GenericBorderImageSlice,
     GenericBorderRadius, GenericBorderSpacing,
 };
 use crate::values::generics::rect::Rect;
 use crate::values::generics::size::Size2D;
-use crate::values::generics::NonNegative;
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
-use crate::Zero;
 use app_units::Au;
 use thin_vec::ThinVec;
 
@@ -97,7 +97,7 @@ pub type BorderImageWidth = Rect<BorderImageSideWidth>;
 
 impl ToTyped for BorderImageWidth {
     fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        return Err(());
+        Err(())
     }
 }
 
@@ -110,7 +110,7 @@ pub type BorderImageSlice = GenericBorderImageSlice<NonNegativeNumberOrPercentag
 
 impl ToTyped for BorderImageSlice {
     fn to_typed(&self, _dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
-        return Err(());
+        Err(())
     }
 }
 

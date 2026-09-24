@@ -36,6 +36,9 @@
  *                        null means the sidebar placement is not overridable via trainhop
  *   requiresHistory    — when true, the widget is hidden entirely on profiles that
  *                        record no history (see isWidgetDataUnavailable)
+ *   requiresWidgetSearchSap — when true, the widget is hidden entirely on hosts whose
+ *                        search code is too old to generate accurate partner codes
+ *                        (see isWidgetDataUnavailable)
  *
  * SIZE PRIORITY
  * sizePref defaults to "" (empty string) in PREFS_CONFIG. An empty value
@@ -343,6 +346,9 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "recentSearchesVisible",
     widgetsSettingsEnabledKey: "recentSearchesEnabled",
+    // @backward-compat { version 157 } See isWidgetSearchSapHostSupported in
+    // PrefsFeed.sys.mjs.
+    requiresWidgetSearchSap: true,
   },
 ];
 
@@ -391,12 +397,21 @@ export function resolveWidgetOrder(prefs) {
  * `recordsHistory` counts as available, so a missing PrefsFeed broadcast cannot
  * hide a working widget.
  *
+ * @backward-compat { version 157 }
+ * The recent searches widget requires the `newtab_search_widget` registered
+ * in BrowserSearchTelemetry.sys.mjs and no partner code configuration which
+ * was added to ConfigSearchEngine.sys.mjs in 157. The `requiresWidgetSearchSap`
+ * check can be removed once 157 hits release.
+ *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
  * @returns {boolean}
  */
 export function isWidgetDataUnavailable(widget, prefs) {
-  return Boolean(widget.requiresHistory && prefs.recordsHistory === false);
+  return Boolean(
+    (widget.requiresHistory && prefs.recordsHistory === false) ||
+    (widget.requiresWidgetSearchSap && prefs.supportsWidgetSearchSap === false)
+  );
 }
 
 /**

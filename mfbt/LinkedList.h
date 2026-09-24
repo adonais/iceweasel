@@ -454,7 +454,6 @@ class LinkedList {
     }
 
     bool operator==(const IteratorImpl& aOther) const = default;
-    bool operator!=(const IteratorImpl& aOther) const = default;
   };
 
  public:

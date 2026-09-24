@@ -94,7 +94,6 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
 
   EncoderConfig mConfig;
   const RefPtr<TaskQueue> mTaskQueue;
-  const bool mHardwareNotAllowed;
   RefPtr<MFTEncoder> mEncoder;
   // SPS/PPS NALUs when encoding in AnnexB usage, avcC otherwise.
   RefPtr<MediaByteBuffer> mConfigData;

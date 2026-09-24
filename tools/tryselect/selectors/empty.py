@@ -31,6 +31,7 @@ def run(
     try_config_params=None,
     stage_changes=False,
     dry_run=False,
+    write_task_config=False,
     closed_tree=False,
     push_to_vcs=False,
 ):
@@ -45,6 +46,7 @@ def run(
         try_task_config=generate_try_task_config("empty", [], params=try_config_params),
         stage_changes=stage_changes,
         dry_run=dry_run,
+        write_task_config=write_task_config,
         closed_tree=closed_tree,
         push_to_vcs=push_to_vcs,
     )

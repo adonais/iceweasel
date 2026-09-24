@@ -104,7 +104,7 @@ class HTMLSourceElement final : public nsGenericHTMLElement {
     return mMappedAttributesForImage;
   }
 
-  static bool IsAttributeMappedToImages(const nsAtom* aAttribute) {
+  static bool IsNoNamespaceAttrMappedToImages(const nsAtom* aAttribute) {
     return aAttribute == nsGkAtoms::width || aAttribute == nsGkAtoms::height;
   }
 

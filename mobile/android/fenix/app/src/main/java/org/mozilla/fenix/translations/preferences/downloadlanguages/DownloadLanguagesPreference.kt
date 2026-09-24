@@ -49,6 +49,8 @@ import mozilla.components.compose.base.InfoCard
 import mozilla.components.compose.base.InfoType
 import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.concept.engine.translate.LanguageModel
 import mozilla.components.concept.engine.translate.ModelState
@@ -59,8 +61,6 @@ import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.translations.DownloadIconIndicator
 import org.mozilla.fenix.translations.DownloadInProgressIndicator
 

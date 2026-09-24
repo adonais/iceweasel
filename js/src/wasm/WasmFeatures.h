@@ -93,7 +93,7 @@ bool SimdAvailable(JSContext* cx);
 // Privileged content that can access experimental features.
 bool IsPrivilegedContext(JSContext* cx);
 
-#if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
+#if defined(ENABLE_JIT_SIMD) && defined(DEBUG)
 // Report the result of a Simd simplification to the testing infrastructure.
 void ReportSimdAnalysis(const char* data);
 #endif

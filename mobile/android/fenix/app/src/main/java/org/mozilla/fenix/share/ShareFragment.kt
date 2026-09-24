@@ -110,16 +110,18 @@ class ShareFragment : AppCompatDialogFragment() {
                     sentFromFirefoxManager = requireComponents.core.sentFromFirefoxManager,
                     recentAppsStorage = RecentAppsStorage(requireContext()),
                     viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
-                ) { result ->
-                    consumePrompt {
-                        when (result) {
-                            ShareController.Result.DISMISSED -> onDismiss()
-                            ShareController.Result.SHARE_ERROR -> onFailure()
-                            ShareController.Result.SUCCESS -> onSuccess()
+                    applicationScope = requireComponents.applicationScope,
+                    dismiss = { result ->
+                        consumePrompt {
+                            when (result) {
+                                ShareController.Result.DISMISSED -> onDismiss()
+                                ShareController.Result.SHARE_ERROR -> onFailure()
+                                ShareController.Result.SUCCESS -> onSuccess()
+                            }
                         }
-                    }
-                    super.dismiss()
-                }
+                        super.dismiss()
+                    },
+                )
             )
 
         binding.shareWrapper.setOnClickListener { shareInteractor.onShareClosed() }

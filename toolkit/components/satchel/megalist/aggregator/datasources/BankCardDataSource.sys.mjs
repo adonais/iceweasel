@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { DataSourceBase } from "resource://gre/modules/megalist/aggregator/datasources/DataSourceBase.sys.mjs";
-import { CreditCardRecord } from "resource://gre/modules/shared/CreditCardRecord.sys.mjs";
 import { formAutofillStorage } from "resource://autofill/FormAutofillStorage.sys.mjs";
 import { OSKeyStore } from "resource://gre/modules/OSKeyStore.sys.mjs";
 
@@ -22,32 +21,9 @@ async function decryptCard(card) {
   }
 }
 
-async function updateCard(card, field, value) {
-  try {
-    await decryptCard(card);
-    const newCard = {
-      ...card,
-      [field]: value ?? "",
-    };
-    formAutofillStorage.INTERNAL_FIELDS.forEach(name => delete newCard[name]);
-    formAutofillStorage.creditCards.VALID_COMPUTED_FIELDS.forEach(
-      name => delete newCard[name]
-    );
-    delete newCard["cc-number-decrypted"];
-    CreditCardRecord.normalizeFields(newCard);
-
-    if (card.guid) {
-      await formAutofillStorage.creditCards.update(card.guid, newCard);
-    } else {
-      await formAutofillStorage.creditCards.add(newCard);
-    }
-  } catch (error) {
-    //todo
-    console.error("failed to modify credit card", error);
-    return false;
-  }
-
-  return true;
+async function updateCard(_card, _field, _value) {
+  // Not implemented: no bank card UI. See AddressesDataSource.updateAddress.
+  throw new Error("Editing bank cards in Megalist is not implemented");
 }
 
 /**

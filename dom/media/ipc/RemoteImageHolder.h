@@ -41,6 +41,7 @@ class RemoteImageHolder final {
   // transfered to that Image.
   already_AddRefed<layers::Image> TransferToImage(
       layers::BufferRecycleBin* aBufferRecycleBin = nullptr);
+  nsCString ToString() const;
 
  private:
   already_AddRefed<layers::Image> DeserializeImage(

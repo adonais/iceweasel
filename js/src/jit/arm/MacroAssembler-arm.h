@@ -131,10 +131,11 @@ class MacroAssemblerARM : public Assembler {
   void wasmTruncateToInt32(FloatRegister input, Register output,
                            MIRType fromType, bool isUnsigned, bool isSaturating,
                            Label* oolEntry);
-  void outOfLineWasmTruncateToIntCheck(FloatRegister input, MIRType fromType,
-                                       MIRType toType, TruncFlags flags,
-                                       Label* rejoin,
-                                       const wasm::TrapSiteDesc& trapSiteDesc);
+  void outOfLineWasmTruncateToIntCheck(
+      FloatRegister input, MIRType fromType, MIRType toType, TruncFlags flags,
+      Label* rejoin, const wasm::TrapSiteDesc& trapSiteDesc,
+      wasm::StackMap* stackMapForTraps,
+      wasm::StackMapRegistry* stackMapRegistry);
 
   // Somewhat direct wrappers for the low-level assembler funcitons
   // bitops. Attempt to encode a virtual alu instruction using two real

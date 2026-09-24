@@ -214,6 +214,11 @@ add_task(async function multipleMerinoSuggestions() {
       iab_category: "22 - Shopping",
       is_sponsored: true,
       score: 0.1,
+      custom_details: {
+        amp: {
+          suggestion_id: "amp-suggestion-id",
+        },
+      },
     },
     {
       provider: "adm",
@@ -228,6 +233,11 @@ add_task(async function multipleMerinoSuggestions() {
       iab_category: "22 - Shopping",
       is_sponsored: true,
       score: 1,
+      custom_details: {
+        amp: {
+          suggestion_id: "amp-suggestion-id",
+        },
+      },
     },
     {
       provider: "adm",
@@ -242,6 +252,11 @@ add_task(async function multipleMerinoSuggestions() {
       iab_category: "22 - Shopping",
       is_sponsored: true,
       score: 0.2,
+      custom_details: {
+        amp: {
+          suggestion_id: "amp-suggestion-id",
+        },
+      },
     },
   ];
 
@@ -289,7 +304,7 @@ add_task(async function timestamps() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-  let controller = UrlbarTestUtils.newMockController({
+  let controller = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate: context.isPrivate,
       getSearchSource() {
@@ -509,6 +524,11 @@ add_task(async function dismissals_amp() {
       is_sponsored: true,
       request_id: "request_id",
       score: 1,
+      custom_details: {
+        amp: {
+          suggestion_id: "amp-suggestion-id",
+        },
+      },
       ...suggestion,
     };
 

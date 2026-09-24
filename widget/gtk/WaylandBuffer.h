@@ -22,26 +22,7 @@
 namespace mozilla::widget {
 
 class WaylandBufferDMABUF;
-
-// Allocates and owns shared memory for Wayland drawing surface
-class WaylandShmPool {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandShmPool);
-
-  static RefPtr<WaylandShmPool> Create(nsWaylandDisplay* aWaylandDisplay,
-                                       int aSize);
-
-  wl_shm_pool* GetShmPool() { return mShmPool; };
-  void* GetImageData();
-
- private:
-  WaylandShmPool() = default;
-  ~WaylandShmPool();
-
-  wl_shm_pool* mShmPool = nullptr;
-  ipc::MutableSharedMemoryHandle mShmHandle;
-  ipc::SharedMemoryMapping mShm;
-};
+class SHMBufSurface;
 
 class BufferTransaction;
 
@@ -84,11 +65,8 @@ class WaylandBuffer {
   // (for instance WaylandBufferDMABUFHolder)
   // and WaylandBuffer can't destroy it.
   wl_buffer* mExternalWlBuffer = nullptr;
-
   AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
-
   LayoutDeviceIntSize mSize;
-
   static gfx::SurfaceFormat sFormat;
 
 #ifdef MOZ_LOGGING
@@ -100,20 +78,17 @@ class WaylandBuffer {
 // Holds actual graphics data for wl_surface
 class WaylandBufferSHM final : public WaylandBuffer {
  public:
-  static RefPtr<WaylandBufferSHM> Create(const LayoutDeviceIntSize& aSize);
+  static RefPtr<WaylandBufferSHM> Create(
+      const LayoutDeviceIntSize& aSize,
+      RefPtr<widget::DRMFormat> aFormat = nullptr);
 
-  void ReleaseWlBuffer();
   already_AddRefed<gfx::DrawTarget> Lock() override;
-  void* GetImageData() override { return mShmPool->GetImageData(); }
+  void* GetImageData() override;
 
-  gfx::SurfaceFormat GetSurfaceFormat() override {
-    return gfx::SurfaceFormat::B8G8R8A8;
-  }
+  gfx::SurfaceFormat GetSurfaceFormat() override;
 
   void Clear();
   size_t GetBufferAge() const { return mBufferAge; };
-  RefPtr<WaylandShmPool> GetShmPool() const { return mShmPool; }
-
   void IncrementBufferAge() { mBufferAge++; };
   void ResetBufferAge() { mBufferAge = 0; };
 
@@ -127,9 +102,8 @@ class WaylandBufferSHM final : public WaylandBuffer {
   explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
   ~WaylandBufferSHM() override;
 
-  // WaylandShmPoolMB provides actual shared memory we draw into
-  RefPtr<WaylandShmPool> mShmPool;
-
+  // SHMBufSurface provides actual shared memory we draw into.
+  RefPtr<SHMBufSurface> mSHMBufSurface;
   size_t mBufferAge = 0;
 };
 

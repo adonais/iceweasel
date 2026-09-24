@@ -188,7 +188,7 @@ class DefaultAddonUpdaterTest {
 
         updater.updateStatusStorage.clear(context)
 
-        updater.onUpdatePermissionRequest(ext, listOf("normandyAddonStudy"), emptyList(), emptyList()) {
+        updater.onUpdatePermissionRequest(ext, listOf("testUnknownPermission"), emptyList(), emptyList()) {
             allowedPreviously = it
         }
 

@@ -21,7 +21,9 @@ const {
 const {
   decodeUnicodeBase64,
   fetchNetworkUpdatePacket,
+  isJsonlResponse,
   parseJSON,
+  parseJSONL,
 } = require("resource://devtools/client/netmonitor/src/utils/request-utils.js");
 const {
   getCORSErrorURL,
@@ -72,6 +74,7 @@ loader.lazyGetter(this, "MODE", function () {
 
 const { div, input, label, span, h2 } = dom;
 const JSON_SCOPE_NAME = L10N.getStr("jsonScopeName");
+const JSONL_SCOPE_NAME = L10N.getStr("jsonlScopeName");
 const JSON_FILTER_TEXT = L10N.getStr("jsonFilterText");
 const RESPONSE_PAYLOAD = L10N.getStr("responsePayload");
 const RAW_RESPONSE_PAYLOAD = L10N.getStr("netmonitor.response.raw");
@@ -81,6 +84,7 @@ const RESPONSE_REDIRECT_EMPTY_TEXT = L10N.getStr("responseRedirectEmptyText");
 const RESPONSE_TRUNCATED = L10N.getStr("responseTruncated");
 
 const JSON_VIEW_MIME_TYPE = "application/vnd.mozilla.json.view";
+const JSONLINES_VIEW_MIME_TYPE = "application/vnd.mozilla.jsonlines.view";
 
 /**
  * Response panel component
@@ -186,6 +190,11 @@ class ResponsePanel extends Component {
       return result;
     }
 
+    if (isJsonlResponse(mimeType, request.url)) {
+      const { json } = parseJSONL(response);
+      return json ? { json, isJsonl: true } : {};
+    }
+
     const { json, error, jsonpCallback, strippedChars } = parseJSON(response);
 
     if (/\bjson/.test(mimeType) || json) {
@@ -288,11 +297,17 @@ class ResponsePanel extends Component {
     let { encoding, mimeType, text } = responseContent.content;
     const { filterText, rawResponsePayloadDisplayed } = this.state;
 
-    // Decode response if it's coming from JSONView.
-    if (mimeType?.includes(JSON_VIEW_MIME_TYPE) && encoding === "base64") {
+    // Decode response if it's coming from JSONView, or if it is a JSON Lines
+    // body, which the backend base64 encodes since it isn't a text type.
+    if (
+      encoding === "base64" &&
+      (mimeType?.includes(JSON_VIEW_MIME_TYPE) ||
+        mimeType?.includes(JSONLINES_VIEW_MIME_TYPE) ||
+        isJsonlResponse(mimeType, url))
+    ) {
       text = decodeUnicodeBase64(text);
     }
-    const { json, jsonpCallback, error, strippedChars } =
+    const { json, jsonpCallback, error, isJsonl, strippedChars } =
       this.handleJSONResponse(mimeType, text) || {};
 
     let component;
@@ -302,7 +317,9 @@ class ResponsePanel extends Component {
     let hasFormattedDisplay = false;
 
     if (json) {
-      if (jsonpCallback) {
+      if (isJsonl) {
+        responsePayloadLabel = JSONL_SCOPE_NAME;
+      } else if (jsonpCallback) {
         responsePayloadLabel = L10N.getFormatStr(
           "jsonpScopeName",
           jsonpCallback
@@ -343,7 +360,8 @@ class ResponsePanel extends Component {
       component = SourcePreview;
       componentProps = {
         text,
-        mimeType: json ? "application/json" : mimeType.replace(/;.+/, ""),
+        mimeType:
+          json && !isJsonl ? "application/json" : mimeType.replace(/;.+/, ""),
         targetSearchResult,
         url,
       };

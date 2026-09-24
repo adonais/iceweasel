@@ -513,7 +513,7 @@ nsresult txMozillaXMLOutput::closePrevious(bool aFlushText) {
     }
 
     ErrorResult error;
-    mCurrentNode->AppendChildTo(mOpenedElement, true, error);
+    mCurrentNode->AppendChild(*mOpenedElement, error);
     if (error.Failed()) {
       return error.StealNSResult();
     }
@@ -589,10 +589,8 @@ nsresult txMozillaXMLOutput::createTxWrapper() {
       ++j;
 #endif
     } else {
-      mDocument->RemoveChildNode(childContent, true);
-
       ErrorResult error;
-      wrapper->AppendChildTo(childContent, true, error);
+      wrapper->AppendChild(*childContent, error);
       if (error.Failed()) {
         return error.StealNSResult();
       }
@@ -606,7 +604,7 @@ nsresult txMozillaXMLOutput::createTxWrapper() {
   NS_ASSERTION(rootLocation == mDocument->GetChildCount(),
                "Incorrect root location");
   ErrorResult error;
-  mDocument->AppendChildTo(wrapper, true, error);
+  mDocument->AppendChild(*wrapper, error);
   return error.StealNSResult();
 }
 

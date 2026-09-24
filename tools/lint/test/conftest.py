@@ -83,6 +83,17 @@ def paths(root):
     return _inner
 
 
+@pytest.fixture
+def linter_module(config):
+    """Return the module the payload of the linter under test was loaded from.
+
+    mozlint loads payloads from the file next to the linter definition rather
+    than importing them by name, so `importlib.import_module(LINTER)` yields a
+    separate copy that the linter never runs. Patch this module instead.
+    """
+    return sys.modules[findobject(config["payload"], config["path"]).__module__]
+
+
 @pytest.fixture(autouse=True)
 def run_setup(config):
     """Make sure that if the linter named in the LINTER global variable has a
@@ -100,7 +111,7 @@ def run_setup(config):
         logger, {"lintname": config.get("name"), "pid": os.getpid()}
     )
 
-    func = findobject(config["setup"])
+    func = findobject(config["setup"], config["path"])
     func(
         build.topsrcdir,
         virtualenv_manager=build.virtualenv_manager,
@@ -122,7 +133,7 @@ def lint(config, root, request):
         request.module.fixed = 0
 
     try:
-        func = findobject(config["payload"])
+        func = findobject(config["payload"], config["path"])
     except (ImportError, ValueError):
         pytest.fail(
             "could not resolve a lint function from '{}'".format(config["payload"])
@@ -167,7 +178,7 @@ def structuredlog_lint(config, root, logger=None):
     specified.
     """
     try:
-        func = findobject(config["payload"])
+        func = findobject(config["payload"], config["path"])
     except (ImportError, ValueError):
         pytest.fail(
             "could not resolve a lint function from '{}'".format(config["payload"])
@@ -204,7 +215,7 @@ def structuredlog_lint(config, root, logger=None):
 @pytest.fixture
 def global_lint(config, root, request):
     try:
-        func = findobject(config["payload"])
+        func = findobject(config["payload"], config["path"])
     except (ImportError, ValueError):
         pytest.fail(
             "could not resolve a lint function from '{}'".format(config["payload"])

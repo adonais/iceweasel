@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.feature.prompts.PromptContainer
@@ -36,9 +37,9 @@ class OnDeviceFilePickerTest {
     }
 
     @Test
-    fun unsafeUrisWillNotBeSelected() {
+    fun unsafeUrisWillNotBeSelected() = runTest {
         val promptContainer = PromptContainer.TestPromptContainer(context)
-        val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
+        val fileUploadsDirCleaner = FileUploadsDirCleaner(this) { context.cacheDir }
         val filePicker =
             FilePicker(
                 container = promptContainer,
@@ -68,9 +69,9 @@ class OnDeviceFilePickerTest {
     }
 
     @Test
-    fun safeUrisWillBeSelected() {
+    fun safeUrisWillBeSelected() = runTest {
         val promptContainer = PromptContainer.TestPromptContainer(context)
-        val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
+        val fileUploadsDirCleaner = FileUploadsDirCleaner(this) { context.cacheDir }
         val filePicker =
             FilePicker(
                 container = promptContainer,
@@ -100,9 +101,9 @@ class OnDeviceFilePickerTest {
     }
 
     @Test
-    fun unsafeUriWillNotBeSelected() {
+    fun unsafeUriWillNotBeSelected() = runTest {
         val promptContainer = PromptContainer.TestPromptContainer(context)
-        val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
+        val fileUploadsDirCleaner = FileUploadsDirCleaner(this) { context.cacheDir }
         val filePicker =
             FilePicker(
                 container = promptContainer,
@@ -131,9 +132,9 @@ class OnDeviceFilePickerTest {
     }
 
     @Test
-    fun safeUriWillBeSelected() {
+    fun safeUriWillBeSelected() = runTest {
         val promptContainer = PromptContainer.TestPromptContainer(context)
-        val fileUploadsDirCleaner = FileUploadsDirCleaner { context.cacheDir }
+        val fileUploadsDirCleaner = FileUploadsDirCleaner(this) { context.cacheDir }
         val filePicker =
             FilePicker(
                 container = promptContainer,

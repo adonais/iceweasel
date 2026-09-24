@@ -113,9 +113,7 @@ async function test_osAuth_enabled_behaviour(settingsRedesignEnabled) {
       await openEditPaymentsList(redesignEnabled, browser);
       await reauthObserved; // If the OS does not popup, this will cause a timeout in the test.
 
-      if (!redesignEnabled) {
-        await waitForSubDialogLoad(content, EDIT_CREDIT_CARD_DIALOG_URL);
-      }
+      await waitForSubDialogLoad(content, EDIT_CREDIT_CARD_DIALOG_URL);
     }
   );
 }

@@ -16,14 +16,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/listeners/BrowsingContextListener.sys.mjs",
   ChromeWindowListener:
     "chrome://remote/content/shared/listeners/ChromeWindowListener.sys.mjs",
-  DebounceCallback: "chrome://remote/content/marionette/sync.sys.mjs",
+  DebounceCallback: "chrome://remote/content/shared/Sync.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   TimedPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
-  waitForObserverTopic: "chrome://remote/content/marionette/sync.sys.mjs",
+  waitForObserverTopic: "chrome://remote/content/shared/Sync.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());

@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::cell::{Cell, RefCell, RefMut};
+use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 use std::ffi::c_void;
+use std::time::Duration;
 
-use dbus::arg::messageitem::MessageItem;
-use dbus::ffidisp::{BusType, Connection};
-use dbus::Message;
+use dbus::arg::Variant;
+use dbus::blocking::Connection;
 use log::warn;
 
 use nserror::{
@@ -22,20 +23,25 @@ use xpcom::{xpcom, xpcom_method, RefPtr};
 const PORTAL_DESTINATION: &str = "org.freedesktop.portal.Desktop";
 const PORTAL_PATH: &str = "/org/freedesktop/portal/desktop";
 const PORTAL_INTERFACE: &str = "org.freedesktop.portal.Notification";
-const CALL_TIMEOUT_MS: i32 = 3000;
+const CALL_TIMEOUT: Duration = Duration::from_millis(3000);
+
+struct ActiveAlert {
+    id: String,
+    callbacks: Option<RefPtr<nsIAlertCallbacks>>,
+}
 
 #[xpcom(implement(nsIAlertsService, nsIAlertsDoNotDisturb), atomic)]
 struct PortalAlertsService {
-    // Connected lazily so creating the service does not block on the
-    // session-bus handshake.
-    connection: RefCell<Option<Connection>>,
+    // Live notifications keyed by the alert name's raw UTF-16 code units,
+    // since names may contain invalid UTF-16.
+    active: RefCell<HashMap<Vec<u16>, ActiveAlert>>,
     suppress_for_screen_sharing: Cell<bool>,
 }
 
 impl PortalAlertsService {
     fn create() -> RefPtr<Self> {
         PortalAlertsService::allocate(InitPortalAlertsService {
-            connection: RefCell::new(None),
+            active: RefCell::new(HashMap::new()),
             suppress_for_screen_sharing: Cell::new(false),
         })
     }
@@ -61,49 +67,54 @@ impl PortalAlertsService {
             }
             return Ok(());
         }
-        self.add_notification(alert).map_err(|error| {
+        let mut name = nsString::new();
+        unsafe { alert.GetName(&mut *name) }.to_result()?;
+        // The id is unique per profile, unlike the name for chrome callers.
+        let mut id = nsString::new();
+        unsafe { alert.GetId(&mut *id) }
+            .to_result()
+            .map_err(|error| {
+                warn!("could not read the alert id: {error}");
+                NS_ERROR_FAILURE
+            })?;
+        let id = id.to_string();
+        // The id is a hash formatted as ASCII digits.
+        debug_assert!(!id.contains('\0'));
+
+        // A same-name alert derives the same id, so the portal atomically
+        // updates the existing notification instead of closing and
+        // recreating it.
+        self.add_notification(alert, &id).map_err(|error| {
             warn!("XDG Desktop Portal notification failed: {error}");
             NS_ERROR_FAILURE
         })?;
-        if let Some(callbacks) = callbacks {
-            // Alert interaction is not implemented yet, so the callback state
-            // is released right after showing.
-            unsafe {
-                callbacks.OnAlertShow();
-                callbacks.OnAlertFinished();
+        let stored_callbacks = callbacks.map(RefPtr::new);
+        let previous = self.active.borrow_mut().insert(
+            name.to_vec(),
+            ActiveAlert {
+                id: id.clone(),
+                callbacks: stored_callbacks,
+            },
+        );
+        if let Some(previous) = previous {
+            if previous.id != id {
+                // Updating in place only works for a shared id, so withdraw
+                // the replaced notification when its id differs. Only the
+                // empty name derives a fresh id per show.
+                debug_assert!(name.is_empty());
+                self.remove_notification(&previous.id);
             }
+            if let Some(previous_callbacks) = &previous.callbacks {
+                unsafe { previous_callbacks.OnAlertFinished() };
+            }
+        }
+        if let Some(callbacks) = callbacks {
+            unsafe { callbacks.OnAlertShow() };
         }
         Ok(())
     }
 
-    // TODO: Use the proxy support in newer dbus-rs instead once the vendored
-    // crate is upgraded (bug 2061689).
-    fn session_connection(&self) -> Result<RefMut<'_, Connection>, String> {
-        let mut guard = self.connection.borrow_mut();
-        // Drop a dead connection so a session-bus restart does not disable
-        // the backend for the rest of the session.
-        if guard
-            .as_ref()
-            .is_some_and(|connection| !connection.is_connected())
-        {
-            *guard = None;
-        }
-        if guard.is_none() {
-            let connection = Connection::get_private(BusType::Session)
-                .map_err(|error| format!("could not connect to the session bus: {error:?}"))?;
-            *guard = Some(connection);
-        }
-        Ok(RefMut::map(guard, |connection| {
-            connection.as_mut().unwrap()
-        }))
-    }
-
-    fn add_notification(&self, alert: &nsIAlertNotification) -> Result<(), String> {
-        // The id is unique per profile, unlike the name for chrome callers.
-        let mut portal_id = nsString::new();
-        unsafe { alert.GetId(&mut *portal_id) }
-            .to_result()
-            .map_err(|error| format!("could not read the alert id: {error}"))?;
+    fn add_notification(&self, alert: &nsIAlertNotification, id: &str) -> Result<(), String> {
         let mut title = nsString::new();
         unsafe { alert.GetTitle(&mut *title) }
             .to_result()
@@ -113,34 +124,42 @@ impl PortalAlertsService {
             .to_result()
             .map_err(|error| format!("could not read the alert text: {error}"))?;
 
-        // All XPCOM calls must stay above this borrow: a JS-implemented alert
-        // runs script in its getters, which could reenter this service and
-        // panic the RefCell.
-        let connection = self.session_connection()?;
-
-        let portal_id = dbus_string(&portal_id);
-        let entries = vec![
-            ("title".to_string(), dbus_string(&title).into()),
-            ("body".to_string(), dbus_string(&body).into()),
-        ];
-        let mut message = Message::new_method_call(
-            PORTAL_DESTINATION,
-            PORTAL_PATH,
-            PORTAL_INTERFACE,
-            "AddNotification",
-        )?;
-        message.append_items(&[
-            portal_id.into(),
-            MessageItem::from_dict(entries.into_iter().map(Ok::<_, ()>)).unwrap(),
+        let entries = HashMap::from([
+            ("title", Variant(dbus_string(&title))),
+            ("body", Variant(dbus_string(&body))),
         ]);
-        connection
-            .send_with_reply_and_block(message, CALL_TIMEOUT_MS)
+        let () = session_connection()?
+            .with_proxy(PORTAL_DESTINATION, PORTAL_PATH, CALL_TIMEOUT)
+            .method_call(PORTAL_INTERFACE, "AddNotification", (id, entries))
             .map_err(|error| format!("{error:?}"))?;
         Ok(())
     }
 
+    fn remove_notification(&self, id: &str) {
+        // Waiting for the reply keeps the connection alive until the portal
+        // has taken the request; the portal discards a request whose sender
+        // has already disconnected.
+        let result = session_connection().and_then(|connection| {
+            let () = connection
+                .with_proxy(PORTAL_DESTINATION, PORTAL_PATH, CALL_TIMEOUT)
+                .method_call(PORTAL_INTERFACE, "RemoveNotification", (id,))
+                .map_err(|error| format!("{error:?}"))?;
+            Ok(())
+        });
+        if let Err(error) = result {
+            warn!("XDG Desktop Portal notification withdrawal failed: {error}");
+        }
+    }
+
     xpcom_method!(close_alert => CloseAlert(aName: *const nsAString, aContextClosed: bool));
-    fn close_alert(&self, _name: &nsAString, _context_closed: bool) -> Result<(), nsresult> {
+    fn close_alert(&self, name: &nsAString, _context_closed: bool) -> Result<(), nsresult> {
+        let entry = self.active.borrow_mut().remove(&name[..]);
+        if let Some(entry) = entry {
+            self.remove_notification(&entry.id);
+            if let Some(callbacks) = &entry.callbacks {
+                unsafe { callbacks.OnAlertFinished() };
+            }
+        }
         Ok(())
     }
 
@@ -154,6 +173,11 @@ impl PortalAlertsService {
 
     xpcom_method!(teardown => Teardown());
     fn teardown(&self) -> Result<(), nsresult> {
+        // Like the libnotify backend, leave the notifications up and only
+        // drop the callbacks, without firing them: dispatching alertfinished
+        // this late in shutdown races service worker teardown. Responding to
+        // notifications that outlived their session is bug 2065932.
+        self.active.borrow_mut().clear();
         Ok(())
     }
 
@@ -189,8 +213,15 @@ impl PortalAlertsService {
     }
 }
 
-// The dbus crate builds CStrings, which abort on interior nuls, so truncate
-// there like the C-string based backends effectively do.
+// The connection is created per call: notifications are infrequent, and this
+// leaves no cached bus state to manage.
+fn session_connection() -> Result<Connection, String> {
+    Connection::new_session()
+        .map_err(|error| format!("could not connect to the session bus: {error:?}"))
+}
+
+// An interior nul would terminate the string early at the D-Bus layer, so
+// truncate there explicitly like the C-string based backends effectively do.
 fn dbus_string(value: &nsAString) -> String {
     let mut value = value.to_string();
     if let Some(position) = value.find('\0') {

@@ -167,8 +167,6 @@ class WindowsError final {
 
   constexpr bool operator==(const WindowsError& aOther) const = default;
 
-  constexpr bool operator!=(const WindowsError& aOther) const = default;
-
   static DWORD NtStatusToWin32Error(NTSTATUS aNtStatus) {
     static const StaticDynamicallyLinkedFunctionPtr<
         decltype(&RtlNtStatusToDosError)>

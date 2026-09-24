@@ -37,7 +37,7 @@ class ImageTrackList final : public nsISupports, public nsWrapperCache {
   void Destroy();
   void OnMetadataSuccess(const image::DecodeMetadataResult& aMetadata);
   void OnFrameCountSuccess(const image::DecodeFrameCountResult& aResult);
-  void SetSelectedIndex(int32_t aIndex, bool aSelected);
+  MOZ_CAN_RUN_SCRIPT void SetSelectedIndex(int32_t aIndex, bool aSelected);
 
  protected:
   ~ImageTrackList();

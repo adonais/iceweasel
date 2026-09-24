@@ -39,6 +39,16 @@ extern "C" {
   "ld1rh  {z26.h}, p0/z, [%[kRGBCoeffBias], #4] \n" \
   "ld1rh  {z27.h}, p0/z, [%[kRGBCoeffBias], #6] \n"
 
+#if defined(LIBYUV_UNBIASED_DATA)
+#define YUVTORGB_SVE_SETUP_AR30                     \
+  YUVTORGB_SVE_SETUP                                \
+  "add        z25.h, z25.h, #24                 \n" \
+  "sub        z26.h, z26.h, #24                 \n" \
+  "add        z27.h, z27.h, #24                 \n"
+#else
+#define YUVTORGB_SVE_SETUP_AR30 YUVTORGB_SVE_SETUP
+#endif
+
 #define READYUV444_SVE                           \
   "ld1b       {z0.h}, p1/z, [%[src_y]]       \n" \
   "ld1b       {z1.h}, p1/z, [%[src_u]]       \n" \
@@ -827,7 +837,7 @@ static inline void I422ToAR30Row_SVE_SC(const uint8_t* src_y,
   asm volatile(
       "cnth     %[vl]                                   \n"
       "ptrue    p0.b                                    \n"  //
-      YUVTORGB_SVE_SETUP
+      YUVTORGB_SVE_SETUP_AR30
       "dup      z23.h, %w[limit]                        \n"
       "subs     %w[width], %w[width], %w[vl], lsl #1    \n"
       "b.le     2f                                      \n"
@@ -2056,10 +2066,10 @@ static const int8_t kABGRToUVJCoefficients[] = {
                                                                             \
   "subs     %w[width], %w[width], %w[vl], lsl #2  \n" /* VL per loop */     \
                                                                             \
-  "fmov     s16, wzr                              \n"                       \
-  "fmov     s17, wzr                              \n"                       \
-  "fmov     s20, wzr                              \n"                       \
-  "fmov     s21, wzr                              \n"                       \
+  "mov      z16.b, #0                             \n"                       \
+  "mov      z17.b, #0                             \n"                       \
+  "mov      z20.b, #0                             \n"                       \
+  "mov      z21.b, #0                             \n"                       \
                                                                             \
   "usdot    z16.s, z0.b, z24.b                    \n"                       \
   "usdot    z17.s, z1.b, z24.b                    \n"                       \
@@ -2150,18 +2160,19 @@ static inline void ARGBToUVMatrixRow_SVE_SC(const uint8_t* src_argb,
   "ld1w     {z2.s}, " p3 "/z, [%[src], #2, mul vl] \n"                       \
   "ld1w     {z3.s}, " p4 "/z, [%[src], #3, mul vl] \n"                       \
   "incb     %[src], all, mul #4                    \n"                       \
-  "fmov     s16, wzr                               \n"                       \
-  "fmov     s17, wzr                               \n"                       \
-  "fmov     s18, wzr                               \n"                       \
-  "fmov     s19, wzr                               \n"                       \
+  "mov      z16.b, #0                              \n"                       \
+  "mov      z17.b, #0                              \n"                       \
+  "mov      z18.b, #0                              \n"                       \
+  "mov      z19.b, #0                              \n"                       \
   "udot     z16.s, z0.b, z24.b                     \n"                       \
   "udot     z17.s, z1.b, z24.b                     \n"                       \
   "udot     z18.s, z2.b, z24.b                     \n"                       \
   "udot     z19.s, z3.b, z24.b                     \n"                       \
   "uzp1     z16.h, z16.h, z17.h                    \n"                       \
   "uzp1     z18.h, z18.h, z19.h                    \n"                       \
-  "addhnb   z20.b, z16.h, z25.h                    \n"                       \
-  "addhnt   z20.b, z18.h, z25.h                    \n"                       \
+  "addhnb   z16.b, z16.h, z25.h                    \n"                       \
+  "addhnb   z18.b, z18.h, z25.h                    \n"                       \
+  "uzp1     z20.b, z16.b, z18.b                    \n"                       \
   "st1b     {z20.b}, " p5 ", [%[dst_y]]            \n"                       \
   "incb     %[dst_y]                               \n"                       \
   "subs     %w[width], %w[width], %w[vl], lsl #2   \n"
@@ -2209,7 +2220,7 @@ static inline void ARGBToYMatrixRow_SVE_SC(const uint8_t* src_argb,
         [vl2] "r"(vl * 2),               // %[vl2]
         [vl3] "r"(vl * 3)                // %[vl3]
       : "cc", "memory", "z0", "z1", "z2", "z3", "z16", "z17", "z18", "z19",
-        "z24", "z25", "p0", "p1", "p2", "p3", "p4", "p5");
+        "z20", "z24", "z25", "p0", "p1", "p2", "p3", "p4", "p5");
 }
 
 #endif  // !defined(LIBYUV_DISABLE_SVE) && defined(__aarch64__)

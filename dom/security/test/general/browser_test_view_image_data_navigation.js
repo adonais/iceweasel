@@ -1,10 +1,6 @@
 "use strict";
 
 add_task(async function test_principal_right_click_open_link_in_new_tab() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   const TEST_PAGE =
     getRootDirectory(gTestPath) + "file_view_image_data_navigation.html";
 

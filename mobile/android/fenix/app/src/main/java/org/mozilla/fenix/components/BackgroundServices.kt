@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.storage.sync.PlacesBookmarksStorage
@@ -84,6 +85,7 @@ class BackgroundServices(
     remoteTabsStorage: Lazy<RemoteTabsStorage>,
     creditCardsStorage: Lazy<AutofillCreditCardsAddressesStorage>,
     strictMode: StrictModeManager,
+    private val applicationScope: CoroutineScope,
 ) {
     // Allows executing tasks which depend on the account manager, but do not need to eagerly initialize it.
     val accountManagerAvailableQueue = RunWhenReadyQueue()
@@ -225,7 +227,14 @@ class BackgroundServices(
 
                 // Enable push if it's configured.
                 push.feature?.let { autoPushFeature ->
-                    FxaPushSupportFeature(context, accountManager, autoPushFeature, crashReporter).initialize()
+                    FxaPushSupportFeature(
+                            context,
+                            accountManager,
+                            autoPushFeature,
+                            applicationScope = applicationScope,
+                            crashReporter = crashReporter,
+                        )
+                        .initialize()
                 }
 
                 SendTabFeature(accountManager) { device, tabs ->

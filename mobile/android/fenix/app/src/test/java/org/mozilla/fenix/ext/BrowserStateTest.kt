@@ -6,6 +6,7 @@ package org.mozilla.fenix.ext
 
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.collections.listOf
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LastMediaAccessState
 import mozilla.components.browser.state.state.TabSessionState
@@ -42,17 +43,110 @@ class BrowserStateTest {
     }
 
     @Test
-    fun `GIVEN the selected tab is a homepage tab WHEN asRecentTabs is called THEN return an empty list`() {
-        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3")
+    fun `GIVEN the selected tab is a homepage tab and there are multiple non homepage tabs WHEN asRecentTabs is called THEN return the most recent non homepage tab`() {
+        val tab1 = createTab("tab1", lastAccess = 800)
+        val tab3 = createTab("tab3", lastAccess = 900)
+        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3", lastAccess = 1000)
         val browserState =
             BrowserState(
-                tabs = listOf(createTab("tab1"), selectedTab, createTab("tab3")),
+                tabs = listOf(tab1, selectedTab, tab3),
                 selectedTabId = selectedTab.id,
             )
 
         val result = browserState.asRecentTabs()
 
-        assertEquals(0, result.size)
+        assertEquals(listOf(RecentTab.Tab(tab3)), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is a homepage tab and there is another homepage tab WHEN asRecentTabs is called THEN return the most recent non homepage tab`() {
+        val tab1 = createTab("tab1", lastAccess = 800)
+        val anotherHomepageTab = createTab(ABOUT_HOME_URL, lastAccess = 900)
+        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3", lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(tab1, selectedTab, anotherHomepageTab),
+                selectedTabId = selectedTab.id,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf(RecentTab.Tab(tab1)), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is null and there are homepage and non homepage tabs WHEN asRecentTabs is called THEN return the most recent non homepage tab`() {
+        val tab1 = createTab("tab1", lastAccess = 900)
+        val anotherHomepageTab = createTab(ABOUT_HOME_URL, lastAccess = 900)
+        val homepageTab = createTab(url = ABOUT_HOME_URL, lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(tab1, homepageTab, anotherHomepageTab),
+                selectedTabId = null,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf(RecentTab.Tab(tab1)), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is null and there are only non homepage tabs WHEN asRecentTabs is called THEN return the most recent non homepage tab`() {
+        val tab1 = createTab("tab1", lastAccess = 900)
+        val tab2 = createTab(url = "tab2", lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(tab1, tab2),
+                selectedTabId = null,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf(RecentTab.Tab(tab2)), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is a homepage tab and there are no other tabs WHEN asRecentTabs is called THEN return an empty list`() {
+        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3", lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(selectedTab),
+                selectedTabId = selectedTab.id,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf<RecentTab.Tab>(), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is a homepage tab and there are only homepage tabs WHEN asRecentTabs is called THEN return an empty list`() {
+        val anotherHomepageTab = createTab(ABOUT_HOME_URL, lastAccess = 900)
+        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3", lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(selectedTab, anotherHomepageTab),
+                selectedTabId = selectedTab.id,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf<RecentTab.Tab>(), result)
+    }
+
+    @Test
+    fun `GIVEN the selected tab is null and there are only homepage tabs WHEN asRecentTabs is called THEN return an empty list`() {
+        val anotherHomepageTab = createTab(ABOUT_HOME_URL, lastAccess = 900)
+        val homepageTab = createTab(url = ABOUT_HOME_URL, lastAccess = 1000)
+        val browserState =
+            BrowserState(
+                tabs = listOf(homepageTab, anotherHomepageTab),
+                selectedTabId = null,
+            )
+
+        val result = browserState.asRecentTabs()
+
+        assertEquals(listOf<RecentTab.Tab>(), result)
     }
 
     @Test
@@ -365,6 +459,50 @@ class BrowserStateTest {
 
         assertEquals(2, result.size)
         assertTrue(result.containsAll(listOf(normalTab1, normalTab3)))
+    }
+
+    @Test
+    fun `GIVEN inactiveTabs feature is disabled WHEN partitionNormalTabsByActiveTime is called THEN return all of the normal tabs as active and return no tabs as inactive`() {
+        val normalTab1 = createTab(url = "url1", id = "normalTab1")
+        val normalTab2 = createTab(url = "url2", id = "normalTab2")
+
+        val normalTab3 = createTab(url = "url3", id = "normalTab3", lastAccess = 0L, createdAt = 0L)
+        val normalTab4 = createTab(url = "url4", id = "normalTab4", lastAccess = 0L, createdAt = 0L)
+
+        val privateTab1 = createTab(url = "url5", id = "privateTab1", private = true)
+        val privateTab2 = createTab(url = "url6", id = "privateTab2", private = true, lastAccess = 0L, createdAt = 0L)
+        val browserState =
+            BrowserState(tabs = listOf(normalTab1, normalTab2, normalTab3, normalTab4, privateTab1, privateTab2))
+        val settings: Settings = mockk {
+            every { inactiveTabsAreEnabled } returns false
+        }
+
+        val (activeTabs, inactiveTabs) = browserState.partitionNormalTabsByActiveTime(settings)
+
+        assertEquals(listOf(normalTab1, normalTab2, normalTab3, normalTab4), activeTabs)
+        assertEquals(emptyList<TabSessionState>(), inactiveTabs)
+    }
+
+    @Test
+    fun `GIVEN inactiveTabs feature is enabled WHEN partitionNormalTabsByActiveTime is called THEN return the normal tabs split by their active time`() {
+        val normalTab1 = createTab(url = "url1", id = "normalTab1")
+        val normalTab2 = createTab(url = "url2", id = "normalTab2")
+
+        val inactiveTab1 = createTab(url = "url3", id = "inactiveTab1", lastAccess = 0L, createdAt = 0L)
+        val inactiveTab2 = createTab(url = "url4", id = "inactiveTab2", lastAccess = 0L, createdAt = 0L)
+
+        val privateTab1 = createTab(url = "url5", id = "privateTab1", private = true)
+        val privateTab2 = createTab(url = "url6", id = "privateTab2", private = true, lastAccess = 0L, createdAt = 0L)
+        val browserState =
+            BrowserState(tabs = listOf(normalTab1, normalTab2, inactiveTab1, inactiveTab2, privateTab1, privateTab2))
+        val settings: Settings = mockk {
+            every { inactiveTabsAreEnabled } returns true
+        }
+
+        val (activeTabs, inactiveTabs) = browserState.partitionNormalTabsByActiveTime(settings)
+
+        assertEquals(listOf(normalTab1, normalTab2), activeTabs)
+        assertEquals(listOf(inactiveTab1, inactiveTab2), inactiveTabs)
     }
 
     @Test

@@ -160,6 +160,7 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   friend class AsyncFrameInit;
 
   void MaybeUpdateEmbedderColorScheme();
+  void MaybeUpdateEmbedderScrollbarInset();
   void MaybeUpdateEmbedderZoom();
   void MaybeUpdateRemoteStyle(ComputedStyle* aOldComputedStyle = nullptr);
   void PropagateIsUnderHiddenEmbedderElement(bool aValue);
@@ -225,7 +226,7 @@ class nsDisplayRemote final : public nsPaintedDisplayItem {
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,

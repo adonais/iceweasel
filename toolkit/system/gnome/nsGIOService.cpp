@@ -1054,8 +1054,6 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
   nsAutoCString path;
   MOZ_TRY(aFile->GetNativePath(path));
 
-  RefPtr<mozilla::widget::DBusCallPromise> dbusPromise;
-
   char* activationToken = nullptr;
   auto releaseActivationToken = MakeScopeExit([&] { g_free(activationToken); });
 
@@ -1088,8 +1086,18 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
         "(ass)", &builder, activationToken ? activationToken : "")));
     g_variant_builder_clear(&builder);
 
-    dbusPromise = widget::DBusProxyCall(aProxy, aMethod, variant,
-                                        G_DBUS_CALL_FLAGS_NONE, timeout);
+    widget::DBusProxyCall(aProxy, aMethod, variant, G_DBUS_CALL_FLAGS_NONE,
+                          timeout)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [](RefPtr<GVariant>&& aResult) {
+              // Do nothing, file is shown, we're done.
+            },
+            [file = RefPtr{aFile}, aMethod](GUniquePtr<GError>&& aError) {
+              g_printerr("Failed to query file manager via %s: %s\n", aMethod,
+                         aError->message);
+              RevealDirectory(file, /* aForce = */ true);
+            });
   } else {
     int fd = open(path.get(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
@@ -1113,20 +1121,19 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile,
         "(sha{sv})", activationToken ? activationToken : "", 0, &options)));
     g_variant_builder_clear(&options);
 
-    dbusPromise = widget::DBusProxyCallWithUnixFDList(
-        aProxy, aMethod, variant, G_DBUS_CALL_FLAGS_NONE, timeout, fd_list);
+    widget::DBusProxyCallWithUnixFDList(
+        aProxy, aMethod, variant, G_DBUS_CALL_FLAGS_NONE, timeout, fd_list)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [](std::pair<RefPtr<GVariant>, RefPtr<GUnixFDList>>&& aResult) {
+              // Do nothing, file is shown, we're done.
+            },
+            [file = RefPtr{aFile}, aMethod](GUniquePtr<GError>&& aError) {
+              g_printerr("Failed to query file manager via %s: %s\n", aMethod,
+                         aError->message);
+              RevealDirectory(file, /* aForce = */ true);
+            });
   }
-
-  dbusPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [](RefPtr<GVariant>&& aResult) {
-        // Do nothing, file is shown, we're done.
-      },
-      [file = RefPtr{aFile}, aMethod](GUniquePtr<GError>&& aError) {
-        g_printerr("Failed to query file manager via %s: %s\n", aMethod,
-                   aError->message);
-        RevealDirectory(file, /* aForce = */ true);
-      });
   return NS_OK;
 }
 

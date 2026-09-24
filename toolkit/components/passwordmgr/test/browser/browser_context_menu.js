@@ -489,6 +489,60 @@ add_task(async function test_context_menu_open_management() {
 });
 
 /**
+ * A menu can be dismissed while the logins for it are still being looked up.
+ * The result has to be dropped rather than added to the menu after the fact.
+ */
+add_task(async function test_context_menu_dismissed_before_logins_arrive() {
+  const { LoginManagerContextMenu } = ChromeUtils.importESModule(
+    "resource://gre/modules/LoginManagerContextMenu.sys.mjs"
+  );
+  const findLogins = LoginManagerContextMenu._findLogins;
+  let releaseLogins;
+  LoginManagerContextMenu._findLogins = formOrigin =>
+    new Promise(resolve => {
+      releaseLogins = () =>
+        resolve(findLogins.call(LoginManagerContextMenu, formOrigin));
+    });
+
+  try {
+    await BrowserTestUtils.withNewTab(
+      {
+        gBrowser,
+        url: TEST_ORIGIN + MULTIPLE_FORMS_PAGE_PATH,
+      },
+      async function (browser) {
+        const input = "#test-password-1";
+        const shown = BrowserTestUtils.waitForEvent(CONTEXT_MENU, "popupshown");
+        await BrowserTestUtils.synthesizeMouseAtCenter(
+          input,
+          { type: "mousedown", button: 2 },
+          browser.browsingContext
+        );
+        await BrowserTestUtils.synthesizeMouseAtCenter(
+          input,
+          { type: "contextmenu", button: 2 },
+          browser.browsingContext
+        );
+        await shown;
+
+        const itemsReady = gContextMenu.passwordItemsReady;
+        await closePopup(CONTEXT_MENU);
+        releaseLogins();
+        await itemsReady;
+
+        Assert.equal(
+          CONTEXT_MENU.getElementsByClassName("context-login-item").length,
+          0,
+          "The logins of the dismissed menu were not added to it"
+        );
+      }
+    );
+  } finally {
+    LoginManagerContextMenu._findLogins = findLogins;
+  }
+});
+
+/**
  * Verify that only the expected form fields are filled.
  */
 async function assertContextMenuFill(
@@ -613,16 +667,6 @@ async function checkMenu(contextMenu, expectedCount) {
       schemeUpgrades: Services.prefs.getBoolPref("signon.schemeUpgrades"),
     });
   });
-  // The context menu populates its login items asynchronously (see
-  // nsContextMenu.updatePasswordManagerSubMenuItems), so wait for the popup to
-  // be cleared and repopulated with the expected items before asserting.
-  await TestUtils.waitForCondition(() => {
-    let items = [...CONTEXT_MENU.getElementsByClassName("context-login-item")];
-    return (
-      items.length == expectedCount &&
-      logins.every(l => items.some(m => l.username == m.label))
-    );
-  }, "Waiting for the context menu to be populated with login items");
   // Make an array of menuitems for easier comparison.
   let menuitems = [
     ...CONTEXT_MENU.getElementsByClassName("context-login-item"),

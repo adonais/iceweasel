@@ -25,6 +25,18 @@ const TreeViewClass = ChromeUtils.importESModule(
 ).default;
 const TreeView = createFactory(TreeViewClass);
 const PropertiesViewContextMenu = require("resource://devtools/client/netmonitor/src/widgets/PropertiesViewContextMenu.js");
+const {
+  limitTooltipLength,
+} = require("resource://devtools/client/netmonitor/src/utils/tooltips.js");
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    JsonlLineError: "resource://devtools/client/shared/jsonl-utils.mjs",
+  },
+  { global: "contextual" }
+);
 
 loader.lazyGetter(this, "Rep", function () {
   return ChromeUtils.importESModule(
@@ -179,6 +191,17 @@ class PropertiesView extends Component {
 
   renderValueWithRep(props) {
     const { member } = props;
+
+    // A JSON Lines entry which isn't valid JSON is displayed inline, as an
+    // error, so that it doesn't hide the rest of the document.
+    if (lazy.JsonlLineError.isInstance(member.value)) {
+      const { cropLimit } = this.props;
+      const text = `${member.value.message}: ${member.value.raw}`;
+      return div(
+        { className: "jsonl-line-error", title: limitTooltipLength(text) },
+        text.length > cropLimit ? text.substring(0, cropLimit) + "\u2026" : text
+      );
+    }
 
     /* Hide strings with following conditions
      * - the `value` object has a `value` property (only happens in Cookies panel)

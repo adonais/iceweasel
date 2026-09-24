@@ -1184,55 +1184,6 @@ telemetry.test.second:
       key1: This is just a test description.
 
 security.ui.protections:
-  show:
-    objects: [
-      "protection_report",
-    ]
-    bug_numbers:
-      - 1557050
-      - 1610897
-      - 1643428
-      - 1650468
-      - 1661756
-      - 1678201
-      - 1739287
-      - 1787249
-    description: >
-      User arrived on the protection report. This also includes a 'value' attribute which defaults to 'direct' or will be the value that a referring website adds to the url.
-    expiry_version: never
-    record_in_processes: ["content"]
-    release_channel_collection: opt-out
-    notification_emails:
-      - emz@mozilla.com
-      - seceng-telemetry@mozilla.com
-    products:
-      - firefox
-    extra_keys:
-      category: The category of protections the user is in, standard, strict or custom.
-  close:
-    objects: [
-      "protection_report",
-    ]
-    bug_numbers:
-      - 1557050
-      - 1610897
-      - 1612091
-      - 1643428
-      - 1678201
-      - 1739287
-      - 1787249
-    description: >
-      User closed on the protection report.
-    expiry_version: never
-    record_in_processes: ["content"]
-    release_channel_collection: opt-out
-    notification_emails:
-      - emz@mozilla.com
-      - seceng-telemetry@mozilla.com
-    products:
-      - firefox
-    extra_keys:
-      category: The category of protections the user is in, standard, strict or custom.
   click:
     bug_numbers:
       - 1557050
@@ -1249,15 +1200,10 @@ security.ui.protections:
     description: >
       User interaction by click events on the protection report.
     objects: [
-      "lw_open_button",
       "lw_sync_link",
-      "lw_about_link",
       "mtr_about_link",
       "mtr_report_link",
       "mtr_signup_button",
-      "trackers_about_link",
-      "mobile_app_link",
-      "settings_link",
       "vpn_app_link_android",
       "vpn_app_link_ios",
     ]
@@ -1438,51 +1384,6 @@ security.doh.neterror:
       mode: Current TRR mode
       provider_key: TRR provider
       skip_reason: The reason why DoH request is failed
-
-security.ui.certerror:
-  load:
-    objects: ["aboutcerterror"]
-    bug_numbers:
-      - 1484255
-      - 1505310
-      - 1553181
-      - 1629826
-    description: >
-      The about:certerror page is loaded, keyed by error code, see https://searchfox.org/firefox-main/source/security/nss/lib/mozpkix/include/pkix/Result.h
-    expiry_version: never
-    notification_emails:
-      - jhofmann@mozilla.com
-      - rtestard@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - "firefox"
-    record_in_processes: ["content"]
-    extra_keys:
-      is_frame: If the error page is loaded in an iframe.
-      has_sts: If the error page is for a site with HSTS headers or with a pinned key.
-      channel_status: The status of the failed channel, as an nsresult.
-      issued_by_cca: If trusting the CCA India roots would fix this error.
-      hyphen_compat: If the error is due to a domain label starting or ending with a hyphen.
-
-security.ui.tlserror:
-  load:
-    objects: ["abouttlserror"]
-    bug_numbers:
-      - 1881335
-    description: >
-      The about:neterror page is loaded with a TLS error or non-overridable certificate error, keyed by error code.
-    expiry_version: never
-    notification_emails:
-      - dkeeler@mozilla.com
-      - seceng-telemetry@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - "firefox"
-    record_in_processes: ["content"]
-    extra_keys:
-      is_frame: If the error page is loaded in an iframe.
-      channel_status: The status of the failed channel, as an nsresult.
 
 ysod:
   shown:

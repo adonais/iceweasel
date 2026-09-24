@@ -77,7 +77,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
   union {
     float f32_;
     double f64_;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     int8_t s128_[16];
     uint64_t bits_[2];
 #else
@@ -87,7 +87,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
 
   explicit MWasmFloatConstant(MIRType type) : MNullaryInstruction(classOpcode) {
     u.bits_[0] = 0;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     u.bits_[1] = 0;
 #endif
     setResultType(type);
@@ -108,7 +108,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
     return ret;
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   static MWasmFloatConstant* NewSimd128(TempAllocator& alloc,
                                         const SimdConstant& s) {
     auto* ret = new (alloc) MWasmFloatConstant(MIRType::Simd128);
@@ -129,7 +129,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
     MOZ_ASSERT(type() == MIRType::Float32);
     return u.f32_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   const SimdConstant toSimd128() const {
     MOZ_ASSERT(type() == MIRType::Simd128);
     return SimdConstant::CreateX16(u.s128_);
@@ -145,7 +145,7 @@ class MWasmFloatConstant : public MNullaryInstruction {
       case MIRType::Double:
         SprintfLiteral(buf, "f64{%e}", u.f64_);
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case MIRType::Simd128:
         SprintfLiteral(buf, "v128{[1]=%016llx:[0]=%016llx}",
                        (unsigned long long int)u.bits_[1],
@@ -161,30 +161,6 @@ class MWasmFloatConstant : public MNullaryInstruction {
 #endif
 
   ALLOW_CLONE(MWasmFloatConstant)
-};
-
-// Converts a uint32 to a float32 (coming from wasm).
-class MWasmUnsignedToFloat32 : public MUnaryInstruction,
-                               public NoTypePolicy::Data {
-  explicit MWasmUnsignedToFloat32(MDefinition* def)
-      : MUnaryInstruction(classOpcode, def) {
-    setResultType(MIRType::Float32);
-    setMovable();
-  }
-
- public:
-  INSTRUCTION_HEADER(WasmUnsignedToFloat32)
-  TRIVIAL_NEW_WRAPPERS
-
-  MDefinition* foldsTo(TempAllocator& alloc) override;
-  bool congruentTo(const MDefinition* ins) const override {
-    return congruentIfOperandsEqual(ins);
-  }
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-  bool canProduceFloat32() const override { return true; }
-
-  ALLOW_CLONE(MWasmUnsignedToFloat32)
 };
 
 class MWasmNewI31Ref : public MUnaryInstruction, public NoTypePolicy::Data {
@@ -724,8 +700,10 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
     // If using the following options, `targetIndex` must be specified.
     Memory,
     Table,
-    // Everything else. Currently used for arrays in the GC proposal. If using
-    // this, targetIndex should not be used.
+    // Arrays in the GC proposal. `targetIndex` should not be used; the
+    // bounds check limit is a load of the array's numElements field.
+    Array,
+    // Everything else. If using this, targetIndex should not be used.
     Other,
   };
 
@@ -744,7 +722,8 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
     MOZ_ASSERT(index->type() == boundsCheckLimit->type());
     MOZ_ASSERT_IF(target == Memory || target == Table,
                   targetIndex != UINT32_MAX);
-    MOZ_ASSERT_IF(target == Other, targetIndex == UINT32_MAX);
+    MOZ_ASSERT_IF(target == Array || target == Other,
+                  targetIndex == UINT32_MAX);
 
     // Bounds check is effectful: it throws for OOB.
     setGuard();
@@ -2197,7 +2176,7 @@ class MWasmTernarySimd128 : public MTernaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            simdOp() == ins->toWasmTernarySimd128()->simdOp();
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
   // If the control mask of a bitselect allows the operation to be specialized
@@ -2239,7 +2218,7 @@ class MWasmBinarySimd128 : public MBinaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            ins->toWasmBinarySimd128()->simdOp() == simdOp_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
   // Checks if pmaddubsw operation is supported.
@@ -2337,7 +2316,7 @@ class MWasmScalarToSimd128 : public MUnaryInstruction,
     return congruentIfOperandsEqual(ins) &&
            ins->toWasmScalarToSimd128()->simdOp() == simdOp_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 #endif
 
@@ -2368,7 +2347,7 @@ class MWasmReduceSimd128 : public MUnaryInstruction, public NoTypePolicy::Data {
            ins->toWasmReduceSimd128()->simdOp() == simdOp_ &&
            ins->toWasmReduceSimd128()->imm() == imm_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* foldsTo(TempAllocator& alloc) override;
 #endif
 
@@ -3423,12 +3402,12 @@ class MWasmMulI64WideHI64 : public MBinaryInstruction,
 
 #undef INSTRUCTION_HEADER
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 MWasmShuffleSimd128* BuildWasmShuffleSimd128(TempAllocator& alloc,
                                              const int8_t* control,
                                              MDefinition* lhs,
                                              MDefinition* rhs);
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
 }  // namespace jit
 }  // namespace js

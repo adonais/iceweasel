@@ -772,8 +772,8 @@ nsMapRuleToAttributesFunc HTMLCanvasElement::GetAttributeMappingFunction()
   return &MapAttributesIntoRule;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLCanvasElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLCanvasElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::width}, {nsGkAtoms::height}, {nullptr}};
   static const MappedAttributeEntry* const map[] = {attributes,

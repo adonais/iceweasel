@@ -775,7 +775,7 @@ static const nsRoleMapEntry sWAIRoleMaps[] = {
     eTableCell,
     kNoReqStates,
     eARIAExpanded,
-    eARIASelectable,
+    eARIASelectableIfDefined,
     eARIAReadonly
   },
   { // group

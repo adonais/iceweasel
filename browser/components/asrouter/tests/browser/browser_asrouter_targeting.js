@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
@@ -28,6 +30,8 @@ ChromeUtils.defineESModuleGetters(this, {
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  DEFAULT_FORM_HISTORY_PARAM:
+    "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   SessionStartup:
@@ -599,6 +603,73 @@ add_task(async function checksearchEngines() {
     message3,
     "should select correct item by searchEngines.hasEnteredSearchMode"
   );
+});
+
+add_task(async function check_recentSearchCount() {
+  const FIELDNAME = DEFAULT_FORM_HISTORY_PARAM;
+  const message = { id: "foo", targeting: "recentSearchCount > 2" };
+
+  const clear = () =>
+    FormHistory.update({ op: "remove", fieldname: FIELDNAME });
+  await clear();
+  registerCleanupFunction(clear);
+
+  is(
+    await ASRouterTargeting.Environment.recentSearchCount,
+    0,
+    "recentSearchCount should be 0 with no search history"
+  );
+
+  await FormHistory.update([
+    { op: "bump", fieldname: FIELDNAME, value: "cats" },
+    { op: "bump", fieldname: FIELDNAME, value: "dogs" },
+    { op: "bump", fieldname: FIELDNAME, value: "weather" },
+  ]);
+
+  is(
+    await ASRouterTargeting.Environment.recentSearchCount,
+    3,
+    "recentSearchCount should count the three distinct recent searches"
+  );
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should select message because recentSearchCount > 2"
+  );
+
+  // Since form history dedupes, repeating a term should not increase the count.
+  await FormHistory.update({ op: "bump", fieldname: FIELDNAME, value: "cats" });
+  is(
+    await ASRouterTargeting.Environment.recentSearchCount,
+    3,
+    "Repeated searches of the same term should not increase the count"
+  );
+
+  // Exclude searches outside the recency window (28 days). Use a margin
+  // beyond the window rather than landing exactly on the cutoff, since the
+  // getter computes its own Date.now()-based cutoff a moment later and an
+  // exact boundary value can land on either side of it. The lastUsed time
+  // is in microseconds, so we need to multiply by 1000 to get the correct
+  // time.
+  const RECENT_SEARCH_WINDOW_DAYS = 28;
+  const STALE_MARGIN_DAYS = 1;
+  const oldLastUsed =
+    (Date.now() -
+      (RECENT_SEARCH_WINDOW_DAYS + STALE_MARGIN_DAYS) * 24 * 60 * 60 * 1000) *
+    1000;
+  await FormHistory.update({
+    op: "add",
+    fieldname: FIELDNAME,
+    value: "stale",
+    lastUsed: oldLastUsed,
+  });
+  is(
+    await ASRouterTargeting.Environment.recentSearchCount,
+    3,
+    "Searches older than the recency window should be excluded"
+  );
+
+  await clear();
 });
 
 add_task(async function checkisDefaultBrowser() {

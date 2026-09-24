@@ -1,0 +1,80 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+widevine-mac-arm64:
+    description: Widevine plugin for mac-arm64
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/ad7g6ajom265ggbvq6rrx4nb22ra_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac_arm64_ad6r3hn3iuwofjkdi4widjwuy3na.crx3
+        sha256: 11a2c644f1bafb3ccdb57f84dfb5bd907bd859749428d807a35f55a3f74c6f21
+        size: 20189918
+        artifact-name: widevine-mac-arm64.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/
+
+widevine-mac:
+    description: Widevine plugin for mac
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/ac46odufbnrvxcdn4wur6s2o4kjq_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_mac64_acvag6gyzleiuk2y32voj4ebbeja.crx3
+        sha256: 0f06d849c5178ab1ba734cfe2d1f5aa4ceba2ab92a4f028e296e8fad44d44193
+        size: 22572251
+        artifact-name: widevine-mac.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/
+
+widevine-linux-arm64:
+    description: Widevine plugin for linux-arm64
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/bar3g6bc54wcbgowdtlox2l3sa_4.10.3057.0/oimompecagnajdejgnnjijobebaeigek_4.10.3057.0_linux_arm64_h5xzghmkhfkkto65d2lfjxatgm.crx3
+        sha256: 260bf3af2c6209d1e319fbfc193d545d79cdadcd4fb9d89d70ebbb3fd76b7da6
+        size: 19826058
+        artifact-name: widevine-linux-arm64.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3057.0/
+
+widevine-linux:
+    description: Widevine plugin for linux
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/bywu6vkyg6gmcthxdaetzfkptm_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_linux_aduyhcxcs7a2znuo6ss5tffn5jpa.crx3
+        sha256: b70d887771d663018f46b1072b14320bd8b9a763641ef0317bd979cbad443e88
+        size: 21685984
+        artifact-name: widevine-linux.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/
+
+widevine-win-arm64:
+    description: Widevine plugin for win-arm64
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/mubkn7mn6cy5fk3644kmxgyueu_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win_arm64_fyramdylknoqrjqvzyqaipdjki.crx3
+        sha256: 80eb3e134db6d0e21f24e96c92ce18ca320a1e737f904f4e34237b8d6049e4e5
+        size: 20015668
+        artifact-name: widevine-win-arm64.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/
+
+widevine-win32:
+    description: Widevine plugin for win32
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/d3hxhzhfhhog7gjt44k3wn7fby_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win32_kledswiwyoquaizrfcfmnaj3oa.crx3
+        sha256: ff89ac6996e3ebf0157a51c88aa4e18224642ff13f0defdbc49e2ee79bfba614
+        size: 21540366
+        artifact-name: widevine-win32.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/
+
+widevine-win64:
+    description: Widevine plugin for win64
+    artifact-prefix: private/widevine
+    fetch:
+        type: crx3-url
+        url: https://www.google.com/dl/release2/chrome_component/acddvywyhts76ngei465tcu7besa_4.10.3050.0/oimompecagnajdejgnnjijobebaeigek_4.10.3050.0_win64_adoev3c5ys462nbqhaead57zg2pa.crx3
+        sha256: 7b81444b063f81e77c527c5589e86836cc2f7328deb2772300ccc7dc9e2510c3
+        size: 22692383
+        artifact-name: widevine-win64.tar.zst
+        add-prefix: gmp-widevinecdm/4.10.3050.0/

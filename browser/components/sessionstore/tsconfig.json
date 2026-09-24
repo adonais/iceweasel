@@ -1,0 +1,19 @@
+{
+  "include": ["*.sys.mjs", "types/*.ts", "../tabbrowser/types/elements.ts"],
+  "exclude": ["SessionStore.sys.mjs", "TabGroupState.sys.mjs"],
+  "extends": "../../../tools/@types/tsconfig.json",
+
+  "compilerOptions": {
+    "checkJs": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+
+    "plugins": [
+      {
+        "transform": "../../../tools/ts/plugins/checkRootOnly.js",
+        "transformProgram": true
+      }
+    ]
+  }
+}

@@ -62,7 +62,7 @@ add_task(async function amp() {
           contextId: "",
           isClicked: false,
           reportingUrl: SUGGESTION.impression_url,
-          suggestionId: null,
+          suggestionId: SUGGESTION.suggestion_id,
         },
         click: [
           {
@@ -79,7 +79,7 @@ add_task(async function amp() {
             contextId: "",
             isClicked: true,
             reportingUrl: SUGGESTION.impression_url,
-            suggestionId: null,
+            suggestionId: SUGGESTION.suggestion_id,
           },
           {
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
@@ -94,7 +94,7 @@ add_task(async function amp() {
             source,
             contextId: "",
             reportingUrl: SUGGESTION.click_url,
-            suggestionId: null,
+            suggestionId: SUGGESTION.suggestion_id,
           },
         ],
         commands: [
@@ -115,7 +115,7 @@ add_task(async function amp() {
                 contextId: "",
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
-                suggestionId: null,
+                suggestionId: SUGGESTION.suggestion_id,
               },
               {
                 pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
@@ -130,7 +130,7 @@ add_task(async function amp() {
                 source,
                 contextId: "",
                 iabCategory: SUGGESTION.iab_category,
-                suggestionId: null,
+                suggestionId: SUGGESTION.suggestion_id,
               },
             ],
           },
@@ -151,7 +151,7 @@ add_task(async function amp() {
                 contextId: "",
                 isClicked: false,
                 reportingUrl: SUGGESTION.impression_url,
-                suggestionId: null,
+                suggestionId: SUGGESTION.suggestion_id,
               },
             ],
           },
@@ -188,7 +188,7 @@ add_task(async function sponsoredBestMatch() {
       contextId: "",
       isClicked: false,
       reportingUrl: SUGGESTION.impression_url,
-      suggestionId: null,
+      suggestionId: SUGGESTION.suggestion_id,
     },
     click: [
       {
@@ -205,7 +205,7 @@ add_task(async function sponsoredBestMatch() {
         contextId: "",
         isClicked: true,
         reportingUrl: SUGGESTION.impression_url,
-        suggestionId: null,
+        suggestionId: SUGGESTION.suggestion_id,
       },
       {
         pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
@@ -220,7 +220,7 @@ add_task(async function sponsoredBestMatch() {
         source,
         contextId: "",
         reportingUrl: SUGGESTION.click_url,
-        suggestionId: null,
+        suggestionId: SUGGESTION.suggestion_id,
       },
     ],
     commands: [
@@ -241,7 +241,7 @@ add_task(async function sponsoredBestMatch() {
             contextId: "",
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
-            suggestionId: null,
+            suggestionId: SUGGESTION.suggestion_id,
           },
           {
             pingType: CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
@@ -256,7 +256,7 @@ add_task(async function sponsoredBestMatch() {
             source,
             contextId: "",
             iabCategory: SUGGESTION.iab_category,
-            suggestionId: null,
+            suggestionId: SUGGESTION.suggestion_id,
           },
         ],
       },
@@ -277,7 +277,7 @@ add_task(async function sponsoredBestMatch() {
             contextId: "",
             isClicked: false,
             reportingUrl: SUGGESTION.impression_url,
-            suggestionId: null,
+            suggestionId: SUGGESTION.suggestion_id,
           },
         ],
       },

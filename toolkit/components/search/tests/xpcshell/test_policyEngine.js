@@ -195,7 +195,7 @@ add_task(async function test_enterprise_policy_invalid_default() {
 
 add_task(async function test_enterprise_policy_private_default() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
 

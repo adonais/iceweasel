@@ -4,18 +4,9 @@
 
 package org.mozilla.fenix
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Intent
 import android.os.Bundle
-import androidx.concurrent.futures.await
-import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.FragmentManager
-import androidx.work.Configuration
-import androidx.work.DelegatingWorkerFactory
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.testing.WorkManagerTestInitHelper
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -23,18 +14,12 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.ActiveOptionsPage
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.feature.session.TrackingProtectionUseCases
-import mozilla.components.support.base.android.NotificationsDelegate
-import mozilla.components.support.test.fakes.engine.FakeEngine
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.utils.FakeDateTimeProvider
 import mozilla.components.support.utils.toSafeIntent
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -56,22 +41,9 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getIntentSource
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
-import org.mozilla.fenix.privacyreport.PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID
-import org.mozilla.fenix.privacyreport.PrivacyReportWorkerFactory
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-
-private const val PRIVACY_REPORT_NOTIFICATION_WORK_NAME = "org.mozilla.fenix.privacyreport.work"
-
-/**
- * Fake "now" used when scheduling the privacy report notification worker in these tests, matching
- * [Settings.onboardingCompletedTimestamp] so the computed initial delay is a full week away rather than ~0. A ~0 delay
- * would, combined with WorkManager's synchronous test executor, cause the worker to actually execute during what are
- * meant to be scheduling-only tests.
- */
-private const val PRIVACY_REPORT_NOTIFICATION_FAKE_NOW = 1_000L
 
 @RunWith(RobolectricTestRunner::class)
 class HomeActivityTest {
@@ -89,34 +61,6 @@ class HomeActivityTest {
 
         every { testContext.components.settings } returns settings
         every { testContext.components.appStore } returns appStore
-
-        // The default WorkManager instance doesn't go through FenixApplication's
-        // Configuration.Provider in this test environment, so scheduling the
-        // PrivacyReportNotificationWorker needs its own WorkerFactory wiring to be able to
-        // actually construct the worker.
-        val workerFactoryConfiguration =
-            Configuration.Builder()
-                .setWorkerFactory(
-                    DelegatingWorkerFactory().apply {
-                        addFactory(
-                            PrivacyReportWorkerFactory(
-                                settings = Settings(testContext),
-                                trackingProtectionUseCases = TrackingProtectionUseCases(BrowserStore(), FakeEngine()),
-                                notificationsDelegate =
-                                    NotificationsDelegate(NotificationManagerCompat.from(testContext)),
-                            )
-                        )
-                    }
-                )
-                .build()
-        WorkManagerTestInitHelper.initializeTestWorkManager(testContext, workerFactoryConfiguration)
-    }
-
-    @After
-    fun teardown() {
-        // Close WorkManager's internal database to prevent leaked SQLite resources from being reported against
-        // subsequent tests.
-        WorkManagerTestInitHelper.closeWorkDatabase()
     }
 
     private fun assertNoPromptWasShown() {
@@ -621,137 +565,4 @@ class HomeActivityTest {
             browserStore.state.extensions[extension.id]?.activeOptionsPage,
         )
     }
-
-    @Test
-    fun `GIVEN the privacy report notification feature is enabled and notifications are allowed WHEN updatePrivacyReportNotificationWorker is called THEN the worker is scheduled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns true
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns true
-            every { settings.onboardingCompletedTimestamp } returns 1_000L
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(true)
-
-            activity.updatePrivacyReportNotificationWorker(
-                dateTimeProvider = FakeDateTimeProvider(currentTime = PRIVACY_REPORT_NOTIFICATION_FAKE_NOW)
-            )
-
-            val workExists =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            assertTrue(workExists)
-        }
-
-    @Test
-    fun `GIVEN tracking protection is disabled WHEN updatePrivacyReportNotificationWorker is called THEN the worker is not scheduled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns false
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns true
-            every { settings.onboardingCompletedTimestamp } returns 1_000L
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(true)
-
-            activity.updatePrivacyReportNotificationWorker()
-
-            val workExists =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            assertFalse(workExists)
-        }
-
-    @Test
-    fun `GIVEN the worker was previously scheduled WHEN tracking protection becomes disabled THEN the worker is cancelled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns true
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns true
-            every { settings.onboardingCompletedTimestamp } returns 1_000L
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(true)
-            activity.updatePrivacyReportNotificationWorker(
-                dateTimeProvider = FakeDateTimeProvider(currentTime = PRIVACY_REPORT_NOTIFICATION_FAKE_NOW)
-            )
-            assertTrue(
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            )
-
-            every { settings.shouldUseTrackingProtection } returns false
-            activity.updatePrivacyReportNotificationWorker()
-
-            val workInfos =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-            assertTrue(workInfos.all { it.state == WorkInfo.State.CANCELLED })
-        }
-
-    @Test
-    fun `GIVEN the privacy report notification feature is disabled WHEN updatePrivacyReportNotificationWorker is called THEN the worker is not scheduled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns true
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns false
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(true)
-
-            activity.updatePrivacyReportNotificationWorker()
-
-            val workExists =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            assertFalse(workExists)
-        }
-
-    @Test
-    fun `GIVEN notifications are not allowed WHEN updatePrivacyReportNotificationWorker is called THEN the worker is not scheduled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns true
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns true
-            every { settings.onboardingCompletedTimestamp } returns 1_000L
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
-
-            activity.updatePrivacyReportNotificationWorker()
-
-            val workExists =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            assertFalse(workExists)
-        }
-
-    @Test
-    fun `GIVEN the privacy report notification channel is disabled WHEN updatePrivacyReportNotificationWorker is called THEN the worker is not scheduled`() =
-        runTest {
-            every { activity.applicationContext } returns testContext
-            every { settings.shouldUseTrackingProtection } returns true
-            every { settings.weeklyPrivacyNotificationFeatureFlagEnabled } returns true
-            every { settings.onboardingCompletedTimestamp } returns 1_000L
-            shadowOf(testContext.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(true)
-            testContext
-                .getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(
-                    NotificationChannel(
-                        PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID,
-                        "Privacy report",
-                        NotificationManager.IMPORTANCE_NONE,
-                    )
-                )
-
-            activity.updatePrivacyReportNotificationWorker()
-
-            val workExists =
-                WorkManager.getInstance(testContext)
-                    .getWorkInfosForUniqueWork(PRIVACY_REPORT_NOTIFICATION_WORK_NAME)
-                    .await()
-                    .isNotEmpty()
-            assertFalse(workExists)
-        }
 }

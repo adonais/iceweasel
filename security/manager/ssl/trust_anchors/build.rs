@@ -394,6 +394,41 @@ fn main() -> std::io::Result<()> {
         }
     };
 
+    // Distrust after dates are only read off of CKO_CERTIFICATE objects. A date that ends up on
+    // some other object, e.g. on the CKO_NSS_TRUST object that follows the certificate, would
+    // otherwise be silently ignored.
+    for block in blocks.iter() {
+        if attr(block, "CKA_CLASS") == &Ck::Class("CKO_CERTIFICATE") {
+            continue;
+        }
+        let misplaced = [
+            "CKA_NSS_SERVER_DISTRUST_AFTER",
+            "CKA_NSS_EMAIL_DISTRUST_AFTER",
+        ]
+        .into_iter()
+        .find(|name| block.contains_key(name))
+        .or_else(|| {
+            block
+                .contains_key("DISTRUST_COMMENT")
+                .then_some("distrust after comment")
+        });
+        if let Some(misplaced) = misplaced {
+            let label = match attr(block, "CKA_LABEL") {
+                Ck::Utf8(label) => label,
+                _ => "(unlabeled)",
+            };
+            emit_build_error!(
+                out,
+                format!(
+                    "certdata.txt has a {} on a non-certificate object (label {}). Distrust after dates must be set on the CKO_CERTIFICATE object.",
+                    misplaced,
+                    label.escape_debug()
+                )
+            );
+            return Ok(());
+        }
+    }
+
     let root_lists: Vec<&Block> = blocks
         .iter()
         .filter(|x| attr(x, "CKA_CLASS") == &Ck::Class("CKO_NSS_BUILTIN_ROOT_LIST"))

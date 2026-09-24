@@ -28,7 +28,7 @@ def main(argv):
             entry_abspath = mozpath.abspath(entry[1])
         if not entry_abspath.startswith(objdir_abspath):
             print(
-                "Warning: omitting generated source [%s] from archive" % entry_abspath,
+                f"Warning: omitting generated source [{entry_abspath}] from archive",
                 file=sys.stderr,
             )
             return False
@@ -40,7 +40,7 @@ def main(argv):
             and not os.path.exists(entry_abspath)
         ):
             print(
-                "Warning: omitting non-existing file [%s] from archive" % entry_abspath,
+                f"Warning: omitting non-existing file [{entry_abspath}] from archive",
                 file=sys.stderr,
             )
             return False

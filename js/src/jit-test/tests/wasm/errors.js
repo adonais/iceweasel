@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 load(libdir + "wasm-binary.js");
 
 const Module = WebAssembly.Module;
@@ -137,7 +139,13 @@ testStore(F64Store, 'f64.store', 'f64', 8, RuntimeError, /index out of bounds/);
 // semantics of call so use the same InternalError as JS and use the bytecode
 // offset of the function body (which happens to start with the number of
 // local entries).
-test(4 /* = num locals */, '(module (func (local i32 i64 f32 f64) (call 0)) (start 0))', InternalError, /too much recursion/);
+//
+// This gets a stack overflows, and takes a long time (~40 seconds) to run on
+// an optimised, debug build, when wasm_baseline_debug==true.  So skip in that case.
+// See bug 2068514.
+if (getPrefValue("wasm_baseline_debug") === false) {
+  test(4 /* = num locals */, '(module (func (local i32 i64 f32 f64) (call 0)) (start 0))', InternalError, /too much recursion/);
+}
 
 // Test whole callstack.
 var {stack, binary} = test(UnreachableCode, `(module

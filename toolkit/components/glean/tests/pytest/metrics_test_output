@@ -31,9 +31,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = BooleanMetric::new(BaseMetricId(1), meta)
-;
-        metric
+        BooleanMetric::new(BaseMetricId(1), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -52,9 +50,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = CounterMetric::new(BaseMetricId(2), meta)
-;
-        metric
+        CounterMetric::new(BaseMetricId(2), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -73,9 +69,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = CustomDistributionMetric::new(BaseMetricId(3), meta, 0, 100, 100, HistogramType::Linear)
-;
-        metric
+        CustomDistributionMetric::new(BaseMetricId(3), meta, 0, 100, 100, HistogramType::Linear)
     });
 
     #[allow(non_upper_case_globals)]
@@ -96,8 +90,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(4), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(4), meta, None)
     });
 
     #[repr(u16)]
@@ -131,20 +124,20 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledBooleanMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::EThreeLabels => "three_labels",
-                Self::EFourLabels => "four_labels",
-                Self::EFiveLabels => "five_labels",
-                Self::ESixLabels => "six_labels",
-                Self::ESevenLabels => "seven_labels",
-                Self::EEightLabels => "eight_labels",
-                Self::ENineLabels => "nine_labels",
-                Self::ETenLabels => "ten_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledBooleanMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledBooleanMetricLabelsLabel) -> Self {
+            match value {
+                LabeledBooleanMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledBooleanMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledBooleanMetricLabelsLabel::EThreeLabels => "three_labels",
+                LabeledBooleanMetricLabelsLabel::EFourLabels => "four_labels",
+                LabeledBooleanMetricLabelsLabel::EFiveLabels => "five_labels",
+                LabeledBooleanMetricLabelsLabel::ESixLabels => "six_labels",
+                LabeledBooleanMetricLabelsLabel::ESevenLabels => "seven_labels",
+                LabeledBooleanMetricLabelsLabel::EEightLabels => "eight_labels",
+                LabeledBooleanMetricLabelsLabel::ENineLabels => "nine_labels",
+                LabeledBooleanMetricLabelsLabel::ETenLabels => "ten_labels",
+                LabeledBooleanMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -166,8 +159,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(5), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(5), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -188,8 +180,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(6), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(6), meta, None)
     });
 
     #[repr(u16)]
@@ -207,12 +198,12 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledCounterMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledCounterMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledCounterMetricLabelsLabel) -> Self {
+            match value {
+                LabeledCounterMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledCounterMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledCounterMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -234,8 +225,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(7), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(7), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -256,8 +246,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(8), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(8), meta, None)
     });
 
     #[repr(u16)]
@@ -275,12 +264,12 @@ pub mod test {
             }
         }
     }
-    impl Into<&'static str> for LabeledStringMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledStringMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledStringMetricLabelsLabel) -> Self {
+            match value {
+                LabeledStringMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledStringMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledStringMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -302,8 +291,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(9), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(9), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -322,9 +310,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = MemoryDistributionMetric::new(BaseMetricId(10), meta, MemoryUnit::Kilobyte)
-;
-        metric
+        MemoryDistributionMetric::new(BaseMetricId(10), meta, MemoryUnit::Kilobyte)
     });
 
     #[allow(non_upper_case_globals)]
@@ -343,9 +329,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = StringListMetric::new(BaseMetricId(11), meta)
-;
-        metric
+        StringListMetric::new(BaseMetricId(11), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -364,9 +348,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = StringMetric::new(BaseMetricId(12), meta)
-;
-        metric
+        StringMetric::new(BaseMetricId(12), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -385,9 +367,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TextMetric::new(BaseMetricId(13), meta)
-;
-        metric
+        TextMetric::new(BaseMetricId(13), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -406,9 +386,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TimespanMetric::new(BaseMetricId(14), meta, TimeUnit::Millisecond)
-;
-        metric
+        TimespanMetric::new(BaseMetricId(14), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -427,9 +405,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TimingDistributionMetric::new(BaseMetricId(15), meta, TimeUnit::Nanosecond)
-;
-        metric
+        TimingDistributionMetric::new(BaseMetricId(15), meta, TimeUnit::Nanosecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -448,9 +424,7 @@ pub mod test {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = BooleanMetric::with_unordered_ipc(BaseMetricId(16), meta)
-;
-        metric
+        BooleanMetric::with_unordered_ipc(BaseMetricId(16), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -471,8 +445,7 @@ pub mod test {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::with_unordered_ipc(BaseMetricId(17), meta, None);
-        metric
+        LabeledMetric::with_unordered_ipc(BaseMetricId(17), meta, None)
     });
 
 }
@@ -499,9 +472,8 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = DualLabeledCounterMetric::new(BaseMetricId(18), meta, None,
-        Some(vec![::std::borrow::Cow::from("cat1"), ::std::borrow::Cow::from("cat2"), ::std::borrow::Cow::from("catblu"), ::std::borrow::Cow::from("catred")]));
-        metric
+        DualLabeledCounterMetric::new(BaseMetricId(18), meta, None,
+        Some(vec![::std::borrow::Cow::from("cat1"), ::std::borrow::Cow::from("cat2"), ::std::borrow::Cow::from("catblu"), ::std::borrow::Cow::from("catred")]))
     });
 
         pub type AnObjectObject = Vec<AnObjectObjectItem>;
@@ -533,8 +505,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = ObjectMetric::new(BaseMetricId(19), meta)
-;
+        let metric = ObjectMetric::new(BaseMetricId(19), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -561,9 +532,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = DatetimeMetric::new(BaseMetricId(20), meta, TimeUnit::Millisecond)
-;
-        metric
+        DatetimeMetric::new(BaseMetricId(20), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -582,8 +551,7 @@ pub mod test_nested {
                 in_session: true,
                 ..Default::default()
             };
-        let metric = EventMetric::new(BaseMetricId(21), meta)
-;
+        let metric = EventMetric::new(BaseMetricId(21), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -608,8 +576,8 @@ pub mod test_nested {
 
         fn into_ffi_extra(self) -> ::std::collections::HashMap<String, String> {
           let mut map = ::std::collections::HashMap::new();
-          self.r#an_extra_key.and_then(|val| map.insert("an_extra_key".into(), val.to_string()));
-          self.r#another_extra_key.and_then(|val| map.insert("another_extra_key".into(), val.to_string()));
+          self.r#an_extra_key.and_then(|val| map.insert("an_extra_key".into(), val));
+          self.r#another_extra_key.and_then(|val| map.insert("another_extra_key".into(), val));
           self.r#bool_extra.and_then(|val| map.insert("bool_extra".into(), val.to_string()));
           self.r#quantity_extra.and_then(|val| map.insert("quantity_extra".into(), val.to_string()));
           map
@@ -631,8 +599,7 @@ pub mod test_nested {
                 in_session: true,
                 ..Default::default()
             };
-        let metric = EventMetric::new(BaseMetricId(22), meta)
-;
+        let metric = EventMetric::new(BaseMetricId(22), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -659,9 +626,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = DenominatorMetric::new(BaseMetricId(23), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false, in_session: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true, in_session: false,  ..Default::default()}])
-;
-        metric
+        DenominatorMetric::new(BaseMetricId(23), meta, vec![CommonMetricData {name: "rate_with_external_denominator".into(), category: "test.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: false, in_session: false,  ..Default::default()}, CommonMetricData {name: "rate_with_external_denominator".into(), category: "test2.nested".into(), send_in_pings: vec!["metrics".into()], lifetime: Lifetime::Ping, disabled: true, in_session: false,  ..Default::default()}])
     });
 
     #[allow(non_upper_case_globals)]
@@ -708,9 +673,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = QuantityMetric::new(BaseMetricId(26), meta)
-;
-        metric
+        QuantityMetric::new(BaseMetricId(26), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -729,9 +692,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = RateMetric::new(BaseMetricId(27), meta)
-;
-        metric
+        RateMetric::new(BaseMetricId(27), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -750,9 +711,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = NumeratorMetric::new(BaseMetricId(28), meta)
-;
-        metric
+        NumeratorMetric::new(BaseMetricId(28), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -771,9 +730,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = QuantityMetric::with_unordered_ipc(BaseMetricId(29), meta)
-;
-        metric
+        QuantityMetric::with_unordered_ipc(BaseMetricId(29), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -792,9 +749,7 @@ pub mod test_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = UuidMetric::new(BaseMetricId(30), meta)
-;
-        metric
+        UuidMetric::new(BaseMetricId(30), meta)
     });
 
 }
@@ -822,9 +777,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = BooleanMetric::new(BaseMetricId(31), meta)
-;
-        metric
+        BooleanMetric::new(BaseMetricId(31), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -843,9 +796,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = CounterMetric::new(BaseMetricId(32), meta)
-;
-        metric
+        CounterMetric::new(BaseMetricId(32), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -864,9 +815,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = CustomDistributionMetric::new(BaseMetricId(33), meta, 0, 100, 100, HistogramType::Linear)
-;
-        metric
+        CustomDistributionMetric::new(BaseMetricId(33), meta, 0, 100, 100, HistogramType::Linear)
     });
 
     #[allow(non_upper_case_globals)]
@@ -887,8 +836,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(34), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(34), meta, None)
     });
 
     #[repr(u16)]
@@ -922,20 +870,20 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledBooleanMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::EThreeLabels => "three_labels",
-                Self::EFourLabels => "four_labels",
-                Self::EFiveLabels => "five_labels",
-                Self::ESixLabels => "six_labels",
-                Self::ESevenLabels => "seven_labels",
-                Self::EEightLabels => "eight_labels",
-                Self::ENineLabels => "nine_labels",
-                Self::ETenLabels => "ten_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledBooleanMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledBooleanMetricLabelsLabel) -> Self {
+            match value {
+                LabeledBooleanMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledBooleanMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledBooleanMetricLabelsLabel::EThreeLabels => "three_labels",
+                LabeledBooleanMetricLabelsLabel::EFourLabels => "four_labels",
+                LabeledBooleanMetricLabelsLabel::EFiveLabels => "five_labels",
+                LabeledBooleanMetricLabelsLabel::ESixLabels => "six_labels",
+                LabeledBooleanMetricLabelsLabel::ESevenLabels => "seven_labels",
+                LabeledBooleanMetricLabelsLabel::EEightLabels => "eight_labels",
+                LabeledBooleanMetricLabelsLabel::ENineLabels => "nine_labels",
+                LabeledBooleanMetricLabelsLabel::ETenLabels => "ten_labels",
+                LabeledBooleanMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -957,8 +905,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(35), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(35), meta, Some(vec![::std::borrow::Cow::from("eight_labels"), ::std::borrow::Cow::from("five_labels"), ::std::borrow::Cow::from("four_labels"), ::std::borrow::Cow::from("nine_labels"), ::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("seven_labels"), ::std::borrow::Cow::from("six_labels"), ::std::borrow::Cow::from("ten_labels"), ::std::borrow::Cow::from("three_labels"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -979,8 +926,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(36), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(36), meta, None)
     });
 
     #[repr(u16)]
@@ -998,12 +944,12 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledCounterMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledCounterMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledCounterMetricLabelsLabel) -> Self {
+            match value {
+                LabeledCounterMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledCounterMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledCounterMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -1025,8 +971,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(37), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(37), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -1047,8 +992,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(38), meta, None);
-        metric
+        LabeledMetric::new(BaseMetricId(38), meta, None)
     });
 
     #[repr(u16)]
@@ -1066,12 +1010,12 @@ pub mod test2 {
             }
         }
     }
-    impl Into<&'static str> for LabeledStringMetricLabelsLabel {
-        fn into(self) -> &'static str {
-            match self {
-                Self::EOneLabel => "one_label",
-                Self::ETwoLabels => "two_labels",
-                Self::__Other__ => "__other__",
+    impl From<LabeledStringMetricLabelsLabel> for &'static str {
+        fn from(value: LabeledStringMetricLabelsLabel) -> Self {
+            match value {
+                LabeledStringMetricLabelsLabel::EOneLabel => "one_label",
+                LabeledStringMetricLabelsLabel::ETwoLabels => "two_labels",
+                LabeledStringMetricLabelsLabel::__Other__ => "__other__",
             }
         }
     }
@@ -1093,8 +1037,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::new(BaseMetricId(39), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]));
-        metric
+        LabeledMetric::new(BaseMetricId(39), meta, Some(vec![::std::borrow::Cow::from("one_label"), ::std::borrow::Cow::from("two_labels")]))
     });
 
     #[allow(non_upper_case_globals)]
@@ -1113,9 +1056,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = MemoryDistributionMetric::new(BaseMetricId(40), meta, MemoryUnit::Kilobyte)
-;
-        metric
+        MemoryDistributionMetric::new(BaseMetricId(40), meta, MemoryUnit::Kilobyte)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1134,9 +1075,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = StringListMetric::new(BaseMetricId(41), meta)
-;
-        metric
+        StringListMetric::new(BaseMetricId(41), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1155,9 +1094,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = StringMetric::new(BaseMetricId(42), meta)
-;
-        metric
+        StringMetric::new(BaseMetricId(42), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1176,9 +1113,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TextMetric::new(BaseMetricId(43), meta)
-;
-        metric
+        TextMetric::new(BaseMetricId(43), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1197,9 +1132,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TimespanMetric::new(BaseMetricId(44), meta, TimeUnit::Millisecond)
-;
-        metric
+        TimespanMetric::new(BaseMetricId(44), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1218,9 +1151,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = TimingDistributionMetric::new(BaseMetricId(45), meta, TimeUnit::Nanosecond)
-;
-        metric
+        TimingDistributionMetric::new(BaseMetricId(45), meta, TimeUnit::Nanosecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1239,9 +1170,7 @@ pub mod test2 {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = BooleanMetric::with_unordered_ipc(BaseMetricId(46), meta)
-;
-        metric
+        BooleanMetric::with_unordered_ipc(BaseMetricId(46), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1262,8 +1191,7 @@ pub mod test2 {
                     ..Default::default()
                 },
             };
-        let metric = LabeledMetric::with_unordered_ipc(BaseMetricId(47), meta, None);
-        metric
+        LabeledMetric::with_unordered_ipc(BaseMetricId(47), meta, None)
     });
 
 }
@@ -1304,8 +1232,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = ObjectMetric::new(BaseMetricId(48), meta)
-;
+        let metric = ObjectMetric::new(BaseMetricId(48), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -1332,9 +1259,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = DatetimeMetric::new(BaseMetricId(49), meta, TimeUnit::Millisecond)
-;
-        metric
+        DatetimeMetric::new(BaseMetricId(49), meta, TimeUnit::Millisecond)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1353,8 +1278,7 @@ pub mod test2_nested {
                 in_session: true,
                 ..Default::default()
             };
-        let metric = EventMetric::new(BaseMetricId(50), meta)
-;
+        let metric = EventMetric::new(BaseMetricId(50), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -1377,8 +1301,8 @@ pub mod test2_nested {
 
         fn into_ffi_extra(self) -> ::std::collections::HashMap<String, String> {
           let mut map = ::std::collections::HashMap::new();
-          self.r#an_extra_key.and_then(|val| map.insert("an_extra_key".into(), val.to_string()));
-          self.r#another_extra_key.and_then(|val| map.insert("another_extra_key".into(), val.to_string()));
+          self.r#an_extra_key.and_then(|val| map.insert("an_extra_key".into(), val));
+          self.r#another_extra_key.and_then(|val| map.insert("another_extra_key".into(), val));
           map
         }
     }
@@ -1398,8 +1322,7 @@ pub mod test2_nested {
                 in_session: true,
                 ..Default::default()
             };
-        let metric = EventMetric::new(BaseMetricId(51), meta)
-;
+        let metric = EventMetric::new(BaseMetricId(51), meta);
         #[cfg(feature = "with_gecko")]
         {
             crate::metrics::METRIC_MEM_OPS.with_borrow_mut(|ops| {
@@ -1468,9 +1391,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = QuantityMetric::new(BaseMetricId(55), meta)
-;
-        metric
+        QuantityMetric::new(BaseMetricId(55), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1489,9 +1410,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = RateMetric::new(BaseMetricId(56), meta)
-;
-        metric
+        RateMetric::new(BaseMetricId(56), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1510,9 +1429,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = NumeratorMetric::new(BaseMetricId(57), meta)
-;
-        metric
+        NumeratorMetric::new(BaseMetricId(57), meta)
     });
 
     #[allow(non_upper_case_globals)]
@@ -1531,9 +1448,7 @@ pub mod test2_nested {
                 in_session: false,
                 ..Default::default()
             };
-        let metric = UuidMetric::new(BaseMetricId(58), meta)
-;
-        metric
+        UuidMetric::new(BaseMetricId(58), meta)
     });
 
 }
@@ -1577,57 +1492,57 @@ pub(crate) mod __glean_metric_maps {
     fn fog_submetric_alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         let mut n = 0;
 
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map(|m| {
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map(|m| {
+        });
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
+        });
 
-            n += once_cell::sync::Lazy::get(&submetric_maps::BOOLEAN_MAP).map(|m| {
+            n += once_cell::sync::Lazy::get(&submetric_maps::BOOLEAN_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::COUNTER_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::COUNTER_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::CUSTOM_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::CUSTOM_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::MEMORY_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::MEMORY_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::STRING_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::STRING_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::TIMING_DISTRIBUTION_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::TIMING_DISTRIBUTION_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
-            n += once_cell::sync::Lazy::get(&submetric_maps::QUANTITY_MAP).map(|m| {
+            });
+            n += once_cell::sync::Lazy::get(&submetric_maps::QUANTITY_MAP).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
+            });
         n
     }
 
@@ -1943,7 +1858,7 @@ pub(crate) mod __glean_metric_maps {
            _ => panic!("No event for metric id {}", metric_id),
         };
 
-        return event.test_get_value(ping_name);
+        event.test_get_value(ping_name)
     }
 
     /// Check the provided event for errors.
@@ -2025,7 +1940,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_boolean by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_boolean_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, bool>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())
@@ -2110,7 +2025,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_counter by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_counter_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, i32>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())
@@ -2191,7 +2106,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_string by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_string_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, String>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())

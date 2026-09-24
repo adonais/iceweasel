@@ -3,7 +3,15 @@
 
 add_task(async function testWindowCreate() {
   let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      description: JSON.stringify({
+        isWayland: Services.appinfo.isWayland,
+      }),
+    },
     async background() {
+      const { isWayland } = JSON.parse(
+        browser.runtime.getManifest().description
+      );
       let _checkWindowPromise;
       browser.test.onMessage.addListener((msg, arg) => {
         if (msg == "checked-window") {
@@ -19,7 +27,12 @@ add_task(async function testWindowCreate() {
         });
       };
 
-      const KEYS = ["left", "top", "width", "height"];
+      // TODO bug 1989539: Wayland has no request to position a toplevel, so
+      // the window stays wherever the compositor put it. Its size is honoured,
+      // and still checked.
+      const KEYS = isWayland
+        ? ["width", "height"]
+        : ["left", "top", "width", "height"];
       function checkGeom(expected, actual) {
         for (let key of KEYS) {
           browser.test.assertEq(

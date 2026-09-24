@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<title>In RTL the inline-end inset is the one that keeps the bottom-left corner</title>
+<style>
+
+.contain { position: relative; height: 140px }
+
+/* Same physical result as -moz-scrollbar-inset-inline: 30px 0 in LTR, because
+   RTL puts the inline end on the left. A second writing-mode swap anywhere
+   between here and GetBorderRadii would protect the right corner instead. */
+.test {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100px;
+  border: 10px solid blue;
+  border-radius: 20px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  direction: rtl;
+  -moz-scrollbar-inset-inline: 0 30px;
+}
+
+/* Covers the whole padding box, so only the border ring is compared and the
+   scrollbar itself can't contribute pixels. */
+.cover {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 200px;
+  height: 100px;
+  background: blue;
+}
+
+</style>
+
+<div class="contain">
+  <div class="test"></div>
+  <div class="cover"></div>
+</div>

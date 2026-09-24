@@ -7,9 +7,14 @@ package org.mozilla.fenix.ui.efficiency.selectors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object MicrosurveysSelectors {
+object MicrosurveysSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        BROWSER_SURVEY
+    }
 
     val CONTINUE_SURVEY_BUTTON =
         Selector(
@@ -17,8 +22,6 @@ object MicrosurveysSelectors {
             value = getStringResource(R.string.micro_survey_continue_button_label),
             description = "Survey Continue button",
             // Will see what groups we'll have once e start converting UI tests
-            groups = listOf("browserSurvey"),
+            groups = setOf(Group.BROWSER_SURVEY),
         )
-
-    val all = listOf(CONTINUE_SURVEY_BUTTON)
 }

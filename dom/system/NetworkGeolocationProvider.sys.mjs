@@ -30,6 +30,43 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   return console.createInstance(consoleOptions);
 });
 
+// Registrable domains of the network geolocation services we report on
+// individually, mapped to their geolocation.network_provider Glean label.
+const KNOWN_PROVIDER_DOMAINS = new Map([
+  ["googleapis.com", "google"],
+  ["beacondb.net", "beacondb"],
+]);
+
+/**
+ * Categorize the configured network geolocation endpoint for telemetry.
+ *
+ * @param   {string} url The url
+ * @returns {string} The geolocation.network_provider label to record:
+ *                   a value in KNOWN_PROVIDER_DOMAINS, "other" for an
+ *                   unrecognized host, or "unknown" if the URL has no host we
+ *                   can parse.
+ */
+export function networkProviderLabel(url) {
+  let host;
+  try {
+    host = Services.io.newURI(url).host;
+  } catch {
+    return "unknown";
+  }
+
+  if (!host) {
+    return "unknown";
+  }
+
+  for (let [domain, label] of KNOWN_PROVIDER_DOMAINS) {
+    if (host == domain || host.endsWith("." + domain)) {
+      return label;
+    }
+  }
+
+  return "other";
+}
+
 function CachedRequest(loc, wifiList) {
   this.location = loc;
 
@@ -183,6 +220,7 @@ export function NetworkGeolocationProvider() {
   this.wifiService = null;
   this.timer = null;
   this.started = false;
+  this._shutdownController = null;
   // Current repeating-timer interval; grows on failure (up to _backoffMaxMs),
   // resets to _wifiMonitorTimeout on a new request or a success.
   this._currentTimerInterval = null;
@@ -208,6 +246,10 @@ NetworkGeolocationProvider.prototype = {
     if (this.timer) {
       this.timer.cancel();
       this.timer = null;
+    }
+    // A request that settles after shutdown() must not re-arm the timer.
+    if (!this.started) {
+      return;
     }
     if (this._currentTimerInterval == null) {
       this._currentTimerInterval = this._wifiMonitorTimeout;
@@ -251,6 +293,7 @@ NetworkGeolocationProvider.prototype = {
     }
 
     this.started = true;
+    this._shutdownController = new AbortController();
 
     if (this.isWifiScanningEnabled) {
       if (this.wifiService) {
@@ -292,6 +335,8 @@ NetworkGeolocationProvider.prototype = {
       this.wifiService.stopWatching(this);
       this.wifiService = null;
     }
+
+    this._shutdownController.abort();
 
     this.listener = null;
     this.started = false;
@@ -448,7 +493,10 @@ NetworkGeolocationProvider.prototype = {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=UTF-8" },
       credentials: "omit",
-      signal: fetchController.signal,
+      signal: AbortSignal.any([
+        fetchController.signal,
+        this._shutdownController.signal,
+      ]),
     };
 
     if (wifiData) {
@@ -463,6 +511,7 @@ NetworkGeolocationProvider.prototype = {
     let isWifi = wifiData && wifiData.length >= 2;
     let label = isWifi ? "network_wifi_and_ip" : "network_ip";
     Glean.geolocation.geolocationService[label].add();
+    Glean.geolocation.networkProvider[networkProviderLabel(url)].add();
 
     let response;
     try {

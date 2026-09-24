@@ -1149,4 +1149,46 @@ class InputTestHelpers extends LitTestHelpers {
     );
     ok(!firstInput.inputEl.readOnly, "Readonly state is propagated.");
   }
+
+  /**
+   * Verifies it is possible to set the required attribute on the input
+   * element and that the indicator is shown next to the label.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
+  async verifyRequired(selector) {
+    let requiredTemplate = this.templateFn({ label: "Label" });
+    let renderTarget = await this.renderTemplate(requiredTemplate);
+    let firstInput = renderTarget.querySelector(selector);
+
+    ok(!firstInput.required, "Input is not required by default.");
+    ok(
+      !firstInput.inputEl.required,
+      "Inner element is not required by default either."
+    );
+    ok(
+      !firstInput.labelEl.querySelector(".required-indicator"),
+      "No required indicator is present."
+    );
+
+    firstInput.required = true;
+    await firstInput.updateComplete;
+
+    ok(firstInput.required, "Input is required.");
+    ok(firstInput.inputEl.required, "Required state is propagated.");
+    ok(
+      firstInput.labelEl.querySelector(".required-indicator"),
+      "Required indicator is shown next to the label."
+    );
+
+    firstInput.required = false;
+    await firstInput.updateComplete;
+
+    ok(!firstInput.required, "Input is not required again.");
+    ok(!firstInput.inputEl.required, "Required state is propagated.");
+    ok(
+      !firstInput.labelEl.querySelector(".required-indicator"),
+      "Required indicator is removed."
+    );
+  }
 }

@@ -385,8 +385,6 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control should be enabled in normal tabs",
@@ -397,12 +395,6 @@ class RuntimeSettingsTest : BaseSessionTest() {
         assertThat(
             "Global Privacy Control should still be in private tabs",
             globalPrivacyControlPrivateMode,
-            equalTo(true),
-        )
-
-        assertThat(
-            "Global Privacy Control Functionality flag should be enabled",
-            globalPrivacyControlFunctionality,
             equalTo(true),
         )
     }
@@ -439,8 +431,6 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control should be enabled in normal tabs",
@@ -451,12 +441,6 @@ class RuntimeSettingsTest : BaseSessionTest() {
         assertThat(
             "Global Privacy Control should still be enabled in private tabs",
             globalPrivacyControlPrivateMode,
-            equalTo(true),
-        )
-
-        assertThat(
-            "Global Privacy Control Functionality flag should still be enabled",
-            globalPrivacyControlFunctionality,
             equalTo(true),
         )
     }

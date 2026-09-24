@@ -4,7 +4,6 @@
 
 #include "FFmpegVideoDecoder.h"
 
-#include "EncoderConfig.h"
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
 #include "FFmpegUtils.h"
@@ -34,6 +33,7 @@
 
 #include <algorithm>
 
+#include "mozilla/ToString.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -370,13 +370,6 @@ static uint32_t VulkanTransferQueueFamily(const AVVulkanDeviceContext* aVkCtx) {
 
 bool FFmpegVideoDecoder<LIBAV_VER>::CreateVulkanDeviceContext(
     const StaticMutexAutoLock& aProofOfLock) {
-  nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
-  if (!mVulkanDecoder.SelectVulkanDecoderPhysicalDevice(aProofOfLock,
-                                                        rendererNode)) {
-    FFMPEG_LOG("Failed to select Vulkan decoder physical device");
-    return false;
-  }
-
   const char* device_extensions =
       "VK_KHR_timeline_semaphore+"
       "VK_KHR_external_memory_fd+"
@@ -718,6 +711,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
         }
         ReleaseCodecContext();
       });
+
+  nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
+  if (!mVulkanDecoder.SelectVulkanDecoderPhysicalDevice(mon, rendererNode)) {
+    FFMPEG_LOG("No usable Vulkan decoder physical device");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (!CreateVulkanDeviceContext(mon)) {
     FFMPEG_LOG("  Failed to create Vulkan device context");
@@ -1118,6 +1117,57 @@ static gfx::YUVColorSpace TransferAVColorSpaceToColorSpace(
   }
 }
 
+static Maybe<gfx::ColorSpace2> TransferAVColorPrimaries(
+    const AVColorPrimaries aPrimaries) {
+  switch (aPrimaries) {
+    case AVCOL_PRI_BT709:
+      return Some(gfx::ColorSpace2::BT709);
+    case AVCOL_PRI_SMPTE170M:
+      return Some(gfx::ColorSpace2::BT601_525);
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+    case AVCOL_PRI_BT2020:
+      return Some(gfx::ColorSpace2::BT2020);
+#endif
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+    case AVCOL_PRI_SMPTE432:
+      return Some(gfx::ColorSpace2::DISPLAY_P3);
+#endif
+    default:
+      return Nothing();
+  }
+}
+
+static Maybe<gfx::TransferFunction> TransferAVTransferFunction(
+    const AVColorTransferCharacteristic aTransfer) {
+  switch (aTransfer) {
+    case AVCOL_TRC_BT709:
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+    case AVCOL_TRC_BT2020_10:
+    case AVCOL_TRC_BT2020_12:
+#endif
+      return Some(gfx::TransferFunction::BT709);
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+    case AVCOL_TRC_IEC61966_2_1:
+      return Some(gfx::TransferFunction::SRGB);
+    case AVCOL_TRC_LINEAR:
+      return Some(gfx::TransferFunction::LINEAR);
+#endif
+#if LIBAVCODEC_VERSION_MAJOR == 57
+    case AVCOL_TRC_SMPTEST2084:
+      return Some(gfx::TransferFunction::PQ);
+#elif LIBAVCODEC_VERSION_MAJOR >= 58
+    case AVCOL_TRC_SMPTE2084:
+      return Some(gfx::TransferFunction::PQ);
+#endif
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+    case AVCOL_TRC_ARIB_STD_B67:
+      return Some(gfx::TransferFunction::HLG);
+#endif
+    default:
+      return Nothing();
+  }
+}
+
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION
 static int GetVideoBufferWrapper(struct AVCodecContext* aCodecContext,
                                  AVFrame* aFrame, int aFlags) {
@@ -1242,18 +1292,22 @@ FFmpegVideoDecoder<LIBAV_VER>::AllocateTextureClientForImage(
   }
   data.mColorDepth = GetColorDepth(aCodecContext->pix_fmt);
   data.mColorRange = GetColorRange(aCodecContext->color_range);
-  if (mInfo.mTransferFunction) {
-    data.mTransferFunction = *mInfo.mTransferFunction;
+  data.mColorPrimaries =
+      TransferAVColorPrimaries(aCodecContext->color_primaries)
+          .valueOr(mInfo.mColorPrimaries.valueOr(gfx::ColorSpace2::UNKNOWN));
+  if (Maybe<gfx::TransferFunction> transfer =
+          TransferAVTransferFunction(aCodecContext->color_trc).orElse([&] {
+            return mInfo.mTransferFunction;
+          })) {
+    data.mTransferFunction = *transfer;
   }
   data.mHDRMetadata = mInfo.mHDRMetadata;
 
   FFMPEG_LOGV(
       "Created plane data, YSize=({}, {}), CbCrSize=({}, {}), "
-      "CroppedYSize=({}, {}), CroppedCbCrSize=({}, {}), ColorDepth={}",
+      "Adjusted plane data={}",
       paddedYSize.Width(), paddedYSize.Height(), paddedCbCrSize.Width(),
-      paddedCbCrSize.Height(), data.YPictureSize().Width(),
-      data.YPictureSize().Height(), data.CbCrPictureSize().Width(),
-      data.CbCrPictureSize().Height(), static_cast<uint8_t>(data.mColorDepth));
+      paddedCbCrSize.Height(), mozilla::ToString(data).c_str());
 
   // Allocate a shmem buffer for image.
   if (NS_FAILED(aImage->CreateEmptyBuffer(data, paddedYSize, paddedCbCrSize))) {
@@ -1931,16 +1985,21 @@ gfx::ColorSpace2 FFmpegVideoDecoder<LIBAV_VER>::GetFrameColorPrimaries() const {
 #if LIBAVCODEC_VERSION_MAJOR > 57
   colorPrimaries = mFrame->color_primaries;
 #endif
-  switch (colorPrimaries) {
-#if LIBAVCODEC_VERSION_MAJOR >= 55
-    case AVCOL_PRI_BT2020:
-      return gfx::ColorSpace2::BT2020;
+  return TransferAVColorPrimaries(colorPrimaries)
+      .valueOr(mInfo.mColorPrimaries.valueOr(gfx::ColorSpace2::UNKNOWN));
+}
+
+Maybe<gfx::TransferFunction>
+FFmpegVideoDecoder<LIBAV_VER>::GetFrameTransferFunction() const {
+  AVColorTransferCharacteristic transfer = AVCOL_TRC_UNSPECIFIED;
+#if LIBAVCODEC_VERSION_MAJOR > 57
+  transfer = mFrame->color_trc;
 #endif
-    case AVCOL_PRI_BT709:
-      return gfx::ColorSpace2::BT709;
-    default:
-      return gfx::ColorSpace2::BT709;
+  if (Maybe<gfx::TransferFunction> transferFunction =
+          TransferAVTransferFunction(transfer)) {
+    return transferFunction;
   }
+  return mInfo.mTransferFunction;
 }
 
 gfx::ColorRange FFmpegVideoDecoder<LIBAV_VER>::GetFrameColorRange() const {
@@ -2015,6 +2074,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
   SetChromaPlaneGeometryFromAVFormat(b, static_cast<int>(mFrame->format),
                                      mFrame->width, mFrame->height);
   b.mYUVColorSpace = GetFrameColorSpace();
+  b.mColorPrimaries = GetFrameColorPrimaries();
   b.mColorRange = GetFrameColorRange();
 
   RefPtr<VideoData> v;
@@ -2072,12 +2132,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
             "Uploaded frame DMABuf surface UID {} HDR {} color space {}/{} "
             "transfer {}",
             surface->GetDMABufSurface()->GetUID(), IsLinuxHDR(),
-            YUVColorSpaceToString(GetFrameColorSpace()),
+            mozilla::ToString(GetFrameColorSpace()),
             mInfo.mColorPrimaries
-                ? ColorSpace2ToString(mInfo.mColorPrimaries.value())
+                ? mozilla::ToString(mInfo.mColorPrimaries.value())
                 : "unknown",
             mInfo.mTransferFunction
-                ? TransferFunctionToString(mInfo.mTransferFunction.value())
+                ? mozilla::ToString(mInfo.mTransferFunction.value())
                 : "unknown");
         v = VideoData::CreateFromImage(
             mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
@@ -2099,12 +2159,14 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         return ret;
       }
     }
+    VideoInfo info = mInfo;
+    info.mTransferFunction = GetFrameTransferFunction();
     Result<already_AddRefed<VideoData>, MediaResult> r =
         VideoData::CreateAndCopyData(
-            mInfo, mImageContainer, aOffset, TimeUnit::FromMicroseconds(aPts),
+            info, mImageContainer, aOffset, TimeUnit::FromMicroseconds(aPts),
             TimeUnit::FromMicroseconds(aDuration), b, IsKeyFrame(mFrame),
             TimeUnit::FromMicroseconds(mFrame->pkt_dts),
-            mInfo.ScaledImageRect(mFrame->width, mFrame->height),
+            info.ScaledImageRect(mFrame->width, mFrame->height),
             mImageAllocator);
     if (r.isErr()) {
       return r.unwrapErr();
@@ -2177,12 +2239,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
 
   FFMPEG_LOG(
       "VA-API frame pts={} dts={} duration={} color space {}/{} transfer {}",
-      aPts, mFrame->pkt_dts, aDuration,
-      YUVColorSpaceToString(GetFrameColorSpace()),
-      mInfo.mColorPrimaries ? ColorSpace2ToString(mInfo.mColorPrimaries.value())
+      aPts, mFrame->pkt_dts, aDuration, mozilla::ToString(GetFrameColorSpace()),
+      mInfo.mColorPrimaries ? mozilla::ToString(mInfo.mColorPrimaries.value())
                             : "unknown",
       mInfo.mTransferFunction
-          ? TransferFunctionToString(mInfo.mTransferFunction.value())
+          ? mozilla::ToString(mInfo.mTransferFunction.value())
           : "unknown");
   RefPtr<VideoData> vp = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),

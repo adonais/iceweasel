@@ -98,10 +98,12 @@ let JSWINDOWACTORS = {
 
   AboutLogins: {
     parent: {
-      esModuleURI: "resource:///actors/AboutLoginsParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/aboutlogins/AboutLoginsParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/AboutLoginsChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/aboutlogins/AboutLoginsChild.sys.mjs",
       events: {
         AboutLoginsCopyLoginDetail: { wantUntrusted: true },
         AboutLoginsCreateLogin: { wantUntrusted: true },
@@ -271,6 +273,23 @@ let JSWINDOWACTORS = {
     allFrames: true,
     enablePreference: "browser.smartwindow.enabled",
     remoteTypes: ["parent"],
+  },
+
+  AITab: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AITabParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/AITabChild.sys.mjs",
+      events: {
+        "AITab:RequestPage": { wantUntrusted: true },
+      },
+    },
+    matches: ["about:aitab", "about:aitab?*"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.aitab.enabled",
   },
 
   SmartWindowTasks: {
@@ -471,10 +490,12 @@ let JSWINDOWACTORS = {
 
   CustomKeys: {
     parent: {
-      esModuleURI: "resource:///actors/CustomKeysParent.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/customkeys/CustomKeysParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource:///actors/CustomKeysChild.sys.mjs",
+      esModuleURI:
+        "moz-src:///browser/components/customkeys/CustomKeysChild.sys.mjs",
       events: {
         DOMDocElementInserted: { wantUntrusted: true },
       },
@@ -615,7 +636,7 @@ let JSWINDOWACTORS = {
       "about:home",
       "about:newtab",
       "about:welcome",
-      "chrome://browser/content/syncedtabs/sidebar.xhtml",
+      "chrome://browser/content/syncedtabs/sidebar.html",
       "chrome://browser/content/places/historySidebar.xhtml",
       "chrome://browser/content/places/bookmarksSidebar.xhtml",
       "chrome://browser/content/sidebar/sidebar-bookmarks.html",
@@ -780,6 +801,7 @@ let JSWINDOWACTORS = {
         ThemePickerUpdateTheme: { wantUntrusted: true },
         ThemePickerUpdateAppearance: { wantUntrusted: true },
         ThemePickerUpdateNativeTheme: { wantUntrusted: true },
+        ThemePickerShown: { wantUntrusted: true },
       },
     },
     matches: [
@@ -931,6 +953,27 @@ let JSWINDOWACTORS = {
       );
       maybeRegister();
     },
+  },
+
+  SmartFormFillReview: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartFormFillReviewParent.sys.mjs",
+    },
+    child: {
+      esModuleURI:
+        "moz-src:///browser/components/aiwindow/ui/actors/SmartFormFillReviewChild.sys.mjs",
+      events: {
+        "SmartFormFillReview:Ready": { wantUntrusted: true },
+        "fill-form": { wantUntrusted: true },
+        cancel: { wantUntrusted: true },
+        stop: { wantUntrusted: true },
+        close: { wantUntrusted: true },
+      },
+    },
+    matches: ["about:smartformfillreview"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.smartwindow.smartformfill.enabled",
   },
 
   SpeechDispatcher: {

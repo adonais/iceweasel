@@ -30,6 +30,7 @@ void FrontendErrors::clearErrors() {
   overRecursed = false;
   outOfMemory = false;
   allocationOverflow = false;
+  cancelled = false;
 }
 
 void FrontendErrors::clearWarnings() { warnings.clear(); }
@@ -128,6 +129,22 @@ void FrontendContext::onOutOfMemory() { addPendingOutOfMemory(); }
 
 void FrontendContext::onOverRecursed() { errors_.overRecursed = true; }
 
+void FrontendContext::requestCompilationCancellation() {
+  MOZ_ASSERT(allowCancellingCompilation_);
+  MOZ_ASSERT(!maybeCx_);
+
+  compilationCancellationRequested_ = true;
+}
+
+bool FrontendContext::checkCompilationCancellation() {
+  if (MOZ_LIKELY(!compilationCancellationRequested_)) {
+    return true;
+  }
+
+  errors_.cancelled = true;
+  return false;
+}
+
 void FrontendContext::recoverFromOutOfMemory() {
   MOZ_ASSERT_IF(maybeCx_, !maybeCx_->isThrowingOutOfMemory());
 
@@ -180,6 +197,7 @@ void FrontendContext::addPendingOutOfMemory() { errors_.outOfMemory = true; }
 
 void FrontendContext::setCurrentJSContext(JSContext* cx) {
   MOZ_ASSERT(!nameCollectionPool_);
+  MOZ_ASSERT(!allowCancellingCompilation_);
 
   maybeCx_ = cx;
   nameCollectionPool_ = &cx->frontendCollectionPool();
@@ -196,6 +214,12 @@ bool FrontendContext::convertToRuntimeError(
   // Report out of memory errors eagerly, or errors could be malformed.
   if (hadOutOfMemory()) {
     js::ReportOutOfMemory(cx);
+    return false;
+  }
+
+  MOZ_ASSERT(!isCompilationCancellationRequested(),
+             "a cancelled compilation's result must be discarded");
+  if (hadCancelled()) {
     return false;
   }
 
@@ -306,11 +330,24 @@ FrontendContext* js::NewFrontendContext() {
   return fc.release();
 }
 
-JS_PUBLIC_API FrontendContext* JS::NewFrontendContext() {
+JS_PUBLIC_API FrontendContext* JS::NewFrontendContext(
+    JS::AllowCancellingCompilation allowCancellingCompilation
+    /* = AllowCancellingCompilation::No */) {
   MOZ_ASSERT(JS::detail::libraryInitState == JS::detail::InitState::Running,
              "must call JS_Init prior to creating any FrontendContexts");
 
-  return js::NewFrontendContext();
+  FrontendContext* fc = js::NewFrontendContext();
+  if (!fc) {
+    return nullptr;
+  }
+
+#ifdef DEBUG
+  if (allowCancellingCompilation == JS::AllowCancellingCompilation::Yes) {
+    fc->setAllowCancellingCompilation();
+  }
+#endif
+
+  return fc;
 }
 
 void js::DestroyFrontendContext(FrontendContext* fc) { js_delete_poison(fc); }
@@ -371,6 +408,15 @@ JS_PUBLIC_API bool JS::HadFrontendOutOfMemory(JS::FrontendContext* fc) {
 
 JS_PUBLIC_API bool JS::HadFrontendAllocationOverflow(JS::FrontendContext* fc) {
   return fc->hadAllocationOverflow();
+}
+
+JS_PUBLIC_API void JS::RequestFrontendCompilationCancellation(
+    JS::FrontendContext* fc) {
+  fc->requestCompilationCancellation();
+}
+
+JS_PUBLIC_API bool JS::HadFrontendCancelled(JS::FrontendContext* fc) {
+  return fc->hadCancelled();
 }
 
 JS_PUBLIC_API size_t JS::GetFrontendWarningCount(JS::FrontendContext* fc) {

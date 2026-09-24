@@ -4342,7 +4342,6 @@ bool gfxFont::InitMetricsFromSkrifa(Metrics& aMetrics) {
       skf, &mStyle.variationSettings);
   SkrifaMetrics metrics;
   skrifa_font_get_metrics(skf, GetAdjustedSize(), location, &metrics);
-  skrifa_location_delete(location);
 
   // Metrics that are always returned from the Skrifa font.
   mFUnitsConvFactor = metrics.scale_factor;
@@ -4358,8 +4357,44 @@ bool gfxFont::InitMetricsFromSkrifa(Metrics& aMetrics) {
   aMetrics.underlineSize = metrics.underline_size;
   aMetrics.strikeoutOffset = metrics.strikeout_offset;
   aMetrics.strikeoutSize = metrics.strikeout_size;
-  aMetrics.xHeight = metrics.x_height;
-  aMetrics.capHeight = metrics.cap_height;
+
+  // Metrics that are derived from measuring specific glyph widths:
+  SkrifaGlyphMetrics* skmtx =
+      skrifa_font_create_glyph_metrics(skf, GetAdjustedSize(), location);
+  auto measureAdvance = [=](char16_t aCh, float aMissing) -> float {
+    uint32_t gid = skrifa_font_map_char_to_glyph(skf, aCh);
+    return gid ? skrifa_metrics_get_glyph_advance(skmtx, gid) : aMissing;
+  };
+  aMetrics.spaceWidth = measureAdvance(' ', 0.0);
+  // Negative values indicate the relevant character is not supported.
+  aMetrics.zeroWidth = measureAdvance('0', -1.0);
+  aMetrics.ideographicWidth = measureAdvance(kWaterIdeograph, -1.0);
+
+  // If aveCharWidth was non-positive, try measuring 'x' instead; fall back to
+  // maxAdvance if unavailable.
+  if (aMetrics.aveCharWidth <= 0.0) {
+    aMetrics.aveCharWidth = measureAdvance('x', aMetrics.maxAdvance);
+  }
+
+  // Metrics with glyph-measurement-based fallbacks:
+  auto measureHeight = [=](char16_t aCh) -> float {
+    if (uint32_t gid = skrifa_font_map_char_to_glyph(skf, aCh)) {
+      gfx::Rect bbox;
+      if (skrifa_metrics_get_glyph_bounds(skmtx, gid, &bbox)) {
+        return bbox.YMost();
+      }
+    }
+    return 0.0;
+  };
+  aMetrics.xHeight =
+      metrics.x_height > 0.0 ? metrics.x_height : measureHeight('x');
+  aMetrics.capHeight =
+      metrics.cap_height > 0.0 ? metrics.cap_height : measureHeight('H');
+
+  skrifa_glyph_metrics_delete(skmtx);
+  skrifa_location_delete(location);
+
+  mSpaceGlyph = skrifa_font_map_char_to_glyph(skf, ' ');
 
   mIsValid = true;
   return true;

@@ -4,17 +4,19 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SitePermissionsSelectors {
+object SitePermissionsSelectors : SelectorContainer {
 
     val PAGE_PERMISSION_DIALOG_ALLOW_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "allow_button",
             description = "Permission dialog allow button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val MICROPHONE_PERMISSION_PROMPT =
@@ -22,7 +24,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = "to use your microphone?",
             description = "Microphone permission prompt",
-            groups = listOf(),
         )
 
     val PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX =
@@ -30,7 +31,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "do_not_ask_again",
             description = "Remember permission decision checkbox",
-            groups = listOf(),
         )
 
     val PAGE_PERMISSION_DIALOG_DENY_BUTTON =
@@ -38,7 +38,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "deny_button",
             description = "Permission dialog deny button",
-            groups = listOf(),
         )
 
     /**
@@ -52,7 +51,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Allow $host to send notifications?",
             description = "the notifications permission prompt for $host",
-            groups = listOf(),
         )
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
@@ -61,7 +59,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Allow $host to use your location?",
             description = "the location permission prompt for $host",
-            groups = listOf(),
         )
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
@@ -70,7 +67,6 @@ object SitePermissionsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Allow $host to use your camera and microphone?",
             description = "the camera and microphone permission prompt for $host",
-            groups = listOf(),
         )
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
@@ -80,7 +76,6 @@ object SitePermissionsSelectors {
             value = "allow_button",
             secondaryValue = label,
             description = "the permission prompt allow button labelled '$label'",
-            groups = listOf(),
         )
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
@@ -90,7 +85,6 @@ object SitePermissionsSelectors {
             value = "deny_button",
             secondaryValue = label,
             description = "the permission prompt deny button labelled '$label'",
-            groups = listOf(),
         )
 
     /**
@@ -106,20 +100,5 @@ object SitePermissionsSelectors {
             value = webId,
             secondaryValue = label,
             description = "the '$label' button on the permissions test page",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            PAGE_PERMISSION_DIALOG_ALLOW_BUTTON,
-            MICROPHONE_PERMISSION_PROMPT,
-            PAGE_PERMISSION_REMEMBER_DECISION_CHECKBOX,
-            PAGE_PERMISSION_DIALOG_DENY_BUTTON,
-            NOTIFICATIONS_PERMISSION_PROMPT(),
-            LOCATION_PERMISSION_PROMPT(),
-            AUDIO_VIDEO_PERMISSION_PROMPT(),
-            PROMPT_ALLOW_BUTTON_LABELLED(),
-            PROMPT_DENY_BUTTON_LABELLED(),
-            PAGE_PERMISSION_BUTTON(),
         )
 }

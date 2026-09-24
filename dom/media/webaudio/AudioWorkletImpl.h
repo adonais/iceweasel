@@ -51,6 +51,8 @@ class AudioWorkletImpl final : public WorkletImpl {
   already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope(
       JSContext* aCx) override;
 
+  void OnFinishedOnExecutionThread() override;
+
  private:
   AudioWorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
                    AudioNodeTrack* aDestinationTrack,

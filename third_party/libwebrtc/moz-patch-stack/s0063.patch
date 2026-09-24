@@ -18,7 +18,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c8606497de1f461a6
  1 file changed, 28 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
-index 10bfd88d14..c8653928d9 100644
+index 2a80bd4ed3..5d7e22e569 100644
 --- a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 +++ b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 @@ -19,6 +19,7 @@

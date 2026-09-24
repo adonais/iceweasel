@@ -14,7 +14,7 @@ add_task(async function testMainActionCalled() {
     url: "about:blank",
   };
 
-  await BrowserTestUtils.withNewTab(options, function () {
+  await BrowserTestUtils.withNewTab(options, async function () {
     is(
       PanelUI.notificationPanel.state,
       "closed",
@@ -26,7 +26,12 @@ add_task(async function testMainActionCalled() {
         mainActionCalled = true;
       },
     };
+    let promiseShown = BrowserTestUtils.waitForPopupEvent(
+      PanelUI.notificationPanel,
+      "shown"
+    );
     AppMenuNotifications.showNotification("update-manual", mainAction);
+    await promiseShown;
 
     isnot(
       PanelUI.notificationPanel.state,
@@ -90,7 +95,12 @@ add_task(async function testSecondaryActionWorkflow() {
         mainActionCalled = true;
       },
     };
+    let promiseShown = BrowserTestUtils.waitForPopupEvent(
+      PanelUI.notificationPanel,
+      "shown"
+    );
     AppMenuNotifications.showNotification("update-manual", mainAction);
+    await promiseShown;
 
     isnot(
       PanelUI.notificationPanel.state,
@@ -251,7 +261,12 @@ add_task(async function testInteractionWithBadges() {
         mainActionCalled = true;
       },
     };
+    let promiseShown = BrowserTestUtils.waitForPopupEvent(
+      PanelUI.notificationPanel,
+      "shown"
+    );
     AppMenuNotifications.showNotification("update-manual", mainAction);
+    await promiseShown;
 
     isnot(
       PanelUI.menuButton.getAttribute("badge-status"),
@@ -328,7 +343,7 @@ add_task(async function testInteractionWithBadges() {
  * This tests that adding a badge will not dismiss any existing doorhangers.
  */
 add_task(async function testAddingBadgeWhileDoorhangerIsShowing() {
-  await BrowserTestUtils.withNewTab("about:blank", function () {
+  await BrowserTestUtils.withNewTab("about:blank", async function () {
     is(
       PanelUI.notificationPanel.state,
       "closed",
@@ -340,7 +355,12 @@ add_task(async function testAddingBadgeWhileDoorhangerIsShowing() {
         mainActionCalled = true;
       },
     };
+    let promiseShown = BrowserTestUtils.waitForPopupEvent(
+      PanelUI.notificationPanel,
+      "shown"
+    );
     AppMenuNotifications.showNotification("update-manual", mainAction);
+    await promiseShown;
     AppMenuNotifications.showBadgeOnlyNotification("fxa-needs-authentication");
 
     isnot(
@@ -488,7 +508,12 @@ add_task(async function testMultipleNonBadges() {
       },
     };
 
+    let promiseShown = BrowserTestUtils.waitForPopupEvent(
+      PanelUI.notificationPanel,
+      "shown"
+    );
     AppMenuNotifications.showNotification("update-manual", updateManualAction);
+    await promiseShown;
 
     let notifications;
     let doorhanger;

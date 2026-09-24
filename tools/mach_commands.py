@@ -270,10 +270,18 @@ def npm(command_context, args):
     path = os.path.abspath(os.path.dirname(npm_path))
     os.environ["PATH"] = "{}{}{}".format(path, os.pathsep, os.environ["PATH"])
 
-    # karma-firefox-launcher needs the path to firefox binary.
-    firefox_bin = command_context.get_binary_path(validate_exists=False)
-    if os.path.exists(firefox_bin):
-        os.environ["FIREFOX_BIN"] = firefox_bin
+    # karma-firefox-launcher needs the path to the firefox binary, when there is
+    # one. validate_exists=False means a path is returned even if nothing was built
+    # there, and a tree that has not been configured has no path to offer at all.
+    from mozbuild.base import BuildEnvironmentNotFoundException
+
+    try:
+        firefox_bin = command_context.get_binary_path(validate_exists=False)
+    except BuildEnvironmentNotFoundException:
+        pass  # karma-firefox-launcher copes with FIREFOX_BIN unset
+    else:
+        if os.path.exists(firefox_bin):
+            os.environ["FIREFOX_BIN"] = firefox_bin
 
     return command_context.run_process(
         [npm_path, "--scripts-prepend-node-path=auto"] + args,

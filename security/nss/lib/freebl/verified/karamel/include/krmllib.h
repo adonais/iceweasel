@@ -25,4 +25,4 @@
 #include "krml/lowstar_endianness.h"
 #include "krml/fstar_int.h"
 
-#endif /* KRML_HEADER_KRMLLIB_H */
+#endif     /* KRML_HEADER_KRMLLIB_H */

@@ -21,6 +21,7 @@
 #include "vm/PropertyResult.h"
 #include "vm/StringType.h"
 #include "vm/TypedArrayObject.h"
+#include "vm/Watchtower.h"
 
 #include "gc/Marking-inl.h"
 #include "gc/ObjectKind-inl.h"
@@ -920,6 +921,80 @@ MOZ_ALWAYS_INLINE bool AddDataPropertyToNativeObjectNoHooks(
 
   MOZ_ASSERT(obj->canDoSetPropertyFastpath());
   MOZ_ASSERT(!obj->hasUnpreservedWrapper());
+  return true;
+}
+
+// Give empty object |target| the shape |newShape| and copy |numSlots| slots
+// from the |from| object.
+MOZ_ALWAYS_INLINE bool CopyPropertiesWithNewShape(JSContext* cx,
+                                                  PlainObject* target,
+                                                  PlainObject* from,
+                                                  SharedShape* newShape,
+                                                  uint32_t numSlots) {
+  MOZ_ASSERT(target->empty());
+  MOZ_ASSERT(target->isExtensible());
+  MOZ_ASSERT(!Watchtower::watchesPropertyAdd(target));
+  MOZ_ASSERT(from->slotSpan() == numSlots);
+
+  if (!target->setShapeAndAddNewSlots(cx, newShape, 0, numSlots)) {
+    return false;
+  }
+
+  MOZ_ASSERT(target->slotSpan() == numSlots);
+
+  for (size_t i = 0; i < numSlots; i++) {
+    target->initSlot(i, from->getSlot(i));
+  }
+  return true;
+}
+
+// Try to copy all |numProps| properties of |from| into the empty object
+// |target| by reusing |from|'s Shape or PropMap.
+//
+// All of |from|'s properties must be enumerable, configurable, and writable
+// data properties.
+//
+// Sets |*copied| to false if the Shape or PropMap can't be reused.
+MOZ_ALWAYS_INLINE bool TryCopyPropertiesReusingShapeOrPropMap(
+    JSContext* cx, Handle<PlainObject*> target, Handle<PlainObject*> from,
+    uint32_t numProps, bool* copied) {
+  MOZ_ASSERT(target->empty());
+  MOZ_ASSERT(numProps > 0);
+
+  *copied = false;
+
+  CanReuseShape canReuse = target->canReuseShapeForNewProperties(from->shape());
+  if (canReuse == CanReuseShape::NoReuse) {
+    return true;
+  }
+
+  MOZ_ASSERT(from->slotSpan() == numProps);
+
+  SharedShape* newShape;
+  if (canReuse == CanReuseShape::CanReuseShape) {
+    newShape = from->sharedShape();
+  } else {
+    // Get a shape with |from|'s PropMap and ObjectFlags (because we need the
+    // HasEnumerable flag checked in canReuseShapeForNewProperties) and the
+    // other fields (BaseShape, numFixedSlots) unchanged.
+    MOZ_ASSERT(canReuse == CanReuseShape::CanReusePropMap);
+    ObjectFlags objectFlags = from->sharedShape()->objectFlags();
+    Rooted<SharedPropMap*> map(cx, from->sharedShape()->propMap());
+    uint32_t mapLength = from->sharedShape()->propMapLength();
+    BaseShape* base = target->sharedShape()->base();
+    uint32_t nfixed = target->sharedShape()->numFixedSlots();
+    newShape = SharedShape::getPropMapShape(cx, base, nfixed, map, mapLength,
+                                            objectFlags);
+    if (!newShape) {
+      return false;
+    }
+  }
+
+  if (!CopyPropertiesWithNewShape(cx, target, from, newShape, numProps)) {
+    return false;
+  }
+
+  *copied = true;
   return true;
 }
 

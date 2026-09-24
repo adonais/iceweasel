@@ -15,7 +15,7 @@ export const ToolUITelemetry = {
    * @param {string} data.location - The location/mode of the AI Window
    * @param {string} data.chat_id - The conversation ID
    * @param {number} data.message_seq - The conversation message count
-   * @param {string} data.action_type - The type of action being prompted for
+   * @param {string} data.action - The browser action being prompted for
    * @param {string} data.prompt_type - The type of prompt being shown
    * @param {string} data.reason - The reason for the prompt
    * @param {number} data.candidates - Number of candidates being acted upon
@@ -32,7 +32,7 @@ export const ToolUITelemetry = {
    * @param {string} data.location - The location/mode of the AI Window
    * @param {string} data.chat_id - The conversation ID
    * @param {number} data.message_seq - The conversation message count
-   * @param {string} data.action_type - The type of action being performed
+   * @param {string} data.action - The browser action being performed
    * @param {string} data.prompt_type - The type of prompt that was responded to
    * @param {string} data.response - The user's response (confirm/cancel)
    * @param {number} data.selected - Number of items selected
@@ -49,7 +49,7 @@ export const ToolUITelemetry = {
    * @param {string} data.location - The location/mode of the AI Window
    * @param {string} data.chat_id - The conversation ID
    * @param {number} data.message_seq - The conversation message count
-   * @param {string} data.action_type - The type of action being undone
+   * @param {string} data.action - The browser action being undone
    * @param {number} data.tabs_restored - Number of tabs that were restored
    * @param {number} data.time_delta - Time elapsed since the original action
    * @param {string} data.result - The result of the undo operation
@@ -70,7 +70,8 @@ export const ToolUITelemetry = {
    * @param {string} data.model - Identifier of the model that invoked the tool
    * @param {string} data.prompt_version - Major version of the chat prompt
    * @param {string} data.submit_type - How the request was submitted (button, enter, etc.)
-   * @param {string} data.action_type - How the action was triggered: tab_mention, description, or unsupported
+   * @param {"tab_mention" | "description" | "unsupported"} data.trigger - How the
+   *   action was triggered
    * @param {number} data.tabs_open - Number of tabs open at submit time
    * @param {number} data.mentions - Number of tab mentions in the request
    */
@@ -88,13 +89,31 @@ export const ToolUITelemetry = {
    * @param {number} data.message_seq - The conversation message count
    * @param {string} data.model - Identifier of the model that invoked the tool
    * @param {string} data.prompt_version - Major version of the chat prompt
-   * @param {string} data.action_type - How the action was triggered: tab_mention, description, or unsupported
-   * @param {string} data.result - Outcome: success, no_match, unclear_target, blocked, cancelled, or error
+   * @param {"tab_mention" | "description" | "unsupported"} data.trigger - How the
+   *   action was triggered
+   * @param {string} data.result - Outcome: success, partial_success, no_match,
+   *   cancelled, or error
    * @param {number} data.tabs_affected - Number of tabs actually closed
    * @param {boolean} data.undo_available - Whether an undo path was available after the action
    * @param {string} data.error - Error code if the action was unsuccessful
    */
   recordBrowserActionComplete(data) {
     Glean.smartWindow.browserActionComplete.record(data);
+  },
+
+  /**
+   * Maps tab-action counts to the `result` value recorded on
+   * `browser_action_complete`.
+   *
+   * @param {number} affected - Tabs the action succeeded on
+   * @param {number} requested - Tabs the action was asked to act on
+   * @returns {"success" | "partial_success" | "error"}
+   */
+  browserActionResult(affected, requested) {
+    const failedCount = Math.max(0, requested - affected);
+    if (!failedCount) {
+      return "success";
+    }
+    return affected ? "partial_success" : "error";
   },
 };

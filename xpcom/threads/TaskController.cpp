@@ -990,7 +990,8 @@ namespace mozilla {
 // to post some runnables to the main thread to find idle time before the
 // (very cheap) check actually runs.
 //
-// aTimer:   Not used
+// aTimer:   Set when our one shot timer called us back, null when we are
+//           called directly.
 // aClosure: A static string describing the trigger, shown in profiler markers.
 void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
   const char* reason = static_cast<const char*>(aClosure);
@@ -1006,6 +1007,12 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
 
   MOZ_ASSERT(!sIdleMemoryCleanupRunner ||
              !sIdleMemoryCleanupWantsLaterScheduled);
+
+  // A one shot timer is no longer armed once it has called us back.
+  if (aTimer) {
+    sIdleMemoryCleanupWantsLaterScheduled = false;
+  }
+
   auto result =
       moz_may_purge_now(/* aPeekOnly */ true, reuseGracePeriod, Nothing());
   switch (result) {
@@ -1017,23 +1024,23 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
       // if something else causes a MayPurgeAll (like
       // jemalloc_free_(excess)_dirty_pages or moz_set_max_dirty_page_modifier)
       // which can happen anytime.
-      if (sIdleMemoryCleanupRunner || sIdleMemoryCleanupWantsLaterScheduled) {
+      if (aTimer || sIdleMemoryCleanupRunner ||
+          sIdleMemoryCleanupWantsLaterScheduled) {
         PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
                         IdlePurgePeekMarker,
                         ProfilerString8View::WrapNullTerminatedString(
-                            "Done (Cancel timer or runner)"),
+                            "Done (Nothing left to purge)"),
                         ProfilerString8View::WrapNullTerminatedString(reason));
         CancelIdleMemoryCleanupTimerAndRunner();
       }
       break;
     case may_purge_now_result_t::WantsLater:
       if (!sIdleMemoryCleanupWantsLaterScheduled) {
-        PROFILER_MARKER(
-            "IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
-            IdlePurgePeekMarker,
-            ProfilerString8View::WrapNullTerminatedString(
-                "WantsLater (First schedule of low priority timer)"),
-            ProfilerString8View::WrapNullTerminatedString(reason));
+        PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
+                        IdlePurgePeekMarker,
+                        ProfilerString8View::WrapNullTerminatedString(
+                            "WantsLater (Arming low priority timer)"),
+                        ProfilerString8View::WrapNullTerminatedString(reason));
       }
       // We always want to (re-)schedule the timer to prevent it from firing
       // as much as possible.
@@ -1120,11 +1127,11 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   const char* last_result;
   switch (result) {
     case may_purge_now_result_t::Done:
-      last_result = "Done (Cancel timer and runner)";
+      last_result = "Done (Cancel runner)";
       CancelIdleMemoryCleanupTimerAndRunner();
       break;
     case may_purge_now_result_t::WantsLater:
-      last_result = "WantsLater (First schedule of low priority timer)";
+      last_result = "WantsLater (Arming low priority timer)";
       ScheduleWantsLaterTimer(aWantsLaterDelay);
       break;
     case may_purge_now_result_t::NeedsMore:

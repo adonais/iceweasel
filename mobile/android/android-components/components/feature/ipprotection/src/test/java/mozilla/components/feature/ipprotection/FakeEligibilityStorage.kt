@@ -16,6 +16,8 @@ import mozilla.components.feature.ipprotection.store.state.AccountState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.LocationListUpdateState
+import mozilla.components.feature.ipprotection.store.state.LocationState
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
@@ -52,11 +54,13 @@ internal fun buildIPProtectionState(
     serviceStatus: ServiceState = ServiceState.Uninitialized,
     proxyStatus: ProxyStatus = Uninitialized,
     eligibilityStatus: EligibilityStatus = EligibilityStatus.Unknown,
+    updateState: LocationListUpdateState = LocationListUpdateState.NotRequested,
 ): IPProtectionState {
     return IPProtectionState(
         accountState = AccountState(accountStatus),
         serviceStatus = serviceStatus,
         proxyStatus = proxyStatus,
         eligibilityStatus = eligibilityStatus,
+        locationState = LocationState(updateState = updateState),
     )
 }

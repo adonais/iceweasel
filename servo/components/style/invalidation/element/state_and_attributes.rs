@@ -8,11 +8,11 @@
 use crate::context::SharedStyleContext;
 use crate::data::ElementData;
 use crate::dom::{TElement, TNode};
-use crate::invalidation::element::element_wrapper::{ElementSnapshot, ElementWrapper};
+use crate::invalidation::element::element_wrapper::{ElementSnapshot, ElementWrapper, Snapshots};
 use crate::invalidation::element::invalidation_map::*;
 use crate::invalidation::element::invalidator::{
-    any_next_has_scope_in_negation, note_scope_dependency_force_at_subject,
     DescendantInvalidationLists, InvalidationVector, SiblingTraversalMap,
+    any_next_has_scope_in_negation, note_scope_dependency_force_at_subject,
 };
 use crate::invalidation::element::invalidator::{Invalidation, InvalidationProcessor};
 use crate::invalidation::element::restyle_hints::RestyleHint;
@@ -22,13 +22,13 @@ use crate::stylesheets::origin::OriginSet;
 use crate::values::AtomIdent;
 use crate::{Atom, WeakAtom};
 use dom::ElementState;
+use selectors::OpaqueElement;
 use selectors::attr::CaseSensitivity;
 use selectors::kleene_value::KleeneValue;
 use selectors::matching::{
-    matches_selector_kleene, MatchingContext, MatchingForInvalidation, MatchingMode,
-    NeedsSelectorFlags, SelectorCaches, VisitedHandlingMode,
+    MatchingContext, MatchingForInvalidation, MatchingMode, NeedsSelectorFlags, SelectorCaches,
+    VisitedHandlingMode, matches_selector_kleene,
 };
-use selectors::OpaqueElement;
 use smallvec::SmallVec;
 
 /// The collector implementation.
@@ -37,7 +37,7 @@ where
     E: TElement,
 {
     element: E,
-    wrapper: ElementWrapper<'b, E>,
+    wrapper: ElementWrapper<'a, 'b, E>,
     snapshot: &'a Snapshot,
     matching_context: &'a mut MatchingContext<'b, E::Impl>,
     lookup_element: E,
@@ -57,6 +57,7 @@ where
 /// changes.
 pub struct StateAndAttrInvalidationProcessor<'a, 'b: 'a, E: TElement> {
     shared_context: &'a SharedStyleContext<'b>,
+    snapshots: Snapshots<'a>,
     element: E,
     data: &'a mut ElementData,
     matching_context: MatchingContext<'a, E::Impl>,
@@ -83,6 +84,7 @@ impl<'a, 'b: 'a, E: TElement + 'b> StateAndAttrInvalidationProcessor<'a, 'b, E> 
 
         Self {
             shared_context,
+            snapshots: Snapshots::new(shared_context.snapshot_map),
             element,
             data,
             matching_context,
@@ -95,8 +97,8 @@ impl<'a, 'b: 'a, E: TElement + 'b> StateAndAttrInvalidationProcessor<'a, 'b, E> 
 /// changed.
 pub fn check_dependency<E, W>(
     dependency: &Dependency,
-    element: &E,
-    wrapper: &W,
+    element: E,
+    wrapper: W,
     context: &mut MatchingContext<'_, E::Impl>,
     scope: Option<OpaqueElement>,
 ) -> bool
@@ -235,14 +237,14 @@ where
         element: E,
         scope: Option<OpaqueElement>,
     ) -> bool {
-        // We cannot assert about `element` having a snapshot here (in fact it
-        // most likely won't), because it may be an arbitrary descendant or
-        // later-sibling of the element we started invalidating with.
-        let wrapper = ElementWrapper::new(element, &*self.shared_context.snapshot_map);
+        // We cannot assert about `element` having a snapshot here (in fact it most likely won't),
+        // because it may be an arbitrary descendant or later-sibling of the element we started
+        // invalidating with.
+        let wrapper = ElementWrapper::new(element, &self.snapshots);
         check_dependency(
             dependency,
-            &element,
-            &wrapper,
+            element,
+            wrapper,
             &mut self.matching_context,
             scope,
         )
@@ -266,7 +268,7 @@ where
         debug_assert_eq!(element, self.element);
         debug_assert!(element.has_snapshot(), "Why bothering?");
 
-        let wrapper = ElementWrapper::new(element, &*self.shared_context.snapshot_map);
+        let wrapper = ElementWrapper::new(element, &self.snapshots);
 
         let state_changes = wrapper.state_changes();
         let Some(snapshot) = wrapper.snapshot() else {
@@ -365,7 +367,7 @@ where
                 lookup_element,
                 state_changes,
                 element,
-                snapshot: &snapshot,
+                snapshot,
                 matching_context: &mut self.matching_context,
                 removed_id: id_removed,
                 added_id: id_added,
@@ -391,8 +393,8 @@ where
                 }
             }
 
-            for &(ref data, ref host) in &shadow_rule_datas {
-                collector.matching_context.current_host = Some(host.clone());
+            for &(data, ref host) in &shadow_rule_datas {
+                collector.matching_context.current_host = Some(*host);
                 collector.collect_dependencies_in_invalidation_map(data.invalidation_map());
             }
 
@@ -422,12 +424,12 @@ where
 
     fn should_process_descendants(&mut self, element: E) -> bool {
         if element == self.element {
-            return should_process_descendants(&self.data);
+            return should_process_descendants(self.data);
         }
 
         match element.borrow_data() {
             Some(d) => should_process_descendants(&d),
-            None => return false,
+            None => false,
         }
     }
 
@@ -469,20 +471,20 @@ where
     fn collect_dependencies_in_invalidation_map(&mut self, map: &'selectors InvalidationMap) {
         let quirks_mode = self.matching_context.quirks_mode();
         let removed_id = self.removed_id;
-        if let Some(ref id) = removed_id {
-            if let Some(deps) = map.id_to_selector.get(id, quirks_mode) {
-                for dep in deps {
-                    self.scan_dependency(dep, false);
-                }
+        if let Some(id) = removed_id
+            && let Some(deps) = map.id_to_selector.get(id, quirks_mode)
+        {
+            for dep in deps {
+                self.scan_dependency(dep, false);
             }
         }
 
         let added_id = self.added_id;
-        if let Some(ref id) = added_id {
-            if let Some(deps) = map.id_to_selector.get(id, quirks_mode) {
-                for dep in deps {
-                    self.scan_dependency(dep, false);
-                }
+        if let Some(id) = added_id
+            && let Some(deps) = map.id_to_selector.get(id, quirks_mode)
+        {
+            for dep in deps {
+                self.scan_dependency(dep, false);
             }
         }
 
@@ -542,9 +544,9 @@ where
     fn check_dependency(&mut self, dependency: &Dependency, set_scope: bool) -> bool {
         check_dependency(
             dependency,
-            &self.element,
-            &self.wrapper,
-            &mut self.matching_context,
+            self.element,
+            self.wrapper,
+            self.matching_context,
             set_scope.then(|| self.element.opaque()),
         )
     }
@@ -567,7 +569,7 @@ where
         }
 
         if self.check_dependency(dependency, set_scope) {
-            return self.note_dependency(dependency, set_scope);
+            self.note_dependency(dependency, set_scope)
         }
     }
 
@@ -589,25 +591,25 @@ where
         }
 
         if let DependencyInvalidationKind::Scope(scope_kind) = invalidation_kind {
-            if scope_kind == ScopeDependencyInvalidationKind::ImplicitScope {
-                if let Some(ref next) = dependency.next {
-                    // When we reach an implicit scope dependency, we know there's an
-                    // element matching that implicit scope somewhere in the descendant.
-                    // We need to go find it so that we can continue the invalidation from
-                    // its next dependencies.
-                    for dep in next.as_ref().slice() {
-                        let invalidation = Invalidation::new_always_effective_for_next_descendant(
-                            dep,
-                            self.matching_context.current_host.clone(),
-                            self.matching_context.scope_element,
-                        );
+            if scope_kind == ScopeDependencyInvalidationKind::ImplicitScope
+                && let Some(ref next) = dependency.next
+            {
+                // When we reach an implicit scope dependency, we know there's an
+                // element matching that implicit scope somewhere in the descendant.
+                // We need to go find it so that we can continue the invalidation from
+                // its next dependencies.
+                for dep in next.as_ref().slice() {
+                    let invalidation = Invalidation::new_always_effective_for_next_descendant(
+                        dep,
+                        self.matching_context.current_host,
+                        self.matching_context.scope_element,
+                    );
 
-                        self.descendant_invalidations
-                            .dom_descendants
-                            .push(invalidation);
-                    }
-                    return;
+                    self.descendant_invalidations
+                        .dom_descendants
+                        .push(invalidation);
                 }
+                return;
             }
 
             if dependency.selector.is_rightmost(dependency.selector_offset) {
@@ -615,7 +617,7 @@ where
                 if scope_kind == ScopeDependencyInvalidationKind::ScopeEnd || force_add {
                     let invalidations = note_scope_dependency_force_at_subject(
                         dependency,
-                        self.matching_context.current_host.clone(),
+                        self.matching_context.current_host,
                         self.matching_context.scope_element,
                         force_add,
                     );
@@ -638,9 +640,9 @@ where
         debug_assert_ne!(dependency.selector_offset, dependency.selector.len());
 
         let invalidation = Invalidation::new(
-            &dependency,
-            self.matching_context.current_host.clone(),
-            self.matching_context.scope_element.clone(),
+            dependency,
+            self.matching_context.current_host,
+            self.matching_context.scope_element,
         );
 
         let invalidated_self = push_invalidation(

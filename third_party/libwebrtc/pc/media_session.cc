@@ -34,7 +34,6 @@
 #include "call/payload_type.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
-#include "media/base/media_engine.h"
 #include "media/base/rid_description.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/ice_credentials_iterator.h"
@@ -736,8 +735,6 @@ bool AcceptOfferWithRfc8888(const FieldTrialsView& field_trials) {
 
 MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
     const Environment& env,
-    const MediaEngineInterface* media_engine,
-    bool rtx_enabled,
     UniqueRandomIdGenerator* ssrc_generator,
     const TransportDescriptionFactory* transport_desc_factory,
     SctpTransportFactoryInterface* sctp_factory,

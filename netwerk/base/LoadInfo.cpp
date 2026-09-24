@@ -57,12 +57,12 @@ using namespace mozilla::dom;
 
 namespace mozilla::net {
 
-static nsCString CurrentRemoteType() {
+static const RemoteType& CurrentRemoteType() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsContentProcess());
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    return nsCString(cc->GetRemoteType());
+    return cc->GetRemoteType();
   }
-  return NOT_REMOTE_TYPE;
+  return RemoteType::NotRemote();
 }
 
 static nsContentPolicyType InternalContentPolicyTypeForFrame(
@@ -141,7 +141,7 @@ bool LoadInfo::IsDocumentMissingClientInfo() {
 
 /* static */ already_AddRefed<LoadInfo> LoadInfo::CreateForDocument(
     dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURI,
-    nsIPrincipal* aTriggeringPrincipal, const nsACString& aTriggeringRemoteType,
+    nsIPrincipal* aTriggeringPrincipal, const RemoteType& aTriggeringRemoteType,
     const OriginAttributes& aOriginAttributes, nsSecurityFlags aSecurityFlags,
     uint32_t aSandboxFlags) {
   return MakeAndAddRef<LoadInfo>(aBrowsingContext, aURI, aTriggeringPrincipal,
@@ -151,7 +151,7 @@ bool LoadInfo::IsDocumentMissingClientInfo() {
 
 /* static */ already_AddRefed<LoadInfo> LoadInfo::CreateForFrame(
     dom::CanonicalBrowsingContext* aBrowsingContext,
-    nsIPrincipal* aTriggeringPrincipal, const nsACString& aTriggeringRemoteType,
+    nsIPrincipal* aTriggeringPrincipal, const RemoteType& aTriggeringRemoteType,
     nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags) {
   return MakeAndAddRef<LoadInfo>(aBrowsingContext, aTriggeringPrincipal,
                                  aTriggeringRemoteType, aSecurityFlags,
@@ -469,7 +469,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIURI* aURI,
 
 LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
                    nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   const nsACString& aTriggeringRemoteType,
+                   const RemoteType& aTriggeringRemoteType,
                    const OriginAttributes& aOriginAttributes,
                    nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags)
     : mTriggeringPrincipal(aTriggeringPrincipal),
@@ -564,7 +564,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
 
 LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
                    nsIPrincipal* aTriggeringPrincipal,
-                   const nsACString& aTriggeringRemoteType,
+                   const RemoteType& aTriggeringRemoteType,
                    nsContentPolicyType aContentPolicyType,
                    nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags)
     : mTriggeringPrincipal(aTriggeringPrincipal),
@@ -693,7 +693,7 @@ LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
 // Used for TYPE_FRAME or TYPE_IFRAME load.
 LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
                    nsIPrincipal* aTriggeringPrincipal,
-                   const nsACString& aTriggeringRemoteType,
+                   const RemoteType& aTriggeringRemoteType,
                    nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags)
     : LoadInfo(aBrowsingContext->GetParentWindowContext(), aTriggeringPrincipal,
                aTriggeringRemoteType,
@@ -763,7 +763,7 @@ LoadInfo::LoadInfo(
     nsIURI* aResultPrincipalURI, nsICookieJarSettings* aCookieJarSettings,
     nsIPolicyContainer* aPolicyContainerToInherit,
     const Maybe<dom::FeaturePolicyInfo>& aContainerFeaturePolicyInfo,
-    const nsACString& aTriggeringRemoteType,
+    const RemoteType& aTriggeringRemoteType,
     const nsID& aSandboxedNullPrincipalID, const Maybe<ClientInfo>& aClientInfo,
     const Maybe<ClientInfo>& aReservedClientInfo,
     const Maybe<ClientInfo>& aInitialClientInfo,
@@ -986,13 +986,19 @@ void LoadInfo::ResetSandboxedNullPrincipalID() {
 nsIPrincipal* LoadInfo::GetTopLevelPrincipal() { return mTopLevelPrincipal; }
 
 NS_IMETHODIMP
-LoadInfo::GetTriggeringRemoteType(nsACString& aTriggeringRemoteType) {
+LoadInfo::GetXPCOMTriggeringRemoteType(nsACString& aTriggeringRemoteType) {
+  aTriggeringRemoteType = mTriggeringRemoteType.Stringify();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::GetTriggeringRemoteType(RemoteType& aTriggeringRemoteType) {
   aTriggeringRemoteType = mTriggeringRemoteType;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-LoadInfo::SetTriggeringRemoteType(const nsACString& aTriggeringRemoteType) {
+LoadInfo::SetTriggeringRemoteType(const RemoteType& aTriggeringRemoteType) {
   mTriggeringRemoteType = aTriggeringRemoteType;
   return NS_OK;
 }

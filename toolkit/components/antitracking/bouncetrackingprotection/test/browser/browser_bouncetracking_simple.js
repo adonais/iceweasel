@@ -136,6 +136,46 @@ add_task(async function test_bounce_chain() {
         );
       }
 
+      // Test getRecentPurgedChainEntriesForSite: initial host
+      let entriesForA =
+        bounceTrackingProtection.getRecentPurgedChainEntriesForSite(SITE_A);
+      Assert.equal(
+        entriesForA.length,
+        2,
+        "getRecentPurgedChainEntriesForSite should return 2 entries for the initial host."
+      );
+
+      // Test getRecentPurgedChainEntriesForSite: final host
+      let entriesForB =
+        bounceTrackingProtection.getRecentPurgedChainEntriesForSite(SITE_B);
+      Assert.equal(
+        entriesForB.length,
+        2,
+        "getRecentPurgedChainEntriesForSite should return 2 entries for the final host."
+      );
+
+      // Test getRecentPurgedChainEntriesForSite: purged site / bounce host
+      let entriesForTracker =
+        bounceTrackingProtection.getRecentPurgedChainEntriesForSite(
+          SITE_TRACKER
+        );
+      Assert.equal(
+        entriesForTracker.length,
+        2,
+        "getRecentPurgedChainEntriesForSite should return 2 entries for a purged/bounce host."
+      );
+
+      // Test getRecentPurgedChainEntriesForSite: unrelated host
+      let entriesForUnrelated =
+        bounceTrackingProtection.getRecentPurgedChainEntriesForSite(
+          "unrelated.example.com"
+        );
+      Assert.equal(
+        entriesForUnrelated.length,
+        0,
+        "getRecentPurgedChainEntriesForSite should return no entries for an unrelated host."
+      );
+
       bounceTrackingProtection.clearAll();
     }
   );

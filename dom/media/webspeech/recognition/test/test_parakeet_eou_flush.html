@@ -1,0 +1,220 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: an utterance's last word is delivered at &lt;EOU&gt;, not a whole utterance later</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Whole clip:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// A cache-aware transducer commits text token-by-token and a word can be
+// extended by the next token, so mid-stream the streaming session holds its
+// trailing word back. An <EOU> token ends the utterance and resets the decoder,
+// so that word can no longer grow and is final right then.
+// This test checks that the first sentence reaches the page WHOLE, as its own
+// results, before anything of the second sentence is delivered: its last word
+// must not be withheld and drained together with the next utterance.
+//
+// pangrams.opus is roughly like this:
+//
+//   0.00 - 0.71s  silence
+//   0.71 - 3.57s  "the quick brown fox jumps over the lazy dog"
+//   3.57 - 7.74s  silence            <- <EOU> fires in here
+//   7.74 - 10.36s "pack my box with five dozen liquor jugs"
+//   10.36 - 12.5s silence
+//
+// Uses en-US on purpose: realtime_eou_120m is the EOU-aware model (see
+// models.yaml). The multilingual nemotron model has no <EOU> piece, so there
+// is nothing to test there. If we change model type for english, this might
+// been a revisit.
+//
+// Nothing here asserts on *when* a word arrives, in wall clock or in audio
+// position. Where in the silence the <EOU> fires is platform-dependent (~1.5s
+// in on macOS, ~4s in on Linux), the streaming loop feeds up to 1s of audio per
+// step so a result's capture timestamp is only that accurate, and delivery runs
+// up to ~1.6s behind capture. Result order and grouping are what the <EOU>
+// close actually changes, and they hold everywhere.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+
+const U1_WORDS = "the quick brown fox jumps over the lazy dog".split(" ");
+const U1_LAST_WORD = U1_WORDS[U1_WORDS.length - 1];
+// Audio between the result carrying U1's last word and the next one: ~3.2s with
+// the <EOU> close, ~0.5s without (that word then rides on U2's first token).
+const MIN_EOU_LEAD_S = 1.2;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for parakeet inference to complete");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+// Recognized text compared as a lowercased word list, so the assertions don't
+// depend on the model's punctuation or spacing.
+function words(text) {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").split(/\s+/).filter(Boolean);
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function last_word_delivered_at_eou() {
+  const installed = await ensureModelInstalled([LANG]);
+  diag(`model installed: ${installed}`);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+  diag(`AudioContext after resume(): state=${ctx.state} rate=${ctx.sampleRate}`);
+
+  // Silent looping source: keeps the graph producing once the clip ends, so the
+  // recognizer sees trailing silence rather than a stalled track.
+  const kickBuf = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  const kick = ctx.createBufferSource();
+  kick.buffer = kickBuf;
+  kick.loop = true;
+  kick.connect(ctx.destination);
+  kick.start(0);
+
+  const audio = await loadTestAudio("pangrams.opus", a => {
+    a.id = "audioElement";
+    a.controls = true;
+  });
+  diag(`audio loaded: duration=${audio.duration.toFixed(2)}s`);
+
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  audio.currentTime = 0;
+  await audio.play().then(() => diag("audio.play() resolved"),
+                          e => diag("audio.play() rejected: " + e));
+
+  const maxLevel = await waitForAudioFlowing(ctx, dst.stream);
+  diag(`audio is flowing into the track (peak FFT level ${maxLevel})`);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  let audioStartTs = 0;
+  sr.onaudiostart = e => {
+    audioStartTs = e.timeStamp;
+    diag(`event: audiostart (capture origin ${audioStartTs.toFixed(1)})`);
+  };
+
+  const finals = [];
+  const transcript = () => finals.map(f => f.text).join(" ").replace(/\s+/g, " ").trim();
+
+  sr.onresult = e => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        const text = e.results[i][0].transcript;
+        finals.push({ text, words: words(text), ts: e.timeStamp });
+        diag(`final result #${finals.length}: "${text}"`);
+      }
+    }
+    document.getElementById("rec-text").textContent = transcript();
+  };
+  sr.onspeechend = () => diag("event: speechend");
+  sr.onaudioend = () => diag("event: audioend");
+
+  const clipEnded = new Promise(resolve =>
+    audio.addEventListener("ended", resolve, { once: true }));
+
+  const ended = new Promise((resolve, reject) => {
+    sr.onend = () => { diag("event: end"); resolve(); };
+    sr.onerror = e => {
+      diag(`event: ERROR error="${e.error}" message="${e.message}"`);
+      reject(new Error(e.error));
+    };
+  });
+
+  diag("calling sr.start(track)");
+  sr.start(track);
+
+  await clipEnded;
+  // Everything delivered so far came from the live session: stop() has not been
+  // called, so none of it is from the end-of-stream flush.
+  const beforeStopCount = finals.length;
+  diag(`clip ended (${finals.length} finals): "${transcript()}"`);
+
+  // stop() must deliver whatever its end-of-stream flush produces before
+  // "end", so awaiting "end" is enough to have collected everything.
+  diag("calling sr.stop()");
+  sr.stop();
+  await ended;
+
+  const transcribed = transcript();
+  diag(`after stop() (${finals.length} finals): "${transcribed}"`);
+
+  await ctx.close();
+
+  const audioPosOf = f => (f.ts - audioStartTs) / 1000;
+  isnot(audioStartTs, 0, "audiostart carries a capture timestamp");
+  ok(finals.length && finals.every(f => f.ts > 0),
+     "Every final result carries a capture timestamp");
+  finals.forEach((f, i) => {
+    diag(`final #${i + 1} from audio ${audioPosOf(f).toFixed(2)}s` +
+         `${i < beforeStopCount ? "" : " (end-of-stream flush)"}: "${f.text}"`);
+  });
+
+  const u1End = finals.findIndex(f => f.words.includes(U1_LAST_WORD));
+  isnot(u1End, -1,
+        `The first sentence was recognized, ending in "${U1_LAST_WORD}". ` +
+        `Got: "${transcribed}"`);
+  if (u1End === -1) {
+    return;
+  }
+
+  is(finals[u1End].words[finals[u1End].words.length - 1], U1_LAST_WORD,
+     `"${U1_LAST_WORD}" ends the result that delivered it, rather than being ` +
+     `drained together with the next sentence. Got: "${finals[u1End].text}"`);
+  is(finals.slice(0, u1End + 1).flatMap(f => f.words).join(" "),
+     U1_WORDS.join(" "),
+     "The first sentence was delivered whole, before anything of the second: " +
+     `its <EOU> closed it. Got: "${transcribed}"`);
+  ok(u1End < beforeStopCount,
+     `"${U1_LAST_WORD}" reached the page while the session was still ` +
+     `listening, not from the end-of-stream flush. Got: "${transcribed}"`);
+  if (u1End >= finals.length - 1) {
+    return;
+  }
+
+  const lead = audioPosOf(finals[u1End + 1]) - audioPosOf(finals[u1End]);
+  ok(lead > MIN_EOU_LEAD_S,
+     `"${U1_LAST_WORD}" was finalized from audio ${lead.toFixed(2)}s before ` +
+     `the second sentence's first word ("${finals[u1End + 1].text}"), so its ` +
+     `<EOU> is what closed it rather than the next utterance pushing it out ` +
+     `(needs > ${MIN_EOU_LEAD_S}s). Got: "${transcribed}"`);
+});
+</script>
+</pre>
+</body>
+</html>

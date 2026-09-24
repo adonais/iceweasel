@@ -1442,9 +1442,35 @@ void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
 //}}} check_macroassembler_style
 // ===============================================================
 
-// Note: this function clobbers the source register.
 void MacroAssemblerX86::convertUInt32ToDouble(Register src,
                                               FloatRegister dest) {
+  ScratchDoubleScope fpscratch(asMasm());
+
+  // Load 0x1p52 with all high words zeroed in preparation for a bit-or.
+  //
+  // Setting any bits in the significand component will yield an integral
+  // number, because 0x1p52 doesn't have any bits available to represent
+  // fractional digits.
+  loadConstantDoubleZeroHighWord(0x1p52, fpscratch);
+
+  // Move |src| from GPR to xmm register.
+  vmovd(src, dest);
+
+  // |dest| now contains `0x1p52 + double(src)`.
+  vpor(fpscratch, dest, dest);
+
+  // Subtract `0x1p52` to obtain `double(src)`.
+  vsubsd(fpscratch, dest, dest);
+}
+
+void MacroAssemblerX86::convertUInt32ToFloat32(Register src,
+                                               FloatRegister dest) {
+  convertUInt32ToDouble(src, dest);
+  convertDoubleToFloat32(dest, dest);
+}
+
+void MacroAssemblerX86::convertUInt32ToDouble(Register src,
+                                              const ScratchDoubleScope& dest) {
   // src is [0, 2^32-1]
   subl(Imm32(0x80000000), src);
 
@@ -1454,13 +1480,6 @@ void MacroAssemblerX86::convertUInt32ToDouble(Register src,
   // dest is now a double with the int range.
   // correct the double value by adding 0x80000000.
   asMasm().addConstantDouble(2147483648.0, dest);
-}
-
-// Note: this function clobbers the source register.
-void MacroAssemblerX86::convertUInt32ToFloat32(Register src,
-                                               FloatRegister dest) {
-  convertUInt32ToDouble(src, dest);
-  convertDoubleToFloat32(dest, dest);
 }
 
 void MacroAssemblerX86::unboxValue(const ValueOperand& src, AnyRegister dest,

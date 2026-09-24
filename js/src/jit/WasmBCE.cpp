@@ -72,8 +72,8 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
       }
 
       if (addr->isConstant()) {
-        // Eliminate constant-address bounds checks to addresses below
-        // the memory/table minimum length.
+        // Eliminate constant-address bounds checks to addresses below the
+        // memory/table minimum length, or below a constant array length.
 
         uint64_t addrConstantValue = UINT64_MAX;
         switch (addr->type()) {
@@ -98,6 +98,26 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
             initialLength =
                 mir->wasmCodeMeta()->tables[bc->targetIndex()].initialLength();
           } break;
+          case MWasmBoundsCheck::Array: {
+            // For arrays the bounds check limit is a load of the numElements
+            // field. If the array was created in this function by an
+            // array.new* with a constant length, work back to that constant
+            // and use it.
+            MDefinition* limit = bc->boundsCheckLimit();
+            if (!limit->isWasmLoadField() ||
+                !limit->toWasmLoadField()->base()->isWasmNewArrayObject()) {
+              continue;
+            }
+            MDefinition* numElements = limit->toWasmLoadField()
+                                           ->base()
+                                           ->toWasmNewArrayObject()
+                                           ->numElements();
+            if (!numElements->isConstant() ||
+                numElements->type() != MIRType::Int32) {
+              continue;
+            }
+            initialLength = numElements->toConstant()->toInt32();
+          } break;
           default:
             MOZ_CRASH();
         }
@@ -110,7 +130,8 @@ bool jit::EliminateBoundsChecks(const MIRGenerator* mir, MIRGraph& graph) {
             MOZ_ASSERT(!bc->hasUses());
           }
         }
-      } else {
+      } else if (bc->target() == MWasmBoundsCheck::Memory ||
+                 bc->target() == MWasmBoundsCheck::Table) {
         // Eliminate bounds checks that are dominated by another bounds check of
         // the same value.
 

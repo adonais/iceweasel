@@ -35,6 +35,7 @@ UNIFIED_SOURCES += [
     "TestPollableEvent.cpp",
     "TestProtocolProxyService.cpp",
     "TestReadStreamToString.cpp",
+    "TestSanitizedSpec.cpp",
     "TestServerTimingHeader.cpp",
     "TestSFV.cpp",
     "TestSocketTransportService.cpp",
@@ -58,6 +59,7 @@ SOURCES += [
     "TestCacheCrypto.cpp",
     "TestCacheEntryWriterHang.cpp",
     "TestHappyEyeballsConnectionAttempt.cpp",
+    "TestHappyEyeballsNetAddrArray.cpp",
 ]
 
 if CONFIG["OS_TARGET"] == "WINNT":

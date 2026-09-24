@@ -60,9 +60,9 @@ add_setup(async () => {
   // Current default values.
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault.ui.enabled", false],
+      ["browser.search.separatePrivateDefault.featureGate", false],
       ["browser.search.separatePrivateDefault.urlbarResult.enabled", false],
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
       ["browser.urlbar.suggest.searches", true],
     ],
   });
@@ -144,11 +144,11 @@ add_task(async function test_nimbus_experiment_urlbar_result_enabled() {
 
 add_task(async function test_non_experiment_prefs() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault.ui.enabled", false]],
+    set: [["browser.search.separatePrivateDefault.featureGate", false]],
   });
   let uiPref = () =>
     Services.prefs.getBoolPref(
-      "browser.search.separatePrivateDefault.ui.enabled"
+      "browser.search.separatePrivateDefault.featureGate"
     );
   Assert.equal(uiPref(), false, "defaulted false");
   await ExperimentAPI.ready();

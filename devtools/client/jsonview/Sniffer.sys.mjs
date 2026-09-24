@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { isJsonlMimeType } from "resource://devtools/client/shared/jsonl-mime-types.mjs";
 
 const gPrefs = {};
 
@@ -50,15 +51,8 @@ export class Sniffer {
           return JSON_VIEW_MIME_TYPE;
         }
 
-        // Same idea, but for JSON Lines (one JSON value per line):
-        // application/jsonl (the standard type), the text/jsonl,
-        // application/jsonlines and application/x-ndjson alternate spellings,
-        // or a .jsonl file served without a matching (or without any)
-        // content type.
-        let isJsonlines =
-          /^(?:text\/jsonl|application\/(?:jsonl|jsonlines|x-ndjson))$/.test(
-            request.contentType
-          );
+        // Check if this is a JSON Lines content-type (one JSON value per line).
+        let isJsonlines = isJsonlMimeType(request.contentType);
         if (!isJsonlines) {
           try {
             isJsonlines =

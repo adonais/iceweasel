@@ -6,7 +6,10 @@
  * This module exports a provider that offers token alias engines.
  */
 
-import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import {
+  UrlbarProvider,
+  UrlbarUtils,
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -46,8 +49,9 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
    * with this provider, to save on resources.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
+   * @param {UrlbarParentController} controller The controller instance.
    */
-  async isActive(queryContext) {
+  async isActive(queryContext, controller) {
     let instance = this.queryInstance;
 
     // This is usually reset on canceling or completing the query, but since we
@@ -85,7 +89,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
 
     // If the user is typing a potential engine name, autofill it.
     if (lazy.UrlbarPrefs.get("autoFill") && queryContext.allowAutofill) {
-      let result = await this._getAutofillResult(queryContext);
+      let result = await this._getAutofillResult(queryContext, controller);
       if (result && instance == this.queryInstance) {
         this._autofillData = { result, instance };
         return true;
@@ -101,8 +105,9 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
+   * @param {UrlbarParentController} controller The controller instance.
    */
-  async startQuery(queryContext, addCallback) {
+  async startQuery(queryContext, addCallback, controller) {
     if (!this._engines || !this._engines.length) {
       return;
     }
@@ -129,7 +134,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
             keyword: tokenAliases[0],
             keywords: tokenAliases.join(", "),
             query: "",
-            icon: await engine.getIconURL(),
+            icon: await UrlbarUtils.getEngineIconUrl(engine, controller),
             providesSearchMode: true,
           },
           highlights: {
@@ -165,7 +170,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
     }
   }
 
-  async _getAutofillResult(queryContext) {
+  async _getAutofillResult(queryContext, controller) {
     let { lowerCaseSearchString } = queryContext;
 
     // The user is typing a specific engine. We should show a heuristic result.
@@ -210,7 +215,7 @@ export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
               keyword: aliasPreservingUserCase,
               keywords: tokenAliases.join(", "),
               query: "",
-              icon: await engine.getIconURL(),
+              icon: await UrlbarUtils.getEngineIconUrl(engine, controller),
               providesSearchMode: true,
             },
             highlights: {

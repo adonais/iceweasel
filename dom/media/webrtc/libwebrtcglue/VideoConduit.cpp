@@ -390,7 +390,7 @@ WebrtcVideoConduit::WebrtcVideoConduit(
       mFrameRecvThread(CreateWebrtcTaskQueueWrapper(
           GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
           "WebrtcVideoConduit::mFrameRecvThread"_ns,
-          /* aSupportsTailDispatch= */ true)),
+          TailDispatchPolicy::ConsistentOrdering)),
       mControl(mCall->mCallThread),
       INIT_CANONICAL(mReceivingSize, mFrameRecvThread, {}),
       mWatchManager(this, mCall->mCallThread),

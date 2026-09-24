@@ -429,6 +429,7 @@
 
   .picture-of-the-day-show-button {
     background-color: var(--button-background-color);
+    color: var(--button-text-color);
 
     &::before {
       // Masked icon: background-color is the icon fill, so it takes a foreground token.

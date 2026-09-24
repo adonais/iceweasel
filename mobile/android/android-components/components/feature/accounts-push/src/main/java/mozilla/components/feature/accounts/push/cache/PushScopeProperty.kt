@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import java.util.UUID
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import mozilla.components.feature.accounts.push.FxaPushSupportFeature
 import mozilla.components.feature.accounts.push.PREF_FXA_SCOPE
@@ -18,11 +18,11 @@ import mozilla.components.feature.push.PushScope
 /** An implementation of a [ScopeProperty] that generates and stores a scope in [SharedPreferences]. */
 internal class PushScopeProperty(
     private val context: Context,
-    private val coroutineScope: CoroutineScope,
+    private val dispatcher: CoroutineDispatcher,
 ) : ScopeProperty {
 
     override suspend fun value(): PushScope =
-        withContext(coroutineScope.coroutineContext) {
+        withContext(dispatcher) {
             val prefs = preference(context)
 
             // Generate a unique scope if one doesn't exist.

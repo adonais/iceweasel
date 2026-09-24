@@ -26,35 +26,33 @@ add_task(async function basic() {
   const TEST_CASES = [
     {
       preferences: [["browser.tabs.loadInBackground", true]],
-      menuItemLabel: "Open in New Tab",
+      openIn: "tab",
       expectedTarget: "tab",
       expectedOption: { background: true },
     },
     {
       preferences: [["browser.tabs.loadInBackground", false]],
-      menuItemLabel: "Open in New Tab",
+      openIn: "tab",
       expectedTarget: "tab",
     },
     {
       preferences: [["browser.tabs.loadInBackground", true]],
-      menuItemLabel: "Open in New Container Tab",
-      subMenuItemLabel: "Personal",
+      openIn: "container-tab",
       expectedTarget: "tab",
       expectedOption: { background: true, userContextId: 1 },
     },
     {
       preferences: [["browser.tabs.loadInBackground", false]],
-      menuItemLabel: "Open in New Container Tab",
-      subMenuItemLabel: "Banking",
+      openIn: "container-tab",
       expectedTarget: "tab",
       expectedOption: { userContextId: 3 },
     },
     {
-      menuItemLabel: "Open in New Window",
+      openIn: "window",
       expectedTarget: "window",
     },
     {
-      menuItemLabel: "Open in New Private Window",
+      openIn: "private-window",
       expectedTarget: "window",
       expectedOption: { private: true },
     },
@@ -62,65 +60,32 @@ add_task(async function basic() {
 
   for (let {
     preferences = [],
-    menuItemLabel,
-    subMenuItemLabel,
+    openIn,
     expectedTarget,
     expectedOption = {},
   } of TEST_CASES) {
-    info(`Test for %{JSON.stringify({ preferences, menuItem, subMenuItem })}`);
+    info(`Test for ${JSON.stringify({ preferences, openIn, expectedOption })}`);
 
     info("Set preferences");
     await SpecialPowers.pushPrefEnv({ set: preferences });
-
-    info("Open urlbar results");
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      value: "exa",
-      window,
-      fireInputEvent: true,
-    });
-    let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
 
     let onSuggestionOpen =
       expectedTarget == "tab"
         ? BrowserTestUtils.waitForNewTab(gBrowser, "https://example.com/")
         : BrowserTestUtils.waitForNewWindow({ url: "https://example.com/" });
 
-    info("Open context menu");
-    let row = element.row;
-    let contextMenu = document.getElementById("urlbarView-context-menu");
-    let onMenuShown = BrowserTestUtils.waitForEvent(document, "popupshown");
-    EventUtils.synthesizeMouseAtCenter(row, {
-      button: 2,
-      type: "mousedown",
-    });
-    EventUtils.synthesizeMouseAtCenter(row, {
-      button: 2,
-      type: "contextmenu",
-    });
-    await onMenuShown;
+    let menu = await openContextMenuOnFirstResult();
+    let menuItem = menu.querySelector(`[data-open-in="${openIn}"]`);
+    Assert.ok(menuItem, `Found the menu item for ${openIn}`);
 
-    info(`Select menu item '${menuItemLabel}'`);
-    let menuItem = [...contextMenu.children].find(
-      i => i.label == menuItemLabel
-    );
-    if (subMenuItemLabel) {
-      info(`Select sub menu item '${subMenuItemLabel}'`);
-      let onSubMenuShown = new Promise(resolve => {
-        menuItem.addEventListener("popupshown", resolve);
-      });
-      menuItem.openMenu(true);
-      await onSubMenuShown;
-
-      info(`Select sub menu item '${subMenuItemLabel}'`);
-      await TestUtils.waitForCondition(() =>
-        [...menuItem.menupopup.children].find(i => i.label == subMenuItemLabel)
+    if (expectedOption.userContextId) {
+      let subMenuItem = await openContainerSubMenuItem(
+        menuItem,
+        expectedOption.userContextId
       );
-      let subMenuItem = [...menuItem.menupopup.children].find(
-        i => i.label == subMenuItemLabel
-      );
-      menuItem.menupopup.activateItem(subMenuItem, {});
+      subMenuItem.click();
     } else {
-      contextMenu.activateItem(menuItem, {});
+      menuItem.click();
     }
 
     let target = await onSuggestionOpen;
@@ -171,6 +136,72 @@ add_task(async function basic() {
   await PlacesUtils.history.clear();
 });
 
+// The three-dot button and a right-click open the same menu, and it holds the
+// result's own commands as well as the ones that open it in a new target.
+add_task(async function same_menu_from_both_triggers() {
+  await PlacesTestUtils.addVisits(["https://example.com/"]);
+
+  let resultIndex = await promiseResultWithMenuButton();
+  let { element } = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    resultIndex
+  );
+
+  await UrlbarTestUtils.openResultMenu(window, { resultIndex, byMouse: true });
+  let fromMenuButton = await promiseMenuDescription();
+  gURLBar.view.resultMenu.hide(undefined, { force: true });
+
+  let menu = await openContextMenu(element.row);
+  let fromContextMenu = await promiseMenuDescription();
+  menu.hide(undefined, { force: true });
+
+  Assert.deepEqual(
+    fromContextMenu,
+    fromMenuButton,
+    "Both triggers open the same menu"
+  );
+  Assert.deepEqual(
+    fromMenuButton.filter(item => item.openIn),
+    ["tab", "container-tab", "window", "private-window"].map(openIn => ({
+      openIn,
+    })),
+    "The menu opens the result in a new target"
+  );
+  Assert.ok(
+    fromMenuButton.some(item => item.command),
+    "The menu keeps the result's own commands"
+  );
+
+  gURLBar.view.close();
+  await PlacesUtils.history.clear();
+});
+
+// With the feature gate off, the three-dot menu holds only the result's own
+// commands and a right-click opens nothing.
+add_task(async function feature_gate_off() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.contextMenu.featureGate", false]],
+  });
+  await PlacesTestUtils.addVisits(["https://example.com/"]);
+
+  let resultIndex = await promiseResultWithMenuButton();
+  await UrlbarTestUtils.openResultMenu(window, { resultIndex, byMouse: true });
+  let items = await promiseMenuDescription();
+  Assert.ok(
+    items.some(item => item.command),
+    "The menu holds the result's own commands"
+  );
+  Assert.ok(
+    items.every(item => !item.openIn),
+    "The menu doesn't open the result in a new target"
+  );
+  gURLBar.view.resultMenu.hide(undefined, { force: true });
+
+  gURLBar.view.close();
+  await PlacesUtils.history.clear();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function toolbar_context_menu() {
   let TEST_TARGETS = [
     ".searchmode-switcher",
@@ -179,6 +210,9 @@ add_task(async function toolbar_context_menu() {
   ];
 
   await BrowserTestUtils.withNewTab("https://example.com/", async () => {
+    // Make search mode switcher visible.
+    document.querySelector(".searchmode-switcher").focus();
+
     for (let target of TEST_TARGETS) {
       info(`Test for ${target}`);
       let element = document.querySelector(target);
@@ -223,11 +257,11 @@ add_task(async function no_context_menu() {
     });
 
     let onContextMenu = BrowserTestUtils.waitForEvent(window, "contextmenu");
-    let popupShown = false;
-    let popupListener = () => {
-      popupShown = true;
+    let menuShown = false;
+    let menuListener = () => {
+      menuShown = true;
     };
-    window.addEventListener("popupshowing", popupListener, true);
+    window.addEventListener("showing", menuListener, true);
 
     document.querySelector(target).dispatchEvent(
       new PointerEvent("contextmenu", {
@@ -242,52 +276,24 @@ add_task(async function no_context_menu() {
     let event = await onContextMenu;
     Assert.ok(event.defaultPrevented);
 
-    Assert.ok(!popupShown);
-    window.removeEventListener("popupshowing", popupListener, true);
+    Assert.ok(!menuShown);
+    window.removeEventListener("showing", menuListener, true);
 
     await SpecialPowers.popPrefEnv();
   }
 });
 
-// Neither activateItem() nor dispatching a "click" triggers a mousedown, so
-// this test dispatches a bare mousedown to verify that the view stays open
-// when a mousedown is fired on the context menu. It does not actually open the
-// result, since a menu item isn't activated by a mousedown alone. Real-clicking
-// a context menu item isn't feasible cross-platform (on macOS the native menu
-// item has no layout box, and synthesizing a click crashes on Windows), so we
-// scope this test to the mousedown behavior only.
 add_task(async function keep_view_open_on_context_menu_mousedown() {
-  info("Open urlbar results");
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    value: "exa",
-    window,
-    fireInputEvent: true,
-  });
-  let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-
-  info("Open context menu");
-  let contextMenu = document.getElementById("urlbarView-context-menu");
-  let onMenuShown = BrowserTestUtils.waitForEvent(document, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(element.row, {
-    button: 2,
-    type: "mousedown",
-  });
-  EventUtils.synthesizeMouseAtCenter(element.row, {
-    button: 2,
-    type: "contextmenu",
-  });
-  await onMenuShown;
+  let menu = await openContextMenuOnFirstResult();
   Assert.ok(
     gURLBar.view.isOpen,
     "The view should remain open after the context menu is shown"
   );
 
   info("Mouse down on a context menu item");
-  let menuItem = [...contextMenu.children].find(
-    i => i.label == "Open in New Tab"
-  );
-  menuItem.dispatchEvent(
-    new MouseEvent("mousedown", { bubbles: true, button: 0, view: window })
+  EventUtils.synthesizeMouseAtCenter(
+    menu.querySelector('[data-open-in="tab"]'),
+    { type: "mousedown" }
   );
 
   Assert.ok(
@@ -295,6 +301,95 @@ add_task(async function keep_view_open_on_context_menu_mousedown() {
     "The view stays open after a mousedown on the context menu"
   );
 
-  contextMenu.hidePopup();
+  menu.hide(undefined, { force: true });
   gURLBar.view.close();
 });
+
+// Returns the menu's items as the command or open-in target each one picks, in
+// the order they are shown, separators included.
+async function promiseMenuDescription() {
+  let menu = gURLBar.view.resultMenu;
+  await TestUtils.waitForCondition(
+    () => menu.children.length,
+    "Waiting for the menu to be populated"
+  );
+  return [...menu.children].map(item => {
+    if (item.localName == "hr") {
+      return "separator";
+    }
+    let { command, openIn } = item.dataset;
+    return command ? { command } : { openIn };
+  });
+}
+
+// Searches for "example" and returns the index of a result that has a menu
+// button, which is also a result the menu can open in a new target.
+async function promiseResultWithMenuButton() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "example",
+    window,
+    fireInputEvent: true,
+  });
+  for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
+    let { element, url } = await UrlbarTestUtils.getDetailsOfResultAt(
+      window,
+      i
+    );
+    if (url && element.row.hasAttribute("has-menu-button")) {
+      return i;
+    }
+  }
+  throw new Error("No result with a menu button");
+}
+
+async function openContextMenu(row) {
+  info("Open the context menu");
+  let menu = gURLBar.view.resultMenu;
+  let onShown = BrowserTestUtils.waitForEvent(menu, "shown");
+  EventUtils.synthesizeMouseAtCenter(row, {
+    button: 2,
+    type: "mousedown",
+  });
+  EventUtils.synthesizeMouseAtCenter(row, {
+    button: 2,
+    type: "contextmenu",
+  });
+  await onShown;
+
+  return menu;
+}
+
+async function openContextMenuOnFirstResult() {
+  info("Open urlbar results");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "exa",
+    window,
+    fireInputEvent: true,
+  });
+  let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  return openContextMenu(element.row);
+}
+
+// Opens the submenu of the given item, the same way hovering it does, and
+// returns the submenu panel.
+async function openContainerSubMenu(menuItem) {
+  let onShown = BrowserTestUtils.waitForEvent(menuItem.submenuPanel, "shown");
+  menuItem.dispatchEvent(
+    new MouseEvent("mouseenter", { view: menuItem.ownerGlobal })
+  );
+  await onShown;
+  return menuItem.submenuPanel;
+}
+
+async function openContainerSubMenuItem(menuItem, userContextId) {
+  let subMenu = await openContainerSubMenu(menuItem);
+  let subMenuItem = subMenu.querySelector(
+    `[data-usercontextid="${userContextId}"]`
+  );
+  Assert.ok(subMenuItem, `Found the container item for ${userContextId}`);
+  await TestUtils.waitForCondition(
+    () => subMenuItem.textContent,
+    "Waiting for the container item to be labeled"
+  );
+  return subMenuItem;
+}

@@ -31,6 +31,7 @@
     padding-block: var(--space-xsmall) var(--space-large);
     padding-inline: var(--space-large);
     background-color: var(--button-background-color);
+    color: var(--button-text-color);
     border-radius: var(--border-radius-large);
 
     // Bug 1908010 - This overwrites the design system color because of a
@@ -257,10 +258,26 @@
   }
 }
 
-// DnD visuals on the wrapper.
+// usePointerReorder drags the real widget rather than a bitmap copy, so it has
+// to paint above its neighbours. No fade either: what the user is dragging is
+// the live widget, not a native drag source.
 .nova-enabled .widget-draggable {
-  &.is-dragging {
-    opacity: 0.5;
+  &[data-dragging] {
+    position: relative;
+    z-index: 1;
+    cursor: grabbing;
+    will-change: transform;
+  }
+}
+
+// Backs up pointer capture: `pointer-events: none` keeps a widget's iframe from
+// taking the pointer if capture was never granted. Text must not select as the
+// pointer sweeps the row either.
+.nova-enabled .widgets-container:has([data-dragging]) {
+  user-select: none;
+
+  iframe {
+    pointer-events: none;
   }
 }
 
@@ -268,6 +285,26 @@
   display: inline-block;
   margin-block-start: var(--space-medium);
   font-size: var(--font-size-small);
+}
+
+// @experiment(remove) { bug 2066527 }
+// The height transition itself comes from .is-animating-height above.
+.nova-enabled .widgets-container[data-section-collapsed] {
+  height: 0;
+  overflow: hidden;
+  // .widgets-section-container is a grid with `gap: var(--space-medium)`;
+  // a zero-height row still leaves its own gap behind.
+  margin-block-end: calc(-1 * var(--space-medium));
+}
+
+// @experiment(remove) { bug 2066527 }
+// :has() rather than a sibling selector: the data-overflow-N rules below
+// reveal the toggle at equal specificity and later in the file, so they
+// would win.
+.nova-enabled
+.widgets-section-container:has(.widgets-container[data-section-collapsed])
+.widgets-row-toggle {
+  display: none;
 }
 
 .nova-enabled .widgets-row-toggle {

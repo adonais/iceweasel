@@ -5691,9 +5691,25 @@ void nsGridContainerFrame::Tracks::Initialize(
   mContentBoxSize = aContentBoxSize;
 }
 
-/**
- * Reflow aChild in the given aAvailableSize.
- */
+// A measuring reflow performed during intrinsic sizing leaves aChild laid out
+// with a size that generally might not be its final one. Mark it dirty up to
+// the nearest ancestor that is already dirty or being reflowed. Callers must
+// do this after reading whatever they need from aChild's measured state.
+static void MarkDirtyAfterIntrinsicSizingReflow(nsIFrame* aChild) {
+  aChild->MarkSubtreeDirty();
+  auto* cur = aChild;
+  while (true) {
+    nsIFrame* parent = cur->GetParent();
+    if (!parent || parent->IsSubtreeDirty() ||
+        parent->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+      return;
+    }
+    parent->ChildIsDirty(cur);
+    cur = parent;
+  }
+}
+
+// Reflow aChild in the given aAvailableSize.
 static nscoord MeasuringReflow(nsIFrame* aChild,
                                const ReflowInput* aReflowInput, gfxContext* aRC,
                                const LogicalSize& aAvailableSize,
@@ -6010,6 +6026,9 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
       LogicalSize availableSize(childWM, availISize, availBSize);
       size = ::MeasuringReflow(child, aGridRI.mReflowInput, rc, availableSize,
                                cbSize, iMinSizeClamp, bMinSizeClamp);
+      if (aGridRI.mIsGridIntrinsicSizing) {
+        MarkDirtyAfterIntrinsicSizingReflow(child);
+      }
     }
     size += child->GetLogicalUsedMargin(childWM).BStartEnd(childWM);
     nscoord overflow = size - aMinSizeClamp;
@@ -6737,6 +6756,10 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
             baselineTrack, finalBaseline, alignSize, &gridItem});
       } else {
         state &= ~ItemState::eAllBaselineBits;
+      }
+
+      if (aGridRI.mIsGridIntrinsicSizing) {
+        MarkDirtyAfterIntrinsicSizingReflow(child);
       }
     }
 

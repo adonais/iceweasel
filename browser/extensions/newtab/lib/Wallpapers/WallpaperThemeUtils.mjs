@@ -65,3 +65,39 @@ export async function calculateTheme(win, blob) {
   const CONTRAST_BRIGHTTEXT_THRESHOLD = Math.sqrt(1.05 * 0.05) - 0.05;
   return averageLuminance <= CONTRAST_BRIGHTTEXT_THRESHOLD ? "dark" : "light";
 }
+
+// The picker draws a tile at 86 pixels, so this stays sharp on a screen that
+// packs in more pixels. Small enough that a whole library is a megabyte or two.
+const THUMBNAIL_MAX_SIDE = 320;
+const THUMBNAIL_TYPE = "image/jpeg";
+const THUMBNAIL_QUALITY = 0.8;
+
+/**
+ * Scales an image down for the wallpaper picker. Thumbnail scaling runs in
+ * content; the parent stores the result it receives.
+ *
+ * @param {Window} win - Window to use for constructors
+ * @param {Blob} blob - The full size image.
+ * @returns {Promise<Blob>} The scaled copy, as a JPEG.
+ */
+export const createThumbnail = async (win, blob) => {
+  const bitmap = await win.createImageBitmap(blob);
+  try {
+    const scale = Math.min(
+      1,
+      THUMBNAIL_MAX_SIDE / Math.max(bitmap.width, bitmap.height)
+    );
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = new win.OffscreenCanvas(width, height);
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+    return await canvas.convertToBlob({
+      type: THUMBNAIL_TYPE,
+      quality: THUMBNAIL_QUALITY,
+    });
+  } finally {
+    // Frees the decoded image rather than waiting for collection, which
+    // matters when someone adds a very large photo.
+    bitmap.close();
+  }
+};

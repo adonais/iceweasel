@@ -4,7 +4,6 @@
 #include "AudioStream.h"
 
 #include <math.h>
-#include <stdio.h>
 
 #include <algorithm>
 #include <mutex>
@@ -126,11 +125,18 @@ class FrameHistory {
   // this the position would keep reporting the pre-seek time; rebasing lets the
   // position resume from zero at the seek target while the same stream keeps
   // running.
-  void Rebase(int64_t aBaseOffset) {
+  //
+  // |aUnplayed| is the audio handed to the engine but not yet played. It
+  // belongs to the position being left behind, so it is carried over as a chunk
+  // that services nothing: the position holds until the engine plays past it.
+  void Rebase(int64_t aBaseOffset, uint32_t aUnplayed, uint32_t aRate) {
     LOG("FrameHistory::Rebase to base offset {}", aBaseOffset);
     mChunks.Clear();
     mBaseOffset = aBaseOffset;
     mBasePosition = 0;
+    if (aUnplayed > 0) {
+      Append(0, aUnplayed, aRate);
+    }
   }
 
  private:
@@ -222,6 +228,21 @@ nsresult AudioStream::EnsureTimeStretcherInitialized() {
     mTimeStretcher->setSetting(
         SETTING_OVERLAP_MS,
         StaticPrefs::media_audio_playbackrate_soundtouch_overlap_ms());
+
+    const uint32_t primeFrames =
+        (StaticPrefs::media_audio_playbackrate_soundtouch_sequence_ms() +
+         StaticPrefs::media_audio_playbackrate_soundtouch_seekwindow_ms()) *
+        mAudioClock.GetInputRate() / 1000;
+    AutoTArray<AudioDataValue, 2048> silence;
+    silence.SetLength(primeFrames * mOutChannels);
+    std::fill(silence.begin(), silence.end(), AudioDataValue(0));
+    mTimeStretcher->putSamples(silence.Elements(), primeFrames);
+    const uint32_t numOut =
+        mTimeStretcher->numSamples().unverified_safe_because(
+            "Bounded by the number of frames used to prime the stretcher.");
+    MOZ_ASSERT(numOut <= primeFrames);
+    silence.SetLength(numOut * mOutChannels);
+    mTimeStretcher->receiveSamples(silence.Elements(), numOut);
   }
   return NS_OK;
 }
@@ -423,8 +444,11 @@ void AudioStream::Resume() {
   MOZ_ASSERT(mState != INITIALIZED, "Must be Start()ed.");
   MOZ_ASSERT(mState != SHUTDOWN, "Already ShutDown()ed.");
 
-  // Do nothing if we are already drained or errored.
+  // Do nothing if we are already drained or errored. Such a backend will not
+  // play what it was handed, so the carry decision must not be left reading an
+  // earlier seek's answer.
   if (mState == DRAINED || mState == ERRORED) {
+    mResumeKeptCubebRunning = false;
     return;
   }
 
@@ -432,7 +456,8 @@ void AudioStream::Resume() {
   // only restore the logical playing state. Otherwise cubeb is stopped, because
   // the stream was paused before the mode was entered, and must be started for
   // real.
-  if (mKeepRunning && mCubebStarted) {
+  mResumeKeptCubebRunning = mKeepRunning && mCubebStarted;
+  if (mResumeKeptCubebRunning) {
     LOG("Resume: keep-running mode, tracking logical STARTED without starting "
         "cubeb");
     mState = STARTED;
@@ -489,7 +514,6 @@ void AudioStream::ShutDown() {
 
 void AudioStream::RebaseLive() {
   TRACE("AudioStream::RebaseLive");
-  // Rebase the clock to the current position of the still-running stream.
   int64_t rawFrames;
   {
 #ifndef XP_MACOSX
@@ -497,7 +521,21 @@ void AudioStream::RebaseLive() {
 #endif
     rawFrames = GetPositionInFramesUnlocked();
   }
-  mAudioClock.Rebase(rawFrames >= 0 ? rawFrames : 0);
+  // The engine counter keeps climbing across the seek while media time
+  // restarts, so re-anchor the clock rather than reset the counter. Carry the
+  // unplayed audio only when the device will still play it, checked live rather
+  // than trusted from Resume(): a restarted or since-dead backend will not, and
+  // a failed read leaves no cursor to measure from.
+  AudioClock::CarryUnplayed carry = AudioClock::CarryUnplayed::Yes;
+  if (rawFrames < 0) {
+    rawFrames = 0;
+    carry = AudioClock::CarryUnplayed::No;
+  } else if (!mResumeKeptCubebRunning || mState != STARTED || !mCubebStarted) {
+    carry = AudioClock::CarryUnplayed::No;
+  }
+  LOG("RebaseLive: raw frame count {}, carrying unplayed audio {}", rawFrames,
+      carry == AudioClock::CarryUnplayed::Yes);
+  mAudioClock.Rebase(rawFrames, carry);
 }
 
 RefPtr<MediaSink::EndedPromise> AudioStream::ReinitEndedPromise() {
@@ -590,18 +628,6 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
             return timeStretcher->receiveSamples(aPtr, aFrames);
           },
           aWriter.Available());
-
-      // TODO: There might be still unprocessed samples in the stretcher.
-      // We should either remove or flush them so they won't be in the output
-      // next time we switch a playback rate other than 1.0.
-      mTimeStretcher->numUnprocessedSamples().copy_and_verify([](auto samples) {
-        NS_WARNING_ASSERTION(samples == 0, "no samples");
-      });
-    } else {
-      // Don't need it anymore: playbackRate is 1.0, and the time stretcher has
-      // been flushed.
-      delete mTimeStretcher;
-      mTimeStretcher = nullptr;
     }
   }
 
@@ -689,6 +715,11 @@ void AudioStream::UpdatePlaybackRateIfNeeded() {
   }
 
   EnsureTimeStretcherInitialized();
+
+  if (mTimeStretcher && mAudioClock.GetPlaybackRate() != 1.0f &&
+      static_cast<float>(mPlaybackRate) == 1.0f) {
+    mTimeStretcher->flush();
+  }
 
   mAudioClock.SetPlaybackRate(mPlaybackRate);
   mAudioClock.SetPreservesPitch(mPreservesPitch);
@@ -810,6 +841,7 @@ AudioClock::~AudioClock() = default;
 void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
 #ifdef XP_MACOSX
+  mHandoff.mTotal += aServiced + aUnderrun;
   if (aAudioThreadChanged) {
     mCallbackInfoQueue.ResetProducerThreadId();
   }
@@ -831,27 +863,64 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
     mAudioThreadCallbackInfo.AppendElement(info);
   }
 #else
+  // Publish the counter and the history together, so a write cursor read under
+  // mMutex always matches the history it will be compared against.
   MutexAutoLock lock(mMutex);
+  mHandoff.mTotal += aServiced + aUnderrun;
   mFrameHistory->Append(aServiced, aUnderrun, mOutRate);
 #endif
 }
 
-void AudioClock::Rebase(int64_t aBaseOffset) {
+void AudioClock::Rebase(int64_t aBaseOffset, CarryUnplayed aCarry) {
 #ifdef XP_MACOSX
-  // The callback may still be running (the stream is reused, not stopped), so
-  // only touch owner/consumer-thread state. The queue is single-consumer and
-  // its Dequeue asserts this is that thread, which also guards the macOS
-  // owner-thread-only history. Discard the queued pre-seek callback info, then
-  // rebase. A stale item still held on the audio thread is applied later,
-  // adding at most a small bounded offset that the next rebase clears.
-  CallbackInfo info;
-  while (mCallbackInfoQueue.Dequeue(&info, 1)) {
-  }
-  mFrameHistory->Rebase(aBaseOffset);
+  // Draining here only bounds the queue. What keeps pre-seek items out of the
+  // post-rebase history is mRebasedThrough, set below.
+  ApplyQueuedCallbackInfo();
 #else
   MutexAutoLock lock(mMutex);
-  mFrameHistory->Rebase(aBaseOffset);
 #endif
+
+  // Read after synchronising with the audio thread: an earlier read misses a
+  // racing callback and leaves the position leading the audio.
+  const uint64_t writeCursor = mHandoff.mTotal;
+
+  uint32_t unplayed = 0;
+  if (aCarry == CarryUnplayed::Yes) {
+    MOZ_ASSERT(aBaseOffset >= 0, "a negative play cursor is not a position");
+    const uint64_t playCursor = static_cast<uint64_t>(aBaseOffset);
+    uint64_t gap = 0;
+    if (writeCursor >= playCursor) {
+      gap = writeCursor - playCursor;
+    } else {
+      // Some backends estimate the position from the wall clock since the last
+      // callback, so it can read above the frames handed over.
+      LOGW("Rebase: play cursor {} above write cursor {}, carrying nothing",
+           playCursor, writeCursor);
+    }
+    // The carry narrows into a chunk's uint32_t counts, and a later
+    // underrun-only append merges into that chunk by adding to them, so the
+    // bound must leave headroom rather than take the whole range. Half is an
+    // arbitrary choice of how much, and leaves over twelve hours at 48 kHz.
+    constexpr uint64_t kMaxUnplayed = UINT32_MAX / 2;
+    if (gap > kMaxUnplayed) {
+      LOGW("Rebase: {} unplayed frames exceed the carry limit, carrying {}",
+           gap, kMaxUnplayed);
+      gap = kMaxUnplayed;
+    }
+    unplayed = static_cast<uint32_t>(gap);
+  }
+
+#ifdef XP_MACOSX
+  // Everything at or below the write cursor is either carried above or
+  // deliberately discarded, so a queued or audio-thread-stranded item at or
+  // below it must be dropped rather than appended after the rebase. This has to
+  // hold on both branches: the history is cleared either way.
+  mHandoff.mRebasedThrough = writeCursor;
+#endif
+
+  LOG("Rebase: play cursor {}, write cursor {}, carrying {} unplayed frames",
+      aBaseOffset, writeCursor, unplayed);
+  mFrameHistory->Rebase(aBaseOffset, unplayed, mOutRate);
 }
 
 int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
@@ -859,14 +928,28 @@ int64_t AudioClock::GetPositionInFrames(int64_t aFrames) {
   return v.isValid() ? v.value() : -1;
 }
 
-int64_t AudioClock::GetPosition(int64_t frames) {
 #ifdef XP_MACOSX
-  // Dequeue all history info, and apply them before returning the position
-  // based on frame history.
+void AudioClock::ApplyQueuedCallbackInfo() {
   CallbackInfo info;
   while (mCallbackInfoQueue.Dequeue(&info, 1)) {
+    // Count first, and count every item, including the ones dropped below: this
+    // running total is only comparable to the producer's if nothing is missed.
+    mHandoff.mSeen += info.TotalFrames();
+    if (mHandoff.mSeen <= mHandoff.mRebasedThrough) {
+      // Handed over before the last rebase, which already accounted for these
+      // frames. Appending them would count them twice, and an underrun-only
+      // item merges into the preceding chunk, extending a window that advances
+      // no media time by however long the seek took.
+      continue;
+    }
     mFrameHistory->Append(info.mServiced, info.mUnderrun, info.mOutputRate);
   }
+}
+#endif
+
+int64_t AudioClock::GetPosition(int64_t frames) {
+#ifdef XP_MACOSX
+  ApplyQueuedCallbackInfo();
 #else
   MutexAutoLock lock(mMutex);
 #endif

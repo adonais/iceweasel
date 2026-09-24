@@ -40,6 +40,15 @@ logic. It's usually looked up during the release promotion action task, using th
 GraphQL API in the [get_partner_config_by_url()](python/taskgraph.util.html#taskgraph.util.partners.get_partner_config_by_url) function, with the
 url defined in [taskcluster/config.yml](https://searchfox.org/mozilla-release/search?q=regexp%3A^partner+path%3Aconfig.yml&redirect=true).
 
+That lookup happens only once per release, in the first promotion action that needs it —
+normally `promote`. Later phases inherit the resolved config from the most recent previous
+graph's `parameters.yml`, so that every phase repacks and publishes the same set of partners.
+A partner added to a `default.xml` manifest partway through a release is therefore not picked
+up by that release's `push` and `ship` phases; without this, they would create repack tasks
+depending on cached tasks whose artifacts predate the new partner (bug 2071912). Use the next
+release, or an off-cycle `promote_firefox_partner_repack` run — those flavors deliberately look
+the config up again — to build a newly added partner.
+
 `release_partner_build_number` is an integer used to create unique upload paths in the firefox
 candidates directory, while `release_partners` is a list of partners that should be
 repacked (i.e. a subset of the whole config). Both are intended for use when respinning a few partners after

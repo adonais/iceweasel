@@ -5,5 +5,7 @@
 
 MediaFormatReader
 review/index
+AudioStream
 AudioSinkWrapper
+SpeechRecognition
 ```

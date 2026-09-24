@@ -6,12 +6,19 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object ShareOverlaySelectors {
+object ShareOverlaySelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        SHARE_TAB_LAYOUT,
+        SHARE_TABS_SITE_LIST,
+    }
 
-    // requiredForPage: this is the share sheet's root layout (fragment_share.xml), so it is what tells
+    // Readiness: this is the share sheet's root layout (fragment_share.xml), so it is what tells
     // the framework we actually arrived. Without it the page had no presence anchor at all and
     // navigateToPage() reported success while still sitting on the browser.
     val SHARING_LAYOUT =
@@ -19,7 +26,8 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "sharingLayout",
             description = "Share overlay layout",
-            groups = listOf("requiredForPage", "shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val DEVICES_LIST =
@@ -27,7 +35,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "devicesList",
             description = "Send to device section",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val RECENT_APPS_CONTAINER =
@@ -35,7 +43,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "recentAppsContainer",
             description = "Recently used apps section",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val APPS_LIST =
@@ -43,7 +51,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "appsList",
             description = "All apps section",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val SEND_TO_DEVICE_HEADER =
@@ -51,7 +59,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.share_device_subheader),
             description = "Send to device header",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val RECENTLY_USED_HEADER =
@@ -59,7 +67,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.share_link_recent_apps_subheader),
             description = "Recently used apps header",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val ALL_ACTIONS_HEADER =
@@ -67,7 +75,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.share_link_all_apps_subheader),
             description = "All actions header",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     val SAVE_AS_PDF_LABEL =
@@ -75,7 +83,7 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.share_save_to_pdf),
             description = "Save as PDF label",
-            groups = listOf("shareTabLayout"),
+            groups = setOf(Group.SHARE_TAB_LAYOUT),
         )
 
     // The list of tabs/sites being shared, shown at the top of the share sheet when sharing tabs.
@@ -84,19 +92,6 @@ object ShareOverlaySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "shared_site_list",
             description = "Shared tabs site list",
-            groups = listOf("shareTabsSiteList"),
-        )
-
-    val all =
-        listOf(
-            SHARING_LAYOUT,
-            DEVICES_LIST,
-            RECENT_APPS_CONTAINER,
-            APPS_LIST,
-            SEND_TO_DEVICE_HEADER,
-            RECENTLY_USED_HEADER,
-            ALL_ACTIONS_HEADER,
-            SAVE_AS_PDF_LABEL,
-            SHARED_SITE_LIST,
+            groups = setOf(Group.SHARE_TABS_SITE_LIST),
         )
 }

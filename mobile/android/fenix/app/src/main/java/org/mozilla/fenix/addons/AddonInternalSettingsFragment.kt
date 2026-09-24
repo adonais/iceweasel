@@ -70,6 +70,7 @@ class AddonInternalSettingsFragment : AddonPopupBaseFragment(), SystemInsetsPadd
                     tabsUseCases = requireComponents.useCases.tabsUseCases,
                     sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
                     customTabSessionId = session?.id,
+                    applicationScope = requireComponents.applicationScope,
                 ),
             owner = this,
             view = view,

@@ -18,14 +18,44 @@
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
    * for other layout calculations too */
-  --urlbar-input-container-border-width: max(env(hairline), round(down, 1px, env(hairline)));
-  --urlbar-input-container-border-width-breakout: calc(2 * var(--urlbar-input-container-border-width));
-  --urlbar-input-container-padding: round(nearest, var(--space-xxsmall) + var(--urlbar-input-container-border-width-breakout), 1px);
+  --urlbar-snapped-1px-border-width: max(env(hairline), round(down, 1px, env(hairline)));
+  --urlbar-input-container-border-width: var(--urlbar-snapped-1px-border-width);
+  --urlbar-input-container-border-width-open: calc(2 * var(--urlbar-input-container-border-width));
+  --urlbar-input-container-padding: round(nearest, var(--space-xxsmall) + var(--urlbar-input-container-border-width-open), 1px);
+
+  /* How far the background reaches past the input while the view is open. */
+  --urlbar-background-overhang-open: 8px;
+
+  /* How far each half of the joint background runs past the seam before it is
+     clipped back to it. Must exceed the open background's 14px shadow blur, so
+     each half's shadow is the whole surface's. */
+  --urlbar-joint-background-overlap: 24px;
+  /* Margin the clip leaves on the other three sides, where that shadow does
+     reach past the surface. */
+  --urlbar-joint-background-shadow-margin: 32px;
+
+  /* How far the joint background reaches past the view's border box, on the
+     sides the input's own background doesn't cover. The view's margin is part
+     of it because the surface wraps the view's margin box, not its border
+     box. */
+  --urlbarView-joint-background-outset-inline: calc(var(--urlbar-background-overhang-open) + var(--urlbarView-margin-inline));
+  --urlbarView-joint-background-outset-block: calc(var(--urlbar-background-overhang-open) + var(--urlbarView-margin-block));
+
+  /* The container's block padding, which the popover takes as its offset from
+     the container's border box. */
+  --urlbar-container-padding-block: var(--urlbar-padding-block);
 
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * (var(--urlbar-input-container-border-width) + var(--urlbar-input-container-padding)));
     --urlbar-icon-padding: calc((var(--urlbar-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
     --urlbar-input-container-padding: round(up, 1px, env(hairline));
+    --urlbar-background-overhang-open: 0px;
+  }
+  &[uidensity="compact"] {
+    --urlbar-background-overhang-open: 0px;
+  }
+  &[uidensity="touch"] {
+    --urlbar-container-padding-block: 5px;
   }
   @media (max-width: 770px) {
     --urlbar-container-min-width: 240px;
@@ -77,6 +107,7 @@
       --urlbar-box-background-color-hover: var(--button-background-color-ghost-hover);
       --urlbar-box-background-color-active: var(--button-background-color-ghost-active);
       --urlbar-box-text-color-hover: var(--button-text-color-ghost-hover);
+      --urlbar-box-text-color-active: var(--button-text-color-ghost-active);
     }
   }
 }
@@ -86,47 +117,58 @@
  * optionally be replaced with inline definitions when Proton is removed.
  * Naming conventions:
  *
- * - "breakout" - when `breakout-active` is set and *not* focused
- * - "breakout-focused" - when `breakout-active` is set and focused
- * - "focused" - when focused and `breakout-active` is *not* set
- * - none of the above - when `breakout-active` is not set and not focused
+ * - "open" - when the popover is open and *not* focused
+ * - "open-focused" - when the popover is open and focused
+ * - "focused" - when focused and the popover is *not* open
+ * - none of the above - when the popover is not open and not focused
  */
 .urlbar,
 #searchbar {
   --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
-  --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid transparent;
-  --urlbar-background-border-focused: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color-focus);
+  --urlbar-background-border-open: var(--urlbar-input-container-border-width) solid transparent;
+  --urlbar-background-border-focused: var(--urlbar-input-container-border-width-open) solid var(--toolbar-field-border-color-focus);
   --urlbar-background-border-radius: var(--urlbarview-border-radius);
-  --urlbar-background-border-top-radius-breakout-compact: min(var(--urlbar-background-border-radius), calc(var(--urlbar-height) / 2));
-  --urlbar-background-box-shadow-breakout: 0 0 14px 0 var(--chrome-box-shadow);
-  --urlbar-background-box-shadow-breakout-compact: none;
-  --urlbar-background-inset-breakout: calc(var(--urlbar-height) / 2 - var(--urlbarview-border-radius));
-  --urlbar-background-inset-breakout-compact: 0;
+  /* The top corners take the input's radius plus however far the background
+     reaches past it, so the two stay concentric. The input's radius is capped
+     at its pill radius; the bottom corners keep the uncapped one, which the
+     results match. */
+  --urlbar-background-border-top-radius-open: calc(
+    min(var(--urlbar-background-border-radius), var(--urlbar-height) / 2) + var(--urlbar-background-overhang-open)
+  );
+  --urlbar-background-box-shadow-open: 0 0 14px 0 var(--chrome-box-shadow);
   --urlbar-background-outline-focused: none;
   --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
-  --urlbar-input-container-outline-breakout: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color);
-  --urlbar-input-container-outline-breakout-focused: var(--urlbar-input-container-border-width-breakout) solid var(--toolbar-field-border-color-focus);
-  --urlbar-input-container-outline-offset-breakout: calc(-1 * var(--urlbar-input-container-border-width-breakout));
-  --urlbar-margin-block-start-breakout: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
+  --urlbar-input-container-outline-open: var(--urlbar-input-container-border-width-open) solid var(--toolbar-field-border-color);
+  --urlbar-input-container-outline-open-focused: var(--urlbar-input-container-border-width-open) solid var(--toolbar-field-border-color-focus);
+  --urlbar-input-container-outline-offset-open: calc(-1 * var(--urlbar-input-container-border-width-open));
+  /* How far the input's border box reaches past its margin box while the view
+     is open, which the joint background's top half covers. Proton grows the
+     input over the container's block padding and inline margins; Nova leaves
+     it put.
+     TODO: Both are 0 under Nova, so remove along with Proton. */
+  --urlbar-input-growth-open-inline: 0px;
+  --urlbar-input-growth-open-block: 0px;
   --urlbar-searchmode-switcher-panel-list-min-width: 17em;
+
+  @media (prefers-contrast) {
+    --urlbar-background-border-open: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
+  }
 
   @media not -moz-pref("browser.nova.enabled") {
     --urlbar-background-border: var(--urlbar-input-container-border-width) solid var(--toolbar-field-border-color);
-    --urlbar-background-border-breakout: var(--urlbar-input-container-border-width) solid var(--panel-border-color);
+    --urlbar-background-border-open: var(--urlbar-input-container-border-width) solid var(--panel-border-color);
     --urlbar-background-border-focused: var(--urlbar-background-border);
-    --urlbar-background-border-top-radius-breakout-compact: var(--urlbar-background-border-radius);
-    --urlbar-background-box-shadow-breakout: 0 2px 14px var(--chrome-box-shadow);
-    --urlbar-background-box-shadow-breakout-compact: var(--urlbar-background-box-shadow-breakout);
-    --urlbar-background-inset-breakout: 0;
+    --urlbar-background-box-shadow-open: 0 2px 14px var(--chrome-box-shadow);
     /* We want the focus outline with the theme's border-color when focused.
        --toolbar-field-border-color-focus is set equal to --focus-outline-color
        on :root, but LWT themes can override this value. */
     --urlbar-background-outline-focused: var(--focus-outline-width) solid var(--toolbar-field-border-color-focus);
     --urlbar-input-container-border: var(--urlbar-input-container-border-width) solid transparent;
-    --urlbar-input-container-outline-breakout: none;
-    --urlbar-input-container-outline-breakout-focused: none;
-    --urlbar-input-container-outline-offset-breakout: 0px;
-    --urlbar-margin-block-start-breakout: 0px;
+    --urlbar-input-container-outline-open: none;
+    --urlbar-input-container-outline-open-focused: none;
+    --urlbar-input-container-outline-offset-open: 0px;
+    --urlbar-input-growth-open-inline: var(--urlbar-margin-inline);
+    --urlbar-input-growth-open-block: var(--urlbar-container-padding-block);
     --urlbar-searchmode-switcher-panel-list-min-width: auto;
   }
 }
@@ -162,16 +204,8 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-container {
-  padding-block: var(--urlbar-padding-block);
+  padding-block: var(--urlbar-container-padding-block);
   margin-inline: var(--urlbar-margin-inline);
-
-  :root[uidensity="touch"] & {
-    padding-block: 5px;
-  }
-
-  &[breakout] {
-    min-height: var(--urlbar-container-height);
-  }
 }
 
 .urlbar {
@@ -179,35 +213,13 @@ toolbar[inactive="true"] .urlbar,
   flex-direction: row;
   flex: 1;
   box-sizing: border-box;
-  will-change: translate;
   -moz-user-focus: ignore;
   user-select: none;
 
-  /* Reset UA popover rules */
-  width: initial;
-  height: initial;
-  inset: auto;
-  border: none;
-  padding: initial;
-  overflow: initial;
-  color: initial;
-  background-color: initial;
-
-  &[breakout] {
-    display: block;
-    /* This is technically not needed, because popover takes care of it, but
-     * helps for clarity. */
-    position: absolute;
-    width: var(--urlbar-width);
-
-    &[breakout-extend] {
-      margin-block-start: var(--urlbar-margin-block-start-breakout);
-    }
-
-    &:popover-open {
-      translate: var(--toolbar-shift-translate, none);
-    }
-  }
+  /* Every bar gives its input container the same anchor name, so scope it here.
+     An unscoped name resolves to whichever container comes last in the
+     document, which would anchor the address bar's view to the search bar. */
+  anchor-scope: --urlbar-anchor;
 }
 
 .urlbar,
@@ -242,21 +254,30 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-/* In a page, the element goes in the top layer anchored to the container it sits
-   in, which the embedder names. A chrome window's own bars are popovers too, and
-   the element lays out in flow until it is shown, hence both parts of the
-   selector. */
-.urlbar[in-page][breakout] {
-  width: 100%;
+.urlbar[in-page] {
+  /* In a page the input takes its height from the embedder and is taller than in
+     a chrome window, leaving the buttons a uniform inset on all four sides. The
+     size derivation repeats the one on the root because that one runs where the
+     padding still has its chrome value. */
+  --urlbar-container-padding-block: 0px;
+  --urlbar-input-container-padding: 10px;
+  --urlbar-basic-component-size: calc(var(--urlbar-height) - 2 * var(--urlbar-input-container-padding));
+  --urlbarview-border-radius: calc(var(--urlbar-height) / 2);
 
-  &:popover-open {
-    position-anchor: --urlbar-anchor;
-    position-area: span-block-end center;
-    inset-block-start: 0;
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
+  /* When the input isn't in a toolbar, it can't use a background that may have
+     significant transparency since it counts on the toolbar background behind
+     it. */
+  --urlbar-background-color: var(--input-text-background-color);
+  --urlbar-background-color-focus: var(--input-text-background-color);
+  --toolbar-field-text-color: var(--input-text-color);
+  --toolbar-field-text-color-focus: var(--input-text-color);
+  --toolbar-field-border-color: var(--input-text-border-color);
+
+  /* The selected row's background and text have to stay a pair, so both come
+     from the list item tokens. The action text follows the input. */
+  --urlbarview-background-color-selected: var(--background-color-list-item-hover);
+  --urlbarview-text-color-selected: var(--text-color-list-item-hover);
+  --urlbarview-text-color-action: var(--input-text-color);
 }
 
 .urlbar-background {
@@ -277,27 +298,34 @@ toolbar[inactive="true"] .urlbar,
     border: var(--urlbar-background-border-focused);
   }
 
-  .urlbar[breakout-extend] > & {
-    border: var(--urlbar-background-border-breakout);
-    box-shadow: var(--urlbar-background-box-shadow-breakout);
-    inset: var(--urlbar-background-inset-breakout);
+  .urlbar[popover-open] > & {
+    border: var(--urlbar-background-border-open);
+    box-shadow: var(--urlbar-background-box-shadow-open);
+    inset-inline: calc(-1 * (var(--urlbar-background-overhang-open) + var(--urlbar-input-growth-open-inline)));
+    inset-block: calc(-1 * (var(--urlbar-background-overhang-open) + var(--urlbar-input-growth-open-block)));
+    border-start-start-radius: var(--urlbar-background-border-top-radius-open);
+    border-start-end-radius: var(--urlbar-background-border-top-radius-open);
   }
 
-  :root[uidensity="compact"] .urlbar[breakout-extend] > & {
-    inset: var(--urlbar-background-inset-breakout-compact);
-
-    .urlbar:not([open]) > & {
-      box-shadow: var(--urlbar-background-box-shadow-breakout-compact);
-    }
-
-    .urlbar[open]:not([noresults]) > & {
-      border-top-left-radius: var(--urlbar-background-border-top-radius-breakout-compact);
-      border-top-right-radius: var(--urlbar-background-border-top-radius-breakout-compact);
-    }
+  /* The rest of the joint background is painted by the view's popover, which
+     the input can't reach into. Each half runs past the seam by more than the
+     shadow's blur radius, so its shadow carries the whole surface's geometry,
+     then is clipped back to the seam. Layout rounds both halves' clips to the
+     same device row, so the row the seam falls in is covered exactly once
+     wherever the input's edge lands. The two halves meet as one surface with
+     one shadow around it. */
+  .urlbar[popover-open] > & {
+    inset-block-end: calc(-1 * var(--urlbar-joint-background-overlap));
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    clip-path: inset(
+      calc(-1 * var(--urlbar-joint-background-shadow-margin)) calc(-1 * var(--urlbar-joint-background-shadow-margin))
+        calc(var(--urlbar-joint-background-overlap) - var(--urlbar-input-growth-open-block))
+    );
   }
 
   .urlbar[open] > & {
-    @media (-moz-platform: macos) and (prefers-contrast) {
+    @media (not -moz-pref("browser.nova.enabled")) and (-moz-platform: macos) and (prefers-contrast) {
       /* The "increase contrast" preference on macOS draws a 1px black line around
          panels, including the separate search bar. Since the Urlbar is not
          implemented as a panel, it does not get this outline. This outline rule
@@ -318,18 +346,22 @@ toolbar[inactive="true"] .urlbar,
   border-radius: var(--urlbar-border-radius);
   overflow: clip;
 
-  .urlbar[breakout] > & {
-    width: 100%;
-    height: 100%;
+  /* The view's popover positions itself against this box. */
+  anchor-name: --urlbar-anchor;
+
+  /* The negative margins keep the bar's own box, so the toolbar's layout
+     doesn't change when the view opens. */
+  .urlbar[popover-open] > & {
+    margin-block: calc(-1 * var(--urlbar-input-growth-open-block));
+    margin-inline: calc(-1 * var(--urlbar-input-growth-open-inline));
+    padding-block: var(--urlbar-input-growth-open-block);
+    padding-inline: calc(var(--urlbar-input-growth-open-inline) + var(--urlbar-input-container-padding));
+    outline: var(--urlbar-input-container-outline-open);
+    outline-offset: var(--urlbar-input-container-outline-offset-open);
   }
 
-  .urlbar[breakout][breakout-extend] > & {
-    outline: var(--urlbar-input-container-outline-breakout);
-    outline-offset: var(--urlbar-input-container-outline-offset-breakout);
-  }
-
-  .urlbar[breakout][breakout-extend][focused] > & {
-    outline: var(--urlbar-input-container-outline-breakout-focused);
+  .urlbar[popover-open][focused] > & {
+    outline: var(--urlbar-input-container-outline-open-focused);
   }
 }
 
@@ -345,8 +377,8 @@ toolbar[inactive="true"] .urlbar,
   &:focus-within {
     background-color: var(--urlbar-background-color-focus);
     outline-color: var(--toolbar-field-border-color-focus);
-    outline-width: var(--urlbar-input-container-border-width-breakout);
-    outline-offset: calc(-1 * var(--urlbar-input-container-border-width-breakout));
+    outline-width: var(--urlbar-input-container-border-width-open);
+    outline-offset: calc(-1 * var(--urlbar-input-container-border-width-open));
   }
 
   @media not -moz-pref("browser.nova.enabled") {
@@ -399,19 +431,23 @@ toolbar[inactive="true"] .urlbar,
   unicode-bidi: plaintext;
   text-align: match-parent;
 
+  /* The input carries dir="auto", so :dir() on the input itself resolves to the
+     direction of the value it holds. Rules that need the locale direction match
+     on the parent, which has no dir attribute and so takes the root's. */
+
   /* Align URLs to the right in RTL mode. */
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     text-align: right !important;
   }
 
   /* Make sure that the location bar's alignment changes according
      to the input box direction if the user switches the text direction using
      cmd_switchTextDirection (which applies a dir attribute to the <input>). */
-  &[dir="ltr"]:-moz-locale-dir(rtl) {
+  :dir(rtl) > &[dir="ltr"] {
     text-align: left !important;
   }
 
-  &[dir="rtl"]:-moz-locale-dir(ltr) {
+  :dir(ltr) > &[dir="rtl"] {
     text-align: right !important;
   }
 
@@ -490,41 +526,70 @@ toolbar[inactive="true"] .urlbar,
   position: relative;
 }
 
-@media not -moz-pref("browser.nova.enabled") {
-  @keyframes urlbar-grow {
-    0% {
-      transform: scaleX(0.99) scaleY(0.98);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
+/* Neutralize the UA popover rules the view supplies itself. :where() holds the
+   specificity at zero, so the theme sheets win. */
+:where(.urlbarView) {
+  inset: auto;
+  width: auto;
+  height: auto;
+  border: none;
+  padding: 0;
+  color: inherit;
+  background-color: transparent;
+}
 
+.urlbarView {
+  /* The max-height below has to bound the border box, which the view's block
+     padding is part of. */
+  box-sizing: border-box;
+
+  &:popover-open {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    position-anchor: --urlbar-anchor;
+    /* The block-end row of the position area starts at the anchor's block-end
+       edge, where span-block-end would start at its block-start edge. */
+    position-area: block-end center;
+    /* Fill the area, less the view's own margin whichever way it points. */
+    inset-inline: 0;
+    justify-self: stretch;
+    /* The view clips its rows, and the joint background and its shadow reach
+       past it. */
+    overflow-clip-margin: var(--urlbar-joint-background-shadow-margin);
+
+    max-height: min(calc(100% - var(--urlbarView-joint-background-outset-block)), 100vh);
+  }
+}
+
+/* The half of the joint background that reaches past the input, which the
+   input's own background can't paint because a toolbar doesn't extend over the
+   content area. See .urlbar-background for how the two halves' shadows
+   meet. */
+.urlbarView-background {
+  display: block;
+  position: absolute;
+  z-index: -1;
+  inset-inline: calc(-1 * var(--urlbarView-joint-background-outset-inline));
+  background-color: var(--urlbar-background-color-focus);
+  background-clip: border-box;
+  border: var(--urlbar-background-border-open);
+  border-radius: var(--urlbar-background-border-radius);
+  box-shadow: var(--urlbar-background-box-shadow-open);
+
+  .urlbar > .urlbarView > & {
+    inset-block: calc(-1 * var(--urlbarView-margin-block) - var(--urlbar-joint-background-overlap)) calc(-1 * var(--urlbarView-joint-background-outset-block));
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    clip-path: inset(
+      var(--urlbar-joint-background-overlap) calc(-1 * var(--urlbar-joint-background-shadow-margin)) calc(-1 * var(--urlbar-joint-background-shadow-margin))
+    );
+  }
+}
+
+@media not -moz-pref("browser.nova.enabled") {
   .urlbar-input-container {
     border: var(--urlbar-input-container-border);
-  }
-
-  .urlbar[breakout][breakout-extend] {
-    margin-left: calc(-1 * var(--urlbar-margin-inline));
-    width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
-
-    > .urlbar-input-container {
-      height: var(--urlbar-container-height);
-      padding-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
-      padding-inline: calc(var(--urlbar-margin-inline) + var(--urlbar-input-container-padding));
-    }
-
-    > .urlbar-background {
-      animation-name: urlbar-grow;
-      animation-duration: 0s;
-      animation-timing-function: var(--animation-easing-function);
-
-      @media (prefers-reduced-motion: no-preference) {
-        [breakout-extend-animate] > & {
-          animation-duration: 150ms;
-        }
-      }
-    }
   }
 }
 
@@ -703,7 +768,7 @@ toolbar[inactive="true"] .urlbar,
 
     &:active {
       background-color: var(--urlbar-box-background-color-active);
-      color: var(--urlbar-box-text-color-hover);
+      color: var(--urlbar-box-text-color-active);
     }
   }
 }
@@ -816,7 +881,7 @@ toolbar[inactive="true"] .urlbar,
   &:not([disabled])[open],
   &:not([disabled]):hover:active {
     background-color: var(--urlbar-box-background-color-active);
-    color: var(--urlbar-box-text-color-hover);
+    color: var(--urlbar-box-text-color-active);
     outline-color: var(--toolbarbutton-outline-color-active);
   }
 }
@@ -842,7 +907,7 @@ toolbar[inactive="true"] .urlbar,
 .searchbar-textbox::-moz-search-clear-button:hover:active,
 .urlbar-input::-moz-search-clear-button:hover:active {
   background-color: var(--urlbar-box-background-color-active);
-  color: var(--urlbar-box-text-color-hover);
+  color: var(--urlbar-box-text-color-active);
   outline-color: var(--toolbarbutton-outline-color-active);
 }
 
@@ -868,7 +933,7 @@ toolbar[inactive="true"] .urlbar,
 .urlbar-go-button,
 .search-go-button {
   padding: var(--urlbar-icon-padding);
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     transform: scaleX(-1);
   }
 }
@@ -903,7 +968,7 @@ toolbar[inactive="true"] .urlbar,
     background-image: repeating-linear-gradient(-45deg, rgba(255, 60, 60, 0.25) 0 25px, rgba(175, 0, 0, 0.25) 25px 50px);
 
     background-attachment: fixed;
-    /* Override the usual breakout animation so the gradient doesn't shift around
+    /* Override the usual popover animation so the gradient doesn't shift around
        when the panel opens. */
     animation: none !important;
   }
@@ -976,7 +1041,7 @@ toolbar[inactive="true"] .urlbar,
     background-color: transparent;
     transform: translateX(calc(var(--cfr-label-width) * -1));
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       transform: translateX(calc(var(--cfr-label-width)));
     }
 
@@ -1016,7 +1081,7 @@ toolbar[inactive="true"] .urlbar,
   transition-duration: var(--cfr-animation-duration);
   align-items: center;
 
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
   }
 
@@ -1039,7 +1104,7 @@ toolbar[inactive="true"] .urlbar,
   mask-repeat: no-repeat;
   transition: mask-position-x ease-in-out var(--cfr-animation-duration);
 
-  &:-moz-locale-dir(rtl) {
+  &:dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
   }
 
@@ -1057,14 +1122,14 @@ toolbar[inactive="true"] .urlbar,
   mask-image: linear-gradient(to left, transparent, black 3ch);
   transition: mask-position-x ease-in-out var(--cfr-animation-duration);
 
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     mask-image: linear-gradient(to right, transparent, black 3ch);
   }
 }
 #urlbar[cfr-recommendation-state="expanded"] .urlbar-input {
   mask-position-x: calc(var(--cfr-label-width) * -1);
 
-  &:-moz-locale-dir(rtl) {
+  :dir(rtl) > & {
     mask-position-x: calc(var(--cfr-label-width));
   }
 }
@@ -1110,7 +1175,7 @@ toolbar[inactive="true"] .urlbar,
   list-style-image: url("chrome://global/skin/media/picture-in-picture-closed.svg");
 }
 
-#picture-in-picture-button:-moz-locale-dir(rtl) > .urlbar-icon {
+#picture-in-picture-button:dir(rtl) > .urlbar-icon {
   transform: scaleX(-1);
 }
 
@@ -1206,7 +1271,7 @@ toolbar[inactive="true"] .urlbar,
 
     &:active {
       background-color: var(--urlbar-box-background-color-active);
-      color: var(--urlbar-box-text-color-hover);
+      color: var(--urlbar-box-text-color-active);
     }
   }
 
@@ -1312,7 +1377,7 @@ toolbar[inactive="true"] .urlbar,
     width: 11px;
     height: 11px;
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       margin-inline: -25px 14px;
     }
   }
@@ -1324,7 +1389,7 @@ toolbar[inactive="true"] .urlbar,
     width: 6px;
     height: 6px;
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       margin-inline: -26px 20px;
     }
   }
@@ -1361,11 +1426,18 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher {
+  display: flex;
   height: var(--urlbar-basic-component-size);
   --button-padding: 0 var(--space-small);
   --button-min-height: 100%;
   --button-font-weight: normal;
   --focus-outline-offset: var(--focus-outline-inset);
+
+  /* The button fills the host; sizing to its label would potentially let it
+     overflow the input container. */
+  &::part(button) {
+    height: 100%;
+  }
 
   @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
     .urlbar[pageproxystate="valid"] & {
@@ -1422,6 +1494,7 @@ toolbar[inactive="true"] .urlbar,
 .searchmode-switcher-close {
   display: none;
   border: 0;
+  padding: 0;
   align-self: center;
 
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
@@ -1453,7 +1526,7 @@ toolbar[inactive="true"] .urlbar,
   .searchmode-switcher[open] & {
     transform: rotate(-180deg);
 
-    &:-moz-locale-dir(rtl) {
+    &:dir(rtl) {
       transform: rotate(180deg);
     }
   }

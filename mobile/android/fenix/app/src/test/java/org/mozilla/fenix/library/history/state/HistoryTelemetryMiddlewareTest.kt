@@ -4,8 +4,10 @@
 
 package org.mozilla.fenix.library.history.state
 
+import java.util.Calendar
 import kotlin.test.assertNotNull
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +30,13 @@ class HistoryTelemetryMiddlewareTest {
 
     @Test
     fun `GIVEN no items selected WHEN regular history item clicked THEN telemetry recorded`() {
-        val history = History.Regular(0, "title", "url", 0, HistoryItemTimeGroup.timeGroupForTimestamp(0))
+        val calendar =
+            Calendar.getInstance().apply {
+                set(2026, Calendar.AUGUST, 26)
+            }
+        val timestamp = calendar.timeInMillis
+        val history =
+            History.Regular(0, "title", "url", timestamp, HistoryItemTimeGroup.timeGroupForTimestamp(timestamp))
         val store =
             HistoryFragmentStore(
                 initialState = HistoryFragmentState.initial,
@@ -37,7 +45,9 @@ class HistoryTelemetryMiddlewareTest {
 
         store.dispatch(HistoryFragmentAction.HistoryItemClicked(history))
 
-        assertNotNull(GleanHistory.openedItem.testGetValue())
+        val events = GleanHistory.openedItem.testGetValue()
+        assertNotNull(events)
+        assertEquals("2026-08-26", events.single().extra?.get("time_group"))
     }
 
     @Test

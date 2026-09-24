@@ -16,8 +16,18 @@ if [[ "$ARTIFACT_NAME" == *"android"* ]]; then
   IS_ANDROID=true
 fi
 
-mkdir custom_car
-cd custom_car
+# Windows has a 260 character MAX_PATH limit, and some Chromium GCS
+# dependencies (chromium-bidi's node_modules) unpack to paths that overflow it
+# Use shorter directory names to avoid this.
+CAR_DIR_NAME=custom_car
+CHROMIUM_DIR_NAME=chromium
+if [[ $(uname -o) == "Msys" ]]; then
+  CAR_DIR_NAME=car
+  CHROMIUM_DIR_NAME=cr
+fi
+
+mkdir "$CAR_DIR_NAME"
+cd "$CAR_DIR_NAME"
 CUSTOM_CAR_DIR=$PWD
 
 # Setup depot_tools
@@ -131,8 +141,8 @@ if [[ $(uname -o) == "Msys" ]]; then
 fi
 
 # Get chromium source code and dependencies
-mkdir chromium
-cd chromium
+mkdir "$CHROMIUM_DIR_NAME"
+cd "$CHROMIUM_DIR_NAME"
 
 fetch --no-history --nohooks $FETCH_NAME
 
@@ -196,7 +206,7 @@ gclient runhooks
 
 # PGO data should be in src/chrome/build/pgo_profiles/
 # with a name like "chrome-{OS}-<some unique identifier>"
-export PGO_DATA_DIR="$CUSTOM_CAR_DIR/chromium/src/chrome/build/pgo_profiles"
+export PGO_DATA_DIR="$CUSTOM_CAR_DIR/$CHROMIUM_DIR_NAME/src/chrome/build/pgo_profiles"
 for entry in "$PGO_DATA_DIR"/*
 do
   if [ -f "$entry" ]; then
@@ -210,9 +220,10 @@ done
 
 PGO_FILE=$PGO_DATA_PATH
 if [[ $(uname -o) == "Msys" ]]; then
-  # Compute a relative path that the build scripts looks for.
-  # This odd pathing seems to only happen on windows
-  PGO_FILE=${PGO_DATA_PATH#*/*/*/*/*/*/*/*/*/}
+  # gn resolves a bare `inputs` entry relative to the directory of the BUILD.gn
+  # declaring it, so hand the build just the file name and move the profile into
+  # that directory below.
+  PGO_FILE=$(basename "$PGO_DATA_PATH")
   mv $PGO_DATA_PATH build/config/compiler/pgo/
 fi
 

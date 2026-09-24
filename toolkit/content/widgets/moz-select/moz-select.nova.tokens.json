@@ -1,6 +1,9 @@
 {
   "border": {
     "color": {
+      "@base": {
+        "value": "{border.color.interactive.@base}"
+      },
       "hover": {
         "value": "{border.color.interactive.hover}"
       },

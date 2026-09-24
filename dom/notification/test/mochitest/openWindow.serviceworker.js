@@ -124,6 +124,7 @@ onnotificationclick = function (e) {
     "https://example.org/tests/dom/notification/test/mochitest/open_window/client.sjs";
 
   promises.push(testForUrl("about:blank", "TypeError", null, results));
+  promises.push(testForUrl("file:///tmp/foo.html", "TypeError", null, results));
   promises.push(testForUrl(different_origin, null, null, results));
   promises.push(testForUrl(same_origin, null, { url: same_origin }, results));
   promises.push(

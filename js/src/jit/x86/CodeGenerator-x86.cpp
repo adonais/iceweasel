@@ -216,31 +216,6 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
   masm.pop64(value);
 }
 
-void CodeGenerator::visitWasmUint32ToDouble(LWasmUint32ToDouble* lir) {
-  Register input = ToRegister(lir->input());
-  Register temp = ToRegister(lir->temp0());
-
-  if (input != temp) {
-    masm.mov(input, temp);
-  }
-
-  // Beware: convertUInt32ToDouble clobbers input.
-  masm.convertUInt32ToDouble(temp, ToFloatRegister(lir->output()));
-}
-
-void CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir) {
-  Register input = ToRegister(lir->input());
-  Register temp = ToRegister(lir->temp0());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  if (input != temp) {
-    masm.mov(input, temp);
-  }
-
-  // Beware: convertUInt32ToFloat32 clobbers input.
-  masm.convertUInt32ToFloat32(temp, output);
-}
-
 template <typename T>
 void CodeGeneratorX86::emitWasmLoad(T* ins) {
   const MWasmLoad* mir = ins->mir();

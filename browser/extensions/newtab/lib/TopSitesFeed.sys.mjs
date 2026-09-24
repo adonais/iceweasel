@@ -14,11 +14,10 @@ import {
 } from "resource://newtab/common/Actions.mjs";
 import { TippyTopProvider } from "resource:///modules/topsites/TippyTopProvider.sys.mjs";
 import { insertPinned } from "resource:///modules/topsites/TopSites.sys.mjs";
-import { TOP_SITES_MAX_SITES_PER_ROW } from "resource:///modules/topsites/constants.mjs";
-// @backward-compat { version 154 }
-// Sourced from Reducers for its fallback shim. When 154 hits Release, import
-// TOP_SITES_MAX_ROWS from the constants.mjs import above instead.
-import { TOP_SITES_MAX_ROWS } from "resource://newtab/common/Reducers.sys.mjs";
+import {
+  TOP_SITES_MAX_ROWS,
+  TOP_SITES_MAX_SITES_PER_ROW,
+} from "resource:///modules/topsites/constants.mjs";
 import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
 
 import {
@@ -1078,18 +1077,7 @@ export class TopSitesFeed {
    * _readContile - sets DEFAULT_TOP_SITES with contile
    */
   _readContile() {
-    // Keep the number of positions in the array in sync with CONTILE_MAX_NUM_SPONSORED.
-    // sponsored_position is a 1-based index, and contilePositions is a 0-based index,
-    // so we need to add 1 to each of these.
-    // Also currently this does not work with SOV.
-    let contilePositions = lazy.NimbusFeatures.pocketNewtab
-      .getVariable(NIMBUS_VARIABLE_CONTILE_POSITIONS)
-      ?.split(",")
-      .map(item => parseInt(item, 10) + 1)
-      .filter(item => !Number.isNaN(item));
-    if (!contilePositions || contilePositions.length === 0) {
-      contilePositions = [1, 2];
-    }
+    const contilePositions = this._contilePositions;
 
     let hasContileTiles = false;
 
@@ -1247,6 +1235,58 @@ export class TopSitesFeed {
     }
 
     this.refresh({ broadcast: true, isStartup });
+  }
+
+  /**
+   * The 1-based tile positions Contile ads are configured to fill.
+   *
+   * Keep the number of positions in the array in sync with
+   * CONTILE_MAX_NUM_SPONSORED. The Nimbus variable is 0-based, so we need to
+   * add 1 to each of these. Also currently this does not work with SOV.
+   */
+  get _contilePositions() {
+    const configured = lazy.NimbusFeatures.pocketNewtab
+      .getVariable(NIMBUS_VARIABLE_CONTILE_POSITIONS)
+      ?.split(",")
+      .map(item => parseInt(item, 10) + 1)
+      .filter(item => !Number.isNaN(item));
+    return configured?.length ? configured : [1, 2];
+  }
+
+  /**
+   * The maximum number of sponsored top sites that can be displayed.
+   */
+  get _maxSponsored() {
+    return (
+      lazy.NimbusFeatures.pocketNewtab.getVariable(
+        NIMBUS_VARIABLE_MAX_SPONSORED
+      ) ?? MAX_NUM_SPONSORED
+    );
+  }
+
+  /**
+   * The 1-based tile positions an ad is allowed to fill, whether or not an ad
+   * was available for them. Positions past the display maximum can never be
+   * filled, so they are not eligible.
+   *
+   * @returns {number[]} Ascending 1-based positions.
+   */
+  _adEligiblePositions() {
+    const state = this.store.getState();
+    if (
+      !lazy.NimbusFeatures.newtab.getVariable(
+        NIMBUS_VARIABLE_CONTILE_ENABLED
+      ) ||
+      !state.Prefs.values[SHOW_SPONSORED_PREF]
+    ) {
+      return [];
+    }
+    const { positions, ready } = state.TopSites.sov || {};
+    const eligible =
+      this._contile.sov && ready
+        ? positions.map(allocation => allocation.position)
+        : this._contilePositions;
+    return eligible.slice(0, this._maxSponsored);
   }
 
   refreshDefaults(sites, { isStartup = false } = {}) {
@@ -1878,6 +1918,21 @@ export class TopSitesFeed {
     // Remove excess items after we inserted sponsored ones.
     withPinned = withPinned.slice(0, numItems);
 
+    // These positions are ad-eligible even when no ad was available to fill
+    // them, so flag whichever tile ended up in each one for telemetry.
+    // Clear any stale references as well.
+    const adEligible = new Set(this._adEligiblePositions());
+    withPinned.forEach((link, index) => {
+      if (!link) {
+        return;
+      }
+      if (adEligible.has(index + 1)) {
+        link.is_ad_eligible_position = true;
+      } else {
+        delete link.is_ad_eligible_position;
+      }
+    });
+
     // Now, get a tippy top icon, a rich icon, or screenshot for every item
     for (const link of withPinned) {
       if (link) {
@@ -1912,10 +1967,7 @@ export class TopSitesFeed {
    */
   _maybeCapSponsoredLinks(links) {
     // Set maximum sponsored top sites
-    const maxSponsored =
-      lazy.NimbusFeatures.pocketNewtab.getVariable(
-        NIMBUS_VARIABLE_MAX_SPONSORED
-      ) ?? MAX_NUM_SPONSORED;
+    const maxSponsored = this._maxSponsored;
     if (links.length > maxSponsored) {
       links.length = maxSponsored;
     }

@@ -112,7 +112,8 @@ const SessionWriterInternal = {
    *
    * @param {string} origin Which of sessionstore.js or its backups
    *   was used. One of the `STATE_*` constants defined above.
-   * @param {boolean} a flag indicate whether we loaded a session file with ext .js
+   * @param {boolean} useOldExtension Whether we loaded a session file with
+   *   extension .js.
    * @param {object} paths The paths at which to find the various files.
    * @param {object} prefs The preferences the writer needs to know.
    */

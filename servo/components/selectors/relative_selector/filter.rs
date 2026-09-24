@@ -3,13 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 /// Bloom filter for relative selectors.
-use rustc_hash::FxHashMap;
+use crate::FxHashMap;
 
+use crate::SelectorImpl;
 use crate::bloom::BloomFilter;
 use crate::context::QuirksMode;
-use crate::parser::{collect_selector_hashes, RelativeSelector, RelativeSelectorMatchHint};
+use crate::parser::{RelativeSelector, RelativeSelectorMatchHint, collect_selector_hashes};
 use crate::tree::{Element, OpaqueElement};
-use crate::SelectorImpl;
 
 enum Entry {
     /// Filter lookup happened once. Construction of the filter is expensive,
@@ -27,16 +27,14 @@ enum TraversalKind {
     Descendants,
 }
 
-fn add_to_filter<E: Element>(element: &E, filter: &mut BloomFilter, kind: TraversalKind) -> bool {
+fn add_to_filter<E: Element>(element: E, filter: &mut BloomFilter, kind: TraversalKind) -> bool {
     let mut child = element.first_element_child();
     while let Some(e) = child {
         if !e.add_element_unique_hashes(filter) {
             return false;
         }
-        if kind == TraversalKind::Descendants {
-            if !add_to_filter(&e, filter, kind) {
-                return false;
-            }
+        if kind == TraversalKind::Descendants && !add_to_filter(e, filter, kind) {
+            return false;
         }
         child = e.next_sibling_element();
     }
@@ -74,8 +72,8 @@ fn fast_reject<Impl: SelectorImpl>(
         &mut len,
         |s| s.iter(),
     );
-    for i in 0..len {
-        if !filter.might_contain_hash(hashes[i]) {
+    for hash in &hashes[0..len] {
+        if !filter.might_contain_hash(*hash) {
             // Definitely rejected.
             return true;
         }
@@ -84,7 +82,7 @@ fn fast_reject<Impl: SelectorImpl>(
 }
 
 impl RelativeSelectorFilterMap {
-    fn get_filter<E: Element>(&mut self, element: &E, kind: TraversalKind) -> Option<&BloomFilter> {
+    fn get_filter<E: Element>(&mut self, element: E, kind: TraversalKind) -> Option<&BloomFilter> {
         // Insert flag to indicate that we looked up the filter once, and
         // create the filter if and only if that flag is there.
         let key = Key(element.opaque(), kind);
@@ -102,7 +100,7 @@ impl RelativeSelectorFilterMap {
                 }
             })
             .or_insert(Entry::Lookup);
-        match entry {
+        match *entry {
             Entry::Lookup => None,
             Entry::HasFilter(ref filter) => Some(filter.as_ref()),
         }
@@ -115,7 +113,7 @@ impl RelativeSelectorFilterMap {
     /// that effectively end up looking at the same(-ish, for siblings) subtree.
     pub fn fast_reject<Impl: SelectorImpl, E: Element>(
         &mut self,
-        element: &E,
+        element: E,
         selector: &RelativeSelector<Impl>,
         quirks_mode: QuirksMode,
     ) -> bool {
@@ -147,13 +145,13 @@ impl RelativeSelectorFilterMap {
             // Contain the entirety of the parent's children/subtree in the filter, and use that.
             // This is less likely to reject, especially for sibling subtree matches; however, it's less
             // expensive memory-wise, compared to storing filters for each sibling.
-            element.parent_element().map_or(false, |parent| {
-                self.get_filter(&parent, kind)
-                    .map_or(false, |filter| fast_reject(selector, quirks_mode, filter))
+            element.parent_element().is_some_and(|parent| {
+                self.get_filter(parent, kind)
+                    .is_some_and(|filter| fast_reject(selector, quirks_mode, filter))
             })
         } else {
             self.get_filter(element, kind)
-                .map_or(false, |filter| fast_reject(selector, quirks_mode, filter))
+                .is_some_and(|filter| fast_reject(selector, quirks_mode, filter))
         }
     }
 }

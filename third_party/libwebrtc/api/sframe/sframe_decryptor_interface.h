@@ -19,6 +19,12 @@
 
 namespace webrtc {
 
+enum class SframeDecryptErrorType {
+  kAuthentication,  // Authentication tag validation failed.
+  kKeyId,           // Unknown key identifier in the Sframe header.
+  kSyntax,          // Payload does not follow the Sframe format.
+};
+
 // Key management handle for Sframe receiver decryption.
 class SframeDecryptorInterface : public RefCountInterface {
  public:

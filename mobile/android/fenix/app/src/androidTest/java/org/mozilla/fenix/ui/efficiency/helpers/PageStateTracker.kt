@@ -4,6 +4,10 @@
 
 package org.mozilla.fenix.ui.efficiency.helpers
 
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationFact
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationNodeId
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationState
+
 /**
  * Where navigation last believes it arrived.
  *
@@ -24,10 +28,32 @@ object PageStateTracker {
     /** Before any navigation has happened. */
     const val ENTRY = "AppEntry"
 
-    @Volatile var currentPageName: String = ENTRY
+    @Volatile private var currentState = NavigationState(NavigationNodeId(ENTRY))
+
+    var currentPageName: String
+        get() = currentState.page
+        set(value) {
+            currentState = NavigationState(NavigationNodeId(value), currentState.facts).normalized()
+        }
+
+    val currentFacts: Set<NavigationFact>
+        get() = currentState.facts
+
+    fun snapshot(): NavigationState = currentState
+
+    fun arrive(state: NavigationState) {
+        currentState = state.normalized()
+    }
+
+    fun recordFacts(
+        provides: Set<NavigationFact> = emptySet(),
+        invalidates: Set<NavigationFact> = emptySet(),
+    ) {
+        currentState = currentState.copy(facts = (currentState.facts - invalidates) + provides).normalized()
+    }
 
     /** Back to "nowhere yet". Called per test, so one test's last page is not the next test's first. */
     fun reset() {
-        currentPageName = ENTRY
+        currentState = NavigationState(NavigationNodeId(ENTRY))
     }
 }

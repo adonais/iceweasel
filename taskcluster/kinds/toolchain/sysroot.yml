@@ -70,12 +70,16 @@ sysroot-wasm32-wasi-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TL(sysroot-wasi-19)
+    worker:
+        docker-image: {in-tree: deb13-toolchain-build}
     run:
-        script: build-sysroot-wasi.sh
+        script: build-wasi-sdk.sh
         arguments:
-            - wasi-sdk.patch
+            - wasi-sdk-compat.patch
+            - wasi-sdk-no-llvm-patches.patch
         resources:
-            - taskcluster/scripts/misc/wasi-sdk.patch
+            - taskcluster/scripts/misc/wasi-sdk-compat.patch
+            - taskcluster/scripts/misc/wasi-sdk-no-llvm-patches.patch
         toolchain-alias: sysroot-wasm32-wasi-clang-base
         toolchain-artifact: public/build/sysroot-wasm32-wasi.tar.zst
     fetches:
@@ -84,7 +88,6 @@ sysroot-wasm32-wasi-clang-19:
             - wasi-sdk
         toolchain:
             - linux64-clang-19-raw
-            - wasm32-wasi-compiler-rt-19
 
 sysroot-wasm32-wasi-clang-22:
     description: "Sysroot for wasi"
@@ -92,12 +95,16 @@ sysroot-wasm32-wasi-clang-22:
         local-toolchain: true
     treeherder:
         symbol: TL(sysroot-wasi-22)
+    worker:
+        docker-image: {in-tree: deb13-toolchain-build}
     run:
-        script: build-sysroot-wasi.sh
+        script: build-wasi-sdk.sh
         arguments:
-            - wasi-sdk.patch
+            - wasi-sdk-compat.patch
+            - wasi-sdk-no-llvm-patches.patch
         resources:
-            - taskcluster/scripts/misc/wasi-sdk.patch
+            - taskcluster/scripts/misc/wasi-sdk-compat.patch
+            - taskcluster/scripts/misc/wasi-sdk-no-llvm-patches.patch
         toolchain-alias:
             by-project:
                 toolchains: null
@@ -109,7 +116,28 @@ sysroot-wasm32-wasi-clang-22:
             - wasi-sdk
         toolchain:
             - linux64-clang-22-stage1
-            - wasm32-wasi-compiler-rt-22
+
+sysroot-wasm32-wasi-clang-23:
+    description: "Sysroot for wasi"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TL(sysroot-wasi-23)
+    worker:
+        docker-image: {in-tree: deb13-toolchain-build}
+    run:
+        script: build-wasi-sdk.sh
+        arguments:
+            - wasi-sdk-compat.patch
+        resources:
+            - taskcluster/scripts/misc/wasi-sdk-compat.patch
+        toolchain-artifact: public/build/sysroot-wasm32-wasi.tar.zst
+    fetches:
+        fetch:
+            - clang-23
+            - wasi-sdk
+        toolchain:
+            - linux64-clang-23-stage1
 
 sysroot-wasm32-wasi-clang-trunk:
     description: "Sysroot for wasi"
@@ -117,12 +145,14 @@ sysroot-wasm32-wasi-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TL(sysroot-wasi-trunk)
+    worker:
+        docker-image: {in-tree: deb13-toolchain-build}
     run:
-        script: build-sysroot-wasi.sh
+        script: build-wasi-sdk.sh
         arguments:
-            - wasi-sdk.patch
+            - wasi-sdk-compat.patch
         resources:
-            - taskcluster/scripts/misc/wasi-sdk.patch
+            - taskcluster/scripts/misc/wasi-sdk-compat.patch
         toolchain-alias:
             by-project:
                 toolchains: sysroot-wasm32-wasi
@@ -134,7 +164,6 @@ sysroot-wasm32-wasi-clang-trunk:
             - wasi-sdk
         toolchain:
             - linux64-clang-trunk-stage1
-            - wasm32-wasi-compiler-rt-trunk
 
 sysroot-aarch64-linux-gnu:
     description: "Sysroot for linux64 aarch64 builds"

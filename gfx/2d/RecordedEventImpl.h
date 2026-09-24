@@ -317,7 +317,7 @@ class RecordedStrokeLine : public RecordedEventDerived<RecordedStrokeLine>,
 class RecordedStrokeCircle : public RecordedEventDerived<RecordedStrokeCircle>,
                              public RecordedStrokeOptionsMixin {
  public:
-  RecordedStrokeCircle(Circle aCircle, const Pattern& aPattern,
+  RecordedStrokeCircle(Path::Circle aCircle, const Pattern& aPattern,
                        const StrokeOptions& aStrokeOptions,
                        const DrawOptions& aOptions)
       : RecordedEventDerived(STROKECIRCLE),
@@ -342,7 +342,7 @@ class RecordedStrokeCircle : public RecordedEventDerived<RecordedStrokeCircle>,
   template <class S>
   MOZ_IMPLICIT RecordedStrokeCircle(S& aStream);
 
-  Circle mCircle;
+  Path::Circle mCircle;
   PatternStorage mPattern;
   StrokeOptions mStrokeOptions;
   DrawOptions mOptions;
@@ -380,7 +380,7 @@ class RecordedFill : public RecordedEventDerived<RecordedFill> {
 
 class RecordedFillCircle : public RecordedEventDerived<RecordedFillCircle> {
  public:
-  RecordedFillCircle(Circle aCircle, const Pattern& aPattern,
+  RecordedFillCircle(Path::Circle aCircle, const Pattern& aPattern,
                      const DrawOptions& aOptions)
       : RecordedEventDerived(FILLCIRCLE),
         mCircle(aCircle),
@@ -403,7 +403,7 @@ class RecordedFillCircle : public RecordedEventDerived<RecordedFillCircle> {
   template <class S>
   MOZ_IMPLICIT RecordedFillCircle(S& aStream);
 
-  Circle mCircle;
+  Path::Circle mCircle;
   PatternStorage mPattern;
   DrawOptions mOptions;
 };

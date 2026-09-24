@@ -124,7 +124,8 @@ SharedSurface_AndroidHardwareBuffer::ToSurfaceDescriptor() {
 }
 
 void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
-  UniqueFileHandle fenceFd = mAndroidHardwareBuffer->GetAndResetReleaseFence();
+  UniqueFileHandle fenceFd =
+      mAndroidHardwareBuffer->GetAndResetAllFencesMerged();
   if (!fenceFd) {
     return;
   }
@@ -144,7 +145,11 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
   // Release fd here, since it is owned by EGLSync
   (void)fenceFd.release();
 
-  egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+  if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
+    egl->fWaitSync(sync, 0);
+  } else {
+    egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+  }
   egl->fDestroySync(sync);
 }
 

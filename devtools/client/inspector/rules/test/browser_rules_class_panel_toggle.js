@@ -61,3 +61,89 @@ add_task(async function () {
     "The pseudo-class panel is shown"
   );
 });
+
+add_task(async function () {
+  await addTab(`data:text/html;charset=utf-8,
+    <!DOCTYPE html>
+    <html>
+    <body>
+    <style>div::after {content: "test";}</style>
+    <!-- comment -->
+    Some text
+    <div></div>
+    </body>
+    </html>`);
+
+  const { inspector, view } = await openRuleView();
+
+  info("Open the class panel");
+  view.classToggle.click();
+  ok(!view.classPanel.hasAttribute("hidden"), "The class panel is shown");
+
+  const panel = inspector.panelDoc.querySelector("#ruleview-class-panel");
+  let addEl = panel.querySelector("input.add-class");
+  ok(!!addEl, "The class add input exists");
+
+  info("Selecting the DOCTYPE node");
+  const { nodes } = await inspector.walker.children(inspector.walker.rootNode);
+  const docTypeNode = nodes[0];
+  await selectNode(docTypeNode, inspector);
+  ok(addEl.disabled, "The class panel inputs are disabled for DOCTYPE");
+
+  info("Select an element node so the inputs become enabled");
+  await selectNode("div", inspector);
+  ok(!addEl.disabled, "Inputs are enabled for div");
+
+  info("Close the class panel");
+  view.classToggle.click();
+  ok(view.classPanel.hasAttribute("hidden"), "The class panel is closed");
+
+  info("Select a non-element node while the panel is closed");
+  await selectNode(docTypeNode, inspector);
+
+  info("Reopen the class panel");
+  view.classToggle.click();
+  ok(!view.classPanel.hasAttribute("hidden"), "The class panel is shown");
+
+  addEl = panel.querySelector("input.add-class");
+  ok(addEl.disabled, "Inputs are disabled when the panel is opened on DOCTYPE");
+
+  info("Selecting the document node");
+  await selectNode(inspector.walker.rootNode, inspector);
+  ok(addEl.disabled, "The class panel inputs are disabled the document node");
+
+  info("Selecting the root node");
+  await selectNode("html", inspector);
+  ok(!addEl.disabled, "The class panel inputs are enabled for html");
+
+  info("Selecting the comment node");
+  const styleNode = await getNodeFront("style", inspector);
+  const commentNode = await inspector.walker.nextSibling(styleNode);
+  await selectNode(commentNode, inspector);
+  ok(
+    addEl.disabled,
+    "The class panel inputs are disabled for the comment node"
+  );
+
+  info("Selecting the text node");
+  const textNode = await inspector.walker.nextSibling(commentNode);
+  await selectNode(textNode, inspector);
+  ok(addEl.disabled, "The class panel inputs are disabled for the text node");
+
+  info("Selecting the body node");
+  await selectNode("body", inspector);
+  ok(!addEl.disabled, "The class panel inputs are enabled for body");
+
+  info("Selecting the ::after pseudo-element");
+  const divNode = await getNodeFront("div", inspector);
+  const pseudoElement = (await inspector.walker.children(divNode)).nodes[0];
+  await selectNode(pseudoElement, inspector);
+  ok(
+    addEl.disabled,
+    "The class panel inputs are disabled for the ::after pseudo-element"
+  );
+
+  info("Selecting the div node");
+  await selectNode("div", inspector);
+  ok(!addEl.disabled, "The class panel inputs are enabled for div");
+});

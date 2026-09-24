@@ -411,13 +411,6 @@ class AndroidEmulatorTest(
                 )
             )
 
-        if self.java_code_coverage_enabled:
-            cmd.extend([
-                "--enable-coverage",
-                "--coverage-output-dir",
-                self.java_coverage_output_dir,
-            ])
-
         if self.config.get("restartAfterFailure", False):
             cmd.append("--restartAfterFailure")
 

@@ -20,6 +20,7 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.compose.browser.awesomebar.internal.CurrentTabData
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -211,7 +212,7 @@ class SearchFragmentStoreTest {
         assertEquals(
             EMPTY_SEARCH_FRAGMENT_STATE.copy(
                 query = "https://example.com",
-                url = "https://example.com",
+                currentTabData = CurrentTabData("", "https://example.com", null),
                 searchTerms = "search terms",
                 searchSuggestionsOrientedAtBottom = true,
                 showAllSessionSuggestions = true,

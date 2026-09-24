@@ -438,7 +438,6 @@ security:
       - julianwels@mozilla.com
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: HTTPS_ONLY_MODE_UPGRADE_TIME_MS
 
   https_only_mode_upgrade_type:
     type: dual_labeled_counter
@@ -483,30 +482,8 @@ security:
       - seceng-telemetry@mozilla.com
       - julianwels@mozilla.com
     expires: never
-    telemetry_mirror: HTTPS_ONLY_MODE_UPGRADE_TYPE
 
 mixed_content:
-  page_load:
-    type: custom_distribution
-    description: >
-      Accumulates type of content per page load (0=no mixed or non-secure page,
-      1=mixed passive, 2=mixed active, 3=mixed passive and mixed active)
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram MIXED_CONTENT_PAGE_LOAD.
-    range_min: 0
-    range_max: 4
-    bucket_count: 5
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: never
-    telemetry_mirror: MIXED_CONTENT_PAGE_LOAD
-
   hsts:
     type: custom_distribution
     description: >
@@ -527,7 +504,6 @@ mixed_content:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: MIXED_CONTENT_HSTS
 
 security.ui:
   events:

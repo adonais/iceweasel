@@ -156,7 +156,7 @@
   <!-- Text for button in synced tab card that opens synced tabs tray -->
   <string name="recent_tabs_see_all_synced_tabs_button_text">Se alle synkroniserte faner</string>
   <!-- Accessibility description for device icon used for recent synced tab -->
-  <string name="recent_tabs_synced_device_icon_content_description">Synkroniserte enheter</string>
+  <string name="recent_tabs_synced_device_icon_content_description">Synkronisert enhet</string>
   <!-- Text for the dropdown menu to remove a recent synced tab from the homescreen -->
   <string name="recent_synced_tab_menu_item_remove">Fjern</string>
   <!--
@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">Oppsummer side</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Ny</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Ny</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Rapporter problem med et nettsted</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Legg til i gruppe</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Oversatt</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Vis fanelinje</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Fanelinjeplassering</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">Topp</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">Bunn</string>
   <!--
     Gestures Preferences
 

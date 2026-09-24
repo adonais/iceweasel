@@ -39,6 +39,7 @@ task-defaults:
     fetches:
         toolchain:
             - linux64-minidump-stackwalk
+            - newtab-node-modules
 
 tasks:
     amd64-nightly/opt:

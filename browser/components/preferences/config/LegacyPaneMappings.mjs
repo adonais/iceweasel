@@ -14,6 +14,7 @@ export const LEGACY_PANE_MAPPINGS = new Map([
 
   ["privacy-sitedata", { category: "privacy", subcategory: "sitedata" }],
   ["privacy-vpn", { category: "privacy", subcategory: "vpn" }],
+  ["privacy-vpnsiterules", { category: "vpnSiteRules" }],
   [
     "privacy-trackingprotection",
     { category: "privacy", subcategory: "etpStatus" },

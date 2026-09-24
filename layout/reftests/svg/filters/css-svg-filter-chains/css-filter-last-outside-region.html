@@ -1,0 +1,35 @@
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSS and SVG Filter Chains: CSS Filter Painting Outside the SVG Filter Region</title>
+  <link rel="help" href="http://www.w3.org/TR/filter-effects-1/#FilterProperty">
+  <link rel="match" href="css-filter-last-outside-region-ref.html">
+  <meta name="assert"
+        content="A CSS filter function after an SVG reference filter has its own
+                 extent, and is not clipped to the region of the SVG filter
+                 before it in the chain.">
+  <style type="text/css">
+    #target {
+      /* #red-to-green has the default filter region, which reaches 20% past a
+         50px wide box, so the shadow lands well outside it. */
+      filter: url(#red-to-green) drop-shadow(50px 0 green);
+      background-color: rgb(71.79%, 28.82%, 0%);
+      width: 50px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <p>You should see a green square.</p>
+  <div id="target"></div>
+  <svg width="0" height="0">
+    <filter id="red-to-green" color-interpolation-filters="sRGB">
+      <feColorMatrix type="hueRotate" values="90"/>
+    </filter>
+  </svg>
+</body>
+</html>

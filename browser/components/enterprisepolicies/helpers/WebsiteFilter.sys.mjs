@@ -31,6 +31,7 @@ const PREF_LOGLEVEL = "browser.policies.loglevel";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  PolicyFailures: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
 });
 
@@ -47,6 +48,17 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   });
 });
 
+/**
+ * Reports an operation of a policy that failed, so that the policy is flagged
+ * as only partially applied in about:policies.
+ *
+ * @param {string} message A description of what failed.
+ */
+function reportFailure(message) {
+  lazy.log.error(message);
+  lazy.PolicyFailures.report("WebsiteFilter", message);
+}
+
 export let WebsiteFilter = {
   _observerAdded: false,
 
@@ -62,7 +74,7 @@ export let WebsiteFilter = {
           `Pattern added to WebsiteFilter. Block: ${blocklist[i]}`
         );
       } catch (e) {
-        lazy.log.error(
+        reportFailure(
           `Invalid pattern on WebsiteFilter. Block: ${blocklist[i]}`
         );
       }
@@ -78,7 +90,7 @@ export let WebsiteFilter = {
           `Pattern added to WebsiteFilter. Exception: ${exceptionlist[i]}`
         );
       } catch (e) {
-        lazy.log.error(
+        reportFailure(
           `Invalid pattern on WebsiteFilter. Exception: ${exceptionlist[i]}`
         );
       }

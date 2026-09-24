@@ -72,7 +72,7 @@ internal constructor(
     private fun getRequestBody(): Body {
         val params =
             mapOf(
-                REQUEST_BODY_LOCALE_KEY to config.locale,
+                REQUEST_BODY_LOCALE_KEY to config.locale.toLanguageTag(),
                 REQUEST_BODY_REGION_KEY to config.region,
                 REQUEST_BODY_COUNT_KEY to config.count,
                 REQUEST_BODY_TOPICS_KEY to config.topics,

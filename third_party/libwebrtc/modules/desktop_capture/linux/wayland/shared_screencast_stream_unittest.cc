@@ -411,4 +411,38 @@ TEST_F(MAYBE_PipeWireStreamTest, TestModifierFallback) {
   shared_screencast_stream_->StopScreenCastStream();
 }
 
+TEST_F(MAYBE_PipeWireStreamTest, TestOnlyOneInstanceAllowed) {
+  // We need to wait for the provider to be ready so we can start the first
+  // stream.
+  Event waitConnectEvent;
+  EXPECT_CALL(*this, OnStreamReady(_))
+      .WillOnce(Invoke(this, &MAYBE_PipeWireStreamTest::StartScreenCastStream));
+  EXPECT_CALL(*this, OnStreamConfigured).WillOnce([&waitConnectEvent] {
+    waitConnectEvent.Set();
+  });
+
+  // This will trigger OnStreamReady and call StartScreenCastStream on the first
+  // stream. We need to wait for it to be configured to ensure it has started.
+  waitConnectEvent.Wait(kLongWait);
+
+  // Now create a second stream.
+  auto shared_screencast_egl_dmabuf2 = TestEglDmaBuf::CreateDefault();
+  auto shared_screencast_stream2 = SharedScreenCastStream::CreateWithEglDmaBuf(
+      std::move(shared_screencast_egl_dmabuf2));
+
+  // Try to start the second stream. It should fail because the first one is
+  // active. We use a dummy stream node ID.
+  EXPECT_FALSE(shared_screencast_stream2->StartScreenCastStream(2));
+
+  // Stop the first stream.
+  shared_screencast_stream_->StopScreenCastStream();
+
+  // Now starting the second stream should succeed (at least it should get past
+  // PipeWireThreadLoop::Create() and try to connect).
+  EXPECT_TRUE(shared_screencast_stream2->StartScreenCastStream(2));
+
+  // Clean up.
+  shared_screencast_stream2->StopScreenCastStream();
+}
+
 }  // namespace webrtc

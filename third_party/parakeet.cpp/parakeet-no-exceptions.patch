@@ -1,0 +1,65 @@
+# Firefox-local: include moz-overrides.h in the translation units that use
+# exceptions, so the library builds with -fno-exceptions (see moz-overrides.h,
+# kept across vendoring). In parakeet_capi.cpp the project headers move below
+# the system headers, because moz-overrides.h redefines `throw`/`try`/`catch`
+# and must not be in effect while the system headers are parsed.
+#
+--- a/src/ctc_decoder.cpp
++++ b/src/ctc_decoder.cpp
+@@ -6,6 +6,7 @@
+ #include <cstring>
+ #include <stdexcept>
+ #include <string>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+--- a/src/model.cpp
++++ b/src/model.cpp
+@@ -23,6 +23,7 @@
+ #include <cstdlib>
+ #include <stdexcept>
+ #include <vector>
++#include "moz-overrides.h"
+ 
+ namespace pk {
+ 
+--- a/src/model_loader.cpp
++++ b/src/model_loader.cpp
+@@ -10,6 +10,7 @@
+ #include <vector>
+ #include <utility>
+ #include <stdexcept>
++#include "moz-overrides.h"
+ namespace pk {
+ 
+ int PromptCfg::resolve_index_or_throw(const std::string& target_lang) const {
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -1,11 +1,4 @@
+ #include "parakeet_capi.h"
+-#include "parakeet.h"     // pk::Decoder
+-#include "model.hpp"      // pk::Model
+-#include "streaming.hpp"  // pk::StreamingSession
+-#include "mel.hpp"        // pk::MelFrontend
+-
+-#include "transcription.hpp"  // pk::Transcription, pk::Word
+-
+ #include <cstdio>
+ #include <cstdlib>
+ #include <cstring>
+@@ -14,7 +7,14 @@
+ #include <new>
+ #include <string>
+ #include <vector>
++#include "parakeet.h"     // pk::Decoder
++#include "model.hpp"      // pk::Model
++#include "streaming.hpp"  // pk::StreamingSession
++#include "mel.hpp"        // pk::MelFrontend
+ 
++#include "transcription.hpp"  // pk::Transcription, pk::Word
++#include "moz-overrides.h"
++
+ // ABI version. Bump on breaking changes.
+ // v3: target_lang variants (transcribe_path_lang / transcribe_pcm_lang /
+ //     stream_begin_lang / transcribe_pcm_batch_json_lang /

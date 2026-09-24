@@ -6,17 +6,25 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsTranslationSelectors {
+object SettingsTranslationSelectors : SelectorContainer {
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_translations),
+            description = "Translations toolbar title",
+        )
 
     val DOWNLOAD_LANGUAGES_BUTTON =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.translation_settings_download_language),
             description = "Download languages button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     /**
@@ -30,7 +38,6 @@ object SettingsTranslationSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = language,
             description = "the $language row in the Download languages list",
-            groups = listOf(),
         )
 
     /**
@@ -48,7 +55,6 @@ object SettingsTranslationSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
             value = getStringResource(R.string.download_language_all_languages_item_preference_to_delete),
             description = "the Delete all languages row, shown only when a model is downloaded",
-            groups = listOf(),
         )
 
     val AUTOMATIC_TRANSLATION_BUTTON =
@@ -56,7 +62,6 @@ object SettingsTranslationSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.translation_settings_automatic_translation),
             description = "the Automatic translation button",
-            groups = listOf(),
         )
 
     /**
@@ -70,7 +75,6 @@ object SettingsTranslationSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT_MERGED,
             value = getStringResource(R.string.automatic_translation_option_never_translate_title_preference),
             description = "the Never translate preference row",
-            groups = listOf(),
         )
 
     /** A language row in the Automatic translation list. */
@@ -80,16 +84,5 @@ object SettingsTranslationSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = language,
             description = "the $language row in the Automatic translation list",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            DOWNLOAD_LANGUAGES_BUTTON,
-            DOWNLOAD_LANGUAGE_ROW(),
-            ANY_LANGUAGE_DOWNLOADED,
-            AUTOMATIC_TRANSLATION_BUTTON,
-            NEVER_TRANSLATE_PREFERENCE,
-            AUTOMATIC_TRANSLATION_LANGUAGE(),
         )
 }

@@ -15,6 +15,10 @@ const TEST_REDIRECT_URI = TEST_DOMAIN + TEST_PATH + "redirect.sjs";
 const TEST_QUERY_STRING = "paramToStrip1=123&paramToKeep=456";
 const TEST_STRIPPED_QUERY_STRING = "paramToKeep=456";
 
+//Bug 1960853
+const TEST_QUERY_STRING_WITH_VALUELESS_PARAM = "paramToStrip1=123&otherParam";
+const TEST_STRIPPED_QUERY_STRING_WITH_VALUELESS_PARAM = "otherParam";
+
 let listService;
 
 function observeChannel(uri, expected) {
@@ -812,5 +816,33 @@ add_task(async function doTestForAllowList() {
         await verifyQueryString(browser, expected);
       });
     });
+  }
+});
+
+// Bug 1960853
+add_task(async function doTestsForValuelessParamPreserved() {
+  info(
+    "Start testing that a valueless param does not gain a wrong '=' when a preceding param gets stripped."
+  );
+  for (const strippingEnabled of [false, true]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["privacy.query_stripping.enabled", strippingEnabled]],
+    });
+    await waitForListServiceInit(strippingEnabled);
+
+    let testURI = TEST_URI + "?" + TEST_QUERY_STRING_WITH_VALUELESS_PARAM;
+    let expected = strippingEnabled
+      ? TEST_STRIPPED_QUERY_STRING_WITH_VALUELESS_PARAM
+      : TEST_QUERY_STRING_WITH_VALUELESS_PARAM;
+
+    let networkPromise = observeChannel(TEST_URI, expected);
+
+    await BrowserTestUtils.withNewTab(testURI, async browser => {
+      await verifyQueryString(browser, expected);
+    });
+
+    await networkPromise;
+
+    await SpecialPowers.popPrefEnv();
   }
 });

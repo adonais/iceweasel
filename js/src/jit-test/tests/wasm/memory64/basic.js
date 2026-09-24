@@ -1,4 +1,4 @@
-// |jit-test| heavy; allow-oom
+// |jit-test| heavy; allow-oom; test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // Basic tests around creating and linking memories with i64 indices
 

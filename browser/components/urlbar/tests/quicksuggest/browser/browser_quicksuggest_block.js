@@ -26,6 +26,7 @@ const REMOTE_SETTINGS_RESULTS = [
     advertiser: "TestAdvertiser",
     iab_category: "22 - Shopping",
     icon: "1234",
+    suggestion_id: "amp-suggestion-id",
   },
   {
     id: 2,

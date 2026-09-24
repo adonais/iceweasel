@@ -10,6 +10,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
 import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Test
@@ -27,6 +29,7 @@ class CrashReporterControllerTest {
     private val settings: Settings = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
     private val crash: NativeCodeCrash = mockk(relaxed = true)
+    private val testScope = CoroutineScope(StandardTestDispatcher())
     private var appStore = AppStore(AppState(nonFatalCrashes = listOf(crash)))
     private var controller = CrashReporterController(sessionId, 2, components, settings, navController, appStore)
 
@@ -107,6 +110,8 @@ class CrashReporterControllerTest {
         val disabledCrashReporterSettings: Settings = mockk {
             every { isCrashReportingEnabled } returns true
         }
+
+        every { components.applicationScope } returns testScope
         appStore = spyk(appStore)
         controller =
             CrashReporterController(sessionId, 2, components, disabledCrashReporterSettings, navController, appStore)

@@ -5,6 +5,7 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDVIDEOFRAME_H_
 
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/RTCEncodedFrameBase.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
 #include "nsIGlobalObject.h"
@@ -16,20 +17,21 @@ class RTCStatsTimestampMaker;
 class StructuredCloneHolder;
 struct RTCEncodedVideoFrameOptions;
 
-struct RTCEncodedVideoFrameData : RTCEncodedFrameState {
-  RTCEncodedVideoFrameType mType;
+// Everything a copy of an RTCEncodedVideoFrame carries apart from the data
+// buffer itself, which travels in the clone stream (see
+// RTCEncodedFrameBase::WriteData). Used only to ferry a copy to the new frame,
+// either while structured cloning, or while copy constructing.
+struct RTCEncodedVideoFrameData {
+  RTCEncodedVideoFrameType mType = RTCEncodedVideoFrameType::Delta;
   RTCEncodedVideoFrameMetadata mMetadata;
   Maybe<nsCString> mRid;
-
-  [[nodiscard]] RTCEncodedVideoFrameData Clone() const;
 };
 
 // Wraps a libwebrtc frame, allowing the frame buffer to be modified, and
 // providing read-only access to various metadata. After the libwebrtc frame is
 // extracted (with RTCEncodedFrameBase::TakeFrame), the frame buffer is
 // detached, but the metadata remains accessible.
-class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
-                                   public RTCEncodedFrameBase {
+class RTCEncodedVideoFrame final : public RTCEncodedFrameBase {
  public:
   explicit RTCEncodedVideoFrame(
       nsIGlobalObject* aGlobal,
@@ -37,16 +39,11 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
       uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
       const Maybe<RTCStatsTimestampMaker>& aTimestampMaker);
 
-  explicit RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
-                                RTCEncodedVideoFrameData&& aData);
+  // For structured clone and copy construction. JS engine supplies the buffer.
+  RTCEncodedVideoFrame(nsIGlobalObject* aGlobal, RTCEncodedVideoFrameData aData,
+                       JS::Handle<JSObject*> aBuffer);
 
-  // forbid copy/move to keep mState member in base valid
-  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
-  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
-
-  // webidl (timestamp and data accessors live in base class)
+  // webidl (data accessors live in base class)
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -56,31 +53,34 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
 
   RTCEncodedVideoFrameType Type() const;
 
-  void InitMetadata();
+  // legacy name for the rtpTimestamp in the metadata
+  unsigned long Timestamp() const;
 
   void GetMetadata(RTCEncodedVideoFrameMetadata& aMetadata);
 
-  bool CheckOwner(RTCRtpScriptTransformer* aOwner) const override;
-
-  bool IsVideo() const override { return true; }
-
-  // Not in webidl right now. Might change.
+  // Not in webidl right now. Probably will change.
   // https://github.com/w3c/webrtc-encoded-transform/issues/147
   Maybe<nsCString> Rid() const;
 
   static JSObject* ReadStructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
                                        JSStructuredCloneReader* aReader,
-                                       RTCEncodedVideoFrameData& aData);
-  bool WriteStructuredClone(JSStructuredCloneWriter* aWriter,
+                                       RTCEncodedVideoFrameData aData);
+  bool WriteStructuredClone(JSContext* aCx, JSStructuredCloneWriter* aWriter,
                             StructuredCloneHolder* aHolder) const;
 
  private:
   virtual ~RTCEncodedVideoFrame() = default;
 
+  RTCEncodedVideoFrameData CloneMetadata() const;
+
   // RTCEncodedVideoFrame can run on either main thread or worker thread.
   void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(RTCEncodedVideoFrame);
   }
+
+  RTCEncodedVideoFrameType mType = RTCEncodedVideoFrameType::Delta;
+  RTCEncodedVideoFrameMetadata mMetadata;
+  Maybe<nsCString> mRid;
 };
 
 }  // namespace mozilla::dom

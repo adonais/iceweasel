@@ -67,7 +67,7 @@ class SettingsDeleteBrowsingDataOnQuitTest : BaseTest() {
         mDevice.waitNotNull(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime)
         restartApp(composeRule.activityRule)
         on.home.navigateToPage()
-        on.downloads.navigateToPage().mozVerifyElementsByGroup("emptyDownloads")
+        on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416053

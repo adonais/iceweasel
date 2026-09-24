@@ -19,9 +19,7 @@ use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::values::{computed, serialize_atom_name};
-use cssparser::{
-    BasicParseErrorKind, ParseErrorKind, Parser, ParserInput, RuleBodyParser, SourceLocation,
-};
+use cssparser::{BasicParseErrorKind, ParseErrorKind, Parser, RuleBodyParser, SourceLocation};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use servo_arc::Arc;
 use std::fmt::{self, Write};
@@ -49,10 +47,10 @@ pub fn parse_property_block(
         context,
         descriptors: &mut descriptors,
     };
-    let mut iter = RuleBodyParser::new(input, &mut parser);
+    let iter = RuleBodyParser::new(input, &mut parser);
     let mut syntax_err = None;
     let mut inherits_err = None;
-    while let Some(declaration) = iter.next() {
+    for declaration in iter {
         if !context.error_reporting_enabled() {
             continue;
         }
@@ -162,8 +160,7 @@ impl PropertyRegistration {
             return Ok(ComputedRegisteredValue::universal(Arc::clone(initial)));
         }
 
-        let mut input = ParserInput::new(initial.css_text());
-        let mut input = Parser::new(&mut input);
+        let mut input = Parser::new(initial.css_text());
         input.skip_whitespace();
 
         match SpecifiedRegisteredValue::compute(
@@ -208,8 +205,7 @@ impl PropertyRegistration {
             return Err(PropertyRegistrationError::InitialValueNotComputationallyIndependent);
         }
 
-        let mut input = ParserInput::new(initial.css_text());
-        let mut input = Parser::new(&mut input);
+        let mut input = Parser::new(initial.css_text());
         input.skip_whitespace();
 
         // The initial-value cannot include CSS-wide keywords.
@@ -306,7 +302,7 @@ impl Parse for InitialValue {
         Ok(Arc::new(SpecifiedValue::parse(
             input,
             Some(&context.namespaces.prefixes),
-            &context.url_data,
+            context.url_data,
         )?))
     }
 }
@@ -330,6 +326,6 @@ impl Descriptors {
 
     /// Whether this property uses universal syntax.
     pub fn is_universal(&self) -> bool {
-        self.syntax.as_ref().map_or(true, |s| s.is_universal())
+        self.syntax.as_ref().is_none_or(|s| s.is_universal())
     }
 }

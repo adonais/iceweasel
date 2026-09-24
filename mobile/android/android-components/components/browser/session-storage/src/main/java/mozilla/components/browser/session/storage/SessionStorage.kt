@@ -14,6 +14,7 @@ import androidx.core.net.toUri
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.session.storage.serialize.BrowserStateReader
 import mozilla.components.browser.session.storage.serialize.BrowserStateWriter
 import mozilla.components.browser.state.selector.normalTabs
@@ -36,6 +37,7 @@ class SessionStorage(
     private val context: Context,
     private val engine: Engine,
     private val crashReporting: CrashReporting? = null,
+    private val applicationScope: CoroutineScope,
 ) : AutoSave.Storage {
     private val logger = Logger("SessionStorage")
     private val stateWriter = BrowserStateWriter()
@@ -110,7 +112,7 @@ class SessionStorage(
         interval: Long = AutoSave.DEFAULT_INTERVAL_MILLISECONDS,
         unit: TimeUnit = TimeUnit.MILLISECONDS,
     ): AutoSave {
-        return AutoSave(store, this, unit.toMillis(interval))
+        return AutoSave(store, this, unit.toMillis(interval), applicationScope)
     }
 }
 

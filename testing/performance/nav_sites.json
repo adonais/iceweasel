@@ -94,6 +94,53 @@
         ["wait.byTime", 3000],
         ["measure.stop", ""]
       ]
+    },
+    {
+      "name": "google-nav",
+      "type": "interactive",
+      "test_url": "https://www.google.com/",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.google.com/"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "facebook-nav",
+      "type": "interactive",
+      "test_url": "https://www.facebook.com/Cristiano",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://www.facebook.com/Cristiano"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "yahoo-nav",
+      "type": "interactive",
+      "test_url": "https://ca.yahoo.com/",
+      "test_cmds": [
+        ["measure.start", "load"],
+        ["navigate", "https://ca.yahoo.com/"],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
+    },
+    {
+      "name": "google-docs-nav",
+      "type": "interactive",
+      "test_url": "https://docs.google.com/document/d/1US-07msg12slQtI_xchzYxcKlTs6Fp7WqIc6W5GK5M8/edit?usp=sharing",
+      "test_cmds": [
+        ["measure.start", "load"],
+        [
+          "navigate",
+          "https://docs.google.com/document/d/1US-07msg12slQtI_xchzYxcKlTs6Fp7WqIc6W5GK5M8/edit?usp=sharing"
+        ],
+        ["wait.byTime", 3000],
+        ["measure.stop", ""]
+      ]
     }
   ]
 }

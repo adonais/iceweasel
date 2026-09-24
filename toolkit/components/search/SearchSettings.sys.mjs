@@ -229,7 +229,7 @@ export class SearchSettings {
     if (corrupt) {
       this.lastGetCorrupt = true;
       Services.prefs.setIntPref(
-        lazy.SearchUtils.BROWSER_SEARCH_PREF + "lastSettingsCorruptTime",
+        "browser.search.lastSettingsCorruptTime",
         Date.now() / 1000
       );
       try {
@@ -750,7 +750,7 @@ export class SearchSettings {
       this.#settings.version < 6 ||
       !("useSavedOrder" in this.#settings.metaData)
     ) {
-      const prefName = lazy.SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder";
+      const prefName = "browser.search.useDBForOrder";
       let useSavedOrder = Services.prefs.getBoolPref(prefName, false);
 
       this.setMetaDataAttribute("useSavedOrder", useSavedOrder);

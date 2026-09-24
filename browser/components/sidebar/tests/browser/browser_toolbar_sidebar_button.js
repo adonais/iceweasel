@@ -361,8 +361,24 @@ add_task(async function test_states_for_hide_sidebar_vertical() {
   await SidebarController.waitUntilStable();
 
   info("Don't collapse the sidebar by loading a tool.");
-  const toolButton = sidebarMain.toolButtons[2];
-  EventUtils.synthesizeMouseAtCenter(toolButton, {}, win);
+  const panelShown = BrowserTestUtils.waitForMutationCondition(
+    SidebarController._box,
+    { attributes: true, attributeFilter: ["hidden"] },
+    () => SidebarController.isOpen
+  );
+  const toolButton = sidebarMain.shadowRoot.querySelector(
+    'moz-button[view="viewTabsSidebar"]'
+  );
+  if (toolButton.checkVisibility({ visibilityProperty: true })) {
+    EventUtils.synthesizeMouseAtCenter(toolButton, {}, win);
+  } else {
+    // The launcher leaves a button it has no room for visibility:hidden with
+    // its layout box intact, and the overflow menu's copies are removed and
+    // recreated by the intersection observer as that menu opens, so there is
+    // nothing a click can reach. Load the tool so the rest of the task runs.
+    await SidebarTestUtils.showPanel(win, "viewTabsSidebar");
+  }
+  await panelShown;
 
   await checkStates({ hidden: false, expanded: true });
 

@@ -328,6 +328,49 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNotNull(TabsTray.tabGroupDeleted.testGetValue())
     }
 
+    /** [TabsTray.tabGroupUngrouped] and [TabsTray.ungroupConfirmationDisabled] coverage */
+    @Test
+    fun `WHEN an ungroup is confirmed THEN the ungroup metric is reported`() {
+        assertNull(TabsTray.tabGroupUngrouped.testGetValue())
+
+        store.dispatch(TabGroupAction.UngroupConfirmed(group = createTabGroup(), dontAskAgain = false))
+
+        assertNotNull(TabsTray.tabGroupUngrouped.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN the confirmation was not previously disabled WHEN an ungroup is confirmed with don't ask again THEN the opt out metric is reported`() {
+        assertNull(TabsTray.ungroupConfirmationDisabled.testGetValue())
+
+        store.dispatch(TabGroupAction.UngroupConfirmed(group = createTabGroup(), dontAskAgain = true))
+
+        assertNotNull(TabsTray.ungroupConfirmationDisabled.testGetValue())
+    }
+
+    @Test
+    fun `WHEN an ungroup is confirmed without don't ask again THEN the opt out metric is not reported`() {
+        assertNull(TabsTray.ungroupConfirmationDisabled.testGetValue())
+
+        store.dispatch(TabGroupAction.UngroupConfirmed(group = createTabGroup(), dontAskAgain = false))
+
+        assertNull(TabsTray.ungroupConfirmationDisabled.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN the confirmation was previously disabled WHEN an ungroup is confirmed THEN only the ungroup metric is reported`() {
+        val suppressedStore =
+            TabsTrayStore(
+                middlewares = listOf(tabsTrayTelemetryMiddleware),
+                initialState =
+                    TabsTrayState(tabGroupState = TabsTrayState.TabGroupState(skipUngroupConfirmation = true)),
+            )
+
+        suppressedStore.dispatch(TabGroupAction.UngroupConfirmed(group = createTabGroup(), dontAskAgain = true))
+
+        assertNotNull(TabsTray.tabGroupUngrouped.testGetValue())
+        assertNull(TabsTray.ungroupConfirmationDisabled.testGetValue())
+    }
+
     /** [TabsTray.tabAddedToGroup] coverage */
     @Test
     fun `WHEN a single tab is added to a tab group THEN the metric is reported with count 1`() {
@@ -432,6 +475,34 @@ class TabsTrayTelemetryMiddlewareTest {
         store.dispatch(TabGroupAction.CloseTabGroupClicked(mockGroup))
 
         assertNotNull(TabsTray.tabGroupClosed.testGetValue())
+    }
+
+    /** [TabsTray.tabGroupOnboardingShown] coverage */
+    @Test
+    fun `WHEN the onboarding card is shown THEN the onboarding shown metric is reported`() {
+        assertNull(TabsTray.tabGroupOnboardingShown.testGetValue())
+
+        store.dispatch(TabGroupAction.OnboardingShown)
+
+        assertNotNull(TabsTray.tabGroupOnboardingShown.testGetValue())
+    }
+
+    @Test
+    fun `WHEN the onboarding card is shown multiple times THEN each impression is reported`() {
+        store.dispatch(TabGroupAction.OnboardingShown)
+        store.dispatch(TabGroupAction.OnboardingShown)
+
+        assertEquals(2, TabsTray.tabGroupOnboardingShown.testGetValue()?.size)
+    }
+
+    /** [TabsTray.tabGroupOnboardingDismissed] coverage */
+    @Test
+    fun `WHEN the onboarding card is dismissed THEN the onboarding dismissed metric is reported`() {
+        assertNull(TabsTray.tabGroupOnboardingDismissed.testGetValue())
+
+        store.dispatch(TabGroupAction.OnboardingDismissed)
+
+        assertNotNull(TabsTray.tabGroupOnboardingDismissed.testGetValue())
     }
 
     /** [Metrics.tabGroupCreationMode] coverage */

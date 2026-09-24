@@ -42,9 +42,7 @@ add_task(async function staysOpenWhenTheViewIsScrolled() {
     let utils = NewtabSearchbarContentTestUtils;
     utils.disableResultMenuAutohide(content);
 
-    let scroller = utils
-      .getResultsContainer(content)
-      .closest(".urlbarView-body-outer");
+    let scroller = utils.getResultsContainer(content);
     Assert.greater(
       scroller.scrollHeight,
       scroller.clientHeight,
@@ -98,6 +96,51 @@ add_task(async function staysOpenWhenTheViewIsScrolled() {
       "The result menu stayed open"
     );
   });
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function dismissRemovesTheRecentSearch() {
+  let tab = await NewtabSearchbarTestUtils.openNewTabPage();
+
+  // An empty bar lists the recent searches, which are the same form history
+  // entries the setup seeded.
+  await NewtabSearchbarTestUtils.promiseAutocompleteResultPopup({
+    browser: tab.linkedBrowser,
+    value: "",
+  });
+
+  let dismissed = await NewtabSearchbarTestUtils.spawn(
+    tab.linkedBrowser,
+    [],
+    async () => {
+      let utils = NewtabSearchbarContentTestUtils;
+      let { result } = utils.getRowAt(content, 0);
+      Assert.equal(
+        result.providerName,
+        "UrlbarProviderRecentSearches",
+        "The first row is a recent search"
+      );
+      let count = utils.getResultCount(content);
+
+      await utils.openResultMenuAndClickItem(content, "dismiss", {
+        resultIndex: 0,
+        openByMouse: true,
+      });
+      await ContentTaskUtils.waitForCondition(
+        () => utils.getResultCount(content) == count - 1,
+        "waiting for the dismissed row to go"
+      );
+
+      return result.payload.suggestion;
+    }
+  );
+
+  Assert.deepEqual(
+    await NewtabSearchbarTestUtils.formHistory.search({ value: dismissed }),
+    [],
+    "The dismissed search left form history"
+  );
 
   BrowserTestUtils.removeTab(tab);
 });

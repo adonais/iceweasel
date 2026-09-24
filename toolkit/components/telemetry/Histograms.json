@@ -887,53 +887,6 @@
     "bug_numbers": [1351147],
     "description": "Server HTTP status code from Safe Browsing ThreatHit report. (0=1xx, 1=200, 2=2xx, 3=204, 4=3xx, 5=400, 6=4xx, 7=403, 8=404, 9=408, 10=413, 11=5xx, 12=502|504|511, 13=503, 14=505, 15=Other)"
   },
-  "HTTPS_ONLY_MODE_UPGRADE_TIME_MS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["julianwels@mozilla.com", "seceng-telemetry@mozilla.com"],
-    "bug_numbers": [1627206],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "low": 50,
-    "high": 300000,
-    "n_buckets": 30,
-    "keyed": true,
-    "keys": [
-      "top_successful",
-      "sub_successful",
-      "top_f_redirectloop",
-      "sub_f_redirectloop",
-      "top_f_timeout",
-      "sub_f_timeout",
-      "top_f_aborted",
-      "sub_f_aborted",
-      "top_f_cxnrefused",
-      "sub_f_cxnrefused",
-      "top_f_ssl_selfsignd",
-      "sub_f_ssl_selfsignd",
-      "top_f_ssl_badcertdm",
-      "sub_f_ssl_badcertdm",
-      "top_f_ssl_unkwnissr",
-      "sub_f_ssl_unkwnissr",
-      "top_f_ssl_other",
-      "sub_f_ssl_other",
-      "top_f_other",
-      "sub_f_other"
-    ],
-    "description": "Time it takes for a request that has been upgraded with HTTPS-Only Mode to complete, broken down by top-level (top) / sub-resource (sub) and status"
-  },
-  "HTTPS_ONLY_MODE_UPGRADE_TYPE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["seceng-telemetry@mozilla.com", "julianwels@mozilla.com"],
-    "bug_numbers": [1675533],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "keyed": true,
-    "description": "What content type did we upgrade, and did it load successfully?"
-  },
   "LINK_ICON_SIZES_ATTR_USAGE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -2364,23 +2317,6 @@
     "bug_numbers": [1621402, 1525076, 1874944],
     "alert_emails": ["omc-core@mozilla.com"]
   },
-  "MIXED_CONTENT_PAGE_LOAD": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 4,
-    "description": "Accumulates type of content per page load (0=no mixed or non-secure page, 1=mixed passive, 2=mixed active, 3=mixed passive and mixed active)"
-  },
-  "MIXED_CONTENT_HSTS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 10,
-    "description": "How often would blocked mixed content be allowed if HSTS upgrades were allowed? 0=display/no-HSTS, 1=display/HSTS, 2=active/no-HSTS, 3=active/HSTS"
-  },
   "FX_THUMBNAILS_BG_QUEUE_SIZE_ON_CAPTURE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -2485,37 +2421,6 @@
     "alert_emails": ["seceng-telemetry@mozilla.com"],
     "bug_numbers": [1636962]
   },
-  "TRACKING_PROTECTION_ENABLED": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "boolean",
-    "description": "True if tracking protection is enabled globally at startup.",
-    "alert_emails": ["pdol@mozilla.com", "safebrowsing-telemetry@mozilla.org"],
-    "bug_numbers": [1058133]
-  },
-  "TRACKING_PROTECTION_PBM_DISABLED": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "boolean",
-    "description": "True if tracking protection in Private Browsing mode is disabled at startup.",
-    "alert_emails": ["pdol@mozilla.com", "safebrowsing-telemetry@mozilla.org"],
-    "bug_numbers": [1200944]
-  },
-  "TRACKING_PROTECTION_SHIELD": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 4,
-    "releaseChannelCollection": "opt-out",
-    "description": "Status of the shield icon for each top-level pageload (outside of Private Browsing mode) when tracking protection is enabled (0 = there was a page load, this is used as a baseline, 1 = shield crossed out because CB was disabled on this page by the user, 2 = shield shown because some content was blocked)",
-    "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
-    "bug_numbers": [1058133, 1659762]
-  },
   "STORAGE_ACCESS_GRANTED_COUNT": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -2616,43 +2521,6 @@
       "seceng-telemetry@mozilla.com"
     ],
     "bug_numbers": [1762374, 1830058]
-  },
-  "EMAIL_TRACKER_COUNT": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "categorical",
-    "labels": [
-      "base_normal",
-      "content_normal",
-      "base_email_webapp",
-      "content_email_webapp"
-    ],
-    "description": "A count of the classified email trackers. ('base_normal' = The classified email tracker is in base category and loaded under a normal site, 'content_normal' = The classified email tracker is in content category and loaded under a normal site, 'base_email_webapp' = The classified email tracker is in base category and loaded under a known email webapp, 'content_email_webapp' = The classified email tracker is in content category and loaded under a known email webapp.)",
-    "alert_emails": ["tihuang@mozilla.com", "seceng-telemetry@mozilla.com"],
-    "bug_numbers": [1773701]
-  },
-  "EMAIL_TRACKER_EMBEDDED_PER_TAB": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 100,
-    "keyed": true,
-    "keys": [
-      "base_normal",
-      "content_normal",
-      "all_normal",
-      "base_emailapp",
-      "content_emailapp",
-      "all_emailapp"
-    ],
-    "alert_emails": ["tihuang@mozilla.com", "seceng-telemetry@mozilla.com"],
-    "description": "A count of the embedded third-party email trackers for known email web apps. ('base_normal' = The count of loaded base email trackers under normal sites, 'conten_normal' = The count of loaded content email trackers under normal sites, 'all_normal' = The count of all loaded email trackers under normal sites, 'base_emailapp' = The count of loaded base email trackers under email webapps, 'content_emailapp' = The count of loaded content email trackers under email webapps, 'all_emailapp' = The count of all loaded email trackers under email webapps.)",
-    "bug_numbers": [1781249]
   },
   "SERVICE_WORKER_LAUNCH_TIME_2": {
     "record_in_processes": ["main", "content"],
@@ -3175,11 +3043,11 @@
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
     "expires_in_version": "never",
-    "alert_emails": ["gfx-telemetry-alerts@mozilla.com", "rhunt@mozilla.com"],
+    "alert_emails": ["gfx-telemetry-alerts@mozilla.com", "aosmond@mozilla.com"],
     "kind": "enumerated",
     "n_values": 20,
     "releaseChannelCollection": "opt-out",
-    "description": "Reports results from the graphics sanity test to track which drivers are having problems (0=TEST_PASSED, 1=TEST_FAILED_RENDER, 2=TEST_FAILED_VIDEO, 3=TEST_CRASHED)"
+    "description": "Reports results from the graphics sanity test to track which drivers are having problems (0=TEST_PASSED, 1=TEST_FAILED_RENDER, 2=TEST_FAILED_VIDEO_DECODE, 3=TEST_CRASHED, 4=TEST_TIMEOUT, 5=TEST_FAILED_TO_RUN, 6=TEST_FAILED_VIDEO_ENCODE)"
   },
   "READER_MODE_PARSE_RESULT": {
     "record_in_processes": ["main", "content"],
@@ -3244,16 +3112,6 @@
     "n_values": 10,
     "releaseChannelCollection": "opt-out",
     "description": "Number of mobile devices associated with this Sync account. Recorded each time Sync successfully completes the 'clients' engine."
-  },
-  "PUSH_API_NOTIFY": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "releaseChannelCollection": "opt-out",
-    "alert_emails": ["push@mozilla.com"],
-    "bug_numbers": [1429286],
-    "expires_in_version": "never",
-    "kind": "count",
-    "description": "Number of push messages that were successfully decrypted and delivered to a ServiceWorker."
   },
   "GFX_CONTENT_FAILED_TO_ACQUIRE_DEVICE": {
     "record_in_processes": ["main", "content"],
@@ -3492,26 +3350,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Counts the number of times that about:tabcrashed was unloaded without submitting."
   },
-  "BLINK_FILESYSTEM_USED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["amarchesini@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "bug_numbers": [1272501],
-    "releaseChannelCollection": "opt-out",
-    "description": "Webkit/Blink filesystem used"
-  },
-  "WEBKIT_DIRECTORY_USED": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["amarchesini@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "bug_numbers": [1272501],
-    "releaseChannelCollection": "opt-out",
-    "description": "HTMLInputElement.webkitdirectory attribute used"
-  },
   "PLACES_SEARCHBAR_FILTER_TYPE": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -3624,28 +3462,6 @@
     "releaseChannelCollection": "opt-out",
     "alert_emails": ["jan.varga@gmail.com", "storage-telemetry@mozilla.com"],
     "description": "Time (ms) for the QuotaManager to shutdown. Keyed by conditions during shutdown, see RecordTimeDeltaHelper::Run in https://searchfox.org/firefox-main/source/dom/quota/ActorsParent.cpp"
-  },
-  "GV_PAGE_LOAD_PROGRESS_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["geckoview-team@mozilla.com", "esawin@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 100000,
-    "n_buckets": 100,
-    "bug_numbers": [1499418, 1580077],
-    "description": "GeckoView: The time between page load progress start (0) and completion (100) in ms."
-  },
-  "GV_PAGE_LOAD_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["geckoview-team@mozilla.com", "esawin@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 100000,
-    "n_buckets": 100,
-    "bug_numbers": [1499418, 1584109],
-    "description": "GeckoView: Time taken to load a page in ms. This includes all static contents, no dynamic content. Loading of about: pages is not counted. Back back navigation (sometimes via BFCache) is included which is a source of bimodality due to the <50ms load times."
   },
   "COOKIE_PURGING_ORIGINS_PURGED": {
     "expires_in_version": "never",
@@ -3788,41 +3604,5 @@
     "n_buckets": 20,
     "bug_numbers": [1783261],
     "description": "Measures the length of the text that was recognized, in code units."
-  },
-  "DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["dlee@mozilla.com", "safebrowsing-telemetry@mozilla.org"],
-    "bug_numbers": [1722066],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "enumerated",
-    "n_values": 3,
-    "keyed": true,
-    "description": "Users action on blocked download, keyed by verdict type (0=Number of blocked downloads, 1=Confirm block, 2=Confirm unblock)"
-  },
-  "STRIP_ON_SHARE_PARAMS_REMOVED": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "linear",
-    "high": 100,
-    "n_buckets": 50,
-    "alert_emails": ["amadan@mozilla.com", "emz@mozilla.com"],
-    "bug_numbers": [1833105],
-    "description": "The number of query parameters removed, if any, when strip on share is used"
-  },
-  "STRIP_ON_SHARE_LENGTH_DECREASE": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 100,
-    "alert_emails": ["amadan@mozilla.com", "emz@mozilla.com"],
-    "bug_numbers": [1833105],
-    "description": "The decrease in the length of the URL when strip on share is used, only if at least one parameter is stripped"
   }
 }

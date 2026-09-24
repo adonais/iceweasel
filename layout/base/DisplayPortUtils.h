@@ -407,6 +407,13 @@ class DisplayPortUtils {
       nsDisplayListBuilder* aBuilder);
 
   /**
+   * Returns the ASR that an abspos frame `aFrame` should scroll with.
+   */
+  static const ActiveScrolledRoot* GetASRForAbsPosFrame(
+      nsIFrame* aFrame, const ActiveScrolledRoot* aContainingBlockASR,
+      nsDisplayListBuilder* aBuilder);
+
+  /**
    * aFrame is an absolutely positioned frame that is anchor positioned and
    * compensates for scroll in at least one axis.
    */

@@ -65,7 +65,6 @@ struct Orientation {
   }
 
   bool operator==(const Orientation& aOther) const = default;
-  bool operator!=(const Orientation& aOther) const = default;
 
   OrientedIntSize ToOriented(const UnorientedIntSize& aSize) const {
     if (SwapsWidthAndHeight()) {

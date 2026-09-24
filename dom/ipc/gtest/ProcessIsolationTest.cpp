@@ -31,8 +31,8 @@ namespace {
 static bool gJitDisabled = false;
 
 struct RemoteTypes {
-  nsCString mIsolated;
-  nsCString mUnisolated;
+  RemoteType mIsolated;
+  RemoteType mUnisolated;
 };
 
 struct WorkerExpectation {
@@ -40,7 +40,7 @@ struct WorkerExpectation {
   WorkerKind mWorkerKind = WorkerKindShared;
   bool mJitDisabled = false;
   Result<RemoteTypes, nsresult> mExpected = Err(NS_ERROR_FAILURE);
-  nsCString mCurrentRemoteType = "fakeRemoteType"_ns;
+  RemoteType mCurrentRemoteType = RemoteType(RemoteType::Kind::WebContent);
 
   void Check(bool aUseRemoteSubframes) {
     nsAutoCString origin;
@@ -50,7 +50,7 @@ struct WorkerExpectation {
         "origin: %s, workerKind: %s, currentRemoteType: %s, "
         "useRemoteSubframes: %d",
         origin.get(), mWorkerKind == WorkerKindShared ? "shared" : "service",
-        mCurrentRemoteType.get(), aUseRemoteSubframes);
+        mCurrentRemoteType.Stringify().get(), aUseRemoteSubframes);
 
     gJitDisabled = mJitDisabled;
     auto result = IsolationOptionsForWorker(
@@ -59,12 +59,14 @@ struct WorkerExpectation {
         << "Unexpected status (expected " << (mExpected.isOk() ? "ok" : "err")
         << ") for " << describe;
     if (mExpected.isOk()) {
-      const nsCString& expected = aUseRemoteSubframes
-                                      ? mExpected.inspect().mIsolated
-                                      : mExpected.inspect().mUnisolated;
+      const RemoteType& expected = aUseRemoteSubframes
+                                       ? mExpected.inspect().mIsolated
+                                       : mExpected.inspect().mUnisolated;
+      EXPECT_TRUE(expected.IsKnown())
+          << "invalid remote type expectation in test";
       ASSERT_EQ(result.inspect().mRemoteType, expected)
-          << "Unexpected remote type (expected " << expected << ") for "
-          << describe;
+          << "Unexpected remote type (expected " << expected.Stringify()
+          << ") for " << describe;
     }
   }
 };
@@ -153,37 +155,11 @@ static void UnregisterMockPolicyService() {
 
 }  // namespace
 
-static nsCString WebIsolatedRemoteType(nsIPrincipal* aPrincipal,
-                                       bool aJitDisabled = false) {
-  nsAutoCString origin;
-  MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetSiteOrigin(origin));
-  if (aJitDisabled) {
-    return FISSION_WEB_REMOTE_TYPE + "="_ns + origin + "^disableJit=1"_ns;
-  }
-  return FISSION_WEB_REMOTE_TYPE + "="_ns + origin;
-}
-
-static nsCString CoopCoepRemoteType(nsIPrincipal* aPrincipal) {
-  nsAutoCString origin;
-  MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetSiteOrigin(origin));
-  return WITH_COOP_COEP_REMOTE_TYPE + "="_ns + origin;
-}
-
-static nsCString ServiceWorkerIsolatedRemoteType(nsIPrincipal* aPrincipal,
-                                                 bool aJitDisabled = false) {
-  nsAutoCString origin;
-  MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetSiteOrigin(origin));
-  if (aJitDisabled) {
-    return SERVICEWORKER_REMOTE_TYPE + "="_ns + origin + "^disableJit=1"_ns;
-  }
-  return SERVICEWORKER_REMOTE_TYPE + "="_ns + origin;
-}
-
 // When file URI process separation is disabled (as is the default on
 // Android), a file: shared worker is allowed to load in any remote type,
 // rather than being rejected when it isn't already in a file: process.
 static Result<RemoteTypes, nsresult> FileWorkerOutsideFileProcessExpected(
-    const nsCString& aFileRemoteType) {
+    const RemoteType& aFileRemoteType) {
   if (StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
     return Err(NS_ERROR_UNEXPECTED);
   }
@@ -230,14 +206,14 @@ TEST(ProcessIsolationTest, WorkerOptions)
   nsCOMPtr<nsIPrincipal> nullSecureComPrecursorPrincipal =
       NullPrincipal::CreateWithInheritedAttributes(secureComPrincipal);
 
-  nsCString extensionRemoteType =
+  RemoteType extensionRemoteType =
       ExtensionPolicyService::GetSingleton().UseRemoteExtensions()
-          ? EXTENSION_REMOTE_TYPE
-          : NOT_REMOTE_TYPE;
-  nsCString fileRemoteType =
+          ? RemoteType(RemoteType::Kind::Extension)
+          : RemoteType::NotRemote();
+  RemoteType fileRemoteType =
       StaticPrefs::browser_tabs_remote_separateFileUriProcess()
-          ? FILE_REMOTE_TYPE
-          : WEB_REMOTE_TYPE;
+          ? RemoteType(RemoteType::Kind::File)
+          : RemoteType(RemoteType::Kind::WebContent);
 
   WorkerExpectation expectations[] = {
       // Neither service not shared workers can have expanded principals
@@ -265,55 +241,62 @@ TEST(ProcessIsolationTest, WorkerOptions)
       // Service workers with various content principals
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected =
-           RemoteTypes{ServiceWorkerIsolatedRemoteType(secureComPrincipal),
-                       WEB_REMOTE_TYPE}},
+       .mExpected = RemoteTypes{RemoteType::Parse(
+                                    "webServiceWorker=https://example.com"_ns),
+                                RemoteType(RemoteType::Kind::WebContent)}},
       {.mPrincipal = secureOrgPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected =
-           RemoteTypes{ServiceWorkerIsolatedRemoteType(secureOrgPrincipal),
-                       WEB_REMOTE_TYPE}},
+       .mExpected = RemoteTypes{RemoteType::Parse(
+                                    "webServiceWorker=https://example.org"_ns),
+                                RemoteType(RemoteType::Kind::WebContent)}},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
-       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::Extension)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
-       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mExpected =
+           RemoteTypes{RemoteType(RemoteType::Kind::PrivilegedMozilla),
+                       RemoteType(RemoteType::Kind::PrivilegedMozilla)},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::PrivilegedMozilla)},
 
       // Shared Worker loaded from within a webCOOP+COEP remote type process,
       // should load elsewhere.
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
-                                WEB_REMOTE_TYPE},
-       .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=https://example.com"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)},
+       .mCurrentRemoteType =
+           RemoteType::Parse("webCOOP+COEP=https://example.com"_ns)},
 
       // Even precursorless null principal should load elsewhere.
       {.mPrincipal = nullPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WEB_REMOTE_TYPE, WEB_REMOTE_TYPE},
-       .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
+       .mExpected = RemoteTypes{RemoteType(RemoteType::Kind::WebContent),
+                                RemoteType(RemoteType::Kind::WebContent)},
+       .mCurrentRemoteType =
+           RemoteType::Parse("webCOOP+COEP=https://example.com"_ns)},
       {.mPrincipal = nullContainerPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WEB_REMOTE_TYPE "=^userContextId=1"_ns,
-                                WEB_REMOTE_TYPE "=^userContextId=1"_ns},
-       .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
+       .mExpected = RemoteTypes{RemoteType::Parse("web=^userContextId=1"_ns),
+                                RemoteType::Parse("web=^userContextId=1"_ns)},
+       .mCurrentRemoteType =
+           RemoteType::Parse("webCOOP+COEP=https://example.com"_ns)},
 
       // System principal shared workers can only load in the parent process.
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{NOT_REMOTE_TYPE, NOT_REMOTE_TYPE},
-       .mCurrentRemoteType = NOT_REMOTE_TYPE},
+       .mExpected =
+           RemoteTypes{RemoteType::NotRemote(), RemoteType::NotRemote()},
+       .mCurrentRemoteType = RemoteType::NotRemote()},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = Err(NS_ERROR_UNEXPECTED),
-       .mCurrentRemoteType = PRIVILEGEDABOUT_REMOTE_TYPE},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::PrivilegedAbout)},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
@@ -324,53 +307,62 @@ TEST(ProcessIsolationTest, WorkerOptions)
       // Content principals should load in the appropriate remote types.
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
-                                WEB_REMOTE_TYPE}},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=https://example.com"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)}},
       {.mPrincipal = secureOrgPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(secureOrgPrincipal),
-                                WEB_REMOTE_TYPE}},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=https://example.org"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)}},
       {.mPrincipal = insecureOrgPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(insecureOrgPrincipal),
-                                WEB_REMOTE_TYPE}},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=http://example.org"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)}},
       {.mPrincipal = filePrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = FileWorkerOutsideFileProcessExpected(fileRemoteType)},
       {.mPrincipal = filePrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{fileRemoteType, fileRemoteType},
-       .mCurrentRemoteType = FILE_REMOTE_TYPE},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::File)},
       {.mPrincipal = extensionPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{extensionRemoteType, extensionRemoteType},
-       .mCurrentRemoteType = EXTENSION_REMOTE_TYPE},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::Extension)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = privilegedMozillaPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{PRIVILEGEDMOZILLA_REMOTE_TYPE,
-                                PRIVILEGEDMOZILLA_REMOTE_TYPE},
-       .mCurrentRemoteType = PRIVILEGEDMOZILLA_REMOTE_TYPE},
+       .mExpected =
+           RemoteTypes{RemoteType(RemoteType::Kind::PrivilegedMozilla),
+                       RemoteType(RemoteType::Kind::PrivilegedMozilla)},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::PrivilegedMozilla)},
       {.mPrincipal = nullSecureComPrecursorPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal),
-                                WEB_REMOTE_TYPE}},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=https://example.com"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)}},
 
       // When the policy service calls for the JIT to be disabled the remote
       // type should reflect that.
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mJitDisabled = true,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal, true),
-                                SharedWebRemoteType(OriginAttributes{}, true)}},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse(
+                           "webIsolated=https://example.com^disableJit=1"_ns),
+                       RemoteType::Parse("web=^disableJit=1"_ns)}},
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindService,
        .mJitDisabled = true,
-       .mExpected = RemoteTypes{ServiceWorkerIsolatedRemoteType(
-                                    secureComPrincipal, true),
-                                SharedWebRemoteType(OriginAttributes{}, true)}},
+       .mExpected =
+           RemoteTypes{
+               RemoteType::Parse(
+                   "webServiceWorker=https://example.com^disableJit=1"_ns),
+               RemoteType::Parse("web=^disableJit=1"_ns)}},
   };
 
   RegisterMockPolicyService();
@@ -413,10 +405,10 @@ TEST(ProcessIsolationTest, FileURIAllowlistedWorkerOptions)
   nsCOMPtr<nsIPrincipal> filePrincipal =
       MakeTestPrincipal("file:///path/to/dir");
 
-  nsCString fileRemoteType =
+  RemoteType fileRemoteType(
       StaticPrefs::browser_tabs_remote_separateFileUriProcess()
-          ? FILE_REMOTE_TYPE
-          : WEB_REMOTE_TYPE;
+          ? RemoteType::Kind::File
+          : RemoteType::Kind::WebContent);
 
   WorkerExpectation expectations[] = {
       // Being in the file:// URI allowlist must not change worker process
@@ -425,15 +417,16 @@ TEST(ProcessIsolationTest, FileURIAllowlistedWorkerOptions)
       // ServiceWorkerPrivate::Initialize() passes for a service worker.
       {.mPrincipal = allowlistedPrincipal,
        .mWorkerKind = WorkerKindService,
-       .mExpected =
-           RemoteTypes{ServiceWorkerIsolatedRemoteType(allowlistedPrincipal),
-                       WEB_REMOTE_TYPE},
-       .mCurrentRemoteType = WEB_REMOTE_TYPE},
+       .mExpected = RemoteTypes{RemoteType::Parse(
+                                    "webServiceWorker=https://example.com"_ns),
+                                RemoteType(RemoteType::Kind::WebContent)},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::WebContent)},
       {.mPrincipal = allowlistedPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{WebIsolatedRemoteType(allowlistedPrincipal),
-                                WEB_REMOTE_TYPE},
-       .mCurrentRemoteType = WEB_REMOTE_TYPE},
+       .mExpected =
+           RemoteTypes{RemoteType::Parse("webIsolated=https://example.com"_ns),
+                       RemoteType(RemoteType::Kind::WebContent)},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::WebContent)},
 
       // An actual file: principal is still confined to the file process,
       // regardless of the allowlist.
@@ -443,7 +436,7 @@ TEST(ProcessIsolationTest, FileURIAllowlistedWorkerOptions)
       {.mPrincipal = filePrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{fileRemoteType, fileRemoteType},
-       .mCurrentRemoteType = FILE_REMOTE_TYPE},
+       .mCurrentRemoteType = RemoteType(RemoteType::Kind::File)},
   };
 
   for (auto& expectation : expectations) {

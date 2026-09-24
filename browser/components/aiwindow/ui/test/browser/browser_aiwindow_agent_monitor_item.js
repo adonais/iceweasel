@@ -169,7 +169,12 @@ add_task(async function test_preset_updates_condition() {
 add_task(async function test_submit_and_delete_dispatch_detail() {
   await withTestPage(async browser => {
     await setProps(browser, {
-      agent: AGENT,
+      // A schedule the card seeds from, so the submitted one doesn't depend on
+      // the form's clock-based default
+      agent: {
+        ...AGENT,
+        schedule: { frequency: "daily", time: "09:00", weekday: 1 },
+      },
       mode: "display",
       expanded: true,
       editing: true,
@@ -414,7 +419,7 @@ add_task(async function test_edit_mode_shows_pages_and_scheduler() {
       const shadow = el.shadowRoot;
 
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "Edit mode seeds a pill for the monitor's existing URL"
       );
@@ -570,7 +575,7 @@ add_task(async function test_create_mode_empty_state_inputs() {
       );
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "Adding a URL shows a pill"
       );
@@ -593,6 +598,50 @@ add_task(async function test_create_mode_empty_state_inputs() {
         ["https://example.com/product"],
         "submit carries the added page URL"
       );
+    });
+  });
+});
+
+add_task(async function test_create_mode_defaults_time_to_next_slot() {
+  await withTestPage(async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const SLOTS_PER_DAY = 48;
+      const slotValue = date => {
+        const slot =
+          Math.ceil((date.getHours() * 60 + date.getMinutes()) / 30) %
+          SLOTS_PER_DAY;
+        const hour = Math.floor(slot / 2);
+        return `${String(hour).padStart(2, "0")}:${slot % 2 ? "30" : "00"}`;
+      };
+
+      // The card computes its default in its constructor, so bracket that call
+      // with timestamps: the only acceptable values are the slots those two
+      // instants map to, which collapse to one unless a boundary was crossed.
+      const before = new Date();
+      const el = content.document.createElement("agent-monitor-item");
+      const after = new Date();
+
+      const accepted = [...new Set([slotValue(before), slotValue(after)])];
+
+      el.mode = "create";
+      content.document.body.append(el);
+      await el.updateComplete;
+
+      const timeSelect = el.shadowRoot.querySelectorAll(
+        "moz-select.form-select"
+      )[1];
+      Assert.ok(
+        accepted.includes(timeSelect.value),
+        `Time defaults to the upcoming half-hour slot, got ${timeSelect.value}, expected one of ${accepted}`
+      );
+      Assert.ok(
+        [...el.shadowRoot.querySelectorAll("moz-option")].some(
+          opt => opt.value === timeSelect.value
+        ),
+        "The default is a value the time dropdown actually offers"
+      );
+
+      el.remove();
     });
   });
 });
@@ -862,7 +911,7 @@ add_task(async function test_draft_restores_over_agent_values() {
         "Condition is restored from the draft, not the agent"
       );
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         2,
         "Added URLs are restored from the draft, replacing the seeded one"
       );
@@ -909,7 +958,7 @@ add_task(async function test_add_and_remove_page_pills() {
       const shadow = el.shadowRoot;
 
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         0,
         "Starts with no page pills when nothing is seeded"
       );
@@ -920,21 +969,19 @@ add_task(async function test_add_and_remove_page_pills() {
       shadow.querySelector("moz-button.add-page-btn").click();
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "Add button adds the typed URL as a pill"
       );
 
-      const removeButton = shadow.querySelector(".page-pill .page-pill-remove");
-
-      await ContentTaskUtils.waitForCondition(() => {
-        const rect = removeButton.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-      }, "Remove button is laid out before clicking");
-      removeButton.click();
+      const chip = shadow.querySelector(".page-pills-row ai-website-chip");
+      await chip.updateComplete;
+      // The chip's remove button only becomes visible on hover, which a test
+      // can't trigger reliably, so click it directly.
+      chip.shadowRoot.querySelector(".chip-remove").click();
       await el.updateComplete;
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         0,
         "Pill remove button removes the URL"
       );
@@ -970,7 +1017,7 @@ add_task(async function test_invalid_url_shows_error() {
         "An invalid URL surfaces an error message"
       );
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         0,
         "An invalid URL is not added as a pill"
       );
@@ -1001,7 +1048,7 @@ add_task(async function test_max_watch_urls_from_host() {
 
       await addUrl("https://example.com/a");
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "The first URL is added"
       );
@@ -1013,7 +1060,7 @@ add_task(async function test_max_watch_urls_from_host() {
       );
 
       Assert.equal(
-        shadow.querySelectorAll(".page-pill").length,
+        shadow.querySelectorAll(".page-pills-row ai-website-chip").length,
         1,
         "A URL past the host's cap is not added"
       );

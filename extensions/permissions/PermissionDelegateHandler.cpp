@@ -50,7 +50,9 @@ static const DelegateInfo sPermissionsMap[] = {
      DelegatePolicy::eDelegateUseFeaturePolicy},
 
     {"screen-wake-lock", u"screen-wake-lock",
-     DelegatePolicy::eDelegateUseFeaturePolicy}};
+     DelegatePolicy::eDelegateUseFeaturePolicy},
+    {"speech-recognition-model-download", nullptr,
+     DelegatePolicy::eDelegateUseIframeOrigin}};
 
 static_assert(PermissionDelegateHandler::DELEGATED_PERMISSION_COUNT ==
                   (sizeof(sPermissionsMap) / sizeof(DelegateInfo)),

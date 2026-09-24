@@ -1,11 +1,5 @@
 "use strict";
 
-add_setup(() =>
-  SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  })
-);
-
 /**
  * Presses Cmd + arrow key/Ctrl + arrow key in order to move the keyboard
  * focused item in the tab strip left or right

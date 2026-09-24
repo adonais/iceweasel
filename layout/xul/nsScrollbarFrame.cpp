@@ -124,6 +124,18 @@ void nsScrollbarFrame::Destroy(DestroyContext& aContext) {
   nsContainerFrame::Destroy(aContext);
 }
 
+std::pair<nscoord, nscoord> nsScrollbarFrame::ScrollbarInset() const {
+  // The scroll container owns the property and resolves the writing mode, so
+  // the margin it hands back is already physical and needs no further mapping.
+  ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(GetParent());
+  if (!scrollContainerFrame) {
+    return {0, 0};
+  }
+  const nsMargin inset = scrollContainerFrame->ScrollbarInsets();
+  return IsHorizontal() ? std::pair{inset.left, inset.right}
+                        : std::pair{inset.top, inset.bottom};
+}
+
 void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
                               ReflowOutput& aDesiredSize,
                               const ReflowInput& aReflowInput,
@@ -152,10 +164,21 @@ void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
 
   const nsSize containerSize = aDesiredSize.PhysicalSize();
   const LogicalSize totalAvailSize = aDesiredSize.Size(wm);
-  LogicalPoint nextKidPos(wm);
 
   MOZ_ASSERT(!wm.IsVertical());
   const bool movesInInlineDirection = horizontal;
+
+  // We stay full-length so our track still spans the whole scrollport, and hold
+  // the slider back at each end instead. Unlike a scrollbar button the two ends
+  // are independent, so the symmetry assumption below doesn't apply to them.
+  const auto [insetStart, insetEnd] = ScrollbarInset();
+
+  LogicalPoint nextKidPos(wm);
+  if (movesInInlineDirection) {
+    nextKidPos.I(wm) = insetStart;
+  } else {
+    nextKidPos.B(wm) = insetStart;
+  }
 
   // Layout our kids left to right / top to bottom.
   for (nsIFrame* kid : mFrames) {
@@ -164,16 +187,18 @@ void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
     const bool isSlider = kid->GetContent() == mSlider;
     LogicalSize availSize = totalAvailSize;
     {
+      const nscoord consumed =
+          movesInInlineDirection ? nextKidPos.I(wm) : nextKidPos.B(wm);
       // Assume we'll consume the same size before and after the slider. This is
       // not a technically correct assumption if we have weird scrollbar button
       // setups, but those will be going away, see bug 1824254.
-      const int32_t factor = isSlider ? 2 : 1;
+      const nscoord reserved =
+          isSlider ? (consumed - insetStart) * 2 + insetStart + insetEnd
+                   : consumed;
       if (movesInInlineDirection) {
-        availSize.ISize(wm) =
-            std::max(0, totalAvailSize.ISize(wm) - nextKidPos.I(wm) * factor);
+        availSize.ISize(wm) = std::max(0, totalAvailSize.ISize(wm) - reserved);
       } else {
-        availSize.BSize(wm) =
-            std::max(0, totalAvailSize.BSize(wm) - nextKidPos.B(wm) * factor);
+        availSize.BSize(wm) = std::max(0, totalAvailSize.BSize(wm) - reserved);
       }
     }
 

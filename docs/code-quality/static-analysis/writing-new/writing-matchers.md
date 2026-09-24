@@ -8,7 +8,7 @@ On this page we will give some information about what a matcher is, and then pro
 
 There are three types of matches: Node, Narrowing, and Traversal. There isn't always a clear separation or distinction between them, so treat this explanation as illustrative rather than definitive. Here is the documentation on matchers: [https://clang.llvm.org/docs/LibASTMatchersReference.html](https://clang.llvm.org/docs/LibASTMatchersReference.html)
 
-On that page it is not obvious, so we want to note, **cicking on the name of a matcher expands help about that matcher.** Example:
+On that page it is not obvious, so we want to note, **clicking on the name of a matcher expands help about that matcher.** Example:
 
 ```{image} documentation-expanded.png
 ```

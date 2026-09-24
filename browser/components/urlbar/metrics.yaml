@@ -17,8 +17,12 @@ urlbar:
     extra_keys:
       abandonment_type:
         description: >
-          Records the reason that resulted in an abandonment. The possible
-          values are: `blur` and `tab_switch`.
+          Records how the search session ended. `blur` is recorded when the
+          input lost focus, `tab_switch` when a tab switch left the input
+          focused. Only the address bar can stay focused across a tab switch,
+          and only when the switch goes to a tab that already had it focused
+          or to a newly opened tab. Every other tab switch takes focus out of
+          the input and so records `blur`.
         type: string
       sap:
         description: >
@@ -662,6 +666,19 @@ urlbar:
           `search_button`,
           `show_less_frequently`
         type: string
+      modifiers:
+        description: >
+          Comma separated list of the modifier keys the user held while
+          selecting the result, always in the order `accel`, `alt`,
+          `altgraph`, `shift`.
+          `accel` is `CTRL` on Windows and Linux, and `Command` on macOS.
+          `alt` is `ALT` on Windows and Linux, and `Option` on macOS.
+          `altgraph` is `ALTGR`. Windows and Linux report it instead of `ALT`,
+          while on macOS the `Option` key reports both, so it is recorded as
+          `alt,altgraph` there.
+          For example, `accel,shift` means the user held both the accel key and
+          `SHIFT`. When no modifier, this will be empty string.
+        type: string
       groups:
         description: >
           Comma separated list of result groups in the order they were shown to
@@ -780,6 +797,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065249
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1797265#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
@@ -788,6 +806,7 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009615
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2027637
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2065249
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1537,54 +1556,72 @@ urlbar.persistedsearchterms:
     expires: never
     telemetry_mirror: URLBAR_PERSISTEDSEARCHTERMS_VIEW_COUNT
 
-urlbar.zeroprefix:
+urlbar.zeroprefix2:
   abandonment:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times the zero-prefix urlbar results panel was
-      abandoned.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.abandonment.
+      Counts how many times the zero-prefix results view was abandoned,
+      labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_ABANDONMENT
+    data_sensitivity:
+      - interaction
 
   engagement:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times a result was picked in the zero-prefix urlbar
-      results panel.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.engagement.
+      Counts how many times a result was picked in the zero-prefix results
+      view, labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_ENGAGEMENT
+    data_sensitivity:
+      - interaction
 
   exposure:
-    type: counter
+    type: labeled_counter
     description: >
-      Counts how many times the zero-prefix urlbar results panel was shown
-      to the user.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar urlbar.zeroprefix.exposure.
+      Counts how many times the zero-prefix results view was shown to the
+      user, labeled by the search access point it was shown for.
+    labels:
+      - urlbar
+      - searchbar
+      - newtab_searchbar
+      - smartbar
     bugs:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     data_reviews:
-      - https://bugzil.la/1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1806765
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066165
     notification_emails:
       - fx-search-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: URLBAR_ZEROPREFIX_EXPOSURE
+    data_sensitivity:
+      - interaction
 
 urlbar.quickaction:
   picked:

@@ -13,7 +13,7 @@ use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::CssRules;
 use crate::values::CssUrl;
-use cssparser::{match_ignore_ascii_case, BasicParseErrorKind, Parser, SourceLocation};
+use cssparser::{BasicParseErrorKind, Parser, SourceLocation, match_ignore_ascii_case};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
@@ -61,7 +61,7 @@ impl DeepCloneWithLock for DocumentRule {
         DocumentRule {
             condition: self.condition.clone(),
             rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard))),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }

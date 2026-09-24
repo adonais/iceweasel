@@ -3,7 +3,7 @@ accept_zero_vismet = false
 alert_on = "SpeedIndex"
 alert_threshold = 5.0
 apps = "firefox, chrome"
-browser_cycles = 10
+browser_cycles = 5
 cold = "true"
 verbose = true
 browsertime_visualmetrics = true
@@ -46,18 +46,43 @@ network.dns.forceResolve=192.0.2.1
 #                                  amazon and wikipedia subnavs were
 #                                  dropped because their SpeedIndex CV%
 #                                  was too high (15% and 536%).
+#   google-docs only:
+#     measure "<site>-warm"     -> revisit of the load URL after navigating
+#                                  away, served from the HTTP cache.
 #
-# Each browser_cycle yields: 5 loads + 2 subnavs (bbc, ddg) = 7 samples.
+# Each browser_cycle yields: 9 loads + 2 subnavs (bbc, ddg)
+# + 1 warm (google-docs) = 12 samples.
 # Set browser_cycles to control replicate count. Score per cycle =
 # 60000 / SpeedIndex_ms (LoadLine2-style); aggregated as geomean across
 # all (sites x phases x cycles) for the overall score.
 
 [nav-bench]
 playback_manifests_dir = "nav-bench"
-playback_pageset_manifest = "mitm12-darwin-firefox-amazon-nav.manifest,mitm12-darwin-firefox-bbc-nav.manifest,mitm12-darwin-firefox-duckduckgo-nav.manifest,mitm12-darwin-firefox-reddit-nav.manifest,mitm12-darwin-firefox-wikipedia-nav.manifest"
+playback_pageset_manifest = "mitm12-darwin-firefox-amazon-nav.manifest,mitm12-darwin-firefox-bbc-nav.manifest,mitm12-darwin-firefox-duckduckgo-nav.manifest,mitm12-darwin-firefox-facebook-nav.manifest,mitm12-darwin-firefox-google-docs-nav.manifest,mitm12-darwin-firefox-google-nav.manifest,mitm12-darwin-firefox-reddit-nav.manifest,mitm12-darwin-firefox-wikipedia-nav.manifest,mitm12-darwin-firefox-yahoo-nav.manifest"
 test_url = "about:blank"
 test_cmds = [
     ["wait.byTime", "30000"],
+
+    ["measure.start", "google-nav-load"],
+    ["navigate", "https://www.google.com/"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "facebook-nav-load"],
+    ["navigate", "https://www.facebook.com/Cristiano"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "yahoo-nav-load"],
+    ["navigate", "https://ca.yahoo.com/"],
+    ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
 
     ["measure.start", "amazon-nav-load"],
     ["navigate", "https://www.amazon.ca/s?k=laptop&ref=nb_sb_noss_1"],
@@ -95,9 +120,23 @@ test_cmds = [
     ["navigate", "about:blank"],
     ["wait.byTime", "1000"],
 
+    ["measure.start", "google-docs-nav-load"],
+    ["navigate", "https://docs.google.com/document/d/1US-07msg12slQtI_xchzYxcKlTs6Fp7WqIc6W5GK5M8/edit?usp=sharing"],
+    ["wait.byTime", "3000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
     ["measure.start", "wikipedia-nav-load"],
     ["navigate", "https://en.wikipedia.org/wiki/Barack_Obama"],
     ["wait.byTime", "2000"],
+    ["measure.stop", ""],
+    ["navigate", "about:blank"],
+    ["wait.byTime", "1000"],
+
+    ["measure.start", "google-docs-nav-warm"],
+    ["navigate", "https://docs.google.com/document/d/1US-07msg12slQtI_xchzYxcKlTs6Fp7WqIc6W5GK5M8/edit?usp=sharing"],
+    ["wait.byTime", "3000"],
     ["measure.stop", ""],
     ["navigate", "about:blank"],
     ["wait.byTime", "1000"],

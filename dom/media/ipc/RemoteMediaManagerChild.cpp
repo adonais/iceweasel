@@ -76,13 +76,21 @@ static EnumeratedArray<RemoteMediaIn, StaticRefPtr<RemoteMediaManagerChild>,
 
 static StaticAutoPtr<nsTArray<RefPtr<Runnable>>> sRecreateTasks;
 
+// Per-location codec support state collected from the remote processes.
+// mSupported holds the snapshot delivered over IPC (Nothing until the remote
+// process reports in); mHolder fulfills any pending EnsureCodecSupportFor()
+// promises once that snapshot arrives.
+struct CodecSupportState {
+  Maybe<media::MediaCodecsSupported> mSupported;
+  MozPromiseHolder<RemoteMediaManagerChild::CodecSupportPromise> mHolder;
+};
+
 // Used for protecting codec support information collected from different remote
 // processes.
 StaticMutex sProcessSupportedMutex;
-MOZ_GLOBINIT static EnumeratedArray<RemoteMediaIn,
-                                    Maybe<media::MediaCodecsSupported>,
+MOZ_GLOBINIT static EnumeratedArray<RemoteMediaIn, CodecSupportState,
                                     size_t(RemoteMediaIn::SENTINEL)>
-    sProcessSupported MOZ_GUARDED_BY(sProcessSupportedMutex);
+    sCodecSupportState MOZ_GUARDED_BY(sProcessSupportedMutex);
 
 class ShutdownObserver final : public nsIObserver {
  public:
@@ -250,7 +258,7 @@ media::DecodeSupportSet RemoteMediaManagerChild::Supports(
     case RemoteMediaIn::UtilityProcess_WMF:
     case RemoteMediaIn::UtilityProcess_MFMediaEngineCDM: {
       StaticMutexAutoLock lock(sProcessSupportedMutex);
-      supported = sProcessSupported[aLocation];
+      supported = sCodecSupportState[aLocation].mSupported;
       break;
     }
     default:
@@ -567,7 +575,7 @@ EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
     case RemoteMediaIn::UtilityProcess_WMF:
     case RemoteMediaIn::UtilityProcess_MFMediaEngineCDM: {
       StaticMutexAutoLock lock(sProcessSupportedMutex);
-      supported = sProcessSupported[aLocation];
+      supported = sCodecSupportState[aLocation].mSupported;
       break;
     }
     default:
@@ -1206,6 +1214,7 @@ void RemoteMediaManagerChild::HandleFatalError(const char* aMsg) {
 
 void RemoteMediaManagerChild::SetSupported(
     RemoteMediaIn aLocation, const media::MediaCodecsSupported& aSupported) {
+  MozPromiseHolder<CodecSupportPromise> holder;
   switch (aLocation) {
     case RemoteMediaIn::GpuProcess:
     case RemoteMediaIn::RddProcess:
@@ -1214,12 +1223,75 @@ void RemoteMediaManagerChild::SetSupported(
     case RemoteMediaIn::UtilityProcess_WMF:
     case RemoteMediaIn::UtilityProcess_MFMediaEngineCDM: {
       StaticMutexAutoLock lock(sProcessSupportedMutex);
-      sProcessSupported[aLocation] = Some(aSupported);
+      CodecSupportState& state = sCodecSupportState[aLocation];
+      state.mSupported = Some(aSupported);
+      holder = std::move(state.mHolder);
       break;
     }
     default:
       MOZ_CRASH("Not to be used for any other process");
   }
+  holder.ResolveIfExists(true, __func__);
+}
+
+/* static */
+RefPtr<RemoteMediaManagerChild::CodecSupportPromise>
+RemoteMediaManagerChild::EnsureCodecSupportFor(RemoteMediaIn aLocation,
+                                               bool aForceRefresh) {
+  RefPtr<CodecSupportPromise> promise;
+  {
+    StaticMutexAutoLock lock(sProcessSupportedMutex);
+    CodecSupportState& state = sCodecSupportState[aLocation];
+    if (!aForceRefresh && state.mSupported) {
+      return CodecSupportPromise::CreateAndResolve(true, __func__);
+    }
+    // Cache is empty or a refresh was requested. Obtain the promise under the
+    // lock so SetSupported() cannot resolve the holder before we return it.
+    // The cache is intentionally not cleared on refresh so that sync callers
+    // continue to see the current value until the next update arrives.
+    promise = state.mHolder.Ensure(__func__);
+  }
+
+  // Only reached when we are going to wait. Launch the process so
+  // SetSupported() will eventually fire and resolve the promise.
+  RefPtr<GenericNonExclusivePromise> launchPromise;
+  switch (aLocation) {
+    case RemoteMediaIn::UtilityProcess_Generic:
+    case RemoteMediaIn::UtilityProcess_AppleMedia:
+    case RemoteMediaIn::UtilityProcess_WMF:
+    case RemoteMediaIn::UtilityProcess_MFMediaEngineCDM:
+      launchPromise = LaunchUtilityProcessIfNeeded(aLocation);
+      break;
+    case RemoteMediaIn::RddProcess:
+      launchPromise = LaunchRDDProcessIfNeeded();
+      break;
+    default:
+      break;
+  }
+
+  if (!launchPromise) {
+    LOGE("Failed to launch remote process '{}'", RemoteMediaInToStr(aLocation));
+    StaticMutexAutoLock lock(sProcessSupportedMutex);
+    CodecSupportState& state = sCodecSupportState[aLocation];
+    state.mHolder.Reject(NS_ERROR_FAILURE, __func__);
+    return promise;
+  }
+
+  nsCOMPtr managerThread = GetManagerThread();
+  launchPromise->Then(
+      managerThread, __func__,
+      [] {
+        // If launched successfully, the promise is resolved in SetSupported().
+      },
+      [aLocation](nsresult aRv) {
+        LOGE("Launch of remote process '{}' was rejected with {}",
+             RemoteMediaInToStr(aLocation), aRv);
+        StaticMutexAutoLock lock(sProcessSupportedMutex);
+        CodecSupportState& state = sCodecSupportState[aLocation];
+        state.mHolder.Reject(aRv, __func__);
+      });
+
+  return promise;
 }
 
 #undef LOG

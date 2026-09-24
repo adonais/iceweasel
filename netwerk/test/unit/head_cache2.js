@@ -431,6 +431,62 @@ function finish_cache2_test() {
   do_test_finished();
 }
 
+// Resolves once everything dispatched to the cache IO thread up to this point
+// at a level below WRITE has run, and the memory pools have been purged.
+function flush_cache2_io() {
+  return new Promise(resolve => {
+    Services.cache2.QueryInterface(Ci.nsICacheTesting).flush({
+      QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
+      observe() {
+        resolve();
+      },
+    });
+  });
+}
+
+// Simulates a browser restart of the cache: all handles are closed and the
+// index is read back from disk, so the entries are left on disk with nothing
+// active referencing them.
+async function restart_cache2() {
+  await flush_cache2_io();
+
+  let testing = Services.cache2.QueryInterface(Ci.nsICacheTesting);
+  testing.shutdownCacheForTesting();
+  testing.startupCacheForTesting();
+
+  await new Promise(wait_for_cache_index);
+}
+
+// Waits for a context eviction (clear by origin, by base domain, or of
+// everything) to finish. CacheFileContextEvictor persists a "ce_*" file for the
+// context before it starts walking the index and removes it once it is done, so
+// the file being gone means the eviction has completed. The flush comes first
+// because the clear is dispatched to the IO thread at the OPEN level, below the
+// WRITE level the flush uses: the "ce_*" file is therefore guaranteed to exist
+// by the time the flush resolves, and polling cannot mistake "not started yet"
+// for "already finished".
+async function wait_for_context_eviction() {
+  await flush_cache2_io();
+
+  let cacheDir = getDiskCacheDirectory().path;
+  for (let i = 0; i < 600; i++) {
+    let children = await IOUtils.getChildren(cacheDir);
+    if (!children.some(path => PathUtils.filename(path).startsWith("ce_"))) {
+      return;
+    }
+    await new Promise(resolve => do_timeout(50, resolve));
+  }
+
+  Assert.ok(false, "timed out waiting for the context eviction to finish");
+}
+
+// Number of entry files currently stored on disk.
+async function count_cache2_entry_files() {
+  let dir = getDiskCacheDirectory();
+  dir.append("entries");
+  return (await IOUtils.getChildren(dir.path)).length;
+}
+
 // Returns the on-disk HTTP cache directory (the "cache2" folder), resolved the
 // same way CacheFileIOManager::OnProfile() does. This is needed because the
 // cache does not always live under the profile: on Android it lives under the

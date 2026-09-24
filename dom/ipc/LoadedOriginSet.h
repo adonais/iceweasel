@@ -32,7 +32,7 @@ class LoadedOriginSet {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LoadedOriginSet)
 
-  explicit LoadedOriginSet(const nsACString& aRemoteType);
+  explicit LoadedOriginSet(const RemoteType& aRemoteType);
 
   enum class Level : uint8_t {
     Unloaded,
@@ -47,10 +47,10 @@ class LoadedOriginSet {
     Full,
   };
 
-  nsCString GetRemoteType();
+  RemoteType GetRemoteType();
 
   // Should only be called by ContentParent or ContentChild.
-  void SetRemoteType(const nsACString& aRemoteType);
+  void SetRemoteType(const RemoteType& aRemoteType);
 
   // Check if this LoadedOriginSet has the given principal.
   bool Has(nsIPrincipal* aPrincipal, Level aThreshold,
@@ -89,7 +89,7 @@ class LoadedOriginSet {
   };
 
   Mutex mMutex{"LoadedOriginSet"};
-  nsCString mRemoteType MOZ_GUARDED_BY(mMutex);
+  RemoteType mRemoteType MOZ_GUARDED_BY(mMutex);
   nsTArray<AttributeBucket> mLoadedOrigins MOZ_GUARDED_BY(mMutex);
 };
 

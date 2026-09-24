@@ -272,13 +272,14 @@ add_task(async function test_telemetry_empty_submission_url() {
 
 add_task(async function test_privateDefaultClearedOnSeparatePrivateDisabled() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   await SearchService.setDefaultPrivate(
     engine1,
@@ -291,7 +292,7 @@ add_task(async function test_privateDefaultClearedOnSeparatePrivateDisabled() {
   );
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     false
   );
   Assert.notEqual(
@@ -301,7 +302,7 @@ add_task(async function test_privateDefaultClearedOnSeparatePrivateDisabled() {
   );
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
   // If the default private engine is ever changed to fall back to the user's
@@ -314,11 +315,10 @@ add_task(async function test_privateDefaultClearedOnSeparatePrivateDisabled() {
   );
 
   Services.prefs.clearUserPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled"
+    "browser.search.separatePrivateDefault.featureGate"
   );
-  Services.prefs.clearUserPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault"
-  );
+  Services.prefs.clearUserPref("browser.search.separatePrivateDefault.enabled");
+  Services.prefs.clearUserPref("browser.search.separatePrivateDefault");
 });
 
 add_task(async function test_switch_with_invalid_overriddenBy() {

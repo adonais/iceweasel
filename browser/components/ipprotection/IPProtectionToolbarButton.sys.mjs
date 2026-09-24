@@ -24,13 +24,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 import { getSitePrincipal } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
-const OPENED_WITH_LOCATION_PREF =
-  "browser.ipProtection.openedPanelWithLocation";
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "siteExceptionsFeaturePref",
   "browser.ipProtection.features.siteExceptions",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "siteInclusionsFeaturePref",
+  "browser.ipProtection.features.siteInclusions",
   false
 );
 
@@ -56,7 +60,6 @@ export class IPProtectionToolbarButton {
   #progressListener = null;
   #widgetId = null;
   #previousIsExcluded = null;
-  #prefObserver = null;
   #visitedExcludedSites = new Set();
 
   static CONFIRMATION_HINT_MESSAGE_ID =
@@ -70,6 +73,7 @@ export class IPProtectionToolbarButton {
     "network-error",
     "error",
     "excluded",
+    "included",
     "paused",
   ];
 
@@ -93,6 +97,17 @@ export class IPProtectionToolbarButton {
    */
   get isExceptionsFeatureEnabled() {
     return lazy.siteExceptionsFeaturePref;
+  }
+
+  /**
+   * Gets the value of the pref
+   * browser.ipProtection.features.siteInclusions.
+   *
+   * @returns {boolean}
+   *  True if site inclusions support is enabled, false otherwise.
+   */
+  get isInclusionsFeatureEnabled() {
+    return lazy.siteInclusionsFeaturePref;
   }
 
   /**
@@ -143,9 +158,6 @@ export class IPProtectionToolbarButton {
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.addEventListener("TabSelect", this);
     }
-
-    this.#prefObserver = { observe: () => this.#updateBadge() };
-    Services.prefs.addObserver(OPENED_WITH_LOCATION_PREF, this.#prefObserver);
 
     if (toolbaritem) {
       toolbaritem.classList.add("subviewbutton-nav"); // adds the right arrow in overflow menu
@@ -269,7 +281,10 @@ export class IPProtectionToolbarButton {
       lazy.IPPExceptionsManager.canManage(principal) &&
       lazy.IPPExceptionsManager.getPrincipalRule(principal) ===
         lazy.IPPPrincipalRules.EXCLUDED;
-
+    //TODO: Add hasInclusion function to exceptions manager, replace false with commented out call to hasInclusion - Bug 2066802
+    let isIncluded =
+      !!principal && lazy.IPPExceptionsManager.canManage(principal) && false;
+    //  lazy.IPPExceptionsManager.hasInclusion(principal);
     let isActive = lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
     let isPaused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
@@ -304,6 +319,7 @@ export class IPProtectionToolbarButton {
       isError,
       isNetworkError,
       isExcluded,
+      isIncluded,
       isPaused,
     });
 
@@ -324,16 +340,14 @@ export class IPProtectionToolbarButton {
       return;
     }
 
-    let everOpenedPanel = Services.prefs.getBoolPref(
-      OPENED_WITH_LOCATION_PREF,
-      false
-    );
+    // Disabling notification until there is a new feature- Bug 2057313
+    let newFeatureRelease = false;
 
     let inPalette = !lazy.CustomizableUI.getPlacementOfWidget(this.#widgetId);
 
     let badge = toolbaritem.querySelector(".toolbarbutton-badge");
 
-    if (everOpenedPanel || inPalette) {
+    if (!newFeatureRelease || inPalette) {
       toolbaritem.removeAttribute("badged");
       badge?.classList.remove("feature-callout");
     } else {
@@ -409,6 +423,7 @@ export class IPProtectionToolbarButton {
       isActive: false,
       isError: false,
       isExcluded: false,
+      isIncluded: false,
       isPaused: false,
       isNetworkError: false,
     }
@@ -423,6 +438,7 @@ export class IPProtectionToolbarButton {
     let isNetworkError = status.isNetworkError;
     let isError = status.isError && !isNetworkError;
     let isExcluded = status.isExcluded && this.isExceptionsFeatureEnabled;
+    let isIncluded = status.isIncluded && this.isInclusionsFeatureEnabled;
     let isPaused = status.isPaused;
     let l10nId =
       isError || isNetworkError
@@ -434,6 +450,7 @@ export class IPProtectionToolbarButton {
       "ipprotection-network-error",
       "ipprotection-error",
       "ipprotection-excluded",
+      "ipprotection-included",
       "ipprotection-paused"
     );
 
@@ -445,6 +462,8 @@ export class IPProtectionToolbarButton {
       toolbaritem.classList.add("ipprotection-paused");
     } else if (isExcluded && isActive) {
       toolbaritem.classList.add("ipprotection-excluded");
+    } else if (isIncluded && !isActive) {
+      toolbaritem.classList.add("ipprotection-included");
     } else if (isActive) {
       toolbaritem.classList.add("ipprotection-on");
     }
@@ -499,12 +518,6 @@ export class IPProtectionToolbarButton {
       this.gBrowser.removeTabsProgressListener(this.#progressListener);
     }
     this.#progressListener = null;
-
-    Services.prefs.removeObserver(
-      OPENED_WITH_LOCATION_PREF,
-      this.#prefObserver
-    );
-    this.#prefObserver = null;
 
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.removeEventListener("TabSelect", this);

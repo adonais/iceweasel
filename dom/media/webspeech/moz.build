@@ -2,7 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS = ["recognition", "synth"]
+DIRS = ["synth"]
+
+# The speech recognition backend (mudler/parakeet.cpp, backends/llama) isn't
+# built on Android: ggml has no armv7-android CPU backend variant upstream.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    DIRS += ["recognition"]
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Web Speech")

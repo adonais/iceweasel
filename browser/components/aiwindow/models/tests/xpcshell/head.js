@@ -27,8 +27,17 @@ function makeConversation({
     securityProperties.setUntrustedInput();
   }
   securityProperties.commit();
+  const pendingBrowserActionTelemetry = new Map();
   return {
     securityProperties,
+    stashPendingBrowserActionTelemetry(toolCallId, telemetryInfo) {
+      pendingBrowserActionTelemetry.set(toolCallId, telemetryInfo);
+    },
+    takePendingBrowserActionTelemetry(toolCallId) {
+      const info = pendingBrowserActionTelemetry.get(toolCallId);
+      pendingBrowserActionTelemetry.delete(toolCallId);
+      return info;
+    },
     serpUrlsForAnonymousFetch: new Set(),
     addSeenUrls() {},
     async addHistoryResults() {},

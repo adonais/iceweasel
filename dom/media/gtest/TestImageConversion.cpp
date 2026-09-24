@@ -5,7 +5,6 @@
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "SourceSurfaceRawData.h"
-#include "YUVBufferGenerator.h"
 #include "gtest/gtest.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/RefPtr.h"
@@ -103,10 +102,101 @@ class TestRedPlanarYCbCrImage2x2 final : public PlanarYCbCrImage {
   uint8_t mV[4] = {0xEF, 0xEF, 0xEF, 0xEF};
 };
 
+namespace {
+
+// A Y/Cb/Cr sample triple used to paint and verify a planar image.
+struct YCbCrValue {
+  uint8_t mY;
+  uint8_t mCb;
+  uint8_t mCr;
+};
+
+// I420 PlanarYCbCrImage backed by planes it owns, with a coded buffer at least
+// as large as the picture rect. The whole buffer is painted aBorder; the
+// picture sub-region (offset by mPictureRect.TopLeft()) is painted aContent.
+// All extents must be even, as required for 4:2:0 chroma alignment.
+class TestI420Image final : public PlanarYCbCrImage {
+ public:
+  TestI420Image(const IntSize& aCodedSize, const IntRect& aPictureRect,
+                const YCbCrValue& aBorder, const YCbCrValue& aContent) {
+    MOZ_ASSERT(!aCodedSize.IsEmpty(), "coded size must not be empty");
+    MOZ_ASSERT(!aPictureRect.IsEmpty(), "picture rect must not be empty");
+    MOZ_ASSERT(aPictureRect.x % 2 == 0 && aPictureRect.y % 2 == 0 &&
+                   aPictureRect.width % 2 == 0 && aPictureRect.height % 2 == 0,
+               "picture rect must be even for 4:2:0 chroma alignment");
+    MOZ_ASSERT(IntRect(IntPoint(), aCodedSize).Contains(aPictureRect),
+               "picture rect must fit inside the coded buffer");
+
+    // ChromaSize rounds up, so an odd coded buffer is representable; only the
+    // picture rect has to be even, for chroma alignment.
+    const IntSize codedChroma =
+        ChromaSize(aCodedSize, ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
+    const CheckedInt<size_t> ySize =
+        CheckedInt<size_t>(aCodedSize.width) * aCodedSize.height;
+    const CheckedInt<size_t> cSize =
+        CheckedInt<size_t>(codedChroma.width) * codedChroma.height;
+    MOZ_ASSERT((ySize + cSize * 2).isValid(), "plane sizes are not valid");
+
+    mY.SetLength(ySize.value());
+    mU.SetLength(cSize.value());
+    mV.SetLength(cSize.value());
+    memset(mY.Elements(), aBorder.mY, ySize.value());
+    memset(mU.Elements(), aBorder.mCb, cSize.value());
+    memset(mV.Elements(), aBorder.mCr, cSize.value());
+
+    FillRect(mY.Elements(), aCodedSize.width, aPictureRect.x, aPictureRect.y,
+             aPictureRect.width, aPictureRect.height, aContent.mY);
+    FillRect(mU.Elements(), codedChroma.width, aPictureRect.x / 2,
+             aPictureRect.y / 2, aPictureRect.width / 2,
+             aPictureRect.height / 2, aContent.mCb);
+    FillRect(mV.Elements(), codedChroma.width, aPictureRect.x / 2,
+             aPictureRect.y / 2, aPictureRect.width / 2,
+             aPictureRect.height / 2, aContent.mCr);
+
+    mSize = aPictureRect.Size();
+    mBufferSize = ySize.value() + 2 * cSize.value();
+
+    mData.mPictureRect = aPictureRect;
+    mData.mYChannel = mY.Elements();
+    mData.mYStride = aCodedSize.width;
+    mData.mYSkip = 0;
+    mData.mCbChannel = mU.Elements();
+    mData.mCrChannel = mV.Elements();
+    mData.mCbCrStride = codedChroma.width;
+    mData.mCbSkip = 0;
+    mData.mCrSkip = 0;
+    mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+  }
+
+  nsresult CopyData(const Data& aData) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf) const { return 0; }
+
+ private:
+  static void FillRect(uint8_t* aPlane, int32_t aStride, int32_t aX, int32_t aY,
+                       int32_t aW, int32_t aH, uint8_t aValue) {
+    for (int32_t row = aY; row < aY + aH; ++row) {
+      memset(aPlane + size_t(row) * aStride + aX, aValue, aW);
+    }
+  }
+
+ private:
+  nsTArray<uint8_t> mY;
+  nsTArray<uint8_t> mU;
+  nsTArray<uint8_t> mV;
+};
+
+}  // namespace
+
+// YUVBufferGenerator rejects dimensions above PlanarYCbCrImage::MAX_DIMENSION,
+// which is below kMaxConvertImageDimension, so the bounds tests build their
+// source directly.
 static already_AddRefed<Image> GenerateI420(int32_t aWidth, int32_t aHeight) {
-  YUVBufferGenerator generator;
-  generator.Init(IntSize(aWidth, aHeight));
-  return generator.GenerateI420Image();
+  const IntSize size(aWidth, aHeight);
+  const YCbCrValue black{0x10, 0x80, 0x80};
+  return MakeAndAddRef<TestI420Image>(size, IntRect(IntPoint(), size), black,
+                                      black);
 }
 
 static already_AddRefed<SourceSurfaceImage> CreateRedSurfaceImage2x2(
@@ -402,95 +492,6 @@ TEST(MediaImageConversion, UndersizedSourceSurface)
 // picture, fills the whole buffer with a "border" value and the picture
 // sub-region with a distinct "content" value, then asserts the converted
 // output carries the content value.
-namespace {
-
-// A Y/Cb/Cr sample triple used to paint and verify a planar image.
-struct YCbCrValue {
-  uint8_t mY;
-  uint8_t mCb;
-  uint8_t mCr;
-};
-
-// I420 PlanarYCbCrImage whose coded planes are larger than the picture rect.
-// The whole buffer is painted aBorder; the picture sub-region (offset by
-// mPictureRect.TopLeft()) is painted aContent. All extents must be even, as
-// required for 4:2:0 chroma alignment.
-class OffsetPictureRectI420Image final : public PlanarYCbCrImage {
- public:
-  OffsetPictureRectI420Image(const IntSize& aCodedSize,
-                             const IntRect& aPictureRect,
-                             const YCbCrValue& aBorder,
-                             const YCbCrValue& aContent) {
-    MOZ_ASSERT(!aCodedSize.IsEmpty(), "coded size must not be empty");
-    MOZ_ASSERT(!aPictureRect.IsEmpty(), "picture rect must not be empty");
-    MOZ_ASSERT(aPictureRect.x % 2 == 0 && aPictureRect.y % 2 == 0 &&
-                   aPictureRect.width % 2 == 0 && aPictureRect.height % 2 == 0,
-               "picture rect must be even for 4:2:0 chroma alignment");
-    MOZ_ASSERT(IntRect(IntPoint(), aCodedSize).Contains(aPictureRect),
-               "picture rect must fit inside the coded buffer");
-
-    // ChromaSize rounds up, so an odd coded buffer is representable; only the
-    // picture rect has to be even, for chroma alignment.
-    const IntSize codedChroma =
-        ChromaSize(aCodedSize, ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
-    const CheckedInt<size_t> ySize =
-        CheckedInt<size_t>(aCodedSize.width) * aCodedSize.height;
-    const CheckedInt<size_t> cSize =
-        CheckedInt<size_t>(codedChroma.width) * codedChroma.height;
-    MOZ_ASSERT((ySize + cSize * 2).isValid(), "plane sizes are not valid");
-
-    mY.SetLength(ySize.value());
-    mU.SetLength(cSize.value());
-    mV.SetLength(cSize.value());
-    memset(mY.Elements(), aBorder.mY, ySize.value());
-    memset(mU.Elements(), aBorder.mCb, cSize.value());
-    memset(mV.Elements(), aBorder.mCr, cSize.value());
-
-    FillRect(mY.Elements(), aCodedSize.width, aPictureRect.x, aPictureRect.y,
-             aPictureRect.width, aPictureRect.height, aContent.mY);
-    FillRect(mU.Elements(), codedChroma.width, aPictureRect.x / 2,
-             aPictureRect.y / 2, aPictureRect.width / 2,
-             aPictureRect.height / 2, aContent.mCb);
-    FillRect(mV.Elements(), codedChroma.width, aPictureRect.x / 2,
-             aPictureRect.y / 2, aPictureRect.width / 2,
-             aPictureRect.height / 2, aContent.mCr);
-
-    mSize = aPictureRect.Size();
-    mBufferSize = ySize.value() + 2 * cSize.value();
-
-    mData.mPictureRect = aPictureRect;
-    mData.mYChannel = mY.Elements();
-    mData.mYStride = aCodedSize.width;
-    mData.mYSkip = 0;
-    mData.mCbChannel = mU.Elements();
-    mData.mCrChannel = mV.Elements();
-    mData.mCbCrStride = codedChroma.width;
-    mData.mCbSkip = 0;
-    mData.mCrSkip = 0;
-    mData.mChromaSubsampling = ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
-  }
-
-  nsresult CopyData(const Data& aData) override {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf) const { return 0; }
-
- private:
-  static void FillRect(uint8_t* aPlane, int32_t aStride, int32_t aX, int32_t aY,
-                       int32_t aW, int32_t aH, uint8_t aValue) {
-    for (int32_t row = aY; row < aY + aH; ++row) {
-      memset(aPlane + size_t(row) * aStride + aX, aValue, aW);
-    }
-  }
-
- private:
-  nsTArray<uint8_t> mY;
-  nsTArray<uint8_t> mU;
-  nsTArray<uint8_t> mV;
-};
-
-}  // namespace
-
 TEST(MediaImageConversion, ConvertToI420HonorsPictureRectOrigin)
 {
   // Odd coded extents on purpose: the picture rect has to be even for chroma
@@ -499,8 +500,7 @@ TEST(MediaImageConversion, ConvertToI420HonorsPictureRectOrigin)
   const IntRect picture(16, 8, 32, 32);
   const YCbCrValue border{0x10, 0x20, 0x30};
   const YCbCrValue content{0x80, 0xA0, 0xC0};
-  auto image =
-      MakeRefPtr<OffsetPictureRectI420Image>(coded, picture, border, content);
+  auto image = MakeRefPtr<TestI420Image>(coded, picture, border, content);
 
   const int32_t chromaW = picture.width / 2;
   const int32_t chromaH = picture.height / 2;
@@ -534,8 +534,7 @@ TEST(MediaImageConversion, ConvertToNV12HonorsPictureRectOrigin)
   const IntRect picture(16, 8, 32, 32);
   const YCbCrValue border{0x10, 0x20, 0x30};
   const YCbCrValue content{0x80, 0xA0, 0xC0};
-  auto image =
-      MakeRefPtr<OffsetPictureRectI420Image>(coded, picture, border, content);
+  auto image = MakeRefPtr<TestI420Image>(coded, picture, border, content);
 
   nsTArray<uint8_t> destY;
   nsTArray<uint8_t> destUV;

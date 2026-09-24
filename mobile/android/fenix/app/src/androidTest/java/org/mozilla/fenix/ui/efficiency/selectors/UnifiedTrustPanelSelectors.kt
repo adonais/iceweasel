@@ -9,17 +9,23 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.shortAppName
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object UnifiedTrustPanelSelectors {
+object UnifiedTrustPanelSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        CLEAR_COOKIES_AND_SITE_DATA_DIALOG
+    }
 
     val CLEAR_COOKIES_AND_SITE_DATA_BUTTON =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.clear_site_data),
             description = "Unified trust panel clear cookies and site button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val CLEAR_COOKIES_AND_SITE_DATA_DIALOG_TITLE =
@@ -27,7 +33,7 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.clear_site_data),
             description = "Unified trust panel clear site data dialog title",
-            groups = listOf("clearCookiesAndSiteDataDialog"),
+            groups = setOf(Group.CLEAR_COOKIES_AND_SITE_DATA_DIALOG),
         )
 
     @Suppress("FunctionName")
@@ -41,7 +47,7 @@ object UnifiedTrustPanelSelectors {
                     )
                     .toString(),
             description = "Unified trust panel clear cookies and site data dialog description",
-            groups = listOf("clearCookiesAndSiteDataDialog"),
+            groups = setOf(Group.CLEAR_COOKIES_AND_SITE_DATA_DIALOG),
         )
 
     val CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CLEAR_BUTTON =
@@ -49,7 +55,7 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.clear_site_data_dialog_positive_button_text),
             description = "Unified trust panel clear site data dialog clear button",
-            groups = listOf("clearCookiesAndSiteDataDialog"),
+            groups = setOf(Group.CLEAR_COOKIES_AND_SITE_DATA_DIALOG),
         )
 
     val CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CANCEL_BUTTON =
@@ -57,7 +63,7 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.clear_site_data_dialog_negative_button_text),
             description = "Unified trust panel clear site data dialog cancel button",
-            groups = listOf("clearCookiesAndSiteDataDialog"),
+            groups = setOf(Group.CLEAR_COOKIES_AND_SITE_DATA_DIALOG),
         )
 
     // ── Site identity ───────────────────────────────────────────────────────
@@ -70,7 +76,6 @@ object UnifiedTrustPanelSelectors {
             value = "unified.trust.panel.website",
             secondaryValue = webSite,
             description = "Unified trust panel website title: $webSite",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -80,7 +85,6 @@ object UnifiedTrustPanelSelectors {
             value = "unified.trust.panel.website.url",
             secondaryValue = webSiteURL,
             description = "Unified trust panel website url: $webSiteURL",
-            groups = listOf(),
         )
 
     // ── Enhanced Tracking Protection banner (content-description, substring) ──
@@ -89,7 +93,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.protection_panel_banner_protected_title, argument = shortAppName),
             description = "ETP banner: protected title",
-            groups = listOf(),
         )
 
     val ETP_BANNER_NOT_SECURE_TITLE =
@@ -97,7 +100,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.protection_panel_banner_not_secure_title, argument = appName),
             description = "ETP banner: not-secure title",
-            groups = listOf(),
         )
 
     val ETP_BANNER_NOT_SECURE_DESCRIPTION =
@@ -105,7 +107,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.protection_panel_banner_not_secure_description),
             description = "ETP banner: not-secure description",
-            groups = listOf(),
         )
 
     val ETP_BANNER_NOT_PROTECTED_TITLE =
@@ -113,7 +114,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.protection_panel_banner_not_protected_title),
             description = "ETP banner: not-protected title",
-            groups = listOf(),
         )
 
     val ETP_BANNER_NOT_PROTECTED_DESCRIPTION =
@@ -122,7 +122,6 @@ object UnifiedTrustPanelSelectors {
             value =
                 getStringResource(R.string.protection_panel_banner_not_protected_description, argument = shortAppName),
             description = "ETP banner: not-protected description",
-            groups = listOf(),
         )
 
     // ── ETP toggle row ───────────────────────────────────────────────────────
@@ -131,7 +130,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_toggle_label),
             description = "ETP toggle label",
-            groups = listOf(),
         )
 
     val ETP_TOGGLE_ENABLED_DESCRIPTION =
@@ -139,7 +137,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_toggle_enabled_description_2),
             description = "ETP toggle enabled description",
-            groups = listOf(),
         )
 
     val ETP_TOGGLE_DISABLED_DESCRIPTION =
@@ -147,7 +144,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_toggle_disabled_description_2),
             description = "ETP toggle disabled description",
-            groups = listOf(),
         )
 
     val ETP_TOGGLE_ON =
@@ -155,7 +151,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_toggle_on),
             description = "ETP toggle ON state",
-            groups = listOf(),
         )
 
     val ETP_TOGGLE_OFF =
@@ -163,7 +158,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_toggle_off),
             description = "ETP toggle OFF state",
-            groups = listOf(),
         )
 
     // ── Trackers-blocked option ──────────────────────────────────────────────
@@ -172,7 +166,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.protection_panel_etp_disabled_no_trackers_blocked),
             description = "Trackers: ETP disabled, none blocked",
-            groups = listOf(),
         )
 
     val TRACKERS_BLOCKED_ON_SITE =
@@ -180,7 +173,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = "blocked on this site",
             description = "Trackers: blocked on this site",
-            groups = listOf(),
         )
 
     val TRACKERS_PROTECTED_NONE_BLOCKED =
@@ -188,7 +180,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.protection_panel_banner_protected_no_blocked_trackers_description),
             description = "Trackers: protected, none blocked",
-            groups = listOf(),
         )
 
     // ── Connection / site security ───────────────────────────────────────────
@@ -197,7 +188,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.connection_security_panel_secure),
             description = "Connection: secure",
-            groups = listOf(),
         )
 
     val CONNECTION_VERIFIED_BY =
@@ -205,7 +195,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT_SUBSTRING,
             value = "Verified by",
             description = "Connection: verified-by line",
-            groups = listOf(),
         )
 
     val CONNECTION_NOT_SECURE =
@@ -213,7 +202,6 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.connection_security_panel_not_secure),
             description = "Connection: not secure",
-            groups = listOf(),
         )
 
     // ── Panel chrome ─────────────────────────────────────────────────────────
@@ -222,34 +210,5 @@ object UnifiedTrustPanelSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = "Privacy Settings Links available",
             description = "Privacy settings hyperlink",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            CLEAR_COOKIES_AND_SITE_DATA_BUTTON,
-            CLEAR_COOKIES_AND_SITE_DATA_DIALOG_TITLE,
-            CLEAR_COOKIES_AND_SITE_DATA_DIALOG_DESCRIPTION(),
-            CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CLEAR_BUTTON,
-            CLEAR_COOKIES_AND_SITE_DATA_DIALOG_CANCEL_BUTTON,
-            WEBSITE_TITLE(),
-            WEBSITE_URL(),
-            ETP_BANNER_PROTECTED_TITLE,
-            ETP_BANNER_NOT_SECURE_TITLE,
-            ETP_BANNER_NOT_SECURE_DESCRIPTION,
-            ETP_BANNER_NOT_PROTECTED_TITLE,
-            ETP_BANNER_NOT_PROTECTED_DESCRIPTION,
-            ETP_TOGGLE_LABEL,
-            ETP_TOGGLE_ENABLED_DESCRIPTION,
-            ETP_TOGGLE_DISABLED_DESCRIPTION,
-            ETP_TOGGLE_ON,
-            ETP_TOGGLE_OFF,
-            TRACKERS_DISABLED_NONE_BLOCKED,
-            TRACKERS_BLOCKED_ON_SITE,
-            TRACKERS_PROTECTED_NONE_BLOCKED,
-            CONNECTION_SECURE,
-            CONNECTION_VERIFIED_BY,
-            CONNECTION_NOT_SECURE,
-            PRIVACY_SETTINGS_LINK,
         )
 }

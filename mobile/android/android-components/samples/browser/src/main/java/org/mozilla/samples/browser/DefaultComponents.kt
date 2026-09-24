@@ -12,7 +12,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.engine.system.SystemEngine
@@ -112,6 +114,9 @@ open class DefaultComponents(private val applicationContext: Context) {
         const val PREF_GLOBAL_PRIVACY_CONTROL = "sample_browser_global_privacy_control"
     }
 
+    /** A [CoroutineScope] tied to the lifetime of the application process. */
+    val applicationScope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     val preferences: SharedPreferences =
         applicationContext.getSharedPreferences(SAMPLE_BROWSER_PREFERENCES, Context.MODE_PRIVATE)
 
@@ -161,14 +166,20 @@ open class DefaultComponents(private val applicationContext: Context) {
     private val lazyHistoryStorage = lazy { PlacesHistoryStorage(applicationContext) }
     val historyStorage by lazy { lazyHistoryStorage.value }
 
-    val sessionStorage by lazy { SessionStorage(applicationContext, engine) }
+    val sessionStorage by lazy {
+        SessionStorage(
+            applicationContext,
+            engine,
+            applicationScope = applicationScope,
+        )
+    }
 
     val permissionStorage by lazy { OnDiskSitePermissionsStorage(applicationContext) }
 
     val thumbnailStorage by lazy { ThumbnailStorage(applicationContext) }
 
     val fileUploadsDirCleaner: FileUploadsDirCleaner by lazy {
-        FileUploadsDirCleaner { applicationContext.cacheDir }
+        FileUploadsDirCleaner(applicationScope) { applicationContext.cacheDir }
     }
 
     val store by lazy {
@@ -187,6 +198,7 @@ open class DefaultComponents(private val applicationContext: Context) {
                         RegionMiddleware(
                             applicationContext,
                             LocationService.default(),
+                            applicationScope = applicationScope,
                         ),
                         SearchMiddleware(applicationContext),
                         RecordingDevicesMiddleware(applicationContext, notificationsDelegate),
@@ -278,7 +290,11 @@ open class DefaultComponents(private val applicationContext: Context) {
 
     // Intent
     val tabIntentProcessor by lazy {
-        TabIntentProcessor(tabsUseCases, searchUseCases.newTabSearch)
+        TabIntentProcessor(
+            tabsUseCases,
+            searchUseCases.newTabSearch,
+            applicationScope = applicationScope,
+        )
     }
     val externalAppIntentProcessors by lazy {
         listOf(
@@ -363,7 +379,7 @@ open class DefaultComponents(private val applicationContext: Context) {
 
         items.add(
             SimpleBrowserMenuItem("Add to homescreen") {
-                    MainScope().launch {
+                    applicationScope.launch {
                         webAppUseCases.addToHomescreen()
                     }
                 }

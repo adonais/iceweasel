@@ -21,7 +21,17 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: system
+    use-python:
+        by-test-platform:
+            # android-hw tasks are driven by the host's script.py wrapper,
+            # which imports mozdevice from the host environment; a fetched CI
+            # Python would shadow the host Python on PATH and break that import.
+            android-hw.*: system
+            # Fetched CI python is x86_64; under Rosetta it forces the universal
+            # mac Firefox onto its x86_64 slice and hits a Rosetta hang.  Keep mac
+            # on the native system python until there's an arm64 fetched python.
+            macosx.*: system
+            default: default
     use-uv: true
     require-signed-extensions:
         by-release-type:

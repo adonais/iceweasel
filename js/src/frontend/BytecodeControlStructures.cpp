@@ -283,10 +283,6 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
 
   AutoCheckUnstableEmitterScope cues(bce_);
 
-  // We emit IteratorClose bytecode inline. 'continue' statements do
-  // not call IteratorClose for the loop they are continuing.
-  bool emitIteratorCloseAtTarget = kind_ != NonLocalExitKind::Continue;
-
   // The JS expression stack (ignoring loop iterator values) is usually empty
   // when we get here because `break`, `continue`, and `return` are statements.
   // The only exception is a forced return for a |yield| expression.
@@ -306,19 +302,26 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
     return bce_->emitPopN(npops);
   };
 
-  // If we are closing multiple for-of loops, the resulting
-  // TryNoteKind::ForOfIterClose trynotes must be appropriately nested. Each
-  // TryNoteKind::ForOfIterClose starts when we close the corresponding for-of
-  // iterator, and continues until the actual jump.
-  Vector<BytecodeOffset, 4> forOfIterCloseScopeStarts(bce_->fc);
-
-  // If we have to execute a finally block or close a destructuring iterator,
-  // we jump there now and continue the non-local jump from there.
-  bool jumpingToCleanup = false;
-
-  // Walk the nestable control stack and patch jumps.
-  for (NestableControl* control = startingControl;
-       control != target && !jumpingToCleanup; control = control->enclosing()) {
+  // Walk the nestable control stack. If a control needs to execute a finally
+  // block or close a for-of/destructuring iterator, we defer the rest of the
+  // non-local exit until after that cleanup.
+  //
+  // For try-finally and for-of controls, we use a Continuation to record the
+  // information needed to process the remaining outer controls and continue the
+  // non-local exit. For destructuring, the only possible non-local exits are
+  // returns, so we just track the list of jumps. We then emit a jump to the
+  // control's cleanup code and return.
+  //
+  // After emitting the body of one of these controls, we emit bytecode for the
+  // finally block or iterator closing and call emitNonLocalJump to resume the
+  // non-local exit from there. This can repeat for enclosing controls until an
+  // invocation reaches the end of the loop below and emits the final jump or
+  // return.
+  //
+  // See the ForOfLoopControl class comment for the bytecode structure of
+  // for-of iterator closing.
+  for (NestableControl* control = startingControl; control != target;
+       control = control->enclosing()) {
     // Walk the scope stack and leave the scopes we entered. Leaving a scope
     // may emit administrative ops like JSOp::PopLexicalEnv but never anything
     // that manipulates the stack.
@@ -336,15 +339,12 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
           return false;
         }
         if (!finallyControl.emittingSubroutine()) {
-          jumpingToCleanup = true;
-
+          // Jump to the finally block.
           uint32_t idx;
           if (!finallyControl.allocateContinuation(target, kind_, &idx)) {
             return false;
           }
-          if (!bce_->emitJumpToFinally(&finallyControl.finallyJumps_, idx)) {
-            return false;
-          }
+          return bce_->emitJumpToFinally(&finallyControl.finallyJumps_, idx);
         }
         break;
       }
@@ -355,38 +355,29 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
+        // Jump to the iterator close code at the end of the destructuring
+        // bytecode.
         auto& destructuringControl = control->as<DestructuringControl>();
-        if (!destructuringControl.emitJumpToIteratorClose(bce_)) {
-          return false;
-        }
-        jumpingToCleanup = true;
-        break;
+        return destructuringControl.emitJumpToIteratorClose(bce_);
       }
 
       case StatementKind::ForOfLoop: {
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
-        BytecodeOffset tryNoteStart;
-        ForOfLoopControl& loopinfo = control->as<ForOfLoopControl>();
-        if (!loopinfo.emitPrepareForNonLocalJumpFromScope(
-                bce_, *es,
-                /* isTarget = */ false, &tryNoteStart)) {
-          //      [stack] ...
-          return false;
-        }
-        if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
-          return false;
-        }
-        break;
+        // Jump to the iterator close code after the loop body.
+        ForOfLoopControl& forOfControl = control->as<ForOfLoopControl>();
+        return forOfControl.emitJumpToIteratorClose(bce_, target, kind_);
       }
 
       case StatementKind::ForInLoop:
         if (!popToStackDepth(*control->nonLocalExitStackDepth())) {
           return false;
         }
-
-        // The iterator and the current value are on the stack.
+        // The iterator and the current value are on the stack. Unlike the
+        // for-of case above, we emit the JSOp::EndIter inline because it's a
+        // single non-throwing bytecode op, so emitting it in the current
+        // try-note region is safe.
         if (!bce_->emit1(JSOp::EndIter)) {
           //        [stack] ...
           return false;
@@ -398,70 +389,51 @@ bool NonLocalExitControl::emitNonLocalJump(NestableControl* target,
     }
   }
 
-  if (!jumpingToCleanup) {
-    // Leave intermediate scopes before emitting any iterator close and the
-    // final jump. This must run before the ForOfLoopControl iterator close
-    // below so that JSOp::TakeDisposeCapability (emitted for `using`
-    // declarations in the for-of head) reads from the for-of head scope's
-    // environment rather than an inner scope whose dispose capability may
-    // already have been consumed.
-    EmitterScope* targetEmitterScope =
-        target ? target->emitterScope() : bce_->varEmitterScope;
-    for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
-      if (!leaveScope(es)) {
-        return false;
-      }
+  // Leave intermediate scopes before emitting the final jump.
+  EmitterScope* targetEmitterScope =
+      target ? target->emitterScope() : bce_->varEmitterScope;
+  for (; es != targetEmitterScope; es = es->enclosingInFrame()) {
+    if (!leaveScope(es)) {
+      return false;
     }
+  }
 
-    if (target && emitIteratorCloseAtTarget && target->is<ForOfLoopControl>()) {
-      BytecodeOffset tryNoteStart;
-      ForOfLoopControl& loopinfo = target->as<ForOfLoopControl>();
-      if (!loopinfo.emitPrepareForNonLocalJumpFromScope(bce_, *es,
-                                                        /* isTarget = */ true,
-                                                        &tryNoteStart)) {
-        //            [stack] ... UNDEF UNDEF UNDEF
+  // The target's own values are still on the stack.
+  MOZ_ASSERT_IF(target && target->nonLocalExitStackDepth().isSome(),
+                bce_->bytecodeSection().stackDepth() ==
+                    *target->nonLocalExitStackDepth());
+
+  switch (kind_) {
+    case NonLocalExitKind::Continue: {
+      LoopControl* loop = &target->as<LoopControl>();
+      if (!bce_->emitJump(JSOp::Goto, &loop->continues)) {
         return false;
       }
-      if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
-        return false;
-      }
+      break;
     }
-
-    // The target's own values are still on the stack.
-    MOZ_ASSERT_IF(target && target->nonLocalExitStackDepth().isSome(),
-                  bce_->bytecodeSection().stackDepth() ==
-                      *target->nonLocalExitStackDepth());
-
-    switch (kind_) {
-      case NonLocalExitKind::Continue: {
-        LoopControl* loop = &target->as<LoopControl>();
-        if (!bce_->emitJump(JSOp::Goto, &loop->continues)) {
+    case NonLocalExitKind::Break: {
+      if (target->is<ForOfLoopControl>()) {
+        // A for-of loop that completes normally doesn't close its iterator, so
+        // `break` can't use the loop's break target. Jump to the iterator-close
+        // code after the loop instead.
+        ForOfLoopControl& forOfControl = target->as<ForOfLoopControl>();
+        if (!forOfControl.emitJumpToIteratorClose(bce_, target, kind_)) {
           return false;
         }
-        break;
-      }
-      case NonLocalExitKind::Break: {
+      } else {
         BreakableControl* breakable = &target->as<BreakableControl>();
         if (!bce_->emitJump(JSOp::Goto, &breakable->breaks)) {
           return false;
         }
-        break;
       }
-      case NonLocalExitKind::Return:
-        MOZ_ASSERT(!target);
-        if (!bce_->finishReturn(setRvalOffset_)) {
-          return false;
-        }
-        break;
+      break;
     }
-  }
-
-  // Close TryNoteKind::ForOfIterClose trynotes.
-  BytecodeOffset end = bce_->bytecodeSection().offset();
-  for (BytecodeOffset start : forOfIterCloseScopeStarts) {
-    if (!bce_->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end)) {
-      return false;
-    }
+    case NonLocalExitKind::Return:
+      MOZ_ASSERT(!target);
+      if (!bce_->finishReturn(setRvalOffset_)) {
+        return false;
+      }
+      break;
   }
 
   return true;

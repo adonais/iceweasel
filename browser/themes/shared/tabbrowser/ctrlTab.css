@@ -60,9 +60,9 @@
   margin-bottom: 2px;
   margin-inline-end: -6px;
   padding: 5px;
-  background-color: #f9f9fa;
+  background-color: var(--background-color-box);
   border-radius: var(--border-radius-small);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color-deemphasized);
 }
 
 .ctrlTab-canvas {

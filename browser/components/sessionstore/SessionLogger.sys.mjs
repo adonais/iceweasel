@@ -8,19 +8,15 @@ import { LogManager } from "resource://gre/modules/LogManager.sys.mjs";
 // eslint-disable-next-line mozilla/use-console-createInstance
 import { Log } from "resource://gre/modules/Log.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   cancelIdleCallback: "resource://gre/modules/Timer.sys.mjs",
+  logFlushIntervalSeconds: {
+    pref: "browser.sessionstore.logFlushIntervalSeconds",
+    default: 3600,
+  },
   requestIdleCallback: "resource://gre/modules/Timer.sys.mjs",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "logFlushIntervalSeconds",
-  "browser.sessionstore.logFlushIntervalSeconds",
-  3600
-);
 
 const loggerNames = ["SessionStore"];
 
@@ -52,10 +48,6 @@ class SessionLogManager extends LogManager {
         return this.stop();
       }
     );
-  }
-
-  get isDebug() {
-    return this.level >= Log.Level.Debug;
   }
 
   getLogFilename(reasonPrefix = "success") {

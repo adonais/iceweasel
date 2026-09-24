@@ -403,8 +403,7 @@ option(
     "--enable-execution-tracing",
     env="MOZ_EXECUTION_TRACING",
     default=enable_execution_tracing,
-    help="{Set|Do not set} compile flags necessary for running the JS "
-    "execution tracer",
+    help="{Set|Do not set} compile flags necessary for running the JS execution tracer",
 )
 
 
@@ -493,7 +492,7 @@ set_define("JS_ION_PERF", ion_perf)
 option(
     "--enable-jitspew",
     default=depends(when=moz_debug)(lambda: True),
-    help="{Enable|Disable} the Jit spew and IONFLAGS environment " "variable",
+    help="{Enable|Disable} the Jit spew and IONFLAGS environment variable",
 )
 
 set_define("JS_JITSPEW", depends_if("--enable-jitspew")(lambda _: True))
@@ -783,12 +782,12 @@ def enable_shared_memory(value):
 set_config("ENABLE_SHARED_MEMORY", enable_shared_memory)
 set_define("ENABLE_SHARED_MEMORY", enable_shared_memory)
 
-# Support for WebAssembly SIMD
+# Support for JIT SIMD
 # =====================================================
 
 
 @depends("--enable-jit", "--enable-simulator", target)
-def default_wasm_simd(jit_enabled, simulator, target):
+def default_jit_simd(jit_enabled, simulator, target):
     if not jit_enabled:
         return
 
@@ -800,37 +799,36 @@ def default_wasm_simd(jit_enabled, simulator, target):
 
 
 option(
-    "--enable-wasm-simd",
-    default=default_wasm_simd,
-    help="{Enable|Disable} WebAssembly SIMD",
+    "--enable-jit-simd",
+    default=default_jit_simd,
+    help="{Enable|Disable} JIT SIMD",
 )
 
 
 @depends(
-    "--enable-wasm-simd",
+    "--enable-jit-simd",
     "--enable-jit",
     "--enable-simulator",
     target,
-    "--wasm-no-experimental",
 )
-def wasm_simd(value, jit_enabled, simulator, target, no_experimental):
-    if no_experimental or not value:
+def jit_simd(value, jit_enabled, simulator, target):
+    if not value:
         return
 
     if not jit_enabled:
-        die("--enable-wasm-simd requires --enable-jit")
+        die("--enable-jit-simd requires --enable-jit")
 
     if simulator and (simulator[0] != "arm64"):
-        die("--enable-wasm-simd is not supported for simulators, except arm64")
+        die("--enable-jit-simd is not supported for simulators, except arm64")
 
     if target.cpu in ("x86_64", "x86", "aarch64"):
         return True
 
-    die("--enable-wasm-simd only possible when targeting the x86_64/x86/arm64 jits")
+    die("--enable-jit-simd only possible when targeting the x86_64/x86/arm64 jits")
 
 
-set_config("ENABLE_WASM_SIMD", wasm_simd)
-set_define("ENABLE_WASM_SIMD", wasm_simd)
+set_config("ENABLE_JIT_SIMD", jit_simd)
+set_define("ENABLE_JIT_SIMD", jit_simd)
 
 # Whether to check for field changes in WebAssembly serialization
 #
@@ -867,15 +865,12 @@ set_define(
 )
 
 # Support for Intel AVX instruction.
-#
-# AVX is exclusively used in WebAssembly SIMD instructions at the moment:
-# set direct dependency on "--enable-wasm-simd".
 # =====================================================
 
 
-@depends("--enable-wasm-simd", "--enable-simulator", target)
-def default_wasm_avx(wasm_simd_enabled, simulator, target):
-    if not wasm_simd_enabled:
+@depends("--enable-jit-simd", "--enable-simulator", target)
+def default_jit_avx(jit_simd_enabled, simulator, target):
+    if not jit_simd_enabled:
         return
 
     if simulator:
@@ -886,45 +881,44 @@ def default_wasm_avx(wasm_simd_enabled, simulator, target):
 
 
 option(
-    "--enable-wasm-avx",
-    default=default_wasm_avx,
-    help="{Enable|Disable} AVX support for WebAssembly SIMD",
+    "--enable-jit-avx",
+    default=default_jit_avx,
+    help="{Enable|Disable} AVX support for JIT SIMD",
 )
 
 
 @depends(
-    "--enable-wasm-avx",
-    "--enable-wasm-simd",
+    "--enable-jit-avx",
+    "--enable-jit-simd",
     "--enable-simulator",
     target,
-    "--wasm-no-experimental",
 )
-def wasm_avx(value, wasm_simd_enabled, simulator, target, no_experimental):
-    if no_experimental or not value:
+def jit_avx(value, jit_simd_enabled, simulator, target):
+    if not value:
         return
 
-    if not wasm_simd_enabled:
-        die("--enable-wasm-avx requires --enable-wasm-simd")
+    if not jit_simd_enabled:
+        die("--enable-jit-avx requires --enable-jit-simd")
 
     if simulator:
-        die("--enable-wasm-avx is not supported for simulators")
+        die("--enable-jit-avx is not supported for simulators")
 
     if target.cpu in ("x86_64", "x86"):
         return True
 
-    die("--enable-wasm-avx only possible when targeting the x86_64/x86 jits")
+    die("--enable-jit-avx only possible when targeting the x86_64/x86 jits")
 
 
-set_config("ENABLE_WASM_AVX", wasm_avx)
-set_define("ENABLE_WASM_AVX", wasm_avx)
+set_config("ENABLE_JIT_AVX", jit_avx)
+set_define("ENABLE_JIT_AVX", jit_avx)
 
 # Support for WebAssembly relaxed SIMD
 # =====================================================
 
 
-@depends("--enable-wasm-simd")
-def default_wasm_relaxed_simd(wasm_simd):
-    if wasm_simd:
+@depends("--enable-jit-simd")
+def default_wasm_relaxed_simd(jit_simd):
+    if jit_simd:
         return True
 
 
@@ -935,12 +929,12 @@ option(
 )
 
 
-@depends("--enable-wasm-relaxed-simd", "--enable-wasm-simd")
-def wasm_relaxed_simd(value, wasm_simd):
+@depends("--enable-wasm-relaxed-simd", "--enable-jit-simd")
+def wasm_relaxed_simd(value, jit_simd):
     if not value:
         return
 
-    if not wasm_simd:
+    if not jit_simd:
         die("relaxed SIMD requires SIMD")
 
     return True

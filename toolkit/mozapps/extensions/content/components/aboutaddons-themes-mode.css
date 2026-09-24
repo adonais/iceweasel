@@ -7,5 +7,5 @@
 }
 
 moz-segmented-control {
-  width: 100%;
+  width: -moz-available;
 }

@@ -439,16 +439,16 @@ LightweightThemeConsumer.prototype = {
         if (theme.backgroundsArea && theme.backgroundsArea != "auto") {
           return theme.backgroundsArea == "top_toolbars";
         }
-        if (hasTheme) {
-          return !!theme.backgroundsAlignment?.split(",").some(alignment => {
+        return (
+          hasTheme &&
+          !!theme.backgroundsAlignment?.split(",").some(alignment => {
             if (alignment == "center" || alignment == "bottom") {
               return true;
             }
             let [, y] = alignment.split(" ");
             return y == "center" || y == "bottom";
-          });
-        }
-        return this.BROWSER_NOVA_ENABLED;
+          })
+        );
       })()
     );
     this._setExperiment(hasTheme, themeData.experiment, theme.experimental);

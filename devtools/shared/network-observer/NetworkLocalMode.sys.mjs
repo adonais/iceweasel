@@ -27,7 +27,11 @@ export const NetworkLocalMode = {
    * @param {string} localFolderPath
    */
   interceptChannelWithPath(channel, localFolderPath) {
-    const path = decodeURI(channel.URI.filePath.replace(/^\//, ""));
+    if (channel.URI.spec.includes("%00")) {
+      overrideChannelIntoCustomCode(channel, 400, "400 Bad request");
+      return;
+    }
+    const path = decodeURI(channel.URI.filePath).replace(/^\/+/, "");
 
     // On Windows, replace all URI's '/' path separators with '\'
     let systemPath = path;
@@ -87,12 +91,38 @@ export const NetworkLocalMode = {
  * @param {nsIHttpChannel} channel
  */
 function overrideChannelInto404(channel) {
+  overrideChannelIntoCustomCode(
+    channel,
+    404,
+    "404 Not Found",
+    `No local file for: ${channel.URI.filePath}`
+  );
+}
+
+/**
+ * Make it so that an in-flight channel that just started
+ * is converted into a custom response with a custom HTTP status code.
+ *
+ * @param {nsIHttpChannel} channel
+ * @param {number} status
+ *        The returned status code
+ * @param {string} statusText
+ *        The returned status text
+ * @param {undefined|string} message
+ *        The message displayed in the returned HTML page. Will default to status text if omitted.
+ */
+function overrideChannelIntoCustomCode(
+  channel,
+  status,
+  statusText,
+  message = statusText
+) {
   const replacedHttpResponse = Cc[
     "@mozilla.org/network/replaced-http-response;1"
   ].createInstance(Ci.nsIReplacedHttpResponse);
 
-  replacedHttpResponse.responseStatus = 404;
-  replacedHttpResponse.responseStatusText = "404 Not Found";
+  replacedHttpResponse.responseStatus = status;
+  replacedHttpResponse.responseStatusText = statusText;
 
   // We don't have access to a document, and we can't create a DocumentFragment from here,
   // so use DOMParser to create a new document that we can use to build our listing page.
@@ -105,7 +135,7 @@ function overrideChannelInto404(channel) {
   const h1 = doc.createElement("h1");
   h1.append("DevTools Local Mode");
   const p = doc.createElement("p");
-  p.textContent = `No local file for: ${channel.URI.filePath}`;
+  p.textContent = message;
   doc.body.append(h1, p);
 
   const serializedDoc = xmlSerializer.serializeToString(doc);

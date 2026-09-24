@@ -18,31 +18,38 @@
  *   User-selected color name for the tab group's label/icons.
  * @property {boolean} collapsed
  *   Whether the tab group is collapsed or expanded in the tab strip.
+ * @property {boolean} [saveOnWindowClose]
+ *   Whether the tab group is to be saved when its window closes. Left out of
+ *   the abbreviated state handed to external callers.
  */
 
 /**
- * @typedef {TabGroupStateData} ClosedTabGroupStateData
- *   State of a tab group that was explicitly closed by the user.
+ * @typedef {object} AdditionalClosedTabGroupState
  * @property {number} closedAt
  *   Timestamp from `Date.now()`.
- * @property {string} sourceWindowId
+ * @property {WindowID} sourceWindowId
  *   Window that the tab group was in before it was closed.
  * @property {ClosedTabStateData[]} tabs
  *   Copy of all tab data for the tabs that were in this tab group
  *   at the time it was closed.
+ * @property {TabSplitViewStateData[]} splitViews
+ *   Copy of all splitview data for the splitviews that were in this tab group
+ *   at the time it was closed.
  */
 
 /**
- * @typedef {TabGroupStateData} SavedTabGroupStateData
- *   State of a tab group that was explicitly saved and closed by the user
- *   or implicitly saved on behalf of the user when the user explicitly closed
- *   a window.
+ * @typedef {TabGroupStateData & AdditionalClosedTabGroupState} ClosedTabGroupStateData
+ *   State of a tab group that was explicitly closed by the user.
+ */
+
+/**
+ * @typedef {object} AdditionalSavedTabGroupState
  * @property {true} saved
  *   Indicates that the tab group was saved explicitly by the user or
  *   automatically by the browser.
  * @property {number} closedAt
  *   Timestamp from `Date.now()`.
- * @property {string} [sourceWindowId]
+ * @property {WindowID} [sourceWindowId]
  *   Window that the tab group was in before a user explicitly saved it. Not set
  *   when the tab group is saved automatically due to a window closing.
  * @property {number} [windowClosedId]
@@ -54,6 +61,15 @@
  * @property {TabSplitViewStateData[]} splitViews
  *   Copy of all splitview data for the splitviews that were in this tab group
  *   at the time it was saved.
+ * @property {boolean} [removeAfterRestore]
+ *   Whether the tab group is to be forgotten once it has been restored.
+ */
+
+/**
+ * @typedef {TabGroupStateData & AdditionalSavedTabGroupState} SavedTabGroupStateData
+ *   State of a tab group that was explicitly saved and closed by the user
+ *   or implicitly saved on behalf of the user when the user explicitly closed
+ *   a window.
  */
 
 /**
@@ -129,9 +145,10 @@ class _TabGroupState {
    * using the `TabState` class.
    *
    * @param {TabGroupStateData} tabGroupState
-   * @param {number} windowClosedId
+   * @param {number} [windowClosedId]
    *   `WindowStateData.closedId` of the closed window from which this tab group
-   *   should be automatically saved.
+   *   should be automatically saved. Left out when the group is saved out of a
+   *   state that has no closed window to point at, as in session migration.
    */
   savedInClosedWindow(tabGroupState, windowClosedId) {
     let savedData = tabGroupState;

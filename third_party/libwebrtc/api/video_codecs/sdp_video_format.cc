@@ -119,6 +119,10 @@ SdpVideoFormat::SdpVideoFormat(absl::string_view name,
                                const CodecParameterMap& parameters)
     : name(name), parameters(parameters) {}
 
+SdpVideoFormat::SdpVideoFormat(absl::string_view name,
+                               CodecParameterMap&& parameters)
+    : name(name), parameters(std::move(parameters)) {}
+
 SdpVideoFormat::SdpVideoFormat(
     absl::string_view name,
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
@@ -131,6 +135,14 @@ SdpVideoFormat::SdpVideoFormat(
     std::span<const ScalabilityMode> scalability_modes)
     : name(name),
       parameters(parameters),
+      scalability_modes(scalability_modes.begin(), scalability_modes.end()) {}
+
+SdpVideoFormat::SdpVideoFormat(
+    absl::string_view name,
+    CodecParameterMap&& parameters,
+    std::span<const ScalabilityMode> scalability_modes)
+    : name(name),
+      parameters(std::move(parameters)),
       scalability_modes(scalability_modes.begin(), scalability_modes.end()) {}
 
 SdpVideoFormat::SdpVideoFormat(

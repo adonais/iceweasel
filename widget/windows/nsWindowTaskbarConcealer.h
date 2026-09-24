@@ -32,6 +32,12 @@ class nsWindow::TaskbarConcealer {
   // state re-asserted at that point.
   static void OnWindowShown(nsWindow* aWin);
 
+  // To be called immediately before a window is resized to cover its monitor
+  // on entering Gecko-fullscreen. Windows decides whether a window is
+  // fullscreen at that resize, so any not-fullscreen marking has to be gone
+  // beforehand.
+  static void OnFullscreenWillBeEntered(nsWindow* aWin);
+
   // To be called when the Gecko-fullscreen state of a window changes.
   static void OnFullscreenChanged(nsWindow* aWin, bool enteredFullscreen);
 

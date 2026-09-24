@@ -664,8 +664,9 @@ Nullable<double> Animation::GetOverallProgress() const {
   return result;
 }
 
-// https://drafts.csswg.org/web-animations/#set-the-playback-rate
+// https://drafts.csswg.org/web-animations-1/#set-the-playback-rate
 void Animation::SetPlaybackRate(double aPlaybackRate) {
+  // 1. Clear any pending playback rate on animation.
   mPendingPlaybackRate.reset();
 
   if (aPlaybackRate == mPlaybackRate) {
@@ -674,10 +675,37 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
 
   AutoMutationBatchForAnimation mb(*this);
 
-  Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
+  // 2. Let previous time be the value of the current time of animation before
+  // changing the playback rate.
+  const Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
+
+  // 3. Let previous playback rate be the current effective playback rate of
+  // animation.
+  const double previousPlaybackRate = CurrentOrPendingPlaybackRate();
+
+  // 4. Set the playback rate to new playback rate.
   mPlaybackRate = aPlaybackRate;
-  if (!HasFiniteTimeline() && !previousTime.IsNull()) {
+
+  // 5. Perform the steps corresponding to the first matching condition from the
+  //    following, if any:
+  if (mTimeline && mTimeline->IsMonotonicallyIncreasing() &&
+      !previousTime.IsNull()) {
+    // If animation is associated with a monotonically increasing timeline and
+    // the previous time is resolved,
+    // Set the current time of animation to previous time.
     SetCurrentTime(previousTime.Value());
+  } else if (mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
+             !mStartTime.IsNull() && EffectEnd() != TimeDuration::Forever() &&
+             ((previousPlaybackRate < 0.0 && aPlaybackRate >= 0.0) ||
+              (previousPlaybackRate >= 0.0 && aPlaybackRate < 0.0))) {
+    // If animation is associated with a non-null timeline that is not
+    // monotonically increasing, the start time of animation is resolved,
+    // associated effect end is not infinity, and either:
+    // - the previous playback rate < 0 and the new playback rate ≥ 0, or
+    // - the previous playback rate ≥ 0 and the new playback rate < 0,
+    // Set animation’s start time to the result of evaluating
+    // "associated effect end − start time" for animation.
+    mStartTime.SetValue(TimeDuration(EffectEnd()) - mStartTime.Value());
   }
 
   // In the case where GetCurrentTimeAsDuration() returns the same result before
@@ -949,7 +977,7 @@ void Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   PostUpdate();
 }
 
-// https://drafts.csswg.org/web-animations/#reverse-an-animation
+// https://drafts.csswg.org/web-animations-1/#reverse-an-animation
 void Animation::Reverse(ErrorResult& aRv) {
   if (!mTimeline) {
     return aRv.ThrowInvalidStateError(
@@ -960,15 +988,17 @@ void Animation::Reverse(ErrorResult& aRv) {
         "Can't reverse an animation associated with an inactive timeline");
   }
 
-  double effectivePlaybackRate = mPendingPlaybackRate.valueOr(mPlaybackRate);
-
-  if (effectivePlaybackRate == 0.0) {
-    return;
-  }
+  const double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Maybe<double> originalPendingPlaybackRate = mPendingPlaybackRate;
 
-  mPendingPlaybackRate = Some(-effectivePlaybackRate);
+  // We still call Play() even if the playback rate is 0 to make sure we update
+  // the animation synchronously (e.g. start time / hold time).
+  // Also, per spec, we do have to call Play() even if the playback rate is 0.
+  // Note: If playback rate is 0, we have to preserve it, i.e. we don't set the
+  // playback rate to -0.
+  mPendingPlaybackRate =
+      Some(effectivePlaybackRate == 0 ? 0 : -effectivePlaybackRate);
 
   Play(aRv, LimitBehavior::AutoRewind);
 
@@ -2154,51 +2184,43 @@ void Animation::ResetPendingTasks() {
   }
 }
 
-// https://drafts.csswg.org/web-animations-2/#at-progress-timeline-boundary
-/* static*/ Animation::ProgressTimelinePosition
-Animation::AtProgressTimelineBoundary(
-    const Nullable<TimeDuration>& aTimelineDuration,
-    const Nullable<TimeDuration>& aCurrentTime,
-    const TimeDuration& aEffectStartTime, const double aPlaybackRate) {
-  // Based on changed defined in: https://github.com/w3c/csswg-drafts/pull/6702
-  // 1.  If any of the following conditions are true:
-  //     * the associated animation's timeline is not a progress-based timeline,
-  //     or
-  //     * the associated animation's timeline duration is unresolved or zero,
-  //     or
-  //     * the animation's playback rate is zero
-  //     return false
-  // Note: We can detect a progress-based timeline by relying on the fact that
-  // monotonic timelines (i.e. non-progress-based timelines) have an unresolved
-  // timeline duration.
-  if (aTimelineDuration.IsNull() || aTimelineDuration.Value().IsZero() ||
-      aPlaybackRate == 0.0) {
+// https://drafts.csswg.org/web-animations-2/#at-timeline-boundary
+/* static*/ Animation::ProgressTimelinePosition Animation::AtTimelineBoundary(
+    const Nullable<TimeDuration>& aTimelineTime,
+    const TimeDuration& aMinimumTimelineTime,
+    const TimeDuration& aMaximumTimelineTime) {
+  const auto timelineTime =
+      aTimelineTime.IsNull() ? TimeDuration{} : aTimelineTime.Value();
+  if (AnimationUtils::IsWithinAnimationTimeTolerance(timelineTime,
+                                                     aMinimumTimelineTime) ||
+      AnimationUtils::IsWithinAnimationTimeTolerance(timelineTime,
+                                                     aMaximumTimelineTime)) {
+    return ProgressTimelinePosition::Boundary;
+  }
+
+  return ProgressTimelinePosition::NotBoundary;
+}
+
+Animation::ProgressTimelinePosition Animation::AtTimelineBoundary() const {
+  if (!mTimeline || !mTimeline->IsScrollTimeline() ||
+      mTimeline->IsUnresolvedTimeline()) {
+    // Null or unresolved timelines have no start and end time to speak of.
+    // Document timelines technically have range of [-Infinity, Infinity],
+    // making them effectively never be at boundaries.
+    // https://drafts.csswg.org/web-animations-2/#minimum-timeline-time
+    // https://drafts.csswg.org/web-animations-2/#maximum-timeline-time
     return ProgressTimelinePosition::NotBoundary;
   }
 
-  // 2.  Let effective start time be the animation's start time if resolved, or
-  // zero otherwise.
-  const TimeDuration& effectiveStartTime = aEffectStartTime;
+  const auto timelineRange =
+      mTimeline->AsScrollTimeline()->IntervalForAttachmentRange(mTimelineRange);
 
-  // 3.  Let effective timeline time be (animation's current time / animation's
-  // playback rate) + effective start time.
-  // Note: we use zero if the current time is unresolved. See the spec issue:
-  // https://github.com/w3c/csswg-drafts/issues/7458
-  const TimeDuration effectiveTimelineTime =
-      (aCurrentTime.IsNull()
-           ? TimeDuration()
-           : aCurrentTime.Value().MultDouble(1.0 / aPlaybackRate)) +
-      effectiveStartTime;
-
-  // 4.  Let effective timeline progress be (effective timeline time / timeline
-  // duration)
-  // 5.  If effective timeline progress is 0 or 1, return true,
-  // We avoid the division here but it is effectively the same as 4 & 5 above.
-  return effectiveTimelineTime.IsZero() ||
-                 (AnimationUtils::IsWithinAnimationTimeTolerance(
-                     effectiveTimelineTime, aTimelineDuration.Value()))
-             ? ProgressTimelinePosition::Boundary
-             : ProgressTimelinePosition::NotBoundary;
+  return AtTimelineBoundary(
+      mTimeline->GetCurrentTimeAsDuration(),
+      TimeDuration::FromMilliseconds(timelineRange.first *
+                                     PROGRESS_TIMELINE_DURATION_MILLISEC),
+      TimeDuration::FromMilliseconds(timelineRange.second *
+                                     PROGRESS_TIMELINE_DURATION_MILLISEC));
 }
 
 void Animation::UpdateNormalizedTimingForTimelineDataChange() {

@@ -8,6 +8,7 @@ from mozunit import main
 
 from mozbuild.frontend.reviewers import (
     herald_reviewers_for_files,
+    known_review_groups,
     mots_groups_for_files,
     mots_modules_for_files,
     parse_reviewers_from_subjects,
@@ -435,6 +436,43 @@ class TestMotsGroupsForFiles(unittest.TestCase):
         self.assertEqual(mots_groups_for_files(config, ["dom/foo.cpp"]), {})
 
 
+class TestKnownReviewGroups(unittest.TestCase):
+    def test_collects_from_herald_and_mots(self):
+        rules = {
+            "rules": [
+                _rule(
+                    "H1",
+                    [("matches-regexp", "^/?netwerk/")],
+                    [_group("necko-reviewers"), _individual("jane")],
+                )
+            ]
+        }
+        config = {
+            "modules": [
+                _module(
+                    "layout",
+                    ["layout/**/*"],
+                    meta={"review_group": "layout-reviewers"},
+                    submodules=[
+                        _module(
+                            "mathml",
+                            ["layout/mathml/**/*"],
+                            meta={"review_group": "firefox-svg-reviewers"},
+                        )
+                    ],
+                ),
+                _module("nogroup", ["dom/**/*"], meta={}),
+            ]
+        }
+        self.assertEqual(
+            known_review_groups(rules, config),
+            {"necko-reviewers", "layout-reviewers", "firefox-svg-reviewers"},
+        )
+
+    def test_no_sources(self):
+        self.assertEqual(known_review_groups(), set())
+
+
 class TestParseReviewersFromSubjects(unittest.TestCase):
     def test_individuals_and_groups(self):
         subjects = [
@@ -446,12 +484,31 @@ class TestParseReviewersFromSubjects(unittest.TestCase):
         self.assertEqual(groups, [("bar-reviewers", 1)])
 
     def test_group_classified_by_hash_prefix(self):
-        # The "#" prefix is the group marker, not the "-reviewers" suffix.
+        # The "#" prefix is a group marker, unlike the "-reviewers" suffix,
+        # which anyone could pick as a nick.
         individuals, groups = parse_reviewers_from_subjects([
             "Bug 1 - thing r=#webdriver-reviewers-rotation,not-a-group-reviewers"
         ])
         self.assertEqual(groups, [("webdriver-reviewers-rotation", 1)])
         self.assertEqual(individuals, [("not-a-group-reviewers", 1)])
+
+    def test_group_classified_by_known_group_name(self):
+        # Landing strips the "#" prefix, so a known group name is a group even
+        # without it.
+        individuals, groups = parse_reviewers_from_subjects(
+            ["Bug 1 - thing r=necko-reviewers,jane"],
+            known_groups={"necko-reviewers"},
+        )
+        self.assertEqual(groups, [("necko-reviewers", 1)])
+        self.assertEqual(individuals, [("jane", 1)])
+
+    def test_known_group_counted_once_with_or_without_prefix(self):
+        individuals, groups = parse_reviewers_from_subjects(
+            ["r=#necko-reviewers", "r=necko-reviewers"],
+            known_groups={"necko-reviewers"},
+        )
+        self.assertEqual(groups, [("necko-reviewers", 2)])
+        self.assertEqual(individuals, [])
 
     def test_review_request_syntax_not_parsed(self):
         # Committed messages use "r="; "r?" is a request and is not parsed.

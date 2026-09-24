@@ -1,0 +1,43 @@
+schema: 1
+
+bugzilla:
+  product: Core
+  component: "Machine Learning: On Device"
+
+origin:
+  name: parakeet.cpp
+  description: Parakeet (FastConformer) speech recognition in C++ with ggml, incl. cache-aware streaming
+
+  url: https://github.com/mudler/parakeet.cpp
+
+  release: f469a57270a1cc4554acb15febf60e56619673b9 (2026-06-26T06:49:50Z).
+  revision: f469a57270a1cc4554acb15febf60e56619673b9
+
+  license: MIT
+
+vendoring:
+  url: https://github.com/mudler/parakeet.cpp
+  source-hosting: github
+  tracking: commit
+
+  skip-vendoring-steps:
+    - update-moz-build
+
+  keep:
+    - moz-overrides.h
+
+  exclude:
+    - "**"
+
+  include:
+    - LICENSE
+    - src
+    - include/parakeet.h
+    - include/parakeet_capi.h
+
+  patches:
+    - parakeet-fd-loading.patch # load a model from an fd (sandboxed process)
+    - parakeet-no-drwav.patch # drop the vendored dr_wav.h dependency (unused: Firefox only feeds PCM)
+    - parakeet-stream-words.patch # typed per-word drain (timing + confidence)
+    - parakeet-no-exceptions.patch # include moz-overrides.h, to build with -fno-exceptions
+    - parakeet-move-mel-batch.patch # move, don't copy, the mel buffer into the 1-item MelBatch

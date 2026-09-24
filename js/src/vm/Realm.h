@@ -144,18 +144,18 @@ class NewPlainObjectWithPropsCache {
   }
 };
 
-// Cache for Object.assign's fast path for two plain objects. It's used to
-// optimize:
+// Cache used to optimize the following operations for plain objects:
 //
 //   Object.assign(to, from)
+//   to = {...from}
 //
 // If the |to| object has shape |emptyToShape_| (shape with no properties) and
 // the |from| object has shape |fromShape_|, we can use |newToShape_| for |to|
-// and copy all (data)) properties from the |from| object.
+// and copy all (data) properties from the |from| object.
 //
-// This is a one-entry cache for now. It has a hit rate of > 90% on both
-// Speedometer 2 and Speedometer 3.
-class MOZ_NON_TEMPORARY_CLASS PlainObjectAssignCache {
+// This is a one-entry cache for now. The Object.assign cache has a hit rate of
+// > 90% on both Speedometer 2 and Speedometer 3.
+class MOZ_NON_TEMPORARY_CLASS PlainObjectCopyPropsCache {
   SharedShape* emptyToShape_ = nullptr;
   SharedShape* fromShape_ = nullptr;
   SharedShape* newToShape_ = nullptr;
@@ -167,9 +167,9 @@ class MOZ_NON_TEMPORARY_CLASS PlainObjectAssignCache {
 #endif
 
  public:
-  PlainObjectAssignCache() = default;
-  PlainObjectAssignCache(const PlainObjectAssignCache&) = delete;
-  void operator=(const PlainObjectAssignCache&) = delete;
+  PlainObjectCopyPropsCache() = default;
+  PlainObjectCopyPropsCache(const PlainObjectCopyPropsCache&) = delete;
+  void operator=(const PlainObjectCopyPropsCache&) = delete;
 
   SharedShape* lookup(Shape* emptyToShape, Shape* fromShape) const {
     if (emptyToShape_ == emptyToShape && fromShape_ == fromShape) {
@@ -253,9 +253,11 @@ class ObjectRealm {
   // Map from array buffers to views sharing that storage.
   JS::WeakCache<js::InnerViewTable> innerViews;
 
+  // ScriptSourceObjects of the module scripts in this realm. Used by
+  // Debugger::findSources to locate the script sources.
   using ModuleScriptSourceSet =
       JS::GCHashSet<js::WeakHeapPtr<ScriptSourceObject*>,
-                    js::DefaultHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
+                    js::StableCellHasher<js::WeakHeapPtr<ScriptSourceObject*>>,
                     js::ZoneAllocPolicy>;
   JS::WeakCache<ModuleScriptSourceSet> moduleScriptSources;
 
@@ -279,6 +281,10 @@ class ObjectRealm {
   void finishRoots();
   void trace(JSTracer* trc);
   void sweepAfterMinorGC(JSTracer* trc);
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkModuleScriptSourcesAfterMovingGC(JS::Zone* zone);
+#endif
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* innerViewsArg,
@@ -436,7 +442,12 @@ class JS::Realm : public JS::shadow::Realm {
   js::DtoaCache dtoaCache;
   js::NewProxyCache newProxyCache;
   js::NewPlainObjectWithPropsCache newPlainObjectWithPropsCache;
-  js::PlainObjectAssignCache plainObjectAssignCache;
+  js::PlainObjectCopyPropsCache plainObjectAssignCache;
+
+  // Same, for object spread. Separate because spread defines own properties
+  // while Object.assign uses [[Set]], so Object.assign must not reuse a shape
+  // derived from a |from| with an own __proto__ property.
+  js::PlainObjectCopyPropsCache plainObjectSpreadCache;
 
   // Last time at which an animation was played for this realm.
   js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
@@ -589,6 +600,10 @@ class JS::Realm : public JS::shadow::Realm {
   void purge();
 
   void fixupAfterMovingGC(JSTracer* trc);
+
+#ifdef JSGC_HASH_TABLE_CHECKS
+  void checkModuleScriptSourcesAfterMovingGC();
+#endif
 
   void enter() { enterRealmDepthIgnoringJit_++; }
   void leave() {

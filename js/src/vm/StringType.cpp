@@ -922,15 +922,6 @@ void CopyChars(Latin1Char* dest, const JSLinearString& str) {
 
 } /* namespace js */
 
-template <typename CharT>
-static constexpr uint32_t StringFlagsForCharType(uint32_t baseFlags) {
-  if constexpr (std::is_same_v<CharT, char16_t>) {
-    return baseFlags;
-  }
-
-  return baseFlags | StringFlags::LATIN1_CHARS_BIT;
-}
-
 static bool UpdateNurseryBuffersOnTransfer(js::Nursery& nursery,
                                            JSExtensibleString* from,
                                            JSString* to, void* chars,

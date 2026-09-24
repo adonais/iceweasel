@@ -1185,8 +1185,9 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
   // element’s attribute list:
   if (nsCOMPtr<nsIScriptElement> script =
           do_QueryInterface(const_cast<Element*>(&aElement))) {
-    auto containsScriptOrStyle = [](const nsAString& aStr) {
-      return aStr.LowerCaseFindASCII("<script") != kNotFound ||
+    auto containsLinkScriptOrStyle = [](const nsAString& aStr) {
+      return aStr.LowerCaseFindASCII("<link") != kNotFound ||
+             aStr.LowerCaseFindASCII("<script") != kNotFound ||
              aStr.LowerCaseFindASCII("<style") != kNotFound;
     };
 
@@ -1194,21 +1195,21 @@ nsString nsContentSecurityUtils::GetIsElementNonceableNonce(
     uint32_t i = 0;
     while (BorrowedAttrInfo info = aElement.GetAttrInfoAt(i++)) {
       // Step 2.1. If attribute’s name contains an ASCII case-insensitive match
-      // for "<script" or "<style", return "Not Nonceable".
+      // for "<link", <script" or "<style", return "Not Nonceable".
       const nsAttrName* name = info.mName;
       if (nsAtom* prefix = name->GetPrefix()) {
-        if (containsScriptOrStyle(nsDependentAtomString(prefix))) {
+        if (containsLinkScriptOrStyle(nsDependentAtomString(prefix))) {
           return EmptyString();
         }
       }
-      if (containsScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
+      if (containsLinkScriptOrStyle(nsDependentAtomString(name->LocalName()))) {
         return EmptyString();
       }
 
       // Step 2.2. If attribute’s value contains an ASCII case-insensitive match
-      // for "<script" or "<style", return "Not Nonceable".
+      // for "<link", "<script" or "<style", return "Not Nonceable".
       info.mValue->ToString(value);
-      if (containsScriptOrStyle(value)) {
+      if (containsLinkScriptOrStyle(value)) {
         return EmptyString();
       }
     }
@@ -1376,7 +1377,7 @@ static nsLiteralCString sImgSrcDataBlobAllowList[] = {
     "chrome://browser/content/sidebar/sidebar-opentabs.html"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,
     "chrome://browser/content/spotlight.html"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.html"_ns,
     "chrome://browser/content/webext-panels.xhtml"_ns,
     "chrome://devtools/content/application/index.html"_ns,
     "chrome://devtools/content/framework/browser-toolbox/window.html"_ns,
@@ -1422,7 +1423,7 @@ static nsLiteralCString sImgSrcAddonsAllowList[] = {
 //  UNSAFE! Allows loading everything.
 static nsLiteralCString sImgSrcWildcardAllowList[] = {
     "about:reader"_ns,
-    "chrome://browser/content/syncedtabs/sidebar.xhtml"_ns,
+    "chrome://browser/content/syncedtabs/sidebar.html"_ns,
     // STOP! Do not add anything to this list.
 };
 // img-src https://example.org
@@ -1826,8 +1827,6 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
       "about:blank"_ns,
       // about:srcdoc is a special about page -> no CSP
       "about:srcdoc"_ns,
-      // about:sync-log displays plain text only -> no CSP
-      "about:sync-log"_ns,
       // about:logo just displays the firefox logo -> no CSP
       "about:logo"_ns,
       // about:sync is a special mozilla-signed developer addon with low usage
@@ -2146,11 +2145,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     // We will temporarily allow all jar URIs through for now
     return true;
   }
-  if (filename.Equals("about:sync-log"_ns)) {
-    // about:sync-log runs in the parent process and displays a directory
-    // listing. The listing has inline javascript that executes on load.
-    return true;
-  }
 
   if (StringBeginsWith(filename, "moz-extension://"_ns)) {
     nsCOMPtr<nsIURI> uri;
@@ -2179,21 +2173,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
     }
   }
 
-  auto kAllowedFilenamesPrefix = {
-      // Until 371900 is fixed, we need to do something about about:downloads
-      // and this is the most reasonable. See 1727770
-      "about:downloads"_ns,
-      // We think this is the same problem as about:downloads
-      "about:preferences"_ns, "about:settings"_ns,
-      // Browser console will give a filename of 'debugger' See 1763943
-      // Sometimes it's 'debugger eager eval code', other times just 'debugger
-      // eval code'
-      "debugger"_ns};
-
-  for (auto allowedFilenamePrefix : kAllowedFilenamesPrefix) {
-    if (StringBeginsWith(filename, allowedFilenamePrefix)) {
-      return true;
-    }
+  // Browser console will give a filename of 'debugger' See 1763943
+  // Sometimes it's 'debugger eager eval code', other times just 'debugger
+  // eval code'
+  if (StringBeginsWith(filename, "debugger"_ns)) {
+    return true;
   }
 
   // Log to MOZ_LOG

@@ -7,6 +7,7 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
@@ -37,8 +38,16 @@ class FormData;
 class DocShellLoadStateInit;
 struct NavigationAPIMethodTracker;
 class SessionHistoryEntry;
+struct RemoteType;
 }  // namespace dom
 }  // namespace mozilla
+
+namespace mozilla::dom {
+
+bool ContentTriggeredURILoadIsAllowed(
+    nsIURI* aURI, const mozilla::dom::RemoteType& aEffectiveRemoteType);
+
+}
 
 /**
  * nsDocShellLoadState contains setup information used in a nsIDocShell::loadURI
@@ -363,11 +372,13 @@ class nsDocShellLoadState final {
 
   bool IsMetaRefresh() const { return mIsMetaRefresh; }
 
-  const mozilla::Maybe<nsCString>& GetRemoteTypeOverride() const {
+  const mozilla::Maybe<mozilla::dom::RemoteType>& GetRemoteTypeOverride()
+      const {
     return mRemoteTypeOverride;
   }
 
-  void SetRemoteTypeOverride(const nsCString& aRemoteTypeOverride);
+  void SetRemoteTypeOverride(
+      const mozilla::dom::RemoteType& aRemoteTypeOverride);
 
   void SetSchemelessInput(nsILoadInfo::SchemelessInputType aSchemelessInput) {
     mSchemelessInput = aSchemelessInput;
@@ -402,9 +413,10 @@ class nsDocShellLoadState final {
   // originally, however non-errorpage history loads are always considered to be
   // triggered by the parent process, as we can validate them against the
   // history entry.
-  const nsCString& GetEffectiveTriggeringRemoteType() const;
+  const mozilla::dom::RemoteType& GetEffectiveTriggeringRemoteType() const;
 
-  void SetTriggeringRemoteType(const nsACString& aTriggeringRemoteType);
+  void SetTriggeringRemoteType(
+      const mozilla::dom::RemoteType& aTriggeringRemoteType);
 
   // Diagnostic assert if this is a system-principal triggered load, and it is
   // trivial to determine that the effective triggering remote type would not be
@@ -758,10 +770,10 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsIURI> mUnstrippedURI;
 
   // If set, the remote type which the load should be completed within.
-  mozilla::Maybe<nsCString> mRemoteTypeOverride;
+  mozilla::Maybe<mozilla::dom::RemoteType> mRemoteTypeOverride;
 
   // Remote type of the process which originally requested the load.
-  nsCString mTriggeringRemoteType;
+  mozilla::dom::RemoteType mTriggeringRemoteType;
 
   // if the address had an intentional protocol
   nsILoadInfo::SchemelessInputType mSchemelessInput =

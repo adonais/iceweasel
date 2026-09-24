@@ -4,10 +4,20 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsHTTPSOnlyModeSelectors {
+object SettingsHTTPSOnlyModeSelectors : SelectorContainer {
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_https_only_title),
+            description = "HTTPS-Only Mode toolbar title",
+        )
 
     val HTTPS_MODE_OPTION_SUMMARY =
         Selector(
@@ -15,7 +25,6 @@ object SettingsHTTPSOnlyModeSelectors {
             value =
                 "Automatically attempts to connect to sites using HTTPS encryption protocol for increased security. Learn more",
             description = "HTTPS only mode option summary",
-            groups = listOf("requiredForPage"),
         )
 
     val HTTPS_ONLY_MODE_TOGGLE =
@@ -23,7 +32,7 @@ object SettingsHTTPSOnlyModeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "https_only_switch",
             description = "HTTPS-Only Mode toggle",
-            groups = listOf(),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val HTTPS_ONLY_ALL_TABS_OPTION =
@@ -31,7 +40,6 @@ object SettingsHTTPSOnlyModeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "https_only_all_tabs",
             description = "Enable in all tabs option",
-            groups = listOf(),
         )
 
     val HTTPS_ONLY_PRIVATE_TABS_OPTION =
@@ -39,14 +47,5 @@ object SettingsHTTPSOnlyModeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "https_only_private_tabs",
             description = "Enable in private tabs only option",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            HTTPS_MODE_OPTION_SUMMARY,
-            HTTPS_ONLY_MODE_TOGGLE,
-            HTTPS_ONLY_ALL_TABS_OPTION,
-            HTTPS_ONLY_PRIVATE_TABS_OPTION,
         )
 }

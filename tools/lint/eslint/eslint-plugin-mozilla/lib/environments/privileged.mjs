@@ -63,6 +63,8 @@ export default {
     ByteLengthQueuingStrategy: "readonly",
     CanonicalBrowsingContext: "readonly",
     CDATASection: "readonly",
+    CollectorLogAnalyzer: "readonly",
+    CollectorNodeFlags: "readonly",
     CSS: "readonly",
     CSSAnimation: "readonly",
     CSSConditionRule: "readonly",

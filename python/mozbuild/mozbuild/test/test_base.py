@@ -185,45 +185,80 @@ class TestMozbuildObject(unittest.TestCase):
             os.chdir(self._old_cwd)
             shutil.rmtree(d)
 
+    def _mach_context_in_tmpdir(self, d, log_manager=None, handler=None):
+        """Lay out a throwaway srcdir/objdir under d and return a mach context."""
+        topobjdir = os.path.join(d, "objdir")
+        os.makedirs(topobjdir)
+
+        topsrcdir = os.path.join(d, "srcdir")
+        prepare_tmp_topsrcdir(topsrcdir)
+
+        mozinfo = os.path.join(topobjdir, "mozinfo.json")
+        with open(mozinfo, "w") as fh:
+            json.dump(
+                dict(
+                    topsrcdir=topsrcdir,
+                ),
+                fh,
+            )
+
+        os.chdir(topobjdir)
+
+        class MockMachContext:
+            pass
+
+        context = MockMachContext()
+        context.cwd = topobjdir
+        context.topdir = topsrcdir
+        context.settings = None
+        context.log_manager = log_manager
+        context.handler = handler
+        context.detect_virtualenv_mozinfo = False
+
+        return context
+
     def test_mach_command_base_inside_objdir(self):
         """Ensure a MachCommandBase constructed from inside the objdir works."""
 
         d = os.path.realpath(tempfile.mkdtemp())
 
         try:
-            topobjdir = os.path.join(d, "objdir")
-            os.makedirs(topobjdir)
-
-            topsrcdir = os.path.join(d, "srcdir")
-            prepare_tmp_topsrcdir(topsrcdir)
-
-            mozinfo = os.path.join(topobjdir, "mozinfo.json")
-            with open(mozinfo, "w") as fh:
-                json.dump(
-                    dict(
-                        topsrcdir=topsrcdir,
-                    ),
-                    fh,
-                )
-
-            os.chdir(topobjdir)
-
-            class MockMachContext:
-                pass
-
-            context = MockMachContext()
-            context.cwd = topobjdir
-            context.topdir = topsrcdir
-            context.settings = None
-            context.log_manager = None
-            context.detect_virtualenv_mozinfo = False
+            context = self._mach_context_in_tmpdir(d)
 
             o = MachCommandBase(context, None)
 
-            self.assertEqual(o.topobjdir, mozpath.normsep(topobjdir))
-            self.assertEqual(o.topsrcdir, mozpath.normsep(topsrcdir))
+            self.assertEqual(o.topobjdir, mozpath.normsep(context.cwd))
+            self.assertEqual(o.topsrcdir, mozpath.normsep(context.topdir))
 
         finally:
+            os.chdir(self._old_cwd)
+            shutil.rmtree(d)
+
+    def test_auto_log_without_tty_for_coding_agent(self):
+        """A coding agent gets a log even though its stdout is not a tty."""
+
+        mock.patch("mozbuild.base.os.isatty", lambda _: False).start()
+        mock.patch("mozbuild.base.is_running_under_coding_agent", lambda: True).start()
+        self.addCleanup(mock.patch.stopall)
+
+        d = os.path.realpath(tempfile.mkdtemp())
+        log_manager = LoggingManager()
+
+        try:
+            handler = mock.Mock()
+            handler.name = "dummy-command"
+            context = self._mach_context_in_tmpdir(d, log_manager, handler)
+
+            obj = MachCommandBase(context, None)
+
+            self.assertIsNotNone(obj.logfile)
+            self.assertTrue(obj.logfile.endswith(".log"))
+            self.assertTrue(os.path.exists(obj.logfile))
+
+        finally:
+            # StreamHandler.close() leaves the stream open; Windows won't rmtree it.
+            for log_handler in log_manager.file_handlers:
+                log_handler.stream.close()
             os.chdir(self._old_cwd)
             shutil.rmtree(d)
 

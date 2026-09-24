@@ -15,13 +15,6 @@
   },
   "border": {
     "color": {
-      "@base": {
-        "value": {
-          "light": "rgba(24, 14, 48, 0.12)",
-          "dark": "rgba(242, 240, 248, 0.12)",
-          "forcedColors": "CanvasText"
-        }
-      },
       "vibrant": {
         "value": "{promo.border.color.@base}"
       }

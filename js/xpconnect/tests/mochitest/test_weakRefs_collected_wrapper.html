@@ -26,6 +26,12 @@
         let iterator = document.fonts.values();
         weakrefs.push(new WeakRef(iterator));
 
+        // 5. JS object in a cycle with a DOM thing.
+        let domThing = document.implementation.createHTMLDocument();
+        let jsThing = {domThing};
+        domThing.jsThing = jsThing;
+        weakrefs.push(new WeakRef(jsThing));
+
         for (let wr of weakrefs) {
           isnot(wr.deref(), undefined, "Check that live wrapper is returned");
         }

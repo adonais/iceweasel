@@ -7,14 +7,16 @@
 
 #![deny(unsafe_code)]
 
+use crate::Atom;
+use crate::LocalName as SelectorLocalName;
 use crate::context::QuirksMode;
 use crate::data::ElementData;
 use crate::derives::*;
 use crate::device::Device;
 use crate::dom::{TDocument, TElement, TNode};
-use crate::invalidation::element::element_wrapper::{ElementSnapshot, ElementWrapper};
+use crate::invalidation::element::element_wrapper::{ElementSnapshot, ElementWrapper, Snapshots};
 use crate::invalidation::element::restyle_hints::RestyleHint;
-use crate::selector_map::PrecomputedHashSet;
+use crate::selector_map::{MaybeCaseInsensitiveHashMap, PrecomputedHashMap, PrecomputedHashSet};
 use crate::selector_parser::{SelectorImpl, Snapshot, SnapshotMap};
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::simple_buckets_map::SimpleBucketsMap;
@@ -23,10 +25,8 @@ use crate::stylesheets::{
     StylesheetInDocument,
 };
 use crate::stylist::CascadeDataDifference;
-use crate::values::specified::position::PositionTryFallbacksItem;
 use crate::values::AtomIdent;
-use crate::Atom;
-use crate::LocalName as SelectorLocalName;
+use crate::values::specified::position::PositionTryFallbacksItem;
 use selectors::parser::{Component, LocalName, Selector};
 
 /// The kind of change that happened for a given rule.
@@ -50,20 +50,20 @@ pub enum RuleChangeKind {
 /// need to be restyled. Whether it represents a whole subtree or just a single
 /// element is determined by the given InvalidationKind in
 /// StylesheetInvalidationSet's maps.
-#[derive(Debug, Eq, Hash, MallocSizeOf, PartialEq)]
-enum Invalidation {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Invalidation<'a> {
     /// An element with a given id.
-    ID(AtomIdent),
+    ID(&'a AtomIdent),
     /// An element with a given class name.
-    Class(AtomIdent),
+    Class(&'a AtomIdent),
     /// An element with a given local name.
     LocalName {
-        name: SelectorLocalName,
-        lower_name: SelectorLocalName,
+        name: &'a SelectorLocalName,
+        lower_name: &'a SelectorLocalName,
     },
 }
 
-impl Invalidation {
+impl Invalidation<'_> {
     fn is_id(&self) -> bool {
         matches!(*self, Invalidation::ID(..))
     }
@@ -225,14 +225,14 @@ impl StylesheetInvalidationSet {
         }
 
         if !self.buckets.ids.is_empty() {
-            if let Some(ref id) = element.id() {
+            if let Some(id) = element.id() {
                 kind.add(self.buckets.ids.get(id, quirks_mode));
                 if kind.is_scope() {
                     return kind;
                 }
             }
 
-            if let Some(ref old_id) = snapshot.and_then(|s| s.id_attr()) {
+            if let Some(old_id) = snapshot.and_then(|s| s.id_attr()) {
                 kind.add(self.buckets.ids.get(old_id, quirks_mode));
                 if kind.is_scope() {
                     return kind;
@@ -277,7 +277,8 @@ impl StylesheetInvalidationSet {
         }
 
         let quirks_mode = root.as_node().owner_doc().quirks_mode();
-        self.process_invalidations_in_subtree(root, snapshots, quirks_mode)
+        let snapshots = snapshots.map(Snapshots::new);
+        self.process_invalidations_in_subtree(root, snapshots.as_ref(), quirks_mode)
     }
 
     /// Process style invalidations in a given subtree. This traverses the
@@ -289,7 +290,7 @@ impl StylesheetInvalidationSet {
     fn process_invalidations_in_subtree<E>(
         &self,
         element: E,
-        snapshots: Option<&SnapshotMap>,
+        snapshots: Option<&Snapshots>,
         quirks_mode: QuirksMode,
     ) -> bool
     where
@@ -359,9 +360,9 @@ impl StylesheetInvalidationSet {
     }
 
     /// TODO(emilio): Reuse the bucket stuff from selectormap? That handles :is() / :where() etc.
-    fn scan_component(
-        component: &Component<SelectorImpl>,
-        invalidation: &mut Option<Invalidation>,
+    fn scan_component<'a>(
+        component: &'a Component<SelectorImpl>,
+        invalidation: &mut Option<Invalidation<'a>>,
     ) {
         match *component {
             Component::LocalName(LocalName {
@@ -369,21 +370,16 @@ impl StylesheetInvalidationSet {
                 ref lower_name,
             }) => {
                 if invalidation.is_none() {
-                    *invalidation = Some(Invalidation::LocalName {
-                        name: name.clone(),
-                        lower_name: lower_name.clone(),
-                    });
+                    *invalidation = Some(Invalidation::LocalName { name, lower_name });
                 }
             },
             Component::Class(ref class) => {
-                if invalidation.as_ref().map_or(true, |s| !s.is_id_or_class()) {
-                    *invalidation = Some(Invalidation::Class(class.clone()));
+                if invalidation.is_none_or(|s| !s.is_id_or_class()) {
+                    *invalidation = Some(Invalidation::Class(class));
                 }
             },
-            Component::ID(ref id) => {
-                if invalidation.as_ref().map_or(true, |s| !s.is_id()) {
-                    *invalidation = Some(Invalidation::ID(id.clone()));
-                }
+            Component::ID(ref id) if invalidation.is_none_or(|s| !s.is_id()) => {
+                *invalidation = Some(Invalidation::ID(id));
             },
             _ => {
                 // Ignore everything else, at least for now.
@@ -466,39 +462,42 @@ impl StylesheetInvalidationSet {
         kind: InvalidationKind,
         quirks_mode: QuirksMode,
     ) -> bool {
-        match invalidation {
-            Invalidation::Class(c) => {
-                let entry = match self.buckets.classes.try_entry(c.0, quirks_mode) {
-                    Ok(e) => e,
-                    Err(..) => return false,
-                };
-                *entry.or_insert(InvalidationKind::None) |= kind;
-            },
-            Invalidation::ID(i) => {
-                let entry = match self.buckets.ids.try_entry(i.0, quirks_mode) {
-                    Ok(e) => e,
-                    Err(..) => return false,
-                };
-                *entry.or_insert(InvalidationKind::None) |= kind;
-            },
-            Invalidation::LocalName { name, lower_name } => {
-                let insert_lower = name != lower_name;
-                if self.buckets.local_names.try_reserve(1).is_err() {
-                    return false;
-                }
-                let entry = self.buckets.local_names.entry(name);
-                *entry.or_insert(InvalidationKind::None) |= kind;
-                if insert_lower {
-                    if self.buckets.local_names.try_reserve(1).is_err() {
-                        return false;
-                    }
-                    let entry = self.buckets.local_names.entry(lower_name);
-                    *entry.or_insert(InvalidationKind::None) |= kind;
-                }
-            },
+        fn insert_atom(
+            map: &mut MaybeCaseInsensitiveHashMap<Atom, InvalidationKind>,
+            key: &AtomIdent,
+            kind: InvalidationKind,
+            quirks_mode: QuirksMode,
+        ) -> bool {
+            match map.try_get_or_insert_with(&key.0, quirks_mode, || InvalidationKind::None) {
+                Ok(existing) => {
+                    *existing |= kind;
+                    true
+                },
+                Err(..) => false,
+            }
         }
 
-        true
+        fn insert_local_name(
+            map: &mut PrecomputedHashMap<SelectorLocalName, InvalidationKind>,
+            key: &SelectorLocalName,
+            kind: InvalidationKind,
+        ) -> bool {
+            if map.try_reserve(1).is_err() {
+                return false;
+            }
+            *map.entry_ref(key).or_insert(InvalidationKind::None) |= kind;
+            true
+        }
+
+        match invalidation {
+            Invalidation::Class(c) => insert_atom(&mut self.buckets.classes, c, kind, quirks_mode),
+            Invalidation::ID(i) => insert_atom(&mut self.buckets.ids, i, kind, quirks_mode),
+            Invalidation::LocalName { name, lower_name } => {
+                insert_local_name(&mut self.buckets.local_names, name, kind)
+                    && (name == lower_name
+                        || insert_local_name(&mut self.buckets.local_names, lower_name, kind))
+            },
+        }
     }
 
     /// Collects invalidations for a given CSS rule, if not fully invalid already.
@@ -639,7 +638,7 @@ impl StylesheetInvalidationSet {
             LayerStatement(..) => {
                 // Layer statement insertions might alter styling order, so we need to always
                 // invalidate fully.
-                return self.invalidate_fully();
+                self.invalidate_fully()
             },
             Document(..) | Import(..) | Media(..) | Supports(..) | Container(..)
             | LayerBlock(..) | StartingStyle(..) | AppearanceBase(..) => {

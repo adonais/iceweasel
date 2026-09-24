@@ -58,7 +58,7 @@ pub(super) fn update_deferred_resolves(
                     ext_image.channel_index
                 );
                 ExternalTexture::new(
-                    0,
+                    api::ExternalTextureHandle(0),
                     texture_target,
                     image.uv,
                     deferred_resolve.rendering,

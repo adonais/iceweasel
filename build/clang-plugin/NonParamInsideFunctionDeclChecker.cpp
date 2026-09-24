@@ -8,7 +8,7 @@
 
 class NonParamAnnotation : public CustomTypeAnnotation {
 public:
-  NonParamAnnotation() : CustomTypeAnnotation(moz_non_param, "non-param"){};
+  NonParamAnnotation() : CustomTypeAnnotation(moz_non_param, "non-param") {};
 
 protected:
   // Helper for checking if a Decl has an explicitly specified alignment.
@@ -17,7 +17,8 @@ protected:
   static unsigned checkExplicitAlignment(const Decl *D) {
     ASTContext &Context = D->getASTContext();
 #if CLANG_VERSION_FULL >= 1600
-    unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(LangAS::Default);
+    unsigned PointerAlign =
+        Context.getTargetInfo().getPointerAlign(LangAS::Default);
 #else
     unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(0);
 #endif
@@ -145,8 +146,7 @@ NonParamAnnotation NonParam;
 void NonParamInsideFunctionDeclChecker::registerMatchers(
     MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
-      functionDecl(isDefinition(),
-                   isFirstParty(),
+      functionDecl(isDefinition(), isFirstParty(),
                    optionally(hasAncestor(
                        classTemplateSpecializationDecl().bind("spec"))),
                    unless(isDeleted()))

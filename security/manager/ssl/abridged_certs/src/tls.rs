@@ -7,7 +7,6 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use log::trace;
 use std::io::Cursor;
 use std::io::Write;
-use std::u8;
 
 /// Parses a TLS vector as defined in https://datatracker.ietf.org/doc/html/rfc8446#section-3.4
 /// The length prefix is specified as WIDTH within 1..4 inclusive.

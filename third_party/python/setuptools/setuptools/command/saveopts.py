@@ -6,9 +6,9 @@ class saveopts(option_base):
 
     description = "save supplied options to setup.cfg or other config file"
 
-    def run(self):
+    def run(self) -> None:
         dist = self.distribution
-        settings = {}
+        settings: dict[str, dict[str, str]] = {}
 
         for cmd in dist.command_options:
             if cmd == 'saveopts':
@@ -18,4 +18,4 @@ class saveopts(option_base):
                 if src == "command line":
                     settings.setdefault(cmd, {})[opt] = val
 
-        edit_config(self.filename, settings, self.dry_run)
+        edit_config(self.filename, settings)

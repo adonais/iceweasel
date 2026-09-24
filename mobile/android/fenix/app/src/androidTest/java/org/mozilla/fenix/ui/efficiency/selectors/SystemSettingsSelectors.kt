@@ -4,10 +4,12 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SystemSettingsSelectors {
+object SystemSettingsSelectors : SelectorContainer {
 
     // Will need support for querying multiple values eg: res id and description (itemWithResIdAndDescription)
     val PRIVATE_BROWSING_SYSTEM_SETTINGS_NOTIFICATIONS_TOGGLE =
@@ -15,7 +17,7 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = "Private browsing session",
             description = "Private browsing system settings notifications toggle",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     // Android's permission dialog. Package-qualified raw res-ids: these belong to the permission controller,
@@ -26,7 +28,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_RAW_RES,
             value = "com.android.permissioncontroller:id/permission_deny_button",
             description = "System permission Deny button",
-            groups = listOf(),
         )
 
     // The dialog container itself, so a caller can tell whether ANOTHER permission request is still
@@ -37,7 +38,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_RAW_RES,
             value = "com.android.permissioncontroller:id/grant_dialog",
             description = "System permission grant dialog",
-            groups = listOf(),
         )
 
     val PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON =
@@ -45,7 +45,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_RAW_RES,
             value = "com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button",
             description = "System permission Deny and don't ask again button",
-            groups = listOf(),
         )
 
     // A row in Gecko's file chooser, addressed by the label the device actually shows for it.
@@ -60,7 +59,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = label,
             description = "System file chooser '$label' option",
-            groups = listOf(),
         )
 
     // The App info screen's "Permissions" row, and then a named permission on the app-permissions list.
@@ -71,7 +69,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = "Permissions",
             description = "App info Permissions row",
-            groups = listOf(),
         )
 
     @Suppress("ktlint:standard:function-naming", "FunctionName")
@@ -80,7 +77,6 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = permissionName,
             description = "'$permissionName' app permission row",
-            groups = listOf(),
         )
 
     // "Allow" is a CONTAINS match, matching the legacy robot: on newer Android the camera permission screen
@@ -90,18 +86,5 @@ object SystemSettingsSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = "Allow",
             description = "App permission Allow option",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            PERMISSION_GRANT_DIALOG,
-            PERMISSION_DENY_BUTTON,
-            PERMISSION_DENY_AND_DONT_ASK_AGAIN_BUTTON,
-            FILE_CHOOSER_OPTION(),
-            APP_INFO_PERMISSIONS_ROW,
-            APP_PERMISSION_ROW(),
-            APP_PERMISSION_ALLOW_OPTION,
-            PRIVATE_BROWSING_SYSTEM_SETTINGS_NOTIFICATIONS_TOGGLE,
         )
 }

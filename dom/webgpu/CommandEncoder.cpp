@@ -12,8 +12,6 @@
 #include "RenderPassEncoder.h"
 #include "TextureView.h"
 #include "Utility.h"
-#include "ipc/WebGPUChild.h"
-#include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/CanvasContext.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
@@ -25,7 +23,7 @@ GPU_IMPL_JS_WRAP(CommandEncoder)
 
 void CommandEncoder::ConvertTextureDataLayoutToFFI(
     const dom::GPUTexelCopyBufferLayout& aLayout,
-    ffi::WGPUTexelCopyBufferLayout* aLayoutFFI) {
+    ffi::WGPUFfiTexelCopyBufferLayout* aLayoutFFI) {
   *aLayoutFFI = {};
   aLayoutFFI->offset = aLayout.mOffset;
 
@@ -107,7 +105,7 @@ void CommandEncoder::CopyBufferToBuffer(
   }
 
   ffi::wgpu_client_command_encoder_copy_buffer_to_buffer(
-      GetClient(), mParent->GetId(), GetId(), aSource.GetId(), aSourceOffset,
+      GetClient(), GetId(), aSource.GetId(), aSourceOffset,
       aDestination.GetId(), aDestinationOffset, size);
 }
 
@@ -115,12 +113,11 @@ void CommandEncoder::CopyBufferToTexture(
     const dom::GPUTexelCopyBufferInfo& aSource,
     const dom::GPUTexelCopyTextureInfo& aDestination,
     const dom::GPUExtent3D& aCopySize) {
-  ffi::WGPUTexelCopyBufferLayout src_layout = {};
+  ffi::WGPUFfiTexelCopyBufferLayout src_layout = {};
   CommandEncoder::ConvertTextureDataLayoutToFFI(aSource, &src_layout);
   ffi::wgpu_client_command_encoder_copy_buffer_to_texture(
-      GetClient(), mParent->GetId(), GetId(), aSource.mBuffer->GetId(),
-      &src_layout, ConvertTextureCopyView(aDestination),
-      ConvertExtent(aCopySize));
+      GetClient(), GetId(), aSource.mBuffer->GetId(), &src_layout,
+      ConvertTextureCopyView(aDestination), ConvertExtent(aCopySize));
 
   TrackPresentationContext(aDestination.mTexture->mTargetContext);
 }
@@ -128,10 +125,10 @@ void CommandEncoder::CopyTextureToBuffer(
     const dom::GPUTexelCopyTextureInfo& aSource,
     const dom::GPUTexelCopyBufferInfo& aDestination,
     const dom::GPUExtent3D& aCopySize) {
-  ffi::WGPUTexelCopyBufferLayout dstLayout = {};
+  ffi::WGPUFfiTexelCopyBufferLayout dstLayout = {};
   CommandEncoder::ConvertTextureDataLayoutToFFI(aDestination, &dstLayout);
   ffi::wgpu_client_command_encoder_copy_texture_to_buffer(
-      GetClient(), mParent->GetId(), GetId(), ConvertTextureCopyView(aSource),
+      GetClient(), GetId(), ConvertTextureCopyView(aSource),
       aDestination.mBuffer->GetId(), &dstLayout, ConvertExtent(aCopySize));
 }
 void CommandEncoder::CopyTextureToTexture(
@@ -139,7 +136,7 @@ void CommandEncoder::CopyTextureToTexture(
     const dom::GPUTexelCopyTextureInfo& aDestination,
     const dom::GPUExtent3D& aCopySize) {
   ffi::wgpu_client_command_encoder_copy_texture_to_texture(
-      GetClient(), mParent->GetId(), GetId(), ConvertTextureCopyView(aSource),
+      GetClient(), GetId(), ConvertTextureCopyView(aSource),
       ConvertTextureCopyView(aDestination), ConvertExtent(aCopySize));
 
   TrackPresentationContext(aDestination.mTexture->mTargetContext);
@@ -154,28 +151,27 @@ void CommandEncoder::ClearBuffer(const Buffer& aBuffer, const uint64_t aOffset,
     size = &sizeVal;
   }
 
-  ffi::wgpu_client_command_encoder_clear_buffer(
-      GetClient(), mParent->GetId(), GetId(), aBuffer.GetId(), aOffset, size);
+  ffi::wgpu_client_command_encoder_clear_buffer(GetClient(), GetId(),
+                                                aBuffer.GetId(), aOffset, size);
 }
 
 void CommandEncoder::PushDebugGroup(const nsAString& aString) {
   NS_ConvertUTF16toUTF8 marker(aString);
-  ffi::wgpu_client_command_encoder_push_debug_group(
-      GetClient(), mParent->GetId(), GetId(), &marker);
+  ffi::wgpu_client_command_encoder_push_debug_group(GetClient(), GetId(),
+                                                    &marker);
 }
 void CommandEncoder::PopDebugGroup() {
-  ffi::wgpu_client_command_encoder_pop_debug_group(GetClient(),
-                                                   mParent->GetId(), GetId());
+  ffi::wgpu_client_command_encoder_pop_debug_group(GetClient(), GetId());
 }
 void CommandEncoder::InsertDebugMarker(const nsAString& aString) {
   NS_ConvertUTF16toUTF8 marker(aString);
-  ffi::wgpu_client_command_encoder_insert_debug_marker(
-      GetClient(), mParent->GetId(), GetId(), &marker);
+  ffi::wgpu_client_command_encoder_insert_debug_marker(GetClient(), GetId(),
+                                                       &marker);
 }
 
 already_AddRefed<ComputePassEncoder> CommandEncoder::BeginComputePass(
     const dom::GPUComputePassDescriptor& aDesc) {
-  ffi::WGPUComputePassDescriptor desc = {};
+  ffi::WGPUFfiComputePassDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -188,7 +184,7 @@ already_AddRefed<ComputePassEncoder> CommandEncoder::BeginComputePass(
   }
 
   RawId id = ffi::wgpu_client_command_encoder_begin_compute_pass(
-      GetClient(), mParent->GetId(), GetId(), &desc);
+      GetClient(), GetId(), &desc);
   RefPtr<ComputePassEncoder> pass = new ComputePassEncoder(this, id);
   pass->SetLabel(aDesc.mLabel);
   return pass.forget();
@@ -233,7 +229,7 @@ already_AddRefed<RenderPassEncoder> CommandEncoder::BeginRenderPass(
     coerceToViewInPlace(desc.mDepthStencilAttachment.Value().mView);
   }
 
-  auto id = BeginFfiRenderPass(GetClient(), mParent->GetId(), GetId(), desc);
+  auto id = BeginFfiRenderPass(GetClient(), GetId(), desc);
   RefPtr<RenderPassEncoder> pass = new RenderPassEncoder(this, id);
   pass->SetLabel(desc.mLabel);
   return pass.forget();
@@ -244,8 +240,8 @@ void CommandEncoder::ResolveQuerySet(QuerySet& aQuerySet, uint32_t aFirstQuery,
                                      webgpu::Buffer& aDestination,
                                      uint64_t aDestinationOffset) {
   ffi::wgpu_client_command_encoder_resolve_query_set(
-      GetClient(), mParent->GetId(), GetId(), aQuerySet.GetId(), aFirstQuery,
-      aQueryCount, aDestination.GetId(), aDestinationOffset);
+      GetClient(), GetId(), aQuerySet.GetId(), aFirstQuery, aQueryCount,
+      aDestination.GetId(), aDestinationOffset);
 }
 
 void CommandEncoder::EndComputePass(
@@ -256,8 +252,7 @@ void CommandEncoder::EndComputePass(
   }
   mExternalTextures.AppendElements(aExternalTextures);
 
-  ffi::wgpu_client_compute_pass_encoder_end(GetClient(), mParent->GetId(),
-                                            aComputePassEncoderId);
+  ffi::wgpu_client_compute_pass_encoder_end(GetClient(), aComputePassEncoderId);
 }
 
 void CommandEncoder::EndRenderPass(
@@ -268,19 +263,18 @@ void CommandEncoder::EndRenderPass(
   }
   mExternalTextures.AppendElements(aExternalTextures);
 
-  ffi::wgpu_client_render_pass_encoder_end(GetClient(), mParent->GetId(),
-                                           aRenderPassEncoderId);
+  ffi::wgpu_client_render_pass_encoder_end(GetClient(), aRenderPassEncoderId);
 }
 
 already_AddRefed<CommandBuffer> CommandEncoder::Finish(
     const dom::GPUCommandBufferDescriptor& aDesc) {
-  ffi::WGPUCommandBufferDescriptor desc = {};
+  ffi::WGPUFfiCommandBufferDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
-  RawId command_buffer_id = ffi::wgpu_client_command_encoder_finish(
-      GetClient(), mParent->GetId(), GetId(), &desc);
+  RawId command_buffer_id =
+      ffi::wgpu_client_command_encoder_finish(GetClient(), GetId(), &desc);
 
   RefPtr<CommandBuffer> comb = new CommandBuffer(
       mParent, command_buffer_id, std::move(mPresentationContexts),

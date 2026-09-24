@@ -174,9 +174,9 @@ class alignas(ArenaSize) Arena {
  private:
   static const size_t ARENA_FLAG_BITS = 4;
   static const size_t DELAYED_MARKING_ARENA_BITS =
-      JS_BITS_PER_WORD - ArenaShift;
+      JS_BITS_PER_WORD - ARENA_FLAG_BITS;
   static_assert(
-      ARENA_FLAG_BITS + DELAYED_MARKING_ARENA_BITS <= JS_BITS_PER_WORD,
+      ArenaShift >= ARENA_FLAG_BITS,
       "Not enough space to pack flags and nextDelayedMarkingArena_ pointer "
       "into a single word.");
 

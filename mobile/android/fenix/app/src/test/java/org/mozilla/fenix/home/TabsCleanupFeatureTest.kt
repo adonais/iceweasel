@@ -442,7 +442,7 @@ class TabsCleanupFeatureTest {
         feature.start()
 
         verify {
-            tabsUseCases.removeTab(tabId = "1", excludedTabIds = setOf("99"))
+            tabsUseCases.removeTab(tabId = "1", excludedFallbackTabIds = setOf("99"))
 
             feature.showUndoSnackbar(testContext.getString(R.string.snackbar_tab_closed), any())
 
@@ -468,7 +468,7 @@ class TabsCleanupFeatureTest {
         feature.start()
 
         verify {
-            tabsUseCases.removeTab(tabId = "1", excludedTabIds = emptySet())
+            tabsUseCases.removeTab(tabId = "1", excludedFallbackTabIds = emptySet())
 
             feature.showUndoSnackbar(testContext.getString(R.string.snackbar_tab_closed), any())
 

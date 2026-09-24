@@ -71,6 +71,8 @@ class MFTEncoder final {
 
   static nsCString GetFriendlyName(const GUID& aSubtype);
 
+  static void ClearCache();
+
   struct Info final {
     GUID mSubtype;
     nsCString mName;

@@ -16,13 +16,13 @@ import androidx.core.graphics.createBitmap
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.HomepageThumbnails
 import mozilla.components.browser.thumbnails.RequestHomepageScreenshot
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.acornLightColorScheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.theme.Theme
 
 /**
  * Homepage delegate to take screenshot of homepage when view loads and display as a thumbnail in tabs tray.

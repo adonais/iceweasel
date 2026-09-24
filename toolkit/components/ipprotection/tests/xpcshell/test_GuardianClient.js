@@ -1108,3 +1108,25 @@ add_task(async function test_getToken_abort() {
     sandbox.restore();
   }
 });
+
+add_task(async function test_fetchProxyPass_networkError() {
+  // Nothing is listening on port 1, so the fetch fails to connect rather than
+  // returning a status.
+  Services.prefs.setCharPref(
+    "browser.ipProtection.guardian.endpoint",
+    "http://localhost:1"
+  );
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("browser.ipProtection.guardian.endpoint")
+  );
+
+  const client = new GuardianClient();
+  const { error, usage } = await client.fetchProxyPass(TEST_TOKEN_HANDLE);
+
+  Assert.equal(
+    error,
+    AUTH_ERRORS.NETWORK_ERROR,
+    "Should resolve with a network error rather than rejecting"
+  );
+  Assert.equal(usage, null, "Should report no usage");
+});

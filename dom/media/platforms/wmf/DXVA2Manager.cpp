@@ -26,7 +26,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
 #include "mozilla/layers/FenceD3D11.h"
@@ -689,7 +689,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
     }
   }
 
-  auto* fencesHolderMap = layers::CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
   const bool useFence =
       fencesHolderMap && layers::FenceD3D11::IsSupported(mDevice);
   if (useFence) {
@@ -961,25 +961,41 @@ void D3D11DXVA2Manager::BeforeShutdownVideoMFTDecoder() {
 // Format pairings for SDR colorspaces:
 // {DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709}
 // {DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_STUDIO_G22_NONE_P709}
+// {DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709}
+// {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709}
 //
-// Format pairings for HDR colorspaces:
+// Format pairings for HDR colorspaces in BT2100PQ:
+// {DXGI_FORMAT_NV12, DXGI_COLOR_SPACE_YCBCR_STUDIO_G2084_LEFT_P2020}
+// {DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020}
 // {DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020}
 // {DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709}
 //
+// No pairings exist for BT2100HLG (because DXGI lacks that transfer function),
+// but we convert it to DXGI_FORMAT_R10G10B10A2_UNORM with
+// DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020 for display because DXGI lacks
+// support for directly displaying P010 with anything other than BT709 for some
+// reason.
+//
 // A few notes:
-// * NV12 can be directly displayed as an overlay, whereas all other
-//   formats need to be converted to RGB for display.
+// * NV12 can be directly displayed as an overlay, whereas all other formats
+//   need to be converted to RGB for display, as an overlay we still need to
+//   correctly set the colorspace (BT601, BT709, BT2020, BT2100HLG, BT2100PQ),
+//   and some real-world testing would be needed to see if those color spaces
+//   are honored for NV12 format.
 // * YV12 is only used for SW decode (and we have no SurfaceFormat to represent
 //   it, gfx::SurfaceFormat::YUV420 has a different plane order).
-// * P010 and P016 are for HDR video, testing these as an overlay showed that
-//   they do not seem to honor the HDR G2084 transfer function so we can
-//   consider them simply not displayable.
+// * NV12 and P010 and P016 can be used for HDR video, testing P010 and P016 as
+//   an overlay showed that they do not seem to honor the HDR G2084 transfer
+//   function so we can consider them simply not displayable.
 // * If a video has alpha channel the decoder would have to output RGBA because
 //   Windows has no enums for YUV with alpha, we don't currently support RGBA
 //   output from decoders so alpha is not currently relevant.
 // * Windows seems to do some magic HDR tonemapping on SDR displays without even
 //   telling it to do anything, it's not clear what we can rely on about this,
-//   but testing in the wild is probably the best answer for now.
+//   but testing in the wild is probably the best answer, and given that we send
+//   all HDR YUV data to a shader for conversion to
+//   DXGI_FORMAT_R10G10B10A2_UNORM, we will have to do our own tonemapping if we
+//   decide to.
 
 // Convert a Media Foundation subtype GUID to a gfx::SurfaceFormat.
 static gfx::SurfaceFormat SurfaceFormatFromSubType(const GUID& aSubType) {
@@ -1064,10 +1080,13 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   // Pick an RGB format based on the required color depth.
-  if (aColorDepth > gfx::ColorDepth::COLOR_10) {
+  if (aColorDepth > gfx::ColorDepth::COLOR_10 ||
+      aTransferFunction == gfx::TransferFunction::LINEAR) {
     hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A16B16G16R16F);
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-  } else if (aColorDepth > gfx::ColorDepth::COLOR_8) {
+  } else if (aColorDepth > gfx::ColorDepth::COLOR_8 ||
+             aTransferFunction == gfx::TransferFunction::PQ ||
+             aTransferFunction == gfx::TransferFunction::HLG) {
     hr = outputType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_A2R10G10B10);
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
   } else {
@@ -1347,7 +1366,7 @@ HRESULT D3D11DXVA2Manager::CopyTextureToImage(
   }
 
   auto* textureData = client->GetInternalData()->AsD3D11TextureData();
-  auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = CompositeProcessFencesHolderMap::Get();
   MOZ_ASSERT(textureData);
   const bool useFence =
       textureData && textureData->mFencesHolderId.isSome() && fencesHolderMap;

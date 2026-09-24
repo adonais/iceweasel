@@ -5,6 +5,8 @@
 //! A gecko snapshot, that stores the element attributes and state before they
 //! change in order to properly calculate restyle hints.
 
+use crate::LocalName;
+use crate::WeakAtom;
 use crate::dom::TElement;
 use crate::gecko::snapshot_helpers;
 use crate::gecko::wrapper::GeckoElement;
@@ -16,8 +18,6 @@ use crate::invalidation::element::element_wrapper::ElementSnapshot;
 use crate::selector_parser::AttrValue;
 use crate::string_cache::{Atom, Namespace};
 use crate::values::{AtomIdent, AtomString};
-use crate::LocalName;
-use crate::WeakAtom;
 use dom::ElementState;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 
@@ -101,7 +101,7 @@ impl ElementSnapshot for GeckoElementSnapshot {
         unsafe {
             bindings::Gecko_Snapshot_DebugListAttributes(self, &mut string);
         }
-        String::from_utf8_lossy(&*string).into_owned()
+        String::from_utf8_lossy(&string).into_owned()
     }
 
     fn state(&self) -> Option<ElementState> {
@@ -123,12 +123,12 @@ impl ElementSnapshot for GeckoElementSnapshot {
             return None;
         }
 
-        snapshot_helpers::get_id(&*self.mAttrs)
+        snapshot_helpers::get_id(&self.mAttrs)
     }
 
     #[inline]
     fn is_part(&self, name: &AtomIdent) -> bool {
-        let attr = match snapshot_helpers::find_attr(&*self.mAttrs, &atom!("part")) {
+        let attr = match snapshot_helpers::find_attr(&self.mAttrs, &atom!("part")) {
             Some(attr) => attr,
             None => return false,
         };
@@ -138,7 +138,7 @@ impl ElementSnapshot for GeckoElementSnapshot {
 
     #[inline]
     fn imported_part(&self, name: &AtomIdent) -> Option<AtomIdent> {
-        snapshot_helpers::imported_part(&*self.mAttrs, name)
+        snapshot_helpers::imported_part(&self.mAttrs, name)
     }
 
     #[inline]

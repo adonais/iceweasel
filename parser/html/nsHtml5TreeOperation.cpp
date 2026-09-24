@@ -225,7 +225,7 @@ nsHtml5TreeOperation::~nsHtml5TreeOperation() {
   mOperation.match(TreeOperationMatcher());
 }
 
-static void AbortNodeInsertion(nsINode* aNode) {
+void nsHtml5TreeOperation::AbortNodeInsertion(nsINode* aNode) {
   if (auto* formControl = nsGenericHTMLFormControlElement::FromNode(aNode)) {
     // Clear form for this element, since it will not actually be
     // inserted.
@@ -233,6 +233,88 @@ static void AbortNodeInsertion(nsINode* aNode) {
   } else if (auto* image = HTMLImageElement::FromNode(aNode)) {
     image->ClearForm(true);
   }
+}
+
+// Inserts aNode into aParent immediately before aBefore, or appends it when
+// aBefore is null.
+static MOZ_ALWAYS_INLINE nsresult
+InsertNodeBefore(nsIContent* aNode, nsIContent* aParent, nsIContent* aBefore,
+                 nsHtml5DocumentBuilder* aBuilder) {
+  MOZ_ASSERT(aBuilder);
+  MOZ_ASSERT(aBuilder->IsInDocUpdate());
+  MOZ_ASSERT(!aNode->GetParentNode());
+  if (!aBefore) {
+    return nsHtml5TreeOperation::Append(aNode, aParent, aBuilder);
+  }
+  MOZ_ASSERT(aBefore->GetParent() == aParent);
+  ErrorResult rv;
+  Document* ownerDoc = aParent->OwnerDoc();
+  nsHtml5OtherDocUpdate update(ownerDoc, aBuilder->GetDocument());
+  aParent->InsertChildBefore(aNode, aBefore, false, rv);
+  if (!rv.Failed() && !ownerDoc->DOMNotificationsSuspended()) {
+    aNode->SetParserHasNotified();
+    MutationObservers::NotifyContentInserted(
+        aParent, aNode, {MutationEffectOnScript::KeepTrustWorthiness});
+  }
+  return rv.StealNSResult();
+}
+
+// Detaches aNode from its old parent, if any, and reports whether it can be
+// inserted into aParent at all.
+static bool PrepareForInsertion(nsIContent* aNode, nsIContent* aParent,
+                                nsHtml5DocumentBuilder* aBuilder) {
+  if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+    nsHtml5TreeOperation::Detach(aNode, aBuilder);
+    if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+      // Can this happen? If it can, give up.
+      nsHtml5TreeOperation::AbortNodeInsertion(aNode);
+      return false;
+    }
+  }
+
+  if (MOZ_UNLIKELY(!nsHtml5TreeOperation::CanInsert(aNode, aParent))) {
+    nsHtml5TreeOperation::AbortNodeInsertion(aNode);
+    return false;
+  }
+
+  return true;
+}
+
+bool nsHtml5TreeOperation::CanInsert(nsIContent* aNode, nsIContent* aParent) {
+  return !aNode->HasChildren() || !aParent->IsInclusiveDescendantOf(aNode);
+}
+
+static MOZ_ALWAYS_INLINE nsresult
+InsertTextImpl(const char16_t* aBuffer, uint32_t aLength, nsIContent* aParent,
+               nsIContent* aBefore, nsHtml5DocumentBuilder* aBuilder) {
+  MOZ_ASSERT(!aBefore || aBefore->GetParent() == aParent);
+  nsIContent* previousSibling =
+      aBefore ? aBefore->GetPreviousSibling() : aParent->GetLastChild();
+  if (previousSibling && previousSibling->IsText()) {
+    nsHtml5OtherDocUpdate update(aParent->OwnerDoc(), aBuilder->GetDocument());
+    return nsHtml5TreeOperation::AppendTextToTextNode(
+        aBuffer, aLength, previousSibling->GetAsText(), aBuilder);
+  }
+
+  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
+  RefPtr<nsTextNode> text = new (nodeInfoManager) nsTextNode(nodeInfoManager);
+  MOZ_ASSERT(text, "Infallible malloc failed?");
+  nsresult rv = text->SetText(aBuffer, aLength, false);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return InsertNodeBefore(text, aParent, aBefore, aBuilder);
+}
+
+static MOZ_ALWAYS_INLINE nsresult
+InsertCommentImpl(nsIContent* aParent, char16_t* aBuffer, int32_t aLength,
+                  nsIContent* aBefore, nsHtml5DocumentBuilder* aBuilder) {
+  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
+  RefPtr<Comment> comment = new (nodeInfoManager) Comment(nodeInfoManager);
+  MOZ_ASSERT(comment, "Infallible malloc failed?");
+  nsresult rv = comment->SetText(aBuffer, aLength, false);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return InsertNodeBefore(comment, aParent, aBefore, aBuilder);
 }
 
 nsresult nsHtml5TreeOperation::AppendTextToTextNode(
@@ -256,21 +338,13 @@ nsresult nsHtml5TreeOperation::AppendTextToTextNode(
 nsresult nsHtml5TreeOperation::AppendText(const char16_t* aBuffer,
                                           uint32_t aLength, nsIContent* aParent,
                                           nsHtml5DocumentBuilder* aBuilder) {
-  nsresult rv = NS_OK;
-  nsIContent* lastChild = aParent->GetLastChild();
-  if (lastChild && lastChild->IsText()) {
-    nsHtml5OtherDocUpdate update(aParent->OwnerDoc(), aBuilder->GetDocument());
-    return AppendTextToTextNode(aBuffer, aLength, lastChild->GetAsText(),
-                                aBuilder);
-  }
+  return InsertTextImpl(aBuffer, aLength, aParent, nullptr, aBuilder);
+}
 
-  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
-  RefPtr<nsTextNode> text = new (nodeInfoManager) nsTextNode(nodeInfoManager);
-  NS_ASSERTION(text, "Infallible malloc failed?");
-  rv = text->SetText(aBuffer, aLength, false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return Append(text, aParent, aBuilder);
+nsresult nsHtml5TreeOperation::InsertTextBefore(
+    const char16_t* aBuffer, uint32_t aLength, nsIContent* aParent,
+    nsIContent* aBefore, nsHtml5DocumentBuilder* aBuilder) {
+  return InsertTextImpl(aBuffer, aLength, aParent, aBefore, aBuilder);
 }
 
 nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
@@ -293,21 +367,7 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
 nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
                                       FromParser aFromParser,
                                       nsHtml5DocumentBuilder* aBuilder) {
-  if (MOZ_UNLIKELY(aNode->GetParentNode())) {
-    Detach(aNode, aBuilder);
-    if (MOZ_UNLIKELY(aNode->GetParentNode())) {
-      // Can this happen? If it can, give up.
-      AbortNodeInsertion(aNode);
-      return NS_OK;
-    }
-  }
-
-  if (MOZ_UNLIKELY(aNode->HasChildren()) &&
-      aParent->IsInclusiveDescendantOf(aNode)) {
-    // "If it is not possible to insert element at the adjusted insertion
-    // location, abort these steps."
-    // But see https://github.com/whatwg/html/issues/12494
-    AbortNodeInsertion(aNode);
+  if (!PrepareForInsertion(aNode, aParent, aBuilder)) {
     return NS_OK;
   }
 
@@ -329,6 +389,16 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
     autoPause.emplace(aBuilder);
   }
   return rv;
+}
+
+nsresult nsHtml5TreeOperation::InsertBefore(nsIContent* aNode,
+                                            nsIContent* aParent,
+                                            nsIContent* aBefore,
+                                            nsHtml5DocumentBuilder* aBuilder) {
+  if (!PrepareForInsertion(aNode, aParent, aBuilder)) {
+    return NS_OK;
+  }
+  return InsertNodeBefore(aNode, aParent, aBefore, aBuilder);
 }
 
 nsresult nsHtml5TreeOperation::AppendToDocument(
@@ -373,20 +443,12 @@ nsresult nsHtml5TreeOperation::AppendToDocument(
   return NS_OK;
 }
 
-static bool IsElementOrTemplateContent(nsINode* aNode) {
-  if (aNode) {
-    if (aNode->IsElement()) {
-      return true;
-    }
-    if (aNode->IsDocumentFragment()) {
-      // Check if the node is a template content.
-      nsIContent* fragHost = aNode->AsDocumentFragment()->GetHost();
-      if (fragHost && fragHost->IsTemplateElement()) {
-        return true;
-      }
-    }
-  }
-  return false;
+// "If the adjusted insertion location's last table has a parent node, then let
+// the adjusted insertion location be inside that parent, immediately before
+// last table." Any parent node qualifies, including the DocumentFragment that
+// roots a fragment parse.
+static bool IsPossibleFosterParent(nsINode* aNode) {
+  return aNode && (aNode->IsElement() || aNode->IsDocumentFragment());
 }
 
 void nsHtml5TreeOperation::Detach(nsIContent* aNode,
@@ -450,7 +512,7 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
 
   nsIContent* foster = aTable->GetParent();
 
-  if (IsElementOrTemplateContent(foster)) {
+  if (IsPossibleFosterParent(foster)) {
     if (MOZ_UNLIKELY(aNode->HasChildren()) &&
         aTable->IsInclusiveDescendantOf(aNode)) {
       // "If it is not possible to insert element at the adjusted insertion
@@ -943,7 +1005,7 @@ nsresult nsHtml5TreeOperation::FosterParentText(
   nsresult rv = NS_OK;
   nsIContent* foster = aTable->GetParent();
 
-  if (IsElementOrTemplateContent(foster)) {
+  if (IsPossibleFosterParent(foster)) {
     nsHtml5OtherDocUpdate update(foster->OwnerDoc(), aBuilder->GetDocument());
 
     nsIContent* previousSibling = aTable->GetPreviousSibling();
@@ -975,13 +1037,13 @@ nsresult nsHtml5TreeOperation::FosterParentText(
 nsresult nsHtml5TreeOperation::AppendComment(nsIContent* aParent,
                                              char16_t* aBuffer, int32_t aLength,
                                              nsHtml5DocumentBuilder* aBuilder) {
-  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
-  RefPtr<Comment> comment = new (nodeInfoManager) Comment(nodeInfoManager);
-  NS_ASSERTION(comment, "Infallible malloc failed?");
-  nsresult rv = comment->SetText(aBuffer, aLength, false);
-  NS_ENSURE_SUCCESS(rv, rv);
+  return InsertCommentImpl(aParent, aBuffer, aLength, nullptr, aBuilder);
+}
 
-  return Append(comment, aParent, aBuilder);
+nsresult nsHtml5TreeOperation::InsertCommentBefore(
+    nsIContent* aParent, char16_t* aBuffer, int32_t aLength,
+    nsIContent* aBefore, nsHtml5DocumentBuilder* aBuilder) {
+  return InsertCommentImpl(aParent, aBuffer, aLength, aBefore, aBuilder);
 }
 
 nsresult nsHtml5TreeOperation::AppendCommentToDocument(
@@ -1018,10 +1080,16 @@ void nsHtml5TreeOperation::SetDocumentFragmentForTemplate(
   tempElem->SetContent(static_cast<DocumentFragment*>(aDocumentFragment));
 }
 
+nsIContent* nsHtml5TreeOperation::GetFosterParentForInsertBefore(
+    nsIContent* aTable) {
+  nsIContent* tableParent = aTable->GetParent();
+  return IsPossibleFosterParent(tableParent) ? tableParent : nullptr;
+}
+
 nsIContent* nsHtml5TreeOperation::GetFosterParent(nsIContent* aTable,
                                                   nsIContent* aStackParent) {
-  nsIContent* tableParent = aTable->GetParent();
-  return IsElementOrTemplateContent(tableParent) ? tableParent : aStackParent;
+  nsIContent* foster = GetFosterParentForInsertBefore(aTable);
+  return foster ? foster : aStackParent;
 }
 
 void nsHtml5TreeOperation::PreventScriptExecution(nsIContent* aNode) {

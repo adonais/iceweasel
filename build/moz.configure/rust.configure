@@ -126,9 +126,11 @@ set_config(
 set_config(
     "MOZ_CLANG_NEWER_THAN_RUSTC_LLVM",
     depends(c_compiler, rustc_info)(
-        lambda c_compiler, rustc_info: rustc_info
-        and c_compiler.type == "clang"
-        and c_compiler.version.major > rustc_info.llvm_version.major
+        lambda c_compiler, rustc_info: (
+            rustc_info
+            and c_compiler.type == "clang"
+            and c_compiler.version.major > rustc_info.llvm_version.major
+        )
     ),
 )
 
@@ -204,9 +206,7 @@ def rust_compiler(rustc_info, cargo_info, target):
         If you have the 'rustup' tool installed you can upgrade
         to the latest release by typing 'rustup update'. The
         installer is available from https://rustup.rs/
-        """.format(
-                    version, rustc_min_version, rustc_min_version
-                )
+        """.format(version, rustc_min_version, rustc_min_version)
             )
         )
 
@@ -477,9 +477,7 @@ def assert_rust_compile(host_or_target, rustc_target, rustc):
             a rust std library for that target installed. Try:
 
               rustup target add {}
-            """.format(
-                        host_or_target.alias, rustc, rustc_target
-                    )
+            """.format(host_or_target.alias, rustc, rustc_target)
                 )
             )
 
@@ -942,3 +940,17 @@ def rust_pgo_ldflags(profile_generate, profile_use, gen_ldflags, use_ldflags):
 
 
 set_config("RUST_PGO_LDFLAGS", rust_pgo_ldflags)
+
+
+@depends(
+    build_environment,
+    host_variables.HOST_OS_ARCH,
+)
+@imports("os")
+def clippy_wrapper(build_env, host_os_arch):
+    if host_os_arch == "WINNT":
+        return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper.bat")
+    return os.path.join(build_env.topsrcdir, "build/cargo-clippy-wrapper")
+
+
+set_config("MOZ_CARGO_CLIPPY_WRAPPER", clippy_wrapper)

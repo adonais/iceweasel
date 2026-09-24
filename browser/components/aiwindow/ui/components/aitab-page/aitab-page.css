@@ -1,0 +1,69 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  /* 800px - wider than the chat column because generated pages carry tables
+     and card grids rather than a conversation. */
+  --aitab-page-max-width: calc(var(--size-layout-xlarge) + var(--dimension-300));
+}
+
+.aitab-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xlarge);
+  max-width: var(--aitab-page-max-width);
+  margin-inline: auto;
+  padding: var(--space-xlarge);
+}
+
+.aitab-eyebrow {
+  margin: 0;
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  text-transform: uppercase;
+}
+
+.aitab-title {
+  margin: 0;
+}
+
+.aitab-subhead {
+  margin: 0;
+  color: var(--text-color-deemphasized);
+}
+
+.aitab-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.aitab-footer-text {
+  margin-block: 0 var(--space-small);
+}
+
+.aitab-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-small);
+}
+
+.aitab-chip {
+  border-radius: var(--border-radius-circle);
+  padding: var(--space-xsmall) var(--space-medium);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+  text-decoration: none;
+
+  &[data-variant="primary"] {
+    background-color: var(--button-background-color-primary);
+    color: var(--button-text-color-primary);
+  }
+}
+
+.aitab-status {
+  margin: var(--space-xxlarge) auto;
+  color: var(--text-color-deemphasized);
+  text-align: center;
+}

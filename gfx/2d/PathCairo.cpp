@@ -109,6 +109,14 @@ already_AddRefed<Path> PathBuilderCairo::Finish() {
                                   mBeginPoint);
 }
 
+bool PathBuilderCairo::Reset(FillRule aFillRule) {
+  mPathData.clear();
+  mFillRule = aFillRule;
+  mCurrentPoint = Point();
+  mBeginPoint = Point();
+  return true;
+}
+
 PathCairo::PathCairo(FillRule aFillRule,
                      std::vector<cairo_path_data_t>& aPathData,
                      const Point& aCurrentPoint, const Point& aBeginPoint)

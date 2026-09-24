@@ -389,13 +389,13 @@ describe("selectPrivacyMessage", () => {
 
     it("forces the empty message by id", () => {
       const { decision } = selectPrivacyMessage(
-        ctx({ forceMessageId: "newtab-privacy-empty" }),
+        ctx({ forceMessageId: "newtab-privacy-empty-state" }),
         state(),
         NOW,
         rand()
       );
       expect(decision.variant).toBe("empty");
-      expect(decision.messageId).toBe("newtab-privacy-empty");
+      expect(decision.messageId).toBe("newtab-privacy-empty-state");
     });
 
     it("does not mutate scheduler state", () => {

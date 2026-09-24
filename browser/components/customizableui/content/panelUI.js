@@ -20,6 +20,73 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 /**
+ * Attributes copied from a `menu_HelpPopup` menuitem onto its app menu clone.
+ */
+const HELP_MENU_ATTRS = [
+  "command",
+  "onclick",
+  "key",
+  "disabled",
+  "accesskey",
+  "label",
+];
+
+/**
+ * The layout of the app menu's "Help and Report" subview, as a list of groups
+ * of `menu_HelpPopup` menuitem ids. Items are cloned in this order, with a
+ * separator between each pair of groups that survive. Visible menuitems that
+ * no group lists are appended, unseparated, after the last group.
+ */
+const HELP_VIEW_GROUPS = [
+  [
+    "menu_openHelp",
+    "help_reportBrokenSite",
+    "menu_HelpPopup_reportPhishingtoolmenu",
+    "menu_HelpPopup_reportPhishingErrortoolmenu",
+    "helpPolicySupport",
+  ],
+  ["helpSafeMode", "troubleShooting"],
+  ["feedbackPage", "helpSwitchDevice"],
+  ["aboutName", "menu_referralsPage"],
+];
+
+/**
+ * Clones one `menu_HelpPopup` menuitem into a subview toolbarbutton.
+ *
+ * @param {Element} node
+ *   The source menuitem.
+ * @returns {Element} The cloned toolbarbutton.
+ */
+function cloneHelpMenuItem(node) {
+  let button = document.createXULElement("toolbarbutton");
+  for (let attrName of HELP_MENU_ATTRS) {
+    if (node.hasAttribute(attrName)) {
+      button.setAttribute(attrName, node.getAttribute(attrName));
+    }
+  }
+
+  // We have AppMenu-specific strings for the Help menu. By convention,
+  // their localization IDs are set on "appmenu-data-l10n-id" attributes.
+  let l10nId = node.getAttribute("appmenu-data-l10n-id");
+  if (l10nId) {
+    document.l10n.setAttributes(button, l10nId);
+  }
+
+  if (node.id) {
+    button.id = "appMenu_" + node.id;
+  }
+
+  if (node.id == "help_reportBrokenSite") {
+    button.removeAttribute("command");
+    button.classList.add("subviewbutton-nav");
+    button.setAttribute("closemenu", "none");
+  }
+
+  button.classList.add("subviewbutton");
+  return button;
+}
+
+/**
  * Maintains the state and dispatches events for the main menu panel.
  */
 
@@ -761,63 +828,43 @@ const PanelUI = {
 
     let helpMenu = document.getElementById("menu_HelpPopup");
     let items = this.getElementsByTagName("vbox")[0];
-    let attrs = ["command", "onclick", "key", "disabled", "accesskey", "label"];
 
     // Remove all buttons from the view
     while (items.firstChild) {
       items.firstChild.remove();
     }
 
-    // Add the current set of menuitems of the Help menu to this view
-    let menuItems = Array.prototype.slice.call(
-      helpMenu.getElementsByTagName("menuitem")
-    );
-    let fragment = document.createDocumentFragment();
-    for (let node of menuItems) {
+    // Index the visible Help menu items so the groups can be built in the
+    // order HELP_VIEW_GROUPS asks for, rather than the menubar's order.
+    let remaining = new Set();
+    let byId = new Map();
+    for (let node of helpMenu.getElementsByTagName("menuitem")) {
       if (node.hidden) {
         continue;
       }
-      let button = document.createXULElement("toolbarbutton");
-      // Copy specific attributes from a menuitem of the Help menu
-      for (let attrName of attrs) {
-        if (!node.hasAttribute(attrName)) {
-          continue;
-        }
-        button.setAttribute(attrName, node.getAttribute(attrName));
-      }
-
-      // We have AppMenu-specific strings for the Help menu. By convention,
-      // their localization IDs are set on "appmenu-data-l10n-id" attributes.
-      let l10nId = node.getAttribute("appmenu-data-l10n-id");
-      if (l10nId) {
-        document.l10n.setAttributes(button, l10nId);
-      }
-
+      remaining.add(node);
       if (node.id) {
-        button.id = "appMenu_" + node.id;
+        byId.set(node.id, node);
       }
-
-      if (node.id == "help_reportBrokenSite") {
-        button.removeAttribute("command");
-        button.classList.add("subviewbutton-nav");
-        button.setAttribute("closemenu", "none");
-      }
-
-      button.classList.add("subviewbutton");
-      fragment.appendChild(button);
     }
 
-    // The Enterprise Support menu item has a different location than its
-    // placement in the menubar, so we need to specify it here.
-    let helpPolicySupport = fragment.querySelector(
-      "#appMenu_helpPolicySupport"
-    );
-    if (helpPolicySupport) {
-      fragment.insertBefore(
-        helpPolicySupport,
-        fragment.querySelector("#appMenu_menu_HelpPopup_reportPhishingtoolmenu")
-          .nextSibling
-      );
+    let fragment = document.createDocumentFragment();
+    for (let group of HELP_VIEW_GROUPS) {
+      let nodes = group.map(id => byId.get(id)).filter(Boolean);
+      if (!nodes.length) {
+        continue;
+      }
+      if (fragment.firstChild) {
+        fragment.appendChild(document.createXULElement("toolbarseparator"));
+      }
+      for (let node of nodes) {
+        fragment.appendChild(cloneHelpMenuItem(node));
+        remaining.delete(node);
+      }
+    }
+
+    for (let node of remaining) {
+      fragment.appendChild(cloneHelpMenuItem(node));
     }
 
     items.appendChild(fragment);
@@ -1267,10 +1314,17 @@ const PanelUI = {
       notification.id === "update-restart" &&
       Services.prefs.getBoolPref("browser.nova.enabled", false);
 
+    // Drop the description in private windows
+    const noDescription =
+      isNovaUpdateRestart && PrivateBrowsingUtils.isWindowPrivate(window);
+    this._panelBannerItem.toggleAttribute("no-description", noDescription);
+
     if (isNovaUpdateRestart) {
       this._panelBannerItem.setAttribute(
         "aria-labelledby",
-        "appMenu-update-banner-title appMenu-update-banner-description"
+        noDescription
+          ? "appMenu-update-banner-title"
+          : "appMenu-update-banner-title appMenu-update-banner-description"
       );
     } else {
       this._panelBannerItem.removeAttribute("aria-labelledby");

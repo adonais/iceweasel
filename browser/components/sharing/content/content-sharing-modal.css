@@ -40,7 +40,7 @@
 }
 
 .container {
-  --modal-size: var(--dimension-400);
+  --modal-size: var(--size-layout-large);
   display: flex;
   width: calc(2 * var(--modal-size));
   height: var(--modal-size);

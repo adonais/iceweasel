@@ -5,7 +5,6 @@
 #ifndef GPU_SharedTextureDMABuf_H_
 #define GPU_SharedTextureDMABuf_H_
 
-#include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/FileHandleWrapper.h"
 #include "mozilla/webgpu/SharedTexture.h"
 #include "nsTArrayForwardDeclare.h"
@@ -16,9 +15,6 @@ namespace mozilla {
 
 namespace webgpu {
 
-class VkImageHandle;
-class VkSemaphoreHandle;
-
 class SharedTextureDMABuf final : public SharedTexture {
  public:
   static UniquePtr<SharedTextureDMABuf> Create(
@@ -27,12 +23,12 @@ class SharedTextureDMABuf final : public SharedTexture {
       const struct ffi::WGPUTextureFormat aFormat,
       const ffi::WGPUTextureUsages aUsage);
 
-  SharedTextureDMABuf(
-      WebGPUParent* aParent, const ffi::WGPUDeviceId aDeviceId,
-      UniquePtr<VkImageHandle>&& aVkImageHandle, const uint32_t aWidth,
-      const uint32_t aHeight, const struct ffi::WGPUTextureFormat aFormat,
-      const ffi::WGPUTextureUsages aUsage, RefPtr<DMABufSurface>&& aSurface,
-      const layers::SurfaceDescriptorDMABuf& aSurfaceDescriptor);
+  SharedTextureDMABuf(const uint32_t aWidth, const uint32_t aHeight,
+                      const struct ffi::WGPUTextureFormat aFormat,
+                      const ffi::WGPUTextureUsages aUsage,
+                      RefPtr<DMABufSurface>&& aSurface,
+                      const layers::SurfaceDescriptorDMABuf& aSurfaceDescriptor,
+                      const ffi::WGPUDMABufInfo& aDMABufInfo);
   virtual ~SharedTextureDMABuf();
 
   Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() override;
@@ -41,22 +37,21 @@ class SharedTextureDMABuf final : public SharedTexture {
 
   SharedTextureDMABuf* AsSharedTextureDMABuf() override { return this; }
 
-  void onBeforeQueueSubmit(RawId aQueueId) override;
+  void onBeforeQueueSubmit(
+      const ffi::WGPUGlobal* aContext, RawId aDeviceId, RawId aQueueId,
+      nsTArray<ffi::WGPUVkSemaphoreHandle>& aSignalSemaphores) override;
 
   void CleanForRecycling() override;
 
   UniqueFileHandle CloneDmaBufFd();
 
-  const ffi::WGPUVkImageHandle* GetHandle();
+  const ffi::WGPUDMABufInfo& GetDMABufInfo() const { return mDMABufInfo; }
 
  protected:
-  const WeakPtr<WebGPUParent> mParent;
-  const RawId mDeviceId;
-  UniquePtr<VkImageHandle> mVkImageHandle;
-  nsTArray<UniquePtr<VkSemaphoreHandle>> mVkSemaphoreHandles;
   RefPtr<DMABufSurface> mSurface;
   const layers::SurfaceDescriptorDMABuf mSurfaceDescriptor;
-  nsTArray<RefPtr<gfx::FileHandleWrapper>> mSemaphoreFds;
+  const ffi::WGPUDMABufInfo mDMABufInfo;
+  RefPtr<gfx::FileHandleWrapper> mSemaphoreFd;
 };
 
 }  // namespace webgpu

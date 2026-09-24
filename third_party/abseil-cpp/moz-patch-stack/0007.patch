@@ -1,23 +1,97 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Jan 2025 15:37:00 -0600
-Subject: Bug 1935474 - only apply android api < 17 fix for SYS_mmap2 if
- actually on < 17 api. r?ng!
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sat, 29 Aug 2026 11:23:35 -0400
+Subject: Bug 2067508 - give abseil's externally-provided symbol declarations
+ default visibility.
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7822a8be4fb906ec1570667f72565a1a91f17228
+The Annotate* race annotations and __tsan_read1 come from the sanitizer runtime,
+__mmap2 from Bionic. Under the tree-wide -fvisibility=hidden they become hidden
+undefined symbols, failing the libxul link on TSan and on 32-bit Android.
+
+Proposed upstream as https://github.com/abseil/abseil-cpp/pull/2136.
 ---
- abseil-cpp/absl/base/internal/direct_mmap.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ abseil-cpp/absl/base/dynamic_annotations.h  | 9 +++++++++
+ abseil-cpp/absl/base/internal/direct_mmap.h | 3 +++
+ abseil-cpp/absl/synchronization/mutex.cc    | 3 +++
+ 3 files changed, 15 insertions(+)
 
+diff --git a/abseil-cpp/absl/base/dynamic_annotations.h b/abseil-cpp/absl/base/dynamic_annotations.h
+index 25161ae5019..6a7588f6bfc 100644
+--- a/abseil-cpp/absl/base/dynamic_annotations.h
++++ b/abseil-cpp/absl/base/dynamic_annotations.h
+@@ -199,6 +199,8 @@
+ 
+ // Function prototypes of annotations provided by the compiler-based sanitizer
+ // implementation.
++// mozilla - externally provided; must not inherit -fvisibility=hidden.
++#pragma GCC visibility push(default)
+ ABSL_INTERNAL_BEGIN_EXTERN_C
+ void AnnotateRWLockCreate(const char* file, int line,
+                           const volatile void* lock);
+@@ -218,6 +220,7 @@ void AnnotateBenignRaceSized(const char* file, int line,
+ void AnnotateThreadName(const char* file, int line, const char* name);
+ void AnnotateEnableRaceDetection(const char* file, int line, int enable);
+ ABSL_INTERNAL_END_EXTERN_C
++#pragma GCC visibility pop
+ 
+ #else  // ABSL_INTERNAL_RACE_ANNOTATIONS_ENABLED == 0
+ 
+@@ -294,12 +297,15 @@ ABSL_INTERNAL_END_EXTERN_C
+ 
+ // Function prototypes of annotations provided by the compiler-based sanitizer
+ // implementation.
++// mozilla - externally provided; must not inherit -fvisibility=hidden.
++#pragma GCC visibility push(default)
+ ABSL_INTERNAL_BEGIN_EXTERN_C
+ void AnnotateIgnoreReadsBegin(const char* file, int line)
+     ABSL_INTERNAL_IGNORE_READS_BEGIN_ATTRIBUTE;
+ void AnnotateIgnoreReadsEnd(const char* file,
+                             int line) ABSL_INTERNAL_IGNORE_READS_END_ATTRIBUTE;
+ ABSL_INTERNAL_END_EXTERN_C
++#pragma GCC visibility pop
+ 
+ #elif defined(ABSL_INTERNAL_ANNOTALYSIS_ENABLED)
+ 
+@@ -350,10 +356,13 @@ ABSL_INTERNAL_STATIC_INLINE void ABSL_INTERNAL_C_SYMBOL(
+ 
+ // Function prototypes of annotations provided by the compiler-based sanitizer
+ // implementation.
++// mozilla - externally provided; must not inherit -fvisibility=hidden.
++#pragma GCC visibility push(default)
+ ABSL_INTERNAL_BEGIN_EXTERN_C
+ void AnnotateIgnoreWritesBegin(const char* file, int line);
+ void AnnotateIgnoreWritesEnd(const char* file, int line);
+ ABSL_INTERNAL_END_EXTERN_C
++#pragma GCC visibility pop
+ 
+ #else
+ 
 diff --git a/abseil-cpp/absl/base/internal/direct_mmap.h b/abseil-cpp/absl/base/internal/direct_mmap.h
-index 1beb2ee4e52..986a8200ad8 100644
+index f56ba239873..423acd139ef 100644
 --- a/abseil-cpp/absl/base/internal/direct_mmap.h
 +++ b/abseil-cpp/absl/base/internal/direct_mmap.h
-@@ -94,7 +94,7 @@ inline void* DirectMmap(void* start, size_t length, int prot, int flags, int fd,
-     errno = EINVAL;
-     return MAP_FAILED;
-   }
--#ifdef __BIONIC__
-+#if defined(__BIONIC__) && (!defined(__ANDROID_API__) || __ANDROID_API__ < 17)
-   // SYS_mmap2 has problems on Android API level <= 16.
-   // Workaround by invoking __mmap2() instead.
-   return __mmap2(start, length, prot, flags, fd,
+@@ -54,7 +54,10 @@
+ 
+ // SYS_mmap and SYS_munmap are not defined in Android.
+ #ifdef __BIONIC__
++// mozilla - externally provided; must not inherit -fvisibility=hidden.
++#pragma GCC visibility push(default)
+ extern "C" void* __mmap2(void*, size_t, int, int, int, size_t);
++#pragma GCC visibility pop
+ #if defined(__NR_mmap) && !defined(SYS_mmap)
+ #define SYS_mmap __NR_mmap
+ #endif
+diff --git a/abseil-cpp/absl/synchronization/mutex.cc b/abseil-cpp/absl/synchronization/mutex.cc
+index 68782564443..961d245f91e 100644
+--- a/abseil-cpp/absl/synchronization/mutex.cc
++++ b/abseil-cpp/absl/synchronization/mutex.cc
+@@ -2788,7 +2788,10 @@ void ReleasableMutexLock::Release() {
+ }
+ 
+ #ifdef ABSL_HAVE_THREAD_SANITIZER
++// mozilla - externally provided; must not inherit -fvisibility=hidden.
++#pragma GCC visibility push(default)
+ extern "C" void __tsan_read1(void* addr);
++#pragma GCC visibility pop
+ #else
+ #define __tsan_read1(addr)  // do nothing if TSan not enabled
+ #endif

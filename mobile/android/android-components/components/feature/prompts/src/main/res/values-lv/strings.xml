@@ -11,4 +11,8 @@
   <string name="mozac_feature_prompts_allow">Atļaut</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">Vai tiešām?</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Turpināt</string>
+  <!-- Text for the positive button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_continue">Turpināt</string>
 </resources>

@@ -4,14 +4,14 @@
 
 Firefox, when packaged as a snap or flatpak, is confined in a way that the browser only has a very partial view of the host filesystem and limited capabilities.
 Because of this, when an extension attempts to use the [nativeMessaging API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging), the browser cannot locate the corresponding [native manifest](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_manifests), and it cannot launch the native messaging host (native application) either.
-Instead, it can use the [WebExtensions XDG desktop portal](https://github.com/flatpak/xdg-desktop-portal/pull/705) (work in progress). The portal is responsible for mediating accesses to otherwise unavailable files on the host filesystem, prompting the user whether they want to allow a given extension to launch a given native application (and remembering the user's choice), and spawning the native application on behalf of the browser.
+Instead, it can use the [WebExtensions XDG desktop portal](https://github.com/flatpak/xdg-desktop-portal/pull/705) (work in progress) or [Native messaging proxy](https://github.com/flatpak/xdg-native-messaging-proxy). The portal is responsible for mediating accesses to otherwise unavailable files on the host filesystem, prompting the user whether they want to allow a given extension to launch a given native application (and remembering the user's choice), and spawning the native application on behalf of the browser.
 The portal is browser-agnostic, although currently its only known use is in Firefox.
 
 ## Workflow
 
-When Firefox detects that it is running strictly confined, and if the value of the `widget.use-xdg-desktop-portal.native-messaging` preference is ≠ `0`, it queries the existence of the WebExtensions portal on the D-Bus session bus. If the portal is not available, native messaging will not work (a generic error is reported). A value of `1` will enable the portal, while a value of `2` will try to autodetect its use.
+When Firefox detects that it is running strictly confined, and if the value of the `widget.use-xdg-desktop-portal.native-messaging` for the `WebExtension XDG desktop portal` or `widget.use-xdg-desktop-portal.native-messaging-proxy` for `Native messaging proxy` preference is ≠ `0`, it queries the existence of the WebExtensions portal or Native messaging proxy on the D-Bus session bus. If the portal is not available, native messaging will not work (a generic error is reported). A value of `1` will enable the portal, while a value of `2` will try to autodetect its use.
 
-If the portal is available, Firefox starts by creating a session ([CreateSession method](https://github.com/flatpak/xdg-desktop-portal/blob/557d3c1b22ce393358d2fecb6862566321a57983/data/org.freedesktop.portal.WebExtensions.xml#L35)). The resulting Session object will be used to communicate with the portal until it is closed ([Close method](https://flatpak.github.io/xdg-desktop-portal/#gdbus-method-org-freedesktop-portal-Session.Close)).
+If the WebExtension portal is available, Firefox starts by creating a session ([CreateSession method](https://github.com/flatpak/xdg-desktop-portal/blob/557d3c1b22ce393358d2fecb6862566321a57983/data/org.freedesktop.portal.WebExtensions.xml#L35)). The resulting Session object will be used to communicate with the portal until it is closed ([Close method](https://flatpak.github.io/xdg-desktop-portal/#gdbus-method-org-freedesktop-portal-Session.Close)).
 
 Firefox then calls [the GetManifest method](https://github.com/flatpak/xdg-desktop-portal/blob/557d3c1b22ce393358d2fecb6862566321a57983/data/org.freedesktop.portal.WebExtensions.xml#L83) on the portal, and the portal looks up a host manifest matching the name of the native application and the extension ID, and returns the JSON manifest, which Firefox can use to do its own validation before pursuing.
 
@@ -25,6 +25,9 @@ Closing the session will have the portal terminate the native process cleanly.
 
 From an end user's perspective, assuming the portal is present and in use, the only visible difference is going to be a one-time prompt for each extension requesting to launch a given native application. There is currently no GUI tool to edit the saved authorizations, but there is a CLI tool (`flatpak permissions webextensions`, whose name is confusing because it's not flatpak-specific).
 
+The Native messaging proxy simplifies the workflow by only using [GetManifest](https://github.com/flatpak/xdg-native-messaging-proxy/blob/4aaa0c494ffa956b52bafb4fef36f35c2f2a7424/data/org.freedesktop.NativeMessagingProxy.xml#L32) and [Start](https://github.com/flatpak/xdg-native-messaging-proxy/blob/4aaa0c494ffa956b52bafb4fef36f35c2f2a7424/data/org.freedesktop.NativeMessagingProxy.xml#L49) method. The `GetManifest` basically works as in the WebExtension XDG desktop portal. The `Start` method returns session `handle`, `stdin`, `stdout` and `stderr` file descriptors. The session `handle` is then used to end the session by using [Close](https://github.com/flatpak/xdg-native-messaging-proxy/blob/4aaa0c494ffa956b52bafb4fef36f35c2f2a7424/data/org.freedesktop.NativeMessagingProxy.xml#L77) method. With the Native messaging proxy there's no user prompt to allow using native extension API.
+
+
 ## Implementation details
 
 Some complexity that is specific to XDG desktop portals architecture is hidden away in the XPCOM interface used by Firefox to talk to the portal: the Request and Response objects aren't exposed (instead the relevant methods are asynchronous and return a Promise that resolves when the response has arrived), and the GetPipes method has been folded into the Start method.
@@ -33,16 +36,19 @@ A `connectRunning()` method was added to the `Subprocess` javascript module to w
 
 Extensions with the "nativeMessaging" permission should know nothing about the underlying mechanism used to talk to native applications, so it is important that the errors thrown in this separate code path aren't distinguishable from the generic errors thrown in the usual code path where the browser is responsible for managing the lifecycle of the native applications itself.
 
-Debugging via `MOZ_LOG` environment variable or `about:logging` can be triggered with the log module `NativeMessagingPortal`. It will enable more verbose logs to be emitted by the Firefox side of the portal client implementation.
+Debugging via `MOZ_LOG` environment variable or `about:logging` can be triggered with the log module `NativeMessagingPortal` or `NativeMessagingProxy`. It will enable more verbose logs to be emitted by the Firefox side of the portal client implementation.
 
-The `IDL` interface to the portal is `nsINativeMessagingPortal`.
+The `IDL` interface to the portal is `nsINativeMessagingPortal`, the `IDL` interface to the native messaging proxy is `nsINativeMessagingProxy`.
 
-## Future work
+The old interface (nsINativeMessagingPortal) required a handle to be instantiated by CreateSession, used by GetManifest, Start and CloseSession.
+The new interface (nsINativeMessagingProxy) allows GetManifest to be used without handle, and merges CreateSession and Start into one method, with the handle now included in start's return value.
 
-The WebExtensions portal isn't widely available yet in a release of the XDG desktop portals project, however an agreement in principle was reached with its maintainers, pending minor changes to the current implementation, and the goal is to land it with the next stable release, hopefully 1.19.
-In the meantime, the portal has been available in Ubuntu [as a distro patch](https://launchpad.net/bugs/1968215) starting with release 22.04.
+Future work
+-----------
 
-The functionality is exercised with XPCShell tests that mock the portal's DBus interface. There are currently no integration tests that exercise the real portal.
+The WebExtensions portal isn't widely available yet in a release of the XDG desktop portals project, the portal has been available in Ubuntu [as a distro patch](https://launchpad.net/bugs/1968215) starting with release 22.04. It's planned to be replaced by the Native messaging proxy which is currently available in the Ubuntu 26.04.
+
+There is currently a simple smoke test that exercise the real portal or proxy and in the future we should contains some bad scenarios.
 
 ### Security Considerations
 

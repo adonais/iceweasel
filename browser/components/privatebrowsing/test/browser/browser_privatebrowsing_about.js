@@ -41,7 +41,7 @@ let expectedIconURL;
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
       // Enable suggestions in this test. Otherwise, the behaviour of the
       // content search box changes.
       ["browser.search.suggest.enabled", true],

@@ -154,6 +154,10 @@ add_task(async function test_appmenu_layout_no_profiles() {
     "The empty profile list should be hidden for a single profile"
   );
   Assert.ok(
+    PanelMultiView.getViewNode(document, "profiles-subview-list-header").hidden,
+    "The profile list header should be hidden for a single profile"
+  );
+  Assert.ok(
     footerSeparator.hidden,
     "The footer separator should be hidden when the profile list is empty"
   );
@@ -229,10 +233,23 @@ add_task(async function test_appmenu_layout_two_profiles() {
     4,
     "The start separator should follow the copy profile button"
   );
+  const profilesListHeader = PanelMultiView.getViewNode(
+    document,
+    "profiles-subview-list-header"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(profilesListHeader),
+    "The profile list header should be visible when there are other profiles"
+  );
   Assert.strictEqual(
-    profilesListStartSeparator.compareDocumentPosition(profileListItems[0]),
+    profilesListStartSeparator.compareDocumentPosition(profilesListHeader),
     4,
-    "Profile list items should follow the start separator"
+    "The profile list header should follow the start separator"
+  );
+  Assert.strictEqual(
+    profilesListHeader.compareDocumentPosition(profileListItems[0]),
+    4,
+    "Profile list items should follow the profile list header"
   );
   Assert.ok(footerSeparator, "A separator after the profile list should exist");
   Assert.strictEqual(

@@ -53,6 +53,26 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   };
 });
 
+/**
+ * Rounds the user's local time up to the nearest TIME_OPTIONS slot, giving the
+ * time input a more useful default than always starting at 9:00. Seconds are
+ * ignored, so 2:00:10 PM still yields 2:00 PM while 2:01 PM yields 2:30 PM.
+ *
+ * @param {Date} [now] - The time to round up from
+ * @returns {string} An "HH:MM" value matching one of TIME_OPTIONS
+ */
+function nextTimeOption(now = new Date()) {
+  const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+  const slot = Math.ceil(minutesSinceMidnight / 30);
+
+  // Wrap past the final 11:30 PM option back to midnight.
+  if (slot >= TIME_OPTIONS.length) {
+    return TIME_OPTIONS[0].value;
+  }
+
+  return TIME_OPTIONS[slot].value;
+}
+
 // Indexed by the weekday values used by the scheduler (0 = Sunday)
 const WEEKDAYS = [
   { value: 0, ftlId: "ai-tasks-alert-weekday-sunday" },
@@ -153,7 +173,7 @@ export class AgentMonitorItem extends MozLitElement {
     this.showLastResult = false;
     this.maxWatchUrls = DEFAULT_MAX_WATCH_URLS;
     this.checkFrequency = SCHEDULE_TYPES.DAILY;
-    this.scheduleTime = "09:00";
+    this.scheduleTime = nextTimeOption();
     this.scheduleWeekday = 1;
     this.alertDescription = "";
     this.pageUrls = [];
@@ -584,18 +604,16 @@ export class AgentMonitorItem extends MozLitElement {
             ? html`<div class="page-pills-row">
                 ${this.pageUrls.map(
                   url =>
-                    html`<span class="page-pill">
-                      <span class="page-pill-url"
-                        >${this.#displayUrl(url)}</span
-                      >
-                      <button
-                        type="button"
-                        class="page-pill-remove"
-                        data-l10n-id="ai-tasks-alert-remove-page-label"
-                        data-l10n-attrs="aria-label"
-                        @click=${() => this.#removeUrl(url)}
-                      ></button>
-                    </span>`
+                    html`<ai-website-chip
+                      type="context-chip"
+                      size="small"
+                      removable
+                      label=${this.agent?.watchUrlTitles?.[url] ??
+                      this.#displayUrl(url)}
+                      .iconSrc=${`page-icon:${url}`}
+                      title=${url}
+                      @ai-website-chip:remove=${() => this.#removeUrl(url)}
+                    ></ai-website-chip>`
                 )}
               </div>`
             : nothing}

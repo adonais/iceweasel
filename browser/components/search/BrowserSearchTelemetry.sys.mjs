@@ -61,6 +61,7 @@ class BrowserSearchTelemetryHandler {
     contextmenu: "contextmenu",
     contextmenu_visual: "contextmenu_visual",
     errorpage: "errorpage",
+    newtab_search_widget: "newtab-search-widget",
     newtab_searchbar: "newtab-searchbar",
     searchbar: "searchbar",
     smartbar: "smartbar",
@@ -254,6 +255,7 @@ class BrowserSearchTelemetryHandler {
       switch (source) {
         case "about_home":
         case "about_newtab":
+        case "newtab_search_widget":
           this.#recordSearch(browser, source, "enter");
           break;
         case "errorpage":
@@ -270,7 +272,14 @@ class BrowserSearchTelemetryHandler {
           this.#recordSearch(browser, source);
           break;
       }
-      if (["urlbar_handoff", "about_home", "about_newtab"].includes(source)) {
+      if (
+        [
+          "about_home",
+          "about_newtab",
+          "newtab_searchbar",
+          "urlbar_handoff",
+        ].includes(source)
+      ) {
         Glean.newtabSearch.issued.record({
           newtab_visit_id: details.newtabSessionId,
           search_access_point: source,

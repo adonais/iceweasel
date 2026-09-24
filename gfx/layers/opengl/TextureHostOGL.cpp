@@ -107,7 +107,8 @@ already_AddRefed<TextureHost> CreateTextureHostOGL(
 
 #ifdef MOZ_WIDGET_GTK
     case SurfaceDescriptor::TSurfaceDescriptorDMABuf: {
-      result = new DMABUFTextureHostOGL(aFlags, aDesc);
+      const SurfaceDescriptorDMABuf& desc = aDesc.get_SurfaceDescriptorDMABuf();
+      result = new DMABUFTextureHostOGL(aFlags, desc);
       if (!result->IsValid()) {
         gfxCriticalError() << "DMABuf surface import failed!";
         result = nullptr;
@@ -997,6 +998,7 @@ void AndroidImageReaderImageTextureSource::DeallocateDeviceData() {
 AndroidImageReaderImageTextureHost::AndroidImageReaderImageTextureHost(
     TextureFlags aFlags, const AndroidImageReaderImageDescriptor& aDescriptor)
     : TextureHost(TextureHostType::AndroidSurfaceTexture, aFlags),
+      mDescriptor(aDescriptor),
       mImageReaderId(aDescriptor.imageReaderId()),
       mFrameId(aDescriptor.frameId()),
       mSize(aDescriptor.size()),
@@ -1098,6 +1100,10 @@ void AndroidImageReaderImageTextureHost::PushDisplayItems(
 bool AndroidImageReaderImageTextureHost::SupportsExternalCompositing(
     WebRenderBackend aBackend) {
   return aBackend == WebRenderBackend::SOFTWARE;
+}
+
+SurfaceDescriptor AndroidImageReaderImageTextureHost::GetSurfaceDescriptor() {
+  return mDescriptor;
 }
 
 #endif  // MOZ_WIDGET_ANDROID

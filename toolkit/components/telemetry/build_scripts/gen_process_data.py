@@ -5,7 +5,6 @@
 # Write out processes data for C++. The processes are defined
 # in a file provided as a command-line argument.
 
-import collections
 import sys
 
 from mozparsers.shared_telemetry_utils import ParserError, load_yaml_file
@@ -39,10 +38,10 @@ def write_processes_data(processes, output):
     def p(line):
         print(line, file=output)
 
-    processes = collections.OrderedDict(processes)
+    processes_items = sorted(processes.items())
 
     p("static GeckoProcessType ProcessIDToGeckoProcessType[%d] = {" % len(processes))
-    for i, (name, value) in enumerate(sorted(processes.items())):
+    for i, (name, value) in enumerate(processes_items):
         p(
             "  /* %d: ProcessID::%s = */ %s,"
             % (i, to_enum_label(name), value["gecko_enum"])
@@ -54,7 +53,7 @@ def write_processes_data(processes, output):
     p("#else")
     p("static constexpr const char* ProcessIDToString[%d] = {" % len(processes))
     p("#endif")
-    for i, (name, value) in enumerate(sorted(processes.items())):
+    for i, (name, value) in enumerate(processes_items):
         p('  /* %d: ProcessID::%s = */ "%s",' % (i, to_enum_label(name), name))
     p("};")
 

@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+  <script type="application/javascript" src="parser_rtp.js"></script>
+  <script type="application/javascript" src="sdpUtils.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "1340372",
+    title: "Video Orientation RTP header extension and rendered pixels " +
+      "through a real negotiated connection"
+  });
+
+  const VIDEO_ORIENTATION_URI = "urn:3gpp:video-orientation";
+
+  // The fake test-pattern frame (320x240 landscape): red background with a
+  // blue bottom-right quadrant.
+  const FRAME_W = 320;
+  const FRAME_H = 240;
+  const SAMPLE_INSET = 10;
+  const RED_MIN_R = 180;
+  const RED_MAX_B = 60;
+  const BLUE_MIN_B = 180;
+  const BLUE_MAX_R = 60;
+
+  // Expected on-wire CVO rotation bits, and where the blue quadrant should
+  // land in the rendered (possibly dimension-swapped) frame, for each
+  // fake-camera rotation pref value this test exercises.
+  const ROTATIONS = {
+    0: {cvoBits: 0, width: FRAME_W, height: FRAME_H, blueCorner: "bottom-right"},
+    90: {cvoBits: 1, width: FRAME_H, height: FRAME_W, blueCorner: "bottom-left"},
+    180: {cvoBits: 2, width: FRAME_W, height: FRAME_H, blueCorner: "top-left"},
+    270: {cvoBits: 3, width: FRAME_H, height: FRAME_W, blueCorner: "top-right"},
+  };
+
+  runNetworkTest(async function (options) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["media.getusermedia.camera.fake.rotation", 90],
+        ["media.getusermedia.camera.fake.rotation-test-pattern", true],
+      ]
+    });
+
+    const test = new PeerConnectionTest(options);
+    // fake: true forces MediaEngineFake on the sending side even when a
+    // loopback device is present, which is required for the rotation pref
+    // to take effect (matches test_getUserMedia_videoOrientation.html).
+    // Width/height are pinned via constraints since MediaEngineFake's
+    // unconstrained default resolution differs between debug and opt builds.
+    // pcRemote only receives; this test doesn't need it to send anything.
+    test.setMediaConstraints(
+      [{video: {width: FRAME_W, height: FRAME_H}, fake: true}], []);
+
+    // Waits for (and consumes) a marker-bit RTP packet whose Video
+    // Orientation extension carries aExpectedCvoBits. The stream keeps
+    // flowing continuously, so it's fine to start looking only once the
+    // caller actually needs the answer, rather than sniffing from the start
+    // of the connection.
+    function waitForVideoOrientationPacket(pc, voExtId, aExpectedCvoBits) {
+      return new Promise(resolve => pc.mozSetPacketCallback((...args) => {
+        const p = ParseRtpPacket(args[3]);
+        const ext = p.header.extensions.find(e => e.id == voExtId);
+        if (p.header.marker === 1 && ext &&
+            (ext.data.getUint8(0) & 0x03) === aExpectedCvoBits) {
+          pc.mozSetPacketCallback(() => {});
+          resolve(p);
+        }
+      }));
+    }
+
+    async function checkVideoOrientationOnWire(aExpectedCvoBits) {
+      const extmaps = sdputils.findExtmapIdsUrnsDirections(
+        test.originalAnswer.sdp);
+      const voEntry = extmaps.find(([, urn]) => urn == VIDEO_ORIENTATION_URI);
+      ok(voEntry, "Video Orientation extension is in negotiated SDP");
+      const voExtId = parseInt(voEntry[0]);
+
+      const pc = SpecialPowers.wrap(test.pcRemote._pc);
+      pc.mozEnablePacketDump(0, "rtp", false);
+      const packet = await waitForVideoOrientationPacket(pc, voExtId,
+        aExpectedCvoBits);
+      pc.mozDisablePacketDump(0, "rtp", false);
+
+      const ext = packet.header.extensions.find(e => e.id == voExtId);
+      is(ext.data.byteLength, 1, "Video Orientation extension is 1 byte");
+    }
+
+    // drawImage() on a <video> playing a MediaStream can transiently throw
+    // NS_ERROR_NOT_AVAILABLE (bug 879717); retry a few times before giving up.
+    async function drawVideoToCanvas(ctx, video) {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          ctx.drawImage(video, 0, 0);
+          return;
+        } catch (e) {
+          if (attempt >= 4) {
+            throw e;
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+    }
+
+    // Asserts the receiving video element's dimensions and, off Android,
+    // rendered pixel content match aRotation.
+    async function checkRenderedPixels(aRotation) {
+      const video = test.pcRemote.remoteMediaElements[0];
+      const {width, height, blueCorner} = ROTATIONS[aRotation];
+      is(video.videoWidth, width,
+        `Remote videoWidth is ${width} for a ${aRotation}° rotation`);
+      is(video.videoHeight, height,
+        `Remote videoHeight is ${height} for a ${aRotation}° rotation`);
+
+      if (navigator.userAgent.includes("Android")) {
+        // Cannot capture a video element on Android (bug 1526207), so
+        // rendered pixels come back solid black. The dimension checks above
+        // (and the wire-level checks in checkVideoOrientationOnWire) are
+        // unaffected and still run.
+        return;
+      }
+
+      const cap = document.createElement("canvas");
+      cap.width = video.videoWidth;
+      cap.height = video.videoHeight;
+      const ctx = cap.getContext("2d");
+      await drawVideoToCanvas(ctx, video);
+
+      const sample = (x, y) => {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        return {r: d[0], g: d[1], b: d[2]};
+      };
+
+      const corners = {
+        "top-left": {x: SAMPLE_INSET, y: SAMPLE_INSET},
+        "top-right": {x: video.videoWidth - SAMPLE_INSET, y: SAMPLE_INSET},
+        "bottom-left": {x: SAMPLE_INSET, y: video.videoHeight - SAMPLE_INSET},
+        "bottom-right": {x: video.videoWidth - SAMPLE_INSET,
+                         y: video.videoHeight - SAMPLE_INSET},
+      };
+
+      for (const [label, {x, y}] of Object.entries(corners)) {
+        const px = sample(x, y);
+        info(`${label}: RGB(${px.r},${px.g},${px.b})`);
+        if (label == blueCorner) {
+          ok(px.b >= BLUE_MIN_B && px.r <= BLUE_MAX_R,
+            `blue quadrant at ${label} (b=${px.b} r=${px.r})`);
+        } else {
+          ok(px.r >= RED_MIN_R && px.b <= RED_MAX_B,
+            `background red at ${label} (r=${px.r} b=${px.b})`);
+        }
+      }
+    }
+
+    test.chain.insertAfter('PC_REMOTE_WAIT_FOR_MEDIA_FLOW', [
+      async function PC_REMOTE_CHECK_INITIAL_VIDEO_ORIENTATION() {
+        // The rotation pref was set before the connection was established,
+        // so every frame -- including whichever one satisfied the media
+        // flow check above -- already carries it; no need to wait for a
+        // resize here.
+        await checkVideoOrientationOnWire(ROTATIONS[90].cvoBits);
+        await checkRenderedPixels(90);
+      },
+
+      async function PC_REMOTE_CHECK_MIDSTREAM_VIDEO_ORIENTATION_CHANGE() {
+        const video = test.pcRemote.remoteMediaElements[0];
+        const resized = haveEvent(video, "resize",
+          wait(10000, new Error("Timeout waiting for rotated resize")));
+        await SpecialPowers.pushPrefEnv({
+          set: [["media.getusermedia.camera.fake.rotation", 180]]
+        });
+        await resized;
+        await checkVideoOrientationOnWire(ROTATIONS[180].cvoBits);
+        await checkRenderedPixels(180);
+      },
+
+      async function PC_REMOTE_CHECK_SECOND_MIDSTREAM_VIDEO_ORIENTATION_CHANGE() {
+        const video = test.pcRemote.remoteMediaElements[0];
+        const resized = haveEvent(video, "resize",
+          wait(10000, new Error("Timeout waiting for rotated resize")));
+        await SpecialPowers.pushPrefEnv({
+          set: [["media.getusermedia.camera.fake.rotation", 270]]
+        });
+        await resized;
+        await checkVideoOrientationOnWire(ROTATIONS[270].cvoBits);
+        await checkRenderedPixels(270);
+      },
+    ]);
+
+    return test.run();
+  });
+</script>
+</pre>
+</body>
+</html>

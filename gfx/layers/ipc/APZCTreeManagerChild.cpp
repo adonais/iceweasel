@@ -50,11 +50,6 @@ void APZCTreeManagerChild::Destroy() {
   }
 }
 
-void APZCTreeManagerChild::SetKeyboardMap(const KeyboardMap& aKeyboardMap) {
-  MOZ_ASSERT(NS_IsMainThread());
-  SendSetKeyboardMap(aKeyboardMap);
-}
-
 void APZCTreeManagerChild::ZoomToRect(const ScrollableLayerGuid& aGuid,
                                       const ZoomTarget& aZoomTarget,
                                       const uint32_t aFlags) {
@@ -83,43 +78,16 @@ void APZCTreeManagerChild::UpdateZoomConstraints(
   }
 }
 
-void APZCTreeManagerChild::SetDPI(float aDpiValue) {
-  MOZ_ASSERT(NS_IsMainThread());
-  SendSetDPI(aDpiValue);
-}
-
 void APZCTreeManagerChild::SetAllowedTouchBehavior(
     uint64_t aInputBlockId, const nsTArray<TouchBehaviorFlags>& aValues) {
   MOZ_ASSERT(NS_IsMainThread());
   SendSetAllowedTouchBehavior(aInputBlockId, aValues);
 }
 
-void APZCTreeManagerChild::SetBrowserGestureResponse(
-    uint64_t aInputBlockId, BrowserGestureResponse aResponse) {
-  MOZ_ASSERT(NS_IsMainThread());
-  SendSetBrowserGestureResponse(aInputBlockId, aResponse);
-}
-
 void APZCTreeManagerChild::StartScrollbarDrag(
     const ScrollableLayerGuid& aGuid, const AsyncDragMetrics& aDragMetrics) {
   MOZ_ASSERT(NS_IsMainThread());
   SendStartScrollbarDrag(aGuid, aDragMetrics);
-}
-
-bool APZCTreeManagerChild::StartAutoscroll(const ScrollableLayerGuid& aGuid,
-                                           const ScreenPoint& aAnchorLocation) {
-  MOZ_ASSERT(NS_IsMainThread());
-  return SendStartAutoscroll(aGuid, aAnchorLocation);
-}
-
-void APZCTreeManagerChild::StopAutoscroll(const ScrollableLayerGuid& aGuid) {
-  MOZ_ASSERT(NS_IsMainThread());
-  SendStopAutoscroll(aGuid);
-}
-
-void APZCTreeManagerChild::SetLongTapEnabled(bool aTapGestureEnabled) {
-  MOZ_ASSERT(NS_IsMainThread());
-  SendSetLongTapEnabled(aTapGestureEnabled);
 }
 
 void APZCTreeManagerChild::NotifyApzAwareListenerAdded(
@@ -135,50 +103,6 @@ APZInputBridge* APZCTreeManagerChild::InputBridge() {
   MOZ_ASSERT(mInputBridge);
 
   return mInputBridge.get();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerChild::RecvNotifyPinchGesture(
-    const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
-    const LayoutDevicePoint& aFocusPoint, const LayoutDeviceCoord& aSpanChange,
-    const Modifiers& aModifiers) {
-  // This will only get sent from the GPU process to the parent process, so
-  // this function should never get called in the content process.
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-
-  // We want to handle it in this process regardless of what the target guid
-  // of the pinch is. This may change in the future.
-  if (mCompositorSession && mCompositorSession->GetWidget()) {
-    APZCCallbackHelper::NotifyPinchGesture(aType, aFocusPoint, aSpanChange,
-                                           aModifiers,
-                                           mCompositorSession->GetWidget());
-  }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerChild::RecvCancelAutoscroll(
-    const ScrollableLayerGuid::ViewID& aScrollId) {
-  // This will only get sent from the GPU process to the parent process, so
-  // this function should never get called in the content process.
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-
-  APZCCallbackHelper::CancelAutoscroll(aScrollId);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerChild::RecvNotifyScaleGestureComplete(
-    const ScrollableLayerGuid::ViewID& aScrollId, float aScale) {
-  // This will only get sent from the GPU process to the parent process, so
-  // this function should never get called in the content process.
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mCompositorSession && mCompositorSession->GetWidget()) {
-    APZCCallbackHelper::NotifyScaleGestureComplete(
-        mCompositorSession->GetWidget(), aScale);
-  }
-  return IPC_OK();
 }
 
 }  // namespace layers

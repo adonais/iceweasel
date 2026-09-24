@@ -143,6 +143,8 @@ nsSyncStreamListener::Read(char* buf, uint32_t bufLen, uint32_t* result) {
     return NS_OK;
   }
 
+  RefPtr<nsSyncStreamListener> self(this);
+
   uint64_t avail64;
   if (NS_FAILED(Available(&avail64))) return mStatus;
 
@@ -158,6 +160,8 @@ nsSyncStreamListener::ReadSegments(nsWriteSegmentFun writer, void* closure,
     *result = 0;
     return NS_OK;
   }
+
+  RefPtr<nsSyncStreamListener> self(this);
 
   uint64_t avail64;
   if (NS_FAILED(Available(&avail64))) return mStatus;

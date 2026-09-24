@@ -132,9 +132,14 @@ open class MainActivity : EdgeToEdgeActivity() {
 
         startupPathProvider.attachOnActivityOnCreate(lifecycle, intent)
         startupTypeTelemetry =
-            StartupTypeTelemetry(components.startupStateProvider, startupPathProvider).apply {
-                attachOnMainActivityOnCreate(lifecycle)
-            }
+            StartupTypeTelemetry(
+                    components.startupStateProvider,
+                    startupPathProvider,
+                    components.applicationScope,
+                )
+                .apply {
+                    attachOnMainActivityOnCreate(lifecycle)
+                }
 
         val safeIntent = SafeIntent(intent)
 

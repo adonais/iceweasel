@@ -391,7 +391,7 @@ class nsXULElement : public nsStyledElement {
   XULFocusability GetXULFocusability(mozilla::IsFocusableFlags);
   Focusable IsFocusableWithoutStyle(mozilla::IsFocusableFlags) override;
 
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override;
 

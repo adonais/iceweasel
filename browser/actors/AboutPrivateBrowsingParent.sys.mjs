@@ -18,7 +18,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "isPrivateSearchUIEnabled",
-  "browser.search.separatePrivateDefault.ui.enabled",
+  "browser.search.separatePrivateDefault.featureGate",
   false
 );
 

@@ -1,0 +1,8 @@
+---
+command: cargo-fix
+continue_on_error: true
+requires_export: true
+cargo_extra_flags:
+  # `cargo fix`'s dirty/VCS check runs within the objdir so it always thinks the
+  # tree has no VCS even though the actual sources are tracked.
+  - --allow-no-vcs

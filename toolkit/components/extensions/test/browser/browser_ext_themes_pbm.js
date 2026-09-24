@@ -436,17 +436,18 @@ add_task(async function test_pbm_dark_prompts() {
         chrome: true,
       });
 
-      if (isPBM) {
-        ok(
-          !prefersColorScheme.light && prefersColorScheme.dark,
-          "Prompt from private window should be themed dark."
-        );
-      } else {
-        ok(
-          prefersColorScheme.light && !prefersColorScheme.dark,
-          "Prompt from normal window should be themed light."
-        );
-      }
+      // Content prompts use content's preferred color scheme, which the
+      // ui.systemUsesDarkTheme pref from add_setup pins to light even in a
+      // dark themed private window.
+      let expectDark = isPBM && modalType == MODAL_TYPE_TAB;
+
+      ok(
+        prefersColorScheme.dark == expectDark &&
+          prefersColorScheme.light != expectDark,
+        `${modalTypeStr} prompt from ${windowTypeStr} window should be themed ${
+          expectDark ? "dark" : "light"
+        }.`
+      );
 
       await PromptTestUtils.handlePrompt(dialog);
       await promptPromise;

@@ -35,7 +35,7 @@ class CustomTypeAnnotation {
 
 public:
   CustomTypeAnnotation(CustomAttributes Attribute, const char *Pretty)
-      : Attribute(Attribute), Pretty(Pretty){};
+      : Attribute(Attribute), Pretty(Pretty) {};
 
   virtual ~CustomTypeAnnotation() {}
 

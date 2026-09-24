@@ -373,6 +373,19 @@ class SettingsTest {
     }
 
     @Test
+    fun shouldUseOledTheme() {
+        // When just created
+        // Then
+        assertFalse(settings.shouldUseOledTheme)
+
+        // When
+        settings.shouldUseOledTheme = true
+
+        // Then
+        assertTrue(settings.shouldUseOledTheme)
+    }
+
+    @Test
     fun shouldFollowDeviceTheme() {
         // When just created
         // Then

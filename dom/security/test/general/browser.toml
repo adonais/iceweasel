@@ -11,6 +11,13 @@ support-files = [
   "file_script.js",
 ]
 
+["browser_resource_module_cors.js"]
+support-files = [
+  "file_resource_module_cors.html",
+  "file_resource_module_cors_dep.mjs",
+  "file_resource_module_cors_server.sjs",
+]
+
 ["browser_restrict_privileged_about_script.js"]
 # This test intentionally asserts when in debug builds. Let's rely on opt builds when in CI.
 skip-if = [

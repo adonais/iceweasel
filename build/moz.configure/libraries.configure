@@ -91,7 +91,9 @@ moz_use_pthreads = (
     | check_symbol_in_libs(
         [None, "pthread"],
         symbol="pthread_create",
-        when=building_with_gnu_compatible_cc & ~target_is_darwin,
+        when=building_with_gnu_compatible_cc
+        & ~target_is_darwin
+        & ~depends(target.os)(lambda os: os == "WASI"),
     ).found
 )
 

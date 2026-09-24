@@ -22,8 +22,8 @@ void IntToEnumCastChecker::registerMatchers(MatchFinder *AstMatcher) {
           forEachDescendant(
               explicitCastExpr(
                   hasDestinationType(qualType(hasCanonicalType(enumType()))),
-                  hasSourceExpression(expr(
-                      hasType(qualType(hasCanonicalType(builtinType()))))))
+                  hasSourceExpression(
+                      expr(hasType(qualType(hasCanonicalType(builtinType()))))))
                   .bind("cast"))),
       this);
 }

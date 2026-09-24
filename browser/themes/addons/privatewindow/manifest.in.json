@@ -18,8 +18,8 @@
 
   "dark_theme": {
     "colors": {
-      "frame": "{color.violet-desaturated.90}",
-      "frame_inactive": "{color.violet-desaturated.80}",
+      "frame": "{color.violet-desaturated.80}",
+      "frame_inactive": "{color.violet-desaturated.70}",
       "tab_background_text": "#ffffff",
       "tab_line": "transparent",
       "popup": "{color.violet-desaturated.60}",
@@ -33,7 +33,7 @@
       "popup_border": "{color.violet-desaturated.60}",
       "popup_highlight_text": "{color.violet-desaturated.10}",
       "popup_highlight": "rgba(182,170,217,0.4)",
-      "sidebar_border": "{color.violet-desaturated.60}",
+      "sidebar_border": "color-mix(in srgb, {color.violet-desaturated.60} 50%, transparent)",
       "sidebar_highlight_text": "#ffffff",
       "sidebar_highlight": "{color.gray.75}",
       "sidebar_text": "#ffffff",
@@ -43,9 +43,9 @@
       "tab_loading": "{color.violet.20}",
       "tab_selected": "{color.gray.75}",
       "tab_text": "#ffffff",
-      "toolbar": "{color.violet-desaturated.70}",
+      "toolbar": "rgba(0, 0, 0, .2)",
       "toolbar_text": "#ffffff",
-      "toolbar_bottom_separator": "{color.violet-desaturated.60}",
+      "toolbar_bottom_separator": "color-mix(in srgb, {color.violet-desaturated.60} 50%, transparent)",
       "toolbar_field_border_focus": "{color.violet.30}",
       "toolbar_field": "{color.violet-desaturated.70}",
       "toolbar_field_focus": "{color.violet-desaturated.70}",

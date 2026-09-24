@@ -3,6 +3,7 @@
   Licensed under the Apache 2.0 and MIT Licenses.
 */
 
+
 #ifndef FStar_UInt128_H
 #define FStar_UInt128_H
 
@@ -71,6 +72,7 @@ static inline uint64_t FStar_UInt128_uint128_to_uint64(FStar_UInt128_uint128 a);
 static inline FStar_UInt128_uint128 FStar_UInt128_mul32(uint64_t x, uint32_t y);
 
 static inline FStar_UInt128_uint128 FStar_UInt128_mul_wide(uint64_t x, uint64_t y);
+
 
 #define FStar_UInt128_H_DEFINED
 #endif /* FStar_UInt128_H */

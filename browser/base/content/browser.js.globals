@@ -139,6 +139,7 @@
   "TaskbarTabsChrome",
   "TelemetryEnvironment",
   "TranslationsParent",
+  "UIDensityTelemetry",
   "UITour",
   "UpdateUtils",
   "URILoadingHelper",

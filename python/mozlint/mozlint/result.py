@@ -113,6 +113,14 @@ class Issue:
     diff = attr.ib(default=None)
     relpath = attr.ib(init=False, default=None)
 
+    @hint.validator
+    def _check_hint(self, attribute, value):
+        if value is not None and not isinstance(value, str):
+            raise TypeError(
+                f"{self.linter} produced a hint for {self.path} that is a "
+                f"{type(value).__name__}, hints must be strings: {value!r}"
+            )
+
     def __attrs_post_init__(self):
         root = ResultSummary.root
         assert root is not None, "Missing ResultSummary.root"

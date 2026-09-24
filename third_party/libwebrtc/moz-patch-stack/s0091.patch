@@ -42,7 +42,7 @@ index 009e1408b9..a737f9bdb3 100644
  uint32_t DeviceInfoPipeWire::NumberOfDevices() {
    RTC_CHECK(pipewire_session_);
 diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index ba841a7f19..b61440463d 100644
+index e17bab807c..cd56026c7b 100644
 --- a/modules/video_capture/linux/pipewire_session.cc
 +++ b/modules/video_capture/linux/pipewire_session.cc
 @@ -36,6 +36,7 @@
@@ -53,7 +53,7 @@ index ba841a7f19..b61440463d 100644
  #include "modules/video_capture/video_capture_defines.h"
  #include "modules/video_capture/video_capture_options.h"
  #include "rtc_base/logging.h"
-@@ -337,6 +338,30 @@ void PipeWireSession::InitPipeWire(int fd) {
+@@ -343,6 +344,30 @@ void PipeWireSession::InitPipeWire(int fd) {
      Finish(VideoCaptureOptions::Status::ERROR);
  }
  
@@ -84,7 +84,7 @@ index ba841a7f19..b61440463d 100644
  RTC_NO_SANITIZE("cfi-icall")
  bool PipeWireSession::StartPipeWire(int fd) {
    pw_initializer_ = std::make_unique<PipeWireInitializer>();
-@@ -409,6 +434,21 @@ void PipeWireSession::PipeWireSync() {
+@@ -415,6 +440,21 @@ void PipeWireSession::PipeWireSync() {
    sync_seq_ = pw_core_sync(pw_core_, PW_ID_CORE, sync_seq_);
  }
  
@@ -106,7 +106,7 @@ index ba841a7f19..b61440463d 100644
  // static
  void PipeWireSession::OnCoreError(void* data,
                                    uint32_t id,
-@@ -466,6 +506,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
+@@ -472,6 +512,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
  
    that->nodes_.push_back(PipeWireNode::Create(that, id, props));
    that->PipeWireSync();
@@ -115,7 +115,7 @@ index ba841a7f19..b61440463d 100644
  }
  
  // static
-@@ -475,10 +517,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
+@@ -481,10 +523,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
    std::erase_if(that->nodes_, [id](const PipeWireNode::PipeWireNodePtr& node) {
      return node->id() == id;
    });
@@ -133,7 +133,7 @@ index ba841a7f19..b61440463d 100644
    webrtc::MutexLock lock(&callback_lock_);
  
 diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index f03ada7528..0eebcc0f6a 100644
+index 934933402f..4dc99a14fc 100644
 --- a/modules/video_capture/linux/pipewire_session.h
 +++ b/modules/video_capture/linux/pipewire_session.h
 @@ -34,6 +34,7 @@

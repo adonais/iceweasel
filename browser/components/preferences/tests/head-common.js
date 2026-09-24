@@ -53,6 +53,46 @@ function is_element_hidden(aElement, aMsg) {
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
 }
 
+async function assertRadioGroupAccessibleName(radioGroup) {
+  ok(radioGroup, "Radio group exists");
+
+  let doc = radioGroup.ownerDocument;
+  await doc.l10n.ready;
+
+  await doc.l10n.translateFragment(radioGroup);
+  await radioGroup.updateComplete;
+  await radioGroup.fieldset.updateComplete;
+
+  let innerFieldset = radioGroup.fieldset.shadowRoot.querySelector("fieldset");
+  ok(innerFieldset, "Radio group has an inner fieldset");
+  ok(
+    innerFieldset.getAttribute("aria-label"),
+    "Inner fieldset has a non-empty aria-label"
+  );
+
+  let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
+    Ci.nsIAccessibilityService
+  );
+  let accessible;
+  await TestUtils.waitForCondition(() => {
+    accessible = accService.getAccessibleFor(innerFieldset);
+    return (
+      accessible && accessible.role == Ci.nsIAccessibleRole.ROLE_RADIO_GROUP
+    );
+  }, "Accessible reflects the localized radio group role");
+  is(
+    innerFieldset.getAttribute("role"),
+    "radiogroup",
+    "Inner fieldset has the radiogroup role"
+  );
+  is(
+    accessible.role,
+    Ci.nsIAccessibleRole.ROLE_RADIO_GROUP,
+    "Accessible has the radiogroup role"
+  );
+  ok(accessible.name, "Radio group has a non-empty accessible name");
+}
+
 /**
  * Opens a fresh preferences tab at the given pane and waits for it to
  * fully initialize before returning. Pre-registers the "Initialized" listener

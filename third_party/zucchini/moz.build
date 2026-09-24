@@ -87,6 +87,10 @@ SOURCES += [
     "/third_party/zucchini/moz_zucchini.cc",
 ]
 
+SOURCES[
+    "/third_party/zucchini/chromium/base/strings/utf_string_conversions.cc"
+].flags += ["-Wno-unused-template"]
+
 if CONFIG["TARGET_OS"] == "WINNT":
     USE_STATIC_MSVCRT = True
 

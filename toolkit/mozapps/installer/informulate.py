@@ -55,17 +55,15 @@ def main(argv):
             return " ".join(x)
         return x or ""
 
-    all_key_value_pairs.update(
-        {x.lower(): stringify(buildconfig.substs.get(x)) for x in other_substitutions}
-    )
+    all_key_value_pairs.update({
+        x.lower(): stringify(buildconfig.substs.get(x)) for x in other_substitutions
+    })
     build_id = os.environ["MOZ_BUILD_DATE"]
-    all_key_value_pairs.update(
-        {
-            "buildid": build_id,
-            "moz_source_stamp": buildconfig.substs["MOZ_SOURCE_CHANGESET"],
-            "moz_pkg_platform": pkg_platform,
-        }
-    )
+    all_key_value_pairs.update({
+        "buildid": build_id,
+        "moz_source_stamp": buildconfig.substs["MOZ_SOURCE_CHANGESET"],
+        "moz_pkg_platform": pkg_platform,
+    })
 
     with open(args.output_json, "wt") as f:
         json.dump(all_key_value_pairs, f, indent=2, sort_keys=True)

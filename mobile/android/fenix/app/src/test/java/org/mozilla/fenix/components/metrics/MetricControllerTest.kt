@@ -11,6 +11,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyAll
 import kotlin.test.assertNotNull
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
 import mozilla.components.feature.autofill.facts.AutofillFacts
 import mozilla.components.feature.awesomebar.facts.AwesomeBarFacts
@@ -48,6 +49,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
 import org.mozilla.fenix.GleanMetrics.Awesomebar
 import org.mozilla.fenix.GleanMetrics.BrowserSearch
+import org.mozilla.fenix.GleanMetrics.BrowserThumbnails
 import org.mozilla.fenix.GleanMetrics.ContextMenu
 import org.mozilla.fenix.GleanMetrics.ContextualMenu
 import org.mozilla.fenix.GleanMetrics.CreditCards
@@ -1171,6 +1173,184 @@ class MetricControllerTest {
 
         assertEquals(1, SitePermissions.permissionsDenied.testGetValue()!!.size)
         assertEquals("deny", SitePermissions.permissionsDenied.testGetValue()!!.single().extra!!["permissions"])
+    }
+
+    @Test
+    fun `WHEN capture_attempted fact is processed THEN captureAttempted labeled counter is incremented for the trigger`() {
+        val controller = createReleaseMetricController()
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.LOAD_COMPLETED,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.SWIPE_TO_SWITCH_TABS,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.EXTERNAL_REQUEST,
+            )
+            .forEach { trigger ->
+                assertNull(BrowserThumbnails.captureAttempted[trigger].testGetValue())
+
+                controller.run {
+                    Fact(
+                            component = Component.BROWSER_THUMBNAILS,
+                            action = Action.IMPLEMENTATION_DETAIL,
+                            item = BrowserThumbnailsFacts.Items.CAPTURE_ATTEMPTED,
+                            value = trigger,
+                        )
+                        .process()
+                }
+
+                assertEquals(1, BrowserThumbnails.captureAttempted[trigger].testGetValue())
+            }
+    }
+
+    @Test
+    fun `WHEN capture_attempted fact has a null value THEN no captureAttempted label is incremented`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_ATTEMPTED,
+                    value = null,
+                )
+                .process()
+        }
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.LOAD_COMPLETED,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.SWIPE_TO_SWITCH_TABS,
+                BrowserThumbnailsFacts.CaptureAttemptedTriggers.EXTERNAL_REQUEST,
+            )
+            .forEach { trigger ->
+                assertNull(BrowserThumbnails.captureAttempted[trigger].testGetValue())
+            }
+    }
+
+    @Test
+    fun `WHEN capture_result fact is processed THEN captureResult labeled counter is incremented for the outcome`() {
+        val controller = createReleaseMetricController()
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureResults.SUCCEEDED,
+                BrowserThumbnailsFacts.CaptureResults.NULL_BITMAP,
+                BrowserThumbnailsFacts.CaptureResults.LOW_MEMORY,
+            )
+            .forEach { result ->
+                assertNull(BrowserThumbnails.captureResult[result].testGetValue())
+
+                controller.run {
+                    Fact(
+                            component = Component.BROWSER_THUMBNAILS,
+                            action = Action.IMPLEMENTATION_DETAIL,
+                            item = BrowserThumbnailsFacts.Items.CAPTURE_RESULT,
+                            value = result,
+                        )
+                        .process()
+                }
+
+                assertEquals(1, BrowserThumbnails.captureResult[result].testGetValue())
+            }
+    }
+
+    @Test
+    fun `WHEN capture_result fact has a null value THEN no captureResult label is incremented`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_RESULT,
+                    value = null,
+                )
+                .process()
+        }
+
+        listOf(
+                BrowserThumbnailsFacts.CaptureResults.SUCCEEDED,
+                BrowserThumbnailsFacts.CaptureResults.NULL_BITMAP,
+                BrowserThumbnailsFacts.CaptureResults.LOW_MEMORY,
+            )
+            .forEach { result ->
+                assertNull(BrowserThumbnails.captureResult[result].testGetValue())
+            }
+    }
+
+    @Test
+    fun `WHEN capture_duration fact is processed THEN captureDuration timing distribution accumulates the sample`() {
+        val controller = createReleaseMetricController()
+
+        assertNull(BrowserThumbnails.captureDuration.testGetValue())
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_DURATION,
+                    metadata = mapOf(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS to 42L),
+                )
+                .process()
+        }
+
+        val distribution = BrowserThumbnails.captureDuration.testGetValue()
+        assertNotNull(distribution)
+        assertEquals(1L, distribution.count)
+    }
+
+    @Test
+    fun `WHEN capture_duration fact has missing duration metadata THEN nothing is accumulated`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.CAPTURE_DURATION,
+                    metadata = null,
+                )
+                .process()
+        }
+
+        assertNull(BrowserThumbnails.captureDuration.testGetValue())
+    }
+
+    @Test
+    fun `WHEN disk_write_duration fact is processed THEN diskWriteDuration timing distribution accumulates the sample`() {
+        val controller = createReleaseMetricController()
+
+        assertNull(BrowserThumbnails.diskWriteDuration.testGetValue())
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION,
+                    metadata = mapOf(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS to 128L),
+                )
+                .process()
+        }
+
+        val distribution = BrowserThumbnails.diskWriteDuration.testGetValue()
+        assertNotNull(distribution)
+        assertEquals(1L, distribution.count)
+    }
+
+    @Test
+    fun `WHEN disk_write_duration fact has missing duration metadata THEN nothing is accumulated`() {
+        val controller = createReleaseMetricController()
+
+        controller.run {
+            Fact(
+                    component = Component.BROWSER_THUMBNAILS,
+                    action = Action.IMPLEMENTATION_DETAIL,
+                    item = BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION,
+                    metadata = null,
+                )
+                .process()
+        }
+
+        assertNull(BrowserThumbnails.diskWriteDuration.testGetValue())
     }
 
     private fun createReleaseMetricController(

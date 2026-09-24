@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/strings/string_view.h"
 #include "api/create_modular_peer_connection_factory.h"
 #include "api/environment/environment.h"
 #include "api/jsep.h"
@@ -74,6 +75,7 @@ using ::testing::ElementsAre;
 using ::testing::Gt;
 using ::testing::HasSubstr;
 using ::testing::NotNull;
+using ::testing::UnorderedElementsAreArray;
 using ::testing::Values;
 
 RtpTransceiver* RtpTransceiverInternal(
@@ -1622,6 +1624,111 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
   auto codecs =
       offer->description()->contents()[0].media_description()->codecs();
   EXPECT_TRUE(CompareCodecs(sender_audio_codecs, codecs));
+}
+
+TEST_F(PeerConnectionMediaTestUnifiedPlan,
+       SetCodecPreferencesAudioRemovingOpusDropsRed) {
+  auto fake_engine = std::make_unique<FakeMediaEngine>();
+  std::vector<Codec> audio_codecs = {
+      CreateAudioCodec(111, kOpusCodecName, 48000, 2),
+      CreateAudioCodec(63, kRedCodecName, 48000, 2),
+      CreateAudioCodec(0, kPcmuCodecName, 8000, 1),
+      CreateAudioCodec(8, kPcmaCodecName, 8000, 1),
+  };
+  audio_codecs[1].params[std::string(kCodecParamNotInNameValueFormat)] =
+      "111/111";
+  fake_engine->SetAudioCodecs(audio_codecs);
+
+  auto caller = CreatePeerConnectionWithAudio(std::move(fake_engine));
+
+  auto transceiver = caller->pc()->GetTransceivers().front();
+  auto caps =
+      caller->pc_factory()->GetRtpSenderCapabilities(MediaType::AUDIO).codecs;
+
+  // Prefer RED, filter opus.
+  std::vector<RtpCodecCapability> preferred;
+  for (const auto& codec : caps) {
+    if (codec.name == kRedCodecName) {
+      preferred.push_back(codec);
+    }
+  }
+  for (const auto& codec : caps) {
+    if (codec.name != kRedCodecName && codec.name != kOpusCodecName) {
+      preferred.push_back(codec);
+    }
+  }
+  EXPECT_THAT(transceiver->SetCodecPreferences(preferred), IsRtcOk());
+
+  auto offer = caller->CreateOffer();
+  const std::vector<Codec>& offered_codecs =
+      offer->description()->contents()[0].media_description()->codecs();
+
+  auto has_codec = [&](absl::string_view name) {
+    return absl::c_any_of(
+        offered_codecs, [&](const Codec& codec) { return codec.name == name; });
+  };
+
+  EXPECT_TRUE(has_codec(kPcmuCodecName));
+  EXPECT_TRUE(has_codec(kPcmaCodecName));
+  // RED was not removed via sCP but depends on opus which was removed
+  // so neither is part of the generated offer.
+  EXPECT_FALSE(has_codec(kOpusCodecName));
+  EXPECT_FALSE(has_codec(kRedCodecName));
+}
+
+TEST_F(PeerConnectionMediaTestUnifiedPlan,
+       SetCodecPreferencesAudioRemovingOpusDropsRedInAnswer) {
+  auto make_engine = [] {
+    auto fake_engine = std::make_unique<FakeMediaEngine>();
+    std::vector<Codec> audio_codecs = {
+        CreateAudioCodec(111, kOpusCodecName, 48000, 2),
+        CreateAudioCodec(63, kRedCodecName, 48000, 2),
+        CreateAudioCodec(0, kPcmuCodecName, 8000, 1),
+        CreateAudioCodec(8, kPcmaCodecName, 8000, 1),
+    };
+    audio_codecs[1].params[std::string(kCodecParamNotInNameValueFormat)] =
+        "111/111";
+    fake_engine->SetAudioCodecs(audio_codecs);
+    return fake_engine;
+  };
+  auto caller = CreatePeerConnectionWithAudio(make_engine());
+  auto callee = CreatePeerConnectionWithAudio(make_engine());
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  auto transceiver = callee->pc()->GetTransceivers().front();
+  auto caps =
+      callee->pc_factory()->GetRtpSenderCapabilities(MediaType::AUDIO).codecs;
+
+  // Prefer RED, filter opus.
+  std::vector<RtpCodecCapability> preferred;
+  for (const auto& codec : caps) {
+    if (codec.name == kRedCodecName) {
+      preferred.push_back(codec);
+    }
+  }
+  for (const auto& codec : caps) {
+    if (codec.name != kRedCodecName && codec.name != kOpusCodecName) {
+      preferred.push_back(codec);
+    }
+  }
+  EXPECT_THAT(transceiver->SetCodecPreferences(preferred), IsRtcOk());
+
+  auto answer = callee->CreateAnswer();
+  const std::vector<Codec>& answer_codecs =
+      answer->description()->contents()[0].media_description()->codecs();
+
+  auto has_codec = [&](absl::string_view name) {
+    return absl::c_any_of(
+        answer_codecs, [&](const Codec& codec) { return codec.name == name; });
+  };
+
+  EXPECT_TRUE(has_codec(kPcmuCodecName));
+  EXPECT_TRUE(has_codec(kPcmaCodecName));
+  // RED was not removed via sCP but depends on opus which was removed
+  // so neither is part of the generated answer.
+  EXPECT_FALSE(has_codec(kOpusCodecName));
+  EXPECT_FALSE(has_codec(kRedCodecName));
 }
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,

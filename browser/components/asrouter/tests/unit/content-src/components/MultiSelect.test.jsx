@@ -381,6 +381,66 @@ describe("MultiSelect component", () => {
     assert.strictEqual(checkbox.prop("tabIndex"), "-1");
   });
 
+  describe("card item designs", () => {
+    // Both card designs pair a label with a description beneath it. The layout
+    // is CSS-only, so what the component has to get right is the container
+    // class and the description's association with its checkbox.
+    const CARD_DATA = [
+      {
+        id: "interaction-data",
+        type: "checkbox",
+        defaultValue: true,
+        label: "Send technical and interaction data to Mozilla",
+        description: "Data about your device, hardware configuration...",
+      },
+      {
+        id: "crash-data",
+        type: "checkbox",
+        defaultValue: false,
+        label: "Automatically send crash reports",
+        description: "Crash reports allow us to diagnose and fix issues...",
+      },
+    ];
+
+    function assertCardDesign(design) {
+      const CARD_PROPS = { ...MULTISELECT_SCREEN_PROPS };
+      CARD_PROPS.content.tiles.multiSelectItemDesign = design;
+      CARD_PROPS.content.tiles.data = CARD_DATA;
+
+      const wrapper = mount(<MultiSelect {...CARD_PROPS} />);
+      wrapper.setProps({ activeMultiSelect: ["interaction-data"] });
+
+      const container = wrapper.find(".multi-select-container");
+      assert.strictEqual(container.hasClass(design), true);
+      assert.strictEqual(
+        container.hasClass("picker"),
+        false,
+        "Card designs are not pickers"
+      );
+
+      const descriptions = wrapper.find("p#interaction-data-description");
+      assert.lengthOf(descriptions, 1);
+
+      // The description is what the checkbox is described by, so screen
+      // readers announce the second line with the item.
+      const checkbox = wrapper.find("input#interaction-data");
+      assert.strictEqual(
+        checkbox.prop("aria-describedby"),
+        "interaction-data-description"
+      );
+
+      wrapper.unmount();
+    }
+
+    it("should put select-card on the container and describe each item", () => {
+      assertCardDesign("select-card");
+    });
+
+    it("should put grouped-card on the container and describe each item", () => {
+      assertCardDesign("grouped-card");
+    });
+  });
+
   describe("unchecked notices", () => {
     let NOTICE_PROPS;
 

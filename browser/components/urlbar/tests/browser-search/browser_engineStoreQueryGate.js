@@ -57,7 +57,7 @@ async function pinUninitializedEngineStore(win) {
  *   An engine id to look the icon up for, from before the store was pinned.
  */
 async function flushParentRoundTrip(win, engineId) {
-  await win.gURLBar.controller.getEngineIconURL(engineId);
+  await win.gURLBar.parentController.getEngineIconURL(engineId);
   await TestUtils.waitForTick();
 }
 

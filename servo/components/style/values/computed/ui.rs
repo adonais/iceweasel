@@ -4,9 +4,9 @@
 
 //! Computed values for UI properties
 
+use crate::values::computed::Number;
 use crate::values::computed::color::Color;
 use crate::values::computed::image::Image;
-use crate::values::computed::Number;
 use crate::values::generics::ui as generics;
 
 pub use crate::values::specified::ui::{

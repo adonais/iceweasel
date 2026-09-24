@@ -8,7 +8,7 @@ const { sanitizeUntrustedContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
 );
 
-const { getOpenTabs } = ChromeUtils.importESModule(
+const { getOpenTabs, _embeddingFunctions } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
@@ -56,7 +56,7 @@ add_task(async function test_getOpenTabs_basic() {
       "https://mozilla.org": "Mozilla organization site",
     });
 
-    const tabs = await getOpenTabs(makeConversation());
+    const tabs = await getOpenTabs({}, makeConversation());
 
     Assert.equal(tabs.length, 3, "Should return all 3 tabs");
     Assert.equal(tabs[0].url, "https://firefox.com", "Most recent tab first");
@@ -86,7 +86,7 @@ add_task(async function test_getOpenTabs_basic() {
 
 add_task(async function test_getOpenTabs_sets_security_flags() {
   const conversation = makeConversation();
-  await getOpenTabs(conversation);
+  await getOpenTabs({}, conversation);
   conversation.securityProperties.commit();
 
   Assert.strictEqual(
@@ -106,7 +106,7 @@ add_task(async function test_getOpenTabs_allowed_when_flags_set() {
     privateData: true,
     untrustedInput: true,
   });
-  const tabs = await getOpenTabs(conversation);
+  const tabs = await getOpenTabs({}, conversation);
 
   Assert.ok(Array.isArray(tabs), "returns array, not refusal");
 });
@@ -128,7 +128,7 @@ add_task(async function test_getOpenTabs_return_structure() {
       "https://test.com": "A test page description",
     });
 
-    const tabs = await getOpenTabs(makeConversation());
+    const tabs = await getOpenTabs({}, makeConversation());
 
     Assert.equal(tabs.length, 1, "Should return one tab");
 
@@ -158,6 +158,68 @@ add_task(async function test_getOpenTabs_return_structure() {
     //   "description should be fetched from PageDataService"
     // );
     Assert.equal(tab.lastAccessed, 1000, "lastAccessed value correct");
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_getOpenTabs_no_topic_skips_embedding() {
+  const BrowserWindowTracker = ChromeUtils.importESModule(
+    "resource:///modules/BrowserWindowTracker.sys.mjs"
+  ).BrowserWindowTracker;
+
+  const sb = sinon.createSandbox();
+  const embedStub = sb.stub(_embeddingFunctions, "embedTexts").resolves([]);
+  try {
+    const tabs = [];
+    for (let i = 0; i < 20; i++) {
+      tabs.push(
+        createFakeTab(`https://example${i}.com`, `Example ${i}`, i * 1000)
+      );
+    }
+    sb.stub(BrowserWindowTracker, "orderedWindows").get(() => [
+      createFakeWindow(tabs),
+    ]);
+
+    setupPageDataServiceMock(sb);
+    const returnedTabs = await getOpenTabs({}, makeConversation());
+    Assert.ok(embedStub.notCalled, "embedTexts not called when topic missing");
+    Assert.equal(returnedTabs[0].url, "https://example19.com"); // recency order
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_getOpenTabs_topic_triggers_embedding() {
+  const BrowserWindowTracker = ChromeUtils.importESModule(
+    "resource:///modules/BrowserWindowTracker.sys.mjs"
+  ).BrowserWindowTracker;
+
+  const sb = sinon.createSandbox();
+  // The embeddings for the 'topic' and example0 (which moves to 40 when ranked by recency)
+  // are the same, the rest or orthogonal
+  const embedStub = sb
+    .stub(_embeddingFunctions, "embedTexts")
+    .callsFake(async texts => {
+      return texts.map((_, i) => (i === 0 || i === 40 ? [1, 0, 0] : [0, 1, 0]));
+    });
+  try {
+    const tabs = [];
+    for (let i = 0; i < 40; i++) {
+      tabs.push(
+        createFakeTab(`https://example${i}.com`, `Example ${i}`, i * 1000)
+      );
+    }
+    sb.stub(BrowserWindowTracker, "orderedWindows").get(() => [
+      createFakeWindow(tabs),
+    ]);
+
+    const returnedTabs = await getOpenTabs(
+      { topic: "bears" },
+      makeConversation()
+    );
+    Assert.ok(embedStub.calledOnce, "embedTexts called when topic provided");
+    Assert.equal(returnedTabs[0].url, "https://example0.com"); // ranked first by similarity
   } finally {
     sb.restore();
   }

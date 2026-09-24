@@ -8,6 +8,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsRect.h"
+#include "nsStringFwd.h"
 
 class nsIWidget;
 class nsPIDOMWindowOuter;

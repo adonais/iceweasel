@@ -80,3 +80,15 @@ async function openCertManager() {
     );
   });
 }
+
+async function findCertByCommonName(commonName) {
+  let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  for (let cert of await certDB.getCerts()) {
+    if (cert.commonName == commonName) {
+      return cert;
+    }
+  }
+  return null;
+}

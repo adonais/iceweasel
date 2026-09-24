@@ -46,12 +46,11 @@ uint32_t SpeechRecognitionResult::Length() const { return mItems.Length(); }
 
 already_AddRefed<SpeechRecognitionAlternative> SpeechRecognitionResult::Item(
     uint32_t aIndex) {
-  RefPtr<SpeechRecognitionAlternative> alternative = mItems.ElementAt(aIndex);
+  RefPtr<SpeechRecognitionAlternative> alternative =
+      mItems.SafeElementAt(aIndex, nullptr);
   return alternative.forget();
 }
 
-bool SpeechRecognitionResult::IsFinal() const {
-  return true;  // TODO
-}
+bool SpeechRecognitionResult::IsFinal() const { return mIsFinal; }
 
 }  // namespace mozilla::dom

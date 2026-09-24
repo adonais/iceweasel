@@ -805,7 +805,6 @@ security:
       - seceng-telemetry@mozilla.com
     expires: never
     unit: unknown
-    telemetry_mirror: SECURITY_HTTPS_ONLY_MODE_ENABLED
 
   https_only_mode_enabled_pbm:
     type: quantity
@@ -825,7 +824,6 @@ security:
       - seceng-telemetry@mozilla.com
     expires: never
     unit: unknown
-    telemetry_mirror: SECURITY_HTTPS_ONLY_MODE_ENABLED_PBM
 
   global_privacy_control_enabled:
     type: quantity
@@ -842,7 +840,6 @@ security:
       - seceng-telemetry@mozilla.com
     expires: never
     unit: unknown
-    telemetry_mirror: SECURITY_GLOBAL_PRIVACY_CONTROL_ENABLED
 
 primary.password:
   enabled:

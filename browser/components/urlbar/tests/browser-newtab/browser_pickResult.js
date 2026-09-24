@@ -8,6 +8,8 @@
 
 const TEST_URL = "https://example.com/";
 
+add_setup(useEngineWithoutSuggestions);
+
 async function pickHeuristic(browser, modifiers) {
   await NewtabSearchbarTestUtils.promiseAutocompleteResultPopup({
     browser,

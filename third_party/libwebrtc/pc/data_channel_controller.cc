@@ -415,6 +415,15 @@ DataChannelController::CreateDataChannel(absl::string_view label,
     sid = StreamId(config.id);
   }
 
+  size_t total_strings_size = label.size() + config.protocol.size();
+  for (const scoped_refptr<SctpDataChannel>& dc : sctp_data_channels_n_) {
+    total_strings_size += dc->label().size() + dc->protocol().size();
+  }
+  if (total_strings_size > 1024 * 1024) {
+    return RTCError(RTCErrorType::RESOURCE_EXHAUSTED,
+                    "DataChannel labels and protocols use too much memory");
+  }
+
   RTCError err = ReserveOrAllocateSid(sid, config.fallback_ssl_role);
   if (!err.ok())
     return err;

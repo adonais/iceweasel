@@ -12,9 +12,9 @@ use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{
     DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard,
 };
-use crate::stylesheets::{style_or_page_rule_to_css, CssRules};
+use crate::stylesheets::{CssRules, style_or_page_rule_to_css};
 use crate::values::{AtomIdent, CustomIdent};
-use cssparser::{match_ignore_ascii_case, Parser, SourceLocation, Token};
+use cssparser::{Parser, SourceLocation, Token, match_ignore_ascii_case};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
@@ -263,7 +263,7 @@ impl PageSelectors {
     /// Get the underlying PageSelector data as a slice
     #[inline]
     pub fn as_slice(&self) -> &[PageSelector] {
-        &*self.0
+        &self.0
     }
 }
 
@@ -343,12 +343,12 @@ impl ToCssWithGuard for PageRule {
 
 impl DeepCloneWithLock for PageRule {
     fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
-        let rules = self.rules.read_with(&guard);
+        let rules = self.rules.read_with(guard);
         PageRule {
             selectors: self.selectors.clone(),
-            block: Arc::new(lock.wrap(self.block.read_with(&guard).clone())),
+            block: Arc::new(lock.wrap(self.block.read_with(guard).clone())),
             rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard))),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }

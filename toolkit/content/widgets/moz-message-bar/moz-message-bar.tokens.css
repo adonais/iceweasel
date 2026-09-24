@@ -33,8 +33,10 @@
     --message-bar-icon-container-border-color: transparent;
     --message-bar-icon-container-border-radius: var(--border-radius-circle);
     --message-bar-icon-container-height: min-content;
-    --message-bar-icon-container-margin-block-start: calc(var(--space-small) + 2px);
-    --message-bar-icon-container-padding: 0;
+    --message-bar-icon-container-margin-block-start: var(--space-small);
+    --message-bar-icon-container-margin-block-start-offset: 2px;
+    --message-bar-icon-container-padding: 0px;
+    --message-bar-icon-container-padding-offset: 0px;
     --message-bar-icon-size: var(--icon-size);
     --message-bar-message-margin-inline-end: var(--space-xsmall);
     --message-bar-text-color: var(--text-color);
@@ -59,8 +61,10 @@
       --message-bar-icon-container-border: 1px solid var(--message-bar-icon-container-border-color);
       --message-bar-icon-container-border-color: transparent;
       --message-bar-icon-container-height: var(--message-bar-icon-size);
-      --message-bar-icon-container-margin-block-start: 0;
-      --message-bar-icon-container-padding: calc(var(--space-small) - 1px);
+      --message-bar-icon-container-margin-block-start: 0px;
+      --message-bar-icon-container-margin-block-start-offset: 0px;
+      --message-bar-icon-container-padding: var(--space-small);
+      --message-bar-icon-container-padding-offset: 1px;
       --message-bar-text-container-padding-block: 0;
     }
 

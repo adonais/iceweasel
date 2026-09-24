@@ -17,6 +17,7 @@
   border-radius: var(--select-border-radius);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--select-background-color);
+  color: var(--select-text-color);
   transition: background-color 0.2s ease;
   white-space: nowrap;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

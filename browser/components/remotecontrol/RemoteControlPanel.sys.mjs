@@ -24,8 +24,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   () => RemoteControlPanel.onPrefChange()
 );
 
-const FIREFOX_DEVTOOLS_MCP_ROOT = ".firefox-devtools-mcp";
-
 const WIDGET_ID = "remote-control-toolbar-button";
 const VIEW_ID = "remote-control-panel";
 const TOGGLE_BUTTON_ID = `${VIEW_ID}-toggle-button`;
@@ -38,17 +36,22 @@ const STATUS_TEXT_ID = `${VIEW_ID}-status-text`;
  * without having to launch Firefox with --remote-debugging-port & --marionette.
  */
 class RemoteControlPanelClass {
-  #isObserving;
+  #initialized;
   #serversAlreadyStarted;
   #toggling;
 
   constructor() {
-    this.#isObserving = false;
+    this.#initialized = false;
     this.#serversAlreadyStarted = null;
     this.#toggling = false;
   }
 
   init() {
+    if (this.#initialized) {
+      return;
+    }
+    this.#initialized = true;
+
     // When init() runs, check if a server is already started. If yes, it
     // was necessarily started via Firefox cli flags, and the panel + button
     // should not be displayed.
@@ -57,12 +60,24 @@ class RemoteControlPanelClass {
     this.onPrefChange();
   }
 
+  uninit() {
+    if (!this.#initialized) {
+      return;
+    }
+    this.#initialized = false;
+
+    lazy.CustomizableUI.destroyWidget(WIDGET_ID);
+    lazy.RemoteControlServers.removeListener(this.#onServersChanged);
+    this.#serversAlreadyStarted = null;
+  }
+
   /**
    * Create or destroy the toolbar button depending on the state of the
    * dynamic start preference.
    */
   onPrefChange() {
     if (
+      !this.#initialized ||
       !AppConstants.ENABLE_WEBDRIVER ||
       !AppConstants.NIGHTLY_BUILD ||
       this.#serversAlreadyStarted
@@ -84,35 +99,11 @@ class RemoteControlPanelClass {
         onViewShowing: event => this.#onViewShowing(event),
         onViewHiding: event => this.#onViewHiding(event),
       });
-      this.#addObservers();
+      lazy.RemoteControlServers.addListener(this.#onServersChanged);
     } else {
       lazy.CustomizableUI.destroyWidget(WIDGET_ID);
-      this.#removeObservers();
+      lazy.RemoteControlServers.removeListener(this.#onServersChanged);
     }
-  }
-
-  #addObservers() {
-    if (this.#isObserving) {
-      return;
-    }
-    this.#isObserving = true;
-
-    Services.obs.addObserver(this, "remote-listening");
-    Services.obs.addObserver(this, "marionette-listening");
-  }
-
-  #removeObservers() {
-    if (!this.#isObserving) {
-      return;
-    }
-    this.#isObserving = false;
-
-    Services.obs.removeObserver(this, "remote-listening");
-    Services.obs.removeObserver(this, "marionette-listening");
-  }
-
-  observe() {
-    this.#updateAllWindows();
   }
 
   handleEvent(event) {
@@ -121,33 +112,9 @@ class RemoteControlPanelClass {
     }
   }
 
-  /**
-   * Specifically for firefox-devtools-mcp usage, prepare the folder where
-   * Marionette is expected to write the port.
-   * Typically should live at ~/.firefox-devtools-mcp/instances
-   *
-   * @returns {string|null}
-   *     The path of the port file, or null if the folder could not be created.
-   */
-  async #createPortFilePath() {
-    const folder = PathUtils.join(
-      Services.dirsvc.get("Home", Ci.nsIFile).path,
-      FIREFOX_DEVTOOLS_MCP_ROOT,
-      "instances"
-    );
-
-    try {
-      await IOUtils.makeDirectory(folder, {
-        createAncestors: true,
-        permissions: 0o700,
-      });
-    } catch (e) {
-      console.error(`Failed to create ${folder}:`, e);
-      return null;
-    }
-
-    return PathUtils.join(folder, `${Services.appinfo.processID}.port`);
-  }
+  #onServersChanged = () => {
+    this.#updateAllWindows();
+  };
 
   async #onToggleCommand() {
     if (this.#toggling) {
@@ -163,9 +130,7 @@ class RemoteControlPanelClass {
       if (lazy.RemoteControlServers.runningDynamically) {
         await lazy.RemoteControlServers.stop();
       } else {
-        await lazy.RemoteControlServers.start({
-          portFilePath: await this.#createPortFilePath(),
-        });
+        await lazy.RemoteControlServers.start();
       }
     } catch (e) {
       console.error("Failed to toggle the Remote Agent servers:", e);
@@ -173,9 +138,8 @@ class RemoteControlPanelClass {
 
     this.#toggling = false;
 
-    // The "remote-listening" and "marionette-listening" notifications already
-    // refresh the UI, but they are not emitted when a server failed to start
-    // or to stop.
+    // The server state change notifications already refresh the UI, but they
+    // are not emitted when a server failed to start or to stop.
     this.#updateAllWindows();
   }
 
@@ -239,8 +203,6 @@ class RemoteControlPanelClass {
         : "remote-control-panel-turn-on-button"
     );
   }
-
-  QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
 }
 
 export const RemoteControlPanel = new RemoteControlPanelClass();

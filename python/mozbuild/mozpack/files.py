@@ -14,7 +14,6 @@ import stat
 import subprocess
 import tempfile
 import uuid
-from collections import OrderedDict
 from io import BytesIO
 from itertools import chain, takewhile
 from pathlib import Path
@@ -1078,20 +1077,27 @@ class FileFinder(BaseFinder):
             if mozpath.match(path, p):
                 return
 
-        # The sorted makes the output idempotent. Otherwise, we are
+        entries = []
+        with os.scandir(os.path.join(self.base, path)) as scan:
+            for entry in scan:
+                if entry.name.startswith(".") and not self.find_dotfiles:
+                    continue
+                entries.append((entry.name, entry.is_dir()))
+
+        # Sorting makes the output idempotent. Otherwise, we are
         # likely dependent on filesystem implementation details, such as
         # inode ordering.
-        for p in sorted(os.listdir(os.path.join(self.base, path))):
-            if p.startswith("."):
-                if p in (".", ".."):
-                    continue
-                if not self.find_dotfiles:
-                    continue
-            yield from self._find(mozpath.join(path, p))
+        entries.sort()
+        for name, is_dir in entries:
+            child = mozpath.join(path, name)
+            if is_dir:
+                yield from self._find_dir(child)
+            elif f := self.get(child, known_to_exist=True):
+                yield child, f
 
-    def get(self, path):
+    def get(self, path, known_to_exist=False):
         srcpath = os.path.join(self.base, path)
-        if not os.path.lexists(srcpath):
+        if not known_to_exist and not os.path.lexists(srcpath):
             return None
 
         if self.ignore_broken_symlinks and not os.path.exists(srcpath):
@@ -1157,7 +1163,7 @@ class JarFinder(BaseFinder):
         """
         assert isinstance(reader, JarReader)
         BaseFinder.__init__(self, base, **kargs)
-        self._files = OrderedDict((f.filename, f) for f in reader)
+        self._files = {f.filename: f for f in reader}
 
     def _find(self, pattern):
         """
@@ -1182,7 +1188,7 @@ class TarFinder(BaseFinder):
         assert isinstance(tar, TarFile)
         self._tar = tar
         BaseFinder.__init__(self, base, **kargs)
-        self._files = OrderedDict((f.name, f) for f in tar if f.isfile())
+        self._files = {f.name: f for f in tar if f.isfile()}
 
     def _find(self, pattern):
         """
@@ -1270,7 +1276,7 @@ class MercurialRevisionFinder(BaseFinder):
         finally:
             os.chdir(oldcwd)
         self._rev = rev if rev is not None else "."
-        self._files = OrderedDict()
+        self._files = {}
 
         # Immediately populate the list of files in the repo since nearly every
         # operation requires this list.

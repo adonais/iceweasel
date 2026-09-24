@@ -39,6 +39,9 @@ class nsXMLFragmentContentSink : public nsXMLContentSink,
                                const nsAString& aSystemId,
                                const nsAString& aPublicId,
                                nsISupports* aCatalogData) override;
+  NS_IMETHOD HandleStartElement(const char16_t* aName, const char16_t** aAtts,
+                                uint32_t aAttsCount, uint32_t aLineNumber,
+                                uint32_t aColumnNumber) override;
   NS_IMETHOD HandleProcessingInstruction(const char16_t* aTarget,
                                          const char16_t* aData) override;
   NS_IMETHOD HandleXMLDeclaration(const char16_t* aVersion,
@@ -157,6 +160,17 @@ bool nsXMLFragmentContentSink::SetDocElement(int32_t aNameSpaceID,
                                              nsIContent* aContent) {
   // this is a fragment, not a document
   return false;
+}
+
+NS_IMETHODIMP
+nsXMLFragmentContentSink::HandleStartElement(const char16_t* aName,
+                                             const char16_t** aAtts,
+                                             uint32_t aAttsCount,
+                                             uint32_t aLineNumber,
+                                             uint32_t aColumnNumber) {
+  return nsXMLContentSink::HandleStartElement(aName, aAtts, aAttsCount,
+                                              aLineNumber, aColumnNumber,
+                                              FROM_PARSER_FRAGMENT);
 }
 
 nsresult nsXMLFragmentContentSink::CreateElement(

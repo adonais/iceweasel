@@ -38,7 +38,7 @@ class SVGTransformableElement : public SVGElement {
     return mAnimateMotionTransform.get();
   }
   void SetAnimateMotionTransform(const gfx::Matrix* aMatrix) override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   SVGAnimatedTransformList* GetExistingAnimatedTransformList() const override {
     return mTransforms.get();

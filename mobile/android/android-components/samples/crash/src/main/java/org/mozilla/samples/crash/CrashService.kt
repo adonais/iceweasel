@@ -13,9 +13,10 @@ import android.content.Intent
 import android.os.IBinder
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mozilla.components.support.base.ids.SharedIdsHelper
@@ -29,9 +30,10 @@ private const val DELAY_CRASH_MS = 10000L
  * activity from a background service if the app was in the foreground a couple of seconds ago.
  */
 class CrashService : Service() {
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     override fun onBind(intent: Intent?): IBinder? = null
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     @Suppress("TooGenericExceptionThrown")
     override fun onCreate() {
         Toast.makeText(this, "Crashing from background soonish...", Toast.LENGTH_SHORT).show()
@@ -40,11 +42,16 @@ class CrashService : Service() {
         // before we can crash.
         startForeground(SharedIdsHelper.getIdForTag(this, NOTIFICATION_TAG), createNotification())
 
-        GlobalScope.launch(Dispatchers.Main) {
+        serviceScope.launch {
             delay(DELAY_CRASH_MS)
 
             throw RuntimeException("Background crash")
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

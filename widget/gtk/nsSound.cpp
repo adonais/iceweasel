@@ -22,29 +22,25 @@ static PRLibrary* libcanberra = nullptr;
 
 /* used to play sounds with libcanberra. */
 typedef struct _ca_context ca_context;
-typedef struct _ca_proplist ca_proplist;
 
 typedef void (*ca_finish_callback_t)(ca_context* c, uint32_t id, int error_code,
                                      void* userdata);
 
 typedef int (*ca_context_create_fn)(ca_context**);
 typedef int (*ca_context_destroy_fn)(ca_context*);
+#if !defined(XP_OPENBSD) && ((defined MOZ_ALSA) || (defined MOZ_SNDIO))
 typedef int (*ca_context_set_driver_fn)(ca_context*, const char*);
+#endif
 typedef int (*ca_context_play_fn)(ca_context* c, uint32_t id, ...);
 typedef int (*ca_context_change_props_fn)(ca_context* c, ...);
-typedef int (*ca_proplist_create_fn)(ca_proplist**);
-typedef int (*ca_proplist_destroy_fn)(ca_proplist*);
-typedef int (*ca_proplist_sets_fn)(ca_proplist* c, const char* key,
-                                   const char* value);
 
 static ca_context_create_fn ca_context_create;
 static ca_context_destroy_fn ca_context_destroy;
+#if !defined(XP_OPENBSD) && ((defined MOZ_ALSA) || (defined MOZ_SNDIO))
 static ca_context_set_driver_fn ca_context_set_driver;
+#endif
 static ca_context_play_fn ca_context_play;
 static ca_context_change_props_fn ca_context_change_props;
-static ca_proplist_create_fn ca_proplist_create;
-static ca_proplist_destroy_fn ca_proplist_destroy;
-static ca_proplist_sets_fn ca_proplist_sets;
 
 static ca_context* ca_context_get_default() {
   // This allows us to avoid race conditions with freeing the context by handing
@@ -159,19 +155,15 @@ nsSound::Init() {
         // at this point we know we have a good libcanberra library
         ca_context_destroy = (ca_context_destroy_fn)PR_FindFunctionSymbol(
             libcanberra, "ca_context_destroy");
+#if !defined(XP_OPENBSD) && ((defined MOZ_ALSA) || (defined MOZ_SNDIO))
         ca_context_set_driver = (ca_context_set_driver_fn)PR_FindFunctionSymbol(
             libcanberra, "ca_context_set_driver");
+#endif
         ca_context_play = (ca_context_play_fn)PR_FindFunctionSymbol(
             libcanberra, "ca_context_play");
         ca_context_change_props =
             (ca_context_change_props_fn)PR_FindFunctionSymbol(
                 libcanberra, "ca_context_change_props");
-        ca_proplist_create = (ca_proplist_create_fn)PR_FindFunctionSymbol(
-            libcanberra, "ca_proplist_create");
-        ca_proplist_destroy = (ca_proplist_destroy_fn)PR_FindFunctionSymbol(
-            libcanberra, "ca_proplist_destroy");
-        ca_proplist_sets = (ca_proplist_sets_fn)PR_FindFunctionSymbol(
-            libcanberra, "ca_proplist_sets");
       }
     }
   }

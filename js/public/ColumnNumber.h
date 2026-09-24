@@ -80,8 +80,6 @@ struct ColumnNumberOffset {
 
   bool operator==(const ColumnNumberOffset& rhs) const = default;
 
-  bool operator!=(const ColumnNumberOffset& rhs) const = default;
-
   int32_t value() const { return value_; }
 };
 
@@ -113,8 +111,6 @@ struct ColumnNumberUnsignedOffset {
   }
 
   bool operator==(const ColumnNumberUnsignedOffset& rhs) const = default;
-
-  bool operator!=(const ColumnNumberUnsignedOffset& rhs) const = default;
 
   uint32_t value() const { return value_; }
 
@@ -149,9 +145,6 @@ struct MaybeLimitedColumnNumber {
   }
 
   bool operator==(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
-      default;
-
-  bool operator!=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
       default;
 
   MaybeLimitedColumnNumber<LimitValue> operator+(
@@ -370,8 +363,6 @@ struct TaggedColumnNumberOneOrigin {
   }
 
   bool operator==(const TaggedColumnNumberOneOrigin& rhs) const = default;
-
-  bool operator!=(const TaggedColumnNumberOneOrigin& rhs) const = default;
 
   bool isLimitedColumnNumber() const { return !isWasmFunctionIndex(); }
 

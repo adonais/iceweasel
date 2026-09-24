@@ -1,0 +1,19 @@
+# define_libcxx_sub applies pending LLVM patches pinned to one llvm revision, but
+# we substitute our own llvm-project to match the pre-built clang, so they don't
+# apply. The trunk task doesn't use this: its llvm-project is main, where they do
+# apply and the locale_base_api one is what keeps libcxx building.
+
+diff --git a/cmake/wasi-sdk-sysroot.cmake b/cmake/wasi-sdk-sysroot.cmake
+--- a/cmake/wasi-sdk-sysroot.cmake
++++ b/cmake/wasi-sdk-sysroot.cmake
+@@ -396,10 +396,6 @@
+     USES_TERMINAL_CONFIGURE ON
+     USES_TERMINAL_BUILD ON
+     USES_TERMINAL_INSTALL ON
+-    USES_TERMINAL_PATCH ON
+-    PATCH_COMMAND
+-      ${CMAKE_COMMAND} -E chdir .. bash -c
+-        "git apply ${patches} || git apply ${patches} -R --check"
+   )
+   add_dependencies(libcxx-${target} libcxx-${target}${target_suffix}-build)
+ endfunction()

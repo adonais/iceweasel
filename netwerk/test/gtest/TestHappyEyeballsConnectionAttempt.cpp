@@ -228,6 +228,11 @@ class RecordingConnMgrDelegate final : public HappyEyeballsConnMgrDelegate {
   void ProcessSpdyPendingQ(ConnectionEntry*) override {
     mCalls.AppendElement("ProcessSpdyPendingQ"_ns);
   }
+  already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase*, ConnectionEntry*) override {
+    mCalls.AppendElement("HandOffHttp3OnlyConnection"_ns);
+    return nullptr;
+  }
   void InsertIntoActiveConns(ConnectionEntry*, HttpConnectionBase*) override {
     mCalls.AppendElement("InsertIntoActiveConns"_ns);
   }

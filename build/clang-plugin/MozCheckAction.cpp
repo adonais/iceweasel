@@ -7,14 +7,14 @@
 #include "DiagnosticsMatcher.h"
 
 ASTConsumerPtr MozCheckAction::CreateASTConsumer(CompilerInstance &CI,
-                                  StringRef FileName) {
+                                                 StringRef FileName) {
   void *Buffer = CI.getASTContext().Allocate<DiagnosticsMatcher>();
   auto Matcher = new (Buffer) DiagnosticsMatcher(CI);
   return Matcher->makeASTConsumer();
 }
 
 bool MozCheckAction::ParseArgs(const CompilerInstance &CI,
-                const std::vector<std::string> &Args) {
+                               const std::vector<std::string> &Args) {
   return true;
 }
 

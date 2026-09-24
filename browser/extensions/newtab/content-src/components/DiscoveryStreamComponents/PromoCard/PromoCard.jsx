@@ -26,7 +26,6 @@ const PromoCard = () => {
       })
     );
     dispatch({ type: at.SHOW_PERSONALIZE });
-    dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
   }, [dispatch]);
 
   const onDismissClick = useCallback(() => {

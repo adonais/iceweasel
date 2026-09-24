@@ -452,6 +452,9 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   void ShutdownConnectionManager();
 
+  // Tears down state that must not outlive XPCOM. Idempotent.
+  void Shutdown();
+
   uint32_t DefaultHpackBuffer() const { return mDefaultHpackBuffer; }
 
   static bool IsHttp3Enabled();
@@ -668,6 +671,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   // true in between init and shutdown states
   Atomic<bool, Relaxed> mHandlerActive{false};
+
+  // Release/acquire: the destructor may run on any thread and has to see what
+  // Shutdown() already did.
+  Atomic<bool, ReleaseAcquire> mShutdownCalled{false};
 
   // The value of 'hidden' network.http.debug-observations : 1;
   uint32_t mDebugObservations : 1;

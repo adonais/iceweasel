@@ -7,18 +7,18 @@ package org.mozilla.fenix.crashes
 import mozilla.components.lib.crash.RuntimeTagProvider
 import mozilla.components.lib.crash.runtimetagproviders.ExperimentData
 import mozilla.components.lib.crash.runtimetagproviders.ExperimentDataProvider
-import mozilla.components.service.nimbus.NimbusApi
+import org.mozilla.experiments.nimbus.internal.EnrollmentSlugs
 
 /**
- * [RuntimeTagProvider] that provides the active [NimbusApi] experiments as runtime tags.
+ * [RuntimeTagProvider] that provides the active experiments and rollouts as runtime tags.
  *
- * @param nimbusApi the [NimbusApi] to use to get the active experiments
+ * @param getEnrollments A function that returns the active enrollments
  */
-class NimbusExperimentDataProvider(private val nimbusApi: Lazy<NimbusApi>) : ExperimentDataProvider {
+class NimbusExperimentDataProvider(private val getEnrollments: () -> List<EnrollmentSlugs>) : ExperimentDataProvider {
 
     override fun getExperimentData(): ExperimentData {
         val data =
-            nimbusApi.value.getActiveExperiments().associate {
+            getEnrollments().associate {
                 it.slug to it.branchSlug
             }
 

@@ -18,12 +18,6 @@ function insertAndClickAnchor(browser) {
   });
 }
 
-function promiseWaitForFocus(aWindow) {
-  return new Promise(resolve => {
-    waitForFocus(resolve, aWindow);
-  });
-}
-
 /**
  * Takes some browser in some window, and forces that browser
  * to become non-remote, and then navigates it to a page that
@@ -40,6 +34,77 @@ registerCleanupFunction(() => {
 });
 
 /**
+ * Opens a browser window and clicks a target="_blank" link in its non-remote
+ * browser. Makes sure that the new tab becomes remote.
+ *
+ * @param {object} windowOptions
+ *        Options for BrowserTestUtils.openNewBrowserWindow.
+ */
+async function checkNewTabBecomesRemote(windowOptions) {
+  let testWindow = await BrowserTestUtils.openNewBrowserWindow(windowOptions);
+  let testBrowser = testWindow.gBrowser.selectedBrowser;
+  info("Preparing non-remote browser");
+  await prepareNonRemoteBrowser(testWindow, testBrowser);
+  info("Non-remote browser prepared");
+
+  let tabOpenEventPromise = BrowserTestUtils.waitForEvent(
+    testWindow.gBrowser.tabContainer,
+    "TabOpen"
+  );
+  await insertAndClickAnchor(testBrowser);
+
+  let newTab = (await tabOpenEventPromise).target;
+  await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
+  // insertAndClickAnchor causes an open to a web page which
+  // means that the tab should eventually become remote.
+  ok(
+    newTab.linkedBrowser.isRemoteBrowser,
+    "The opened browser never became remote."
+  );
+
+  await BrowserTestUtils.closeWindow(testWindow);
+}
+
+/**
+ * Opens a browser window and clicks a target="_blank" link in its non-remote
+ * browser. Makes sure that the link opens a second window with the same
+ * private browsing state, and that its tab becomes remote.
+ *
+ * @param {object} windowOptions
+ *        Options for BrowserTestUtils.openNewBrowserWindow.
+ */
+async function checkNewWindowBecomesRemote(windowOptions) {
+  let testWindow = await BrowserTestUtils.openNewBrowserWindow(windowOptions);
+  let testBrowser = testWindow.gBrowser.selectedBrowser;
+  await prepareNonRemoteBrowser(testWindow, testBrowser);
+
+  let newWindowPromise = TestUtils.topicObserved(
+    "browser-delayed-startup-finished"
+  );
+  await insertAndClickAnchor(testBrowser);
+  let [newWindow] = await newWindowPromise;
+
+  is(
+    PrivateBrowsingUtils.isWindowPrivate(testWindow),
+    PrivateBrowsingUtils.isWindowPrivate(newWindow),
+    "Private browsing state of new window does not match the original!"
+  );
+
+  let newTab = newWindow.gBrowser.selectedTab;
+
+  await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
+  // insertAndClickAnchor causes an open to a web page which
+  // means that the tab should eventually become remote.
+  ok(
+    newTab.linkedBrowser.isRemoteBrowser,
+    "The opened browser never became remote."
+  );
+
+  await BrowserTestUtils.closeWindow(newWindow);
+  await BrowserTestUtils.closeWindow(testWindow);
+}
+
+/**
  * Test that if we open a new tab from a link in a non-remote
  * browser in an e10s window, that the new tab will load properly.
  */
@@ -48,41 +113,8 @@ add_task(async function test_new_tab() {
     set: [["dom.security.skip_html_fragment_assertion", true]],
   });
 
-  let normalWindow = await BrowserTestUtils.openNewBrowserWindow({
-    remote: true,
-  });
-  let privateWindow = await BrowserTestUtils.openNewBrowserWindow({
-    remote: true,
-    private: true,
-  });
-
-  for (let testWindow of [normalWindow, privateWindow]) {
-    await promiseWaitForFocus(testWindow);
-    let testBrowser = testWindow.gBrowser.selectedBrowser;
-    info("Preparing non-remote browser");
-    await prepareNonRemoteBrowser(testWindow, testBrowser);
-    info("Non-remote browser prepared");
-
-    let tabOpenEventPromise = BrowserTestUtils.waitForEvent(
-      testWindow.gBrowser.tabContainer,
-      "TabOpen"
-    );
-    await insertAndClickAnchor(testBrowser);
-
-    let newTab = (await tabOpenEventPromise).target;
-    await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
-    // insertAndClickAnchor causes an open to a web page which
-    // means that the tab should eventually become remote.
-    ok(
-      newTab.linkedBrowser.isRemoteBrowser,
-      "The opened browser never became remote."
-    );
-
-    testWindow.gBrowser.removeTab(newTab);
-  }
-
-  normalWindow.close();
-  privateWindow.close();
+  await checkNewTabBecomesRemote({ remote: true });
+  await checkNewTabBecomesRemote({ remote: true, private: true });
 });
 
 /**
@@ -95,20 +127,6 @@ add_task(async function test_new_window() {
     set: [["dom.security.skip_html_fragment_assertion", true]],
   });
 
-  let normalWindow = await BrowserTestUtils.openNewBrowserWindow(
-    {
-      remote: true,
-    },
-    true
-  );
-  let privateWindow = await BrowserTestUtils.openNewBrowserWindow(
-    {
-      remote: true,
-      private: true,
-    },
-    true
-  );
-
   // Fiddle with the prefs so that we open target="_blank" links
   // in new windows instead of new tabs.
   Services.prefs.setIntPref(
@@ -116,36 +134,6 @@ add_task(async function test_new_window() {
     Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW
   );
 
-  for (let testWindow of [normalWindow, privateWindow]) {
-    await promiseWaitForFocus(testWindow);
-    let testBrowser = testWindow.gBrowser.selectedBrowser;
-    await prepareNonRemoteBrowser(testWindow, testBrowser);
-
-    await insertAndClickAnchor(testBrowser);
-
-    // Click on the link in the browser, and wait for the new window.
-    let [newWindow] = await TestUtils.topicObserved(
-      "browser-delayed-startup-finished"
-    );
-
-    is(
-      PrivateBrowsingUtils.isWindowPrivate(testWindow),
-      PrivateBrowsingUtils.isWindowPrivate(newWindow),
-      "Private browsing state of new window does not match the original!"
-    );
-
-    let newTab = newWindow.gBrowser.selectedTab;
-
-    await BrowserTestUtils.browserLoaded(newTab.linkedBrowser);
-    // insertAndClickAnchor causes an open to a web page which
-    // means that the tab should eventually become remote.
-    ok(
-      newTab.linkedBrowser.isRemoteBrowser,
-      "The opened browser never became remote."
-    );
-    newWindow.close();
-  }
-
-  normalWindow.close();
-  privateWindow.close();
+  await checkNewWindowBecomesRemote({ remote: true });
+  await checkNewWindowBecomesRemote({ remote: true, private: true });
 });

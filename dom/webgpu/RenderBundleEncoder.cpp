@@ -39,7 +39,7 @@ void RenderBundleEncoder::SetBindGroup(uint32_t aSlot,
       .length = aDynamicOffsetsLength,
   };
   ffi::wgpu_client_render_bundle_encoder_set_bind_group(
-      GetClient(), mParent->GetId(), GetId(), aSlot, bindGroup, dynamicOffsets);
+      GetClient(), GetId(), aSlot, bindGroup, dynamicOffsets);
 }
 
 void RenderBundleEncoder::SetBindGroup(
@@ -65,8 +65,8 @@ void RenderBundleEncoder::SetBindGroup(
 }
 
 void RenderBundleEncoder::SetPipeline(const RenderPipeline& aPipeline) {
-  ffi::wgpu_client_render_bundle_encoder_set_pipeline(
-      GetClient(), mParent->GetId(), GetId(), aPipeline.GetId());
+  ffi::wgpu_client_render_bundle_encoder_set_pipeline(GetClient(), GetId(),
+                                                      aPipeline.GetId());
 }
 
 void RenderBundleEncoder::SetIndexBuffer(
@@ -83,8 +83,7 @@ void RenderBundleEncoder::SetIndexBuffer(
     bufferSize.tag = ffi::WGPUFfiOption_BufferAddress_None_BufferAddress;
   }
   ffi::wgpu_client_render_bundle_encoder_set_index_buffer(
-      GetClient(), mParent->GetId(), GetId(), aBuffer.GetId(), iformat, aOffset,
-      bufferSize);
+      GetClient(), GetId(), aBuffer.GetId(), iformat, aOffset, bufferSize);
 }
 
 void RenderBundleEncoder::SetVertexBuffer(
@@ -102,15 +101,14 @@ void RenderBundleEncoder::SetVertexBuffer(
     bufferSize.tag = ffi::WGPUFfiOption_BufferAddress_None_BufferAddress;
   }
   ffi::wgpu_client_render_bundle_encoder_set_vertex_buffer(
-      GetClient(), mParent->GetId(), GetId(), aSlot, bufferId, aOffset,
-      bufferSize);
+      GetClient(), GetId(), aSlot, bufferId, aOffset, bufferSize);
 }
 
 void RenderBundleEncoder::Draw(uint32_t aVertexCount, uint32_t aInstanceCount,
                                uint32_t aFirstVertex, uint32_t aFirstInstance) {
-  ffi::wgpu_client_render_bundle_encoder_draw(
-      GetClient(), mParent->GetId(), GetId(), aVertexCount, aInstanceCount,
-      aFirstVertex, aFirstInstance);
+  ffi::wgpu_client_render_bundle_encoder_draw(GetClient(), GetId(),
+                                              aVertexCount, aInstanceCount,
+                                              aFirstVertex, aFirstInstance);
 }
 
 void RenderBundleEncoder::DrawIndexed(uint32_t aIndexCount,
@@ -118,47 +116,44 @@ void RenderBundleEncoder::DrawIndexed(uint32_t aIndexCount,
                                       uint32_t aFirstIndex, int32_t aBaseVertex,
                                       uint32_t aFirstInstance) {
   ffi::wgpu_client_render_bundle_encoder_draw_indexed(
-      GetClient(), mParent->GetId(), GetId(), aIndexCount, aInstanceCount,
-      aFirstIndex, aBaseVertex, aFirstInstance);
+      GetClient(), GetId(), aIndexCount, aInstanceCount, aFirstIndex,
+      aBaseVertex, aFirstInstance);
 }
 
 void RenderBundleEncoder::DrawIndirect(const Buffer& aIndirectBuffer,
                                        uint64_t aIndirectOffset) {
   ffi::wgpu_client_render_bundle_encoder_draw_indirect(
-      GetClient(), mParent->GetId(), GetId(), aIndirectBuffer.GetId(),
-      aIndirectOffset);
+      GetClient(), GetId(), aIndirectBuffer.GetId(), aIndirectOffset);
 }
 
 void RenderBundleEncoder::DrawIndexedIndirect(const Buffer& aIndirectBuffer,
                                               uint64_t aIndirectOffset) {
   ffi::wgpu_client_render_bundle_encoder_draw_indexed_indirect(
-      GetClient(), mParent->GetId(), GetId(), aIndirectBuffer.GetId(),
-      aIndirectOffset);
+      GetClient(), GetId(), aIndirectBuffer.GetId(), aIndirectOffset);
 }
 
 void RenderBundleEncoder::PushDebugGroup(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
-  ffi::wgpu_client_render_bundle_encoder_push_debug_group(
-      GetClient(), mParent->GetId(), GetId(), utf8.get());
+  ffi::wgpu_client_render_bundle_encoder_push_debug_group(GetClient(), GetId(),
+                                                          utf8.get());
 }
 void RenderBundleEncoder::PopDebugGroup() {
-  ffi::wgpu_client_render_bundle_encoder_pop_debug_group(
-      GetClient(), mParent->GetId(), GetId());
+  ffi::wgpu_client_render_bundle_encoder_pop_debug_group(GetClient(), GetId());
 }
 void RenderBundleEncoder::InsertDebugMarker(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
   ffi::wgpu_client_render_bundle_encoder_insert_debug_marker(
-      GetClient(), mParent->GetId(), GetId(), utf8.get());
+      GetClient(), GetId(), utf8.get());
 }
 
 already_AddRefed<RenderBundle> RenderBundleEncoder::Finish(
     const dom::GPURenderBundleDescriptor& aDesc) {
-  ffi::WGPURenderBundleDescriptor desc = {};
+  ffi::WGPUFfiRenderBundleDescriptor desc = {};
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
-  RawId id = ffi::wgpu_client_render_bundle_encoder_finish(
-      GetClient(), mParent->GetId(), GetId(), &desc);
+  RawId id = ffi::wgpu_client_render_bundle_encoder_finish(GetClient(), GetId(),
+                                                           &desc);
 
   auto canvasContexts = mUsedCanvasContexts.Clone();
   auto externalTextures = mExternalTextures.Clone();

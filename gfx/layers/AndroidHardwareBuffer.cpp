@@ -4,6 +4,7 @@
 
 #include "AndroidHardwareBuffer.h"
 
+#include <android/sync.h>
 #include <sys/socket.h>
 
 #include "mozilla/TimeStamp.h"
@@ -196,9 +197,38 @@ int AndroidHardwareBuffer::Unlock() {
   return 0;
 }
 
+/* static */
+UniqueFileHandle AndroidHardwareBuffer::MergeFences(
+    UniqueFileHandle&& aFence1, UniqueFileHandle&& aFence2) {
+  if (!aFence1) {
+    return aFence2;
+  }
+
+  if (!aFence2) {
+    return aFence1;
+  }
+
+  UniqueFileHandle fence1 = std::move(aFence1);
+  UniqueFileHandle fence2 = std::move(aFence2);
+
+  int fd = sync_merge("MergeFences", fence1.get(), fence2.get());
+  if (fd < 0) {
+    gfxCriticalNote << "AndroidHardwareBuffer::MergeFences: "
+                       "failed to merge fences";
+    return UniqueFileHandle();
+  }
+
+  // Release fds here, since there are consumed by sync_merge().
+  (void)fence1.release();
+  (void)fence2.release();
+
+  return UniqueFileHandle(fd);
+}
+
 void AndroidHardwareBuffer::SetReleaseFence(UniqueFileHandle&& aFenceFd) {
   MonitorAutoLock lock(mMonitor);
-  mReleaseFenceFd = std::move(aFenceFd);
+  mReleaseFenceFd =
+      MergeFences(std::move(mReleaseFenceFd), std::move(aFenceFd));
 }
 
 void AndroidHardwareBuffer::SetAcquireFence(UniqueFileHandle&& aFenceFd) {
@@ -215,6 +245,11 @@ UniqueFileHandle AndroidHardwareBuffer::GetAndResetReleaseFence() {
 UniqueFileHandle AndroidHardwareBuffer::GetAndResetAcquireFence() {
   MonitorAutoLock lock(mMonitor);
   return std::move(mAcquireFenceFd);
+}
+
+UniqueFileHandle AndroidHardwareBuffer::GetAndResetAllFencesMerged() {
+  MonitorAutoLock lock(mMonitor);
+  return MergeFences(std::move(mAcquireFenceFd), std::move(mReleaseFenceFd));
 }
 
 UniqueFileHandle AndroidHardwareBuffer::GetAcquireFence() const {

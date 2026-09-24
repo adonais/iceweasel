@@ -57,6 +57,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   bool IsStaticImport() const { return mKind == Kind::StaticImport; }
   bool IsDynamicImport() const { return mKind == Kind::DynamicImport; }
 
+  bool IsSourcePhaseRequest(JSContext* aCx) const;
+
   bool IsErrored() const;
 
   nsIGlobalObject* GetGlobalObject();
@@ -70,7 +72,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   void ModuleLoaded();
   void ModuleErrored();
-  void LoadFailed();
 
   // Tells the load context that this request stopped waiting on an in-progress
   // fetch of the same URL. Must be called whenever that happens, whether the
@@ -97,9 +98,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 #endif
   nsresult StartModuleLoad() { return mLoader->StartModuleLoad(this); }
   nsresult RestartModuleLoad() { return mLoader->RestartModuleLoad(this); }
-  nsresult OnFetchComplete(nsresult aRv) {
-    return mLoader->OnFetchComplete(this, aRv);
-  }
+  void OnFetchComplete(nsresult aRv) { mLoader->OnFetchComplete(this, aRv); }
   bool InstantiateModuleGraph() {
     return mLoader->InstantiateModuleGraph(this);
   }

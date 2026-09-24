@@ -24,6 +24,10 @@ object WebCompatTestData {
               "isTabSpecific": true,
               "value": false
             },
+            "btpPurgeHistory": {
+              "isTabSpecific": true,
+              "value": []
+            },
             "etpCategory": {
               "value": "standard"
             },

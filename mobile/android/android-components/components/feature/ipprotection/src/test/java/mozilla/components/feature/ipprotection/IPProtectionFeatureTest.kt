@@ -15,6 +15,7 @@ import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
+import mozilla.components.feature.ipprotection.store.state.isActivationInFlight
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
@@ -96,6 +97,24 @@ class IPProtectionFeatureTest {
 
             middleware.assertFirstAction(IPProtectionAction.ToggleFailed::class)
             middleware.assertNotDispatched(IPProtectionAction.LocationSwitchFailed::class)
+        }
+
+    @Test
+    fun `GIVEN a location switch WHEN the engine accepts it without a state change THEN the request is retired`() =
+        runTest(testDispatcher) {
+            // The engine reports nothing when only the country changes, so nothing else clears the request.
+            val request = PendingActivationRequest.Activate("JP", isLocationSwitch = true)
+            val (store, _) =
+                buildStore(
+                    buildIPProtectionState(eligibilityStatus = EligibilityStatus.Eligible)
+                        .copy(pendingActivationRequest = request)
+                )
+
+            startFeature(store)
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(null, store.state.pendingActivationRequest)
+            assertEquals(false, store.state.isActivationInFlight)
         }
 
     private fun TestScope.startFeature(store: IPProtectionStore, failing: Boolean = false): FakeIPProtectionHandler {

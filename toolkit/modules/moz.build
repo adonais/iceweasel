@@ -204,7 +204,6 @@ EXTRA_JS_MODULES += [
     "RemotePageAccessManager.sys.mjs",
     "ResetProfile.sys.mjs",
     "RustSharedRemoteSettingsService.sys.mjs",
-    "ScheduledTask.sys.mjs",
     "SelectionUtils.sys.mjs",
     "ServiceRequest.sys.mjs",
     "ShortcutUtils.sys.mjs",
@@ -269,8 +268,11 @@ if "Android" != CONFIG["OS_TARGET"]:
         "GMPUtils.sys.mjs",
         "LightweightThemeConsumer.sys.mjs",
         "upcheck.sys.mjs",
+        "ScheduledTask.sys.mjs",
     ]
-
+    TESTING_JS_MODULES += [
+        "tests/modules/SystemDelay.sys.mjs",
+    ]
     DIRS += [
         "launchonlogin",
         "subprocess",

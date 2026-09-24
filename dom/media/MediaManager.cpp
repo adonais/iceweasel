@@ -2544,15 +2544,14 @@ MediaManager* MediaManager::Get() {
     timesCreated++;
     MOZ_RELEASE_ASSERT(timesCreated == 1);
 
-    constexpr bool kSupportsTailDispatch = false;
     RefPtr<TaskQueue> mediaThread =
 #ifdef MOZ_WEBRTC
         CreateWebrtcTaskQueueWrapper(
             GetMediaThreadPool(MediaThreadType::SUPERVISOR), "MediaManager"_ns,
-            kSupportsTailDispatch);
+            TailDispatchPolicy::NoTailDispatch);
 #else
         TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
-                          "MediaManager", kSupportsTailDispatch);
+                          "MediaManager", TailDispatchPolicy::NoTailDispatch);
 #endif
     LOG("New Media thread for gum");
 

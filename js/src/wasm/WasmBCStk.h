@@ -39,7 +39,7 @@ struct Stk {
     MemI64,  // 64-bit integer stack value ("offs")
     MemF32,  // 32-bit floating stack value ("offs")
     MemF64,  // 64-bit floating stack value ("offs")
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     MemV128,  // 128-bit vector stack value ("offs")
 #endif
     MemRef,  // reftype (pointer wide) stack value ("offs")
@@ -50,7 +50,7 @@ struct Stk {
     LocalI64,  // Local int64 var ("slot")
     LocalF32,  // Local float32 var ("slot")
     LocalF64,  // Local double var ("slot")
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     LocalV128,  // Local v128 var ("slot")
 #endif
     LocalRef,  // Local reftype (pointer wide) var ("slot")
@@ -59,7 +59,7 @@ struct Stk {
     RegisterI64,  // 64-bit integer register ("i64reg")
     RegisterF32,  // 32-bit floating register ("f32reg")
     RegisterF64,  // 64-bit floating register ("f64reg")
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     RegisterV128,  // 128-bit vector register ("v128reg")
 #endif
     RegisterRef,  // reftype (pointer wide) register ("refReg")
@@ -68,7 +68,7 @@ struct Stk {
     ConstI64,  // 64-bit integer constant ("i64val")
     ConstF32,  // 32-bit floating constant ("f32val")
     ConstF64,  // 64-bit floating constant ("f64val")
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     ConstV128,  // 128-bit vector constant ("v128val")
 #endif
     ConstRef,  // reftype (pointer wide) constant ("refval")
@@ -89,7 +89,7 @@ struct Stk {
     RegRef refReg_;
     RegF32 f32reg_;
     RegF64 f64reg_;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     RegV128 v128reg_;
 #endif
     int32_t i32val_;
@@ -97,7 +97,7 @@ struct Stk {
     intptr_t refval_;
     float f32val_;
     double f64val_;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     V128 v128val_;
 #endif
     uint32_t slot_;
@@ -109,7 +109,7 @@ struct Stk {
   explicit Stk(RegRef r) : kind_(RegisterRef), refReg_(r) {}
   explicit Stk(RegF32 r) : kind_(RegisterF32), f32reg_(r) {}
   explicit Stk(RegF64 r) : kind_(RegisterF64), f64reg_(r) {}
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   explicit Stk(RegV128 r) : kind_(RegisterV128), v128reg_(r) {}
 #endif
   explicit Stk(int32_t v) : kind_(ConstI32), i32val_(v) {}
@@ -117,7 +117,7 @@ struct Stk {
   explicit Stk(int64_t v) : kind_(ConstI64), i64val_(v) {}
   explicit Stk(float v) : kind_(ConstF32), f32val_(v) {}
   explicit Stk(double v) : kind_(ConstF64), f64val_(v) {}
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   explicit Stk(V128 v) : kind_(ConstV128), v128val_(v) {}
 #endif
   explicit Stk(Kind k, uint32_t v) : kind_(k), slot_(v) {
@@ -139,7 +139,7 @@ struct Stk {
         k = Stk::MemI64;
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         k = Stk::MemV128;
         break;
 #else
@@ -190,7 +190,7 @@ struct Stk {
     MOZ_ASSERT(kind_ == RegisterF64);
     return f64reg_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   RegV128 v128reg() const {
     MOZ_ASSERT(kind_ == RegisterV128);
     return v128reg_;
@@ -222,7 +222,7 @@ struct Stk {
     *out = f64val_;
   }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // For SIMD, do the same as for floats since we're using float registers to
   // hold vectors; this is just conservative.
   void v128val(V128* out) const {
@@ -259,7 +259,7 @@ struct Stk {
       case MemF64:
         fprintf(stderr, "MemF64()");
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case MemV128:
         fprintf(stderr, "MemV128()");
         break;
@@ -279,7 +279,7 @@ struct Stk {
       case LocalF64:
         fprintf(stderr, "LocalF64()");
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case LocalV128:
         fprintf(stderr, "LocalV128()");
         break;
@@ -299,7 +299,7 @@ struct Stk {
       case RegisterF64:
         fprintf(stderr, "RegisterF64()");
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case RegisterV128:
         fprintf(stderr, "RegisterV128()");
         break;
@@ -319,7 +319,7 @@ struct Stk {
       case ConstF64:
         fprintf(stderr, "ConstF64()");
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case ConstV128:
         fprintf(stderr, "ConstV128()");
         break;

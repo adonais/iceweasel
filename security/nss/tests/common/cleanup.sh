@@ -43,18 +43,20 @@ if [ -z "${CLEANUP}" -o "${CLEANUP}" = "${SCRIPTNAME}" ]; then
     echo
     printf "${COLOR_BOLD}Tests summary:${COLOR_RESET}\n"
     echo "--------------"
-    LINES_CNT=$(grep -c ">Passed<" ${RESULTS} 2>/dev/null | sed s/\ *//)
-    echo "Passed:             ${LINES_CNT}"
+    PASSED_CNT=$(grep -c ">Passed<" ${RESULTS} 2>/dev/null | sed s/\ *//)
+    echo "Passed:             ${PASSED_CNT}"
     FAILED_CNT=$(grep -c ">Failed<" ${RESULTS} 2>/dev/null | sed s/\ *//)
     echo "Failed:             ${FAILED_CNT}"
     CORE_CNT=$(grep -c ">Failed Core<" ${RESULTS} 2>/dev/null | sed s/\ *//)
     echo "Failed with core:   ${CORE_CNT}"
     ASAN_CNT=$(grep -c "SUMMARY: AddressSanitizer" $LOGFILE 2>/dev/null | sed s/\ *//)
     echo "ASan failures:      ${ASAN_CNT}"
-    LINES_CNT=$(grep -c ">Unknown<" ${RESULTS} 2>/dev/null | sed s/\ *//)
-    echo "Unknown status:     ${LINES_CNT}"
-    if [ ${LINES_CNT} -gt 0 ]; then
-        echo "TinderboxPrint:Unknown: ${LINES_CNT}"
+    UBSAN_CNT=$(grep -c "runtime error:" $LOGFILE 2>/dev/null | sed s/\ *//)
+    echo "UBSan failures:     ${UBSAN_CNT}"
+    UNKNOWN_CNT=$(grep -c ">Unknown<" ${RESULTS} 2>/dev/null | sed s/\ *//)
+    echo "Unknown status:     ${UNKNOWN_CNT}"
+    if [ ${UNKNOWN_CNT} -gt 0 ]; then
+        echo "TinderboxPrint:Unknown: ${UNKNOWN_CNT}"
     fi
     echo
 
@@ -70,8 +72,46 @@ if [ -z "${CLEANUP}" -o "${CLEANUP}" = "${SCRIPTNAME}" ]; then
     html "END_OF_TEST<BR>"
     html "</BODY></HTML>"
     rm -f ${TEMPFILES} 2>/dev/null
+
     if [ ${FAILED_CNT} -gt 0 ] || [ ${ASAN_CNT} -gt 0 ] ||
-       ([ ${CORE_CNT} -gt 0 ] && [ -n "${BUILD_OPT}" ] && [ ${BUILD_OPT} -eq 1 ]); then
+       [ ${UBSAN_CNT} -gt 0 ] || [ ${CORE_CNT} -gt 0 ]; then
+        RUN_STATUS=fail
+    else
+        RUN_STATUS=pass
+    fi
+
+    # Machine-readable summary, so that callers do not have to scrape
+    # output.log or results.html.
+    {
+        echo "{"
+        echo "  \"status\": \"${RUN_STATUS}\","
+        echo "  \"host\": \"${HOST}\","
+        echo "  \"objdir\": \"${OBJDIR}\","
+        echo "  \"nss_tests\": \"${NSS_TESTS}\","
+        echo "  \"nss_cycles\": \"${NSS_CYCLES}\","
+        echo "  \"passed\": ${PASSED_CNT:-0},"
+        echo "  \"failed\": ${FAILED_CNT:-0},"
+        echo "  \"failed_with_core\": ${CORE_CNT:-0},"
+        echo "  \"asan_failures\": ${ASAN_CNT:-0},"
+        echo "  \"ubsan_failures\": ${UBSAN_CNT:-0},"
+        echo "  \"unknown\": ${UNKNOWN_CNT:-0},"
+        echo -n "  \"failed_tests\": ["
+        if [ -s "${FAILED_TESTS_FILE}" ]; then
+            sep=""
+            while IFS= read -r ft; do
+                # Escape backslashes and double quotes for JSON.
+                ft=$(printf '%s' "$ft" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')
+                printf '%s\n    "%s"' "$sep" "$ft"
+                sep=","
+            done < "${FAILED_TESTS_FILE}"
+            echo ""
+            echo -n "  "
+        fi
+        echo "]"
+        echo "}"
+    } > ${HOSTDIR}/summary.json
+
+    if [ "${RUN_STATUS}" = "fail" ]; then
         exit 1
     fi
 

@@ -72,6 +72,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
+  FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
@@ -99,6 +100,15 @@ ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () => {
     "resource://gre/modules/FxAccounts.sys.mjs"
   ).getFxAccountsSingleton();
 });
+
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "searchFormHistoryFieldname",
+  () =>
+    ChromeUtils.importESModule(
+      "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs"
+    ).DEFAULT_FORM_HISTORY_PARAM
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -894,6 +904,16 @@ const TargetingGetters = {
         })
         .catch(() => resolve(NONE));
     });
+  },
+  get recentSearchCount() {
+    const RECENT_SEARCH_WINDOW_DAYS = 28;
+    // FormHistory times are in microseconds, so we need to multiply by 1000 to get the correct time.
+    const lastUsedStart =
+      (Date.now() - RECENT_SEARCH_WINDOW_DAYS * 24 * 60 * 60 * 1000) * 1000;
+    return lazy.FormHistory.count({
+      fieldname: lazy.searchFormHistoryFieldname,
+      lastUsedStart,
+    }).catch(() => 0);
   },
   get isDefaultBrowser() {
     return QueryCache.getters.isDefaultBrowser.get().catch(() => null);

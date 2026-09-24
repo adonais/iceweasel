@@ -6,12 +6,6 @@ const INITIAL_TABATTR_REMOVAL_DELAY_MS = Services.prefs.getIntPref(
   TABATTR_REMOVAL_PREFNAME
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 async function pause(tab, options) {
   let extendedDelay = options && options.extendedDelay;
   if (extendedDelay) {
@@ -114,6 +108,32 @@ async function test_tooltip(icon, expectedTooltip, isActiveTab) {
     );
   }
   leave_icon(icon);
+}
+
+async function hover_icon(icon, tooltip) {
+  disable_non_test_mouse(true);
+
+  let popupShownPromise = BrowserTestUtils.waitForEvent(tooltip, "popupshown");
+  EventUtils.synthesizeMouse(icon, 1, 1, { type: "mouseover" });
+  EventUtils.synthesizeMouse(icon, 2, 2, { type: "mousemove" });
+  EventUtils.synthesizeMouse(icon, 3, 3, { type: "mousemove" });
+  EventUtils.synthesizeMouse(icon, 4, 4, { type: "mousemove" });
+  await popupShownPromise;
+}
+
+function leave_icon(icon) {
+  EventUtils.synthesizeMouse(icon, 0, 0, { type: "mouseout" });
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mousemove",
+  });
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mousemove",
+  });
+  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
+    type: "mousemove",
+  });
+
+  disable_non_test_mouse(false);
 }
 
 function get_tab_state(tab) {

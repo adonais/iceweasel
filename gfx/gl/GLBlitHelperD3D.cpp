@@ -11,10 +11,11 @@
 #include "GPUVideoImage.h"
 #include "ScopedGLHelpers.h"
 #include "mozilla/StaticPrefs_gl.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11YCbCrImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"
+#include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/layers/GpuProcessD3D11TextureMap.h"
 #include "mozilla/layers/TextureD3D11.h"
 
@@ -183,36 +184,6 @@ ID3D11Device* GLBlitHelper::GetD3D11() const {
 
 // -------------------------------------
 
-bool GLBlitHelper::BlitImage(layers::D3D11ShareHandleImage* const srcImage,
-                             const gfx::IntRect& destRect,
-                             const OriginPos destOrigin,
-                             const gfx::IntSize& fbSize) const {
-  const auto& data = srcImage->GetData();
-  if (!data) return false;
-
-  layers::SurfaceDescriptorD3D10 desc;
-  if (!data->SerializeSpecific(&desc)) return false;
-
-  return BlitDescriptor(desc, destRect, destOrigin, fbSize);
-}
-
-// -------------------------------------
-
-bool GLBlitHelper::BlitImage(layers::D3D11ZeroCopyTextureImage* const srcImage,
-                             const gfx::IntRect& destRect,
-                             const OriginPos destOrigin,
-                             const gfx::IntSize& fbSize) const {
-  const auto& data = srcImage->GetData();
-  if (!data) return false;
-
-  layers::SurfaceDescriptorD3D10 desc;
-  if (!data->SerializeSpecific(&desc)) return false;
-
-  return BlitDescriptor(desc, destRect, destOrigin, fbSize);
-}
-
-// -------------------------------------
-
 bool GLBlitHelper::BlitDescriptor(const layers::SurfaceDescriptorD3D10& desc,
                                   const gfx::IntRect& destRect,
                                   const OriginPos destOrigin,
@@ -272,10 +243,11 @@ bool GLBlitHelper::BlitDescriptor(const layers::SurfaceDescriptorD3D10& desc,
     return false;
   }
 
-  auto* fencesHolderMap = layers::CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = layers::CompositeProcessFencesHolderMap::Get();
   MOZ_ASSERT(fencesHolderMap);
   if (fencesHolderMap && fencesHolderId.isSome()) {
-    fencesHolderMap->WaitWriteFence(fencesHolderId.ref(), d3d);
+    auto fence = fencesHolderMap->GetWriteFence(fencesHolderId.ref());
+    layers::FenceD3D11::WaitD3D11Fence(fence, d3d);
   }
 
   if (!yuv) {

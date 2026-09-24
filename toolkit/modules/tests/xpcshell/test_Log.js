@@ -419,3 +419,29 @@ add_test(function test_prefs() {
 
   run_next_test();
 });
+
+/*
+ * Check that the level-enabled getters follow the effective level.
+ */
+add_task(function test_level_enabled() {
+  let parent = Log.repository.getLogger("enabled");
+  let log = Log.repository.getLogger("enabled.logger");
+
+  log.level = Log.Level.Info;
+  Assert.ok(!log.debugEnabled);
+  Assert.ok(!log.traceEnabled);
+
+  log.level = Log.Level.Debug;
+  Assert.ok(log.debugEnabled);
+  Assert.ok(!log.traceEnabled);
+
+  log.level = Log.Level.Trace;
+  Assert.ok(log.debugEnabled);
+  Assert.ok(log.traceEnabled);
+
+  // A level inherited from the parent counts.
+  parent.level = Log.Level.Debug;
+  log.level = null;
+  Assert.ok(log.debugEnabled);
+  Assert.ok(!log.traceEnabled);
+});

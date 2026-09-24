@@ -7,7 +7,7 @@ support-files = [
 
 ["browser_a11y.js"]
 
-["browser_breakout_state.js"]
+["browser_popover_state.js"]
 
 ["browser_formatValue.js"]
 skip-if = [
@@ -91,6 +91,9 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1773790
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", #  Bug 1773790
 ]
+
+["browser_setURI_keepsSelectedResult.js"]
+support-files = ["../browser/slow-page.sjs"]
 
 ["browser_tooltip.js"]
 

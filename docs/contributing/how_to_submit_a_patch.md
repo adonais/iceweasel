@@ -26,11 +26,11 @@ graph TD;
     d[Getting Reviews] --> Lando[(Lando)];
     Lando[(Lando)] --> h[Push the change];
     h[Push the change] --> Git2[(Git)];
-    style Bugzilla fill:#e1f5ff,stroke:#0366d6
-    style Git fill:#e1f5ff,stroke:#0366d6
-    style Phabricator fill:#e1f5ff,stroke:#0366d6
-    style Lando fill:#e1f5ff,stroke:#0366d6
-    style Git2 fill:#e1f5ff,stroke:#0366d6
+    style Bugzilla fill:#e1f5ff,stroke:#0366d6,color:#1a1a1a
+    style Git fill:#e1f5ff,stroke:#0366d6,color:#1a1a1a
+    style Phabricator fill:#e1f5ff,stroke:#0366d6,color:#1a1a1a
+    style Lando fill:#e1f5ff,stroke:#0366d6,color:#1a1a1a
+    style Git2 fill:#e1f5ff,stroke:#0366d6,color:#1a1a1a
 ```
 
 ## Preparation

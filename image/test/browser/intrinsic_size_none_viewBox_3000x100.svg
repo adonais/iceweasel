@@ -1,0 +1,7 @@
+<svg viewBox="0 0 3000 100" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    :root { color-scheme: light dark; }
+    rect { fill: light-dark(green, blue); }
+  </style>
+  <rect width="3000" height="100" />
+</svg>

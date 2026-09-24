@@ -1107,20 +1107,30 @@ class Window extends WindowBase {
     // forever for a change that might not ever happen.
     const noWindowManagerTimeout = 2000;
 
-    // We check for window.fullScreen here to make sure to exit fullscreen even
-    // if DOM and widget disagree on what the state is. This is a speculative
-    // fix for bug 1780876, ideally it should not be needed.
+    // Widgets report the sizemode change before resizing the window to the size
+    // of its new state, so the resize needs to be waited for separately,
+    // otherwise we would report the size the window had in its previous state.
+    // The minimized state is the only one that leaves the size unchanged, and
+    // waiting for a resize that never happens costs a whole
+    // noWindowManagerTimeout.
+    const resizeExpected =
+      window.fullScreen ||
+      (initialState != window.STATE_MINIMIZED &&
+        expectedState != window.STATE_MINIMIZED);
+
     let onResize;
-    let promiseExitFullscreenResize;
-    if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
-      // Widgets report the sizemode change before resizing the window back to
-      // its pre-fullscreen size, so the resize needs to be waited for
-      // separately, otherwise we would report the fullscreen size as the size
-      // of the no longer fullscreen window.
-      promiseExitFullscreenResize = new Promise(resolve => {
+    let promiseResize;
+    if (resizeExpected) {
+      promiseResize = new Promise(resolve => {
         onResize = resolve;
         window.addEventListener("resize", onResize);
       });
+    }
+
+    // We check for window.fullScreen here to make sure to exit fullscreen even
+    // if DOM and widget disagree on what the state is. This is a speculative
+    // fix for bug 1780876, ideally it should not be needed.
+    if (initialState == window.STATE_FULLSCREEN || window.fullScreen) {
       window.fullScreen = false;
     }
 
@@ -1164,11 +1174,11 @@ class Window extends WindowBase {
       });
     }
 
-    if (promiseExpectedSizeMode || promiseExitFullscreenResize) {
+    if (promiseExpectedSizeMode || promiseResize) {
       // Both waits share a single timeout, so that a window manager that never
       // reports either change delays us once rather than twice.
       await Promise.any([
-        Promise.all([promiseExpectedSizeMode, promiseExitFullscreenResize]),
+        Promise.all([promiseExpectedSizeMode, promiseResize]),
         new Promise(resolve => setTimeout(resolve, noWindowManagerTimeout)),
       ]);
 

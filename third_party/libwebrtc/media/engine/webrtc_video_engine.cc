@@ -129,7 +129,6 @@ const char* StreamTypeToString(VideoSendStream::StreamStats::StreamType type) {
   return nullptr;
 }
 
-
 // Get the default set of supported codecs.
 // is_decoder_factory is needed to keep track of the implict assumption that any
 // H264 decoder also supports constrained base line profile.
@@ -1251,11 +1250,11 @@ bool WebRtcVideoSendChannel::SetSenderParameters(
 void WebRtcVideoSendChannel::RequestEncoderSwitch(
     std::optional<SdpVideoFormat> format,
     bool allow_default_fallback) {
-  auto task =
-      SafeTask(task_safety_.flag(), [this, format, allow_default_fallback] {
-        RTC_DCHECK_RUN_ON(worker_thread_);
-        ApplyEncoderSwitch(std::move(format), allow_default_fallback);
-      });
+  auto task = SafeTask(task_safety_.flag(), [this, format = std::move(format),
+                                             allow_default_fallback]() mutable {
+    RTC_DCHECK_RUN_ON(worker_thread_);
+    ApplyEncoderSwitch(std::move(format), allow_default_fallback);
+  });
   if (encoder_switch_request_callback_) {
     encoder_switch_request_callback_(std::move(task));
   } else {
@@ -3627,8 +3626,8 @@ bool WebRtcVideoReceiveChannel::WebRtcVideoReceiveStream::ReconfigureCodecs(
   bool recreate_needed = false;
 
   if (raw_payload_types != config_.rtp.raw_payload_types) {
+    stream_->SetRawPayloadTypes(raw_payload_types);
     raw_payload_types.swap(config_.rtp.raw_payload_types);
-    recreate_needed = true;
   }
 
   if (decoders != config_.decoders) {
@@ -3880,11 +3879,11 @@ WebRtcVideoReceiveChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
       stats.jitter_buffer_minimum_delay.seconds<double>();
   info.min_playout_delay_ms = stats.min_playout_delay_ms;
   info.render_delay_ms = stats.render_delay_ms;
-  info.frames_received =
-      stats.frame_counts.key_frames + stats.frame_counts.delta_frames;
+  info.frames_received = stats.received_frame_counts.key_frames +
+                         stats.received_frame_counts.delta_frames;
   info.frames_dropped = stats.frames_dropped;
   info.frames_decoded = stats.frames_decoded;
-  info.key_frames_decoded = stats.frame_counts.key_frames;
+  info.key_frames_decoded = stats.key_frames_decoded;
   info.frames_rendered = stats.frames_rendered;
   info.qp_sum = stats.qp_sum;
   info.corruption_score_sum = stats.corruption_score_sum;

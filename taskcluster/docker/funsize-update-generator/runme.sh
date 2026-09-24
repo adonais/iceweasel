@@ -5,7 +5,7 @@ set -xe
 test "$TASK_ID"
 test "$SIGNING_CERT"
 
-ARTIFACTS_DIR="/home/worker/artifacts"
+ARTIFACTS_DIR="/builds/worker/artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
 # Strip trailing / if present
@@ -15,12 +15,12 @@ export TASKCLUSTER_ROOT_URL
 # duplicate the functionality of taskcluster-lib-urls, but in bash..
 queue_base="${TASKCLUSTER_ROOT_URL%/}/api/queue/v1"
 
-curl --location --retry 10 --retry-delay 10 -o /home/worker/task.json "$queue_base/task/$TASK_ID"
+curl --location --retry 10 --retry-delay 10 -o /builds/worker/task.json "$queue_base/task/$TASK_ID"
 
 # auth:aws-s3:read-write:tc-gp-private-1d-us-east-1/releng/mbsdiff-cache/
 # -> bucket of tc-gp-private-1d-us-east-1, path of releng/mbsdiff-cache/
 # Trailing slash is important, due to prefix permissions in S3.
-S3_BUCKET_AND_PATH=$(jq -r '.scopes[] | select(contains ("auth:aws-s3"))' /home/worker/task.json | awk -F: '{print $4}')
+S3_BUCKET_AND_PATH=$(jq -r '.scopes[] | select(contains ("auth:aws-s3"))' /builds/worker/task.json | awk -F: '{print $4}')
 
 # Will be empty if there's no scope for AWS S3.
 if [ -n "${S3_BUCKET_AND_PATH}" ] && getent hosts taskcluster
@@ -44,7 +44,7 @@ then
 
   if [ -n "$AWS_ACCESS_KEY_ID" ] && [ -n "$AWS_SECRET_ACCESS_KEY" ]; then
     # Pass the full bucket/path prefix, as the script just appends local files.
-    export MBSDIFF_HOOK="/home/worker/bin/mbsdiff_hook.sh -S ${S3_BUCKET_AND_PATH}"
+    export MBSDIFF_HOOK="/builds/worker/bin/mbsdiff_hook.sh -S ${S3_BUCKET_AND_PATH}"
   fi
   set -x
 else
@@ -54,8 +54,8 @@ fi
 
 # EXTRA_PARAMS is optional
 # shellcheck disable=SC2086
-python3 /home/worker/bin/funsize.py \
+python3 /builds/worker/bin/funsize.py \
     --artifacts-dir "$ARTIFACTS_DIR" \
-    --task-definition /home/worker/task.json \
-    --signing-cert "/home/worker/keys/${SIGNING_CERT}.pubkey" \
+    --task-definition /builds/worker/task.json \
+    --signing-cert "/builds/worker/keys/${SIGNING_CERT}.pubkey" \
     $EXTRA_PARAMS

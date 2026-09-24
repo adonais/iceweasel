@@ -27,7 +27,9 @@ class SettingsHTTPSOnlyModeTest : BaseTest() {
 
         on.home.navigateToPage()
 
-        on.browserPage.navigateToPage("http://permission.site/").verifyPageContent("permission.site")
+        on.browserPage
+            .navigateToPage("http://permission.site/")
+            .verifyPageContentWithReload("http://permission.site/", "permission.site")
 
         on.searchBar.navigateToPage().verifyUrl("https://permission.site/")
 
@@ -35,7 +37,7 @@ class SettingsHTTPSOnlyModeTest : BaseTest() {
             .navigateToPage("http.badssl.com")
             .verifyHttpsOnlyErrorPage()
             .goBackFromHttpsError()
-            .verifyPageContent("permission.site")
+            .verifyPageContentWithReload("http://permission.site/", "permission.site")
 
         on.searchBar.navigateToPage()
         on.browserPage.navigateToPage("http.badssl.com").continueToHttpSite().verifyPageContent("http.badssl.com")

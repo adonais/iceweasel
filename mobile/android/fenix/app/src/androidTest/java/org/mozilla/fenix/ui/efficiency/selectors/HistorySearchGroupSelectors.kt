@@ -6,16 +6,18 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object HistorySearchGroupSelectors {
+object HistorySearchGroupSelectors : SelectorContainer {
     val NAVIGATION_TOOLBAR =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "navigationToolbar",
             description = "Library navigation toolbar",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val ITEM_URL =
@@ -23,7 +25,7 @@ object HistorySearchGroupSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "url",
             description = "Search group item URL",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // The screen's toolbar title is the search term itself, which is precisely why HistoryPage cannot stand
@@ -34,7 +36,6 @@ object HistorySearchGroupSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = searchTerm,
             description = "'$searchTerm' search group toolbar title",
-            groups = listOf(),
         )
 
     // Espresso and not UiAutomator, deliberately: this row gets long-pressed to enter multi-selection mode,
@@ -47,7 +48,6 @@ object HistorySearchGroupSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = url,
             description = "Search group item '$url'",
-            groups = listOf(),
         )
 
     // On this screen the row's overflow view is repurposed as a per-row delete cross carrying the content
@@ -60,7 +60,6 @@ object HistorySearchGroupSelectors {
             value = "overflow_menu",
             secondaryValue = url,
             description = "Delete button for '$url'",
-            groups = listOf(),
         )
 
     // The multi-selection toolbar's overflow button. Espresso's openActionBarOverflowOrOptionsMenu, which the
@@ -71,7 +70,6 @@ object HistorySearchGroupSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = getStringResource(R.string.content_description_menu),
             description = "Multi-select toolbar overflow button",
-            groups = listOf(),
         )
 
     // The Delete entry in the multi-selection toolbar's overflow menu. Matched on text, which the per-row
@@ -81,17 +79,5 @@ object HistorySearchGroupSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.history_delete_item),
             description = "Multi-select overflow Delete menu item",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            NAVIGATION_TOOLBAR,
-            ITEM_URL,
-            TOOLBAR_TITLE(),
-            ITEM_WITH_URL(),
-            ITEM_DELETE_BUTTON(),
-            MULTI_SELECT_OVERFLOW_BUTTON,
-            MULTI_SELECT_DELETE_MENU_ITEM,
         )
 }

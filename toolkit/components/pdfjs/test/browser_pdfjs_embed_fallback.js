@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -19,6 +21,15 @@ const REFERRER_RESULT_URL = TESTROOT + "file_pdfjs_referrer.sjs?result";
 const SLOW_PDF_URL = TESTROOT + "file_pdfjs_slow.sjs";
 const FALLBACK_CONVERTER_URI =
   "resource://pdf.js/PdfEmbedFallbackStreamConverter.sys.mjs";
+
+const SITES = [
+  { name: "same-site", suffix: "", pdfURL: PDF_URL },
+  { name: "cross-site", suffix: "_cross_site", pdfURL: CROSS_SITE_PDF_URL },
+];
+
+function pageURL(name, { suffix }) {
+  return `${TESTROOT}file_pdfjs_${name}${suffix}.html`;
+}
 
 function promiseDownloadFinished(list) {
   return new Promise(resolve => {
@@ -283,6 +294,153 @@ add_task(async function test_open_pdf_from_the_fallback_page() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function test_open_pdf_from_the_fallback_page_in_a_frame() {
+  for (const site of SITES) {
+    for (const page of ["iframe", "frameset"]) {
+      info(`Testing the ${site.name} case with the ${page} page`);
+      const tab = await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        "about:blank"
+      );
+      const { linkedBrowser: browser } = tab;
+
+      const fallbackLoaded = BrowserTestUtils.browserLoaded(
+        browser,
+        /* includeSubFrames = */ true,
+        site.pdfURL
+      );
+      BrowserTestUtils.startLoadingURIString(browser, pageURL(page, site));
+      await fallbackLoaded;
+
+      const frameContext = browser.browsingContext.children[0];
+      ok(frameContext, "The frame must have a browsing context");
+      if (site.suffix && gFissionBrowser) {
+        isnot(
+          frameContext.currentWindowGlobal.osPid,
+          browser.browsingContext.currentWindowGlobal.osPid,
+          "The fallback must be displayed in the process of the PDF's site"
+        );
+      }
+
+      const downloadList = await Downloads.getList(Downloads.PUBLIC);
+      const downloadFinished = promiseDownloadFinished(downloadList);
+      const embedderPrincipal = browser.contentPrincipal;
+      const retryStarted = TestUtils.topicObserved(
+        "http-on-modify-request",
+        subject =>
+          subject.QueryInterface(Ci.nsIHttpChannel).URI.spec === site.pdfURL
+      );
+
+      info("Clicking on the button to open the pdf of the frame...");
+      await clickOpenButton(frameContext);
+
+      const [retryChannel] = await retryStarted;
+      ok(
+        retryChannel.loadInfo.loadingPrincipal.equals(embedderPrincipal),
+        "The retried PDF request must use the embedder's loading principal"
+      );
+      ok(
+        retryChannel.loadInfo.triggeringPrincipal.equals(embedderPrincipal),
+        "The retried request must preserve the embedder's triggering principal"
+      );
+
+      const download = await downloadFinished;
+      ok(download.succeeded, "The PDF must have been downloaded successfully");
+      is(
+        download.source.url,
+        site.pdfURL,
+        "The PDF must have the expected URL"
+      );
+
+      // Downloading leaves the fallback in place.
+      await SpecialPowers.spawn(frameContext, [], () => {
+        ok(
+          content.document.getElementById("fallbackOpenButton"),
+          "The frame must still display the fallback page"
+        );
+      });
+
+      BrowserTestUtils.removeTab(tab);
+      await cleanupDownloads();
+    }
+  }
+});
+
+add_task(async function test_frames_are_not_downloaded() {
+  for (const site of SITES) {
+    info(`Testing the ${site.name} case`);
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      pageURL("frames", site)
+    );
+    const frames = tab.linkedBrowser.browsingContext;
+
+    await TestUtils.waitForCondition(
+      () => frames.children.length === 3,
+      "Waiting for the browsing contexts of the frames"
+    );
+    for (const frame of frames.children) {
+      await SpecialPowers.spawn(frame, [], async () => {
+        const { ContentTaskUtils } = ChromeUtils.importESModule(
+          "resource://testing-common/ContentTaskUtils.sys.mjs"
+        );
+        await ContentTaskUtils.waitForCondition(
+          () => content.document.getElementById("fallbackOpenButton"),
+          "Each frame must display the fallback page"
+        );
+      });
+    }
+
+    const downloadList = await Downloads.getList(Downloads.PUBLIC);
+    const downloads = (await downloadList.getAll()).filter(download =>
+      download.source.url.startsWith(`${site.pdfURL}?`)
+    );
+    is(downloads.length, 0, "The PDFs must not have been downloaded");
+
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
+add_task(async function test_pref_disables_the_frame_fallback() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["pdfjs.handleFrameAttributeLoads", false]],
+  });
+
+  const downloadList = await Downloads.getList(Downloads.PUBLIC);
+  const downloadFinished = promiseDownloadFinished(downloadList);
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    pageURL("iframe", SITES[0])
+  );
+
+  const download = await downloadFinished;
+  ok(download.succeeded, "The PDF must have been downloaded successfully");
+  is(download.source.url, PDF_URL, "The PDF must have the expected URL");
+
+  BrowserTestUtils.removeTab(tab);
+  await cleanupDownloads();
+
+  // Object and embed elements are not affected by the pref.
+  const embedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TESTROOT + "file_pdfjs_embed.html"
+  );
+  const embedder = embedTab.linkedBrowser.browsingContext;
+  await TestUtils.waitForCondition(
+    () => embedder.children.length === 1,
+    "Waiting for the browsing context of the embed element"
+  );
+  await SpecialPowers.spawn(embedder.children[0], [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.getElementById("fallbackOpenButton"),
+      "The embed element must still display the fallback page"
+    );
+  });
+
+  BrowserTestUtils.removeTab(embedTab);
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_open_cross_site_pdf_from_the_fallback_page() {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -346,9 +504,7 @@ add_task(async function test_open_cross_site_pdf_from_the_fallback_page() {
   BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function test_only_embedded_pdfs_are_opened() {
-  // A compromised content process can send this message for any frame it hosts.
-  // Only object/embed frames may be reloaded with their embedder's principal.
+add_task(async function test_only_frames_embedded_in_pages_are_opened() {
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     TESTROOT + "file_pdfjs_embed.html"
@@ -356,26 +512,29 @@ add_task(async function test_only_embedded_pdfs_are_opened() {
   const { linkedBrowser: browser } = tab;
   const topContext = browser.browsingContext;
 
-  await SpecialPowers.spawn(browser, [], async () => {
-    const append = async element => {
-      const loaded = new Promise(resolve => {
-        element.addEventListener("load", resolve, { once: true });
-      });
-      content.document.body.append(element);
-      if (element.localName === "object") {
-        element.type = "application/pdf";
-        element.data = "file_pdfjs_test.pdf";
-      }
-      await loaded;
+  await SpecialPowers.spawn(browser, [], () => {
+    const append = (name, properties) => {
+      content.document.body.append(
+        Object.assign(content.document.createElement(name), properties)
+      );
     };
-    await append(content.document.createElement("iframe"));
-    await append(content.document.createElement("object"));
+    append("iframe", { src: "file_pdfjs_test.pdf" });
+    append("object", { type: "application/pdf", data: "file_pdfjs_test.pdf" });
   });
   await TestUtils.waitForCondition(
     () => topContext.children.length === 3,
     "Waiting for the browsing contexts of the added frames"
   );
   const [embedContext, iframeContext, objectContext] = topContext.children;
+
+  for (const context of topContext.children) {
+    await SpecialPowers.spawn(context, [], async () => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.getElementById("fallbackOpenButton"),
+        "Waiting for the fallback page"
+      );
+    });
+  }
 
   const openPdf = context => {
     const sandbox = sinon.createSandbox();
@@ -401,8 +560,8 @@ add_task(async function test_only_embedded_pdfs_are_opened() {
   );
   ok(!openPdf(topContext), "A top-level document must not be loaded again");
 
-  is(iframeContext.embedderElementType, "iframe", "The iframe is an iframe");
-  ok(!openPdf(iframeContext), "An iframe must not be loaded again");
+  is(iframeContext.embedderElementType, "iframe", "The PDF is in an iframe");
+  ok(openPdf(iframeContext), "The PDF in an iframe must be loaded");
 
   is(embedContext.embedderElementType, "embed", "The PDF is in an embed");
   ok(openPdf(embedContext), "The PDF embedded with an embed must be loaded");
@@ -433,9 +592,9 @@ add_task(async function test_fallback_hidden_when_embed_is_too_short() {
 
   await SpecialPowers.spawn(embedContext, [], async () => {
     const container = content.document.getElementById("fallbackContainer");
-    is(
-      content.getComputedStyle(container).display,
-      "none",
+    // The subdocument's viewport may update after its load event.
+    await ContentTaskUtils.waitForCondition(
+      () => content.getComputedStyle(container).display === "none",
       "The fallback must be hidden when its complete UI cannot be shown"
     );
   });

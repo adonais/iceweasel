@@ -6,7 +6,6 @@ import os
 import re
 import struct
 import subprocess
-from collections import OrderedDict
 from tempfile import mkstemp
 
 import buildconfig
@@ -122,20 +121,10 @@ class UnifiedFinder(BaseFinder):
         """
         UnifiedFinder.find() implementation.
         """
-        # There is no `OrderedSet`.  Operator `|` was added only in
-        # Python 3.9, so we merge by hand.
-        all_paths = OrderedDict()
+        files1 = dict(self._finder1.find(path))
+        files2 = dict(self._finder2.find(path))
 
-        files1 = OrderedDict()
-        for p, f in self._finder1.find(path):
-            files1[p] = f
-            all_paths[p] = True
-        files2 = OrderedDict()
-        for p, f in self._finder2.find(path):
-            files2[p] = f
-            all_paths[p] = True
-
-        for p in all_paths:
+        for p in files1 | files2:
             err = errors.count
             unified = self.unify_file(p, files1.get(p), files2.get(p))
             if unified:

@@ -10,9 +10,7 @@ async function click_unblock_icon(tab) {
   let icon =
     isPinned || isVerticalAndCollapsed ? tab.overlayIcon : tab.audioButton;
 
-  await hover_icon(icon, document.getElementById("tabbrowser-tab-tooltip"));
   EventUtils.synthesizeMouseAtCenter(icon, { button: 0 });
-  leave_icon(icon);
 }
 
 add_task(async function setup_test_preference() {

@@ -53,7 +53,7 @@ impl<T: Sized> Drop for OwnedSlice<T> {
     #[inline]
     fn drop(&mut self) {
         if self.len != 0 {
-            let _ = mem::replace(self, Self::default()).into_vec();
+            let _ = std::mem::take(self).into_vec();
         }
     }
 }
@@ -64,7 +64,7 @@ unsafe impl<T: Sized + Sync> Sync for OwnedSlice<T> {}
 impl<T: Clone> Clone for OwnedSlice<T> {
     #[inline]
     fn clone(&self) -> Self {
-        Self::from_slice(&**self)
+        Self::from_slice(self)
     }
 }
 
@@ -203,6 +203,6 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for OwnedSlice<T> {
 
 impl<T: Hash> Hash for OwnedSlice<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        T::hash_slice(&**self, state)
+        T::hash_slice(self, state)
     }
 }

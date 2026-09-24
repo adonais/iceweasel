@@ -277,8 +277,8 @@ In order to enable `buildcache` for Firefox builds, you can use
 
 : Enable full optimizations for Rust code.
 
-You can make an optimized build with debugging symbols. See {ref}`Building
-with Debug Symbols <building-with-debug-symbols>`.
+You can make an optimized build with debugging symbols. See [Building
+with Debug Symbols](building_with_debug_symbols.md).
 
 ### Building as Beta or Release
 

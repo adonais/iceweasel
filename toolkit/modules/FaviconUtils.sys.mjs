@@ -25,9 +25,17 @@ export const TRUSTED_FAVICON_SCHEMES = Object.freeze([
  *   The URL to (remotely) load the image from.
  * @param {object} options
  *   Further configuration options for loading.
- * @param {number} [options.size]
- *   The size of the final image. Should be > 0. Assumes that all images are
- *   square.
+ * @param {number} options.size
+ *   Either the desired maximum size of the final image or the desired actual
+ *   size, depending on the value of the `stretch` option. This is required and
+ *   should be > 0.
+ * @param {boolean} [options.stretch]
+ *   Controls how the image will be resized along with the `size` option. If
+ *   true (the default) or the image lacks an intrinsic size, it will be
+ *   stretched into a square of side length `size`. If false, `size` is treated
+ *   as a maximum bound: If the image is larger than `size` in either dimension,
+ *   it will be shrunk and its intrinsic aspect ratio will be preserved; if the
+ *   image isn't larger, it won't be resized at all.
  * @param {string} [options.colorScheme]
  *   Either "dark" or "light". Used for SVGs.
  * @param {number} [options.contentParentId]
@@ -37,6 +45,13 @@ function getMozRemoteImageURL(url, options = {}) {
   if (options.size !== undefined) {
     options.height = options.width = options.size;
     delete options.size;
+  }
+
+  if (options.hasOwnProperty("stretch")) {
+    options.stretch = !!options.stretch;
+  } else {
+    // TODO: This should default to false. Audit and update callers.
+    options.stretch = true;
   }
 
   let params = new URLSearchParams({

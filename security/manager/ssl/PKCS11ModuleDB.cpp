@@ -820,7 +820,7 @@ void ShowProtectedAuthDialog(const nsCString& tokenName,
   nsCOMPtr<mozIDOMWindowProxy> newWindow;
   (void)ww->OpenWindow(activeWindow,
                        "chrome://pippki/content/protectedAuth.xhtml"_ns,
-                       "_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
+                       u"_blank"_ns, "centerscreen,chrome,modal,titlebar"_ns,
                        dialogArgs, getter_AddRefs(newWindow));
 }
 

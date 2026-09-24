@@ -222,6 +222,7 @@ async function getExpectedWebCompatInfo(tab, snapshot, fullAppData = false) {
           hasMixedActiveContentBlocked: false,
           hasMixedDisplayContentBlocked: false,
           btpHasPurgedSite: false,
+          btpPurgeHistory: [],
           etpCategory: "standard",
         },
         frameworks: {
@@ -255,6 +256,11 @@ function extractBrokenSiteReportFromGleanPing(Glean) {
   ping.tabInfo.antitracking = extractPingData(
     Glean.brokenSiteReportTabInfoAntitracking
   );
+  const btpPurgeHistory =
+    Glean.brokenSiteReportTabInfoAntitracking.btpPurgeHistory.testGetValue();
+  ping.tabInfo.antitracking.btpPurgeHistory = btpPurgeHistory
+    ? Array.from(btpPurgeHistory)
+    : null;
   ping.tabInfo.frameworks = extractPingData(
     Glean.brokenSiteReportTabInfoFrameworks
   );
@@ -285,6 +291,7 @@ function removeTabSpecificInfo(tabInfo, setToNull = false) {
   for (const name of [
     "blockedOrigins",
     "btpHasPurgedSite",
+    "btpPurgeHistory",
     "hasMixedActiveContentBlocked",
     "hasMixedDisplayContentBlocked",
     "hasTrackingContentBlocked",
@@ -370,6 +377,12 @@ async function testSend(tab, menu, expectedOverrides = {}) {
 
   if (expectedOverrides.expectNoTabDetails) {
     removeTabSpecificInfo(expected.tabInfo, true);
+  }
+
+  // filterReportData drops btpPurgeHistory unless the user opts into sending
+  // blocked tracker data, so the metric is never set in that case.
+  if (!rbs.blockedTrackersToggle.pressed) {
+    expected.tabInfo.antitracking.btpPurgeHistory = null;
   }
 
   Services.fog.testResetFOG();

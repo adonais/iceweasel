@@ -13,6 +13,7 @@
 body {
   overflow: hidden;
   background-color: var(--toolbar-background-color);
+  color: var(--toolbar-text-color);
   font-size: var(--font-size-root);
 }
 

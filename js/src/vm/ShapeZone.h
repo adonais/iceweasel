@@ -240,6 +240,10 @@ struct ShapeZone {
   // after a number (RESHAPE_MAX) of queries.
   bool useDictionaryModeTeleportation();
 
+  void disableDictionaryModeTeleportation() {
+    reshapeCounter = RESHAPE_MAX + 1;
+  }
+
  private:
   // The number of teleporting reshapes which have occurred for this
   // shape zone. Used to avoid pathological cases of continuous reshape

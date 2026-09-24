@@ -4,6 +4,8 @@
 
 package mozilla.components.service.pocket.helpers
 
+import mozilla.appservices.merino.CuratedRecommendationsResponse
+import mozilla.appservices.merino.RecommendationDataItem
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
@@ -17,6 +19,7 @@ import mozilla.components.service.pocket.mars.db.SponsoredContentEntity
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationResponseItem
 import mozilla.components.service.pocket.recommendations.api.ContentRecommendationsResponse
 import mozilla.components.service.pocket.recommendations.db.ContentRecommendationEntity
+import mozilla.components.service.pocket.recommendations.utils.IMAGE_URL
 
 private const val POCKET_DIR = "pocket"
 
@@ -149,6 +152,43 @@ internal object PocketTestResources {
         ContentRecommendationsResponse(
             recommendedAt = 0,
             data = contentRecommendationResponseItems,
+        )
+
+    val recommendationDataItem =
+        RecommendationDataItem(
+            corpusItemId = "corpusItemId",
+            scheduledCorpusItemId = "scheduledCorpusItemId",
+            url = "https://mozilla.org",
+            title = "title",
+            excerpt = "excerpt",
+            topic = "topic",
+            publisher = "publisher",
+            isTimeSensitive = true,
+            imageUrl = "https://test.com/image1.jpg",
+            iconUrl = "https://test.com/icon1.jpg",
+            tileId = 1L,
+            receivedRank = 2L,
+        )
+
+    val contentRecommendationResponseItem =
+        ContentRecommendationResponseItem(
+            corpusItemId = "corpusItemId",
+            scheduledCorpusItemId = "scheduledCorpusItemId",
+            url = "https://mozilla.org",
+            title = "title",
+            excerpt = "excerpt",
+            topic = "topic",
+            publisher = "publisher",
+            isTimeSensitive = true,
+            imageUrl = IMAGE_URL + "https%3A%2F%2Ftest.com%2Fimage1.jpg",
+            tileId = 1L,
+            receivedRank = 2,
+        )
+
+    val curatedRecommendationsResponse =
+        CuratedRecommendationsResponse(
+            recommendedAt = 1L,
+            data = listOf(recommendationDataItem),
         )
 
     internal val marsSpocsResponseItem =

@@ -78,14 +78,11 @@
   <!-- note that "text" must already exist in the page to trigger this. -->
   <p id="rangeBasedWithPunctuationAfterFirstWordStart">Text: the colon</p>
   <p id="rangeBasedWithPunctuationAfterFirstWordEnd">is important here</p>
-  <!-- Test case for Bug 2043324: nsFind's ComparePoints endpoint check returned
-       a wrong result for native anonymous content (::before pseudo-elements).-->
   <style>
-    #beforeBugContainer::before { content: "x"; display: block; }
+    #generatedCreatorMatch::before { content: "creatorNacTarget"; }
   </style>
-  <div id="beforeBugContainer">
-    <p id="beforeBugFirst">By default, using this method will cause focus to reset when any handlers' returned promises settle. Focus will be reset to the first element with the autofocus attribute set, or the body element if the attribute isn't present. The focusReset option can be set to "manual" to avoid this behavior.</p>
-    <p id="beforeBugSecond">By default, using this method will delay the browser's scroll restoration logic for "traverse" or "reload" navigations, or its scroll-reset/scroll-to-a-fragment logic for "push" or "replace" navigations, until any handlers' returned promises settle</p></div>
+  <span id="generatedCreatorMatch"></span>
+  <p id="creatorNacTarget">creatorNacTarget</p>
   <!-- (crash)Test case for bug 1989891 -->
   <p>1 1111111111111
 1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
@@ -520,13 +517,13 @@
           textDirective: "text=Text%3A%20the,here",
         },
         {
-          name: "::before pseudo-element must not break text directive disambiguation",
-          startContainer: beforeBugSecond.firstChild,
+          name: "Generated content must not count as a competing match",
+          startContainer: creatorNacTarget.firstChild,
           startOffset: 0,
-          endContainer: beforeBugSecond.firstChild,
-          endOffset: beforeBugSecond.firstChild.length,
-          content: "By default, using this method will delay the browser's scroll restoration logic for \"traverse\" or \"reload\" navigations, or its scroll-reset/scroll-to-a-fragment logic for \"push\" or \"replace\" navigations, until any handlers' returned promises settle",
-          textDirective: "text=behavior%2E-,By,settle",
+          endContainer: creatorNacTarget.firstChild,
+          endOffset: creatorNacTarget.firstChild.length,
+          content: "creatorNacTarget",
+          textDirective: "text=creatorNacTarget",
         },
         {
           name: "Word boundary extension must stop at <br> element",

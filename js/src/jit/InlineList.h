@@ -291,7 +291,6 @@ class AppendOnlyListIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const AppendOnlyListIterator& where) const = default;
   bool operator==(const AppendOnlyListIterator& where) const = default;
   explicit operator bool() const { return iter != nullptr; }
 
@@ -470,7 +469,6 @@ class InlineListIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const InlineListIterator<T>& where) const = default;
   bool operator==(const InlineListIterator<T>& where) const = default;
 
  private:
@@ -508,7 +506,6 @@ class InlineListReverseIterator {
   }
   T* operator*() { return static_cast<T*>(iter); }
   T* operator->() { return static_cast<T*>(iter); }
-  bool operator!=(const InlineListReverseIterator<T>& where) const = default;
   bool operator==(const InlineListReverseIterator<T>& where) const = default;
 
  private:
@@ -588,7 +585,6 @@ class InlineSpaghettiStackIterator {
   }
   T* operator*() const { return static_cast<T*>(iter); }
   T* operator->() const { return static_cast<T*>(iter); }
-  bool operator!=(const InlineSpaghettiStackIterator<T>& where) const = default;
   bool operator==(const InlineSpaghettiStackIterator<T>& where) const = default;
 
  private:

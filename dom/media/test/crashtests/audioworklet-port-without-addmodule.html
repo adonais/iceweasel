@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>AudioWorklet global scope port destroyed on the graph thread</title>
+<script>
+// Touching audioWorklet without calling addModule() leaves
+// AudioWorkletImpl::mGlobalScopePortIdentifier unconsumed, and AudioContext's
+// cycle collection Unlink hands the impl to the graph thread to destroy.
+addEventListener("load", () => {
+  let ctx = new OfflineAudioContext(1, 4096, 44100);
+  void ctx.audioWorklet;
+  ctx = undefined;
+  SpecialPowers.forceGC();
+  SpecialPowers.forceCC();
+});
+</script>
+</html>

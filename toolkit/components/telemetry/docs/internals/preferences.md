@@ -131,10 +131,6 @@ Enable the {doc}`../data/new-profile-ping` on new profiles.
 
 Controls the delay after which the {doc}`../data/new-profile-ping` is sent on new profiles.
 
-`toolkit.telemetry.updatePing.enabled`
-
-Enable the {doc}`../data/update-ping` on browser updates.
-
 `toolkit.telemetry.eventping.minimumFrequency`
 
 The minimum frequency at which an {doc}`../data/event-ping` will be sent.

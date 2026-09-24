@@ -100,7 +100,7 @@ interface nsPIWindowWatcher : nsISupports
   */
   [noscript]
   BrowsingContext openWindow2(in mozIDOMWindowProxy aParent, in nsIURI aUri,
-                              in ACString aName, in ACString aFeatures,
+                              in AString aName, in ACString aFeatures,
                               in UserActivationModifiersRef aModifiers,
                               in boolean aCalledFromScript,
                               in boolean aDialog,

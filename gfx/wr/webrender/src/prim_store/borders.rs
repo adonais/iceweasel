@@ -10,7 +10,6 @@ use crate::clip::{ClipChainInstance, ClipIntern};
 use crate::command_buffer::CommandBufferIndex;
 use crate::pattern::image::ImagePattern;
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
-use crate::visibility::PrimitiveDrawIndex;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
 use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
@@ -22,7 +21,6 @@ use crate::prim_store::{
 use crate::resource_cache::ImageRequest;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
-use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
 // `NormalBorderPrim` now lives in `webrender_api::interned_prims` so content-process
@@ -46,9 +44,6 @@ impl NormalBorderData {
         &self,
         desc: &QuadDescriptor,
         clip_chain: &ClipChainInstance,
-        prim_spatial_node_index: SpatialNodeIndex,
-        device_pixel_scale: DevicePixelScale,
-        draw_index: PrimitiveDrawIndex,
         quad_transform: &mut QuadTransformState,
         frame_context: &FrameBuildingContext,
         pic_context: &PictureContext,
@@ -57,23 +52,13 @@ impl NormalBorderData {
         frame_state: &mut FrameBuildingState,
         scratch: &mut PrimitiveScratchBuffer,
     ) {
-        // TODO(gw): For now, the scale factors to rasterize borders at are
-        //           based on the true world transform of the primitive. When
-        //           raster roots with local scale are supported in future,
-        //           that will need to be accounted for here.
-        let scale = frame_context
-            .spatial_tree
-            .get_world_transform(prim_spatial_node_index)
-            .scale_factors();
+        // The border is rasterized at the scale it is composited at: the
+        // primitive to raster transform of the surface being drawn into, times
+        // that surface's device pixel scale. The two are kept apart because only
+        // the raster part is quantized to a power of two below.
+        let raster_scale = quad_transform.raster_scale_factors();
+        let device_pixel_scale = quad_transform.device_pixel_scale();
 
-        // Scale factors are normalized to a power of 2 to reduce the number of
-        // resolution changes.
-        // For frames with a changing scale transform round scale factors up to
-        // nearest power-of-2 boundary so that we don't keep having to redraw
-        // the content as it scales up and down. Rounding up to nearest
-        // power-of-2 boundary ensures we never scale up, only down --- avoiding
-        // jaggies. It also ensures we never scale down by more than a factor of
-        // 2, avoiding bad downscaling quality.
         // Snap the thickness of a border the author declared at >= 1 CSS pixel
         // to a whole device pixel. Border edges are composited onto their
         // layout-space rects, so a transform makes a 1px edge a fractional
@@ -84,40 +69,49 @@ impl NormalBorderData {
         // (bug 1950029). Rounding the device thickness to the nearest pixel
         // (floored at 1 so a real border can't disappear) makes every side a
         // consistent whole-pixel width. Genuinely sub-CSS-pixel edges are left
-        // untouched. Uses the unclamped world scale factors, since that is the
-        // transform the edge is actually composited with, not the power-of-2
-        // rasterization scale.
-        let snap_width = |w: f32, s: f32| {
-            if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
-        };
-        let device_scale_x = scale.0 * device_pixel_scale.0;
-        let device_scale_y = scale.1 * device_pixel_scale.0;
-        let mut widths = self.widths;
-        widths.left = snap_width(widths.left, device_scale_x);
-        widths.right = snap_width(widths.right, device_scale_x);
-        widths.top = snap_width(widths.top, device_scale_y);
-        widths.bottom = snap_width(widths.bottom, device_scale_y);
-
-        // A corner's cached texture is rasterized at the whole-pixel size of its
-        // corner box and then stretched onto that box, so a box with a fractional
-        // device size is resampled on composite: the arc loses contrast against
-        // the grid-snapped straight edges, which reads as the curve being thinner
-        // than the sides (bug 2062877). The box is `max(radius, width)`, so
-        // snapping a radius that exceeds its border width to a whole device pixel
-        // makes that composite exact. Radii below the width don't drive the box
-        // size, so they are left alone.
+        // untouched.
         //
-        // Rounds down rather than to the nearest pixel. Growing a radius can push
-        // the pair that shares an edge past the length of that edge, which makes
-        // the two corner segments overlap and double-blend a translucent border;
-        // and since the two axes are constrained by different edges, guarding them
-        // separately can round one axis up and the other down, turning a circular
-        // corner into an elliptical one.
-        let snap_radius = |r: f32, w: f32, s: f32| {
-            if r > w && s > 0.0 { (r * s).floor().max(w * s) / s } else { r }
-        };
+        // Both this and the corner snapping below are expressed in layout
+        // space, so they are only valid when a single device scale describes
+        // the whole border. Under a perspective transform `w` varies across the
+        // border box, there is no such scale, and `coplanar_scale_factors`
+        // returns None: widening the layout width by 1/scale would then swell
+        // the border by an unbounded amount as the element tilts away from the
+        // viewer, eating into the content box. Leave those borders at their
+        // authored dimensions.
+        //
+        // Uses the unclamped device scale factors, since that is the transform
+        // the edge is actually composited with, not the power-of-2
+        // rasterization scale.
+        let mut widths = self.widths;
         let mut border = self.border;
-        {
+        if let Some((device_scale_x, device_scale_y)) = quad_transform.coplanar_scale_factors() {
+            let snap_width = |w: f32, s: f32| {
+                if w >= 1.0 && s > 0.0 { (w * s).round().max(1.0) / s } else { w }
+            };
+            widths.left = snap_width(widths.left, device_scale_x);
+            widths.right = snap_width(widths.right, device_scale_x);
+            widths.top = snap_width(widths.top, device_scale_y);
+            widths.bottom = snap_width(widths.bottom, device_scale_y);
+
+            // A corner's cached texture is rasterized at the whole-pixel size of its
+            // corner box and then stretched onto that box, so a box with a fractional
+            // device size is resampled on composite: the arc loses contrast against
+            // the grid-snapped straight edges, which reads as the curve being thinner
+            // than the sides (bug 2062877). The box is `max(radius, width)`, so
+            // snapping a radius that exceeds its border width to a whole device pixel
+            // makes that composite exact. Radii below the width don't drive the box
+            // size, so they are left alone.
+            //
+            // Rounds down rather than to the nearest pixel. Growing a radius can push
+            // the pair that shares an edge past the length of that edge, which makes
+            // the two corner segments overlap and double-blend a translucent border;
+            // and since the two axes are constrained by different edges, guarding them
+            // separately can round one axis up and the other down, turning a circular
+            // corner into an elliptical one.
+            let snap_radius = |r: f32, w: f32, s: f32| {
+                if r > w && s > 0.0 { (r * s).floor().max(w * s) / s } else { r }
+            };
             let r = &mut border.radius;
             r.top_left.width = snap_radius(r.top_left.width, widths.left, device_scale_x);
             r.top_left.height = snap_radius(r.top_left.height, widths.top, device_scale_y);
@@ -129,11 +123,20 @@ impl NormalBorderData {
             r.bottom_right.height = snap_radius(r.bottom_right.height, widths.bottom, device_scale_y);
         }
 
-        let scale_width = clamp_to_scale_factor(scale.0, false);
-        let scale_height = clamp_to_scale_factor(scale.1, false);
+        // Scale factors are normalized to a power of 2 to reduce the number of
+        // resolution changes.
+        // For frames with a changing scale transform round scale factors up to
+        // nearest power-of-2 boundary so that we don't keep having to redraw
+        // the content as it scales up and down. Rounding up to nearest
+        // power-of-2 boundary ensures we never scale up, only down --- avoiding
+        // jaggies. It also ensures we never scale down by more than a factor of
+        // 2, avoiding bad downscaling quality.
+        let scale_width = clamp_to_scale_factor(raster_scale.0, false);
+        let scale_height = clamp_to_scale_factor(raster_scale.1, false);
         // Pick the maximum dimension as scale
-        let world_scale = LayoutToWorldScale::new(scale_width.max(scale_height));
-        let mut scale = world_scale * device_pixel_scale;
+        let mut scale = LayoutToDeviceScale::new(
+            scale_width.max(scale_height) * device_pixel_scale.0,
+        );
 
         // Build the per-frame border segments up front so we can clamp the
         // rasterization scale against the largest segment before requesting
@@ -174,7 +177,6 @@ impl NormalBorderData {
                         aligned_aa_edges: desc.aligned_aa_edges & segment.edge_flags,
                         transformed_aa_edges: desc.transformed_aa_edges & segment.edge_flags,
                     },
-                    draw_index,
                     &None,
                     clip_chain,
                     quad_transform,
@@ -283,7 +285,6 @@ impl NormalBorderData {
                 },
                 stretch_size,
                 spacing,
-                draw_index,
                 &None,
                 clip_chain,
                 quad_transform,
@@ -470,9 +471,9 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<NormalBorderPrim>(), 116, "NormalBorderPrim size changed");
-    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 168, "NormalBorderTemplate size changed");
-    assert_eq!(mem::size_of::<NormalBorderKey>(), 120, "NormalBorderKey size changed");
+    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 200, "NormalBorderTemplate size changed");
+    assert_eq!(mem::size_of::<NormalBorderKey>(), 152, "NormalBorderKey size changed");
     assert_eq!(mem::size_of::<ImageBorder>(), 68, "ImageBorder size changed");
-    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 72, "ImageBorderTemplate size changed");
-    assert_eq!(mem::size_of::<ImageBorderKey>(), 72, "ImageBorderKey size changed");
+    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 104, "ImageBorderTemplate size changed");
+    assert_eq!(mem::size_of::<ImageBorderKey>(), 104, "ImageBorderKey size changed");
 }

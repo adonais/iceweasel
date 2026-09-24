@@ -2656,3 +2656,4 @@ d48158104cb4d50d2696a92c94975e0b755ed137 # Bug 2050591 - Replace ktlint with ktf
 1967f78d98efce2eab72c0cfc79e9319360d7b1e # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
 b4f712874bb3721456c5573673ab78f33f121b42 # Bug 2050591 - Replace ktlint with ktfmt for android linting and autoformat mobile/android/** files
 560af3c0b95a11167742f616efb7e12c8850f08a # Bug 2064159 - Drop the indentation-preserving block from Tabbrowser.sys.mjs
+4c51e408dc63a77a14459b84731942c5ac6a6dfc # Bug 2067088 - Indent browser-menubar.inc.xhtml

@@ -873,6 +873,9 @@ static bool AddClosingPhisForLoop(TempAllocator& alloc,
 
   for (size_t i = 0; i < state.exitingValues.size(); i++) {
     MDefinition* exitingValue = state.exitingValues.get(i);
+    if (!alloc.ensureBallast()) {
+      return false;
+    }
     // In `targetBlock`, add a single-argument phi node that "catches"
     // `exitingValue`, and change all uses of `exitingValue` to be the phi
     // node instead.
@@ -1077,6 +1080,9 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
   const CompileInfo& info = originalHeader->info();
   for (uint32_t cix = 1; cix < unrollFactor; cix++) {
     for (uint32_t bix = 0; bix < numBlocksInOriginal; bix++) {
+      if (!graph.alloc().ensureBallast()) {
+        return false;
+      }
       MBasicBlock* empty = MBasicBlock::New(graph, info, /*pred=*/nullptr,
                                             MBasicBlock::Kind::NORMAL);
       if (!empty) {
@@ -1110,6 +1116,9 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
       for (MPhiIterator phiIter(originalBlock->phisBegin());
            phiIter != originalBlock->phisEnd(); phiIter++) {
         const MPhi* originalPhi = *phiIter;
+        if (!graph.alloc().ensureBallast()) {
+          return false;
+        }
         MPhi* clonedPhi =
             MakeReplacementPhi(graph.alloc(), mapper, originalPhi);
         if (!clonedPhi) {
@@ -1134,6 +1143,9 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
       for (MInstructionIterator insnIter(originalBlock->begin());
            insnIter != originalBlock->end(); insnIter++) {
         const MInstruction* originalInsn = *insnIter;
+        if (!graph.alloc().ensureBallast()) {
+          return false;
+        }
         MInstruction* clonedInsn =
             MakeReplacementInstruction(graph.alloc(), mapper, originalInsn);
         if (!clonedInsn) {
@@ -1444,6 +1456,9 @@ static bool UnrollAndOrPeelLoop(MIRGraph& graph, UnrollState& state) {
           continue;
         }
         // Invent a new block.
+        if (!graph.alloc().ensureBallast()) {
+          return false;
+        }
         MBasicBlock* splitter =
             MBasicBlock::New(graph, info, block, MBasicBlock::Kind::SPLIT_EDGE);
         if (!splitter || !splitterBlocks.append(splitter)) {

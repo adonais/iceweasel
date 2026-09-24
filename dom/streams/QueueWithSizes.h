@@ -86,7 +86,7 @@ inline void DequeueValue(JSContext* aCx, QueueContainingClass aContainer,
                          ErrorResult& aRv) {
   // Step 1. Implicit via template instantiation.
   // Step 2.
-  MOZ_ASSERT(!aContainer->Queue().isEmpty());
+  MOZ_RELEASE_ASSERT(!aContainer->Queue().isEmpty());
 
   // Step 3+4
   // UniquePtr to ensure memory is freed.
@@ -117,7 +117,7 @@ inline void PeekQueueValue(JSContext* aCx, QueueContainingClass aContainer,
   // Step 1. Assert: container has [[queue]] and [[queueTotalSize]] internal
   // slots.
   // Step 2. Assert: container.[[queue]] is not empty.
-  MOZ_ASSERT(!aContainer->Queue().isEmpty());
+  MOZ_RELEASE_ASSERT(!aContainer->Queue().isEmpty());
 
   // Step 3. Let valueWithSize be container.[[queue]][0].
   ValueWithSize* valueWithSize = aContainer->Queue().getFirst();

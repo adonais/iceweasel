@@ -397,6 +397,12 @@ class Simulator {
   template <typename T>
   void AtomicMemoryHelper(AmoOp<T> f, SimInstruction* instr);
 
+  template <typename T>
+  using AmoCasOp = T (*)(SharedMem<T*> addr, T expected, T replacement);
+
+  template <typename T>
+  void AtomicMemoryCasHelper(AmoCasOp<T> f, SimInstruction* instr);
+
   inline int32_t loadLinkedW(uint64_t addr, SimInstruction* instr);
   inline int storeConditionalW(uint64_t addr, int32_t value,
                                SimInstruction* instr);

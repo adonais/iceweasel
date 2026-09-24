@@ -685,7 +685,7 @@ Foo::~Foo() = default;
   `nsWeakPtr` for weak references.
 - Don't use `QueryInterface` directly. Use `CallQueryInterface` or
   `do_QueryInterface` instead.
-- Use {ref}`Contract IDs <contract_ids>`,
+- Use {ref}`Contract IDs <contract-ids>`,
   instead of CIDs with `do_CreateInstance`/`do_GetService`.
 - Use pointers, instead of references for function out parameters, even
   for primitive types.

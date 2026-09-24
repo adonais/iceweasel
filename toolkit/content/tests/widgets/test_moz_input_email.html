@@ -36,6 +36,10 @@
       add_task(async function testMozInputEmailEvents() {
         await testHelpers.testTextBasedInputEvents("moz-input-email");
       });
+
+      add_task(async function testMozInputEmailRequiredProperty() {
+        await testHelpers.verifyRequired("moz-input-email");
+      });
     </script>
   </head>
   <body>

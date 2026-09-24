@@ -287,6 +287,8 @@ nsresult MultiGetUntrustedModulesData::SubmitToGlean() {
         .processType = Some(processType),
         .sanitizationFailures = Some(data.mSanitizationFailures),
         .trustTestFailures = Some(data.mTrustTestFailures),
+        .unverifiableLoads = Some(data.mUnverifiableLoads),
+        .rejectedSections = Some(data.mRejectedSections),
     };
 
     nsCString strPid(processType);

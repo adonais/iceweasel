@@ -15,9 +15,7 @@ addons = [
     "browser_theme",
 ]
 
-output_dir = (
-    OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.mozapps.extensions.test.browser.addons
-)
+output_dir = OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.mozapps.extensions.test.browser.addons
 
 for addon in addons:
     for file_type in ["xpi", "zip"]:

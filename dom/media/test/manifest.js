@@ -2186,6 +2186,23 @@ function getMajorMimeType(mimetype) {
   return "audio";
 }
 
+// removeNodeAndSource() below intentionally aborts any in-flight media
+// resource fetch. If a play() promise is still pending at that point, it
+// rejects with AbortError; callers aren't expected to catch that themselves,
+// so silence just this specific rejection instead of letting it show up as a
+// JS error in logs.
+window.addEventListener("unhandledrejection", function (event) {
+  if (
+    event.reason instanceof DOMException &&
+    event.reason.name == "AbortError" &&
+    event.reason.message.startsWith(
+      "The fetching process for the media resource was aborted"
+    )
+  ) {
+    event.preventDefault();
+  }
+});
+
 // Force releasing decoder to avoid timeout in waiting for decoding resource.
 function removeNodeAndSource(n) {
   n.remove();

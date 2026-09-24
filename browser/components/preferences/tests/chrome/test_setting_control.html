@@ -258,6 +258,32 @@
         });
       });
 
+      add_task(async function testHeadingLevel() {
+        const SETTING = "setting-control-heading-level";
+        Preferences.addSetting({
+          id: SETTING,
+          get: () => true,
+        });
+
+        const headingLevel = 3;
+        const control = await renderTemplate({
+          id: SETTING,
+          control: "moz-fieldset",
+          headingLevel,
+        });
+        const fieldset = control.querySelector("moz-fieldset");
+
+        const srdEnabled = Services.prefs.getBoolPref(
+          "browser.settings-redesign.enabled",
+          false
+        );
+        is(
+          fieldset.headingLevel,
+          srdEnabled ? headingLevel + 1 : headingLevel,
+          "sets headingLevel (bumped one level up when SRD is enabled)"
+        );
+      });
+
       add_task(async function testSupportLinkSubcategory() {
         const SETTING = "setting-control-subcategory";
         Preferences.addSetting({

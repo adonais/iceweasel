@@ -292,6 +292,11 @@ NS_IMETHODIMP nsBaseFilePicker::SetDisplayDirectory(nsIFile* aDirectory) {
     mDisplayDirectory = nullptr;
     return NS_OK;
   }
+
+  if (!IsReadableDirectory(*aDirectory)) {
+    return NS_ERROR_FAILURE;
+  }
+
   nsCOMPtr<nsIFile> directory;
   nsresult rv = aDirectory->Clone(getter_AddRefs(directory));
   if (NS_FAILED(rv)) {
@@ -401,6 +406,14 @@ bool nsBaseFilePicker::IsWithinInputProtectionTimeRange(
     return false;
   }
   return (aNow - aShowTime).ToMilliseconds() < double(aProtectionMs);
+}
+
+// static
+bool nsBaseFilePicker::IsReadableDirectory(nsIFile& aDirectory) {
+  bool isDirectory = false;
+  bool isReadable = false;
+  return NS_SUCCEEDED(aDirectory.IsDirectory(&isDirectory)) && isDirectory &&
+         NS_SUCCEEDED(aDirectory.IsReadable(&isReadable)) && isReadable;
 }
 
 bool nsBaseFilePicker::IsContentInitiated() const {

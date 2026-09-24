@@ -3,12 +3,6 @@
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 async function cancelPanel(helper) {
   let exitObserved = TestUtils.topicObserved("screenshots-exit");
   await SimpleTest.promiseFocus(helper.browser.documentGlobal);

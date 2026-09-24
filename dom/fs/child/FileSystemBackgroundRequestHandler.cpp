@@ -79,7 +79,7 @@ FileSystemBackgroundRequestHandler::CreateFileSystemManagerChild(
 
   // Throw if this process wouldn't be allowed to access storage.
   EnumSet<ValidatePrincipalOptions> options;
-  if (CurrentRemoteType() == INFERENCE_REMOTE_TYPE) {
+  if (CurrentRemoteType().IsInference()) {
     options += ValidatePrincipalOptions::AllowSystemIfLoaded;
   }
   if (!BackgroundChild::ValidatePrincipalInfo(aPrincipalInfo, options)) {

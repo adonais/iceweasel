@@ -726,7 +726,7 @@ void nsGlobalWindowInner::RemoveIdleCallback(
                                   Timeout::Reason::eIdleCallbackTimeout);
   }
 
-  aRequest->removeFrom(mIdleRequestCallbacks);
+  aRequest->RemoveFromList();
 }
 
 void nsGlobalWindowInner::RunIdleRequest(IdleRequest* aRequest,
@@ -834,6 +834,7 @@ uint32_t nsGlobalWindowInner::RequestIdleCallback(
     request->SetTimeoutHandle(timeoutHandle);
   }
 
+  request->SetContainer(mIdleRequestCallbacksByHandle);
   mIdleRequestCallbacks.insertBack(request);
 
   if (!IsSuspended()) {
@@ -844,11 +845,8 @@ uint32_t nsGlobalWindowInner::RequestIdleCallback(
 }
 
 void nsGlobalWindowInner::CancelIdleCallback(uint32_t aHandle) {
-  for (IdleRequest* r : mIdleRequestCallbacks) {
-    if (r->Handle() == aHandle) {
-      RemoveIdleCallback(r);
-      break;
-    }
+  if (IdleRequest* request = mIdleRequestCallbacksByHandle->Get(aHandle)) {
+    RemoveIdleCallback(request);
   }
 }
 
@@ -931,6 +929,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
 #endif
       mFocusMethod(0),
       mIdleRequestCallbackCounter(1),
+      mIdleRequestCallbacksByHandle(new mozilla::dom::IdleRequestMap()),
       mIdleRequestExecutor(nullptr),
       mObservingRefresh(false),
       mIteratingDocumentFlushedResolvers(false),

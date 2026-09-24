@@ -74,7 +74,6 @@ describe("<SectionsMgmtPanel>", () => {
 
     DEFAULT_PROPS = {
       pocketEnabled: true,
-      onSubpanelToggle: sandbox.stub(),
       togglePanel: sandbox.stub(),
       showPanel: false,
     };
@@ -143,26 +142,6 @@ describe("<SectionsMgmtPanel>", () => {
       </WrapWithProvider>
     );
     assert.isFalse(wrapper.find(".sections-mgmt-panel").exists());
-  });
-
-  it("should call onSubpanelToggle when panel opens", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <SectionsMgmtPanel {...DEFAULT_PROPS} showPanel={false} />
-      </WrapWithProvider>
-    );
-
-    wrapper.setProps({
-      children: (
-        <SectionsMgmtPanel
-          {...DEFAULT_PROPS}
-          showPanel={true}
-          onSubpanelToggle={DEFAULT_PROPS.onSubpanelToggle}
-        />
-      ),
-    });
-
-    assert.called(DEFAULT_PROPS.onSubpanelToggle);
   });
 
   it("should call togglePanel when arrow button is clicked (non-nova)", () => {

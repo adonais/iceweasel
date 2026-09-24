@@ -73,6 +73,7 @@ members = [
   "toolkit/library/rust/",
   "toolkit/components/taskscheduler/rust",
   "toolkit/mozapps/msixcomserver-rust",
+  "toolkit/mozapps/pushnotificationhelper",
   "services/application-services/components/viaduct-necko",
   "js/src/builtin/normalizer_glue",
 ]
@@ -277,12 +278,8 @@ itertools_0_14 = { package = "itertools", path = "build/rust/itertools" }
 # else we do use requires backtrace, so dummy it out for now.
 backtrace = { path = "build/rust/backtrace" }
 
-# Locally patch bindgen to a yet-unreleased version + a patch that was recently
-# merged upstream.
-bindgen_0_72 = { package = "bindgen", git = "https://github.com/glandium/rust-bindgen", rev = "5274da5a06411accb266c10819b989ac25a81b7d" }
-
-# Patch bindgen 0.69 to 0.72
-bindgen = { path = "build/rust/bindgen" }
+# Patch bindgen 0.72 to 0.73
+bindgen = { package = "bindgen", path = "build/rust/bindgen" }
 
 # Locally patch icu_normalizer to take fixes from the 2.3 track
 icu_collator = { path = "third_party/rust/icu_collator" }
@@ -297,6 +294,10 @@ icu_properties_data = { path = "third_party/rust/icu_properties_data" }
 
 # Patch autocfg to hide rustc output. Workaround for https://github.com/cuviper/autocfg/issues/30
 autocfg = { path = "third_party/rust/autocfg" }
+
+# Patch cc to fix https://github.com/rust-lang/cc-rs/issues/1883
+# See also https://github.com/rust-lang/cc-rs/pull/1884
+cc = { path = "third_party/rust/cc" }
 
 # Patch goblin 0.7.0 to 0.8
 goblin = { path = "build/rust/goblin" }
@@ -388,8 +389,6 @@ harfbuzz-sys = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a
 harfbuzz = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a23a98772a197291d04af93f7041b7093d95" }
 # Also vendor `harfbuzz-traits` to keep cargo-vendor happy.
 harfbuzz-traits = { git = "https://github.com/hsivonen/rust-harfbuzz", rev = "9d58a23a98772a197291d04af93f7041b7093d95" }
-# Make --enable-rust-simd compatible with Rust 1.95
-encoding_rs = { git = "https://github.com/hsivonen/encoding_rs", rev = "1236d1bc423e6ba35a06485f74a6304db2d703b5" }
 
 # objc 0.2.7 + fa7ca43b862861dd1cd000d7ad01e6e0266cda13
 objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
@@ -423,7 +422,7 @@ ohttp = { git = "https://github.com/martinthomson/ohttp", rev = "600931b5a1e9477
 zip = { path = "third_party/rust/zip" }
 
 # Unpublished changes
-cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "84af7967fc0093c81f44c2d03029fe6db546485e" }
+cssparser = { git = "https://github.com/servo/rust-cssparser", rev = "ddccc070a0261cb94195ed0f74095c67b86a8550" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }

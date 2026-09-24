@@ -118,8 +118,6 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     : signaling_thread_(context->signaling_thread()),
       transport_desc_factory_(env.field_trials()),
       session_desc_factory_(env,
-                            context->media_engine(),
-                            context->use_rtx(),
                             context->ssrc_generator(),
                             &transport_desc_factory_,
                             context->sctp_transport_factory(),

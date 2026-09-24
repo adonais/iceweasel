@@ -10,7 +10,7 @@ MOZ_SRC_FILES += [
     "CustomKeys.sys.mjs",
 ]
 
-FINAL_TARGET_FILES.actors += [
+MOZ_SRC_FILES += [
     "CustomKeysChild.sys.mjs",
     "CustomKeysParent.sys.mjs",
 ]

@@ -49,10 +49,10 @@ thread_local!(static STATE: Cell<Option<ThreadState>> = const { Cell::new(None) 
 /// Initializes the current thread state.
 pub fn initialize(initialize_to: ThreadState) {
     STATE.with(|state| {
-        if let Some(current_state) = state.get() {
-            if initialize_to != current_state {
-                panic!("Thread state already initialized as {:?}", current_state);
-            }
+        if let Some(current_state) = state.get()
+            && initialize_to != current_state
+        {
+            panic!("Thread state already initialized as {:?}", current_state);
         }
         state.set(Some(initialize_to));
     });

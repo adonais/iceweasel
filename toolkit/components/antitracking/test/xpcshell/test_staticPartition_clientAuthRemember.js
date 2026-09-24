@@ -25,11 +25,10 @@ function getOAWithPartitionKey(
   };
 }
 
-// These are not actual server and client certs. The ClientAuthRememberService
-// does not care which certs we store decisions for, as long as they're valid.
-let [clientCert] = certDB.getCerts();
-
-function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
+function addSecurityInfo(
+  { host, topLevelBaseDomain, originAttributes = {} },
+  clientCert
+) {
   let attrs = getOAWithPartitionKey({ topLevelBaseDomain }, originAttributes);
   cars.rememberDecisionScriptable(
     host,
@@ -61,7 +60,7 @@ function testSecurityInfo({
   );
 }
 
-function addTestEntries() {
+async function addTestEntries() {
   let entries = [
     { host: "example.net" },
     { host: "test.example.net" },
@@ -79,14 +78,20 @@ function addTestEntries() {
     },
   ];
 
+  // These are not actual server and client certs. The ClientAuthRememberService
+  // does not care which certs we store decisions for, as long as they're valid.
+  let [clientCert] = await certDB.getCerts();
+
   info("Add test state");
-  entries.forEach(addSecurityInfo);
+  entries.forEach(entry => {
+    addSecurityInfo(entry, clientCert);
+  });
   info("Ensure we have the correct state initially");
   entries.forEach(testSecurityInfo);
 }
 
 add_task(async () => {
-  addTestEntries();
+  await addTestEntries();
 
   info("Should not be set for unrelated host");
   [undefined, "example.org", "example.net", "example.com"].forEach(

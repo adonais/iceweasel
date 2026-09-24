@@ -128,6 +128,23 @@ class DefaultTabManagerUiStateRepositoryTest {
         assertTrue { repository.uiState.first()!!.hasViewedTabGroupsPage }
     }
 
+    @Test
+    fun `GIVEN the ungroup confirmation was previously dismissed WHEN the repository has initialized THEN the first emission contains this state`() =
+        runTest {
+            val expectedInitialState = PersistedUIState(skipUngroupConfirmation = true)
+            val repository = createRepository(initialPersistedUIState = expectedInitialState)
+
+            assertEquals(expectedInitialState, repository.uiState.first())
+        }
+
+    @Test
+    fun `WHEN the ungroup confirmation is dismissed THEN the update is saved to disk`() = runTest {
+        val repository = createRepository()
+        repository.setSkipUngroupConfirmation()
+
+        assertTrue { repository.uiState.first()!!.skipUngroupConfirmation }
+    }
+
     private suspend fun TestScope.createRepository(
         initialPersistedUIState: PersistedUIState =
             PersistedUIState(

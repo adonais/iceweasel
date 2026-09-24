@@ -141,7 +141,7 @@ struct SimdShuffle {
   }
 };
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 SimdShuffle AnalyzeSimdShuffle(SimdConstant control, MDefinition* lhs,
                                MDefinition* rhs);

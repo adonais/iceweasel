@@ -11,6 +11,7 @@ import {
   MONITOR_ERROR_CODES,
   MONITOR_PROMPT_VERSION,
   MONITOR_AGENTS_CHANGED_TOPIC,
+  MONITOR_CONDITION_MET_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 import { Schedule } from "moz-src:///browser/components/aiwindow/models/agents/Schedule.sys.mjs";
 
@@ -21,6 +22,7 @@ export {
   MONITOR_PROMPT_VERSION,
   TOTAL_NUM_URLS_IN_MONITOR,
   MONITOR_AGENTS_CHANGED_TOPIC,
+  MONITOR_CONDITION_MET_TOPIC,
 } from "moz-src:///browser/components/aiwindow/models/agents/Monitor.sys.mjs";
 
 const lazy = {};
@@ -413,13 +415,12 @@ export const MonitorAgent = {
    *  - "dismiss": stop notifying while the monitor keeps running.
    * Clicking the body opens the watched page.
    *
+   * Muting only silences the desktop notification: the condition-met topic is
+   * still fired so the passive dot on the toolbar button stays accurate.
+   *
    * @param {Monitor} monitor - The monitor whose latest run just saved
    */
   _notifyIfConditionMet(monitor) {
-    if (monitor.notificationsMuted) {
-      return;
-    }
-
     const entry = monitor.history.at(-1);
     if (!entry || entry.status !== "success" || !entry.conditionMet) {
       return;
@@ -429,6 +430,12 @@ export const MonitorAgent = {
       return;
     }
     gNotifiedRunIds.add(entry.id);
+
+    Services.obs.notifyObservers(null, MONITOR_CONDITION_MET_TOPIC, monitor.id);
+
+    if (monitor.notificationsMuted) {
+      return;
+    }
 
     const [titleFallback, bodyFallback, snoozeTitle, dismissTitle] =
       lazy.l10n.formatValuesSync([

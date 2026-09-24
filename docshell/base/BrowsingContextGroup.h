@@ -7,6 +7,7 @@
 
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/RemoteType.h"
 #include "nsRefPtrHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -82,7 +83,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   // Look up the process which should be used to host documents with this
   // RemoteType. This will be a non-dead process associated with this
   // BrowsingContextGroup, if possible.
-  ContentParent* GetHostProcess(const nsACString& aRemoteType);
+  ContentParent* GetHostProcess(const RemoteType& aRemoteType);
 
   // Check if the process which sent the message being read from aReader is
   // aware of this BrowsingContextGroup's existence.
@@ -297,7 +298,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   // A non-launching host process must also be a subscriber, though a launching
   // host process may not yet be subscribed, and a subscriber need not be a host
   // process.
-  nsRefPtrHashtable<nsCStringHashKey, ContentParent> mHosts;
+  nsRefPtrHashtable<nsGenericHashKey<RemoteType>, ContentParent> mHosts;
 
   // Whether or not a given http(s) origin uses origin or siteOrigin-keyed
   // DocGroups/AgentClusters. Only contains entries for http(s) origins.

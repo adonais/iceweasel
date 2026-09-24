@@ -262,7 +262,7 @@ class GetUsageOp final
                              const PersistenceType aPersistenceType,
                              const nsACString& aOrigin,
                              const int64_t aTimestamp, const bool aPersisted,
-                             const uint64_t aUsage);
+                             const int64_t aUsage);
 
   RefPtr<BoolPromise> OpenDirectory() override;
 
@@ -1688,7 +1688,7 @@ void GetUsageOp::ProcessOriginInternal(QuotaManager* aQuotaManager,
                                        const nsACString& aOrigin,
                                        const int64_t aTimestamp,
                                        const bool aPersisted,
-                                       const uint64_t aUsage) {
+                                       const int64_t aUsage) {
   if (!mGetAll && aQuotaManager->IsOriginInternal(aOrigin)) {
     return;
   }
@@ -1723,10 +1723,7 @@ void GetUsageOp::ProcessOriginInternal(QuotaManager* aQuotaManager,
     originUsage->mPersisted = aPersisted;
   }
 
-  // Ignore usage values which have underflowed (workaround for bug 1585978)
-  if (aUsage < INT64_MAX) [[likely]] {
-    originUsage->mUsage += aUsage;
-  }
+  originUsage->mUsage += QM_CLAMP_TO_ZERO(aUsage);
 
   originUsage->mLastAccessTime =
       std::max<int64_t>(originUsage->mLastAccessTime, aTimestamp);

@@ -6,6 +6,8 @@
 Utility functions for the glean_parser-based code generator
 """
 
+from __future__ import annotations
+
 import copy
 from hashlib import sha1
 

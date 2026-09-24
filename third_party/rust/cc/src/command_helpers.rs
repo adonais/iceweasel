@@ -3,20 +3,20 @@
 use std::{
     borrow::Cow,
     collections::hash_map,
-    ffi::OsString,
+    ffi::{OsStr, OsString},
     fmt::Display,
     fs,
     hash::Hasher,
     io::{self, Read, Write},
     path::Path,
-    process::{Child, ChildStderr, Command, Stdio},
+    process::{Child, ChildStderr, Command, Output, Stdio},
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc,
     },
 };
 
-use crate::{Error, ErrorKind, Object};
+use crate::{utilities::cargo_env_var_os, Error, ErrorKind, Object};
 
 #[derive(Clone, Debug)]
 pub(crate) struct CargoOutput {
@@ -34,7 +34,7 @@ pub(crate) enum OutputKind {
     Forward,
     /// Discard the output ([`Stdio::null()`])
     Discard,
-    /// Capture the result (`[Stdio::piped()`])
+    /// Capture the result ([`Stdio::piped()`])
     Capture,
 }
 
@@ -66,8 +66,12 @@ impl CargoOutput {
     }
 
     pub(crate) fn print_debug(&self, arg: &dyn Display) {
-        if self.metadata && !self.checked_dbg_var.load(Ordering::Relaxed) {
-            self.checked_dbg_var.store(true, Ordering::Relaxed);
+        if self.metadata
+            && self
+                .checked_dbg_var
+                .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+        {
             println!("cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT");
         }
         if self.debug {
@@ -119,7 +123,7 @@ impl StderrForwarder {
         }
     }
 
-    fn forward_available(&mut self) -> bool {
+    pub(crate) fn forward_available(&mut self) -> bool {
         if let Some((stderr, buffer)) = self.inner.as_mut() {
             loop {
                 // For non-blocking we check to see if there is data available, so we should try to
@@ -226,7 +230,7 @@ impl StderrForwarder {
     }
 
     #[cfg(feature = "parallel")]
-    fn forward_all(&mut self) {
+    pub(crate) fn forward_all(&mut self) {
         while !self.forward_available() {}
     }
 
@@ -304,11 +308,7 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
 
         // Make the dirname relative (if possible) to avoid full system paths influencing the sha
         // and making the output system-dependent
-        //
-        // NOTE: Here we allow using std::env::var (instead of Build::getenv) because
-        // CARGO_* variables always trigger a rebuild when changed
-        #[allow(clippy::disallowed_methods)]
-        let dirname = if let Some(root) = std::env::var_os("CARGO_MANIFEST_DIR") {
+        let dirname = if let Some(root) = cargo_env_var_os("CARGO_MANIFEST_DIR") {
             let root = root.to_string_lossy();
             Cow::Borrowed(dirname.strip_prefix(&*root).unwrap_or(&dirname))
         } else {
@@ -319,6 +319,7 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
         if let Some(extension) = file.extension() {
             hasher.write(extension.to_string_lossy().as_bytes());
         }
+
         let obj = dst
             .join(format!("{:016x}-{}", hasher.finish(), basename))
             .with_extension("o");
@@ -339,29 +340,151 @@ pub(crate) fn objects_from_files(files: &[Arc<Path>], dst: &Path) -> Result<Vec<
     Ok(objects)
 }
 
+/// Which of cc's own probing invocations a [`Command`] is being set up for.
+///
+/// A probe is not a command the caller asked cc to run: it is how cc works out
+/// what the compiler it was handed can do. Which probes run, and how many of
+/// them, depends on the compiler, the target and cc's internal caching, so the
+/// test shim records one only when a test names its class. See
+/// [`set_probe_env`] and `src/bin/cc-shim.rs`.
+#[derive(Clone, Copy, Debug)]
+enum ProbeKind {
+    /// Working out a compiler's [`ToolFamily`](crate::ToolFamily).
+    FamilyDetection,
+    /// Checking whether a compiler accepts a flag.
+    FlagSupportCheck,
+    /// Working out whether an Android NDK ships `llvm-ar` under that name.
+    ArDetection,
+}
+
+impl ProbeKind {
+    /// The test-only variable naming where the shim should record this class.
+    const fn out_files_var(self) -> &'static str {
+        match self {
+            Self::FamilyDetection => "CC_SHIM_OUT_FILES_FOR_FAMILY_DETECTION",
+            Self::FlagSupportCheck => "CC_SHIM_OUT_FILES_FOR_FLAG_SUPPORT_CHECK",
+            Self::ArDetection => "CC_SHIM_OUT_FILES_FOR_AR_DETECTION",
+        }
+    }
+}
+
+/// Apply [`Build::env`](crate::Build::env) to one of cc's own probing
+/// invocations.
+///
+/// A probe is a child process like any other, so it gets the environment the
+/// caller configured - `PATH` above all, without which a probe resolves a bare
+/// compiler name such as `cc` against the ambient environment rather than the
+/// one the compile commands run in, and answers a question about a different
+/// compiler than the one being built with (rust-lang/cc-rs#1859).
+///
+/// The `CC_SHIM_OUT_FILES_FOR_*` variables are the exception, and a third
+/// category beside the two that [`Build::env`](crate::Build::env) already
+/// distinguishes: they are set through `Build::env` but read by cc itself, and
+/// rewritten for exactly one child. cc renames the one matching `kind` to
+/// `CC_SHIM_OUT_FILES` and otherwise clears it, and clears `CC_SHIM_OUT_DIR`
+/// either way, instead of copying `Build::env` over blindly. A probe a test did
+/// not ask about then records nothing at all, rather than taking an `out{i}`
+/// slot and shifting the invocations the test is asserting on. They are
+/// test-only, like `CC_SHIM_OUT_DIR`, and so are documented in
+/// `src/bin/cc-shim.rs` rather than in the table of public variables in
+/// `src/lib.rs`.
+fn set_probe_env<K, V>(cmd: &mut Command, env: &[(K, V)], kind: ProbeKind)
+where
+    K: AsRef<OsStr>,
+    V: AsRef<OsStr>,
+{
+    for (key, value) in env {
+        cmd.env(key.as_ref(), value.as_ref());
+    }
+
+    cmd.env_remove("CC_SHIM_OUT_DIR");
+    match env
+        .iter()
+        .find(|(key, _)| key.as_ref() == OsStr::new(kind.out_files_var()))
+    {
+        Some((_, value)) => cmd.env("CC_SHIM_OUT_FILES", value.as_ref()),
+        None => cmd.env_remove("CC_SHIM_OUT_FILES"),
+    };
+}
+
 pub(crate) fn run(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<(), Error> {
     let mut child = spawn(cmd, cargo_output)?;
     wait_on_child(cmd, &mut child, cargo_output)
 }
 
-pub(crate) fn run_output(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Vec<u8>, Error> {
+/// Like [`run`], but stderr is only forwarded as `cargo:warning=` when the
+/// command succeeds. On failure, stderr is silently discarded.
+///
+/// Useful for probe commands where failure is expected and the error
+/// message is not actionable.
+pub(crate) fn run_silent_on_error(
+    cmd: &mut Command,
+    cargo_output: &CargoOutput,
+) -> Result<(), Error> {
+    let Output {
+        status,
+        stdout: _,
+        stderr,
+    } = spawn_and_wait_for_output(cmd, cargo_output)?;
+
+    cargo_output.print_debug(&status);
+
+    if status.success() {
+        if cargo_output.warnings {
+            stderr
+                .split(|&b| b == b'\n')
+                .map(|line| line.strip_suffix(b"\r").unwrap_or(line))
+                .filter(|line| !line.is_empty())
+                .for_each(write_warning);
+        }
+        Ok(())
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            format!("command did not execute successfully (status code {status}): {cmd:?}"),
+        ))
+    }
+}
+
+pub(crate) fn spawn_and_wait_for_output(
+    cmd: &mut Command,
+    cargo_output: &CargoOutput,
+) -> Result<Output, Error> {
     // We specifically need the output to be captured, so override default
     let mut captured_cargo_output = cargo_output.clone();
     captured_cargo_output.output = OutputKind::Capture;
-    let mut child = spawn(cmd, &captured_cargo_output)?;
+    spawn(cmd, &captured_cargo_output)?
+        .wait_with_output()
+        .map_err(|e| {
+            Error::new(
+                ErrorKind::ToolExecError,
+                format!("failed to wait on spawned child process `{cmd:?}`: {e}"),
+            )
+        })
+}
 
-    let mut stdout = vec![];
-    child
-        .stdout
-        .take()
-        .unwrap()
-        .read_to_end(&mut stdout)
-        .unwrap();
+pub(crate) fn run_output(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Vec<u8>, Error> {
+    let Output {
+        status,
+        stdout,
+        stderr,
+    } = spawn_and_wait_for_output(cmd, cargo_output)?;
 
-    // Don't care about this output, use the normal settings
-    wait_on_child(cmd, &mut child, cargo_output)?;
+    stderr
+        .split(|&b| b == b'\n')
+        .filter(|part| !part.is_empty())
+        .for_each(write_warning);
 
-    Ok(stdout)
+    cargo_output.print_debug(&status);
+
+    if status.success() {
+        Ok(stdout)
+    } else {
+        Err(Error::new(
+            ErrorKind::ToolExecError,
+            format!("command did not execute successfully (status code {status}): {cmd:?}"),
+        ))
+    }
 }
 
 pub(crate) fn spawn(cmd: &mut Command, cargo_output: &CargoOutput) -> Result<Child, Error> {
@@ -425,37 +548,53 @@ pub(crate) fn command_add_output_file(cmd: &mut Command, dst: &Path, args: CmdAd
     }
 }
 
-#[cfg(feature = "parallel")]
-pub(crate) fn try_wait_on_child(
-    cmd: &Command,
-    child: &mut Child,
-    stdout: &mut dyn io::Write,
-    stderr_forwarder: &mut StderrForwarder,
-) -> Result<Option<()>, Error> {
-    stderr_forwarder.forward_available();
+/// Naming the two probe classes at the call site, so a caller does not have
+/// to reach for [`ProbeKind`] to say which one it means.
+pub(crate) trait CommandExt {
+    /// Apply `Build::env` to a compiler family detection probe.
+    fn set_family_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
 
-    match child.try_wait() {
-        Ok(Some(status)) => {
-            stderr_forwarder.forward_all();
+    /// Apply `Build::env` to an `is_flag_supported` probe.
+    fn set_flag_supported_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
 
-            let _ = writeln!(stdout, "{}", status);
+    /// Apply `Build::env` to the Android `llvm-ar` probe.
+    fn set_ar_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>;
+}
 
-            if status.success() {
-                Ok(Some(()))
-            } else {
-                Err(Error::new(
-                    ErrorKind::ToolExecError,
-                    format!("command did not execute successfully (status code {status}): {cmd:?}"),
-                ))
-            }
-        }
-        Ok(None) => Ok(None),
-        Err(e) => {
-            stderr_forwarder.forward_all();
-            Err(Error::new(
-                ErrorKind::ToolExecError,
-                format!("failed to wait on spawned child process `{cmd:?}`: {e}"),
-            ))
-        }
+impl CommandExt for Command {
+    fn set_family_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::FamilyDetection);
+        self
+    }
+
+    fn set_flag_supported_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::FlagSupportCheck);
+        self
+    }
+
+    fn set_ar_detection_env<K, V>(&mut self, env: &[(K, V)]) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        set_probe_env(self, env, ProbeKind::ArDetection);
+        self
     }
 }

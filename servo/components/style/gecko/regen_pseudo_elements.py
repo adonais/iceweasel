@@ -23,7 +23,11 @@ def generate_pseudo_elements(out):
         print(f"cargo:rerun-if-changed={f}")
 
     target = os.path.join(out, "pseudo_element_definition.rs")
-    build.write(out, "pseudo_element_definition.rs", build.render(pseudo_definition_template, PSEUDOS=data.all_pseudos()))
+    build.write(
+        out,
+        "pseudo_element_definition.rs",
+        build.render(pseudo_definition_template, PSEUDOS=data.all_pseudos()),
+    )
 
 
 if __name__ == "__main__":

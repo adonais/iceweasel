@@ -1,0 +1,118 @@
+<!doctype html>
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Panel List Submenu Click</title>
+    <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+    <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+    <link
+      rel="stylesheet"
+      href="chrome://mochikit/content/tests/SimpleTest/test.css"
+    />
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content">
+      <button id="anchor-button">Open</button>
+      <panel-list id="panel-list">
+        <panel-item id="plain-item">one</panel-item>
+        <panel-item submenu="sub-panel-list" id="submenu-host">
+          two
+          <panel-list slot="submenu" id="sub-panel-list">
+            <panel-item id="sub-item">sub one</panel-item>
+          </panel-list>
+        </panel-item>
+      </panel-list>
+    </div>
+    <script class="testbody" type="application/javascript">
+      const { BrowserTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/BrowserTestUtils.sys.mjs"
+      );
+      let anchorButton, panelList, submenuHost;
+
+      add_setup(async function setup() {
+        await customElements.whenDefined("panel-list");
+        await customElements.whenDefined("panel-item");
+        panelList = document.getElementById("panel-list");
+        submenuHost = document.getElementById("submenu-host");
+        anchorButton = document.getElementById("anchor-button");
+        anchorButton.addEventListener("click", e => panelList.toggle(e));
+      });
+
+      async function openPanel() {
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        anchorButton.click();
+        await shown;
+      }
+
+      add_task(async function testClickingSubmenuParentKeepsTheMenu() {
+        await openPanel();
+
+        let shown = BrowserTestUtils.waitForEvent(
+          submenuHost.submenuPanel,
+          "shown"
+        );
+        submenuHost.click();
+        await shown;
+
+        ok(panelList.open, "The menu should stay open");
+        ok(submenuHost.submenuPanel.open, "The submenu should be open");
+      });
+
+      add_task(async function testEnterOnSubmenuParentOpensIt() {
+        panelList.hide(undefined, { force: true });
+        submenuHost.submenuPanel.hide(undefined, { force: true });
+        await openPanel();
+        ok(!submenuHost.submenuPanel.open, "The submenu starts closed");
+
+        let shown = BrowserTestUtils.waitForEvent(
+          submenuHost.submenuPanel,
+          "shown"
+        );
+        submenuHost.focus();
+        synthesizeKey("KEY_Enter");
+        await shown;
+
+        ok(panelList.open, "The menu should stay open");
+        ok(submenuHost.submenuPanel.open, "The submenu should be open");
+      });
+
+      add_task(async function testClickingASubmenuItemDismissesBoth() {
+        if (!panelList.open) {
+          await openPanel();
+        }
+        if (!submenuHost.submenuPanel.open) {
+          let shown = BrowserTestUtils.waitForEvent(
+            submenuHost.submenuPanel,
+            "shown"
+          );
+          submenuHost.click();
+          await shown;
+        }
+
+        let subItem = submenuHost.submenuPanel.querySelector("panel-item");
+        let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        subItem.click();
+        await hidden;
+
+        ok(!panelList.open, "Picking a submenu item should close the menu");
+        ok(
+          !submenuHost.submenuPanel.open,
+          "And the submenu it was picked from"
+        );
+      });
+
+      add_task(async function testClickingAPlainItemStillDismisses() {
+        await openPanel();
+
+        let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        document.getElementById("plain-item").click();
+        await hidden;
+
+        ok(!panelList.open, "An item without a submenu should close the menu");
+      });
+    </script>
+  </body>
+</html>

@@ -22,3 +22,15 @@ index e3e93b135e96..d75719583881 100644
  
  #include "moz-overrides.h"
  
+
+diff --git a/ggml/src/ggml-metal/ggml-metal.cpp b/ggml/src/ggml-metal/ggml-metal.cpp
+--- a/ggml/src/ggml-metal/ggml-metal.cpp
++++ b/ggml/src/ggml-metal/ggml-metal.cpp
+@@ -7,6 +7,7 @@
+ #include "ggml-metal-context.h"
+ #include "ggml-metal-ops.h"
+ 
++#include <memory>
+ #include <mutex>
+ #include <string>
+ 

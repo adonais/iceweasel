@@ -83,14 +83,6 @@ testRule({
         "Using the small item size token in a `calc()` declaration with the width property is valid.",
     },
     {
-      code: `
-        :root { --custom-size: calc(var(--dimension-2) * -1); }
-        .a { inset-inline-start: var(--custom-size); }
-      `,
-      description:
-        "Using dimension tokens in a `calc()` declaration in a local custom property is valid.",
-    },
-    {
       code: ".a { width: calc(2 * var(--size-item-small)); }",
       description:
         "Using the small item size token in a `calc()` declaration with the width property is valid.",
@@ -184,20 +176,60 @@ testRule({
       code: ".a { inset-inline-start: 0.5em; }",
       description: "Using em unit in inset-inline-start property is valid.",
     },
-    {
-      code: `
-        :root { --custom-size: var(--dimension-16); }
-        .a { inset-inline-start: var(--custom-size); }
-      `,
-      description:
-        "Using a local variable that resolves to a dimension token is valid.",
-    },
   ],
   reject: [
     {
       code: ".a { max-height: 500px; }",
-      unfixable: true,
-      message: messages.rejected("500px", ["size", "icon-size"]),
+      fixed: ".a { max-height: var(--size-layout-xlarge); }",
+      message: messages.rejected(
+        "500px",
+        ["size", "icon-size"],
+        "var(--size-layout-xlarge)"
+      ),
+      description:
+        "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
+    },
+    {
+      code: ".a { max-height: 400px; }",
+      fixed: ".a { max-height: var(--size-layout-large); }",
+      message: messages.rejected(
+        "400px",
+        ["size", "icon-size"],
+        "var(--size-layout-large)"
+      ),
+      description:
+        "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
+    },
+    {
+      code: ".a { max-height: 100px; }",
+      fixed: ".a { max-height: var(--size-layout-xsmall); }",
+      message: messages.rejected(
+        "100px",
+        ["size", "icon-size"],
+        "var(--size-layout-xsmall)"
+      ),
+      description:
+        "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
+    },
+    {
+      code: ".a { width: 56px; }",
+      fixed: ".a { width: var(--size-image-medium); }",
+      message: messages.rejected(
+        "56px",
+        ["size", "icon-size"],
+        "var(--size-image-medium)"
+      ),
+      description:
+        "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
+    },
+    {
+      code: ".a { width: 96px; }",
+      fixed: ".a { width: var(--size-image-xxlarge); }",
+      message: messages.rejected(
+        "96px",
+        ["size", "icon-size"],
+        "var(--size-image-xxlarge)"
+      ),
       description:
         "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
     },
@@ -243,12 +275,6 @@ testRule({
       ),
       description:
         "Consider using a size design token instead of using a pixel value. This may be fixable by running the same command again with --fix.",
-    },
-    {
-      code: ".a { width: var(--dimension-16); }",
-      unfixable: true,
-      message: messages.rejected("var(--dimension-16)", ["size", "icon-size"]),
-      description: "Dimension tokens should not be used directly.",
     },
     {
       code: ".a { inset: 1rem; }",

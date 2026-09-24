@@ -5,13 +5,13 @@
 @import url(chrome://devtools/skin/breadcrumbs.css);
 
 .theme-dark {
-  --table-splitter-color: rgba(255, 255, 255, 0.15);
+  --table-splitter-color: rgb(255 255 255 / 0.15);
   --sidemenu-selected-arrow: url(images/item-arrow-dark-ltr.svg);
   --sidemenu-selected-arrow-rtl: url(images/item-arrow-dark-rtl.svg);
 }
 
 .theme-light {
-  --table-splitter-color: rgba(0, 0, 0, 0.15);
+  --table-splitter-color: rgb(0 0 0 / 0.15);
   --sidemenu-selected-arrow: url(images/item-arrow-ltr.svg);
   --sidemenu-selected-arrow-rtl: url(images/item-arrow-rtl.svg);
 }
@@ -268,7 +268,7 @@
 }
 
 .table-widget-column-header:not([sorted]):hover {
-  background-image: image(rgba(0, 0, 0, 0.1));
+  background-image: image(rgb(0 0 0 / 0.1));
 }
 
 .table-widget-column-header[sorted] {
@@ -292,11 +292,11 @@
 }
 
 .theme-dark .table-widget-column[readonly] {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgb(255 255 255 / 0.1);
 }
 
 .theme-light .table-widget-column[readonly] {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgb(0 0 0 / 0.1);
 }
 
 .table-widget-body .devtools-side-splitter:last-of-type {

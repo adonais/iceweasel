@@ -9,10 +9,11 @@
 #include "AssertAssignmentChecker.h"
 #include "CanRunScriptChecker.h"
 #include "DanglingOnTemporaryChecker.h"
+#include "DefaultEqualChecker.h"
 #include "EnumSerializerChecker.h"
-#include "FinalCycleCollectingIsupportsChecker.h"
 #include "ExplicitImplicitChecker.h"
 #include "ExplicitOperatorBoolChecker.h"
+#include "FinalCycleCollectingIsupportsChecker.h"
 #ifdef TARGET_IS_WINDOWS
 #include "EmptyBasesChecker.h"
 #include "LoadLibraryUsageChecker.h"

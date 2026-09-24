@@ -4,27 +4,28 @@
 
 #include "SpeechTrackListener.h"
 
-#include "SpeechRecognition.h"
-#include "nsProxyRelease.h"
+#include "SpeechRecognitionBackend.h"
 
 namespace mozilla::dom {
 
-SpeechTrackListener::SpeechTrackListener(SpeechRecognition* aRecognition)
-    : mRecognition(new nsMainThreadPtrHolder<SpeechRecognition>(
-          "SpeechTrackListener::SpeechTrackListener", aRecognition, false)),
+SpeechTrackListener::SpeechTrackListener(SpeechRecognitionBackend* aBackend)
+    : mBackend(aBackend),
       mRemovedPromise(
           mRemovedHolder.Ensure("SpeechTrackListener::mRemovedPromise")) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
 already_AddRefed<SpeechTrackListener> SpeechTrackListener::Create(
-    SpeechRecognition* aRecognition) {
+    SpeechRecognitionBackend* aBackend) {
   MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<SpeechTrackListener> listener = new SpeechTrackListener(aRecognition);
+  RefPtr<SpeechTrackListener> listener = new SpeechTrackListener(aBackend);
 
-  listener->mRemovedPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [listener] { listener->mRecognition = nullptr; });
+  listener->mRemovedPromise->Then(GetCurrentSerialEventTarget(), __func__,
+                                  [listener]() {
+                                    // Safe to clear: NotifyRemoved was the last
+                                    // graph thread callback
+                                    listener->mBackend = nullptr;
+                                  });
 
   return listener.forget();
 }
@@ -32,63 +33,24 @@ already_AddRefed<SpeechTrackListener> SpeechTrackListener::Create(
 void SpeechTrackListener::NotifyQueuedChanges(
     MediaTrackGraph* aGraph, TrackTime aTrackOffset,
     const MediaSegment& aQueuedMedia) {
-  AudioSegment* audio = const_cast<AudioSegment*>(
-      static_cast<const AudioSegment*>(&aQueuedMedia));
+  if (!mBackend) {
+    return;
+  }
 
-  AudioSegment::ChunkIterator iterator(*audio);
-  while (!iterator.IsEnded()) {
-    // Skip over-large chunks so we don't crash!
-    if (iterator->GetDuration() > INT_MAX) {
-      continue;
-    }
-    int duration = int(iterator->GetDuration());
+  const AudioSegment* audio = static_cast<const AudioSegment*>(&aQueuedMedia);
 
-    if (iterator->IsNull()) {
-      nsTArray<int16_t> nullData;
-      PodZero(nullData.AppendElements(duration), duration);
-      ConvertAndDispatchAudioChunk(duration, iterator->mVolume,
-                                   nullData.Elements(), aGraph->GraphRate());
-    } else {
-      AudioSampleFormat format = iterator->mBufferFormat;
-
-      MOZ_ASSERT(format == AUDIO_FORMAT_S16 || format == AUDIO_FORMAT_FLOAT32);
-
-      if (format == AUDIO_FORMAT_S16) {
-        ConvertAndDispatchAudioChunk(
-            duration, iterator->mVolume,
-            static_cast<const int16_t*>(iterator->mChannelData[0]),
-            aGraph->GraphRate());
-      } else if (format == AUDIO_FORMAT_FLOAT32) {
-        ConvertAndDispatchAudioChunk(
-            duration, iterator->mVolume,
-            static_cast<const float*>(iterator->mChannelData[0]),
-            aGraph->GraphRate());
-      }
-    }
-
-    iterator.Next();
+  TrackTime offsetForChunk = aTrackOffset;
+  AudioSegment::ConstChunkIterator chunk(*audio);
+  while (!chunk.IsEnded()) {
+    mBackend->DataCallback(aGraph, offsetForChunk + chunk->mDuration, *chunk);
+    chunk.Next();
   }
 }
 
-template <typename SampleFormatType>
-void SpeechTrackListener::ConvertAndDispatchAudioChunk(int aDuration,
-                                                       float aVolume,
-                                                       SampleFormatType* aData,
-                                                       TrackRate aTrackRate) {
-  CheckedInt<size_t> bufferSize(sizeof(int16_t));
-  bufferSize *= aDuration;
-  bufferSize *= 1;  // channel
-  RefPtr<SharedBuffer> samples(SharedBuffer::Create(bufferSize));
-
-  int16_t* to = static_cast<int16_t*>(samples->Data());
-  ConvertAudioSamplesWithScale(aData, to, aDuration, aVolume);
-
-  mRecognition->FeedAudioData(mRecognition, samples.forget(), aDuration, this,
-                              aTrackRate);
-}
-
 void SpeechTrackListener::NotifyEnded(MediaTrackGraph* aGraph) {
-  // TODO dispatch SpeechEnd event so services can be informed
+  if (mBackend) {
+    mBackend->NotifyTrackEnded();
+  }
 }
 
 void SpeechTrackListener::NotifyRemoved(MediaTrackGraph* aGraph) {

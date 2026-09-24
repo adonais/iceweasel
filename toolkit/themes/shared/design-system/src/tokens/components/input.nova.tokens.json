@@ -1,0 +1,24 @@
+{
+  "text": {
+    "background": {
+      "color": {
+        "@base": {
+          "value": {
+            "nativeTheme": "Field",
+            "default": "{background.color.box.@base}"
+          }
+        },
+        "disabled": {
+          "value": "{button.background.color.ghost.disabled}"
+        }
+      }
+    }
+  },
+  "search": {
+    "icon": {
+      "size": {
+        "value": "{icon.size.small}"
+      }
+    }
+  }
+}

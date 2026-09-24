@@ -1,4 +1,4 @@
-FROM debian:11
+FROM $DOCKER_IMAGE_PARENT
 
 # Required software
 ENV DEBIAN_FRONTEND noninteractive
@@ -18,7 +18,6 @@ RUN apt-get update -q && \
     python3-dev \
     python3-pip \
     xz-utils
-RUN useradd -d /home/worker -s /bin/bash -m worker
 COPY requirements.txt /
 
 RUN locale-gen en_CA.UTF-8
@@ -27,21 +26,14 @@ ENV LANGUAGE en_CA.UTF-8
 ENV LANG_ALL en_CA.UTF-8
 ENV LC_ALL en_CA.UTF-8
 
-RUN ["pip", "install", "-r", "/requirements.txt"]
+RUN ["pip", "install", "--break-system-packages", "-r", "/requirements.txt"]
 
 # scripts
-RUN mkdir /home/worker/bin
-COPY scripts/* /home/worker/bin/
+COPY --chown=worker:worker scripts/* /builds/worker/bin/
 
 COPY runme.sh /runme.sh
-RUN chmod 755 /home/worker/bin/* /*.sh
-RUN mkdir /home/worker/keys
-COPY *.pubkey /home/worker/keys/
-
-ENV           HOME          /home/worker
-ENV           SHELL         /bin/bash
-ENV           USER          worker
-ENV           LOGNAME       worker
+RUN chmod 755 /builds/worker/bin/* /*.sh
+COPY --chown=worker:worker *.pubkey /builds/worker/keys/
 
 USER worker
 

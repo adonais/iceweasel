@@ -593,7 +593,6 @@ class TaggedSlotOffset {
   bool isFixedSlot() const { return bits_ & IsFixedSlotFlag; }
 
   bool operator==(const TaggedSlotOffset& other) const = default;
-  bool operator!=(const TaggedSlotOffset& other) const = default;
 };
 
 enum class CanReuseShape {

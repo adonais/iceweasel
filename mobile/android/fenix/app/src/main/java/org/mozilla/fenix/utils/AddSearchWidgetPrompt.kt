@@ -51,4 +51,5 @@ fun showAddSearchWidgetPromptIfSupported(context: Context) {
 }
 
 /** Checks whether the device is capable of displaying the "add search widget" prompt. */
-fun canShowAddSearchWidgetPrompt(appWidgetManager: AppWidgetManager) = appWidgetManager.isRequestPinAppWidgetSupported
+fun canShowAddSearchWidgetPrompt(appWidgetManager: AppWidgetManager?) =
+    appWidgetManager?.isRequestPinAppWidgetSupported == true

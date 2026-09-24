@@ -14,6 +14,11 @@ support-files = [
   "arkose_labs.html"
 ]
 
+["test_cf_turnstile_early_fail.html"]
+support-files = [
+  "cf_turnstile.html"
+]
+
 ["test_cf_turnstile_fail.html"]
 support-files = [
   "cf_turnstile.html"

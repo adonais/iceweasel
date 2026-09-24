@@ -6,6 +6,7 @@ Apply some defaults and minor modifications to the jobs defined in the build
 kind.
 """
 
+import copy
 import logging
 
 from mozbuild.artifact_builds import JOB_CHOICES as ARTIFACT_JOBS
@@ -135,25 +136,83 @@ def mozconfig(config, jobs):
         yield job
 
 
+UNIFY_JOB_SCRIPT = "taskcluster/scripts/misc/unify.sh"
+
+
+def _use_artifact(config):
+    if "try_task_config" not in config.params:
+        return False
+    return config.params["try_task_config"].get("use-artifact-builds", False)
+
+
+def _label(config, job):
+    return job.get("label", f"{config.kind}-{job['name']}")
+
+
+def _supports_artifact_build(job, env):
+    return (
+        job.get("index", {}).get("job-name") in ARTIFACT_JOBS
+        # If tests aren't packaged, then we are not able to rebuild all the packages
+        and env.get("MOZ_AUTOMATION_PACKAGE_TESTS") == "1"
+        # Android shippable artifact builds are not supported
+        and not ("android" in job["name"] and job["attributes"].get("shippable", False))
+    )
+
+
+@transforms.add
+def collapse_unified_builds(config, jobs):
+    """Turn the macOS universal builds into plain artifact builds.
+
+    A universal build lipos an x64 and an aarch64 build together, and hardcodes
+    fetches for artifacts that artifact builds don't produce, such as the gtest
+    tarball. There is nothing to unify in artifact build mode anyway: the
+    universal build is already indexed, and downloading it is exactly what a
+    local macOS artifact build does. So take over the configuration of the x64
+    build being unified, which `use_artifact` below then turns into an artifact
+    build, and let the two per-architecture builds fall out of the graph.
+    """
+    # The whole kind has to be rewritten before anything is yielded: downstream
+    # transforms consume a job as soon as it is yielded, and consuming the x64
+    # build empties the `run` this needs to copy.
+    jobs = list(jobs)
+    if config.kind == "build" and _use_artifact(config):
+        by_label = {_label(config, job): job for job in jobs}
+        for job in jobs:
+            if job["run"].get("job-script") != UNIFY_JOB_SCRIPT:
+                continue
+
+            # unify.sh unpacks the x64 halves of what it lipos under `x64`.
+            x64 = by_label[
+                next(
+                    job["dependencies"][name]
+                    for name, fetches in job["fetches"].items()
+                    if any(
+                        isinstance(fetch, dict)
+                        and fetch.get("dest", "").split("/")[0] == "x64"
+                        for fetch in fetches
+                    )
+                )
+            ]
+            if not _supports_artifact_build(job, x64["worker"]["env"]):
+                continue
+
+            job.pop("dependencies")
+            job["run"] = copy.deepcopy(x64["run"])
+            job["fetches"] = copy.deepcopy(x64["fetches"])
+            job["worker"]["env"].update(copy.deepcopy(x64["worker"]["env"]))
+            job["worker"]["max-run-time"] = x64["worker"]["max-run-time"]
+
+    yield from jobs
+
+
 @transforms.add
 def use_artifact(config, jobs):
-    if "try_task_config" in config.params:
-        use_artifact = config.params["try_task_config"].get(
-            "use-artifact-builds", False
-        )
-    else:
-        use_artifact = False
+    use_artifact = _use_artifact(config)
     for job in jobs:
         if (
             config.kind == "build"
             and use_artifact
-            and job.get("index", {}).get("job-name") in ARTIFACT_JOBS
-            # If tests aren't packaged, then we are not able to rebuild all the packages
-            and job["worker"]["env"].get("MOZ_AUTOMATION_PACKAGE_TESTS") == "1"
-            # Android shippable artifact builds are not supported
-            and not (
-                "android" in job["name"] and job["attributes"].get("shippable", False)
-            )
+            and _supports_artifact_build(job, job["worker"]["env"])
         ):
             job["treeherder"]["symbol"] = add_suffix(job["treeherder"]["symbol"], "a")
             job["worker"]["env"]["USE_ARTIFACT"] = "1"

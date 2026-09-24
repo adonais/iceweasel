@@ -110,11 +110,11 @@ pub struct MarkerTypeFunctionsReadGuard {
 }
 
 impl MarkerTypeFunctionsReadGuard {
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a MarkerTypeFunctions> {
+    pub fn iter(&self) -> impl Iterator<Item = &MarkerTypeFunctions> {
         self.guard.marker_type_functions_1_based.iter()
     }
 
-    pub fn get<'a>(&'a self, deserializer_tag: u8) -> &'a MarkerTypeFunctions {
+    pub fn get(&self, deserializer_tag: u8) -> &MarkerTypeFunctions {
         self.guard
             .marker_type_functions_1_based
             .get(deserializer_tag as usize - 1)

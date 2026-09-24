@@ -4,16 +4,16 @@
 
 :root {
   --flex-basis-outline-border-color: var(--blue-40);
-  --flex-basis-outline-background-color: rgba(69, 161, 255, 0.25);
-  --flex-growing-delta-outline-background-color: rgba(221, 0, 169, 0.13);
+  --flex-basis-outline-background-color: rgb(69 161 255 / 0.25);
+  --flex-growing-delta-outline-background-color: rgb(221 0 169 / 0.13);
   --flex-shrinking-delta-outline-background-color: #e9e3ff;
   --flex-min-max-properties-color: var(--purple-60);
 }
 
 :root.theme-dark {
-  --flex-basis-outline-border-color: rgba(10, 132, 255, 0.85);
-  --flex-basis-outline-background-color: rgba(10, 132, 255, 0.3);
-  --flex-growing-delta-outline-background-color: rgba(255, 26, 217, 0.25);
+  --flex-basis-outline-border-color: rgb(10 132 255 / 0.85);
+  --flex-basis-outline-background-color: rgb(10 132 255 / 0.3);
+  --flex-growing-delta-outline-background-color: rgb(255 26 217 / 0.25);
   --flex-shrinking-delta-outline-background-color: #322952;
   --flex-min-max-properties-color: var(--theme-highlight-purple);
 }

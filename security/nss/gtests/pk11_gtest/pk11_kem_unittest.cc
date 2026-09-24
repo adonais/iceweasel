@@ -22,8 +22,8 @@
 namespace nss_test {
 
 // The key generation mechanism does not determine the parameter set --
-// CKM_ML_KEM_KEY_PAIR_GEN covers both ML-KEM-768 and ML-KEM-1024 -- so state
-// all three explicitly rather than deriving one from another.
+// CKM_ML_KEM_KEY_PAIR_GEN covers ML-KEM-512, -768 and -1024 -- so state all
+// three explicitly rather than deriving one from another.
 struct KemTestParams {
   CK_MECHANISM_TYPE keyGenMech;
   CK_MECHANISM_TYPE encapsMech;
@@ -36,12 +36,6 @@ struct KemTestParams {
 };
 
 static const KemTestParams kKemTestParams[] = {
-#ifndef NSS_DISABLE_KYBER
-    // Round 3 Kyber has no ML-KEM OID and no seckey_KyberParamsToLen arm, so
-    // cryptohi cannot size it; both strengths come back 0.
-    {CKM_NSS_KYBER_KEY_PAIR_GEN, CKM_NSS_KYBER, CKP_NSS_KYBER_768_ROUND3,
-     "Kyber768Round3", 0, 0},
-#endif
     // The vendor mechanism with its matching vendor parameter set. Both
     // spellings of ML-KEM-768 have to survive a generate/export/import round
     // trip; pk11wrap normalises the vendor one to CKP_ML_KEM_768 on the way
@@ -53,6 +47,8 @@ static const KemTestParams kKemTestParams[] = {
      KYBER768_PUBLIC_KEY_BYTES * 8, KYBER768_PRIVATE_KEY_BYTES * 8},
     {CKM_ML_KEM_KEY_PAIR_GEN, CKM_ML_KEM, CKP_ML_KEM_1024, "MlKem1024",
      MLKEM1024_PUBLIC_KEY_BYTES * 8, MLKEM1024_PRIVATE_KEY_BYTES * 8},
+    {CKM_ML_KEM_KEY_PAIR_GEN, CKM_ML_KEM, CKP_ML_KEM_512, "MlKem512",
+     MLKEM512_PUBLIC_KEY_BYTES * 8, MLKEM512_PRIVATE_KEY_BYTES * 8},
 };
 
 class Pkcs11KEMTest : public ::testing::Test,
@@ -295,6 +291,8 @@ class Pkcs11MlKemStorageTest
 
   static SECOidTag OidTag(CK_ML_KEM_PARAMETER_SET_TYPE paramSet) {
     switch (paramSet) {
+      case CKP_ML_KEM_512:
+        return SEC_OID_ML_KEM_512;
       case CKP_NSS_ML_KEM_768:
       case CKP_ML_KEM_768:
         return SEC_OID_ML_KEM_768;
@@ -309,7 +307,8 @@ class Pkcs11MlKemStorageTest
   static unsigned int ExpectedPublicKeyLen(
       CK_ML_KEM_PARAMETER_SET_TYPE paramSet) {
     switch (paramSet) {
-      case CKP_NSS_KYBER_768_ROUND3:
+      case CKP_ML_KEM_512:
+        return MLKEM512_PUBLIC_KEY_BYTES;
       case CKP_NSS_ML_KEM_768:
       case CKP_ML_KEM_768:
         return KYBER768_PUBLIC_KEY_BYTES;
@@ -567,6 +566,7 @@ TEST_P(Pkcs11MlKemStorageTest, PublicKeyEncoding) {
 }
 
 INSTANTIATE_TEST_SUITE_P(Pkcs11MlKemStorageTest, Pkcs11MlKemStorageTest,
-                         ::testing::Values(CKP_ML_KEM_768, CKP_ML_KEM_1024));
+                         ::testing::Values(CKP_ML_KEM_512, CKP_ML_KEM_768,
+                                           CKP_ML_KEM_1024));
 
 }  // namespace nss_test

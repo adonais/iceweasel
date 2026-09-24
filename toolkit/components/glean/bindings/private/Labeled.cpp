@@ -184,10 +184,10 @@ nsCString GetProcessTypeForTelemetry() {
   if (processType.EqualsLiteral("tab")) {
     auto* cc = mozilla::dom::ContentChild::GetSingleton();
     if (cc) {
-      const nsACString& remoteType = cc->GetRemoteType();
-      if (remoteType == EXTENSION_REMOTE_TYPE) {
+      const auto& remoteType = cc->GetRemoteType();
+      if (remoteType.IsExtension()) {
         processType.AssignLiteral("extension");
-      } else if (remoteType == INFERENCE_REMOTE_TYPE) {
+      } else if (remoteType.IsInference()) {
         processType.AssignLiteral("inference");
       }
       // Otherwise keep "tab" for regular content processes

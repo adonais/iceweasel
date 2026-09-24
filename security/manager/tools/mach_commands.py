@@ -76,6 +76,7 @@ def is_specification_file(filename):
     "generate-test-certs",
     category="devenv",
     description="Generate test certificates and keys from specifications.",
+    virtualenv_name="generate-test-certs",
 )
 @CommandArgument(
     "specifications",

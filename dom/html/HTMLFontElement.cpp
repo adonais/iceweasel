@@ -89,8 +89,7 @@ void HTMLFontElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLFontElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLFontElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::face}, {nsGkAtoms::size}, {nsGkAtoms::color}, {nullptr}};
 

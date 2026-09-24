@@ -2,12 +2,12 @@
 
 :::{note}
 Unless you really want to target older hardware, you probably
-want to {ref}`Build Firefox 64-bit <building-firefox-on-linux>`
+want to [Build Firefox 64-bit](linux_build.md)
 since it is better-supported.
 :::
 
 Before following these 32-bit-Firefox-specific instructions, follow
-the {ref}`building-firefox-on-linux` instructions to ensure that
+the [Building Firefox On Linux](linux_build.md) instructions to ensure that
 your machine can do a normal build.
 
 ## Instructions for Ubuntu 19.10

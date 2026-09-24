@@ -98,6 +98,8 @@ export const ERRORS = Object.freeze({
    */
   from(error) {
     switch (error) {
+      case AUTH_ERRORS.NETWORK_ERROR:
+        return ERRORS.NETWORK;
       case AUTH_ERRORS.SERVER_ERROR:
         return ERRORS.CATASTROPHIC;
       case AUTH_ERRORS.REGION_UNAVAILABLE:
@@ -109,6 +111,26 @@ export const ERRORS = Object.freeze({
     }
   },
 });
+
+const MAX_STACK_FRAMES = 8;
+const MAX_SOURCE_LENGTH = 500; // Glean's event extra limit.
+
+/**
+ * The privileged frames of a stack as "function@filename:line:column",
+ * innermost first. Dropping the directories keeps any URL out of telemetry.
+ *
+ * @param {string} stack - a newline separated SpiderMonkey stack.
+ * @returns {string} up to eight frames, newline separated.
+ */
+function stackSource(stack) {
+  return stack
+    .split("\n")
+    .filter(frame => /(?:moz-src|resource|chrome):\/\//.test(frame))
+    .slice(0, MAX_STACK_FRAMES)
+    .map(frame => frame.replace(/@.*\//, "@"))
+    .join("\n")
+    .slice(0, MAX_SOURCE_LENGTH);
+}
 
 const LOG_PREF = "browser.ipProtection.log";
 
@@ -932,8 +954,9 @@ class IPPProxyManagerSingleton extends EventTarget {
   #setErrorState(error) {
     this.#rotation?.controller.abort();
 
-    this.#errorType =
-      typeof error === "string" ? ERRORS.from(error) : ERRORS.GENERIC;
+    const isString = typeof error === "string";
+    this.#errorType = isString ? ERRORS.from(error) : ERRORS.GENERIC;
+
     if (this.#state === IPPProxyStates.ACTIVE) {
       // If the proxy is active, switch to the error state.
       // Stop will need to be called to move out of the error state.
@@ -944,7 +967,11 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
 
     lazy.logConsole.error(error);
-    Glean.ipprotection.error.record({ source: "ProxyManager" });
+    // A provider can report an error it never threw, which carries no stack.
+    const stack = isString
+      ? ""
+      : stackSource(error?.stack ?? new Error().stack);
+    Glean.ipprotection.error.record({ source: stack || "ProxyManager" });
   }
 
   /**

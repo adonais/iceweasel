@@ -1,5 +1,3 @@
-(crashes-crashmanager)=
-
 # Crash Manager
 
 The **Crash Manager** is a service and interface for managing crash

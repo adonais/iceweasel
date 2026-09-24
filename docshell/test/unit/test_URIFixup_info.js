@@ -1023,8 +1023,8 @@ add_setup(async () => {
     "browser.fixup.domainwhitelist.whitelisted",
     "browser.fixup.domainsuffixwhitelist.test",
     "browser.fixup.domainsuffixwhitelist.local.domain",
-    "browser.search.separatePrivateDefault",
-    "browser.search.separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
   ];
   for (let pref of prefList) {
     Services.prefs.setBoolPref(pref, true);

@@ -91,6 +91,16 @@ exports.menuitems = [
   },
   {
     id: "menu_browserToolbox",
+    get disabled() {
+      // The Browser Toolbox requires chrome and remote debugging to be enabled.
+      const chromeEnabled = Services.prefs.getBoolPref(
+        "devtools.chrome.enabled"
+      );
+      const devtoolsRemoteEnabled = Services.prefs.getBoolPref(
+        "devtools.debugger.remote-enabled"
+      );
+      return !chromeEnabled || !devtoolsRemoteEnabled;
+    },
     l10nKey: "browserToolboxMenu",
     oncommand() {
       lazy.BrowserToolboxLauncher.init();

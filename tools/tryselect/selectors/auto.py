@@ -81,6 +81,7 @@ def run(
     message="{msg}",
     stage_changes=False,
     dry_run=False,
+    write_task_config=False,
     closed_tree=False,
     strategy=None,
     tasks_regex=None,
@@ -116,6 +117,7 @@ def run(
         try_task_config=task_config,
         stage_changes=stage_changes,
         dry_run=dry_run,
+        write_task_config=write_task_config,
         closed_tree=closed_tree,
         push_to_vcs=push_to_vcs,
     )

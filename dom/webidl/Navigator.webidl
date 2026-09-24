@@ -118,9 +118,8 @@ partial interface Navigator {
   readonly attribute DOMString doNotTrack;
 };
 
-// https://globalprivacycontrol.github.io/gpc-spec/
+// https://w3c.github.io/gpc/#dom-globalprivacycontrol-globalprivacycontrol
 interface mixin GlobalPrivacyControl {
-  [Pref="privacy.globalprivacycontrol.functionality.enabled"]
   readonly attribute boolean globalPrivacyControl;
 };
 

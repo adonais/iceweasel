@@ -8,17 +8,17 @@ diff --git a/clang/include/clang/Basic/DiagnosticASTKinds.td b/clang/include/cla
 index bde418695f64..a32a95eca9e1 100644
 --- a/clang/include/clang/Basic/DiagnosticASTKinds.td
 +++ b/clang/include/clang/Basic/DiagnosticASTKinds.td
-@@ -1052,6 +1052,10 @@ def err_unsupported_itanium_mangling : Error<
-     "containing a substitution failure}"
-     "}0">;
+@@ -1073,6 +1073,10 @@
+ def err_unsupported_itanium_expr_mangling : Error<
+     "cannot yet mangle %0 expression">;
  
 +def remark_unsupported_itanium_expr_mangling : Remark<
 +    "cannot yet mangle %0 expression">,
 +    InGroup<DiagGroup<"unsupported-itanium-mangling">>;
 +
- def err_unsupported_itanium_expr_mangling : Error<
-     "cannot yet mangle %0 expression">;
- 
+ def err_ms_mangle_number_overflow : Error<
+     "mangling number exceeds limit (65535)">;
+ def err_ms_mangle_unsupported_with_detail : Error<
 diff --git a/clang/lib/AST/ItaniumMangle.cpp b/clang/lib/AST/ItaniumMangle.cpp
 index d1280f21a000..9dd1a66a0836 100644
 --- a/clang/lib/AST/ItaniumMangle.cpp

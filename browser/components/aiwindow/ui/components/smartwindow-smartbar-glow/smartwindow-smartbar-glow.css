@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --glow-bleed: calc(var(--dimension-24) * -1);
+  --glow-bleed: calc(var(--size-item-medium) * -1);
   /* position: absolute so the host sizes to match the bar's container;
    * a custom element with no content would collapse to zero height with
    * position: relative, leaving the SVG nothing to fill. */

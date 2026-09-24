@@ -257,3 +257,52 @@ add_task(async function test_private_window() {
 add_task(async function test_tabs_mode() {
   await simple_tabgroup_search_test("About Pages", "% a");
 });
+
+/**
+ * Group colors are passed via `style` and are applied.
+ */
+add_task(async function test_tabgroup_colors() {
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  const { COLORS } = win.customElements.get("tabgroup-menu");
+  Assert.ok(COLORS.length, `Tab group colors: ${COLORS}`);
+  for (let color of COLORS) {
+    let tab = BrowserTestUtils.addTab(win.gBrowser, "about:robots");
+    let tabGroup = win.gBrowser.addTabGroup([tab], {
+      color,
+      label: `${color} group`,
+    });
+    tabGroup.collapsed = true;
+
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window: win,
+      value: color,
+    });
+
+    const BUTTON_SELECTOR = '.urlbarView-action-btn[data-action^="tabgroup-"]';
+    const results = win.document.querySelector(".urlbarView-results");
+    await BrowserTestUtils.waitForMutationCondition(
+      results,
+      { childList: true, subtree: true, attributes: true },
+      () => results.querySelector(BUTTON_SELECTOR),
+      `Wait for the tab group action button: ${color}`
+    );
+    let button = results.querySelector(BUTTON_SELECTOR);
+    Assert.equal(
+      button.style.getPropertyValue("--tab-group-background-color"),
+      `var(--tab-group-${color})`,
+      `Group color token is applied: ${color}`
+    );
+    Assert.ok(
+      win
+        .getComputedStyle(button)
+        .getPropertyValue("--tab-group-background-color"),
+      `Group color variable resolves to a value: ${color}`
+    );
+
+    await UrlbarTestUtils.promisePopupClose(win);
+    await TabGroupTestUtils.removeTabGroup(tabGroup);
+  }
+
+  await BrowserTestUtils.closeWindow(win);
+  TabGroupTestUtils.forgetSavedTabGroups();
+});

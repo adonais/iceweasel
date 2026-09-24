@@ -37,6 +37,10 @@ def strtobool(value: str):
     raise ValueError(f"Expected one of: {', '.join(true_vals + false_vals)}")
 
 
+def _is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def flatten(data, parent_dir, sep="/"):
     """
     Converts a dictionary with nested entries like this
@@ -75,7 +79,8 @@ def flatten(data, parent_dir, sep="/"):
     """
     result = {}
 
-    if not data:
+    # Stop on empty containers, but not on a measurement of zero.
+    if not data and not _is_number(data):
         return result
 
     if isinstance(data, list):
@@ -89,7 +94,7 @@ def flatten(data, parent_dir, sep="/"):
             if isinstance(v, Iterable) and not isinstance(v, str):
                 for x, y in flatten(v, current_dir, sep=sep).items():
                     result.setdefault(x, []).extend(y)
-            elif v or v == 0:
+            elif v or _is_number(v):
                 result.setdefault(subtest, []).append(v)
     else:
         result.setdefault(sep.join(parent_dir), []).append(data)

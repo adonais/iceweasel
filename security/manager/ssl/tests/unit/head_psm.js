@@ -64,6 +64,7 @@ const SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE = SEC_ERROR_BASE + 30;
 const SEC_ERROR_CA_CERT_INVALID = SEC_ERROR_BASE + 36;
 const SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION = SEC_ERROR_BASE + 41;
 const SEC_ERROR_PKCS7_BAD_SIGNATURE = SEC_ERROR_BASE + 47;
+const SEC_ERROR_UNSUPPORTED_KEYALG = SEC_ERROR_BASE + 48;
 const SEC_ERROR_INADEQUATE_KEY_USAGE = SEC_ERROR_BASE + 90;
 const SEC_ERROR_INADEQUATE_CERT_TYPE = SEC_ERROR_BASE + 91;
 const SEC_ERROR_CERT_NOT_IN_NAME_SPACE = SEC_ERROR_BASE + 112;
@@ -1467,4 +1468,24 @@ function installWindowWatcherForProtectedAuth(prompt) {
   });
 
   return windowWatcher;
+}
+
+async function commonFindCertBy(propertyName, value) {
+  let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  for (let cert of await certDB.getCerts()) {
+    if (cert[propertyName] == value) {
+      return cert;
+    }
+  }
+  return null;
+}
+
+async function findCertByCommonName(commonName) {
+  return commonFindCertBy("commonName", commonName);
+}
+
+async function findCertByEmailAddress(emailAddress) {
+  return commonFindCertBy("emailAddress", emailAddress);
 }

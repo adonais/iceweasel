@@ -1,19 +1,38 @@
 {
   "margin": {
     "block": {
-      "value": "{dimension.4}"
+      "value": "4px"
     }
   },
   "border": {
+    "@base": {
+      "value": "{border.width} solid {tab.border.color.@base}"
+    },
     "radius": {
-      "value": "var(--toolbarbutton-border-radius)"
+      "value": "{toolbarbutton.border.radius}"
     },
     "color": {
+      "@base": {
+        "value": "{toolbarbutton.outline.color.@base}"
+      },
+      "hover": {
+        "value": "{toolbarbutton.outline.color.hover}"
+      },
       "accent": {
         "override": true,
-        "value": "unset"
+        "value": {
+          "default": "unset",
+          "nova": {
+            "comment": "This linear-gradient cannot be expressed in Figma",
+            "value": "linear-gradient(96deg, {tab.border.color.selected.leading} 20.68%, {tab.border.color.selected.trailing} 79.34%)"
+          }
+        }
       },
       "selected": {
+        "@base": {
+          "ignoreFigma": "Figma uses a gradient, so its values are empty",
+          "value": "{toolbarbutton.outline.color.selected}"
+        },
         "leading": {
           "override": true,
           "value": "unset"
@@ -39,33 +58,62 @@
       }
     }
   },
-  "close": {
-    "button": {
-      "padding": {
-        "value": "6px"
-      }
-    }
-  },
-  "hover": {
-    "outline": {
-      "color": {
-        "value": {
-          "default": "transparent",
-          "prefersContrast": "currentColor"
-        }
-      }
-    }
-  },
   "background": {
     "color": {
+      "@base": {
+        "value": {
+          "default": "transparent",
+          "nativeTheme": "transparent",
+          "forcedColors": "{button.background.color.@base}"
+        }
+      },
       "hover": {
-        "value": "color-mix(in srgb, currentColor 11%, transparent)"
+        "value": {
+          "default": "color-mix(in srgb, currentColor 11%, transparent)",
+          "forcedColors": "{button.background.color.hover}",
+          "nova": {
+            "comment": "color-mix with currentColor cannot be expressed in Figma",
+            "value": {
+              "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+              "default": "{toolbarbutton.background.color.hover}"
+            }
+          }
+        }
       },
       "selected": {
         "value": {
           "light": "{color.white.@base}",
           "dark": "rgba(106, 106, 120, 0.7)",
-          "nativeTheme": "var(--toolbar-background-color)"
+          "nativeTheme": "{toolbar.background.color}",
+          "forcedColors": "SelectedItem"
+        }
+      },
+      "pinned": {
+        "override": true,
+        "value": "unset"
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": {
+          "default": "{toolbox.text.color.current}",
+          "forcedColors": "{button.text.color.@base}"
+        }
+      },
+      "hover": {
+        "value": {
+          "default": "{toolbox.text.color.current}",
+          "forcedColors": "{button.text.color.hover}"
+        }
+      },
+      "selected": {
+        "value": {
+          "light": "rgb(21, 20, 26)",
+          "dark": "{color.white.@base}",
+          "nativeTheme": "{toolbar.text.color}",
+          "forcedColors": "SelectedItemText"
         }
       }
     }
@@ -79,7 +127,7 @@
   },
   "inline": {
     "padding": {
-      "value": "{dimension.8}"
+      "value": "8px"
     }
   },
   "inner": {
@@ -98,16 +146,16 @@
   },
   "loading": {
     "fill": {
-      "value": "{color.blue.50}"
+      "value": {
+        "default": "{color.blue.50}",
+        "nova": {
+          "comment": "Tab HCM overrides are handled in CSS, so we don't want the forcedColors value from Figma",
+          "value": "{color.accent.primary.@base}"
+        }
+      }
     }
   },
   "outline": {
-    "@base": {
-      "value": "{border.width} solid {tab.outline.color}"
-    },
-    "color": {
-      "value": "transparent"
-    },
     "offset": {
       "value": "calc(-1 * {border.width})"
     }
@@ -115,7 +163,7 @@
   "overflow": {
     "clip": {
       "margin": {
-        "value": "{dimension.2}"
+        "value": "2px"
       }
     }
   },
@@ -132,7 +180,7 @@
     "expanded": {
       "background": {
         "width": {
-          "value": "{dimension.40}"
+          "value": "40px"
         }
       }
     },
@@ -144,32 +192,121 @@
       }
     }
   },
-  "selected": {
-    "outline": {
-      "color": {
-        "value": {
-          "default": "transparent",
-          "prefersContrast": "currentColor"
-        }
-      }
-    },
-    "textcolor": {
-      "value": {
-        "light": "rgb(21, 20, 26)",
-        "dark": "{color.white.@base}",
-        "nativeTheme": "var(--toolbar-text-color)"
-      }
-    }
-  },
   "vertical": {
     "block": {
       "margin": {
-        "value": "{dimension.2}"
+        "value": "2px"
       }
     },
     "inline": {
       "padding": {
         "value": "{space.medium}"
+      }
+    }
+  },
+  "close": {
+    "button": {
+      "padding": {
+        "value": "6px"
+      },
+      "background": {
+        "color": {
+          "@base": {
+            "value": {
+              "default": "{button.background.color.ghost.@base}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.background.color.ghost.@base}",
+                  "default": "{toolbarbutton.background.color.@base}"
+                }
+              }
+            }
+          },
+          "hover": {
+            "value": {
+              "default": "{button.background.color.ghost.hover}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.background.color.ghost.hover}",
+                  "default": "{toolbarbutton.background.color.hover}"
+                }
+              }
+            }
+          },
+          "active": {
+            "value": {
+              "default": "{button.background.color.ghost.active}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.background.color.ghost.active}",
+                  "default": "{toolbarbutton.background.color.active}"
+                }
+              }
+            }
+          }
+        }
+      },
+      "border": {
+        "color": {
+          "@base": {
+            "value": "{tab.border.color.@base}"
+          },
+          "hover": {
+            "value": {
+              "default": "{tab.border.color.@base}",
+              "prefersContrast": "{button.border.color.hover}"
+            }
+          },
+          "active": {
+            "value": {
+              "default": "{tab.border.color.@base}",
+              "prefersContrast": "{button.border.color.active}"
+            }
+          }
+        }
+      },
+      "text": {
+        "color": {
+          "@base": {
+            "value": {
+              "default": "{button.text.color.ghost.@base}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.text.color.ghost.@base}",
+                  "default": "{tab.text.color.@base}"
+                }
+              }
+            }
+          },
+          "hover": {
+            "value": {
+              "default": "{button.text.color.ghost.hover}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.text.color.ghost.hover}",
+                  "default": "{tab.text.color.@base}"
+                }
+              }
+            }
+          },
+          "active": {
+            "value": {
+              "default": "{button.text.color.ghost.active}",
+              "nova": {
+                "comment": "Default themes keep the toolbarbutton colors",
+                "value": {
+                  "nativeTheme": "{button.text.color.ghost.active}",
+                  "default": "{tab.text.color.@base}"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

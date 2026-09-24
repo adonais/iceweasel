@@ -124,6 +124,8 @@ treeherder:
         'W-pb': 'Web platform tests with private browsing enabled'
         'W-ioi': 'Web platform tests tagged with inc-origin-init'
         'W-ioi-cf': 'Web platform tests tagged with inc-origin-init for confirm failure'
+        'W-oh264': 'Web platform tests with OpenH264 preferred'
+        'W-oh264-cf': 'Web platform tests with OpenH264 preferred for confirm failure'
         'W-pb-ioi': 'Web platform tests with private browsing enabled and tagged with inc-origin-init'
         'X': 'Xpcshell tests'
         'X-f': 'Xpcshell tests that fail on a given config'
@@ -252,6 +254,7 @@ treeherder:
         'fenix-beta': 'Fenix beta-related tasks'
         'fenix-debug': 'Fenix builds made for testing'
         'fenix-nightly': 'Fenix nightly-related tasks'
+        'fenix-nightly-nobp': 'Fenix nightly builds without baseline profiles'
         'fenix-nightlySim': 'Nightly-related tasks that run on each github push'
         'fenix-release': 'Fenix production-related tasks'
 
@@ -272,6 +275,7 @@ treeherder:
         'compose-awesomebar': 'compose-engine'
         'compose-browser-toolbar': 'awesomebar-browser-toolbar'
         'compose-engine': 'compose-engine'
+        'compose-menu': 'compose-menu'
         'compose-tabstray': 'compose-tabstray'
         'concept-accelerometer': 'concept-accelerometer'
         'concept-ai-controls': 'concept-ai-controls'
@@ -578,14 +582,23 @@ partner-urls:
                             staging: 'git@github.com:mozilla-partners/staging-mozilla-EME-free-manifest.git'
 
 
+# Beta and ESR are integration branches, so by default their tasks run at the
+# same priority as autoland. Release managers landing an uplift they intend to
+# ship set the "SHIPPING" flag in Lando, which adds "SHIPPING" to the commit
+# message and raises the priority to get results as quickly as possible.
 task-priority:
     by-project:
         'mozilla-release': 'highest'
-        'mozilla-esr.*': 'very-high'
-        'mozilla-beta': 'high'
+        'mozilla-esr.*':
+            by-shipping:
+                'true': 'very-high'
+                'default': 'low'
+        'mozilla-beta':
+            by-shipping:
+                'true': 'very-high'
+                'default': 'low'
         'mozilla-central': 'medium'
         'autoland': 'low'
-        'mozilla-inbound': 'low'
         'default': 'very-low'
 
 taskgraph:

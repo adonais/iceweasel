@@ -147,11 +147,9 @@ class nsWaylandDisplay {
   void SetCMSupportedFeature(uint32_t aFeature);
   void SetCMSupportedTFNamed(uint32_t aTF);
   void SetCMSupportedPrimariesNamed(uint32_t aPrimaries);
-  bool IsHDREnabled() const {
-    return mColorManagerSupportedFeature.mParametric;
-  }
   void SetSupportedCoefficientsAndRanges(uint32_t aCoefficients,
                                          uint32_t aRange);
+  bool IsHDREnabled() const;
   uint32_t GetColorRange(uint32_t aCoefficients, bool aFullRange);
   RefPtr<DMABufFormats> GetDMABufFormats() const { return mFormats; }
   bool HasDMABufFeedback() const { return mDmabufIsFeedback; }
@@ -197,9 +195,11 @@ class nsWaylandDisplay {
   MonitorConfig* GetMonitorConfig(int x, int y);
   bool RemoveMonitorConfig(int aId);
 
-  bool IsTFSupported(int aTF);
+  bool IsTFSupported(uint32_t aTF);
   bool IsSetMDCVSupported();
   bool IsSetLuminancesSupported();
+  bool IsPrimariesSupported(uint32_t aPrimaries);
+  bool IsParametricSupported();
 
   ~nsWaylandDisplay();
 

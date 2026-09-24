@@ -14,7 +14,9 @@ support-files = [
   "shims_test_3.html",
   "smartblock_embed_test.html",
   "smartblock_embed_link_container_test.html",
+  "smartblock_embed_iframe_test.html",
   "embed_test.js",
+  "embed_test_iframe.html",
   "content_classifier_block_list.txt",
 ]
 prefs = ["extensions.webcompat.disabled_interventions.test6=true","extensions.webcompat.disabled_interventions.test7=false"]
@@ -56,6 +58,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1945222
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1945222
 ]
+
+["browser_smartblockembeds_iframe.js"]
 
 ["browser_smartblockembeds_link_preservation.js"]
 skip-if = [

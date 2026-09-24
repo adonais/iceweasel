@@ -24,6 +24,29 @@ add_task(async function test_mlNimbusPref() {
   await checkEnrollmentWithValue(false);
 });
 
+add_task(async function test_mlIgnoreFieldTypesNimbusPref() {
+  await ExperimentAPI.ready();
+
+  const doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "autofill-ml-ignore-field-types",
+    value: { ignoreFieldTypes: "cc-exp, cc-exp-month, cc-exp-year" },
+  });
+
+  Assert.deepEqual(
+    FormAutofillUtils.mlIgnoreFieldTypes,
+    ["cc-exp", "cc-exp-month", "cc-exp-year"],
+    "The ignored field types follow the autofill-ml-ignore-field-types Nimbus variable"
+  );
+
+  await doCleanup();
+
+  Assert.deepEqual(
+    FormAutofillUtils.mlIgnoreFieldTypes,
+    [],
+    "No field type is ignored once the enrollment ends"
+  );
+});
+
 async function checkEnrollmentWithValue(aEnabled) {
   const doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
     featureId: "autofill-ml",

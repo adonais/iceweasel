@@ -92,6 +92,26 @@ geolocation:
     notification_emails:
       - daparks@mozilla.com
     expires: never
+  network_provider:
+    type: labeled_counter
+    description: >
+      Which network geolocation service each request from the
+      NetworkGeolocationProvider was sent to, determined from the host of the
+      configured geo.provider.network.url.  "other" means the URL had a host that
+      is not one of the services listed here, and "unknown" means it had no
+      host that could be parsed.
+    labels:
+      - google
+      - beacondb
+      - other
+      - unknown
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070622
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2070622
+    notification_emails:
+      - daparks@mozilla.com
+    expires: never
   network_failures:
     type: labeled_counter
     description: >

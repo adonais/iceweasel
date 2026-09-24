@@ -6,7 +6,6 @@ package mozilla.components.compose.browser.toolbar.ui
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.content.res.Configuration.UI_MODE_TYPE_NORMAL
-import android.view.SoundEffectConstants
 import androidx.annotation.StringRes
 import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.LocalIndication
@@ -136,7 +135,6 @@ internal fun Origin(
                         this.contentDescription = contentDescription
                     }
                     .clickable(enabled = onClick != null && !shouldReactToLongClicks) {
-                        view.playSoundEffect(SoundEffectConstants.CLICK)
                         onInteraction(requireNotNull(onClick))
                     }
                     .thenConditional(
@@ -144,7 +142,6 @@ internal fun Origin(
                             role = Button,
                             onClick = {
                                 onClick?.let {
-                                    view.playSoundEffect(SoundEffectConstants.CLICK)
                                     onInteraction(it)
                                 }
                             },

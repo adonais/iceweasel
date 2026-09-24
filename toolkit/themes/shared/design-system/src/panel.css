@@ -5,8 +5,8 @@
 :root {
   /* Compact mode */
   &[uidensity="compact"] {
-    --panel-menuitem-margin-inline: var(--dimension-4);
-    --panel-menuitem-padding-block: var(--dimension-4);
+    --panel-menuitem-margin-inline: 4px;
+    --panel-menuitem-padding-block: 6px;
     --panel-separator-padding-inline: 4px;
   }
 }

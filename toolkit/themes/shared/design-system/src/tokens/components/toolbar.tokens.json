@@ -17,7 +17,15 @@
         "focus": {
           "value": {
             "default": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
-            "prefersContrast": "{focus.outline.color}"
+            "prefersContrast": "{focus.outline.color}",
+            "nova": {
+              "comment": "color-mix cannot be expressed in Figma",
+              "value": {
+                "nativeTheme": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
+                "default": "{focus.outline.color}",
+                "prefersContrast": "{focus.outline.color}"
+              }
+            }
           }
         }
       }
@@ -66,7 +74,15 @@
       "value": {
         "light": "#f9f9fb",
         "dark": "rgb(43, 42, 51)",
-        "nativeTheme": "color-mix(in srgb, -moz-dialog 85%, {color.white.@base})"
+        "nativeTheme": "color-mix(in srgb, -moz-dialog 85%, {color.white.@base})",
+        "nova": {
+          "value": {
+            "nativeTheme": "color-mix(in srgb, -moz-dialog 85%, {color.white.@base})",
+            "light": "rgba(255, 255, 255, 0.4)",
+            "dark": "rgba(0, 0, 0, 0.2)",
+            "forcedColors": "Canvas"
+          }
+        }
       }
     }
   },

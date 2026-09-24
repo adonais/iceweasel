@@ -51,6 +51,9 @@ interface Notification : EventTarget {
   [Pure]
   readonly attribute UTF8String icon;
 
+  [Pure, Pref="dom.webnotifications.navigate.enabled"]
+  readonly attribute UTF8String navigate;
+
   [Constant, Pref="dom.webnotifications.requireinteraction.enabled"]
   readonly attribute boolean requireInteraction;
 
@@ -78,6 +81,7 @@ dictionary NotificationOptions {
   DOMString lang = "";
   DOMString body = "";
   // [UseCounter], bug 1976515
+  [Pref="dom.webnotifications.navigate.enabled"]
   UTF8String navigate;
   DOMString tag = "";
   // [UseCounter], bug 1976515
@@ -113,6 +117,8 @@ enum NotificationPermission {
 dictionary NotificationAction {
   required DOMString action;
   required DOMString title;
+  [Pref="dom.webnotifications.navigate.enabled"]
+  UTF8String navigate;
 };
 
 callback NotificationPermissionCallback = undefined (NotificationPermission permission);

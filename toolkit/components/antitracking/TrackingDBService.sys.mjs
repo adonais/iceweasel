@@ -123,6 +123,95 @@ async function removeRecordsSince(db, date) {
   await db.execute(SQL.removeRecordsSince, { date });
 }
 
+/**
+ * @param {Array} events - Array of [state, blocked] pairs from the content blocking log for one origin.
+ * @returns {number|null}
+ */
+export function identifyType(events) {
+  let result = null;
+  let isTracker = false;
+  for (let [state, blocked] of events) {
+    if (
+      state & Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_1_TRACKING_CONTENT ||
+      state & Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_2_TRACKING_CONTENT
+    ) {
+      isTracker = true;
+    }
+    if (blocked) {
+      if (
+        state &
+          Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT ||
+        state & Ci.nsIWebProgressListener.STATE_REPLACED_FINGERPRINTING_CONTENT
+      ) {
+        result = Ci.nsITrackingDBService.FINGERPRINTERS_ID;
+      } else if (
+        lazy.fpp_enabled &&
+        state &
+          Ci.nsIWebProgressListener.STATE_BLOCKED_SUSPICIOUS_FINGERPRINTING
+      ) {
+        // The suspicious fingerprinting event gets filed in standard windows
+        // regardless of whether the fingerprinting protection is enabled. To
+        // avoid recording the case where our protection doesn't apply, we
+        // only record blocking suspicious fingerprinting if the
+        // fingerprinting protection is enabled in the normal windows.
+        //
+        // TODO(Bug 1864909): We don't need to check if fingerprinting
+        // protection is enabled once the event only gets filed when
+        // fingerprinting protection is enabled for the context.
+        result = Ci.nsITrackingDBService.SUSPICIOUS_FINGERPRINTERS_ID;
+      } else if (
+        // If STP is enabled and either a social tracker or cookie is blocked.
+        lazy.social_enabled &&
+        (state &
+          Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
+          state &
+            Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT)
+      ) {
+        result = Ci.nsITrackingDBService.SOCIAL_ID;
+      } else if (
+        // If there is a tracker blocked, attribute it to trackers. Social
+        // tracker blocks also fall through to here when STP is not enabled.
+        // We also attribute replaced tracking content and email tracker
+        // blocks to trackers.
+        state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT ||
+        state &
+          Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT ||
+        state & Ci.nsIWebProgressListener.STATE_REPLACED_TRACKING_CONTENT ||
+        state & Ci.nsIWebProgressListener.STATE_BLOCKED_EMAILTRACKING_CONTENT
+      ) {
+        result = Ci.nsITrackingDBService.TRACKERS_ID;
+      } else if (
+        // If a tracking cookie was blocked attribute it to tracking cookies.
+        // This includes social tracking cookies since STP is not enabled.
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER ||
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_PARTITIONED_TRACKER
+      ) {
+        result = Ci.nsITrackingDBService.TRACKING_COOKIES_ID;
+      } else if (
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_BY_PERMISSION ||
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_ALL ||
+        state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_FOREIGN
+      ) {
+        result = Ci.nsITrackingDBService.OTHER_COOKIES_BLOCKED_ID;
+      } else if (
+        state & Ci.nsIWebProgressListener.STATE_BLOCKED_CRYPTOMINING_CONTENT
+      ) {
+        result = Ci.nsITrackingDBService.CRYPTOMINERS_ID;
+      } else if (state & Ci.nsIWebProgressListener.STATE_PURGED_BOUNCETRACKER) {
+        result = Ci.nsITrackingDBService.BOUNCETRACKERS_ID;
+      }
+    }
+  }
+  // if a cookie is blocked for any reason, and it is identified as a tracker,
+  // then add to the tracking cookies count.
+  if (result == Ci.nsITrackingDBService.OTHER_COOKIES_BLOCKED_ID && isTracker) {
+    result = Ci.nsITrackingDBService.TRACKING_COOKIES_ID;
+  }
+
+  return result;
+}
+
 export function TrackingDBService() {
   this._initPromise = this._initialize();
 }
@@ -245,100 +334,6 @@ TrackingDBService.prototype = {
     return undefined;
   },
 
-  identifyType(events) {
-    let result = null;
-    let isTracker = false;
-    for (let [state, blocked] of events) {
-      if (
-        state &
-          Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_1_TRACKING_CONTENT ||
-        state & Ci.nsIWebProgressListener.STATE_LOADED_LEVEL_2_TRACKING_CONTENT
-      ) {
-        isTracker = true;
-      }
-      if (blocked) {
-        if (
-          state &
-            Ci.nsIWebProgressListener.STATE_BLOCKED_FINGERPRINTING_CONTENT ||
-          state &
-            Ci.nsIWebProgressListener.STATE_REPLACED_FINGERPRINTING_CONTENT
-        ) {
-          result = Ci.nsITrackingDBService.FINGERPRINTERS_ID;
-        } else if (
-          lazy.fpp_enabled &&
-          state &
-            Ci.nsIWebProgressListener.STATE_BLOCKED_SUSPICIOUS_FINGERPRINTING
-        ) {
-          // The suspicious fingerprinting event gets filed in standard windows
-          // regardless of whether the fingerprinting protection is enabled. To
-          // avoid recording the case where our protection doesn't apply, we
-          // only record blocking suspicious fingerprinting if the
-          // fingerprinting protection is enabled in the normal windows.
-          //
-          // TODO(Bug 1864909): We don't need to check if fingerprinting
-          // protection is enabled once the event only gets filed when
-          // fingerprinting protection is enabled for the context.
-          result = Ci.nsITrackingDBService.SUSPICIOUS_FINGERPRINTERS_ID;
-        } else if (
-          // If STP is enabled and either a social tracker or cookie is blocked.
-          lazy.social_enabled &&
-          (state &
-            Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
-            state &
-              Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT)
-        ) {
-          result = Ci.nsITrackingDBService.SOCIAL_ID;
-        } else if (
-          // If there is a tracker blocked, attribute it to trackers. Social
-          // tracker blocks also fall through to here when STP is not enabled.
-          // We also attribute replaced tracking content and email tracker
-          // blocks to trackers.
-          state & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT ||
-          state &
-            Ci.nsIWebProgressListener.STATE_BLOCKED_SOCIALTRACKING_CONTENT ||
-          state & Ci.nsIWebProgressListener.STATE_REPLACED_TRACKING_CONTENT ||
-          state & Ci.nsIWebProgressListener.STATE_BLOCKED_EMAILTRACKING_CONTENT
-        ) {
-          result = Ci.nsITrackingDBService.TRACKERS_ID;
-        } else if (
-          // If a tracking cookie was blocked attribute it to tracking cookies.
-          // This includes social tracking cookies since STP is not enabled.
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER ||
-          state &
-            Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_SOCIALTRACKER ||
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_PARTITIONED_TRACKER
-        ) {
-          result = Ci.nsITrackingDBService.TRACKING_COOKIES_ID;
-        } else if (
-          state &
-            Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_BY_PERMISSION ||
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_ALL ||
-          state & Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_FOREIGN
-        ) {
-          result = Ci.nsITrackingDBService.OTHER_COOKIES_BLOCKED_ID;
-        } else if (
-          state & Ci.nsIWebProgressListener.STATE_BLOCKED_CRYPTOMINING_CONTENT
-        ) {
-          result = Ci.nsITrackingDBService.CRYPTOMINERS_ID;
-        } else if (
-          state & Ci.nsIWebProgressListener.STATE_PURGED_BOUNCETRACKER
-        ) {
-          result = Ci.nsITrackingDBService.BOUNCETRACKERS_ID;
-        }
-      }
-    }
-    // if a cookie is blocked for any reason, and it is identified as a tracker,
-    // then add to the tracking cookies count.
-    if (
-      result == Ci.nsITrackingDBService.OTHER_COOKIES_BLOCKED_ID &&
-      isTracker
-    ) {
-      result = Ci.nsITrackingDBService.TRACKING_COOKIES_ID;
-    }
-
-    return result;
-  },
-
   /**
    * Saves data rows to the DB.
    *
@@ -353,7 +348,7 @@ TrackingDBService.prototype = {
         for (let thirdParty in log) {
           // "type" will be undefined if there is no blocking event, or 0 if it is a
           // cookie which is not a tracking cookie. These should not be added to the database.
-          let type = this.identifyType(log[thirdParty]);
+          let type = identifyType(log[thirdParty]);
           if (type) {
             // Send the blocked event to Telemetry
             Glean.contentblocking.trackersBlockedCount.add(1);

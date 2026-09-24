@@ -78,9 +78,7 @@ struct MockSleep {
     sum += val;
   }
 
-  bool operator==(MockSleep const& that) const {
-    return calls == that.calls && sum == that.sum;
-  }
+  bool operator==(MockSleep const& that) const = default;
 };
 std::ostream& operator<<(std::ostream& o, MockSleep const& s) {
   return o << "MockSleep { count: " << s.calls << ", sum: " << s.sum << " }";

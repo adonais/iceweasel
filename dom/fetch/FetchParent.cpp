@@ -114,7 +114,7 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
     // The inference process uses ChromeWorkers which have a system principal,
     // so system principals must be allowed there.
     EnumSet<ValidatePrincipalOptions> options;
-    if (contentHandle->GetRemoteType() == INFERENCE_REMOTE_TYPE) {
+    if (contentHandle->GetRemoteType().IsInference()) {
       options += ValidatePrincipalOptions::AllowSystemIfLoaded;
     }
     if (!contentHandle->ValidatePrincipal(principal, options)) {

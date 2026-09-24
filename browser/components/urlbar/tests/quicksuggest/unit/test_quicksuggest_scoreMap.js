@@ -123,6 +123,11 @@ const MERINO_SPONSORED_SUGGESTION = {
   impression_url: "https://example.com/impression",
   advertiser: "TestAdvertiser",
   icon: "1234",
+  custom_details: {
+    amp: {
+      suggestion_id: "amp-suggestion-id",
+    },
+  },
 };
 
 const MERINO_ADDON_SUGGESTION = {

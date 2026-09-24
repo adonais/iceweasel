@@ -216,17 +216,30 @@ public final class EventDispatcher extends JNIObject {
     dispatch(type, message, /* callback */ null);
   }
 
-  private abstract class CallbackResult<T> extends GeckoResult<T> implements EventCallback {
+  private static class CallbackResult<T> extends GeckoResult<T> implements EventCallback {
+    private final String mType;
+
+    CallbackResult(final String type) {
+      mType = type;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void sendSuccess(final Object response) {
+      complete((T) response);
+    }
+
     @Override
     public void sendError(final Object response) {
-      completeExceptionally(new QueryException(response));
+      completeExceptionally(new QueryException(mType, response));
     }
   }
 
   public static class QueryException extends Exception {
     public final Object data;
 
-    public QueryException(final Object data) {
+    public QueryException(final String type, final Object data) {
+      super("Failed on message type: " + type);
       this.data = data;
     }
   }
@@ -326,15 +339,7 @@ public final class EventDispatcher extends JNIObject {
   }
 
   private <T> GeckoResult<T> query(final String type, final GeckoBundle message) {
-    final CallbackResult<T> result =
-        new CallbackResult<T>() {
-          @Override
-          @SuppressWarnings("unchecked") // Not a lot we can do about this :(
-          public void sendSuccess(final Object response) {
-            complete((T) response);
-          }
-        };
-
+    final CallbackResult<T> result = new CallbackResult<>(type);
     dispatch(type, message, result);
     return result;
   }

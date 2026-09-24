@@ -6,24 +6,24 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 
-object SettingsCustomizeSelectors {
+object SettingsCustomizeSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        CUSTOMIZE_SETTINGS,
+        APP_ICON_DEFAULT,
+        TOOLBAR_LAYOUT,
+    }
+
     val SETTINGS_CUSTOMIZE_TITLE =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Customize",
-            description = "The Customize Settings title",
-            groups = listOf("requiredForPage"),
-        )
-
-    val SHOW_TOOLBAR_TOGGLE =
-        Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_ID,
-            value = "show_toolbar_toggle",
-            description = "Show Toolbar Toggle",
-            groups = listOf("customizeSettings"),
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_customize),
+            description = "Customize toolbar title",
         )
 
     val SHOW_TAB_BAR_TOGGLE =
@@ -31,7 +31,9 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = getStringResource(R.string.preference_tab_strip_show),
             description = "Show tab bar toggle",
-            groups = listOf("requiresScroll"),
+            groups = setOf(Group.CUSTOMIZE_SETTINGS),
+            readiness = PageReadinessProfiles.READY_CONTENT,
+            scrollDirection = SwipeDirection.UP,
         )
 
     val SELECT_APP_ICON_TITLE =
@@ -39,7 +41,7 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preference_select_app_icon_title),
             description = "Select App Icon title",
-            groups = listOf("appIconDefault"),
+            groups = setOf(Group.APP_ICON_DEFAULT),
         )
 
     val APP_ICON_DEFAULT =
@@ -47,7 +49,7 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "Default",
             description = "Default app icon option",
-            groups = listOf("appIconDefault"),
+            groups = setOf(Group.APP_ICON_DEFAULT),
         )
 
     val TOOLBAR_LAYOUT_SIMPLE =
@@ -55,7 +57,8 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = getStringResource(R.string.preference_simple_toolbar),
             description = "Simple toolbar layout option",
-            groups = listOf("toolbarLayout", "requiresScroll", "swipeDown"),
+            groups = setOf(Group.TOOLBAR_LAYOUT),
+            scrollDirection = SwipeDirection.DOWN,
         )
 
     val TOOLBAR_LAYOUT_EXPANDED =
@@ -63,7 +66,8 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = getStringResource(R.string.preference_expanded_toolbar),
             description = "Expanded toolbar layout option",
-            groups = listOf("toolbarLayout", "requiresScroll"),
+            groups = setOf(Group.TOOLBAR_LAYOUT),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val TOOLBAR_POSITION_BOTTOM =
@@ -71,7 +75,7 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = getStringResource(R.string.preference_bottom_toolbar),
             description = "Bottom toolbar position option",
-            groups = listOf("requiresScroll"),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val NAVIGATE_BACK_TOOLBAR_BUTTON =
@@ -79,19 +83,8 @@ object SettingsCustomizeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = "Navigate up",
             description = "Navigate back toolbar button",
-            groups = listOf("requiredForPage"),
         )
 
-    val all =
-        listOf(
-            SETTINGS_CUSTOMIZE_TITLE,
-            SHOW_TOOLBAR_TOGGLE,
-            SHOW_TAB_BAR_TOGGLE,
-            SELECT_APP_ICON_TITLE,
-            APP_ICON_DEFAULT,
-            TOOLBAR_LAYOUT_SIMPLE,
-            TOOLBAR_LAYOUT_EXPANDED,
-            TOOLBAR_POSITION_BOTTOM,
-            NAVIGATE_BACK_TOOLBAR_BUTTON,
-        )
+    override val scrollTraversalOrder: Map<SelectorGroup, List<Selector>> =
+        mapOf(Group.TOOLBAR_LAYOUT to listOf(TOOLBAR_LAYOUT_SIMPLE, TOOLBAR_LAYOUT_EXPANDED))
 }

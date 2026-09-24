@@ -12,6 +12,8 @@ the toolkit/components/translations/jar.mn after building the file. Just make su
 not to check the code change in.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import platform

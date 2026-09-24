@@ -9,7 +9,6 @@ from mozbuild.preprocessor import Preprocessor
 from mozbuild.util import DefinesAction
 from mozpack.packager.unpack import UnpackFinder
 from mozpack.files import DeflatedFile
-from collections import OrderedDict
 from io import StringIO
 import argparse
 import buildconfig
@@ -24,7 +23,7 @@ def normalize_osx_path(p):
     """
     Strips the first 3 elements of an OSX app path
 
-    >>> normalize_osx_path('Nightly.app/foo/bar/baz')
+    >>> normalize_osx_path("Nightly.app/foo/bar/baz")
     'baz'
     """
     bits = p.split("/")
@@ -66,7 +65,7 @@ class AllowedDupes:
 
 def find_dupes(source, allowed_dupes, bail=True):
     chunk_size = 1024 * 10
-    checksums = OrderedDict()
+    checksums = {}
     for p, f in UnpackFinder(source):
         checksum = hashlib.sha1()
         content_size = 0
@@ -98,7 +97,9 @@ def find_dupes(source, allowed_dupes, bail=True):
             num_dupes += 1
 
             for p in paths:
-                if not is_l10n_file(p) and not allowed_dupes.is_allowed(normalize_path(p)):
+                if not is_l10n_file(p) and not allowed_dupes.is_allowed(
+                    normalize_path(p)
+                ):
                     unexpected_dupes.append(p)
 
     if num_dupes:

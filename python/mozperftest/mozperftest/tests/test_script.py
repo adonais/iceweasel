@@ -21,6 +21,7 @@ from mozperftest.tests.support import (
     EXAMPLE_MOCHITEST_TEST2,
     EXAMPLE_SHELL_TEST,
     EXAMPLE_TEST,
+    EXAMPLE_XPCSHELL_DESTRUCTURED_TEST,
     EXAMPLE_XPCSHELL_TEST,
     EXAMPLE_XPCSHELL_TEST2,
     HERE,
@@ -160,6 +161,19 @@ def test_scriptinfo_dynamic_metadata_parsing():
     assert info["options"]["linux"]["perfherder_metrics"] == [
         {"name": "speed", "unit": "bps_lin"}
     ]
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="requires Node.js")
+def test_scriptinfo_dynamic_metadata_parsing_destructured_imports():
+    info = ScriptInfo(EXAMPLE_XPCSHELL_DESTRUCTURED_TEST)
+
+    # The dynamic parsing must succeed, and not fall back on the static parser
+    metadata = info._get_perf_metadata_from_node()
+    assert metadata["owner"] == "Performance Testing Team"
+    assert metadata["name"] == "Example"
+
+    assert info["owner"] == "Performance Testing Team"
+    assert info.script_type == ScriptType.xpcshell
 
 
 @mock.patch("mozperftest.script.ScriptInfo._get_node_builtins", return_value=set())

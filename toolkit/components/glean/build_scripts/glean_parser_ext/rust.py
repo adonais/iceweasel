@@ -71,6 +71,10 @@ def rust_datatypes_filter(value):
                 yield f"::std::borrow::Cow::from({value})"
             elif isinstance(value, str):
                 yield f"{json.dumps(value)}.into()"
+            # bool is a subclass of int, and JSONEncoder already renders it
+            # the way Rust wants, so let it fall through to the default.
+            elif isinstance(value, int) and not isinstance(value, bool):
+                yield rust_int(value)
             elif isinstance(value, Rate):
                 yield "CommonMetricData {"
                 for arg_name in common_metric_data_args:
@@ -124,6 +128,17 @@ def type_name(obj):
         generic = util.Camelize(obj.name) + "Object"
         return f"{class_name(obj.type)}<{generic}>"
     return class_name(obj.type)
+
+
+def rust_int(value: int) -> str:
+    """
+    Renders an integer as a Rust literal with `_` digit separators.
+
+    Metric and ping ids run to eight digits, which clippy::unreadable_literal
+    (rightly) complains about when they're written out bare.
+    """
+
+    return f"{value:_}"
 
 
 def extra_type_name(typ: str) -> str:
@@ -312,20 +327,24 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
                 full_path = f"{category_snake}::{metric_name}"
 
                 if metric.type == "event":
-                    events_by_id[get_metric_id(metric)] = full_path
+                    events_by_id[rust_int(get_metric_id(metric))] = full_path
                     continue
                 if metric.type == "object":
-                    objects_by_id[get_metric_id(metric)] = full_path
+                    objects_by_id[rust_int(get_metric_id(metric))] = full_path
                     continue
                 if metric.type == "dual_labeled_counter":
-                    dual_labeled_counters_by_id[get_metric_id(metric)] = full_path
+                    dual_labeled_counters_by_id[rust_int(get_metric_id(metric))] = (
+                        full_path
+                    )
                     continue
 
                 if getattr(metric, "labeled", False):
                     labeled_type = metric.type[8:]
                     if labeled_type not in labeleds_by_id_by_type:
                         labeleds_by_id_by_type[labeled_type] = {}
-                    labeleds_by_id_by_type[labeled_type][get_metric_id(metric)] = (
+                    labeleds_by_id_by_type[labeled_type][
+                        rust_int(get_metric_id(metric))
+                    ] = (
                         full_path,
                         metric.labels and len(metric.labels),
                     )
@@ -333,7 +352,7 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
 
                 if key not in objs_by_type:
                     objs_by_type[key] = []
-                objs_by_type[key].append((get_metric_id(metric), full_path))
+                objs_by_type[key].append((rust_int(get_metric_id(metric)), full_path))
 
     # Now for the modules for each category.
     template = util.get_jinja2_template(
@@ -346,8 +365,8 @@ def output_rust(objs, output_fd, ping_names_by_app_id, options={}):
             ("structure_type_name", structure_type_name),
             ("ctor", ctor),
             ("extra_keys", extra_keys),
-            ("metric_id", get_metric_id),
-            ("ping_id", get_ping_id),
+            ("metric_id", lambda metric: rust_int(get_metric_id(metric))),
+            ("ping_id", lambda ping: rust_int(get_ping_id(ping))),
         ),
     )
 

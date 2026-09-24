@@ -6,7 +6,6 @@
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["test.wait300msAfterTabSwitch", true],
       ["dom.fullscreen.keyboard_lock.enabled", true],
       [
         "dom.fullscreen.keyboard_lock.long_press_interval",

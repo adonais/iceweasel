@@ -58,11 +58,11 @@
   },
   "twitter": {
     "queryParams": ["ref_src", "ref_url"],
-    "origins": ["www.twitter.com", "twitter.com", "x.com"]
+    "hosts": ["www.twitter.com", "twitter.com", "x.com"]
   },
   "instagram": {
     "queryParams": ["igshid", "ig_rid"],
-    "origins": ["www.instagram.com"]
+    "hosts": ["www.instagram.com"]
   },
   "amazon": {
     "queryParams": [
@@ -105,7 +105,7 @@
       "sr",
       "store_ref"
     ],
-    "origins": [
+    "hosts": [
       "www.amazon.com",
       "www.amazon.de",
       "www.amazon.nl",
@@ -146,11 +146,11 @@
   },
   "handelsblatt": {
     "queryParams": ["share"],
-    "origins": ["www.handelsblatt.com"]
+    "hosts": ["www.handelsblatt.com"]
   },
   "shopee": {
     "queryParams": ["sp_atk", "xptdk"],
-    "origins": [
+    "hosts": [
       "shopee.co.id",
       "shopee.tw",
       "shopee.vn",
@@ -166,23 +166,23 @@
   },
   "tokopedia": {
     "queryParams": ["extParam"],
-    "origins": ["www.tokopedia.com"]
+    "hosts": ["www.tokopedia.com"]
   },
   "spotify": {
     "queryParams": ["si"],
-    "origins": ["open.spotify.com"]
+    "hosts": ["open.spotify.com"]
   },
   "meetup": {
     "queryParams": ["eventOrigin", "recId", "recSource", "searchId"],
-    "origins": ["www.meetup.com"]
+    "hosts": ["www.meetup.com"]
   },
   "facebook": {
     "queryParams": ["__cft__[0]", "__cft__%5B0%5D", "__tn__"],
-    "origins": ["www.facebook.com"]
+    "hosts": ["www.facebook.com"]
   },
   "wikimedia": {
     "queryParams": ["wprov"],
-    "origins": [
+    "hosts": [
       "w.wiki",
       "www.wikidata.org",
       "test.wikidata.org",
@@ -197,14 +197,14 @@
       "is_room_feed",
       "live_from"
     ],
-    "origins": ["www.bilibili.com", "space.bilibili.com", "live.bilibili.com"]
+    "hosts": ["www.bilibili.com", "space.bilibili.com", "live.bilibili.com"]
   },
   "humblebundle": {
     "queryParams": ["hmb_source", "hmb_medium", "hmb_campaign"],
-    "origins": ["www.humblebundle.com"]
+    "hosts": ["www.humblebundle.com"]
   },
   "linkedin": {
     "queryParams": ["rcm"],
-    "origins": ["www.linkedin.com"]
+    "hosts": ["www.linkedin.com"]
   }
 }

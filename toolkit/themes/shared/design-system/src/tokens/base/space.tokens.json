@@ -1,30 +1,23 @@
 {
   "xxsmall": {
-    "comment": "0.125rem",
-    "value": "{dimension.relative.0125}"
+    "value": "0.125rem"
   },
   "xsmall": {
-    "comment": "0.25rem",
-    "value": "{dimension.relative.025}"
+    "value": "0.25rem"
   },
   "small": {
-    "comment": "0.5rem",
-    "value": "{dimension.relative.050}"
+    "value": "0.5rem"
   },
   "medium": {
-    "comment": "0.75rem",
-    "value": "{dimension.relative.075}"
+    "value": "0.75rem"
   },
   "large": {
-    "comment": "1rem",
-    "value": "{dimension.relative.100}"
+    "value": "1rem"
   },
   "xlarge": {
-    "comment": "1.5rem",
-    "value": "{dimension.relative.150}"
+    "value": "1.5rem"
   },
   "xxlarge": {
-    "comment": "2rem",
-    "value": "{dimension.relative.200}"
+    "value": "2rem"
   }
 }

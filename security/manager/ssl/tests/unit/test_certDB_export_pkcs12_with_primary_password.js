@@ -46,15 +46,6 @@ const gPromptFactory = {
   getPrompt: () => gPrompt,
 };
 
-function findCertByCommonName(commonName) {
-  for (let cert of gCertDB.getCerts()) {
-    if (cert.commonName == commonName) {
-      return cert;
-    }
-  }
-  return null;
-}
-
 add_task(async function run_test() {
   let promptFactoryCID = MockRegistrar.register(
     "@mozilla.org/prompter;1",
@@ -73,13 +64,13 @@ add_task(async function run_test() {
   await token.logout();
 
   // Import the certificate and key so we have something to export.
-  let cert = findCertByCommonName(CERT_COMMON_NAME);
+  let cert = await findCertByCommonName(CERT_COMMON_NAME);
   equal(cert, null, "cert should not be found before import");
   let certFile = do_get_file(PKCS12_FILE);
   ok(certFile, `${PKCS12_FILE} should exist`);
   let errorCode = gCertDB.importPKCS12File(certFile, TEST_CERT_PASSWORD);
   equal(errorCode, Ci.nsIX509CertDB.Success, "cert should import");
-  cert = findCertByCommonName(CERT_COMMON_NAME);
+  cert = await findCertByCommonName(CERT_COMMON_NAME);
   notEqual(cert, null, "cert should be found now");
 
   // Log out so we're prompted for the password.

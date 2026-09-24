@@ -4,9 +4,9 @@
 
 //! Generic type for CSS properties that are composed by two dimensions.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::parser::ParserContext;
-use crate::Zero;
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};

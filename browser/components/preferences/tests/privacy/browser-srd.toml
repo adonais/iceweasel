@@ -31,6 +31,8 @@ tags = "os_integration"
 
 ["browser_privacy_ipprotection.js"]
 
+["browser_privacy_ipprotection_siterules_srd.js"]
+
 ["browser_privacy_passwordGenerationAndAutofill_srd.js"]
 
 ["browser_privacy_status_card_srd.js"]

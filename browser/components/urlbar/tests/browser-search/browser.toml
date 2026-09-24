@@ -132,6 +132,12 @@ support-files = [
   "../browser/searchSuggestionEngine.sjs",
 ]
 
+["browser_searchSuggestions_postData.js"]
+support-files = [
+  "../browser/print_postdata.sjs",
+  "../browser/searchSuggestionEngine.sjs",
+]
+
 ["browser_searchTelemetry.js"]
 support-files = [
   "../browser/searchSuggestionEngine.xml",

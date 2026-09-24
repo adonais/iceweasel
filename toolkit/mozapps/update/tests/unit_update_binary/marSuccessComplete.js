@@ -16,6 +16,7 @@ async function run_test() {
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   await checkPostUpdateAppLog();
   checkAppBundleModTime();
+  checkUpdateTelemetry();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile);

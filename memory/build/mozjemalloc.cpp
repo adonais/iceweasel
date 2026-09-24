@@ -136,7 +136,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Likely.h"
@@ -1083,23 +1082,19 @@ void arena_t::InitChunk(arena_chunk_t* aChunk, size_t aMinCommittedPages) {
       gMaxLargeClass;
 }
 
-bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
-  aChunk->mDying = true;
+void arena_t::RemoveChunk(arena_chunk_t* aChunk) {
+  MOZ_ASSERT(aChunk->mArena == this);
 
-  // If the chunk has busy pages that means that a Purge() is in progress.
-  // We can't remove the chunk now, instead Purge() will do it.
-  if (aChunk->mIsPurging) {
-    return false;
-  }
+  // The chunk cannot be in either the spare or dirty chunk lists.
+  MOZ_ASSERT(!mSpares.ElementProbablyInList(aChunk));
+  MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(aChunk));
 
-  if (aChunk->mNumDirty > 0) {
-    MOZ_ASSERT(aChunk->mArena == this);
-    if (mChunksDirty.ElementProbablyInList(aChunk)) {
-      mChunksDirty.remove(aChunk);
-    }
-    mNumDirty -= aChunk->mNumDirty;
-    mStats.committed -= aChunk->mNumDirty;
-  }
+  // RemoveChunk is only called with the spare chunk or after purging, so
+  // the chunk will never be purging.
+  MOZ_ASSERT(!aChunk->mIsPurging);
+
+  mNumDirty -= aChunk->mNumDirty;
+  mStats.committed -= aChunk->mNumDirty;
 
   // Count the number of madvised/fresh pages and update the stats.
   size_t madvised = 0;
@@ -1127,23 +1122,21 @@ bool arena_t::RemoveChunk(arena_chunk_t* aChunk) {
 
   mStats.mapped -= kChunkSize;
   mStats.committed -= gChunkHeaderNumPages - gPagesPerRealPage;
-
-  return true;
 }
 
-arena_chunk_t* arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
-  if (mSpare) {
-    if (!RemoveChunk(mSpare)) {
-      // If we can't remove the spare chunk now purge will finish removing it
-      // later.  Set it to null so that the return below will return null and
-      // our caller won't delete the chunk before Purge() is finished.
-      mSpare = nullptr;
-    }
+void arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
+  // Spare chunks can't exist on the dirty chunks list because they use the
+  // same element field, so remove it from dirty chunks before adding it to
+  // spare chunks.  If called after Purge then the chunk won't be on the
+  // dirty chunks list, the caller must clear aChunk->mIsPurging after this
+  // call.
+  if (aChunk->mNumDirty && !aChunk->mIsPurging) {
+    MOZ_ASSERT(mChunksDirty.ElementProbablyInList(aChunk));
+    mChunksDirty.remove(aChunk);
   }
-
-  arena_chunk_t* chunk_dealloc = mSpare;
-  mSpare = aChunk;
-  return chunk_dealloc;
+  MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(aChunk));
+  MOZ_ASSERT(!mSpares.ElementProbablyInList(aChunk));
+  mSpares.pushFront(aChunk);
 }
 
 arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
@@ -1163,10 +1156,15 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
     run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
     mRunsAvail.Remove(mapelm);
-  } else if (mSpare && !mSpare->mIsPurging) {
-    // Use the spare.
-    arena_chunk_t* chunk = mSpare;
-    mSpare = nullptr;
+  } else if (!mSpares.isEmpty()) {
+    arena_chunk_t* chunk = mSpares.popFront();
+    MOZ_ASSERT(!chunk->mIsPurging);
+
+    if (chunk->mNumDirty) {
+      MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk));
+      mChunksDirty.pushFront(chunk);
+    }
+
     run = (arena_run_t*)(uintptr_t(chunk) +
                          (gChunkHeaderNumPages << gPageSize2Pow));
     MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
@@ -1293,80 +1291,123 @@ size_t arena_t::ExtraCommitPages(size_t aReqPages, size_t aRemainingPages) {
 }
 #endif
 
-ArenaPurgeResult arena_t::Purge(
-    PurgeCondition aCond, PurgeStats& aStats,
-    const Maybe<std::function<bool()>>& aKeepGoing) {
-  arena_chunk_t* chunk = nullptr;
+ArenaPurgeResult arena_t::Purge(PurgeCondition aCond, PurgeStats& aStats,
+                                const Maybe<std::function<bool()>>& aKeepGoing)
+    MOZ_EXCLUDES(mLock) {
+  mLock.Lock();
 
-  // The first critical section will find a chunk with dirty pages.
-  {
-    MaybeMutexAutoLock lock(mLock);
+  if (mMustDeleteAfterPurge) {
+    mIsPurgePending = false;
+    mLock.Unlock();
+    return Dying;
+  }
 
-    if (mMustDeleteAfterPurge) {
-      mIsPurgePending = false;
-      return Dying;
-    }
+  if (!ShouldContinuePurge(aCond)) {
+    mIsPurgePending = false;
+    mLock.Unlock();
+    return ReachedThresholdOrBusy;
+  }
 
+  arena_chunk_t* chunk = PurgeGetSpareChunk(aStats);
+  if (chunk) {
+    // Release the memory outside of the lock.
+    mLock.Unlock();
+    arena_chunk_dealloc(mChunkAllocator, (void*)chunk, kChunkSize);
+    aStats.system_calls++;
+    return NotDone;
+  }
+
+  chunk = PurgeGetDirtyChunk(aCond, aStats);
+  mLock.Unlock();
+  if (chunk) {
+    return PurgeDirtyPages(chunk, aCond, aStats, aKeepGoing);
+  }
+
+  return ReachedThresholdOrBusy;
+}
+
+arena_chunk_t* arena_t::PurgeGetSpareChunk(PurgeStats& aStats)
+    MOZ_REQUIRES(mLock) {
+  if (mSpares.isEmpty()) {
+    return nullptr;
+  }
+
+  // Start flushing our cache of spare chunks.
+  arena_chunk_t* chunk = mSpares.popBack();
+
+  // This is not possible. Not because another thread won't be purging
+  // memory because that is possible (but rare).  But because it'd need
+  // to start purging, then become empty before the purge finishes,
+  // which cannot happen because busy runs won't be merged and it won't
+  // be detected as empty until the end of the purge.
+  MOZ_ASSERT(!chunk->mIsPurging);
+
+  aStats.chunks++;
+  aStats.pages_dirty += chunk->mNumDirty;
+  aStats.pages_total += (kChunkSize >> gPageSize2Pow) - gPagesPerRealPage * 2;
+  RemoveChunk(chunk);
+
+  return chunk;
+}
+
+arena_chunk_t* arena_t::PurgeGetDirtyChunk(PurgeCondition aCond,
+                                           PurgeStats& aStats)
+    MOZ_REQUIRES(mLock) {
 #ifdef MOZ_DEBUG
-    size_t ndirty = 0;
-    for (auto& chunk : mChunksDirty) {
-      ndirty += chunk.mNumDirty;
-    }
-    // Not all dirty chunks are in mChunksDirty as some may not have enough
-    // dirty pages for purging or might currently be being purged.
-    MOZ_ASSERT(ndirty <= mNumDirty);
+  size_t ndirty = 0;
+  for (auto& chunk : mChunksDirty) {
+    ndirty += chunk.mNumDirty;
+  }
+
+  // Spare chunks don't appear in mChunksDirty.
+  for (auto& chunk : mSpares) {
+    ndirty += chunk.mNumDirty;
+  }
+
+  // Not all dirty chunks are in mChunksDirty as some may not have enough
+  // dirty pages for purging or might currently be being purged.
+  MOZ_ASSERT(ndirty <= mNumDirty);
 #endif
 
-    if (!ShouldContinuePurge(aCond)) {
-      mIsPurgePending = false;
-      return ReachedThresholdOrBusy;
-    }
+  // Take a single chunk and attempt to purge some of its dirty pages.  The
+  // loop below will purge memory from the chunk until either:
+  //  * The dirty page count for the arena hits its target,
+  //  * Another thread attempts to delete this chunk, or
+  //  * The chunk has no more dirty pages.
+  // In any of these cases the loop will break and Purge() will return,
+  // which means it may return before the arena meets its dirty page count
+  // target, the return value is used by the caller to call Purge() again
+  // where it will take the next chunk with dirty pages.
+  if (mChunksDirty.isEmpty()) {
+    // We have to clear the flag to preserve the invariant that if Purge()
+    // returns anything other than NotDone then the flag is clear. If
+    // there's more purging work to do in other chunks then either other
+    // calls to Purge() (in other threads) will handle it or we rely on
+    // ShouldStartPurge() returning true at some point in the future.
+    mIsPurgePending = false;
 
-    // Take a single chunk and attempt to purge some of its dirty pages.  The
-    // loop below will purge memory from the chunk until either:
-    //  * The dirty page count for the arena hits its target,
-    //  * Another thread attempts to delete this chunk, or
-    //  * The chunk has no more dirty pages.
-    // In any of these cases the loop will break and Purge() will return, which
-    // means it may return before the arena meets its dirty page count target,
-    // the return value is used by the caller to call Purge() again where it
-    // will take the next chunk with dirty pages.
-    if (mSpare && mSpare->mNumDirty && !mSpare->mIsPurging &&
-        mChunksDirty.ElementProbablyInList(mSpare)) {
-      // If the spare chunk has dirty pages then try to purge these first.
-      //
-      // They're unlikely to be used in the near future because the spare chunk
-      // is only used if there's no run in mRunsAvail suitable.  mRunsAvail
-      // never contains runs from the spare chunk.
-      chunk = mSpare;
-      mChunksDirty.remove(chunk);
-    } else {
-      if (!mChunksDirty.isEmpty()) {
-        chunk = mChunksDirty.popFront();
-      }
-    }
-    if (!chunk) {
-      // We have to clear the flag to preserve the invariant that if Purge()
-      // returns anything other than NotDone then the flag is clear. If there's
-      // more purging work to do in other chunks then either other calls to
-      // Purge() (in other threads) will handle it or we rely on
-      // ShouldStartPurge() returning true at some point in the future.
-      mIsPurgePending = false;
+    // There are chunks with dirty pages (because mNumDirty > 0 above) but
+    // they're not in mChunksDirty, they might not have enough dirty pages.
+    // Or maybe they're busy being purged by other threads.
+    return nullptr;
+  }
 
-      // There are chunks with dirty pages (because mNumDirty > 0 above) but
-      // they're not in mChunksDirty, they might not have enough dirty pages.
-      // Or maybe they're busy being purged by other threads.
-      return ReachedThresholdOrBusy;
-    }
-    MOZ_ASSERT(chunk->mNumDirty > 0);
+  arena_chunk_t* chunk = mChunksDirty.popFront();
+  MOZ_ASSERT(chunk->mNumDirty > 0);
+  MOZ_ASSERT(!chunk->IsEmpty());
 
-    // Mark the chunk as busy so it won't be deleted and remove it from
-    // mChunksDirty so we're the only thread purging it.
-    MOZ_ASSERT(!chunk->mIsPurging);
-    chunk->mIsPurging = true;
-    aStats.chunks++;
-  }  // MaybeMutexAutoLock
+  // Mark the chunk as busy so it won't be deleted and remove it from
+  // mChunksDirty so we're the only thread purging it.
+  MOZ_ASSERT(!chunk->mIsPurging);
+  chunk->mIsPurging = true;
+  aStats.chunks++;
 
+  return chunk;
+}
+
+ArenaPurgeResult arena_t::PurgeDirtyPages(
+    arena_chunk_t* aChunk, PurgeCondition aCond, PurgeStats& aStats,
+    const Maybe<std::function<bool()>>& aKeepGoing) MOZ_EXCLUDES(mLock) {
   // True if we should continue purging memory from this arena.
   bool continue_purge_arena = true;
 
@@ -1383,23 +1424,21 @@ ArenaPurgeResult arena_t::Purge(
   while (continue_purge_chunk && continue_purge_arena && keep_going) {
     // This structure is used to communicate between the two PurgePhase
     // functions.
-    PurgeInfo purge_info(*this, chunk, aStats);
+    PurgeInfo purge_info(*this, aChunk, aStats);
 
-    bool chunk_is_dying;
     {
       // Phase 1: Find pages that need purging.
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
-      MOZ_ASSERT(chunk->mIsPurging);
+      MOZ_ASSERT(aChunk->mIsPurging);
 
       if (purge_info.mArena.mMustDeleteAfterPurge) {
-        chunk->mIsPurging = false;
+        aChunk->mIsPurging = false;
         purge_info.mArena.mIsPurgePending = false;
         return Dying;
       }
 
       continue_purge_chunk = purge_info.FindDirtyPages(purged_once);
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
-      chunk_is_dying = chunk->mDying;
 
       // The code below will exit returning ReachedThresholdOrBusy if these are
       // both false, so clear mIsPurgePending while we still hold the
@@ -1409,12 +1448,6 @@ ArenaPurgeResult arena_t::Purge(
       }
     }
     if (!continue_purge_chunk) {
-      if (chunk_is_dying) {
-        // Phase one already unlinked the chunk from structures, we just need to
-        // release the memory.
-        arena_chunk_dealloc(purge_info.mArena.mChunkAllocator, (void*)chunk,
-                            kChunkSize);
-      }
       // There's nothing else to do here, our caller may execute Purge() again
       // if continue_purge_arena is true.
       return continue_purge_arena ? NotDone : ReachedThresholdOrBusy;
@@ -1438,22 +1471,19 @@ ArenaPurgeResult arena_t::Purge(
     // potentially expensive operation.
     keep_going = aKeepGoing ? (*aKeepGoing)() : true;
 
-    arena_chunk_t* chunk_to_release = nullptr;
     bool arena_is_dying;
     {
       // Phase 2: Mark the pages with their final state (madvised or
       // decommitted) and fix up any other bookkeeping.
       MaybeMutexAutoLock lock(purge_info.mArena.mLock);
-      MOZ_ASSERT(chunk->mIsPurging);
+      MOZ_ASSERT(aChunk->mIsPurging);
 
       // We can't early exit if the arena is dying, we have to finish the purge
       // (which restores the state so the destructor will check it) and maybe
       // release the old spare arena.
       arena_is_dying = purge_info.mArena.mMustDeleteAfterPurge;
 
-      auto [cpc, ctr] = purge_info.UpdatePagesAndCounts();
-      continue_purge_chunk = cpc;
-      chunk_to_release = ctr;
+      continue_purge_chunk = purge_info.UpdatePagesAndCounts();
       continue_purge_arena = purge_info.mArena.ShouldContinuePurge(aCond);
 
       if (!continue_purge_chunk || !continue_purge_arena || !keep_going) {
@@ -1468,12 +1498,6 @@ ArenaPurgeResult arena_t::Purge(
       }
     }  // MaybeMutexAutoLock
 
-    // Phase 2 can release the spare chunk (not always == chunk) so an extra
-    // parameter is used to return that chunk.
-    if (chunk_to_release) {
-      arena_chunk_dealloc(purge_info.mArena.mChunkAllocator,
-                          (void*)chunk_to_release, kChunkSize);
-    }
     if (arena_is_dying) {
       return Dying;
     }
@@ -1523,7 +1547,7 @@ ArenaPurgeResult arena_t::PurgeLoop(PurgeCondition aCond, const char* aCaller,
 bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
   // It's possible that the previously dirty pages have now been
   // allocated or the chunk is dying.
-  if (mChunk->mNumDirty == 0 || mChunk->mDying) {
+  if (mChunk->mNumDirty == 0) {
     // Add the chunk to the mChunksMAdvised list if it's had at least one
     // madvise.
     FinishPurgingInChunk(aPurgedOnce, false);
@@ -1581,8 +1605,9 @@ bool arena_t::PurgeInfo::FindDirtyPages(bool aPurgedOnce) {
   mChunk->mPageMap[FreeRunLastInd()].bits |= CHUNK_MAP_BUSY;
 
   // Before we unlock ensure that no other thread can allocate from these
-  // pages.
-  if (mArena.mSpare != mChunk) {
+  // pages.  Only chunks that are not spare, and therefore not-empty will be in
+  // the mRunsAvail list.
+  if (!mChunk->IsEmpty()) {
     mArena.mRunsAvail.Remove(&mChunk->mPageMap[mFreeRunInd]);
   }
   return true;
@@ -1689,7 +1714,7 @@ bool arena_t::PurgeInfo::ScanForLastDirtyPage() {
   return false;
 }
 
-std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
+bool arena_t::PurgeInfo::UpdatePagesAndCounts() {
   size_t num_madvised = 0;
   size_t num_decommitted = 0;
   size_t num_fresh = 0;
@@ -1746,32 +1771,14 @@ std::pair<bool, arena_chunk_t*> arena_t::PurgeInfo::UpdatePagesAndCounts() {
   // Note that this code can't update the dirty run hint.  There may be other
   // dirty pages within the same run.
 
-  if (mChunk->mDying) {
-    // A dying chunk doesn't need to be coaleased, it will already have one
-    // large run.
-    MOZ_ASSERT(mFreeRunInd == gChunkHeaderNumPages &&
-               mFreeRunLen ==
-                   gChunkNumPages - gChunkHeaderNumPages - gPagesPerRealPage);
-
-    return std::make_pair(false, mChunk);
-  }
-
-  bool was_empty = mChunk->IsEmpty();
   mFreeRunInd =
       mArena.TryCoalesce(mChunk, mFreeRunInd, mFreeRunLen, FreeRunLenBytes());
 
-  arena_chunk_t* chunk_to_release = nullptr;
-  if (!was_empty && mChunk->IsEmpty()) {
-    // This now-empty chunk will become the spare chunk and the spare
-    // chunk will be returned for deletion.
-    chunk_to_release = mArena.DemoteChunkToSpare(mChunk);
-  }
-
-  if (mChunk != mArena.mSpare) {
+  if (!mChunk->IsEmpty()) {
     mArena.mRunsAvail.Insert(&mChunk->mPageMap[mFreeRunInd]);
   }
 
-  return std::make_pair(mChunk->mNumDirty != 0, chunk_to_release);
+  return mChunk->mNumDirty != 0;
 }
 
 void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised,
@@ -1779,24 +1786,19 @@ void arena_t::PurgeInfo::FinishPurgingInChunk(bool aAddToMAdvised,
   // If there's no more purge activity for this chunk then finish up while
   // we still have the lock.
   MOZ_ASSERT(mChunk->mIsPurging);
-  mChunk->mIsPurging = false;
 
-  if (mChunk->mDying) {
-    // Another thread tried to delete this chunk while we weren't holding
-    // the lock.  Now it's our responsibility to finish deleting it.
-
-    DebugOnly<bool> release_chunk = mArena.RemoveChunk(mChunk);
-    // RemoveChunk() can't return false because mIsPurging was false
-    // during the call.
-    MOZ_ASSERT(release_chunk);
-    return;
-  }
-
-  if (mChunk->mNumDirty != 0 && aAddToDirty) {
+  if (mChunk->IsEmpty()) {
+    // This now-empty chunk will become the spare chunk and the spare
+    // chunk will be returned for deletion.  Note that mChunk->mIsPurging is
+    // still true for this call, that tells DemoteChunkToSpare not to remove
+    // the chunk from mChunksDirty.
+    mArena.DemoteChunkToSpare(mChunk);
+  } else if (mChunk->mNumDirty != 0 && aAddToDirty) {
     // Put the semi-processed chunk on the front of the queue so that it is
     // the first chunk processed next time.
     mArena.mChunksDirty.pushFront(mChunk);
   }
+  mChunk->mIsPurging = false;
 
 #ifdef MALLOC_DOUBLE_PURGE
   if (aAddToMAdvised) {
@@ -1876,7 +1878,7 @@ size_t arena_t::TryCoalesce(arena_chunk_t* aChunk, size_t run_ind,
   return run_ind;
 }
 
-arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
+void arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   arena_chunk_t* chunk = GetChunkForPtr(aRun);
   size_t run_ind =
       (size_t)((uintptr_t(aRun) - uintptr_t(chunk)) >> gPageSize2Pow);
@@ -1927,15 +1929,14 @@ arena_chunk_t* arena_t::DallocRun(arena_run_t* aRun, bool aDirty) {
   }
 
   // Deallocate chunk if it is now completely unused.
-  arena_chunk_t* chunk_dealloc = nullptr;
   if (chunk->IsEmpty()) {
-    chunk_dealloc = DemoteChunkToSpare(chunk);
+    if (!chunk->mIsPurging) {
+      DemoteChunkToSpare(chunk);
+    }
   } else {
     // Insert into tree of available runs, now that coalescing is complete.
     mRunsAvail.Insert(&chunk->mPageMap[run_ind]);
   }
-
-  return chunk_dealloc;
 }
 
 void arena_t::TrimRunHead(arena_chunk_t* aChunk, arena_run_t* aRun,
@@ -1952,10 +1953,7 @@ void arena_t::TrimRunHead(arena_chunk_t* aChunk, arena_run_t* aRun,
   aChunk->mPageMap[pageind + head_npages].bits =
       aNewSize | CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
 
-  DebugOnly<arena_chunk_t*> no_chunk = DallocRun(aRun, false);
-  // This will never release a chunk as there's still at least one allocated
-  // run.
-  MOZ_ASSERT(!no_chunk);
+  DallocRun(aRun, false);
 }
 
 void arena_t::TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun,
@@ -1972,12 +1970,7 @@ void arena_t::TrimRunTail(arena_chunk_t* aChunk, arena_run_t* aRun,
   aChunk->mPageMap[pageind + npages].bits =
       (aOldSize - aNewSize) | CHUNK_MAP_LARGE | CHUNK_MAP_ALLOCATED;
 
-  DebugOnly<arena_chunk_t*> no_chunk =
-      DallocRun((arena_run_t*)(uintptr_t(aRun) + aNewSize), aDirty);
-
-  // This will never release a chunk as there's still at least one allocated
-  // run.
-  MOZ_ASSERT(!no_chunk);
+  DallocRun((arena_run_t*)(uintptr_t(aRun) + aNewSize), aDirty);
 }
 
 arena_run_t* arena_t::GetNewEmptyBinRun(arena_bin_t* aBin) {
@@ -2638,8 +2631,8 @@ MOZ_NEVER_INLINE jemalloc_ptr_info_t* jemalloc_ptr_info(const void* aPtr) {
 }
 }  // namespace Debug
 
-arena_chunk_t* arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
-                                    arena_chunk_map_t* aMapElm) {
+void arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
+                          arena_chunk_map_t* aMapElm) {
   arena_run_t* run;
   arena_bin_t* bin;
   size_t size;
@@ -2653,7 +2646,6 @@ arena_chunk_t* arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
 
   arena_run_reg_dalloc(run, bin, aPtr, size);
   run->mNumFree++;
-  arena_chunk_t* dealloc_chunk = nullptr;
 
   if (run->mNumFree == bin->mRunNumRegions) {
     // This run is entirely freed, remove it from our bin.
@@ -2662,7 +2654,7 @@ arena_chunk_t* arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
 #endif
     MOZ_ASSERT(bin->mNonFullRuns.ElementProbablyInList(run));
     bin->mNonFullRuns.remove(run);
-    dealloc_chunk = DallocRun(run, true);
+    DallocRun(run, true);
     bin->mNumRuns--;
   } else if (run->mNumFree == 1) {
     // This is first slot we freed from this run, start tracking.
@@ -2680,11 +2672,9 @@ arena_chunk_t* arena_t::DallocSmall(arena_chunk_t* aChunk, void* aPtr,
 
   mStats.allocated_small -= size;
   mStats.operations++;
-
-  return dealloc_chunk;
 }
 
-arena_chunk_t* arena_t::DallocLarge(arena_chunk_t* aChunk, void* aPtr) {
+void arena_t::DallocLarge(arena_chunk_t* aChunk, void* aPtr) {
   MOZ_DIAGNOSTIC_ASSERT((uintptr_t(aPtr) & gPageSizeMask) == 0);
   size_t pageind = (uintptr_t(aPtr) - uintptr_t(aChunk)) >> gPageSize2Pow;
   size_t size = aChunk->mPageMap[pageind].bits & ~gPageSizeMask;
@@ -2692,7 +2682,7 @@ arena_chunk_t* arena_t::DallocLarge(arena_chunk_t* aChunk, void* aPtr) {
   mStats.allocated_large -= size;
   mStats.operations++;
 
-  return DallocRun((arena_run_t*)aPtr, true);
+  DallocRun((arena_run_t*)aPtr, true);
 }
 
 static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
@@ -2713,7 +2703,6 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
     MaybePoison(aPtr, info.Size());
   }
 
-  arena_chunk_t* chunk_dealloc_delay = nullptr;
   purge_action_t purge_action;
   {
     MOZ_DIAGNOSTIC_ASSERT(arena->mLock.SafeOnThisThread());
@@ -2727,18 +2716,13 @@ static inline void arena_dalloc(void* aPtr, size_t aOffset, arena_t* aArena) {
                        "Double-free?");
     if ((mapelm->bits & CHUNK_MAP_LARGE) == 0) {
       // Small allocation.
-      chunk_dealloc_delay = arena->DallocSmall(chunk, aPtr, mapelm);
+      arena->DallocSmall(chunk, aPtr, mapelm);
     } else {
       // Large allocation.
-      chunk_dealloc_delay = arena->DallocLarge(chunk, aPtr);
+      arena->DallocLarge(chunk, aPtr);
     }
 
     purge_action = arena->ShouldStartPurge();
-  }
-
-  if (chunk_dealloc_delay) {
-    arena_chunk_dealloc(arena->mChunkAllocator, (void*)chunk_dealloc_delay,
-                        kChunkSize);
   }
 
   arena->MayDoOrQueuePurge(purge_action, "arena_dalloc");
@@ -3047,8 +3031,9 @@ arena_t::~arena_t() {
                      "Arena is still registered");
   MOZ_RELEASE_ASSERT(!mStats.allocated_small && !mStats.allocated_large,
                      "Arena is not empty");
-  if (mSpare) {
-    arena_chunk_dealloc(mChunkAllocator, mSpare, kChunkSize);
+  while (!mSpares.isEmpty()) {
+    arena_chunk_t* spare = mSpares.popFront();
+    arena_chunk_dealloc(mChunkAllocator, spare, kChunkSize);
   }
   for (i = 0; i < NUM_SMALL_CLASSES; i++) {
     MOZ_RELEASE_ASSERT(mBins[i].mNonFullRuns.isEmpty(), "Bin is not empty");
@@ -3462,9 +3447,11 @@ static bool malloc_init_hard() {
 #ifndef MALLOC_STATIC_PAGESIZE
   DefineGlobals();
 #endif
-  gRecycledSize = 0;
 
-  chunks_init();
+#ifndef XP_WIN
+  gCache.Init();
+#endif
+
   huge_init();
   sBaseAlloc.Init();
 
@@ -4148,8 +4135,8 @@ void ArenaCollection::MayPurgeAll(PurgeCondition aCond, const char* aCaller) {
       ArenaPurgeResult pr = arena->PurgeLoop(aCond, aCaller);
 
       // No arena can die here because we're holding the arena collection lock.
-      // Arenas are removed from the collection before setting their mDying
-      // flag.
+      // Arenas are removed from the collection before setting their
+      // mMustDeleteAfterPurge flag.
       MOZ_RELEASE_ASSERT(pr != ArenaPurgeResult::Dying);
     }
   }

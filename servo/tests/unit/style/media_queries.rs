@@ -7,13 +7,13 @@ use euclid::Size2D;
 use servo_arc::Arc;
 use servo_url::ServoUrl;
 use std::borrow::ToOwned;
+use style::Atom;
 use style::context::QuirksMode;
 use style::media_queries::*;
 use style::servo::media_queries::*;
 use style::shared_lock::SharedRwLock;
 use style::stylesheets::{AllRules, CssRule, Origin, Stylesheet, StylesheetInDocument};
-use style::values::{specified, CustomIdent};
-use style::Atom;
+use style::values::{CustomIdent, specified};
 use style_traits::ToCss;
 
 fn test_media_rule<F>(css: &str, callback: F)

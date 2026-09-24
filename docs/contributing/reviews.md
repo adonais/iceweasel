@@ -242,6 +242,9 @@ For more information about the review process, see the {ref}`Code Review FAQ`.
    * - #nss-reviewers
      - Network Security Services (NSS)
      - `Member list <https://phabricator.services.mozilla.com/project/members/156/>`__
+   * - #pdfjs-reviewers
+     - `Core: PDF </mots/index.html#core-pdf>`__ (the `pdf.js <https://github.com/mozilla/pdf.js>`__ viewer and its Gecko integration)
+     - `Member list <https://phabricator.services.mozilla.com/project/members/152/>`__
    * - #perftest-reviewers
      - Perf Tests
      - `Member list <https://phabricator.services.mozilla.com/project/members/102/>`__
@@ -287,6 +290,9 @@ For more information about the review process, see the {ref}`Code Review FAQ`.
    * - #theme or #desktop-theme-reviewers
      - `Firefox: Theme and Toolkit: Themes </mots/index.html#desktop-theme>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/141/>`__
+   * - #toolkit-telemetry-reviewers-rotation
+     - `Toolkit :: Telemetry </mots/index.html#telemetry>`__
+     - `Member list <https://phabricator.services.mozilla.com/project/members/229/>`__
    * - #translations-reviewers
      - `Firefox: Translation <https://firefox-source-docs.mozilla.org/mots/index.html#translation>`__
      - `Member list <https://phabricator.services.mozilla.com/project/members/192/>`__

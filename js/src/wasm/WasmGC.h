@@ -99,7 +99,6 @@ struct StackMapHeader {
                 "limited size of the offset field");
 
   bool operator==(const StackMapHeader& rhs) const = default;
-  bool operator!=(const StackMapHeader& rhs) const = default;
 };
 
 WASM_DECLARE_CACHEABLE_POD(StackMapHeader);

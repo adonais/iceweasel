@@ -18,7 +18,7 @@ DEFAULT_MTIME = 1451606400
 # which changes the output of tar creation compared to earlier versions.
 # As this code is used to generate tar files that are meant to be deterministic
 # across versions of python (specifically, it's used as part of computing the hash
-# of docker images, which needs to be identical between CI (which uses python 3.8),
+# of docker images, which needs to be identical between CI (which uses python 3.10),
 # and developer environments (using arbitrary versions of python, at this point,
 # most probably more recent than 3.9)).
 # What we do is subblass TarInfo so that if used on python >= 3.9, it reproduces the

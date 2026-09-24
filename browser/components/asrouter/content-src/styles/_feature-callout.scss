@@ -388,7 +388,7 @@
           border: 1px solid var(--fc-border);
           box-shadow: 0 2px 5px rgba(0, 0, 0, 15%);
           border-radius: var(--panel-border-radius, var(--border-radius-large));
-          padding: var(--callout-padding, var(--dimension-20));
+          padding: var(--callout-padding, 20px);
           width: 25em;
           gap: 16px;
           background: var(--fc-background);
@@ -511,7 +511,7 @@
             // 16px is the callout's default bottom padding. The CTAs are 24px
             // tall by default, and the steps are 8px tall. So we need to offset
             // the steps by half the difference in order to center them.
-            bottom: calc(var(--callout-padding, var(--dimension-20)) + (var(--cta-height, var(--button-min-height-small, 24px)) / 2) - 4px);
+            bottom: calc(var(--callout-padding, 20px) + (var(--cta-height, var(--button-min-height-small, 24px)) / 2) - 4px);
             padding-block: 0;
 
             .indicator {

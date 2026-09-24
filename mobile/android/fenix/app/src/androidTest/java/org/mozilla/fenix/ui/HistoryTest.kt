@@ -314,7 +314,7 @@ class HistoryTest {
                 verifySearchEngineIcon("History")
                 verifySearchBarPlaceholder("Search history")
                 verifySearchBarPosition()
-                tapOutsideToDismissSearchBar(defaultWebPage.url.toString())
+                mDevice.pressBack()
                 verifySearchToolbar(false)
                 exitMenu()
             }
@@ -333,8 +333,10 @@ class HistoryTest {
             .clickSearchButton {
                 verifySearchToolbar(true)
                 verifySearchBarPosition()
-                pressBack()
+                mDevice.pressBack()
+                verifySearchToolbar(false)
             }
+        mDevice.waitForIdle()
         historyMenu(composeTestRule) {
             verifyHistoryMenuView(historyItemExists = true)
         }
@@ -413,6 +415,7 @@ class HistoryTest {
                 verifySponsoredSuggestionsResults(thirdWebPage.url.toString(), searchTerm = "generic")
                 pressBack()
             }
+        mDevice.waitForIdle()
         historyMenu(composeTestRule) {
                 clickDeleteHistoryButton(thirdWebPage.title)
                 verifyHistoryItemExists(false, firstWebPage.title)

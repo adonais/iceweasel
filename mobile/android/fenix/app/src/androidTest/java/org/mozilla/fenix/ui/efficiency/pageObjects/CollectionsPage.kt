@@ -7,9 +7,11 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.navigation.PageObjectContract
+import org.mozilla.fenix.ui.efficiency.navigation.PageObjectKind
 import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors
 
+@PageObjectContract(PageObjectKind.SELECTOR_ONLY)
 class CollectionsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "CollectionsPage"
 
@@ -19,7 +21,5 @@ class CollectionsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTest
     // selector namespace after arriving by other means — it never calls navigateToPage() on it. With no
     // edge, navigateToPage() fails loudly instead of pretending to have navigated.
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return CollectionsSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = CollectionsSelectors
 }

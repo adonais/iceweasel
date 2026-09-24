@@ -656,6 +656,8 @@ class Accessible {
 
   bool IsHTMLSpinner() const { return mType == eHTMLSpinnerType; }
 
+  bool IsHTMLRange() const { return mType == eHTMLRangeType; }
+
   bool IsHTMLTable() const { return mType == eHTMLTableType; }
   bool IsHTMLTableCell() const { return mType == eHTMLTableCellType; }
   bool IsHTMLTableRow() const { return mType == eHTMLTableRowType; }
@@ -699,7 +701,8 @@ class Accessible {
   }
 
   bool IsTextField() const {
-    return mType == eHTMLTextFieldType || mType == eHTMLTextPasswordFieldType;
+    return mType == eHTMLTextFieldType || mType == eHTMLTextPasswordFieldType ||
+           mType == eHTMLSpinnerType;
   }
 
   bool IsDateTimeField() const { return mType == eHTMLDateTimeFieldType; }

@@ -26,6 +26,7 @@ static int testRegExpFuzz(const uint8_t* buf, size_t size) {
   auto gcGuard = mozilla::MakeScopeExit([&] {
     JS::PrepareForFullGC(gCx);
     JS::NonIncrementalGC(gCx, JS::GCOptions::Normal, JS::GCReason::API);
+    gCx->clearPendingException();
   });
 
   const uint32_t HEADER_LEN = 2;
@@ -58,12 +59,10 @@ static int testRegExpFuzz(const uint8_t* buf, size_t size) {
   Rooted<JSAtom*> pattern(gCx,
                           AtomizeUTF8Chars(gCx, patternChars, patternLength));
   if (!pattern) {
-    ReportOutOfMemory(gCx);
     return 0;
   }
   Rooted<JSAtom*> input(gCx, AtomizeUTF8Chars(gCx, inputChars, inputLength));
   if (!input) {
-    ReportOutOfMemory(gCx);
     return 0;
   }
 

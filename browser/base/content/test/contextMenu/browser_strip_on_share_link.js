@@ -10,10 +10,7 @@ let url =
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["privacy.query_stripping.strip_list", "stripParam"],
-    ],
+    set: [["privacy.query_stripping.strip_list", "stripParam"]],
   });
 
   // Get the list service so we can wait for it to be fully initialized before running tests.
@@ -145,6 +142,128 @@ add_task(async function testStripNothingDisabled() {
   });
 });
 
+// Bug 1960853 - Tests
+
+// Ensuring a valueless param does not gain a wrong '='
+add_task(async function testEqualsSignNotAddedToValuelessParam() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// Same bug, but with the valueless param appearing before the
+// stripped param instead of after.
+add_task(async function testValuelessParamBeforeStrippedParam() {
+  let validUrl = "https://www.example.com/?x&utm_ad=test";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// A genuinely empty value (trailing '=') must be preserved
+add_task(async function testGenuineEmptyValuePreserved() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x=";
+  let shortenedUrl = "https://www.example.com/?x=";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// A mix of a valueless param and a valued param surviving stripping.
+add_task(async function testMixedValuelessAndValuedParams() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x&y=1";
+  let shortenedUrl = "https://www.example.com/?x&y=1";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// Multiple valueless params surviving stripping in a row.
+add_task(async function testMultipleValuelessParams() {
+  let validUrl = "https://www.example.com/?utm_ad=test&x&y";
+  let shortenedUrl = "https://www.example.com/?x&y";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// Stripping the only query param removes the '?' too.
+add_task(async function testStrippingOnlyParamRemovesQuestionMark() {
+  let validUrl = "https://www.example.com/?utm_ad";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// An '=' inside a value must not be mistaken for the name/value
+// separator when re-splitting the surviving query string.
+add_task(async function testEqualsSignInsideValueNotSplitIncorrectly() {
+  let validUrl = "https://www.example.com/?utm_ad=test&a=b=c";
+  let shortenedUrl = "https://www.example.com/?a=b=c";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// An empty name with a value survives stripping unchanged.
+add_task(async function testEmptyNameWithValue() {
+  let validUrl = "https://www.example.com/?utm_ad=test&=v";
+  let shortenedUrl = "https://www.example.com/?=v";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: false,
+  });
+});
+
+// Nothing on the strip list matches: early return, URI left untouched,
+// menu item disabled.
+add_task(async function testQueryParamNotOnListUnchanged() {
+  let validUrl = "https://www.example.com/?x";
+  let shortenedUrl = "https://www.example.com/?x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+    expectedDisabled: true,
+  });
+});
+
 // Ensuring clean copy does works correctly when encountering a nested link that throws causes an error to
 // occur. In this case, a nested magnetic link was used as it causes an error to be thrown.
 add_task(async function testErrorHandlingForNestedLinks() {
@@ -194,11 +313,11 @@ async function testStripOnShare({
       },
       example: {
         queryParams: ["test_2", "test_1"],
-        origins: ["www.example.com"],
+        hosts: ["www.example.com"],
       },
       exampleNet: {
         queryParams: ["test_3", "test_4"],
-        origins: ["www.example.net"],
+        hosts: ["www.example.net"],
       },
     };
 

@@ -80,7 +80,7 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        // ..and test that we strip of URLs from remoteTypes
        "blob://000-000"_ns,
        nsContentPolicyType::TYPE_SCRIPT,
-       "webIsolated=https://blob.example/"_ns,
+       "webIsolated=https://blob.example"_ns,
        {"bloburi"_ns, "TYPE_SCRIPT"_ns, "webIsolated"_ns, "unknown"_ns, ""_ns}},
       {// test for cases where finalURI is null, due to a broken nested URI
        // .. like malformed moz-icon URLs
@@ -195,9 +195,12 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
       mockLoadInfo->AppendRedirectHistoryEntry(redirectChannel, false);
     }
 
+    auto remoteType = mozilla::dom::RemoteType::Parse(currentTest.remoteType);
+    ASSERT_TRUE(remoteType);
+
     // this will record the event
-    nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
-        mockLoadInfo, uri, currentTest.remoteType);
+    nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(mockLoadInfo,
+                                                               uri, remoteType);
 
     // let's inspect the recorded Glean events
     auto optEvents =

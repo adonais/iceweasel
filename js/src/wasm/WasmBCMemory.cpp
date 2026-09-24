@@ -876,7 +876,7 @@ void BaseCompiler::doLoadCommon(MemoryAccessDesc* access, AccessCheck check,
       free(rp);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegType rp = popMemoryAccess<RegType>(access, &check);
       RegV128 rv = needV128();
@@ -966,7 +966,7 @@ void BaseCompiler::doStoreCommon(MemoryAccessDesc* access, AccessCheck check,
       free(rv);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 rv = popV128();
       RegType rp = popMemoryAccess<RegType>(access, &check);
@@ -2115,7 +2115,51 @@ static void Deallocate(BaseCompiler* bc, RegI32 rexpect, RegI32 rnew,
   bc->freeI32(rexpect);
 }
 
-#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+#elif defined(JS_CODEGEN_LOONG64)
+
+struct Temps {
+  RegI32 t0, t1, t2;
+};
+
+static void PopAndAllocate(BaseCompiler* bc, ValType type,
+                           Scalar::Type viewType, RegI32* rexpect, RegI32* rnew,
+                           RegI32* rd, Temps* temps) {
+  if (type == ValType::I64) {
+    *rnew = bc->popI64ToI32();
+    *rexpect = bc->popI64ToI32();
+    // Architecture-specific i64-to-i32.
+    bc->masm.move64To32(Register64(*rexpect), *rexpect);
+  } else {
+    *rnew = bc->popI32();
+    *rexpect = bc->popI32();
+  }
+  const bool needsLlScLoop =
+      Scalar::byteSize(viewType) < 4 && !LOONG64Flags::HasLamcasExtension();
+  if (needsLlScLoop) {
+    temps->t0 = bc->needI32();
+    temps->t1 = bc->needI32();
+    temps->t2 = bc->needI32();
+  }
+  *rd = bc->needI32();
+}
+
+static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
+                    Address srcAddr, RegI32 rexpect, RegI32 rnew, RegI32 rd,
+                    const Temps& temps) {
+  bc->masm.wasmCompareExchange(access, srcAddr, rexpect, rnew, temps.t0,
+                               temps.t1, temps.t2, rd);
+}
+
+static void Deallocate(BaseCompiler* bc, RegI32 rexpect, RegI32 rnew,
+                       const Temps& temps) {
+  bc->freeI32(rnew);
+  bc->freeI32(rexpect);
+  bc->maybeFree(temps.t0);
+  bc->maybeFree(temps.t1);
+  bc->maybeFree(temps.t2);
+}
+
+#elif defined(JS_CODEGEN_MIPS64)
 
 struct Temps {
   RegI32 t0, t1, t2;
@@ -2580,7 +2624,7 @@ void BaseCompiler::memCopyInlineM32() {
 
   // Compute the number of copies of each width we will need to do
   size_t remainder = length;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   size_t numCopies16 = 0;
   if (MacroAssembler::SupportsFastUnalignedFPAccesses()) {
     numCopies16 = remainder / sizeof(V128);
@@ -2603,7 +2647,7 @@ void BaseCompiler::memCopyInlineM32() {
   bool omitBoundsCheck = false;
   size_t offset = 0;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     RegI32 temp = needI32();
     moveI32(src, temp);
@@ -2758,7 +2802,7 @@ void BaseCompiler::memCopyInlineM32() {
   }
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     offset -= sizeof(V128);
 
@@ -2799,7 +2843,7 @@ void BaseCompiler::memFillInlineM32() {
 
   // Compute the number of copies of each width we will need to do
   size_t remainder = length;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   size_t numCopies16 = 0;
   if (MacroAssembler::SupportsFastUnalignedFPAccesses()) {
     numCopies16 = remainder / sizeof(V128);
@@ -2819,7 +2863,7 @@ void BaseCompiler::memFillInlineM32() {
   MOZ_ASSERT(numCopies2 <= 1 && numCopies1 <= 1);
 
   // Generate splatted definitions for wider fills as needed
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   V128 val16(value);
 #endif
 #ifdef JS_64BIT
@@ -2904,7 +2948,7 @@ void BaseCompiler::memFillInlineM32() {
   }
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   for (uint32_t i = 0; i < numCopies16; i++) {
     offset -= sizeof(V128);
 
@@ -2930,7 +2974,7 @@ void BaseCompiler::memFillInlineM32() {
 //
 // SIMD and Relaxed SIMD.
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::loadSplat(MemoryAccessDesc* access) {
   // We can implement loadSplat mostly as load + splat because the push of the
   // result onto the value stack in loadCommon normally will not generate any
@@ -3074,7 +3118,7 @@ void BaseCompiler::storeLane(MemoryAccessDesc* access, uint32_t laneIndex) {
 
   storeCommon(access, AccessCheck(), type);
 }
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
 }  // namespace wasm
 }  // namespace js

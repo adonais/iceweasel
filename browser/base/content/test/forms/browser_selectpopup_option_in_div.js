@@ -12,10 +12,7 @@ const PAGE_CONTENT = `
 // select is enabled, so the dropdown has to list every <option> either way.
 async function testOptionsInDiv(customizableSelect) {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["dom.select.customizable_select.enabled", customizableSelect],
-    ],
+    set: [["dom.select.customizable_select.enabled", customizableSelect]],
   });
 
   const pageUrl = "data:text/html," + encodeURIComponent(PAGE_CONTENT);

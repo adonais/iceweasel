@@ -11,12 +11,11 @@ use crate::composite::{NativeSurfaceId, NativeTileId};
 use crate::debug_colors;
 use crate::debug_font_data;
 use crate::debug_item::DebugItem;
-use crate::device::{Device, Program, Texture, TextureSlot, VertexDescriptor, ShaderError, VAO};
-use crate::device::{DrawTarget, ReadTarget, TextureFlags};
+use crate::device::{BlendMode, Device, Program, Texture, TextureSlot, VertexDescriptor, ShaderError, VAO};
+use crate::device::{DrawTarget, LoadOp, ReadTarget, RenderPassDescriptor, TextureFlags};
 use crate::device::{TextureFilter, VertexAttribute, VertexAttributeKind, VertexUsageHint};
 use euclid::{rect, Point2D, Rect, Size2D, Transform3D, default};
 use crate::internal_types::{RenderTargetInfo, Swizzle};
-use std::f32;
 
 use super::{PipelineInfo, TextureResolver};
 
@@ -321,9 +320,8 @@ impl DebugRenderer {
         surface_origin_is_top_left: bool,
     ) {
         if let Some(viewport_size) = viewport_size {
-            device.disable_depth();
-            device.set_blend(true);
-            device.set_blend_mode_premultiplied_alpha();
+            device.set_depth_test(None);
+            device.set_blend_mode(BlendMode::PremultipliedAlpha);
 
             let (bottom, top) = if surface_origin_is_top_left {
                 (0.0, viewport_size.height as f32 * scale)
@@ -458,7 +456,6 @@ impl DebugOverlayState {
 /// Update the state of any debug / profiler overlays. This is currently only needed
 /// when running with the native compositor enabled.
 pub fn update_debug_overlay(
-    device: &mut Device,
     compositor_config: &mut CompositorConfig,
     compositor_kind: CompositorKind,
     state: &mut DebugOverlayState,
@@ -487,7 +484,7 @@ pub fn update_debug_overlay(
         // the size has changed.
         if let Some(current_size) = state.current_size {
             if !state.is_enabled || current_size != framebuffer_size {
-                compositor.destroy_surface(device, NativeSurfaceId::DEBUG_OVERLAY);
+                compositor.destroy_surface(NativeSurfaceId::DEBUG_OVERLAY);
                 state.current_size = None;
             }
         }
@@ -495,16 +492,12 @@ pub fn update_debug_overlay(
         // Allocate a new surface, if we need it and there isn't one.
         if state.is_enabled && state.current_size.is_none() {
             compositor.create_surface(
-                device,
                 NativeSurfaceId::DEBUG_OVERLAY,
                 DeviceIntPoint::zero(),
                 framebuffer_size,
                 false,
             );
-            compositor.create_tile(
-                device,
-                NativeTileId::DEBUG_OVERLAY,
-            );
+            compositor.create_tile(NativeTileId::DEBUG_OVERLAY);
             state.current_size = Some(framebuffer_size);
         }
     }
@@ -527,13 +520,11 @@ pub fn bind_debug_overlay(
 
                 // Ensure old surface is invalidated before binding
                 compositor.invalidate_tile(
-                    device,
                     NativeTileId::DEBUG_OVERLAY,
                     DeviceIntRect::from_size(surface_size),
                 );
                 // Bind the native surface
                 let surface_info = compositor.bind(
-                    device,
                     NativeTileId::DEBUG_OVERLAY,
                     DeviceIntRect::from_size(surface_size),
                     DeviceIntRect::from_size(surface_size),
@@ -542,10 +533,14 @@ pub fn bind_debug_overlay(
                 // Bind the native surface to current FBO target
                 let draw_target = DrawTarget::NativeSurface {
                     offset: surface_info.origin,
-                    external_fbo_id: surface_info.fbo_id,
+                    handle: surface_info.handle,
                     dimensions: surface_size,
                 };
-                device.bind_draw_target(draw_target);
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::DontCare,
+                });
 
                 // When native compositing, clear the debug overlay each frame.
                 device.clear_target(
@@ -560,19 +555,32 @@ pub fn bind_debug_overlay(
                 let compositor = compositor_config.layer_compositor().unwrap();
                 compositor.bind_layer(state.layer_index, &[]);
 
+                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::DontCare,
+                });
+
                 device.clear_target(
                     Some([0.0, 0.0, 0.0, 0.0]),
                     None, // debug renderer does not use depth
                     None,
                 );
 
-                Some(DrawTarget::new_default(device_size, device.surface_origin_is_top_left()))
+                Some(draw_target)
             }
             CompositorKind::Draw { .. } => {
-                // If we're not using the native compositor, then the default
-                // frame buffer is already bound. Create a DrawTarget for it and
-                // return it.
-                Some(DrawTarget::new_default(device_size, device.surface_origin_is_top_left()))
+                // If we're not using the native compositor, the overlay is drawn
+                // over the frame in the default frame buffer.
+                let draw_target = DrawTarget::new_default(device_size, device.surface_origin_is_top_left());
+                device.begin_render_pass(&RenderPassDescriptor {
+                    target: draw_target,
+                    render_area: None,
+                    color_load: LoadOp::Load,
+                });
+
+                Some(draw_target)
             }
         }
     } else {
@@ -582,7 +590,6 @@ pub fn bind_debug_overlay(
 
 /// Unbind the draw target for debug / profiler overlays, if required.
 pub fn unbind_debug_overlay(
-    device: &mut Device,
     compositor_config: &mut CompositorConfig,
     compositor_kind: CompositorKind,
     state: &DebugOverlayState,
@@ -593,14 +600,13 @@ pub fn unbind_debug_overlay(
             CompositorKind::Native { .. } => {
                 let compositor = compositor_config.compositor().unwrap();
                 // Unbind the draw target and add it to the visual tree to be composited
-                compositor.unbind(device);
+                compositor.unbind();
 
                 let clip_rect = DeviceIntRect::from_size(
                     state.current_size.unwrap(),
                 );
 
                 compositor.add_surface(
-                    device,
                     NativeSurfaceId::DEBUG_OVERLAY,
                     CompositorSurfaceTransform::identity(),
                     clip_rect,
@@ -989,7 +995,7 @@ pub fn draw_window_visibility_debug(
     let y: f32 = 40.0;
 
     if let CompositorConfig::Native { ref mut compositor, .. } = *compositor_config {
-        let visibility = compositor.get_window_visibility(device);
+        let visibility = compositor.get_window_visibility();
         let color = if visibility.is_fully_occluded {
             ColorU::new(255, 0, 0, 255)
 

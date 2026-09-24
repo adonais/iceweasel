@@ -4,6 +4,7 @@
 
 #include "MFProtectedPathReadinessMonitor.h"
 #include "gtest/gtest.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -26,7 +27,37 @@ void DrainMainThread();
 constexpr HRESULT kTopoUnsupported = static_cast<HRESULT>(0xC00D5214);
 constexpr HRESULT kSampleProtection = static_cast<HRESULT>(0xC00D7176);
 constexpr HRESULT kUnrelatedError = static_cast<HRESULT>(0x80004005);  // E_FAIL
+
+constexpr const char* kRecoveryPref =
+    "media.wmf.media-engine.protected-readiness-gate.recovery.enabled";
+
+// The recovery is off by default, so the tests that cover it have to turn it
+// on for their duration.
+class ScopedRecoveryEnabled {
+ public:
+  ScopedRecoveryEnabled() {
+    mWasEnabled = mozilla::Preferences::GetBool(kRecoveryPref, false);
+    mozilla::Preferences::SetBool(kRecoveryPref, true);
+  }
+  ~ScopedRecoveryEnabled() {
+    mozilla::Preferences::SetBool(kRecoveryPref, mWasEnabled);
+  }
+
+ private:
+  bool mWasEnabled = false;
+};
 }  // namespace
+
+// The default. Every activation error is terminal, so nothing is reported to
+// the page as a hardware context reset.
+TEST(MFProtectedPathReadinessMonitor, RecoveryIsDisabledByDefault)
+{
+  MFProtectedPathReadinessMonitor monitor;
+  EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 2), Reaction::Terminal);
+  EXPECT_EQ(monitor.OnActivationError(kSampleProtection, 2),
+            Reaction::Terminal);
+  EXPECT_EQ(monitor.RecoveriesUsed(), 0u);
+}
 
 TEST(MFProtectedPathReadinessMonitor, ReadyToActivateRequiresAllPreConditions)
 {
@@ -84,6 +115,7 @@ TEST(MFProtectedPathReadinessMonitor, ResetEngineConditionsReopensGate)
 
 TEST(MFProtectedPathReadinessMonitor, RecoversWithinBudgetThenTerminal)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 2), Reaction::Recover);
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 2), Reaction::Recover);
@@ -92,6 +124,7 @@ TEST(MFProtectedPathReadinessMonitor, RecoversWithinBudgetThenTerminal)
 
 TEST(MFProtectedPathReadinessMonitor, BothActivationErrorsShareTheBudget)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 2), Reaction::Recover);
   EXPECT_EQ(monitor.OnActivationError(kSampleProtection, 2), Reaction::Recover);
@@ -100,6 +133,7 @@ TEST(MFProtectedPathReadinessMonitor, BothActivationErrorsShareTheBudget)
 
 TEST(MFProtectedPathReadinessMonitor, UnrelatedErrorIsTerminalAndKeepsBudget)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.OnActivationError(kUnrelatedError, 2), Reaction::Terminal);
   // The budget was not consumed by the unrelated error.
@@ -110,6 +144,7 @@ TEST(MFProtectedPathReadinessMonitor, UnrelatedErrorIsTerminalAndKeepsBudget)
 
 TEST(MFProtectedPathReadinessMonitor, ResetRecoveryBudgetRestores)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 1), Reaction::Recover);
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 1), Reaction::Terminal);
@@ -119,6 +154,7 @@ TEST(MFProtectedPathReadinessMonitor, ResetRecoveryBudgetRestores)
 
 TEST(MFProtectedPathReadinessMonitor, ZeroBudgetIsImmediatelyTerminal)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.OnActivationError(kTopoUnsupported, 0), Reaction::Terminal);
 }
@@ -260,6 +296,7 @@ TEST(MFProtectedPathReadinessMonitor, DescribeReadinessSummarizesEveryCondition)
 
 TEST(MFProtectedPathReadinessMonitor, RecoveriesUsedTracksBudget)
 {
+  ScopedRecoveryEnabled recoveryEnabled;
   MFProtectedPathReadinessMonitor monitor;
   EXPECT_EQ(monitor.RecoveriesUsed(), 0u);
   monitor.OnActivationError(kUnrelatedError, 2);

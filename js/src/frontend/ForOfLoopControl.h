@@ -11,9 +11,12 @@
 
 #include "frontend/BytecodeControlStructures.h"  // NestableControl, LoopControl
 #include "frontend/IteratorKind.h"               // IteratorKind
+#include "frontend/JumpList.h"                   // JumpList
 #include "frontend/SelfHostedIter.h"             // SelfHostedIter
 #include "frontend/TryEmitter.h"                 // TryEmitter
 #include "frontend/UsingEmitter.h"               // ForOfDisposalEmitter
+#include "js/AllocPolicy.h"                      // TempAllocPolicy
+#include "js/Vector.h"                           // js::Vector
 #include "vm/CompletionKind.h"                   // CompletionKind
 
 namespace js {
@@ -32,24 +35,19 @@ class ForOfLoopControl : public LoopControl {
   // IteratorClose.  This is done by enclosing the body of the loop with
   // try-catch and calling IteratorClose in the `catch` block.
   //
-  // If IteratorClose itself throws, we must not re-call
-  // IteratorClose. Since non-local jumps like break and return call
-  // IteratorClose, whenever a non-local jump is emitted, we must
-  // prevent the catch block from catching any exception thrown from
-  // IteratorClose. We do this by wrapping the non-local jump in a
-  // ForOfIterClose try-note.
+  // For non-local exits like `break` and `return`, we associate each exit with
+  // a Continuation. We emit a separate IteratorClose section for each
+  // Continuation after the loop body and the try-catch. This ensures we don't
+  // try to close the iterator a second time if IteratorClose throws an
+  // exception.
   //
   //   for (x of y) {
   //     // Operations for iterator (IteratorNext etc) are outside of
   //     // try-block.
   //     try {
   //       ...
-  //       if (...) {
-  //         // Before non-local jump, close iterator.
-  //         CloseIter(iter, CompletionKind::Return); // Covered by
-  //         return;                                  // trynote
-  //       }
-  //       ...
+  //       if (...) goto close-for-break;  // `break` continuation
+  //       if (...) goto close-for-return; // `return` continuation
   //     } catch (e) {
   //       // When propagating an exception, we swallow any exceptions
   //       // thrown while closing the iterator.
@@ -57,6 +55,14 @@ class ForOfLoopControl : public LoopControl {
   //       throw e;
   //     }
   //   }
+  //   goto done;
+  //   close-for-break:
+  //     CloseIter(iter, CompletionKind::Normal);
+  //     goto done;
+  //   close-for-return:
+  //     CloseIter(iter, CompletionKind::Normal);
+  //     ... remaining return bytecode ...
+  //   done:
   mozilla::Maybe<TryEmitter> tryCatch_;
 
   SelfHostedIter selfHostedIter_;
@@ -64,6 +70,20 @@ class ForOfLoopControl : public LoopControl {
   IteratorKind iterKind_;
 
   mozilla::Maybe<ForOfDisposalEmitter> forOfDisposalEmitter_;
+
+  // A non-local exit out of this loop must close the iterator. Exits with the
+  // same (target, kind) pair share a Continuation.
+  struct Continuation {
+    NestableControl* target;
+    NonLocalExitKind kind;
+    JumpList jumps;
+
+    Continuation(NestableControl* target, NonLocalExitKind kind)
+        : target(target), kind(kind) {}
+  };
+  Vector<Continuation, 2, TempAllocPolicy> continuations_;
+
+  [[nodiscard]] bool emitIteratorCloseForNonLocalExits(BytecodeEmitter* bce);
 
  public:
   ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
@@ -76,15 +96,13 @@ class ForOfLoopControl : public LoopControl {
   [[nodiscard]] bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
   [[nodiscard]] bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
 
-  [[nodiscard]] bool emitIteratorCloseInInnermostScopeWithTryNote(
-      BytecodeEmitter* bce, CompletionKind completionKind);
   [[nodiscard]] bool emitIteratorCloseInScope(BytecodeEmitter* bce,
                                               EmitterScope& currentScope,
                                               CompletionKind completionKind);
-
-  [[nodiscard]] bool emitPrepareForNonLocalJumpFromScope(
-      BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
-      BytecodeOffset* tryNoteStart);
+  [[nodiscard]] bool emitJumpToIteratorClose(BytecodeEmitter* bce,
+                                             NestableControl* target,
+                                             NonLocalExitKind kind);
+  [[nodiscard]] bool emitEnd(BytecodeEmitter* bce);
 };
 template <>
 inline bool NestableControl::is<ForOfLoopControl>() const {

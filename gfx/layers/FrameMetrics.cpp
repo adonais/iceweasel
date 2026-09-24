@@ -270,6 +270,10 @@ std::ostream& operator<<(std::ostream& aStream,
       aStream << "contain";
       break;
     }
+    case OverscrollBehavior::Chain: {
+      aStream << "chain";
+      break;
+    }
     case OverscrollBehavior::None: {
       aStream << "none";
       break;
@@ -289,6 +293,8 @@ static OverscrollBehavior ToOverscrollBehavior(
       return OverscrollBehavior::Auto;
     case StyleOverscrollBehavior::Contain:
       return OverscrollBehavior::Contain;
+    case StyleOverscrollBehavior::Chain:
+      return OverscrollBehavior::Chain;
     case StyleOverscrollBehavior::None:
       return OverscrollBehavior::None;
   }

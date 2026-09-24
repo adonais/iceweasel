@@ -65,7 +65,7 @@ class RenderingTrackerTest : public SimulatedTimeTestFixture {
           env_,
           RenderingTracker::Config{.ssrc = EncodedFrameBuilderGenerator::kSsrc,
                                    .render_delay = TimeDelta::Millis(10)},
-          std::make_unique<VCMTiming>(&env_.clock(), env_.field_trials(),
+          std::make_unique<VCMTiming>(env_,
                                       /*render_delay=*/TimeDelta::Millis(10)),
           &rendering_tracker_events_);
       rendering_tracker_->SetDecodedFrameIdCallback(&decoded_frame_id_cb_);

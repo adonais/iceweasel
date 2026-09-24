@@ -10,38 +10,56 @@ struct RefCountedBase {
 };
 
 struct RefCountedBaseHolder {
-  RefPtr<RefCountedBase> GetRefCountedBase() const {
-    return mRefCountedBase;
-  }
+  RefPtr<RefCountedBase> GetRefCountedBase() const { return mRefCountedBase; }
 
 private:
   RefPtr<RefCountedBase> mRefCountedBase = MakeRefPtr<RefCountedBase>();
 };
 
-
 void test_arrow_temporary_new_refptr_function_style_cast() {
-  RefPtr<RefCountedBase>(new RefCountedBase())->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}}
+  RefPtr<RefCountedBase>(new RefCountedBase())
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
 }
 
 void test_arrow_temporary_new_refptr_brace() {
-  RefPtr<RefCountedBase>{new RefCountedBase()}->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}}
+  RefPtr<RefCountedBase>{new RefCountedBase()}
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
 }
 
 void test_arrow_temporary_new_c_style_cast() {
-  ((RefPtr<RefCountedBase>)(new RefCountedBase()))->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}}
+  ((RefPtr<RefCountedBase>)(new RefCountedBase()))
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
 }
 
 void test_arrow_temporary_new_static_cast() {
-  static_cast<RefPtr<RefCountedBase>>(new RefCountedBase())->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}}
+  static_cast<RefPtr<RefCountedBase>>(new RefCountedBase())
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
 }
 
 void test_arrow_temporary_new_refptr_makerefptr() {
-  MakeRefPtr<RefCountedBase>()->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}}
+  MakeRefPtr<RefCountedBase>()
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
 }
 
 void test_arrow_temporary_get_refptr_from_member_function() {
   const RefCountedBaseHolder holder;
-  holder.GetRefCountedBase()->method_test(); // expected-warning {{performance issue: temporary 'RefPtr<RefCountedBase>' is only dereferenced here once which involves short-lived AddRef/Release calls}} expected-note {{consider changing function RefCountedBaseHolder::GetRefCountedBase to return a raw reference instead}}
+  holder.GetRefCountedBase()
+      ->method_test(); // expected-warning {{performance issue: temporary
+                       // 'RefPtr<RefCountedBase>' is only dereferenced here
+                       // once which involves short-lived AddRef/Release calls}}
+                       // expected-note {{consider changing function
+                       // RefCountedBaseHolder::GetRefCountedBase to return a
+                       // raw reference instead}}
 }
 
 void test_ref(RefCountedBase &aRefCountedBase);

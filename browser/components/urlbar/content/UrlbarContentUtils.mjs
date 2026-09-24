@@ -11,20 +11,29 @@
  * accessor.
  */
 
+const lazy = typeof ChromeUtils != "undefined" ? {} : null;
+
+if (lazy) {
+  ChromeUtils.defineESModuleGetters(lazy, {
+    UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  });
+}
+
+/**
+ * @import {UrlbarActorPort} from "moz-src:///browser/components/urlbar/actors/UrlbarChild.sys.mjs"
+ * @import {URIFixupPrimitives} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
+ */
+
 /**
  * The port the actor publishes on a realm that routes through it, or null where
  * this realm reaches its privileged side itself. The actor's own scope has no
  * window, so its handlers always take the direct branch and never re-enter.
  *
- * @returns {?object}
+ * @returns {?UrlbarActorPort}
  */
 function port() {
   return globalThis.window?.UrlbarActorPort ?? null;
 }
-
-/**
- * @import {URIFixupPrimitives} from "chrome://browser/content/urlbar/UrlbarShared.mjs"
- */
 
 let platform;
 
@@ -188,4 +197,17 @@ export function willLoadInBackground(where, params) {
     ).BrowserUtils.willLoadInBackground(where, params);
   }
   return port().willLoadInBackground(where, params);
+}
+
+/**
+ * Whether the message path or direct path should be used.
+ *
+ * @returns {boolean}
+ */
+export function usesMessagePath() {
+  return (
+    !lazy ||
+    Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT ||
+    lazy.UrlbarPrefs.get("ipc.chromeMessagePassing")
+  );
 }

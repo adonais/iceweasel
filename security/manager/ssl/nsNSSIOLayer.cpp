@@ -18,6 +18,7 @@
 #include "brotli/decode.h"
 #include "keyhi.h"
 #include "mozilla/Base64.h"
+#include "mozilla/BaseProfiler.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
@@ -1002,6 +1003,14 @@ static int32_t PlaintextRecv(PRFileDesc* fd, void* buf, int32_t amount,
   return bytesRead;
 }
 
+static int16_t PlaintextPoll(PRFileDesc* fd, int16_t in_flags,
+                             int16_t* out_flags) {
+  // This thread may sleep as a result of this poll call - let the profiler
+  // know about it.
+  AutoProfilerThreadSleep _;
+  return fd->lower->methods->poll(fd->lower, in_flags, out_flags);
+}
+
 nsSSLIOLayerHelpers::~nsSSLIOLayerHelpers() {
   // Pref observers must have been removed before destruction, since the
   // destructor may run off the main thread.
@@ -1079,6 +1088,7 @@ nsresult nsSSLIOLayerHelpers::Init() {
     nsSSLPlaintextLayerIdentity = PR_GetUniqueIdentity("Plaintxext PSM layer");
     nsSSLPlaintextLayerMethods = *PR_GetDefaultIOMethods();
     nsSSLPlaintextLayerMethods.recv = PlaintextRecv;
+    nsSSLPlaintextLayerMethods.poll = PlaintextPoll;
   }
 
   loadVersionFallbackLimit();
@@ -1578,8 +1588,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   // Include a modest set of named groups in supported_groups and determine how
   // many key shares to send. Please change getKeaGroupName in
   // nsNSSCallbacks.cpp when changing the lists here.
-  unsigned int additional_shares =
-      StaticPrefs::security_tls_client_hello_send_p256_keyshare();
+  unsigned int additional_shares = 1;
   bool tls13 = range.max >= SSL_LIBRARY_VERSION_TLS_1_3;
 
   AutoTArray<SSLNamedGroup, 8> namedGroups;
@@ -1610,8 +1619,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
   }
 
   // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
-  // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
-  // If additional_shares == 0, send x25519.
+  // If additional_shares == 1, send x25519 and p256.
   if (SECSuccess != SSL_SendAdditionalKeyShares(fd, additional_shares)) {
     return NS_ERROR_FAILURE;
   }

@@ -104,6 +104,7 @@ class WebExtensionActionPopupFragment : AddonPopupBaseFragment(), EngineSession.
                     tabsUseCases = requireComponents.useCases.tabsUseCases,
                     sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
                     customTabSessionId = null,
+                    applicationScope = requireComponents.applicationScope,
                 ),
             owner = this,
             view = view,

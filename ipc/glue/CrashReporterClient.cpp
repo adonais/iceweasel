@@ -34,10 +34,18 @@ void CrashReporterClient::InitSingleton() {
   }
 }
 
+static dom::NativeThreadId CurrentNativeThreadId() {
+#if defined(XP_DARWIN)
+  return mozilla::UniqueMachSendRight{CrashReporter::CurrentThreadId()};
+#else
+  return CrashReporter::CurrentThreadId();
+#endif  // defined(XP_DARWIN)
+}
+
 /*static*/
 CrashReporter::CrashReporterInitArgs CrashReporterClient::CreateInitArgs() {
   CrashReporter::CrashReporterInitArgs initArgs;
-  initArgs.threadId() = CrashReporter::CurrentThreadId();
+  initArgs.threadId() = CurrentNativeThreadId();
 
 #if defined(XP_LINUX) && defined(MOZ_CRASHREPORTER) && \
     defined(MOZ_OXIDIZED_BREAKPAD)

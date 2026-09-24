@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<title>Applying an inset dynamically un-squares the corner</title>
+<!-- Starts with a scrollbar and no inset, so GetBorderRadii squares the right
+     corners off, then applies the inset after a forced reflow. Matches the
+     no-scrollbar reference only if the corners go back to being round, which
+     needs the radii to be recomputed and the result repainted. -->
+<style>
+
+.contain { position: relative; height: 140px }
+
+.test {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100px;
+  border: 10px solid blue;
+  border-radius: 20px;
+  overflow-y: scroll;
+}
+
+.test.inset {
+  -moz-scrollbar-inset-block: 30px;
+}
+
+/* Covers the whole padding box, so only the border ring is compared and the
+   scrollbar itself can't contribute pixels. */
+.cover {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 200px;
+  height: 100px;
+  background: blue;
+}
+
+</style>
+
+<div class="contain">
+  <div class="test"></div>
+  <div class="cover"></div>
+</div>
+
+<script>
+  // Force a reflow so the squared-off corners are really computed first.
+  document.body.offsetHeight;
+  document.querySelector(".test").classList.add("inset");
+</script>

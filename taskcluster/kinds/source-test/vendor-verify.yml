@@ -175,6 +175,7 @@ misc:
         - third_party/llama.cpp/moz.yaml
         - third_party/opentelemetry-cpp/moz.yaml
         - third_party/opentelemetry-cpp/third_party/opentelemetry-proto/moz.yaml
+        - third_party/parakeet.cpp/moz.yaml
         - third_party/perfetto/moz.yaml
         - third_party/python/vsdownload/moz.yaml
         - toolkit/components/ml/vendor/openai/moz.yaml

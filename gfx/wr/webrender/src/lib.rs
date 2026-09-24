@@ -176,6 +176,7 @@ mod resource_cache;
 pub mod scene;
 mod scene_builder_thread;
 mod scene_building;
+mod scene_debug;
 mod screen_capture;
 mod segment;
 #[cfg(test)]
@@ -229,15 +230,15 @@ extern crate webrender_build;
 #[doc(hidden)]
 pub use crate::composite::{LayerCompositor, CompositorInputConfig, CompositorSurfaceUsage, ClipRadius};
 pub use crate::composite::{CompositorConfig, Compositor, CompositorCapabilities, CompositorSurfaceTransform};
-pub use crate::composite::{NativeSurfaceId, NativeTileId, NativeSurfaceInfo, PartialPresentCompositor};
+pub use crate::composite::{NativeSurfaceId, NativeTileId, NativeSurfaceHandle, NativeSurfaceInfo, PartialPresentCompositor};
 pub use crate::composite::{MappableCompositor, MappedTileInfo, SWGLCompositeSurfaceInfo, WindowVisibility, WindowProperties};
-pub use crate::device::{UploadMethod, VertexUsageHint, get_gl_target, get_unoptimized_shader_source};
-pub use crate::device::{ProgramBinary, ProgramCache, ProgramCacheObserver, FormatDesc, ShaderError};
-pub use crate::device::Device;
+pub use crate::device::{UploadMethod, VertexUsageHint, get_unoptimized_shader_source};
+pub use crate::device::{ProgramBinary, ProgramCache, ProgramCacheObserver, ShaderError};
+pub use crate::device::{Device, DeviceOptions, GraphicsApi, GraphicsApiInfo};
 pub use crate::profiler::{ProfilerHooks, set_profiler_hooks};
 pub use crate::renderer::{
-    CpuProfile, DebugFlags, GpuProfile, GraphicsApi,
-    GraphicsApiInfo, PendingShadersToPrecache, PipelineInfo, Renderer, RendererError, RenderResults,
+    CpuProfile, DebugFlags, GpuProfile,
+    PendingShadersToPrecache, PipelineInfo, Renderer, RendererError, RenderResults,
     RendererStats, Shaders, SharedShaders, ShaderPrecacheFlags,
     MAX_VERTEX_TEXTURE_WIDTH,
 };

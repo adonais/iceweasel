@@ -346,16 +346,23 @@ void TaskbarConcealerImpl::MarkAsHidingTaskbar(HWND aWnd, bool aMark) {
 
   // `PrepareFullScreen()` is known to sometimes fail to clear a misdetection,
   // no matter how many times it is called (bug 1949079 comment 15, bug
-  // 2064534). "NonRudeHWND" is consulted whenever Windows performs a
-  // fullscreen check rather than being a one-shot signal, so set it as well
-  // to cover those cases.
+  // 2064534). "NonRudeHWND" is honored by the Shell's automatic detection
+  // where `MarkFullscreenWindow(FALSE)` is not, so set it as well to cover
+  // those cases.
   //
   // Only do so once the window is actually on screen. Per the third bullet
   // point above, a window that had this property before it was shown may
   // never afterwards be treatable as fullscreen -- which is what bug 1965699
-  // (fullscreen video failing to conceal the taskbar) appeared to be. Marking
-  // a window as hiding the taskbar still removes the property outright, so
-  // going fullscreen clears it either way.
+  // (fullscreen video failing to conceal the taskbar) appeared to be.
+  //
+  // Note that the Shell consults this property only when it makes a
+  // fullscreen decision about the window: when the window is shown, and when
+  // it is resized to cover the screen. Changing the property afterwards has
+  // no effect until the next such decision. [1] So it is not enough to remove
+  // the property here when marking a window as fullscreen, and we do it in
+  // `OnFullscreenWillBeEntered()` instead. (bug 2072895)
+  //
+  // [1] https://devblogs.microsoft.com/oldnewthing/20250522-00/?p=111211
   bool forceUseNonRudeHWND =
       !aMark && ::IsWindowVisible(aWnd) &&
       StaticPrefs::widget_windows_fullscreen_set_nonrudehwnd();
@@ -470,6 +477,17 @@ void nsWindow::TaskbarConcealer::OnWindowShown(nsWindow* aWin) {
   }
 
   OnWindowMaximized(aWin, /* aForce = */ true);
+}
+
+void nsWindow::TaskbarConcealer::OnFullscreenWillBeEntered(nsWindow* aWin) {
+  MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+          ("==> OnFullscreenWillBeEntered() for HWND %p; removing NonRudeHWND",
+           aWin->mWnd));
+
+  // The Shell decides whether this window is fullscreen when it is resized to
+  // cover the monitor, and won't revisit that decision when the property is
+  // removed later. See the comment in MarkAsHidingTaskbar().
+  ::RemovePropW(aWin->mWnd, L"NonRudeHWND");
 }
 
 void nsWindow::TaskbarConcealer::OnFullscreenChanged(nsWindow* aWin,

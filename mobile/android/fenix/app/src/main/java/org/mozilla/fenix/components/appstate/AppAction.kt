@@ -717,10 +717,11 @@ sealed class AppAction : Action {
         data class ShowSnackbar(val title: String) : IPProtectionSnackbarAction()
 
         /**
-         * Dispatched when the IP Protection monthly data limit has been reached.
+         * [IPProtectionSnackbarAction] dispatched to show a snackbar with a custom title and with an action that
+         * navigates the user into the IP Protection settings screen.
          *
          * @property title The title to display in the snackbar.
          */
-        data class DataLimitReached(val title: String) : IPProtectionSnackbarAction()
+        data class ShowActionSettingsSnackbar(val title: String) : IPProtectionSnackbarAction()
     }
 }

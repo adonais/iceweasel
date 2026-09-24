@@ -20,7 +20,7 @@ add_setup(async function () {
   await gCUITestUtils.addSearchBar();
 
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault", false]],
+    set: [["browser.search.separatePrivateDefault.enabled", false]],
   });
 
   // Create two new search engines. Mark one as the default engine, so
@@ -38,8 +38,8 @@ add_setup(async function () {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", false],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", false],
     ],
   });
 
@@ -111,7 +111,7 @@ add_task(async function test_default_search_private_no_separate() {
 
 add_task(async function test_default_search_private_no_separate() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault", true]],
+    set: [["browser.search.separatePrivateDefault.enabled", true]],
   });
 
   await SearchService.setDefaultPrivate(

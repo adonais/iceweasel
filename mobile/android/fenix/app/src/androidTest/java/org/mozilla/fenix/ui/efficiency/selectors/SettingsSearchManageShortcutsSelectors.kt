@@ -6,10 +6,18 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsSearchManageShortcutsSelectors {
+object SettingsSearchManageShortcutsSelectors : SelectorContainer {
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_manage_search_shortcuts_2),
+            description = "Manage alternative search engines toolbar title",
+        )
 
     // The screen is Compose (SearchEngineShortcuts): its category header is the only stable,
     // always-present arrival signal. The individual engine rows depend on the region's engine set.
@@ -18,7 +26,7 @@ object SettingsSearchManageShortcutsSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.preferences_category_engines_in_search_menu),
             description = "Engines visible on the search menu header",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // A single engine row in the shortcuts list, keyed by the engine name (the row's Text node).
@@ -28,12 +36,5 @@ object SettingsSearchManageShortcutsSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = engineName,
             description = "Search engine shortcut row: $engineName",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            ENGINES_LIST_HEADER,
-            SEARCH_ENGINE_SHORTCUT(),
         )
 }

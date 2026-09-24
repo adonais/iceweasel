@@ -292,8 +292,7 @@
 .font-value-input {
   text-align: right;
   width: 60px;
-  padding: 2px 3px;
-  padding-inline-end: 5px;
+  padding-inline: 3px 5px;
 }
 
 .font-value-input,
@@ -301,6 +300,9 @@
   color: var(--theme-text-color-strong);
   border: 1px solid var(--input-border-color);
   background-color: var(--input-background-color);
+  /* Use the same block padding so the input and the select have the same height (for example
+     for the "Size" line) */
+  padding-block: 2px;
 }
 
 /* Styles for disabled input fields */
@@ -354,7 +356,7 @@
   -moz-context-properties: fill;
   appearance: none;
   box-shadow: none;
-  padding: 1px 10px 1px 2px;
+  padding-inline: 10px 2px;
   min-width: 3.8em;
 }
 
@@ -376,8 +378,8 @@
 
 .font-value-input:focus,
 .font-value-select:focus {
-  outline: 1px solid var(--highlight-color);
-  outline-offset: -1px;
+  outline: var(--theme-focus-outline);
+  outline-offset: -2px;
 }
 
 .font-value-slider-container {
@@ -419,6 +421,9 @@
   background: transparent;
   width: 100%;
   margin: 0;
+  &:focus-visible {
+    outline-offset: 2px;
+  }
 }
 
 /*
@@ -435,10 +440,6 @@
   background-repeat: repeat-x;
   /* Size the background to get nine visible notch instances. */
   background-size: calc(12.5% - var(--notch-size) / 2) 7px;
-}
-
-.font-value-slider:-moz-focusring {
-  outline: none;
 }
 
 .font-value-slider::-moz-range-thumb {

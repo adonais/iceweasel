@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/56fbf0469e25fa0d5
  2 files changed, 10 insertions(+), 3 deletions(-)
 
 diff --git a/video/receive_statistics_proxy.cc b/video/receive_statistics_proxy.cc
-index b40e260dc6..05d8d9b7be 100644
+index 8b61f6bf0d..79af66f444 100644
 --- a/video/receive_statistics_proxy.cc
 +++ b/video/receive_statistics_proxy.cc
-@@ -810,8 +810,13 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+@@ -813,8 +813,13 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
  }
  
  void ReceiveStatisticsProxy::OnDiscardedPackets(uint32_t packets_discarded) {
@@ -30,17 +30,17 @@ index b40e260dc6..05d8d9b7be 100644
  
  void ReceiveStatisticsProxy::OnPreDecode(VideoCodecType codec_type, int qp) {
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 5c69419252..f72a6bd187 100644
+index c1d29d11d8..7747bbf9b1 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -1383,7 +1383,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
-     packet_infos_.erase(packet_infos_.begin(),
-                         packet_infos_.upper_bound(unwrapped_rtp_seq_num));
+@@ -1411,7 +1411,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+   if (seq_num != -1) {
+     int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
      uint32_t num_packets_cleared = packet_buffer_.ClearTo(unwrapped_rtp_seq_num);
 -    vcm_receive_statistics_->OnDiscardedPackets(num_packets_cleared);
 +    if (num_packets_cleared > 0) {
 +      vcm_receive_statistics_->OnDiscardedPackets(num_packets_cleared);
 +    }
      reference_finder_->ClearTo(seq_num, rtp_timestamp);
-   }
- }
+   } else {
+     RTC_LOG(LS_WARNING) << "Frame with id " << picture_id

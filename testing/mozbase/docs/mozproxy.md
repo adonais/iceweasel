@@ -11,7 +11,6 @@ with the real web site.
 
 Mozproxy provide a function that returns a playback class. The usage pattern is
 
-% rstcheck: ignore-languages=python
 
 ```python
 from mozproxy import get_playback

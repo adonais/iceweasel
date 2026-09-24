@@ -3024,8 +3024,6 @@ export class CustomizeMode {
     __dumpDragData(aEvent, "#onDragEnd");
 
     let document = aEvent.target.ownerDocument;
-    document.documentElement.removeAttribute("customizing-movingItem");
-
     let documentId = document.documentElement.id;
     if (!aEvent.dataTransfer.mozTypesAt(0)) {
       return;
@@ -3401,9 +3399,7 @@ export class CustomizeMode {
   /**
    * Handler for mousedown events in the customize mode UI for the primary
    * button. If the mousedown event is being fired on a customizable item, it
-   * will have a "mousedown" attribute set to "true" on it. A
-   * "customizing-movingItem" attribute is also set to "true" on the
-   * document element.
+   * will have a "mousedown" attribute set to "true" on it.
    *
    * @param {MouseEvent} aEvent
    *   The mousedown event being handled.
@@ -3413,8 +3409,6 @@ export class CustomizeMode {
     if (aEvent.button != 0) {
       return;
     }
-    let doc = aEvent.target.ownerDocument;
-    doc.documentElement.setAttribute("customizing-movingItem", true);
     let item = this.#getWrapper(aEvent.target);
     if (item) {
       item.toggleAttribute("mousedown", true);
@@ -3424,9 +3418,7 @@ export class CustomizeMode {
   /**
    * Handler for mouseup events in the customize mode UI for the primary
    * button. If the mouseup event is being fired on a customizable item, it
-   * will have the "mousedown" attribute added in #onMouseDown removed. This
-   * will also remove the "customizing-movingItem" attribute on the document
-   * element.
+   * will have the "mousedown" attribute added in #onMouseDown removed.
    *
    * @param {MouseEvent} aEvent
    *   The mouseup event being handled.
@@ -3436,8 +3428,6 @@ export class CustomizeMode {
     if (aEvent.button != 0) {
       return;
     }
-    let doc = aEvent.target.ownerDocument;
-    doc.documentElement.removeAttribute("customizing-movingItem");
     let item = this.#getWrapper(aEvent.target);
     if (item) {
       item.removeAttribute("mousedown");

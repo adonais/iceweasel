@@ -19,6 +19,7 @@ import mozilla.components.support.test.mock
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -899,6 +900,29 @@ class EngineSessionTest {
     }
 
     @Test
+    fun `tracking protection policies carry the expected fingerprinting protection`() {
+        val strict = TrackingProtectionPolicy.strict()
+        assertEquals(true, strict.fingerprintingProtection)
+        assertEquals(true, strict.fingerprintingProtectionPrivateBrowsing)
+
+        val recommended = TrackingProtectionPolicy.recommended()
+        assertEquals(false, recommended.fingerprintingProtection)
+        assertEquals(true, recommended.fingerprintingProtectionPrivateBrowsing)
+
+        val custom =
+            TrackingProtectionPolicy.select(
+                fingerprintingProtection = true,
+                fingerprintingProtectionPrivateBrowsing = false,
+            )
+        assertEquals(true, custom.fingerprintingProtection)
+        assertEquals(false, custom.fingerprintingProtectionPrivateBrowsing)
+
+        val unset = TrackingProtectionPolicy.select()
+        assertNull(unset.fingerprintingProtection)
+        assertNull(unset.fingerprintingProtectionPrivateBrowsing)
+    }
+
+    @Test
     fun `TrackingSessionPolicies retain all expected fields during privacy transformations`() {
         val strict = TrackingProtectionPolicy.strict()
         val default = TrackingProtectionPolicy.recommended()
@@ -1017,6 +1041,12 @@ open class DummyEngineSession : EngineSession() {
 
     override fun checkForPdfViewer(
         onResult: (Boolean) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {}
+
+    override fun addSignatureToPdf(
+        text: String,
+        onResult: () -> Unit,
         onException: (Throwable) -> Unit,
     ) {}
 

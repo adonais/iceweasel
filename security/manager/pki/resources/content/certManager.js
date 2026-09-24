@@ -315,11 +315,11 @@ var rememberedDecisionsRichList = {
   },
 };
 
-function LoadCerts() {
+async function LoadCerts() {
   certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
-  var certcache = certdb.getCerts();
+  let certcache = await certdb.getCerts();
 
   caTreeView = Cc["@mozilla.org/security/nsCertTree;1"].createInstance(
     Ci.nsICertTree
@@ -705,7 +705,7 @@ async function restoreCerts() {
   fp.appendFilter(filePkcs12Spec, "*.p12; *.pfx");
   fp.appendFilter(fileCertSpec, gCertFileTypes);
   fp.appendFilters(Ci.nsIFilePicker.filterAll);
-  fp.open(rv => {
+  fp.open(async rv => {
     if (rv != Ci.nsIFilePicker.returnOK) {
       return;
     }
@@ -766,7 +766,7 @@ async function restoreCerts() {
       }
     }
 
-    var certcache = certdb.getCerts();
+    let certcache = await certdb.getCerts();
     userTreeView.loadCertsFromCache(certcache, Ci.nsIX509Cert.USER_CERT);
     userTreeView.selection.clearSelection();
     caTreeView.loadCertsFromCache(certcache, Ci.nsIX509Cert.CA_CERT);
@@ -850,10 +850,10 @@ async function addCACerts() {
   fp.init(window.browsingContext, importCa, Ci.nsIFilePicker.modeOpen);
   fp.appendFilter(fileCertSpec, gCertFileTypes);
   fp.appendFilters(Ci.nsIFilePicker.filterAll);
-  fp.open(rv => {
+  fp.open(async rv => {
     if (rv == Ci.nsIFilePicker.returnOK) {
       certdb.importCertsFromFile(fp.file, Ci.nsIX509Cert.CA_CERT);
-      let certcache = certdb.getCerts();
+      let certcache = await certdb.getCerts();
       caTreeView.loadCertsFromCache(certcache, Ci.nsIX509Cert.CA_CERT);
       caTreeView.selection.clearSelection();
     }
@@ -869,10 +869,10 @@ async function addEmailCert() {
   fp.init(window.browsingContext, importEmail, Ci.nsIFilePicker.modeOpen);
   fp.appendFilter(fileCertSpec, gCertFileTypes);
   fp.appendFilters(Ci.nsIFilePicker.filterAll);
-  fp.open(rv => {
+  fp.open(async rv => {
     if (rv == Ci.nsIFilePicker.returnOK) {
       certdb.importCertsFromFile(fp.file, Ci.nsIX509Cert.EMAIL_CERT);
-      var certcache = certdb.getCerts();
+      let certcache = await certdb.getCerts();
       emailTreeView.loadCertsFromCache(certcache, Ci.nsIX509Cert.EMAIL_CERT);
       emailTreeView.selection.clearSelection();
       caTreeView.loadCertsFromCache(certcache, Ci.nsIX509Cert.CA_CERT);

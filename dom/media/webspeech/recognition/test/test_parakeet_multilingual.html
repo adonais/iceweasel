@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: parakeet multilingual (nemotron) backend</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Recognized:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// End-to-end test for the multilingual streaming backend (nvidia
+// nemotron-3.5-asr-streaming-0.6b via parakeet.cpp). Non-English locales route
+// there on their own; the only clip in the tree is the English Kennedy one, so
+// the model pref below is what points en at the multilingual model, exercising
+// the full Firefox path for the larger prompt-conditioned model. Also checks
+// that several distinct non-"en-*" language codes all report the multilingual
+// model as available once it is installed.
+//
+// Heavily instrumented (see test_parakeet_e2e.html): the log shows model
+// availability, AudioContext state, real audio flow into the captured track,
+// every recognition event, a periodic heartbeat, and a final summary.
+//
+// On Linux, requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+// Enough speech for the transcript assertion below (>50 chars) with a wide
+// margin; beyond that, a longer window only adds runtime.
+const LISTEN_DURATION_MS = 15000;
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for parakeet inference to complete");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+    ["media.webspeech.recognition.model.en", "multilingual"],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const installed = await ensureModelInstalled(["fr-FR"]);
+    diag(`multilingual model installed: ${installed}`);
+    ok(installed, "Multilingual model installed successfully");
+    if (!installed) {
+      SimpleTest.finish();
+      return;
+    }
+
+    // Any non-"en-*" language should route to the same multilingual model
+    // (LanguagesToModelIdentifier falls back to it for locales it has no
+    // dedicated model for), so it should already be "available" for other
+    // languages too now that it has been installed above.
+    for (const lang of ["de-DE", "es-ES", "ja-JP"]) {
+      const otherAvailability =
+        await SpeechRecognition.available({ langs: [lang], processLocally: true });
+      diag(`multilingual model availability (${lang}): ${otherAvailability}`);
+      is(otherAvailability, "available",
+         `Multilingual model is available for ${lang} once installed`);
+    }
+
+    // Created suspended; must be explicitly resumed so the graph runs and the
+    // captured track carries audio (headless CI has no user gesture).
+    const ctx = await createResumedAudioContext();
+    diag(`AudioContext after resume(): state=${ctx.state}`);
+
+    const kick = ctx.createBufferSource();
+    kick.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+    kick.loop = true;
+    kick.connect(ctx.destination);
+    kick.start(0);
+
+    // Same-origin support file (served by the mochitest server); only the model
+    // comes from the local model hub (serve_model.py) via modelHubRootUrl.
+    const audio = await loadTestAudio("kennedy-appolo.opus");
+    diag(`audio loaded: readyState=${audio.readyState} duration=${audio.duration.toFixed(2)}s ` +
+         `muted=${audio.muted} volume=${audio.volume} error=${audio.error ? audio.error.code : "none"}`);
+
+    const src = ctx.createMediaElementSource(audio);
+    const dst = ctx.createMediaStreamDestination();
+    src.connect(dst);
+    src.connect(ctx.destination);
+
+    const track = dst.stream.getAudioTracks()[0];
+    ok(track, "Got audio track");
+    diag(`track: id=${track.id} readyState=${track.readyState} enabled=${track.enabled} muted=${track.muted}`);
+
+    audio.currentTime = 0;
+    await audio.play().then(() => diag("audio.play() resolved"),
+                            e => diag("audio.play() rejected: " + e));
+
+    // Verify real audio is flowing into the captured track. Fails fast
+    // instead of hanging on the recognition events below.
+    const maxLevel = await waitForAudioFlowing(ctx, dst.stream);
+    diag(`audio is flowing into the track (peak FFT level ${maxLevel})`);
+    ok(true, "audio is flowing into the track");
+
+    // Kept alive for the periodic heartbeat below.
+    const analyser = new AudioStreamAnalyser(ctx, dst.stream);
+
+    const sr = new SpeechRecognition();
+    sr.continuous = true;
+    // Routed to the multilingual nemotron model by the model pref above.
+    sr.lang = "en-US";
+
+    const {
+      transcript,
+      finalCount,
+      interimCount,
+      audiostartFired,
+      soundstartFired,
+      speechstartFired,
+    } = await runSpeechRecognitionSession(sr, track, {
+      ctx,
+      audio,
+      analyser,
+      durationMs: LISTEN_DURATION_MS,
+      diag,
+    });
+
+    analyser.disconnect();
+
+    diag("=== SUMMARY ===");
+    diag(`model installed: ${installed}`);
+    diag(`peak audio level seen: ${maxLevel} (0 == silent track)`);
+    diag(`events: audiostart=${audiostartFired} soundstart=${soundstartFired} speechstart=${speechstartFired}`);
+    diag(`results: ${finalCount} final, ${interimCount} interim`);
+    diag(`transcript (${transcript.length} chars): ${transcript}`);
+    diag("=== END ===");
+
+    isnot(transcript.trim(), "", "Got a non-empty transcript from the multilingual model");
+    ok(transcript.length > 50,
+       "Transcript has substantial content (>50 chars): " + transcript.length + " chars");
+    // No inline <lang> markers should leak into the transcript.
+    ok(!/[<>]/.test(transcript), "No inline markers in transcript");
+
+    audio.pause();
+    await ctx.close();
+
+    SimpleTest.finish();
+  } catch (e) {
+    ok(false, "Test threw: " + e + "\n" + e.stack);
+    SimpleTest.finish();
+  }
+});
+</script>
+</pre>
+</body>
+</html>

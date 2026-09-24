@@ -36,7 +36,7 @@ class HistoryTelemetryMiddleware(private val isInPrivateMode: Boolean) :
                             GleanHistory.openedItem.record(
                                 GleanHistory.OpenedItemExtra(
                                     isRemote = item.isRemote,
-                                    timeGroup = item.historyTimeGroup.toString(),
+                                    timeGroup = item.historyTimeGroup.toIsoDateString(),
                                     isPrivate = isInPrivateMode,
                                 )
                             )

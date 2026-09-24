@@ -101,6 +101,7 @@ static int FuzzingRunURLPattern(const uint8_t* data, size_t size) {
   }
 
   if (MOZ_UNLIKELY(rv.Failed())) {
+    rv.SuppressException();
     return 0;
   }
 
@@ -132,6 +133,7 @@ static int FuzzingRunURLPattern(const uint8_t* data, size_t size) {
 
       ErrorResult testRv;
       (void)pattern->Test(testInput, base, testRv);
+      testRv.SuppressException();
     } else if (operation == 10) {
       // Exec
       UTF8StringOrURLPatternInit execInput;
@@ -144,6 +146,7 @@ static int FuzzingRunURLPattern(const uint8_t* data, size_t size) {
       Nullable<URLPatternResult> result;
       ErrorResult execRv;
       pattern->Exec(execInput, base, result, execRv);
+      execRv.SuppressException();
     }
   }
 

@@ -163,13 +163,42 @@ def reviewers_to_json(reviewers):
 _REVIEWER_RE = re.compile(r"\br=(#?[\w-]+!?(?:,#?[\w-]+!?)*)")
 
 
-def parse_reviewers_from_subjects(subjects):
+def known_review_groups(rules_data=None, mots_config=None):
+    """Return the set of reviewer group names Herald and mots know about."""
+    names = set()
+
+    for rule in (rules_data or {}).get("rules", []):
+        for action in rule.get("actions", []):
+            if action.get("type") != "add-reviewers":
+                continue
+            for reviewer in action.get("reviewers", []):
+                if reviewer.get("is_group"):
+                    names.add(reviewer["target"])
+
+    def walk(modules):
+        for module in modules or []:
+            group = module.get("meta", {}).get("review_group")
+            if group:
+                names.add(group)
+            walk(module.get("submodules"))
+
+    walk((mots_config or {}).get("modules"))
+
+    return names
+
+
+def parse_reviewers_from_subjects(subjects, known_groups=None):
     """Tally reviewers from a list of commit message subjects.
 
     Returns (individuals, groups), each an ordered list of (name, count) tuples
-    sorted by descending count. Groups are distinguished by their "#" prefix,
-    which is Phabricator's marker for a reviewer group.
+    sorted by descending count.
+
+    Phabricator marks a reviewer group with a "#" prefix, but it is stripped
+    when the revision lands, so a landed commit message names a group exactly
+    like an individual. Names in known_groups are therefore classified as
+    groups too, on top of any that did keep their prefix.
     """
+    known_groups = known_groups or set()
     individuals = defaultdict(int)
     groups = defaultdict(int)
     for line in subjects:
@@ -180,6 +209,8 @@ def parse_reviewers_from_subjects(subjects):
             name = entry.rstrip("!")  # Drop the "!" blocking marker.
             if name.startswith("#"):
                 groups[name[1:]] += 1
+            elif name in known_groups:
+                groups[name] += 1
             else:
                 individuals[name] += 1
 
@@ -222,7 +253,7 @@ def _recent_commit_subjects(repo, relpaths):
     return out.splitlines()
 
 
-def recent_reviewers_for_files(command_context, relpaths):
+def recent_reviewers_for_files(command_context, relpaths, known_groups=None):
     """Tally reviewers from recent commits touching the given files.
 
     Reviewers are parsed from the "r=" trailers of recent commit message
@@ -236,7 +267,7 @@ def recent_reviewers_for_files(command_context, relpaths):
         print(f"(could not read version control history: {e})", file=sys.stderr)
         return [], []
 
-    return parse_reviewers_from_subjects(subjects)
+    return parse_reviewers_from_subjects(subjects, known_groups=known_groups)
 
 
 def load_mots_config(topsrcdir):

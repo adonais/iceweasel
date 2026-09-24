@@ -279,13 +279,13 @@ class Bootstrapper:
                 args["distro"] = dist_id
             elif dist_id in ("gentoo", "funtoo"):
                 cls = GentooBootstrapper
-            elif dist_id in ("solus"):
+            elif dist_id in ("solus",):
                 cls = SolusBootstrapper
             elif dist_id in ("arch", "kaos") or Path("/etc/arch-release").exists():
                 cls = ArchlinuxBootstrapper
-            elif dist_id in ("aerynos"):
+            elif dist_id in ("aerynos",):
                 cls = AerynOsBootstrapper
-            elif dist_id in ("void"):
+            elif dist_id in ("void",):
                 cls = VoidBootstrapper
             elif dist_id in (
                 "opensuse",

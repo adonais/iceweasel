@@ -227,12 +227,21 @@ class TelemetryMiddleware(
     // the next launch, the OS clears the exit buffer, and we lose the REASON_USER_REQUESTED signal,
     // causing us to incorrectly record an app_session_restore. These are hard to detect since the
     // evidence is gone by the time we check.
+    // Some OEM AMS implementations violate the platform contract and throw
+    // IllegalArgumentException from getHistoricalProcessExitReasons (bug 2072086). Catching
+    // extends the same conservative default to that case.
+    @Suppress("TooGenericExceptionCaught")
     @SuppressLint("NewApi") // Only called when supportsEngineTabTelemetry is true (API >= 30).
     private fun wasLastExitUserRequested(): Boolean =
-        (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
-            .getHistoricalProcessExitReasons(null, 0, 0)
-            .firstOrNull { ":" !in it.processName }
-            ?.reason == ApplicationExitInfo.REASON_USER_REQUESTED
+        try {
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
+                .getHistoricalProcessExitReasons(null, 0, 0)
+                .firstOrNull { ":" !in it.processName }
+                ?.reason == ApplicationExitInfo.REASON_USER_REQUESTED
+        } catch (e: RuntimeException) {
+            logger.warn("getHistoricalProcessExitReasons threw", e)
+            false
+        }
 
     private fun computeDurationSinceLastVisible(tab: SessionState): Int {
         val lastVisibleAt = (tab as? TabSessionState)?.lastVisibleAt?.takeIf { it != 0L } ?: return -1

@@ -248,8 +248,7 @@ void IdlePeriodState::ClearIdleToken() {
 }
 
 bool IdlePeriodState::ShouldGetIdleToken() {
-  return StaticPrefs::idle_period_cross_process_scheduling() &&
-         dom::ContentChild::GetSingleton() &&
+  return dom::ContentChild::GetSingleton() &&
          dom::ContentChild::GetSingleton()->GetProcessPriority() <
              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND;
 }

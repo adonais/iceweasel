@@ -207,11 +207,16 @@ add_task(async function testPopupTypeWithDimension() {
     // Missing left should be +10 from the last browser window.
     `${baseWindow.screenX + offsetFromBase},${roundedY}`,
   ];
-  is(
-    actualCoordinates.join(" / "),
-    expectedCoordinates.join(" / "),
-    "expected popup type windows are opened at given coordinates"
-  );
+  // TODO bug 1989539: Wayland has no request to position a toplevel, so the
+  // windows stay wherever the compositor put them. Their size is honoured, and
+  // still checked below.
+  if (!Services.appinfo.isWayland) {
+    is(
+      actualCoordinates.join(" / "),
+      expectedCoordinates.join(" / "),
+      "expected popup type windows are opened at given coordinates"
+    );
+  }
 
   const isGtk = Services.appinfo.widgetToolkit == "gtk";
   const actualSizes = windows.slice(0, 3).map(window => {
@@ -241,7 +246,11 @@ add_task(async function testPopupTypeWithDimension() {
     left: minLeft,
     right: maxRight,
   };
-  isRectContained(actualRect, maxRect);
+  // TODO bug 1989539: Wayland has no request to position a toplevel, so the
+  // popups are wherever the compositor put them.
+  if (!Services.appinfo.isWayland) {
+    isRectContained(actualRect, maxRect);
+  }
 
   for (const window of windows) {
     window.close();

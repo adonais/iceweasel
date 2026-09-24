@@ -1825,6 +1825,49 @@ TEST_F(TestSimulcastEncoderAdapterFake, GeneratesKeyFramesOnRequestedLayers) {
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake,
+       GeneratesKeyFrameWhenFrameTypesSizeLessThanStreams) {
+  // Set up common settings for three streams.
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  rate_allocator_ = std::make_unique<SimulcastRateAllocator>(env_, codec_);
+  adapter_->RegisterEncodeCompleteCallback(this);
+
+  scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
+  codec_.startBitrate = 3000;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, adapter_->InitEncode(&codec_, kSettings));
+
+  std::vector<MockVideoEncoder*> original_encoders =
+      helper_->factory()->encoders();
+  ASSERT_EQ(3u, original_encoders.size());
+
+  std::vector<VideoFrameType> expected_keyframe(1,
+                                                VideoFrameType::kVideoFrameKey);
+  std::vector<VideoFrameType> expected_deltaframe(
+      1, VideoFrameType::kVideoFrameDelta);
+
+  // Request keyframe only on first stream by passing a vector of size 1.
+  std::vector<VideoFrameType> frame_types = {VideoFrameType::kVideoFrameKey};
+
+  EXPECT_CALL(*original_encoders[0],
+              Encode(_, ::testing::Pointee(::testing::Eq(expected_keyframe))))
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*original_encoders[1],
+              Encode(_, ::testing::Pointee(::testing::Eq(expected_deltaframe))))
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
+  EXPECT_CALL(*original_encoders[2],
+              Encode(_, ::testing::Pointee(::testing::Eq(expected_deltaframe))))
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
+
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_video_frame_buffer(buffer)
+                         .set_rtp_timestamp(1000)
+                         .set_timestamp_ms(100)
+                         .build();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, adapter_->Encode(frame, &frame_types));
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
        BypassModePassesPerStreamKeyframeRequests) {
   SimulcastTestFixtureImpl::DefaultSettings(
       &codec_, static_cast<const int*>(kTestTemporalLayerProfile),

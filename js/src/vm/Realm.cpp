@@ -29,6 +29,7 @@
 #include "wasm/WasmInstance.h"
 
 #include "gc/Marking-inl.h"
+#include "gc/StableCellHasher-inl.h"
 #include "gc/WeakMap-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
@@ -338,6 +339,19 @@ void Realm::sweepAfterMinorGC(JSTracer* trc) {
   objects_.sweepAfterMinorGC(trc);
 }
 
+#ifdef JSGC_HASH_TABLE_CHECKS
+void Realm::checkModuleScriptSourcesAfterMovingGC() {
+  objects_.checkModuleScriptSourcesAfterMovingGC(zone_);
+}
+
+void ObjectRealm::checkModuleScriptSourcesAfterMovingGC(JS::Zone* zone) {
+  gc::CheckTableAfterMovingGC(moduleScriptSources, [zone](const auto& entry) {
+    gc::CheckGCThingAfterMovingGC(entry, zone);
+    return entry.unbarrieredGet();
+  });
+}
+#endif
+
 void Realm::traceWeakSavedStacks(JSTracer* trc) { savedStacks_.traceWeak(trc); }
 
 void Realm::traceWeakGlobalEdge(JSTracer* trc) {
@@ -365,6 +379,7 @@ void Realm::purge() {
   newProxyCache.purge();
   newPlainObjectWithPropsCache.purge();
   plainObjectAssignCache.purge();
+  plainObjectSpreadCache.purge();
   objects_.iteratorCache.clearAndCompact();
 }
 

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_Hash_SHA3_H
 #define __Hacl_Hash_SHA3_H
 
@@ -36,16 +37,20 @@ extern "C" {
 
 #include "Hacl_Streaming_Types.h"
 
-typedef struct Hacl_Streaming_Keccak_hash_buf_s {
-    Spec_Hash_Definitions_hash_alg fst;
-    uint64_t *snd;
-} Hacl_Streaming_Keccak_hash_buf;
+typedef struct Hacl_Streaming_Keccak_hash_buf_s
+{
+  Spec_Hash_Definitions_hash_alg fst;
+  uint64_t *snd;
+}
+Hacl_Streaming_Keccak_hash_buf;
 
-typedef struct Hacl_Streaming_Keccak_state_s {
-    Hacl_Streaming_Keccak_hash_buf block_state;
-    uint8_t *buf;
-    uint64_t total_len;
-} Hacl_Streaming_Keccak_state;
+typedef struct Hacl_Streaming_Keccak_state_s
+{
+  Hacl_Streaming_Keccak_hash_buf block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Streaming_Keccak_state;
 
 Spec_Hash_Definitions_hash_alg Hacl_Streaming_Keccak_get_alg(Hacl_Streaming_Keccak_state *s);
 
@@ -74,17 +79,19 @@ bool Hacl_Streaming_Keccak_is_shake(Hacl_Streaming_Keccak_state *s);
 
 void
 Hacl_SHA3_shake128_hacl(
-    uint32_t inputByteLen,
-    uint8_t *input,
-    uint32_t outputByteLen,
-    uint8_t *output);
+  uint32_t inputByteLen,
+  uint8_t *input,
+  uint32_t outputByteLen,
+  uint8_t *output
+);
 
 void
 Hacl_SHA3_shake256_hacl(
-    uint32_t inputByteLen,
-    uint8_t *input,
-    uint32_t outputByteLen,
-    uint8_t *output);
+  uint32_t inputByteLen,
+  uint8_t *input,
+  uint32_t outputByteLen,
+  uint8_t *output
+);
 
 void Hacl_SHA3_sha3_224(uint32_t inputByteLen, uint8_t *input, uint8_t *output);
 
@@ -98,20 +105,22 @@ void Hacl_Impl_SHA3_absorb_inner(uint32_t rateInBytes, uint8_t *block, uint64_t 
 
 void
 Hacl_Impl_SHA3_squeeze(
-    uint64_t *s,
-    uint32_t rateInBytes,
-    uint32_t outputByteLen,
-    uint8_t *output);
+  uint64_t *s,
+  uint32_t rateInBytes,
+  uint32_t outputByteLen,
+  uint8_t *output
+);
 
 void
 Hacl_Impl_SHA3_keccak(
-    uint32_t rate,
-    uint32_t capacity,
-    uint32_t inputByteLen,
-    uint8_t *input,
-    uint8_t delimitedSuffix,
-    uint32_t outputByteLen,
-    uint8_t *output);
+  uint32_t rate,
+  uint32_t capacity,
+  uint32_t inputByteLen,
+  uint8_t *input,
+  uint8_t delimitedSuffix,
+  uint32_t outputByteLen,
+  uint8_t *output
+);
 
 #if defined(__cplusplus)
 }

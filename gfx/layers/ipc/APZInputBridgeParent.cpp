@@ -7,6 +7,7 @@
 #include "InputData.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/APZInputBridge.h"
+#include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
 
@@ -199,6 +200,49 @@ mozilla::ipc::IPCResult APZInputBridgeParent::RecvProcessUnhandledEvent(
   mTreeManager->InputBridge()->ProcessUnhandledEvent(
       &refPoint, aOutTargetGuid, aOutFocusSequenceNumber, aOutLayersId);
   *aOutRefPoint = refPoint;
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvSetKeyboardMap(
+    const KeyboardMap& aKeyboardMap) {
+  mTreeManager->InputBridge()->SetKeyboardMap(aKeyboardMap);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvSetDPI(
+    const float& aDpiValue) {
+  mTreeManager->InputBridge()->SetDPI(aDpiValue);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvSetBrowserGestureResponse(
+    const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse) {
+  mTreeManager->InputBridge()->SetBrowserGestureResponse(aInputBlockId,
+                                                         aResponse);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvStartAutoscroll(
+    const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation) {
+  mTreeManager->InputBridge()->StartAutoscroll(aGuid, aAnchorLocation);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvStopAutoscroll(
+    const ScrollableLayerGuid& aGuid) {
+  mTreeManager->InputBridge()->StopAutoscroll(aGuid);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult APZInputBridgeParent::RecvSetLongTapEnabled(
+    const bool& aTapGestureEnabled) {
+  mTreeManager->InputBridge()->SetLongTapEnabled(aTapGestureEnabled);
 
   return IPC_OK();
 }

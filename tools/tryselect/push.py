@@ -259,6 +259,7 @@ def push_to_try(
     try_task_config=None,
     stage_changes=False,
     dry_run=False,
+    write_task_config=False,
     closed_tree=False,
     files_to_change=None,
     allow_log_capture=False,
@@ -327,12 +328,19 @@ def push_to_try(
         )
 
     if try_task_config:
-        changed_files["try_task_config.json"] = (
+        try_task_config_file = (
             json.dumps(
                 try_task_config, indent=4, separators=(",", ": "), sort_keys=True
             )
             + "\n"
         )
+        changed_files["try_task_config.json"] = try_task_config_file
+        if write_task_config:
+            path = os.path.join(vcs.path, "try_task_config.json")
+            with open(path, "w") as fh:
+                fh.write(try_task_config_file)
+            print(f"Wrote {path}")
+            return
         if method not in ("again", "auto", "empty"):
             write_task_config_history(msg, try_task_config)
 

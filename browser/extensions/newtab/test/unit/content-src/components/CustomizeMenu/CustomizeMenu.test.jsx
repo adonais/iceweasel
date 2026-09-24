@@ -50,6 +50,7 @@ describe("<CustomizeMenu>", () => {
       openPreferences: sandbox.stub(),
       setPref: sandbox.stub(),
       dispatch: sandbox.stub(),
+      closeSubpanels: sandbox.stub(),
       enabledSections: {
         topSitesEnabled: true,
         pocketEnabled: true,
@@ -252,64 +253,6 @@ describe("<CustomizeMenu>", () => {
     assert.calledOnce(mockClose);
   });
 
-  it("calls toggleWidgetsManagementPanel when onExited is called and widgets panel is open", () => {
-    const toggleWidgetsManagementPanel = sandbox.stub();
-    wrapper = mount(
-      <WrapWithProvider>
-        <CustomizeMenu
-          {...DEFAULT_PROPS}
-          showWidgetsManagementPanel={true}
-          toggleWidgetsManagementPanel={toggleWidgetsManagementPanel}
-        />
-      </WrapWithProvider>
-    );
-    const instance = wrapper.find("_CustomizeMenu").instance();
-    instance.dialogRef.current = { open: false };
-    instance.personalizeButtonRef.current = { focus: sandbox.stub() };
-    instance.onExited();
-    assert.calledOnce(toggleWidgetsManagementPanel);
-  });
-
-  it("calls toggleSectionsMgmtPanel when onExited is called and sections panel is open", () => {
-    const toggleSectionsMgmtPanel = sandbox.stub();
-    wrapper = mount(
-      <WrapWithProvider>
-        <CustomizeMenu
-          {...DEFAULT_PROPS}
-          showSectionsMgmtPanel={true}
-          toggleSectionsMgmtPanel={toggleSectionsMgmtPanel}
-        />
-      </WrapWithProvider>
-    );
-    const instance = wrapper.find("_CustomizeMenu").instance();
-    instance.dialogRef.current = { open: false };
-    instance.personalizeButtonRef.current = { focus: sandbox.stub() };
-    instance.onExited();
-    assert.calledOnce(toggleSectionsMgmtPanel);
-  });
-
-  it("adds subpanel-open class to customize-menu-content when onSubpanelToggle is called", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <CustomizeMenu {...DEFAULT_PROPS} showing={true} />
-      </WrapWithProvider>
-    );
-
-    const instance = wrapper.find("_CustomizeMenu").instance();
-
-    instance.onSubpanelToggle(true);
-    wrapper.update();
-
-    const content = wrapper.find(".customize-menu-content").hostNodes();
-    assert.isTrue(content.hasClass("subpanel-open"));
-
-    instance.onSubpanelToggle(false);
-    wrapper.update();
-
-    const contentAfter = wrapper.find(".customize-menu-content").hostNodes();
-    assert.isFalse(contentAfter.hasClass("subpanel-open"));
-  });
-
   it("calls showModal when showing transitions from false to true", () => {
     wrapper = mount(
       <WrapWithProvider>
@@ -318,7 +261,11 @@ describe("<CustomizeMenu>", () => {
     );
     const instance = wrapper.find("_CustomizeMenu").instance();
     const mockShowModal = sandbox.stub();
-    instance.dialogRef.current = { open: false, showModal: mockShowModal };
+    instance.dialogRef.current = {
+      open: false,
+      showModal: mockShowModal,
+      querySelectorAll: () => [],
+    };
 
     // Simulate the transition: prevProps.showing was false, now it's true
     instance.componentDidUpdate({ ...DEFAULT_PROPS, showing: false });

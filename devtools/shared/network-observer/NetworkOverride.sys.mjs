@@ -41,8 +41,10 @@ function readFile(file) {
  *        The request to replace content for.
  * @param {string} path
  *        The absolute path to the local file to read content from.
+ * @param {boolean} bypassCors
+ *        Optionally bypass cors by passing "Access-Control-Allow-Origin: *" header.
  */
-function overrideChannelWithFilePath(channel, path) {
+function overrideChannelWithFilePath(channel, path, bypassCors = false) {
   // For JS it isn't important, but for HTML we ought to set the right content type on the data URI.
   // Always consider folders as being html documents.
   let mimeType = channel.URI.spec.endsWith("/") ? "text/html" : "";
@@ -64,12 +66,14 @@ function overrideChannelWithFilePath(channel, path) {
     replacedHttpResponse.setResponseHeader("Content-Type", mimeType, false);
   }
 
-  // Allow all cross origin requests for overrides.
-  replacedHttpResponse.setResponseHeader(
-    "Access-Control-Allow-Origin",
-    "*",
-    false
-  );
+  // Optionally allow all cross origin requests for overrides.
+  if (bypassCors) {
+    replacedHttpResponse.setResponseHeader(
+      "Access-Control-Allow-Origin",
+      "*",
+      false
+    );
+  }
 
   channel
     .QueryInterface(Ci.nsIHttpChannelInternal)

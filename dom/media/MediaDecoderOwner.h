@@ -165,8 +165,13 @@ class MediaDecoderOwner {
   // for some other reason.
   enum class ImageSizeChanged { No, Yes };
   enum class ForceInvalidate { No, Yes };
+  // aNewIntrinsicSize stays in raw (unrotated) pixel dimensions here, matching
+  // how MediaInfo::mDisplay is used for regular (non-WebRTC) playback.
+  // Implementations fall back to their own already-applied value for
+  // whichever of aNewIntrinsicSize/aNewRotation is Nothing here.
   virtual void Invalidate(ImageSizeChanged aImageSizeChanged,
                           const Maybe<nsIntSize>& aNewIntrinsicSize,
+                          const Maybe<VideoRotation>& aNewRotation,
                           ForceInvalidate aForceInvalidate) {}
 
   // Called after the MediaStream we're playing rendered a frame to aContainer

@@ -85,17 +85,7 @@ class DefaultTopSitesBinding(
                         val includedInRegions = item.includeRegions.isEmpty() || region in item.includeRegions
                         val notExcludedInRegions = item.excludeRegions.isEmpty() || region !in item.excludeRegions
 
-                        val includedInExperiments =
-                            if (
-                                item.includeExperiments.isNotEmpty() &&
-                                    item.includeExperiments.first() == "firefox-jp-guide-default-site"
-                            ) {
-                                settings.showFirefoxJpGuideDefaultSite
-                            } else {
-                                true
-                            }
-
-                        includedInRegions && notExcludedInRegions && includedInExperiments
+                        includedInRegions && notExcludedInRegions
                     }
                     .map {
                         Pair(

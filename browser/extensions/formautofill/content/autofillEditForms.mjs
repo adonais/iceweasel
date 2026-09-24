@@ -6,6 +6,7 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  FormAutofill: "resource://autofill/FormAutofill.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
 });
 
@@ -121,13 +122,40 @@ export class EditCreditCard extends EditAutofillForm {
       ),
       month: this._elements.form.querySelector("#cc-exp-month"),
       year: this._elements.form.querySelector("#cc-exp-year"),
+      securityCode: this._elements.form.querySelector("#cc-csc"),
+      securityCodeContainer:
+        this._elements.form.querySelector("#cc-csc-container"),
       billingAddress: this._elements.form.querySelector("#billingAddressGUID"),
       billingAddressRow:
         this._elements.form.querySelector(".billingAddressRow"),
     });
 
+    this.#setupSecurityCodeField();
     this.attachEventListeners();
     this.loadRecord(record, addresses);
+  }
+
+  /**
+   * The security code field is behind a pref. Take it out of the form entirely
+   * while the pref is off so that it can't contribute to the record we save.
+   */
+  #setupSecurityCodeField() {
+    let securityCode = this._elements.securityCode;
+    if (!lazy.FormAutofill.isAutofillCreditCardCVVEnabled) {
+      securityCode.remove();
+      this._elements.securityCode = null;
+      return;
+    }
+    this._elements.securityCodeContainer.hidden = false;
+    this._elements.form.classList.add("has-security-code");
+
+    // The security code is optional, but must be 3 or 4 digits when provided.
+    // The constraints are applied as soon as the inner input exists rather than
+    // in setupValidation() so that the length is enforced while typing.
+    securityCode.updateComplete.then(() => {
+      securityCode.inputEl.pattern = "[0-9]{3,4}";
+      securityCode.inputEl.maxLength = 4;
+    });
   }
 
   loadRecord(record, addresses, preserveFieldValues) {

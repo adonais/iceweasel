@@ -1,4 +1,4 @@
-// |jit-test| exitstatus: 3; skip-if: !wasmIsSupported()
+// |jit-test| exitstatus: 3; skip-if: !wasmIsSupported(); test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 let { exports } = new WebAssembly.Instance(
     new WebAssembly.Module(wasmTextToBinary(`

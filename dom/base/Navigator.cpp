@@ -691,8 +691,7 @@ bool Navigator::GlobalPrivacyControl() {
     gpcStatus = loadContext && loadContext->UsePrivateBrowsing() &&
                 StaticPrefs::privacy_globalprivacycontrol_pbmode_enabled();
   }
-  return StaticPrefs::privacy_globalprivacycontrol_functionality_enabled() &&
-         gpcStatus;
+  return gpcStatus;
 }
 
 uint64_t Navigator::HardwareConcurrency() {

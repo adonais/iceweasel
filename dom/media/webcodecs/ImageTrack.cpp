@@ -49,8 +49,8 @@ JSObject* ImageTrack::WrapObject(JSContext* aCx,
 }
 
 void ImageTrack::SetSelected(bool aSelected) {
-  if (mTrackList) {
-    mTrackList->SetSelectedIndex(mIndex, aSelected);
+  if (const RefPtr<ImageTrackList> trackList = mTrackList) {
+    trackList->SetSelectedIndex(mIndex, aSelected);
   }
 }
 

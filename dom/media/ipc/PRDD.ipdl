@@ -18,7 +18,6 @@ include protocol PSandboxTesting;
 include "mozilla/ipc/ByteBufUtils.h";
 
 using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
-using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 using mozilla::media::MediaCodecsSupported from "MediaCodecsSupport.h";
 
 // Telemetry
@@ -31,7 +30,7 @@ using mozilla::Telemetry::DiscardedData from "mozilla/TelemetryComms.h";
 
 #if defined(XP_WIN)
 [MoveOnly] using mozilla::UntrustedModulesData from "mozilla/UntrustedModulesData.h";
-[MoveOnly] using mozilla::ModulePaths from "mozilla/UntrustedModulesData.h";
+[MoveOnly] using mozilla::ModuleIdentifiers from "mozilla/UntrustedModulesData.h";
 [MoveOnly] using mozilla::ModulesMapResult from "mozilla/UntrustedModulesData.h";
 #endif  // defined(XP_WIN)
 
@@ -103,7 +102,7 @@ child:
   async AddMemoryReport(MemoryReport aReport);
 
 #if defined(XP_WIN)
-  async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
+  async GetModulesTrust(ModuleIdentifiers aModIdents, bool aRunAtNormalPriority)
       returns (ModulesMapResult? modMapResult);
 #endif  // defined(XP_WIN)
 

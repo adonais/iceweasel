@@ -32,12 +32,12 @@ def _generate_task_output_files(job, filenames, locale=None):
     for filename in filenames:
         data.append({
             "type": "file",
-            "path": f"/home/worker/artifacts/{filename}",
+            "path": f"/builds/worker/artifacts/{filename}",
             "name": f"{artifact_prefix}/{locale_output_path}{filename}",
         })
     data.append({
         "type": "file",
-        "path": "/home/worker/artifacts/manifest.json",
+        "path": "/builds/worker/artifacts/manifest.json",
         "name": f"{artifact_prefix}/{locale_output_path}manifest.json",
     })
     return data

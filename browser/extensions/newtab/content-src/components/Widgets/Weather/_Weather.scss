@@ -156,10 +156,6 @@
         background-image: url('chrome://global/skin/icons/shaft-arrow-down.svg');
       }
     }
-
-    .weather-info-description {
-      display: none;
-    }
   }
 
   // Weather condition background colors
@@ -245,6 +241,18 @@
   &.small-widget {
     grid-column: span 2;
     grid-row: span 2;
+
+    // The small layout has no room to show the conditions summary, but it is the
+    // weather icon's only text alternative, so it is visually hidden rather than
+    // display: none to keep it in the accessibility tree.
+    .weather-info-description {
+      clip-path: inset(50%);
+      height: 1px;
+      overflow: hidden;
+      position: absolute;
+      white-space: nowrap;
+      width: 1px;
+    }
   }
 
   &.medium-widget {
@@ -289,7 +297,6 @@
     }
 
     .weather-info-description {
-      display: block;
       font-size: var(--font-size-small);
       color: var(--text-color-deemphasized);
     }
@@ -341,7 +348,6 @@
     }
 
     .weather-info-description {
-      display: block;
       font-size: var(--font-size-small);
       color: var(--text-color-deemphasized);
     }

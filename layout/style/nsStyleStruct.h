@@ -43,6 +43,7 @@ class ComputedStyle;
 struct AnchorPosResolutionCache;
 class AnchorPosReferenceData;
 struct IntrinsicSize;
+class LogicalMargin;
 struct SizeComputationInput;
 
 }  // namespace mozilla
@@ -1662,6 +1663,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleScrollSnapAlign mScrollSnapAlign;
   mozilla::StyleScrollSnapStop mScrollSnapStop;
   mozilla::StyleScrollSnapType mScrollSnapType;
+  mozilla::StyleScrollbarInset mScrollbarInsetBlock;
+  mozilla::StyleScrollbarInset mScrollbarInsetInline;
 
   mozilla::StyleBackfaceVisibility mBackfaceVisibility;
   mozilla::StyleTransformStyle mTransformStyle;
@@ -1847,6 +1850,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     return mOverflowX == mozilla::StyleOverflow::Visible &&
            mOverflowY == mozilla::StyleOverflow::Visible;
   }
+
+  // How much to shorten each scrollbar by at each of its ends. Each side holds
+  // the inset measured from it, so the block-axis pair shortens the scrollbar
+  // running along the block axis. Defined in WritingModes.h.
+  inline mozilla::LogicalMargin GetScrollbarInset(
+      mozilla::WritingMode aWM) const;
 
   bool IsContainPaint() const {
     // Short circuit for no containment whatsoever
@@ -2483,5 +2492,18 @@ struct nsSize_Simple {
 STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsSize, nsSize_Simple);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, width);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, height);
+
+/**
+ * <div rustbindgen="true" replaces="mozilla::gfx::Rect">
+ */
+struct Rect_Simple {  // note that this is gfx::Rect, NOT gfxRect!
+  float x, y, width, height;
+};
+
+STATIC_ASSERT_TYPE_LAYOUTS_MATCH(mozilla::gfx::Rect, Rect_Simple);
+STATIC_ASSERT_FIELD_OFFSET_MATCHES(mozilla::gfx::Rect, Rect_Simple, x);
+STATIC_ASSERT_FIELD_OFFSET_MATCHES(mozilla::gfx::Rect, Rect_Simple, y);
+STATIC_ASSERT_FIELD_OFFSET_MATCHES(mozilla::gfx::Rect, Rect_Simple, width);
+STATIC_ASSERT_FIELD_OFFSET_MATCHES(mozilla::gfx::Rect, Rect_Simple, height);
 
 #endif /* nsStyleStruct_h_ */

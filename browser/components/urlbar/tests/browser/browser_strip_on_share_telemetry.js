@@ -1,13 +1,34 @@
 "use strict";
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 let listService;
 
-const STRIP_ON_SHARE_PARAMS_REMOVED = "STRIP_ON_SHARE_PARAMS_REMOVED";
-const STRIP_ON_SHARE_LENGTH_DECREASE = "STRIP_ON_SHARE_LENGTH_DECREASE";
+/**
+ * Asserts a Glean custom distribution holds the expected samples. Every
+ * recorded sample is expected to be `expectedSample`, so the distribution's
+ * sum is that value repeated `expectedCount` times.
+ *
+ * @param {"stripOnShareParamsRemoved"|"stripOnShareLengthDecrease"} name
+ *   Name of the metric on `Glean.contentblocking`.
+ * @param {number} expectedSample
+ *   Value each recorded sample is expected to have.
+ * @param {number} expectedCount
+ *   Number of samples expected in the distribution.
+ */
+function assertDistribution(name, expectedSample, expectedCount) {
+  let distribution = Glean.contentblocking[name].testGetValue();
+
+  Assert.ok(distribution, `${name} should have been recorded`);
+  Assert.equal(
+    distribution?.count,
+    expectedCount,
+    `${name} should have ${expectedCount} sample(s)`
+  );
+  Assert.equal(
+    distribution?.sum,
+    expectedSample * expectedCount,
+    `${name} sample(s) should each be ${expectedSample}`
+  );
+}
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -30,26 +51,21 @@ add_task(async function testSingleQueryParam() {
   let originalURI = "https://www.example.com/?utm_source=1";
   let strippedURI = "https://www.example.com/";
 
-  // Calculating length difference between URLs to check correct telemetry label
+  // Calculating length difference between URLs to check correct telemetry sample
   let lengthDiff = originalURI.length - strippedURI.length;
 
-  let paramHistogram = TelemetryTestUtils.getAndClearHistogram(
-    STRIP_ON_SHARE_PARAMS_REMOVED
-  );
-  let lengthHistogram = TelemetryTestUtils.getAndClearHistogram(
-    STRIP_ON_SHARE_LENGTH_DECREASE
-  );
+  Services.fog.testResetFOG();
 
   await testStripOnShare(originalURI, strippedURI);
 
-  // The "1" Label is being checked as 1 Query Param is being stripped
-  TelemetryTestUtils.assertHistogram(paramHistogram, 1, 1);
-  TelemetryTestUtils.assertHistogram(lengthHistogram, lengthDiff, 1);
+  // A sample of "1" is being checked as 1 Query Param is being stripped
+  assertDistribution("stripOnShareParamsRemoved", 1, 1);
+  assertDistribution("stripOnShareLengthDecrease", lengthDiff, 1);
 
   await testStripOnShare(originalURI, strippedURI);
 
-  TelemetryTestUtils.assertHistogram(paramHistogram, 1, 2);
-  TelemetryTestUtils.assertHistogram(lengthHistogram, lengthDiff, 2);
+  assertDistribution("stripOnShareParamsRemoved", 1, 2);
+  assertDistribution("stripOnShareLengthDecrease", lengthDiff, 2);
 });
 
 // Checking telemetry for mutliple query params being stripped
@@ -57,26 +73,21 @@ add_task(async function testMultiQueryParams() {
   let originalURI = "https://www.example.com/?utm_source=1&utm_ad=1&utm_id=1";
   let strippedURI = "https://www.example.com/";
 
-  // Calculating length difference between URLs to check correct telemetry label
+  // Calculating length difference between URLs to check correct telemetry sample
   let lengthDiff = originalURI.length - strippedURI.length;
 
-  let paramHistogram = TelemetryTestUtils.getAndClearHistogram(
-    STRIP_ON_SHARE_PARAMS_REMOVED
-  );
-  let lengthHistogram = TelemetryTestUtils.getAndClearHistogram(
-    STRIP_ON_SHARE_LENGTH_DECREASE
-  );
+  Services.fog.testResetFOG();
 
   await testStripOnShare(originalURI, strippedURI);
 
-  // The "3" Label is being checked as 3 Query Params are being stripped
-  TelemetryTestUtils.assertHistogram(paramHistogram, 3, 1);
-  TelemetryTestUtils.assertHistogram(lengthHistogram, lengthDiff, 1);
+  // A sample of "3" is being checked as 3 Query Params are being stripped
+  assertDistribution("stripOnShareParamsRemoved", 3, 1);
+  assertDistribution("stripOnShareLengthDecrease", lengthDiff, 1);
 
   await testStripOnShare(originalURI, strippedURI);
 
-  TelemetryTestUtils.assertHistogram(paramHistogram, 3, 2);
-  TelemetryTestUtils.assertHistogram(lengthHistogram, lengthDiff, 2);
+  assertDistribution("stripOnShareParamsRemoved", 3, 2);
+  assertDistribution("stripOnShareLengthDecrease", lengthDiff, 2);
 });
 
 async function testStripOnShare(validUrl, strippedUrl) {

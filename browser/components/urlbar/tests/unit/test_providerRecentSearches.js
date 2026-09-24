@@ -13,7 +13,6 @@ let EXPIRE_PREF = "recentsearches.expirationMs";
 let SUGGESTS_PREF = "suggest.recentsearches";
 
 let TEST_SEARCHES = ["Bob Vylan", "Glasgow Weather", "Joy Formidable"];
-let SEARCH_BAR_SAPS = ["searchbar", "newtab_searchbar"];
 let defaultEngine;
 
 function makeRecentSearchResult(context, engine, suggestion) {
@@ -81,7 +80,7 @@ add_task(async function test_disabled() {
     matches: [],
   });
 
-  for (let sapName of SEARCH_BAR_SAPS) {
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
     info(`Check whether prefs don't disable it in ${sapName}`);
     let context = createContext("", { isPrivate: false, sapName });
     await check_results({
@@ -121,7 +120,7 @@ add_task(async function test_most_recent_shown_searchbar() {
   info(
     "Check that browser.urlbar.recentsearches.maxResults doesn't affect a search bar"
   );
-  for (let sapName of SEARCH_BAR_SAPS) {
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
     await addSearches(Array.from(Array(12).keys()).map(i => `Search ${i}`));
     let context = createContext("", { isPrivate: false, sapName });
     await check_results({

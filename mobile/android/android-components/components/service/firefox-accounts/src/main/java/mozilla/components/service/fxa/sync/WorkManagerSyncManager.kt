@@ -255,7 +255,7 @@ internal class WorkManagerSyncDispatcher(
     }
 
     private fun periodicSyncWorkRequest(unit: TimeUnit, period: Long, initialDelay: Long): PeriodicWorkRequest {
-        val data = getWorkerData(SyncReason.Scheduled)
+        val data = getWorkerData(reason = SyncReason.Scheduled, supportedEngines = supportedEngines)
         // Periodic interval must be at least PeriodicWorkRequest.MIN_PERIODIC_INTERVAL_MILLIS,
         // e.g. not more frequently than 15 minutes.
         return PeriodicWorkRequestBuilder<WorkManagerSyncWorker>(period, unit, initialDelay, unit)
@@ -277,7 +277,12 @@ internal class WorkManagerSyncDispatcher(
         debounce: Boolean = false,
         customEngineSubset: List<SyncEngine> = listOf(),
     ): OneTimeWorkRequest {
-        val data = getWorkerData(reason, customEngineSubset)
+        val data =
+            getWorkerData(
+                reason = reason,
+                supportedEngines = supportedEngines,
+                customEngineSubset = customEngineSubset,
+            )
         return OneTimeWorkRequestBuilder<WorkManagerSyncWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setInputData(data)
@@ -292,15 +297,18 @@ internal class WorkManagerSyncDispatcher(
             .build()
     }
 
-    private fun getWorkerData(
-        reason: SyncReason,
-        customEngineSubset: List<SyncEngine> = listOf(),
-    ): Data {
-        val enginesToSync = customEngineSubset.takeIf { it.isNotEmpty() } ?: supportedEngines
-        return Data.Builder()
-            .putStringArray(KEY_DATA_STORES, enginesToSync.map { it.nativeName }.toTypedArray())
-            .putString(KEY_REASON, reason.asString())
-            .build()
+    companion object {
+        internal fun getWorkerData(
+            reason: SyncReason,
+            supportedEngines: Set<SyncEngine>,
+            customEngineSubset: List<SyncEngine> = listOf(),
+        ): Data {
+            val enginesToSync = customEngineSubset.takeIf { it.isNotEmpty() } ?: supportedEngines
+            return Data.Builder()
+                .putStringArray(KEY_DATA_STORES, enginesToSync.map { it.nativeName }.toTypedArray())
+                .putString(KEY_REASON, reason.asString())
+                .build()
+        }
     }
 }
 
@@ -315,6 +323,13 @@ internal class WorkManagerSyncWorker(
 
     private val rustSyncManager: RustSyncManager
         get() = GlobalAccountManager.requireRustSyncManager()
+
+    private val syncStateStorageProvider: SyncStateStorage.Provider
+        get() = GlobalAccountManager.requireSyncStateStorageProvider()
+
+    private val clock by lazy {
+        GlobalAccountManager.systemClock
+    }
 
     @VisibleForTesting
     internal fun isDebounced(): Boolean {
@@ -375,6 +390,7 @@ internal class WorkManagerSyncWorker(
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     private suspend fun doSync(syncableStores: Map<SyncEngine, LazyStoreWithKey>): Result {
         val engineKeyProviders = mutableMapOf<SyncEngine, KeyProvider>()
+        val syncStateStorage = syncStateStorageProvider.get()
 
         // We need to tell RustSyncManager which engines to sync.
         val enginesToSync = SyncEngineSelection.Some(syncableStores.map { it.key.nativeName })
@@ -419,7 +435,7 @@ internal class WorkManagerSyncWorker(
         // We need any persisted state that we received from RustSyncManager in the past.
         // We should be able to pass a `null` value, but currently the library will crash.
         // See https://github.com/mozilla/application-services/issues/1829
-        val currentSyncState = getSyncState(context) ?: ""
+        val currentSyncState = syncStateStorage.persistedSyncState ?: ""
 
         // We need to tell RustSyncManager about our local "which engines are enabled/disabled" state.
         // This is a global state, shared by every sync client for this account. State that we will
@@ -486,7 +502,7 @@ internal class WorkManagerSyncWorker(
 
         // Persist the sync state; it may have changed during a sync, and RustSyncManager relies on us
         // to store it.
-        setSyncState(context, syncResult.persistedState)
+        syncStateStorage.persistedSyncState = syncResult.persistedState
 
         // Log the results.
         syncResult.failures.entries.forEach {
@@ -524,7 +540,7 @@ internal class WorkManagerSyncWorker(
                 // in Fennec, but for very specific reasons that aren't relevant here. We could have
                 // a timestamp per store, or whatever we want here really.
                 // For now, we just update it every time we succeed to sync.
-                setLastSynced(context)
+                syncStateStorage.lastSynced = clock.now()
                 Result.success()
             }
 
@@ -596,7 +612,6 @@ internal class WorkManagerSyncWorker(
 
 private const val SYNC_STATE_PREFS_KEY = "syncPrefs"
 private const val SYNC_LAST_SYNCED_KEY = "lastSynced"
-private const val SYNC_STATE_KEY = "persistedState"
 
 private const val SYNC_STARTUP_DELAY_MS = 5 * 1000L // 5 seconds.
 
@@ -608,34 +623,31 @@ private fun recordEngineSyncedTime(engine: String, now: Long = System.currentTim
     WorkManagerSyncWorker.engineSyncTimestamp[engine] = now
 }
 
+/**
+ * This API is currently compatible with [SharedPrefsSyncStateStorage] because they have the underlying shared
+ * preferences, but this API will be completely removed in bug https://bugzilla.mozilla.org/show_bug.cgi?id=2067060
+ */
+@Deprecated(
+    message =
+        "This API will be removed in the future. The last synced time should be accessed through the standard way" +
+            " of accessing sync state"
+)
 fun getLastSynced(context: Context): Long {
     return context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).getLong(SYNC_LAST_SYNCED_KEY, 0)
 }
 
-internal fun clearSyncState(context: Context) {
-    context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).edit { clear() }
-}
-
-internal fun getSyncState(context: Context): String? {
-    return context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).getString(SYNC_STATE_KEY, null)
-}
-
 /**
- * Saves the lastSyncedTime to the shared preferences
+ * Saves the lastSyncedTime to the shared preferences. Will be removed in
+ * https://bugzilla.mozilla.org/show_bug.cgi?id=2067060
  *
  * @param context the context
  * @param lastSyncedTime - the last synced time in milliseconds. Defaults to the current time.
  * @return the time that was stored.
  */
+@Deprecated(message = "This API will be removed in bug 2067060. This should not be set externally")
 fun setLastSynced(context: Context, lastSyncedTime: Long = System.currentTimeMillis()): Long {
     context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).edit {
         putLong(SYNC_LAST_SYNCED_KEY, lastSyncedTime)
     }
     return lastSyncedTime
-}
-
-internal fun setSyncState(context: Context, state: String) {
-    context.getSharedPreferences(SYNC_STATE_PREFS_KEY, Context.MODE_PRIVATE).edit {
-        putString(SYNC_STATE_KEY, state)
-    }
 }

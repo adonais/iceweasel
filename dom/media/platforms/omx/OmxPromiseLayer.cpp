@@ -28,6 +28,8 @@ OmxPromiseLayer::OmxPromiseLayer(TaskQueue* aTaskQueue,
   MOZ_ASSERT(!!mPlatformLayer);
 }
 
+OmxPromiseLayer::~OmxPromiseLayer() = default;
+
 RefPtr<OmxPromiseLayer::OmxCommandPromise> OmxPromiseLayer::Init(
     const TrackInfo* aInfo) {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());

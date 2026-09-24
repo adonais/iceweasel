@@ -4,7 +4,6 @@
 
 package mozilla.components.compose.base.button
 
-import android.view.SoundEffectConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,7 +25,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -39,15 +37,10 @@ import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.ui.icons.R as iconsR
 
-// Temporary workaround to Compose buttons not having click sounds
-// see https://issuetracker.google.com/issues/218064821
-
 private val RippleRadius = 24.dp
 
 /**
- * A Button with the following functionalities:
- * - it has a minimum touch target size of 48dp
- * - it will play a sound effect for clicks
+ * A Button with a minimum touch target size of 48dp.
  *
  * @param onClick Callback for when this button is clicked.
  * @param contentDescription Text used by accessibility services to describe what this button does.
@@ -79,8 +72,6 @@ fun IconButton(
     val contentColor = if (enabled) colors.contentColor else colors.disabledContentColor
 
     CompositionLocalProvider(LocalContentColor provides contentColor) {
-        val view = LocalView.current
-
         Box(
             modifier =
                 modifier
@@ -96,10 +87,7 @@ fun IconButton(
                         enabled = enabled,
                         onClickLabel = onClickLabel,
                         role = Role.Button,
-                        onClick = {
-                            view.playSoundEffect(SoundEffectConstants.CLICK)
-                            onClick()
-                        },
+                        onClick = { onClick() },
                     ),
             contentAlignment = Alignment.Center,
         ) {

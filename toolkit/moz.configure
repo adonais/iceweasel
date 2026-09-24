@@ -118,8 +118,8 @@ def all_configure_options():
     previous = None
     for option in __sandbox__._options.values():
         # __sandbox__._options contains items for both option.name and
-        # option.env. But it's also an OrderedDict, meaning both are
-        # consecutive.
+        # option.env. But it's also a dict, meaning it is ordered and both
+        # are consecutive.
         # Also ignore MOZCONFIG because they're not
         # interesting.
         if option == previous or option.env in ("MOZCONFIG",):
@@ -639,6 +639,7 @@ set_define("MOZ_ENABLE_VAAPI", True, when=toolkit_gtk)
 set_config("MOZ_ENABLE_VULKAN_VIDEO", True, when=toolkit_gtk)
 set_define("MOZ_ENABLE_VULKAN_VIDEO", True, when=toolkit_gtk)
 
+
 @depends(target, toolkit_gtk)
 def v4l2(target, toolkit_gtk):
     # V4L2 decode is only used in GTK/Linux and generally only appears on
@@ -798,23 +799,12 @@ def applemedia(toolkit):
 set_config("MOZ_APPLEMEDIA", applemedia)
 set_define("MOZ_APPLEMEDIA", applemedia)
 
+
 # Windows Media Foundation support
 # ==============================================================
-option("--disable-wmf", help="Disable support for Windows Media Foundation")
-
-
-@depends("--disable-wmf", target, "--help")
-def wmf(value, target, _):
-    enabled = bool(value)
-    if value.origin == "default":
-        # Enable Windows Media Foundation support by default.
-        # Note our minimum SDK version is Windows 7 SDK, so we are (currently)
-        # guaranteed to have a recent-enough SDK to build WMF.
-        enabled = target.os == "WINNT"
-    if enabled and target.os != "WINNT":
-        die("Cannot enable Windows Media Foundation support on %s", target.os)
-    if enabled:
-        return True
+@depends(target)
+def wmf(target):
+    return target.os == "WINNT"
 
 
 @depends(artifact_builds, c_compiler, when=wmf)
@@ -824,28 +814,22 @@ def wmfmediaengine(artifact_builds, c_compiler):
     return bool(artifact_builds)
 
 
-set_config("MOZ_WMF", wmf)
-set_define("MOZ_WMF", wmf)
+set_config("MOZ_WMF", True, when=wmf)
+set_define("MOZ_WMF", True, when=wmf)
 
 set_config("MOZ_WMF_MEDIA_ENGINE", True, when=wmfmediaengine)
 set_define("MOZ_WMF_MEDIA_ENGINE", True, when=wmfmediaengine)
 
+
 # FFmpeg H264/AAC Decoding Support
 # ==============================================================
-option("--disable-ffmpeg", help="Disable FFmpeg for fragmented H264/AAC decoding")
+@depends(target)
+def ffmpeg(target):
+    return target.os not in ("Android", "WINNT")
 
 
-@depends("--disable-ffmpeg", target)
-def ffmpeg(value, target):
-    enabled = bool(value)
-    if value.origin == "default":
-        enabled = target.os not in ("Android", "WINNT")
-    if enabled:
-        return True
-
-
-set_config("MOZ_FFMPEG", ffmpeg)
-set_define("MOZ_FFMPEG", ffmpeg)
+set_config("MOZ_FFMPEG", True, when=ffmpeg)
+set_define("MOZ_FFMPEG", True, when=ffmpeg)
 
 # AV1 Video Codec Support
 # ==============================================================
@@ -1266,23 +1250,6 @@ def webspeech(value):
 
 set_config("MOZ_WEBSPEECH", webspeech)
 set_define("MOZ_WEBSPEECH", webspeech)
-
-# Speech API test backend
-# ==============================================================
-option(
-    "--enable-webspeechtestbackend",
-    default=webspeech,
-    help="{Enable|Disable} support for HTML Speech API Test Backend",
-)
-
-
-@depends_if("--enable-webspeechtestbackend")
-def webspeech_test_backend(value):
-    return True
-
-
-set_config("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
-set_define("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
 
 
 # Graphics
@@ -2568,9 +2535,10 @@ def ffvpx(target):
     audio_only = False
     flags = []
 
-    # This enables audio and video codecs paths on Windows  x86 and x86_64,
-    # macOS (all arch), and Linux x86_64. On other arch / OS combinations,
-    # only audio codecs are enabled.
+    # This enables audio and video codecs paths on Windows (x86, x86_64,
+    # aarch64), macOS (all arch), Android (x86_64, aarch64, arm), and Linux
+    # x86_64 and aarch64. On other arch / OS combinations, only audio codecs
+    # are enabled.
     if target.kernel == "WINNT":
         if target.cpu == "x86":
             # 32-bit windows need to prefix symbols with an underscore.
@@ -2607,6 +2575,10 @@ def ffvpx(target):
             use_nasm = False
     elif target.cpu == "x86_64":
         flags = ["-D__x86_64__", "-DPIC", "-DELF", "-Pconfig_unix64.asm"]
+    elif target.cpu == "aarch64":
+        # Linux/BSD aarch64: match Android aarch64 (NEON asm, no nasm).
+        flags = ["-DPIC", "-DELF"]
+        use_nasm = False
     else:
         audio_only = True
 
@@ -3028,12 +3000,14 @@ with only_when(compile_environment & wasm_sandboxing.hunspell):
         body="clock();",
         check_msg="for emulated clock() in wasi sysroot",
         flags=depends(wasi_sysroot_flags)(
-            lambda sysroot_flags: [
-                "-Werror",
-                "-D_WASI_EMULATED_PROCESS_CLOCKS",
-                "-lwasi-emulated-process-clocks",
-            ]
-            + sysroot_flags
+            lambda sysroot_flags: (
+                [
+                    "-Werror",
+                    "-D_WASI_EMULATED_PROCESS_CLOCKS",
+                    "-lwasi-emulated-process-clocks",
+                ]
+                + sysroot_flags
+            )
         ),
         when=depends(clock_in_wasi_sysroot)(lambda x: not x),
         onerror=lambda: die("Can't find clock() in wasi sysroot."),
@@ -3410,8 +3384,6 @@ with only_when(target_is_osx):
 
 # Miscellaneous options
 # ==============================================================
-option(env="MOZ_WINCONSOLE", nargs="?", help="Whether we can create a console window")
-set_define("MOZ_WINCONSOLE", True, when=depends("MOZ_WINCONSOLE")(lambda x: x))
 
 # Alternative Crashreporter setting
 option(
@@ -3796,6 +3768,7 @@ def pkg_suffix(pkg_format):
 
 set_config("PKG_SUFFIX", pkg_suffix)
 
+
 @depends(build_project, moz_app_name)
 def moz_pkg_dir_default(build_project, moz_app_name):
     if build_project == "mobile/android":
@@ -3855,9 +3828,7 @@ def package_toolkit_defines(dll_prefix, dll_suffix, bin_suffix, toolkit, fold_li
 
 set_config("PACKAGE_TOOLKIT_DEFINES", package_toolkit_defines)
 
-set_config(
-    "JAR_COMPRESSION", "none", when=depends(toolkit)(lambda t: t != "android")
-)
+set_config("JAR_COMPRESSION", "none", when=depends(toolkit)(lambda t: t != "android"))
 
 
 @depends("MOZ_DEV_EDITION")
@@ -4085,10 +4056,14 @@ def moz_package_extra_args(
     if pkg_format == "DMG" and branding_dir:
         brand = join(topsrcdir, branding_dir)
         args += [
-            "--dsstore", join(brand, "dsstore"),
-            "--background", join(brand, "background.png"),
-            "--icon", join(brand, "disk.icns"),
-            "--volume-name", app_displayname,
+            "--dsstore",
+            join(brand, "dsstore"),
+            "--background",
+            join(brand, "background.png"),
+            "--icon",
+            join(brand, "disk.icns"),
+            "--volume-name",
+            app_displayname,
         ]
     return " ".join(shlex.quote(a) for a in args)
 

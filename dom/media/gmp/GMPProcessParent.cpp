@@ -90,7 +90,7 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
       auto prefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
       bool success =
           prefSerializer->SerializeToSharedMemory(GeckoProcessType_GMPlugin,
-                                                  /* remoteType */ ""_ns);
+                                                  /* remoteType */ {});
 
       MonitorAutoLock lock(mMonitor);
       MOZ_ASSERT(!mComplete);

@@ -734,17 +734,22 @@ void StreamFilterParent::DoSendData(Data&& aData) {
     MutexAutoLock al(mBufferMutex);
     if (mPrependedBufferCount == 0) {
       mBufferedData.insertFront(new BufferedData(std::move(aData)));
+      ++mPrependedBufferCount;
     } else {
       MOZ_ASSERT(!mBufferedData.isEmpty());
       int i = 0;
+      bool inserted = false;
       for (BufferedData* item : mBufferedData) {
         if (++i == mPrependedBufferCount) {
           item->setNext(new BufferedData(std::move(aData)));
           ++mPrependedBufferCount;
+          inserted = true;
           break;
         }
       }
-      MOZ_ASSERT_UNREACHABLE("mPrependedBufferCount past end of mBufferedData");
+      if (!inserted) {
+        MOZ_ASSERT_UNREACHABLE("mPrependedBufferCount outside mBufferedData");
+      }
     }
   }
 
@@ -805,6 +810,19 @@ StreamFilterParent::OnDataAvailable(nsIRequest* aRequest,
   if (mState == State::Disconnecting) {
     MutexAutoLock al(mBufferMutex);
     BufferData(std::move(data));
+  } else if (mState == State::Disconnected) {
+    // Although we already return early on Disconnected above, it is possible
+    // to still encounter Disconnected again here, e.g. via FinishDisconnect:
+    // it first hops to the IO thread to call FlushBufferedData, then back to
+    // the actor thread to set mState to Disconnected. If OnDataAvailable is
+    // called while hopping back to the actor thread, it is possible for mState
+    // to transition to Disconnected while OnDataAvailable is Read()ing above.
+    //
+    // To preserve FIFO order, flush buffered data if any (rare), and the data
+    // that we just read. The next OnDataAvailable call would immediately write
+    // to mOrigListener, so we need to write without further delays.
+    FlushBufferedData();
+    return Write(data);
   } else if (mState == State::Closed) {
     return NS_ERROR_FAILURE;
   } else {

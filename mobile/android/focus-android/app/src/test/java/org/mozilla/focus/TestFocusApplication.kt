@@ -9,6 +9,8 @@ import android.util.AttributeSet
 import android.util.JsonReader
 import android.util.JsonWriter
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import mozilla.components.browser.engine.gecko.profiler.Profiler
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
@@ -29,7 +31,12 @@ import org.json.JSONObject
  */
 class TestFocusApplication : FocusApplication() {
     override val components: Components by lazy {
-        Components(this, engineOverride = FakeEngine(), clientOverride = FakeClient())
+        Components(
+            this,
+            engineOverride = FakeEngine(),
+            clientOverride = FakeClient(),
+            applicationScope = CoroutineScope(Dispatchers.Unconfined),
+        )
     }
 
     override fun initializeNimbus() = Unit

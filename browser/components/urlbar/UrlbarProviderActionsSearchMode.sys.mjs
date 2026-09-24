@@ -83,6 +83,11 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
     return !!action.isInactive?.();
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { key, inputLength } = details.result.payload;
     let action = lazy.ActionsProviderQuickActions.getAction(key);

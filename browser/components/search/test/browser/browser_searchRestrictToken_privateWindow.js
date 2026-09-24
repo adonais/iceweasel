@@ -1,7 +1,8 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-const PREF = "browser.search.separatePrivateDefault.ui.enabled";
+const PREF = "browser.search.separatePrivateDefault.featureGate";
+const ENABLED_PREF = "browser.search.separatePrivateDefault.enabled";
 
 const CONFIG = [
   {
@@ -43,11 +44,15 @@ const CONFIG = [
 add_setup(async function () {
   await SearchService.init();
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF, true]],
+    set: [
+      [PREF, true],
+      [ENABLED_PREF, true],
+    ],
   });
 
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref(PREF);
+    Services.prefs.clearUserPref(ENABLED_PREF);
   });
 });
 

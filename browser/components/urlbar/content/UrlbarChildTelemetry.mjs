@@ -64,7 +64,7 @@ export class UrlbarChildTelemetry {
    * @param {Event} event
    *   The event that started the session.
    * @param {object} queryContext
-   *   The query context (unused here, kept for signature parity).
+   *   The query context, cached for the session when no query has run.
    * @param {string} [searchString]
    *   The search string related to the event, if any.
    * @param {string} [interactionType]
@@ -114,6 +114,12 @@ export class UrlbarChildTelemetry {
         UrlbarTelemetryUtils.startInteractionType(event, searchString),
       searchString,
     };
+
+    // Engagements that run no query would otherwise reach the provider
+    // notifications with no context at all.
+    if (!this.#controller.parentController._lastQueryContextWrapper) {
+      this.#controller.parentController.setLastQueryContextCache(queryContext);
+    }
   }
 
   /**
@@ -178,7 +184,7 @@ export class UrlbarChildTelemetry {
               engagementData.visibleResults
             );
 
-        this.#controller.recordEngagement(
+        this.#controller.parentController.recordEngagement(
           UrlbarTelemetryUtils.recordedEngagementToWire({
             built,
             disableBuilt,
@@ -213,7 +219,7 @@ export class UrlbarChildTelemetry {
    */
   reset() {
     this.#previousSearchWords = null;
-    this.#controller.resetEngagement();
+    this.#controller.parentController.resetEngagement();
   }
 
   /**
@@ -297,114 +303,67 @@ export class UrlbarChildTelemetry {
     });
   }
 
-  // Bounces still being tracked on the message path, keyed by the tab's stable
-  // browser id.
-  #bounceStates = new Map();
-
   /**
-   * Starts tracking a potential bounce after an engagement, resolving the
-   * bounce snapshot content-side (the recording itself runs parent-side).
+   * Starts tracking a potential bounce after an engagement, building the Glean
+   * event content-side and handing it to the parent, which owns the tracking
+   * and the recording.
    *
-   * Bounce tracking keys on the chrome address bar's selected-tab browser and
-   * its tab-close/navigation triggers, so -- unlike the collector's engagement
-   * recording -- it doesn't run for a content-process urlbar, which has no such
-   * browser.
-   *
-   * @param {number} browserId
-   *   The stable browser id of the tab the engagement happened in.
+   * @param {?number} browserId
+   *   The stable browser id of the tab the engagement happened in, or null when
+   *   the input has no chrome window to read one from.
    * @param {Event} event The DOM event behind the engagement.
    * @param {object} details The interaction details.
    */
   async startTrackingBounceEvent(browserId, event, details) {
-    // Resolve the session and the input/view content the snapshot needs before
-    // awaiting below: the engagement record that follows this call ends the
-    // session and closes the view, and the await yields to it.
-    let startEventInfo = this.#startEventInfo;
     let { input, view } = this.#controller;
     let engagementData = UrlbarTelemetryUtils.engagementData(input, view);
     let smartbarData = UrlbarTelemetryUtils.smartbarData(input);
 
-    // Another engagement while already tracking could itself be a bounce.
-    if (this.#bounceStates.has(browserId)) {
-      await this.handleBounceEventTrigger(browserId);
-    }
-
     let snapshot = UrlbarTelemetryUtils.collectBounceSnapshot(
       event,
       details,
-      startEventInfo,
+      this.#startEventInfo,
       engagementData.visibleResults
     );
+    if (!snapshot) {
+      return;
+    }
 
     // Build the Glean event now, while the input and view are live; `view_time`
     // is filled parent-side once `Interactions` reports it at trigger time.
-    let built = null;
-    let searchSource = null;
-    if (snapshot) {
-      searchSource = snapshot.searchSource;
-      let searchMode = snapshot.searchMode ?? engagementData.searchMode;
-      let { interaction } = UrlbarTelemetryUtils.getInteractionType(
-        "bounce",
-        snapshot.startEventInfo,
-        searchSource,
-        snapshot.searchWords,
-        searchMode,
-        this.#previousSearchWords
-      );
-      built = UrlbarTelemetryUtils.buildEventInfo({
-        method: "bounce",
-        action: snapshot.action,
-        interaction,
-        numChars: snapshot.numChars,
-        numWords: snapshot.numWords,
-        provider: snapshot.provider,
-        searchSource,
-        searchMode,
-        selIndex: snapshot.selIndex,
-        visibleResults: snapshot.visibleResults,
-        viewIsOpen: engagementData.viewIsOpen,
-        selType: snapshot.selType,
-        location: snapshot.location,
-        chatId: smartbarData.chatId,
-        intent: smartbarData.intent,
-        model: smartbarData.model,
-        windowMode: snapshot.windowMode,
-      });
-    }
-
-    this.#bounceStates.set(browserId, {
-      startTime: Date.now(),
-      built,
+    let { searchSource } = snapshot;
+    let searchMode = snapshot.searchMode ?? engagementData.searchMode;
+    let { interaction } = UrlbarTelemetryUtils.getInteractionType(
+      "bounce",
+      snapshot.startEventInfo,
       searchSource,
+      snapshot.searchWords,
+      searchMode,
+      this.#previousSearchWords
+    );
+    let built = UrlbarTelemetryUtils.buildEventInfo({
+      method: "bounce",
+      action: snapshot.action,
+      interaction,
+      numChars: snapshot.numChars,
+      numWords: snapshot.numWords,
+      provider: snapshot.provider,
+      searchSource,
+      searchMode,
+      selIndex: snapshot.selIndex,
+      visibleResults: snapshot.visibleResults,
+      viewIsOpen: engagementData.viewIsOpen,
+      selType: snapshot.selType,
+      location: snapshot.location,
+      chatId: smartbarData.chatId,
+      intent: smartbarData.intent,
+      model: smartbarData.model,
+      windowMode: snapshot.windowMode,
     });
 
-    // The bounce records parent-side at trigger time, by which point a closing
-    // tab's browser is gone. Hand the parent the live browser now so it can
-    // still resolve it then.
-    this.#controller.trackBounceBrowser(browserId);
-  }
-
-  /**
-   * Handles a bounce trigger (tab close, navigating away, re-engaging the
-   * urlbar): ships the tracked snapshot, start time, browser id, and the
-   * content the recording reads to the parent, which queries `Interactions`
-   * and records the bounce if warranted.
-   *
-   * @param {number} browserId
-   *   The stable browser id of the tab the trigger happened in.
-   */
-  handleBounceEventTrigger(browserId) {
-    let state = this.#bounceStates.get(browserId);
-    if (!state) {
-      return;
-    }
-    this.#bounceStates.delete(browserId);
-    let { built, searchSource, startTime } = state;
-
-    this.#controller.handleBounceTrigger({
+    this.#controller.parentController.startTrackingBuiltBounce({
       built,
       searchSource,
-      startTime,
       browserId,
     });
   }

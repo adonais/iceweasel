@@ -251,6 +251,18 @@ menu to match its anchor's width when it is opened.
 </panel-list>
 ```
 
+### Suppressing the context menu
+
+Setting the `suppress-contextmenu` attribute prevents a contextmenu from being
+triggered on the items within a panel-list.
+
+```html
+<panel-list suppress-contextmenu>
+  <panel-item>Open in a new tab</panel-item>
+  <panel-item>Open in a new window</panel-item>
+</panel-list>
+```
+
 ### Usage in a XUL `panel`
 
 The "new" (as of early 2023) migration wizard uses the `panel-list` inside of a

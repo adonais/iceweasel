@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, MutableMapping
 from collections.abc import MutableMapping as MutableMappingABC
 from pathlib import Path
-from typing import Any, Callable, Iterable, MutableMapping, TypedDict, cast
+from typing import TYPE_CHECKING, Any, TypedDict, cast
+
+if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
 
 EnvType = MutableMapping[str, Any]  # note: could use TypeAlias in python 3.10
 """Type for the environment sandbox used in parsing and rendering,
@@ -31,6 +36,19 @@ class OptionsType(TypedDict):
     """CSS language prefix for fenced blocks."""
     highlight: Callable[[str, str, str], str] | None
     """Highlighter function: (content, lang, attrs) -> str."""
+    store_labels: NotRequired[bool]
+    """Store link label in link/image token's metadata (under Token.meta['label']).
+
+    This is a Python only option, and is intended for the use of round-trip parsing.
+    """
+    tasklists: NotRequired[bool]
+    """Enable GFM task list checkbox detection in list items."""
+    alerts: NotRequired[bool]
+    """Enable GitHub-style alert detection in blockquotes."""
+    tasklists_editable: NotRequired[bool]
+    """When True, rendered task list checkboxes are interactive (no disabled attribute)."""
+    strikethrough_single_tilde: NotRequired[bool]
+    """Allow single tilde ``~text~`` for strikethrough in addition to double."""
 
 
 class PresetType(TypedDict):

@@ -486,6 +486,8 @@ skip-if = [
   "os == 'android' && debug",
 ]
 
+["test_ext_module_import_while_scripting_disabled.js"]
+
 ["test_ext_networkStatus.js"]
 
 ["test_ext_notifications_incognito.js"]

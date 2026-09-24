@@ -95,6 +95,12 @@ export class NativeThemeColorsCheckbox extends MozLitElement {
 
   #onChange(e) {
     Services.prefs.setBoolPref(PREF_NATIVE_THEME, e.target.checked);
+    Glean.themePicker.change.record({
+      source: "about:addons",
+      layout: "full",
+      property: "nativeTheme",
+      native_theme: e.target.checked,
+    });
   }
 
   render() {

@@ -10,10 +10,7 @@ const TEST_URL =
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["privacy.query_stripping.strip_list", "stripParam"],
-    ],
+    set: [["privacy.query_stripping.strip_list", "stripParam"]],
   });
 
   // Get the list service so we can wait for it to be fully initialized before running tests.
@@ -97,6 +94,49 @@ add_task(async function testNonHTTPsPages() {
   });
 });
 
+// Bug 1960853 - Tests
+
+// Testing that a valueless param inside a nested URL
+// does not gain a wrong '='
+add_task(async function testNestedValuelessParamNotGivenEquals() {
+  let validUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F%3Futm_ad%3D1234%26x";
+  let shortenedUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F%3Fx";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+  });
+});
+
+// A genuine empty value (trailing '=') inside a nested URL must be
+// preserved through the recursive strip
+add_task(async function testNestedGenuineEmptyValuePreserved() {
+  let validUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F%3Futm_ad%3D1234%26x%3D";
+  let shortenedUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F%3Fx%3D";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+  });
+});
+
+// A valueless param at the TOP level, appearing after a param whose
+// value is a nested URL that gets recursively stripped, must also not
+// gain a wrong '=' -- confirms the outer loop's own equals-tracking
+// still works correctly for entries following a TryStripValue mutation.
+add_task(async function testTopLevelValuelessParamAfterNestedStripping() {
+  let validUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F%3Futm_ad%3D1234&x";
+  let shortenedUrl =
+    "https://www.example.com/?test=https%3A%2F%2Fwww.example.net%2F&x";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+  });
+});
+
 /**
  * Opens a new tab, opens the context menu and checks that the strip-on-share menu item is visible.
  * Checks that the stripped version of the url is copied to the clipboard.
@@ -119,11 +159,11 @@ async function testStripOnShare({ originalURI, strippedURI }) {
     },
     example: {
       queryParams: ["test_2", "test_1"],
-      origins: ["www.example.com"],
+      hosts: ["www.example.com"],
     },
     exampleNet: {
       queryParams: ["test_3", "test_4"],
-      origins: ["www.example.net"],
+      hosts: ["www.example.net"],
     },
   };
 

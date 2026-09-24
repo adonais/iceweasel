@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
 </head>
 <body>
-<iframe srcdoc="<!DOCTYPE html><h1>Another document</h1>"></iframe>
+<iframe></iframe>
 <div id="container">
   <div contenteditable id="editor"></div>
 </div>
@@ -20,8 +20,14 @@ const container = document.getElementById('container');
 const editor = document.getElementById('editor');
 const iframe = document.querySelector('iframe');
 let otherDocument;
-let {promise: waitForIFrameLoad, resolve: onIFrameLoad} = Promise.withResolvers();
-iframe.onload = onIFrameLoad;
+const waitForIFrameLoad = new Promise(resolve => {
+  iframe.onload = () => {
+    if (iframe.contentWindow.location.href === 'about:srcdoc') {
+      resolve();
+    }
+  };
+  iframe.srcdoc = '<!DOCTYPE html><h1>Another document</h1>';
+});
 
 function reset() {
   document.adoptNode(editor);

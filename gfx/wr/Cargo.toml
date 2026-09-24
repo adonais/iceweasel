@@ -4,6 +4,7 @@ members = [
     "webrender",
     "webrender_api",
     "wrench",
+    "wrshell",
     "example-compositor/compositor",
 ]
 resolver = "2"

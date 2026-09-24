@@ -93,6 +93,9 @@ add_task(async function unexpectedSchemeDoesNotLoad() {
     await NewtabSearchbarTestUtils.promiseAutocompleteResultPopup({
       browser: tab.linkedBrowser,
       value: query,
+      // These icons are supposed to fail to load, that's the point of this
+      // task.
+      expectUnloadableIcons: true,
     });
     let icon = await NewtabSearchbarTestUtils.waitForRowIcon(
       tab.linkedBrowser,

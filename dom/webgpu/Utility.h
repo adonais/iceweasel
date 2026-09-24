@@ -44,9 +44,10 @@ ffi::WGPUTextureFormat ConvertTextureFormat(
 ffi::WGPUTextureAspect ConvertTextureAspect(
     const dom::GPUTextureAspect& aAspect);
 
-// Converts a `dom::GPUTextureDescriptor` into a `ffi::WGPUTextureDescriptor`,
-// owning the necessary temporary storage. The converted descriptor returned by
-// `Get` is only valid for the lifetime of this object.
+// Converts a `dom::GPUTextureDescriptor` into a
+// `ffi::WGPUFfiTextureDescriptor`, owning the necessary temporary storage. The
+// converted descriptor returned by `Get` is only valid for the lifetime of this
+// object.
 class MOZ_STACK_CLASS ConvertTextureDescriptor final {
  public:
   explicit ConvertTextureDescriptor(const dom::GPUTextureDescriptor& aDesc);
@@ -54,12 +55,12 @@ class MOZ_STACK_CLASS ConvertTextureDescriptor final {
   ConvertTextureDescriptor(const ConvertTextureDescriptor&) = delete;
   ConvertTextureDescriptor& operator=(const ConvertTextureDescriptor&) = delete;
 
-  const ffi::WGPUTextureDescriptor* Get() const { return &mDesc; }
+  const ffi::WGPUFfiTextureDescriptor* Get() const { return &mDesc; }
 
  private:
   StringHelper mLabel;
   AutoTArray<ffi::WGPUTextureFormat, 8> mViewFormats;
-  ffi::WGPUTextureDescriptor mDesc = {};
+  ffi::WGPUFfiTextureDescriptor mDesc = {};
 };
 
 ffi::WGPUVertexFormat ConvertVertexFormat(const dom::GPUVertexFormat& aFormat);

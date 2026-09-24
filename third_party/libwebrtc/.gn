@@ -106,4 +106,7 @@ default_args = {
 
   # WebRTC must stay in C++20 for longer compared to Chromium.
   use_cxx23 = false
+
+  # Perfetto with zstd doesn't build when build_with_chromium=false
+  enable_perfetto_zstd = false
 }

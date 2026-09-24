@@ -21,6 +21,7 @@ const FAILED_URL = "https://foo.exit-cta.com/";
 
 add_setup(async function () {
   stubSearchCTASupportedEngine();
+  pinSearchCTADecisionDeadline();
   await SearchTestUtils.installSearchExtension(
     {
       name: "MozSearchCTAExit",

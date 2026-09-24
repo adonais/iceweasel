@@ -1616,16 +1616,6 @@
     <!-- History multi select title in app bar
     %1$d is the number of bookmarks selected -->
     <string name="history_multi_select_title">%1$d selected</string>
-    <!-- Text for the header that groups the history for today -->
-    <string name="history_today">Today</string>
-    <!-- Text for the header that groups the history for yesterday -->
-    <string name="history_yesterday">Yesterday</string>
-    <!-- Text for the header that groups the history the past 7 days -->
-    <string name="history_7_days">Last 7 days</string>
-    <!-- Text for the header that groups the history the past 30 days -->
-    <string name="history_30_days">Last 30 days</string>
-    <!-- Text for the header that groups the history older than the last month -->
-    <string name="history_older">Older</string>
     <!-- Text shown when no history exists -->
     <string name="history_empty_message">No history here</string>
 
@@ -2199,10 +2189,6 @@
     <string name="sync_sign_in">Sign in to Sync</string>
     <!-- An option from the share dialog to send link to all other sync devices -->
     <string name="sync_send_to_all">Send to all devices</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">No devices available</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Any devices signed in and syncing to this account will appear here.</string>
     <!-- An option from the share dialog to reconnect to sync -->
     <string name="sync_reconnect">Reconnect to Sync</string>
     <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -2227,6 +2213,20 @@
     <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nSent from %2$s 🦊 Try the mobile browser: %3$s</string>
     <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
     <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nSent from %2$s 🦊 %3$s</string>
+    <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+    <string name="sync_send_tab_error_auth_title">Sign back in to send tabs between devices</string>
+    <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate-->
+    <string name="sync_send_tab_error_auth_button">Sign in</string>
+    <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+    <string name="sync_send_tab_error_auth_remove_account">Remove account</string>
+    <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+    <string name="sync_send_tab_empty_state_title">No devices connected</string>
+    <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+    <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">To send a tab, sign in to Firefox on at least one other device.</string>
+    <!-- Send tab to synced devices: Connectivity Error title -->
+    <string name="sync_send_tab_error_connection_title">Check your internet connection</string>
+    <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+    <string name="sync_send_tab_error_connection_text">Then try resending your tab.</string>
 
     <!-- Notifications -->
     <!-- Text shown in the notification that pops up to remind the user that a private browsing session is active. -->
@@ -2799,14 +2799,14 @@
     <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
     <string name="preferences_ip_protection_beta_badge_label">BETA</string>
     <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-    <string name="ip_protection_title">VPN</string>
+    <string name="ip_protection_settings_title">Built-in VPN</string>
     <!-- Label for the browser VPN toggle on the settings screen -->
     <string name="ip_protection_toggle_label">VPN</string>
     <!-- Content description for the browser VPN settings screen top bar back button -->
     <string name="ip_protection_navigate_back_button_content_description">Navigate back</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
     <string name="ip_protection_promo_headline">%s’s built-in VPN</string>
-    <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text.-->
+    <!-- Body text for the browser VPN settings header, shown when no promo is running. %s is a learn more link using ip_protection_learn_more as text.-->
     <string name="ip_protection_promo_body_2">Browse with extra protection by hiding your location, even on public Wi-Fi. %s</string>
     <!-- Link text that opens additional information about the browser VPN -->
     <string name="ip_protection_learn_more">Learn more</string>
@@ -2879,7 +2879,7 @@
         %1$d is the total monthly allowance in GB (for example "50"). -->
     <string name="ip_protection_data_limit_reached_snackbar">%1$d GB of VPN data used. Access will reset next month.</string>
     <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-    <string name="ip_protection_data_limit_reached_snackbar_action">Settings</string>
+    <string name="ip_protection_open_settings_snackbar_action">Settings</string>
     <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
     <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Turn VPN on to make your browsing more private and harder to trace.</string>
     <!-- Title shown on the browser VPN settings screen for location selection section. -->

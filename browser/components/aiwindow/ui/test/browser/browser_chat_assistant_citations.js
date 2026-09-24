@@ -196,6 +196,58 @@ add_task(async function test_overflow_panel_holds_hidden_sources() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function test_overflow_panel_keeps_duplicate_urls() {
+  const { tab, browser } = await openTestPage(TEST_PAGE);
+
+  // Assistants can cite the same page more than once (e.g. several details
+  // pulled from one recipe). The overflow panel must keep every citation even
+  // when they share a URL.
+  const DUPLICATE_SOURCES = [
+    { url: "https://recipes.example/potato", title: "Potato recipe A" },
+    { url: "https://recipes.example/potato", title: "Potato recipe B" },
+    { url: "https://recipes.example/potato", title: "Potato recipe C" },
+    { url: "https://recipes.example/potato", title: "Potato recipe D" },
+    { url: "https://recipes.example/potato", title: "Potato recipe E" },
+  ];
+
+  await setCitationsAndSettle(browser, "narrow-citations", DUPLICATE_SOURCES);
+
+  await SpecialPowers.spawn(browser, [DUPLICATE_SOURCES], async sources => {
+    const el = content.document.getElementById("narrow-citations");
+    const row = el.shadowRoot.querySelector(".citations");
+    const moreButton = row.querySelector(
+      ".citations-more:not([data-overflow])"
+    );
+    Assert.ok(moreButton, "The duplicate sources overflow into the menu");
+    const overflowCount = JSON.parse(
+      moreButton.getAttribute("data-l10n-args")
+    ).count;
+    Assert.greater(overflowCount, 1, "More than one source overflows");
+
+    const inline = row.querySelectorAll(
+      ':scope > [role="listitem"]:not([data-overflow])'
+    ).length;
+    Assert.equal(
+      inline + overflowCount,
+      sources.length,
+      "Inline and overflow items account for every duplicate source"
+    );
+
+    const panel = row.querySelector("smartwindow-panel-list");
+    Assert.ok(panel, "A panel list holds the overflow sources");
+    await panel.updateComplete;
+    const innerList = panel.shadowRoot.querySelector("panel-list");
+    const hiddenTitles = sources.slice(inline).map(s => s.title);
+    Assert.deepEqual(
+      [...innerList.querySelectorAll("ai-website-chip")].map(c => c.label),
+      hiddenTitles,
+      "The overflow panel lists every hidden source even with duplicate URLs"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_widening_re_expands_collapsed_sources() {
   const { tab, browser } = await openTestPage(TEST_PAGE);
 

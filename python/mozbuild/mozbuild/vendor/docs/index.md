@@ -1,7 +1,40 @@
 # Vendoring Third Party Components
 
-The firefox source tree vendors many third party dependencies. The build system
-provides a normalized way to keep track of:
+The firefox source tree vendors many third party dependencies. This document
+describes both the expectations when adding vendored dependencies, and the
+practical side of how to use our vendoring infrastructure.
+
+## Expectations Around Vendoring
+
+When you vendor in new code, ownership expectations are similar to those when
+you write your own code. We expect you to:
+
+- check the suitability of the vendored code as compared to available
+  alternatives;
+- check licensing suitability;
+- check the vendored code is maintained in its source location;
+- check for auditing results where the language/vendoring system supports this;
+- commit to keeping it updated (especially but not limited to security updates).
+
+Where vendored packages are depended on by several parts of our codebase and
+several teams, that responsibility is shared between those teams. In these
+situations, please proactively organize between the teams to avoid "tragedy
+of the commons" type situations where nobody takes responsibility for ongoing
+ownership of the vendored dependency.
+
+To ensure the vendored code stays up-to-date, consider making use of `updatebot`
+(detailed below). This will allow you to review automatically created vendoring
+updates, including running trypushes to verify the updates do not break things.
+
+Otherwise, you will need to set up reminders or a push-based
+notification for new releases.
+
+For rust crates, we also run `cargo deny` in automation, which will lead to bugs
+filed when/where crates are missing critical security updates. This can help
+you stay on top of security issues but does not cover other updates.
+
+## Vendoring Architecture
+The build system provides a normalized way to keep track of:
 
 1. The upstream source license, location and revision
 

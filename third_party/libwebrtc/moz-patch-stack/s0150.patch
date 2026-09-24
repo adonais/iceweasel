@@ -1,0 +1,260 @@
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Thu, 27 Aug 2026 08:06:00 +0000
+Subject: Bug 2054622 - WebRTC backport: PipeWire mmap improvements r=pehrsons
+
+PipeWire: encapsulate mmap in ScopedBuf and fix mapoffset handling
+Move mmap into ScopedBuf::initialize so callers no longer manage mmap
+flags and cleanup directly. Use MAP_PRIVATE for read-only MemFd
+consumers and MAP_SHARED for DmaBuf and read-write consumers. Fix
+screen capture's double mapoffset application by passing the offset
+to mmap directly. Add AccessMode and BufferType enums for clarity
+and delete copy/move to prevent double-munmap.
+
+PipeWire: validate fd backing size before mmap
+Validate that the fd actually backs the requested mapping range
+by calling fstat and checking mapoffset + maxsize <= st_size
+before mmap, matching what PipeWire does in its own memory pool
+(src/pipewire/mem.c). Skip the check for DmaBuf fds where fstat
+does not reliably report the buffer size.
+
+This is a simple backport of WebRTC upstream changes.
+
+Upstream commits:
+c84dbe590a5519bc1404a268dd8816088ffe8980
+5c10f93376c1e9f0ff339bd1facf5b6d7d978f25
+
+Differential Revision: https://phabricator.services.mozilla.com/D321791
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/abff9e232490c530fa9693f3b6792966ab8a877b
+---
+ .../linux/wayland/shared_screencast_stream.cc | 11 ++---
+ .../linux/wayland/test/test_egl_dmabuf.cc     |  5 +--
+ .../test/test_screencast_stream_provider.cc   |  7 ++--
+ modules/portal/pipewire_utils.cc              | 42 +++++++++++++++++++
+ modules/portal/pipewire_utils.h               | 33 ++++++++-------
+ .../linux/video_capture_pipewire.cc           | 12 +++---
+ 6 files changed, 72 insertions(+), 38 deletions(-)
+
+diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+index b42fa2e139..c35f9370e9 100644
+--- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
++++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
+@@ -1109,20 +1109,15 @@ bool SharedScreenCastStreamPrivate::ProcessMemFDBuffer(
+   uint8_t* src = nullptr;
+ 
+   const uint64_t maxsize = static_cast<uint64_t>(spa_buffer->datas[0].maxsize);
+-  const uint64_t mapoffset =
+-      static_cast<uint64_t>(spa_buffer->datas[0].mapoffset);
+-
+-  map.initialize(
+-      static_cast<uint8_t*>(mmap(nullptr, maxsize + mapoffset, PROT_READ,
+-                                 MAP_PRIVATE, spa_buffer->datas[0].fd, 0)),
+-      maxsize + mapoffset, spa_buffer->datas[0].fd);
++  map.initialize(spa_buffer->datas[0].fd, maxsize,
++                 spa_buffer->datas[0].mapoffset, ScopedBuf::BufferType::kMemFd);
+ 
+   if (!map) {
+     RTC_LOG(LS_ERROR) << "Failed to mmap the memory: " << std::strerror(errno);
+     return false;
+   }
+ 
+-  src = SPA_MEMBER(map.get(), mapoffset, uint8_t);
++  src = map.get();
+ 
+   const uint64_t src_stride = spa_buffer->datas[0].chunk->stride;
+ 
+diff --git a/modules/desktop_capture/linux/wayland/test/test_egl_dmabuf.cc b/modules/desktop_capture/linux/wayland/test/test_egl_dmabuf.cc
+index 36be3fa8ee..58f745ede5 100644
+--- a/modules/desktop_capture/linux/wayland/test/test_egl_dmabuf.cc
++++ b/modules/desktop_capture/linux/wayland/test/test_egl_dmabuf.cc
+@@ -60,10 +60,9 @@ bool TestEglDrmDevice::ImageFromDmaBuf(
+   const size_t plane_stride = plane.stride;
+   const size_t buffer_size_bytes = plane_stride * size.height();
+ 
+-  uint8_t* map = static_cast<uint8_t*>(
+-      mmap(nullptr, buffer_size_bytes, PROT_READ, MAP_SHARED, plane.fd, 0));
+   ScopedBuf scoped_buf;
+-  scoped_buf.initialize(map, buffer_size_bytes, plane.fd, true);
++  scoped_buf.initialize(plane.fd, buffer_size_bytes, 0,
++                        ScopedBuf::BufferType::kDmaBuf);
+ 
+   if (!scoped_buf) {
+     RTC_LOG(LS_ERROR) << "TestEglDrmDevice: Failed to mmap DMA-BUF";
+diff --git a/modules/desktop_capture/linux/wayland/test/test_screencast_stream_provider.cc b/modules/desktop_capture/linux/wayland/test/test_screencast_stream_provider.cc
+index 7253cbf166..3b95eb7a2c 100644
+--- a/modules/desktop_capture/linux/wayland/test/test_screencast_stream_provider.cc
++++ b/modules/desktop_capture/linux/wayland/test/test_screencast_stream_provider.cc
+@@ -195,10 +195,9 @@ void TestScreenCastStreamProvider::RecordFrame(RgbaColor rgba_color,
+   ScopedBuf scoped_buf;
+ 
+   if (spa_data->type == SPA_DATA_DmaBuf) {
+-    uint8_t* map =
+-        static_cast<uint8_t*>(mmap(nullptr, buffer_size, PROT_READ | PROT_WRITE,
+-                                   MAP_SHARED, spa_data->fd, 0));
+-    scoped_buf.initialize(map, buffer_size, spa_data->fd, true);
++    scoped_buf.initialize(spa_data->fd, buffer_size, 0,
++                          ScopedBuf::BufferType::kDmaBuf,
++                          ScopedBuf::AccessMode::kReadWrite);
+     if (!scoped_buf) {
+       RTC_LOG(LS_ERROR) << "Failed to mmap DMA-BUF for recording";
+       pw_stream_queue_buffer(pw_stream_, buffer);
+diff --git a/modules/portal/pipewire_utils.cc b/modules/portal/pipewire_utils.cc
+index 7008696b7d..bdea4318e7 100644
+--- a/modules/portal/pipewire_utils.cc
++++ b/modules/portal/pipewire_utils.cc
+@@ -11,13 +11,18 @@
+ #include "modules/portal/pipewire_utils.h"
+ 
+ #include <pipewire/pipewire.h>
++#include <sys/mman.h>
++#include <sys/stat.h>
+ 
++#include <cstddef>
++#include <cstdint>
+ #include <optional>
+ #include <string>
+ #include <string_view>
+ #include <tuple>
+ #include <vector>
+ 
++#include "rtc_base/checks.h"
+ #include "rtc_base/sanitizer.h"
+ #include "rtc_base/string_encode.h"
+ #include "rtc_base/string_to_number.h"
+@@ -120,4 +125,41 @@ PipeWireInitializer::~PipeWireInitializer() {
+   }
+ }
+ 
++void ScopedBuf::initialize(int fd,
++                           size_t maxsize,
++                           off_t mapoffset,
++                           BufferType buffer_type,
++                           AccessMode mode) {
++  // PipeWire supports shared memory mappings <= 4GB in size.
++  RTC_CHECK_GE(mapoffset, 0);
++  RTC_CHECK_LE(mapoffset, UINT32_MAX);
++  RTC_CHECK_LE(maxsize, UINT32_MAX);
++
++  if (buffer_type == BufferType::kMemFd) {
++    struct stat sb;
++    if (fstat(fd, &sb) != 0 ||
++        static_cast<int64_t>(mapoffset) + static_cast<int64_t>(maxsize) >
++            static_cast<int64_t>(sb.st_size)) {
++      return;
++    }
++  }
++
++  int prot =
++      mode == AccessMode::kReadWrite ? (PROT_READ | PROT_WRITE) : PROT_READ;
++  int flags =
++      (buffer_type == BufferType::kDmaBuf || mode == AccessMode::kReadWrite)
++          ? MAP_SHARED
++          : MAP_PRIVATE;
++
++  map_ =
++      static_cast<uint8_t*>(mmap(nullptr, maxsize, prot, flags, fd, mapoffset));
++  map_size_ = maxsize;
++  fd_ = fd;
++  buffer_type_ = buffer_type;
++
++  if (buffer_type_ == BufferType::kDmaBuf && map_ != MAP_FAILED) {
++    SyncDmaBuf(fd_, DMA_BUF_SYNC_START);
++  }
++}
++
+ }  // namespace webrtc
+diff --git a/modules/portal/pipewire_utils.h b/modules/portal/pipewire_utils.h
+index d0734c19be..e3769294f2 100644
+--- a/modules/portal/pipewire_utils.h
++++ b/modules/portal/pipewire_utils.h
+@@ -16,6 +16,7 @@
+ #include <sys/mman.h>
+ 
+ #include <cerrno>
++#include <cstddef>
+ #include <cstdint>
+ #include <string>
+ #include <string_view>
+@@ -102,12 +103,17 @@ static bool SyncDmaBuf(int fd, uint64_t start_or_end) {
+ 
+ class ScopedBuf {
+  public:
++  enum class AccessMode { kReadOnly, kReadWrite };
++  enum class BufferType { kMemFd, kDmaBuf };
++
+   ScopedBuf() {}
+-  ScopedBuf(uint8_t* map, int map_size, int fd, bool is_dma_buf = false)
+-      : map_(map), map_size_(map_size), fd_(fd), is_dma_buf_(is_dma_buf) {}
++  ScopedBuf(const ScopedBuf&) = delete;
++  ScopedBuf& operator=(const ScopedBuf&) = delete;
++  ScopedBuf(ScopedBuf&&) = delete;
++  ScopedBuf& operator=(ScopedBuf&&) = delete;
+   ~ScopedBuf() {
+     if (map_ != MAP_FAILED) {
+-      if (is_dma_buf_) {
++      if (buffer_type_ == BufferType::kDmaBuf) {
+         SyncDmaBuf(fd_, DMA_BUF_SYNC_END);
+       }
+       munmap(map_, map_size_);
+@@ -116,24 +122,19 @@ class ScopedBuf {
+ 
+   explicit operator bool() { return map_ != MAP_FAILED; }
+ 
+-  void initialize(uint8_t* map, int map_size, int fd, bool is_dma_buf = false) {
+-    map_ = map;
+-    map_size_ = map_size;
+-    is_dma_buf_ = is_dma_buf;
+-    fd_ = fd;
+-
+-    if (is_dma_buf_) {
+-      SyncDmaBuf(fd_, DMA_BUF_SYNC_START);
+-    }
+-  }
++  void initialize(int fd,
++                  size_t maxsize,
++                  off_t mapoffset,
++                  BufferType buffer_type,
++                  AccessMode mode = AccessMode::kReadOnly);
+ 
+   uint8_t* get() { return map_; }
+ 
+  protected:
+   uint8_t* map_ = static_cast<uint8_t*>(MAP_FAILED);
+-  int map_size_;
+-  int fd_;
+-  bool is_dma_buf_;
++  size_t map_size_ = 0;
++  int fd_ = -1;
++  BufferType buffer_type_ = BufferType::kMemFd;
+ };
+ 
+ }  // namespace webrtc
+diff --git a/modules/video_capture/linux/video_capture_pipewire.cc b/modules/video_capture/linux/video_capture_pipewire.cc
+index 54586e2673..2b3b619c38 100644
+--- a/modules/video_capture/linux/video_capture_pipewire.cc
++++ b/modules/video_capture/linux/video_capture_pipewire.cc
+@@ -24,7 +24,6 @@
+ #include <spa/utils/defs.h>
+ #include <spa/utils/result.h>
+ #include <spa/utils/type.h>
+-#include <sys/mman.h>
+ 
+ #include <algorithm>
+ #include <cerrno>
+@@ -483,12 +482,11 @@ void VideoCaptureModulePipeWire::ProcessBuffers() {
+     if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf ||
+         spaBuffer->datas[0].type == SPA_DATA_MemFd) {
+       ScopedBuf frame;
+-      frame.initialize(
+-          static_cast<uint8_t*>(
+-              mmap(nullptr, spaBuffer->datas[0].maxsize, PROT_READ, MAP_SHARED,
+-                   spaBuffer->datas[0].fd, spaBuffer->datas[0].mapoffset)),
+-          spaBuffer->datas[0].maxsize, spaBuffer->datas[0].fd,
+-          spaBuffer->datas[0].type == SPA_DATA_DmaBuf);
++      frame.initialize(spaBuffer->datas[0].fd, spaBuffer->datas[0].maxsize,
++                       spaBuffer->datas[0].mapoffset,
++                       spaBuffer->datas[0].type == SPA_DATA_DmaBuf
++                           ? ScopedBuf::BufferType::kDmaBuf
++                           : ScopedBuf::BufferType::kMemFd);
+ 
+       if (!frame) {
+         RTC_LOG(LS_ERROR) << "Failed to mmap the memory: "

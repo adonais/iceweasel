@@ -84,7 +84,7 @@ export async function executeToolByName(
       break;
     }
     case GET_OPEN_TABS:
-      result = await toolFns.getOpenTabs(conversation);
+      result = await toolFns.getOpenTabs(toolParams, conversation);
       break;
     case SEARCH_BROWSING_HISTORY:
       result = await toolFns.searchBrowsingHistory(toolParams, conversation);

@@ -21,16 +21,22 @@
   <string name="content_description_private_browsing">Merdeiñ prevez</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Klask pe chomlecʼh</string>
+  <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+  <string name="search_hint_short">Klask</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
   <string name="search_hint_general_engine">Klask er web</string>
   <!-- Placeholder text shown in search bar when using history search -->
   <string name="history_search_hint">Klask er roll istor</string>
   <!-- Placeholder text shown in search bar when using bookmarks search -->
   <string name="bookmark_search_hint">Klask er sinedoù</string>
+  <!-- Content description for the toolbar back button while searching bookmarks -->
+  <string name="bookmark_close_search_description">Distreiñ ha serriñ ar c’hlask</string>
   <!-- Placeholder text shown in search bar when using tabs search -->
   <string name="tab_search_hint">Klask en ivinelloù</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Skrivit gerioù ar c’hlask</string>
+  <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
+  <string name="tab_manager_empty_normal_tabs_page_header">Krouiñ un ivinell nevez evit kregiñ da glask</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d diuzet</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -261,6 +267,8 @@
     Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
   -->
   <string name="browser_toolbar_translate">Treiñ ar bajenn</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Klask dre vouezh</string>
   <!--
     Locale Settings Fragment
 
@@ -1114,6 +1122,8 @@
   <string name="download_item_status_failed">Pellgargañ c\'hwitet</string>
   <!-- Text for the snackbar action button to view failed download details. -->
   <string name="download_failed_snackbar_action_details">Munudoù</string>
+  <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
+  <string name="download_search_placeholder">Klask er pellgargadurioù</string>
   <!-- Text to indicate that no downloads match the search query. -->
   <string name="download_search_no_results_found">Disoc’h ebet kavet</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
@@ -1257,6 +1267,8 @@
   <string name="bookmark_delete_folder_content_description">Dilemel an teuliad</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">Klask er sinedoù</string>
+  <!-- Content description for select folder screen search action button ("search" is a verb) -->
+  <string name="select_bookmark_search_button_content_description">Klask en teuliadoù</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Elfenn lañser evit %s</string>
   <!-- Title for the bookmark list empty state -->
@@ -2710,6 +2722,14 @@
   <string name="review_prompt_positive_button">Dispar eo!</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Reiñ hoc’h ali</string>
+  <!--
+    Settings Search Strings
+
+    Title of Settings Search. "Search" is a verb here
+  -->
+  <string name="settings_search_title">Klask en arventennoù</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">Skarzhañ ar c’hlask</string>
   <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Un hizivadur zo da gaout</string>
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->

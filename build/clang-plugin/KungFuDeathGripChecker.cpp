@@ -7,7 +7,7 @@
 
 void KungFuDeathGripChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(varDecl(hasType(isRefPtr()), hasLocalStorage(),
-                                       hasInitializer(anything()),
+                                 hasInitializer(anything()),
                                  unless(anyOf(isReferenced(), isParameter())))
                              .bind("decl"),
                          this);

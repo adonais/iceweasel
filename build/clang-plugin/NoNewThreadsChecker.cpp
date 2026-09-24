@@ -11,8 +11,8 @@ void NoNewThreadsChecker::registerMatchers(MatchFinder *AstMatcher) {
   // -Instances of NS_NewNamedThread that use names that aren't recognized
   AstMatcher->addMatcher(
       callExpr(isFirstParty(),
-                     callee(functionDecl(hasName("NS_NewNamedThread"))),
-                     unless(isInAllowlistForThreads()))
+               callee(functionDecl(hasName("NS_NewNamedThread"))),
+               unless(isInAllowlistForThreads()))
           .bind("funcCall"),
       this);
 }
@@ -20,15 +20,14 @@ void NoNewThreadsChecker::registerMatchers(MatchFinder *AstMatcher) {
 void NoNewThreadsChecker::check(const MatchFinder::MatchResult &Result) {
   const CallExpr *FuncCall = Result.Nodes.getNodeAs<CallExpr>("funcCall");
 
-    diag(FuncCall->getBeginLoc(),
-         "Thread name not recognized. Please use the background thread pool.",
-         DiagnosticIDs::Error)
-        << FuncCall->getDirectCallee()->getName();
-    diag(
-        FuncCall->getBeginLoc(),
-        "NS_NewNamedThread has been deprecated in favor of background "
-        "task dispatch via NS_DispatchBackgroundTask and "
-        "NS_CreateBackgroundTaskQueue. If you must create a new ad-hoc thread, "
-        "have your thread name added to ThreadAllows.txt.",
-        DiagnosticIDs::Note);
+  diag(FuncCall->getBeginLoc(),
+       "Thread name not recognized. Please use the background thread pool.",
+       DiagnosticIDs::Error)
+      << FuncCall->getDirectCallee()->getName();
+  diag(FuncCall->getBeginLoc(),
+       "NS_NewNamedThread has been deprecated in favor of background "
+       "task dispatch via NS_DispatchBackgroundTask and "
+       "NS_CreateBackgroundTaskQueue. If you must create a new ad-hoc thread, "
+       "have your thread name added to ThreadAllows.txt.",
+       DiagnosticIDs::Note);
 }

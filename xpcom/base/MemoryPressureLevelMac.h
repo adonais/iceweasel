@@ -27,9 +27,7 @@ class MacMemoryPressureLevel {
   MOZ_IMPLICIT MacMemoryPressureLevel(Value aValue) : mValue(aValue) {}
 
   bool operator==(const Value& aRhsValue) const { return mValue == aRhsValue; }
-  bool operator==(const MacMemoryPressureLevel& aRhs) const {
-    return mValue == aRhs.mValue;
-  }
+  bool operator==(const MacMemoryPressureLevel& aRhs) const = default;
 
   // Implement '<' and derive the other comparators from it.
   bool operator<(const MacMemoryPressureLevel& aRhs) const {

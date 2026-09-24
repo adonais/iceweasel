@@ -33,6 +33,7 @@
 #include "nsIUUIDGenerator.h"
 #include "nsIXPConnect.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsStringStream.h"
 
 using mozilla::dom::cache::Cache;
@@ -537,16 +538,28 @@ class CompareManager final : public PromiseNativeHandler {
       return NS_OK;
     }
 
+    // Scripts can be several megabytes, so the UTF-16 to UTF-8 conversion is
+    // done fallibly here.  Failing the update is much better than aborting the
+    // parent process with an OOM crash.
+    nsCString converted;
+    if (NS_WARN_IF(!CopyUTF16toUTF8(aCN->Buffer(), converted, fallible))) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+
+    // Note that this is the length of the UTF-8 body we just produced, not the
+    // length of the UTF-16 buffer it was converted from.
+    const int64_t bodyLength = converted.Length();
+
     nsCOMPtr<nsIInputStream> body;
-    nsresult rv = NS_NewCStringInputStream(
-        getter_AddRefs(body), NS_ConvertUTF16toUTF8(aCN->Buffer()));
+    nsresult rv =
+        NS_NewCStringInputStream(getter_AddRefs(body), std::move(converted));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
     SafeRefPtr<InternalResponse> ir =
         MakeSafeRefPtr<InternalResponse>(200, "OK"_ns);
-    ir->SetBody(body, aCN->Buffer().Length());
+    ir->SetBody(body, bodyLength);
     ir->SetURLList(aCN->URLList());
 
     ir->InitChannelInfo(aCN->GetChannelInfo());

@@ -3,12 +3,6 @@
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 function startDropServer() {
   const server = Cc["@mozilla.org/network/server-socket;1"].createInstance(
     Ci.nsIServerSocket

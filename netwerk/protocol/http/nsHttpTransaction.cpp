@@ -2035,6 +2035,29 @@ nsresult nsHttpTransaction::Restart() {
   mResumptionAttempted = false;
   mRestarted = true;
 
+  // These must describe the serving attempt; Activate only bootstraps the
+  // first.
+  TimingStruct prevTimings;
+  {
+    MutexAutoLock lock(mLock);
+    prevTimings = mTimings;
+    mTimings = TimingStruct();
+    mTimings.transactionPending = prevTimings.transactionPending;
+  }
+
+  // Apply0RTTTimingOverride would rewrite connectEnd from a stale stamp.
+  const TimeStamp prevEarlyDataSent = mEarlyDataSentTime;
+  mEarlyDataSentTime = TimeStamp();
+
+  // Only this one, which would send OnTransportStatus down
+  // Apply0RTTTimingOverride and past the clamp of requestStart to connectEnd.
+  // The rest still describe what HandleContentStart reports on the retried
+  // response.
+  const auto prevEarlyData = mEarlyDataDisposition;
+  if (prevEarlyData == EARLY_ACCEPTED) {
+    mEarlyDataDisposition = EARLY_NONE;
+  }
+
   // If we weren't trying to do 'proper' ECH, disable ECH GREASE when retrying.
   if (mConnInfo->GetEchConfig().IsEmpty() &&
       StaticPrefs::security_tls_ech_disable_grease_on_fallback()) {
@@ -2052,7 +2075,17 @@ nsresult nsHttpTransaction::Restart() {
     gHttpHandler->ConnMgr()->ResetIPFamilyPreference(mConnInfo);
   }
 
-  return gHttpHandler->InitiateTransaction(this, mPriority);
+  nsresult rv = gHttpHandler->InitiateTransaction(this, mPriority);
+  if (NS_SUCCEEDED(rv)) {
+    return rv;
+  }
+
+  // No attempt will follow, so the failed one's record is all there is.
+  mEarlyDataSentTime = prevEarlyDataSent;
+  mEarlyDataDisposition = prevEarlyData;
+  MutexAutoLock lock(mLock);
+  mTimings = prevTimings;
+  return rv;
 }
 
 bool nsHttpTransaction::TakeRestartedState() {
@@ -2466,6 +2499,11 @@ nsresult nsHttpTransaction::HandleContentStart() {
     nsresult rv = mConnection->OnHeadersAvailable(this, mRequestHead,
                                                   mResponseHead, &reset);
     NS_ENSURE_SUCCESS(rv, rv);
+
+    // OnHeadersAvailable can re-enter and set mConnection to null.
+    if (!mConnection) {
+      return NS_ERROR_NET_RESET;
+    }
 
     // looks like we should ignore this response, resetting...
     if (reset) {
@@ -3090,6 +3128,19 @@ void nsHttpTransaction::SetResponseStart(mozilla::TimeStamp timeStamp,
     return;  // We only set the timestamp if it was previously null
   }
   mTimings.responseStart = timeStamp;
+}
+
+void nsHttpTransaction::SetResponseIsComplete() {
+  if (!mResponseIsComplete.compareExchange(false, true)) {
+    return;
+  }
+
+  // Http2Session marks this from the stream end, which without a content-length
+  // reaches neither HandleContent's report nor Close's.
+  gHttpHandler->ObserveHttpActivityWithArgs(
+      HttpActivityArgs(mChannelId), NS_HTTP_ACTIVITY_TYPE_HTTP_TRANSACTION,
+      NS_HTTP_ACTIVITY_SUBTYPE_RESPONSE_COMPLETE, PR_Now(),
+      static_cast<uint64_t>(mContentRead), ""_ns);
 }
 
 void nsHttpTransaction::SetResponseEnd(mozilla::TimeStamp timeStamp,

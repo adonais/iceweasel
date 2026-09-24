@@ -13,7 +13,7 @@
 #  include "AudioNodeEngineGeneric.h"
 #  include "mozilla/SSE.h"
 #endif
-#if defined(USE_SSE42)
+#if defined(USE_SSE4_2)
 #  include "AudioNodeEngineGeneric.h"
 #  include "mozilla/SSE.h"
 #endif
@@ -76,7 +76,7 @@ void AudioBufferAddWithScale(const float* aInput, float aScale, float* aOutput,
 
 #ifdef USE_SSE2
   if (mozilla::supports_sse2()) {
-#  if defined(USE_SSE42)
+#  if defined(USE_SSE4_2)
     if (mozilla::supports_sse4_2()) {
       Engine<xsimd::sse4_2>::AudioBufferAddWithScale(aInput, aScale, aOutput,
                                                      aSize);
@@ -144,7 +144,7 @@ void BufferComplexMultiply(const float* aInput, const float* aScale,
 #endif
 #ifdef USE_SSE2
   if (mozilla::supports_sse()) {
-#  if defined(USE_SSE42)
+#  if defined(USE_SSE4_2)
     if (mozilla::supports_sse4_2()) {
       Engine<xsimd::sse4_2>::BufferComplexMultiply(aInput, aScale, aOutput,
                                                    aSize);
@@ -289,7 +289,7 @@ void AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
 
 #ifdef USE_SSE2
   if (mozilla::supports_sse2()) {
-#  if defined(USE_SSE42)
+#  if defined(USE_SSE4_2)
     if (mozilla::supports_sse4_2()) {
       Engine<xsimd::sse4_2>::AudioBlockPanStereoToStereo(
           aInputL, aInputR, aGainL, aGainR, aIsOnTheLeft, aOutputL, aOutputR);
@@ -335,7 +335,7 @@ void AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
 
 #ifdef USE_SSE2
   if (mozilla::supports_sse2()) {
-#  if defined(USE_SSE42)
+#  if defined(USE_SSE4_2)
     if (mozilla::supports_sse4_2()) {
       Engine<xsimd::sse4_2>::AudioBlockPanStereoToStereo(
           aInputL, aInputR, aGainL, aGainR, aIsOnTheLeft, aOutputL, aOutputR);
@@ -370,7 +370,7 @@ float AudioBufferSumOfSquares(const float* aInput, uint32_t aLength) {
 
 #ifdef USE_SSE2
   if (mozilla::supports_sse()) {
-#  if defined(USE_SSE42)
+#  if defined(USE_SSE4_2)
     if (mozilla::supports_sse4_2()) {
       return Engine<xsimd::sse4_2>::AudioBufferSumOfSquares(aInput, aLength);
     } else

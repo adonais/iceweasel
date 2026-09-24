@@ -16,7 +16,7 @@ pkcs11-bindings = "0.1.1"
 smallvec = { version = "1.9.0", features = ["const_new"] }
 
 [build-dependencies]
-bindgen = { default-features = false, features = ["runtime"], version = "0.69" }
+bindgen = { default-features = false, features = ["runtime"], version = "0.73" }
 mozbuild = "0.1"
 nom = "7.1.1"
 sha2 = "0.10"

@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useCallback } from "react";
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 
 export function ActivationWindowMessage({
   dispatch,
@@ -34,7 +34,6 @@ export function ActivationWindowMessage({
 
     if (content.primaryButton?.action?.type === "SHOW_PERSONALIZE") {
       dispatch({ type: at.SHOW_PERSONALIZE });
-      dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
     }
   }, [dispatch, handleClick, handleDismiss, handleBlock, content]);
 

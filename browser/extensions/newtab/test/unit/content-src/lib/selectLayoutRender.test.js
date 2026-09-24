@@ -28,6 +28,11 @@ describe("selectLayoutRender", () => {
     globals.restore();
   });
 
+  const SPONSORED_STORIES_PREFS = {
+    showSponsored: true,
+    "system.showSponsored": true,
+  };
+
   it("should return an empty array given initial state", () => {
     const { layoutRender } = selectLayoutRender({
       state: store.getState().DiscoveryStream,
@@ -222,7 +227,9 @@ describe("selectLayoutRender", () => {
     ];
     const fakeSpocsData = {
       lastUpdated: 0,
-      spocs: { newtab_spocs: { items: ["fooSpoc", "barSpoc"] } },
+      spocs: {
+        newtab_spocs: { items: [{ id: "fooSpoc" }, { id: "barSpoc" }] },
+      },
     };
 
     store.dispatch({
@@ -241,19 +248,21 @@ describe("selectLayoutRender", () => {
 
     const { layoutRender } = selectLayoutRender({
       state: store.getState().DiscoveryStream,
+      prefs: SPONSORED_STORIES_PREFS,
     });
 
     assert.lengthOf(layoutRender, 1);
-    assert.deepEqual(
-      layoutRender[0].components[0].data.recommendations[0],
-      "fooSpoc"
-    );
-    assert.deepEqual(
-      layoutRender[0].components[0].data.recommendations[1],
-      "barSpoc"
-    );
+    assert.deepEqual(layoutRender[0].components[0].data.recommendations[0], {
+      id: "fooSpoc",
+      is_ad_eligible_position: true,
+    });
+    assert.deepEqual(layoutRender[0].components[0].data.recommendations[1], {
+      id: "barSpoc",
+      is_ad_eligible_position: true,
+    });
     assert.deepEqual(layoutRender[0].components[0].data.recommendations[2], {
       id: "foo",
+      is_ad_eligible_position: true,
     });
     assert.deepEqual(layoutRender[0].components[0].data.recommendations[3], {
       id: "bar",
@@ -389,6 +398,48 @@ describe("selectLayoutRender", () => {
     ]);
   });
 
+  it("should not flag ad-eligible positions when sponsored stories are off", () => {
+    const fakeSpocConfig = { positions: [{ index: 0 }] };
+    const fakeLayout = [
+      {
+        width: 3,
+        components: [
+          { type: "foo", feed: { url: "foo.com" }, spocs: fakeSpocConfig },
+        ],
+      },
+    ];
+    store.dispatch({
+      type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
+      data: { layout: fakeLayout },
+    });
+    store.dispatch({
+      type: at.DISCOVERY_STREAM_FEED_UPDATE,
+      data: {
+        feed: { data: { recommendations: [{ name: "rec" }] } },
+        url: "foo.com",
+      },
+    });
+    store.dispatch({ type: at.DISCOVERY_STREAM_FEEDS_UPDATE });
+    store.dispatch({
+      type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
+      data: { lastUpdated: 0, spocs: { newtab_spocs: { items: [] } } },
+    });
+
+    for (const prefs of [
+      { showSponsored: false, "system.showSponsored": true },
+      { showSponsored: true, "system.showSponsored": false },
+    ]) {
+      const { layoutRender } = selectLayoutRender({
+        state: store.getState().DiscoveryStream,
+        prefs,
+      });
+      assert.isUndefined(
+        layoutRender[0].components[0].data.recommendations[0]
+          .is_ad_eligible_position
+      );
+    }
+  });
+
   it("should not render a spoc if there are no available spocs", () => {
     const fakeLayout = [
       {
@@ -434,11 +485,13 @@ describe("selectLayoutRender", () => {
 
     const { layoutRender } = selectLayoutRender({
       state: store.getState().DiscoveryStream,
+      prefs: SPONSORED_STORIES_PREFS,
     });
 
     assert.deepEqual(layoutRender[0].components[2].data.recommendations[0], {
       name: "rec",
       pos: 0,
+      is_ad_eligible_position: true,
     });
   });
 
@@ -526,6 +579,7 @@ describe("selectLayoutRender", () => {
 
     const { layoutRender: layout1 } = selectLayoutRender({
       state: store.getState().DiscoveryStream,
+      prefs: SPONSORED_STORIES_PREFS,
     });
 
     store.dispatch({
@@ -535,16 +589,19 @@ describe("selectLayoutRender", () => {
 
     const { layoutRender: layout2 } = selectLayoutRender({
       state: store.getState().DiscoveryStream,
+      prefs: SPONSORED_STORIES_PREFS,
     });
 
     assert.deepEqual(layout1[0].components[0].data.recommendations[0], {
       name: "spoc",
       url: "https://foo.com",
       pos: 0,
+      is_ad_eligible_position: true,
     });
     assert.deepEqual(layout2[0].components[0].data.recommendations[0], {
       name: "rec",
       pos: 0,
+      is_ad_eligible_position: true,
     });
   });
 

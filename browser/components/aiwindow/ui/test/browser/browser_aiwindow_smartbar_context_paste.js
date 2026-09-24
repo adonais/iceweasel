@@ -221,7 +221,7 @@ add_task(async function test_smartbar_context_menu_paste_and_go_submits() {
   const pasteAndGo = inputBox.getMenuItem("paste-and-go");
 
   const sb = sinon.createSandbox();
-  const loadURL = sb.stub(smartbar.controller, "loadURL").returns({});
+  const loadURL = sb.stub(smartbar.parentController, "loadURL").returns({});
   pasteAndGo.doCommand();
 
   await BrowserTestUtils.waitForMutationCondition(

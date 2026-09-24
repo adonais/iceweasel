@@ -59,6 +59,7 @@ th {
   font-weight: normal;
   text-align: start;
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
 }
 th:not(:first-child) {
   border-inline-start: 1px solid;

@@ -286,8 +286,6 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
 
   mLoseContextOnMemoryPressure =
       StaticPrefs::webgl_lose_context_on_memory_pressure();
-  mCanLoseContextInForeground =
-      StaticPrefs::webgl_can_lose_context_in_foreground();
 
   /*
   // Technically, we should be setting mStencil[...] values to

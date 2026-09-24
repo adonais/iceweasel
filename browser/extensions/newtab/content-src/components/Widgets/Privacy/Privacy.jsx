@@ -150,7 +150,7 @@ function ctaDestination(action) {
   }
 }
 
-// eslint-disable-next-line max-statements
+// eslint-disable-next-line max-statements, complexity
 function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const privacyData = useSelector(state => state.PrivacyWidget);
@@ -426,7 +426,7 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
     });
     // Impression of the secondary message, keyed by ctaMessageId (blank ->
     // "newtab-privacy-blank"). Gated on !isEmptyState: the selector sets
-    // messageId to "newtab-privacy-empty" in the empty state, so a bare
+    // messageId to "newtab-privacy-empty-state" in the empty state, so a bare
     // ctaMessageId check would log a spurious impression for a state that shows
     // no message/CTA. The blank state still logs, keeping its URL-valued CTA
     // click attributable by joining to this impression on newtab_visit_id.
@@ -578,7 +578,7 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
         className="privacy-cta"
         data-l10n-id={`${messageId}-cta`}
         onClick={handleCtaClick}
-        size="small"
+        size={isLarge ? undefined : "small"}
         type="primary"
       />
     ) : null;
@@ -591,7 +591,7 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
         className="privacy-cta"
         data-l10n-id="newtab-privacy-message-info-1-cta"
         onClick={handleCtaClick}
-        size="small"
+        size={isLarge ? undefined : "small"}
         type="primary"
       />
     ) : null;
@@ -604,6 +604,8 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
       }${initialized && !isEtpOff && isEmptyState ? " is-empty" : ""}${
         initialized && isTip ? " has-tip-msg" : ""
       }${initialized && isStreak ? " has-streak" : ""}${
+        initialized && showCount && !hasMessage ? " is-count-only" : ""
+      }${
         isCelebrating && activeCelebration.isMajor
           ? " is-major-celebration"
           : ""
@@ -694,10 +696,14 @@ function Privacy({ dispatch, widgetsMayBeMaximized, widgetEnabledMap }) {
                 href="about:protections"
                 onClick={handleViewProtections}
               >
-                <p
-                  className="privacy-empty-message"
-                  data-l10n-id="newtab-privacy-empty"
-                />
+                <div className="privacy-empty-message-wrapper">
+                  <p data-l10n-id="newtab-privacy-empty-state" />
+                  {/* Adding a string literal here to add spaces to the sentences in the medium widget */}{" "}
+                  <p
+                    className="privacy-empty-message"
+                    data-l10n-id="newtab-privacy-empty-state-tally"
+                  />
+                </div>
               </a>
             </div>
           ) : (

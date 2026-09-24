@@ -13,13 +13,19 @@
 namespace mozilla::dom::quota {
 
 template <typename T>
-void AssertNoOverflow(uint64_t aDest, T aArg);
+void AssertNoOverflow(int64_t aDest, T aArg);
 
 template <typename T, typename U>
-void AssertNoUnderflow(T aDest, U aArg,
-                       const nsACString& context = EmptyCString());
+void AssertNoUnderflow(T aDest, U aArg);
 
-// Implementation detail of AssertNoUnderflow and ReportUsageDriftIfAny, not
+template <typename T>
+void AssertNotNegative(T aValue, const nsACString& context = EmptyCString());
+
+// Prefer QM_CLAMP_TO_ZERO over using this function directly
+uint64_t ClampToZero(int64_t aValue,
+                     const nsACString& context = EmptyCString());
+
+// Implementation detail of AssertNotNegative and ReportUsageDriftIfAny, not
 // meant to be called directly. Throttles how often a given context is
 // reported (to the browser console/telemetry) using exponential backoff, to
 // avoid flooding. aContext is used to have different counters, so callers
@@ -38,32 +44,46 @@ void AssertCurrentThreadOwnsQuotaMutex();
 
 }  // namespace mozilla::dom::quota
 
-// QM_ASSERT_NO_UNDERFLOW/QM_ASSERT_NO_UNDERFLOW_2 should be used instead of
-// calling AssertNoUnderflow directly, so that the context argument (which
+// QM_ASSERT_NOT_NEGATIVE/QM_ASSERT_NOT_NEGATIVE_2 should be used instead of
+// calling AssertNotNegative directly, so that the context argument (which
 // involves string concatenation) isn't constructed on builds where
-// AssertNoUnderflow doesn't consume it.
+// AssertNotNegative doesn't consume it.
 //
-// QM_ASSERT_NO_UNDERFLOW(aDest, aArg) derives the context from aDest's own
-// source text (via __func__ and #aDest), which is enough when aDest already
-// names the field being checked.
+// QM_ASSERT_NOT_NEGATIVE(aValue) derives the context from aValue's own source
+// text (via __func__ and #aValue), which is enough when aValue already names
+// the field being checked.
 //
-// QM_ASSERT_NO_UNDERFLOW_2(aDest, aArg, aFieldContext) should be used instead
-// when aDest's source text isn't itself a useful label. aFieldContext is
-// appended after __func__ instead of #aDest.
+// QM_ASSERT_NOT_NEGATIVE_2(aValue, aFieldContext) should be used instead when
+// aValue's source text isn't itself a useful label. aFieldContext is
+// appended after __func__ instead of #aValue.
 #if defined(NIGHTLY_BUILD) || defined(DEBUG)
-#  define QM_ASSERT_NO_UNDERFLOW(aDest, aArg) \
-    mozilla::dom::quota::AssertNoUnderflow(   \
-        aDest, aArg,                          \
-        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aDest))
-#  define QM_ASSERT_NO_UNDERFLOW_2(aDest, aArg, aFieldContext) \
-    mozilla::dom::quota::AssertNoUnderflow(                    \
-        aDest, aArg,                                           \
+#  define QM_ASSERT_NOT_NEGATIVE(aValue)    \
+    mozilla::dom::quota::AssertNotNegative( \
+        aValue,                             \
+        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aValue))
+#  define QM_ASSERT_NOT_NEGATIVE_2(aValue, aFieldContext) \
+    mozilla::dom::quota::AssertNotNegative(               \
+        aValue,                                           \
         nsDependentCString(__func__) + "::"_ns + nsAutoCString(aFieldContext))
 #else
-#  define QM_ASSERT_NO_UNDERFLOW(aDest, aArg) \
-    mozilla::dom::quota::AssertNoUnderflow(aDest, aArg)
-#  define QM_ASSERT_NO_UNDERFLOW_2(aDest, aArg, aFieldContext) \
-    mozilla::dom::quota::AssertNoUnderflow(aDest, aArg)
+#  define QM_ASSERT_NOT_NEGATIVE(aValue) \
+    mozilla::dom::quota::AssertNotNegative(aValue)
+#  define QM_ASSERT_NOT_NEGATIVE_2(aValue, aFieldContext) \
+    mozilla::dom::quota::AssertNotNegative(aValue)
+#endif
+
+// Used when we don't shouldn't expose negative values (e.g.
+// navigator.storage.estimate()). Because this isn't really suppose to happen,
+// this will also MOZ_ASSERT on debug builds, and have telemetry on nightly
+// builds.
+// See bug 2066923 for details.
+#if defined(NIGHTLY_BUILD) || defined(DEBUG)
+#  define QM_CLAMP_TO_ZERO(aValue)    \
+    mozilla::dom::quota::ClampToZero( \
+        aValue,                       \
+        nsDependentCString(__func__) + "::"_ns + nsDependentCString(#aValue))
+#else
+#  define QM_CLAMP_TO_ZERO(aValue) mozilla::dom::quota::ClampToZero(aValue)
 #endif
 
 #endif  // DOM_QUOTA_ASSERTIONS_H_

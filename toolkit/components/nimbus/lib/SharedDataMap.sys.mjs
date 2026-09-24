@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { EventEmitter } from "resource://gre/modules/EventEmitter.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   NimbusEnrollments: "resource://nimbus/lib/Enrollments.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
@@ -244,7 +244,7 @@ export class SharedDataMap extends EventEmitter {
     ) {
       // This will unblock anybody waiting for our init and leave data == null
       // if it was not yet initialized, making get() return null.
-      this._readyDeferred.reject();
+      this._readyDeferred.reject(new Error("SharedDataMap: in shutdown"));
       lazy.AsyncShutdown.appShutdownConfirmed.removeBlocker(
         this._shutdownBlocker
       );

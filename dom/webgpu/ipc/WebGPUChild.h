@@ -29,7 +29,7 @@ namespace webgpu {
 namespace ffi {
 struct WGPUClient;
 struct WGPULimits;
-struct WGPUTextureViewDescriptor;
+struct WGPUFfiTextureViewDescriptor;
 }  // namespace ffi
 
 using AdapterPromise =
@@ -104,8 +104,8 @@ class WebGPUChild final : public PWebGPUChild {
   ffi::WGPUClient* GetClient() const { return mClient.get(); }
 
   void SwapChainPresent(RawId aTextureId,
-                        const RemoteTextureId& aRemoteTextureId,
-                        const RemoteTextureOwnerId& aOwnerId);
+                        const layers::RemoteTextureId& aRemoteTextureId,
+                        const layers::RemoteTextureOwnerId& aOwnerId);
 
   void RegisterDevice(Device* const aDevice);
   void UnregisterDevice(RawId aDeviceId);
@@ -119,6 +119,12 @@ class WebGPUChild final : public PWebGPUChild {
 
   void SendSerializedMessages(uint32_t aNrOfMessages,
                               ipc::ByteBuf aSerializedMessages);
+
+  void HandleUncapturedError(RawId aDeviceId, ffi::WGPUFfiErrorFilter aType,
+                             const nsACString& aMessage);
+
+  void HandleDeviceLost(RawId aDeviceId, ffi::WGPUFfiDeviceLostReason aReason,
+                        const nsACString& aMessage);
 
  private:
   virtual ~WebGPUChild();
@@ -163,12 +169,6 @@ class WebGPUChild final : public PWebGPUChild {
 
  public:
   ipc::IPCResult RecvServerMessage(const ipc::ByteBuf& aByteBuf);
-  ipc::IPCResult RecvUncapturedError(RawId aDeviceId,
-                                     const dom::GPUErrorFilter aType,
-                                     const nsACString& aMessage);
-  ipc::IPCResult RecvDeviceLost(RawId aDeviceId,
-                                const dom::GPUDeviceLostReason aReason,
-                                const nsACString& aMessage);
 
   size_t QueueDataBuffer(ipc::ByteBuf&& bb);
   size_t QueueShmemHandle(ipc::MutableSharedMemoryHandle&& handle);

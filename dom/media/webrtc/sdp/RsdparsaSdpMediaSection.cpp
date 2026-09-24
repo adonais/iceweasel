@@ -4,18 +4,10 @@
 
 #include "sdp/RsdparsaSdpMediaSection.h"
 
-#include <ostream>
-
 #include "mozilla/Assertions.h"
-#include "nsString.h"
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
-#include "sdp/SdpMediaSection.h"
-
-#ifdef CRLF
-#  undef CRLF
-#endif
-#define CRLF "\r\n"
+#include "sdp/SdpMediaSectionImpl.h"
 
 namespace mozilla {
 
@@ -32,12 +24,23 @@ auto RsdparsaSdpMediaSection::GetSection() const -> RustMediaSection* {
   return section;
 }
 
+UniquePtr<SdpAttributeListImpl> RsdparsaSdpMediaSection::CreateAttributeList(
+    const RsdparsaSessionHandle& session, size_t level,
+    const RsdparsaSdpAttributeList* sessionLevel) {
+  auto* section = sdp_get_media_section(session.get(), level);
+  MOZ_RELEASE_ASSERT(section);
+  RsdparsaSessionHandle attributeSession(sdp_new_reference(session.get()));
+  return UniquePtr<SdpAttributeListImpl>(new RsdparsaSdpAttributeList(
+      std::move(attributeSession), section, sessionLevel));
+}
+
 RsdparsaSdpMediaSection::RsdparsaSdpMediaSection(
     size_t level, RsdparsaSessionHandle session,
     const RsdparsaSdpAttributeList* sessionLevel)
-    : SdpMediaSection(level), mSession(std::move(session)) {
-  RustMediaSection* section = GetSection();
-  switch (sdp_rust_get_media_type(section)) {
+    : SdpMediaSectionImpl(level,
+                          CreateAttributeList(session, level, sessionLevel)),
+      mSession(std::move(session)) {
+  switch (sdp_rust_get_media_type(GetSection())) {
     case RustSdpMediaValue::Audio:
       mMediaType = kAudio;
       break;
@@ -49,182 +52,55 @@ RsdparsaSdpMediaSection::RsdparsaSdpMediaSection(
       break;
   }
 
-  RsdparsaSessionHandle attributeSession(sdp_new_reference(mSession.get()));
-  mAttributeList.reset(new RsdparsaSdpAttributeList(std::move(attributeSession),
-                                                    section, sessionLevel));
-
+  LoadPort();
+  LoadProtocol();
   LoadFormats();
   LoadConnection();
+  LoadBandwidths();
 }
 
-unsigned int RsdparsaSdpMediaSection::GetPort() const {
-  return sdp_get_media_port(GetSection());
+void RsdparsaSdpMediaSection::LoadPort() {
+  mPort = static_cast<uint16_t>(sdp_get_media_port(GetSection()));
+  mPortCount = static_cast<uint16_t>(sdp_get_media_port_count(GetSection()));
 }
 
-void RsdparsaSdpMediaSection::SetPort(const unsigned int port) {
-  sdp_set_media_port(GetSection(), port);
-}
-
-unsigned int RsdparsaSdpMediaSection::GetPortCount() const {
-  return sdp_get_media_port_count(GetSection());
-}
-
-SdpMediaSection::Protocol RsdparsaSdpMediaSection::GetProtocol() const {
+void RsdparsaSdpMediaSection::LoadProtocol() {
   switch (sdp_get_media_protocol(GetSection())) {
     case RustSdpProtocolValue::RtpSavpf:
-      return kRtpSavpf;
+      mProtocol = kRtpSavpf;
+      return;
     case RustSdpProtocolValue::UdpTlsRtpSavp:
-      return kUdpTlsRtpSavp;
+      mProtocol = kUdpTlsRtpSavp;
+      return;
     case RustSdpProtocolValue::TcpDtlsRtpSavp:
-      return kTcpDtlsRtpSavp;
+      mProtocol = kTcpDtlsRtpSavp;
+      return;
     case RustSdpProtocolValue::UdpTlsRtpSavpf:
-      return kUdpTlsRtpSavpf;
+      mProtocol = kUdpTlsRtpSavpf;
+      return;
     case RustSdpProtocolValue::TcpDtlsRtpSavpf:
-      return kTcpDtlsRtpSavpf;
+      mProtocol = kTcpDtlsRtpSavpf;
+      return;
     case RustSdpProtocolValue::DtlsSctp:
-      return kDtlsSctp;
+      mProtocol = kDtlsSctp;
+      return;
     case RustSdpProtocolValue::UdpDtlsSctp:
-      return kUdpDtlsSctp;
+      mProtocol = kUdpDtlsSctp;
+      return;
     case RustSdpProtocolValue::TcpDtlsSctp:
-      return kTcpDtlsSctp;
+      mProtocol = kTcpDtlsSctp;
+      return;
     case RustSdpProtocolValue::RtpAvp:
-      return kRtpAvp;
+      mProtocol = kRtpAvp;
+      return;
     case RustSdpProtocolValue::RtpAvpf:
-      return kRtpAvpf;
+      mProtocol = kRtpAvpf;
+      return;
     case RustSdpProtocolValue::RtpSavp:
-      return kRtpSavp;
+      mProtocol = kRtpSavp;
+      return;
   }
   MOZ_CRASH("invalid media protocol");
-}
-
-const SdpConnection& RsdparsaSdpMediaSection::GetConnection() const {
-  MOZ_ASSERT(mConnection);
-  return *mConnection;
-}
-
-SdpConnection& RsdparsaSdpMediaSection::GetConnection() {
-  MOZ_ASSERT(mConnection);
-  return *mConnection;
-}
-
-uint32_t RsdparsaSdpMediaSection::GetBandwidth(const std::string& type) const {
-  nsDependentCString bwType(type.data(), type.size());
-  return sdp_get_media_bandwidth(GetSection(), &bwType);
-}
-
-const std::vector<std::string>& RsdparsaSdpMediaSection::GetFormats() const {
-  return mFormats;
-}
-
-const SdpAttributeList& RsdparsaSdpMediaSection::GetAttributeList() const {
-  return *mAttributeList;
-}
-
-SdpAttributeList& RsdparsaSdpMediaSection::GetAttributeList() {
-  return *mAttributeList;
-}
-
-SdpDirectionAttribute RsdparsaSdpMediaSection::GetDirectionAttribute() const {
-  return SdpDirectionAttribute(mAttributeList->GetDirection());
-}
-
-void RsdparsaSdpMediaSection::AddCodec(const std::string& pt,
-                                       const std::string& name,
-                                       const uint32_t clockrate,
-                                       const uint16_t channels) {
-  StringView rustName{reinterpret_cast<const uint8_t*>(name.data()),
-                      name.size()};
-
-  // call the rust interface
-  auto nr = sdp_media_add_codec(GetSection(), std::stoul(pt), rustName,
-                                clockrate, channels);
-
-  if (NS_SUCCEEDED(nr)) {
-    // If the rust call was successful, adjust the shadow C++ structures
-    mFormats.push_back(pt);
-
-    // Add a rtpmap in mAttributeList
-    auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
-    if (mAttributeList->HasAttribute(SdpAttribute::kRtpmapAttribute)) {
-      const SdpRtpmapAttributeList& old = mAttributeList->GetRtpmap();
-      for (auto it = old.mRtpmaps.begin(); it != old.mRtpmaps.end(); ++it) {
-        rtpmap->mRtpmaps.push_back(*it);
-      }
-    }
-
-    SdpRtpmapAttributeList::CodecType codec =
-        SdpRtpmapAttributeList::kOtherCodec;
-    if (name == "opus") {
-      codec = SdpRtpmapAttributeList::kOpus;
-    } else if (name == "VP8") {
-      codec = SdpRtpmapAttributeList::kVP8;
-    } else if (name == "VP9") {
-      codec = SdpRtpmapAttributeList::kVP9;
-    } else if (name == "H264") {
-      codec = SdpRtpmapAttributeList::kH264;
-    }
-
-    rtpmap->PushEntry(pt, codec, name, clockrate, channels);
-    mAttributeList->SetAttribute(std::move(rtpmap));
-  }
-}
-
-void RsdparsaSdpMediaSection::ClearCodecs() {
-  // Clear the codecs in rust
-  sdp_media_clear_codecs(GetSection());
-
-  mFormats.clear();
-  mAttributeList->RemoveAttribute(SdpAttribute::kRtpmapAttribute);
-  mAttributeList->RemoveAttribute(SdpAttribute::kFmtpAttribute);
-  mAttributeList->RemoveAttribute(SdpAttribute::kSctpmapAttribute);
-  mAttributeList->RemoveAttribute(SdpAttribute::kRtcpFbAttribute);
-}
-
-void RsdparsaSdpMediaSection::AddDataChannel(const std::string& name,
-                                             const uint16_t port,
-                                             const uint16_t streams,
-                                             const uint32_t message_size) {
-  StringView rustName{reinterpret_cast<const uint8_t*>(name.data()),
-                      name.size()};
-  auto nr = sdp_media_add_datachannel(GetSection(), rustName, port, streams,
-                                      message_size);
-  if (NS_SUCCEEDED(nr)) {
-    // Update the formats
-    mFormats.clear();
-    LoadFormats();
-
-    // Update the attribute list
-    RsdparsaSessionHandle sessHandle(sdp_new_reference(mSession.get()));
-    auto sessAttributes = mAttributeList->mSessionAttributes;
-    mAttributeList.reset(new RsdparsaSdpAttributeList(
-        std::move(sessHandle), GetSection(), sessAttributes));
-  }
-}
-
-void RsdparsaSdpMediaSection::Serialize(std::ostream& os) const {
-  os << "m=" << mMediaType << " " << GetPort();
-  if (GetPortCount()) {
-    os << "/" << GetPortCount();
-  }
-  os << " " << GetProtocol();
-  for (auto i = mFormats.begin(); i != mFormats.end(); ++i) {
-    os << " " << (*i);
-  }
-  os << CRLF;
-
-  // We don't do i=
-
-  if (mConnection) {
-    os << *mConnection;
-  }
-
-  nsAutoCString bwString;
-  sdp_serialize_bandwidth(sdp_get_media_bandwidth_vec(GetSection()), &bwString);
-  os << bwString.get();
-
-  // We don't do k= because they're evil
-
-  os << *mAttributeList;
 }
 
 void RsdparsaSdpMediaSection::LoadFormats() {
@@ -262,6 +138,10 @@ void RsdparsaSdpMediaSection::LoadConnection() {
       mConnection = convertRustConnection(conn);
     }
   }
+}
+
+void RsdparsaSdpMediaSection::LoadBandwidths() {
+  convertBandwidths(sdp_get_media_bandwidth_vec(GetSection()), mBandwidths);
 }
 
 }  // namespace mozilla

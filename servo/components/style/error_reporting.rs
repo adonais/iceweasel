@@ -9,9 +9,9 @@
 use crate::selector_parser::SelectorImpl;
 use crate::stylesheets::UrlExtraData;
 use cssparser::{BasicParseErrorKind, ParseErrorKind, SourceLocation};
+use selectors::SelectorList;
 use selectors::parser::{Combinator, Component, RelativeSelector, Selector};
 use selectors::visitor::{SelectorListKind, SelectorVisitor};
-use selectors::SelectorList;
 use std::fmt;
 use style_traits::ParseError;
 
@@ -376,7 +376,7 @@ impl SelectorVisitor for UnconstrainedRelativeSelectorVisitor {
 
                     let c = iter.next_sequence();
                     offset += 1;
-                    if c.map_or(true, |c| !c.is_pseudo_element()) {
+                    if c.is_none_or(|c| !c.is_pseudo_element()) {
                         break;
                     }
                 }

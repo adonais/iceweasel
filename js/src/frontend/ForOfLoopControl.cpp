@@ -18,7 +18,8 @@ ForOfLoopControl::ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
     : LoopControl(bce, StatementKind::ForOfLoop),
       iterDepth_(iterDepth),
       selfHostedIter_(selfHostedIter),
-      iterKind_(iterKind) {}
+      iterKind_(iterKind),
+      continuations_(bce->fc) {}
 
 bool ForOfLoopControl::emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   tryCatch_.emplace(bce, TryEmitter::Kind::TryCatch,
@@ -82,9 +83,10 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
     return false;
   }
 
-  if (!emitIteratorCloseInInnermostScopeWithTryNote(bce,
-                                                    CompletionKind::Throw)) {
-    return false;  // ITER ... EXCEPTION STACK
+  if (!emitIteratorCloseInScope(bce, *bce->innermostEmitterScope(),
+                                CompletionKind::Throw)) {
+    //              [stack] ITER ... EXCEPTION STACK
+    return false;
   }
 
   if (!bce->emit1(JSOp::ThrowWithStack)) {
@@ -101,17 +103,6 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
   return true;
 }
 
-bool ForOfLoopControl::emitIteratorCloseInInnermostScopeWithTryNote(
-    BytecodeEmitter* bce, CompletionKind completionKind) {
-  BytecodeOffset start = bce->bytecodeSection().offset();
-  if (!emitIteratorCloseInScope(bce, *bce->innermostEmitterScope(),
-                                completionKind)) {
-    return false;
-  }
-  BytecodeOffset end = bce->bytecodeSection().offset();
-  return bce->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end);
-}
-
 bool ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
                                                 EmitterScope& currentScope,
                                                 CompletionKind completionKind) {
@@ -119,25 +110,41 @@ bool ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
                                        selfHostedIter_);
 }
 
-// Since we're in the middle of emitting code that will leave
-// |bce->innermostEmitterScope()|, passing the innermost emitter scope to
-// emitIteratorCloseInScope and looking up .generator there would be very,
-// very wrong.  We'd find .generator in the function environment, and we'd
-// compute a NameLocation with the correct slot, but we'd compute a
-// hop-count to the function environment that was too big.  At runtime we'd
-// either crash, or we'd find a user-controllable value in that slot, and
-// Very Bad Things would ensue as we reinterpreted that value as an
-// iterator.
-bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
-    BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,
-    BytecodeOffset* tryNoteStart) {
+bool ForOfLoopControl::emitJumpToIteratorClose(BytecodeEmitter* bce,
+                                               NestableControl* target,
+                                               NonLocalExitKind kind) {
   //                [stack] NEXT ITER VALUE
   MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
 
-  // Pop unnecessary value from the stack.  Effectively this means
-  // leaving try-catch block.  However, the performing IteratorClose can
-  // reach the depth for try-catch, and effectively re-enter the
-  // try-catch block.
+  MOZ_ASSERT_IF(target == this, kind == NonLocalExitKind::Break);
+
+  // Look up or create a continuation for this target + kind.
+  Continuation* continuation = nullptr;
+  for (Continuation& c : continuations_) {
+    if (c.target == target && c.kind == kind) {
+      continuation = &c;
+      break;
+    }
+  }
+  if (!continuation) {
+    if (!continuations_.emplaceBack(target, kind)) {
+      return false;
+    }
+    continuation = &continuations_.back();
+  }
+
+  return bce->emitJump(JSOp::Goto, &continuation->jumps);
+}
+
+bool ForOfLoopControl::emitIteratorCloseForNonLocalExits(BytecodeEmitter* bce) {
+  //                [stack] NEXT ITER VALUE
+  MOZ_ASSERT(bce->bytecodeSection().stackDepth() == *nonLocalExitStackDepth());
+
+  // This code is emitted after the loop, so this loop's scope is the innermost
+  // emitter scope.
+  MOZ_ASSERT(bce->innermostEmitterScope() == emitterScope());
+  EmitterScope& currentScope = *emitterScope();
+
   if (!bce->emit1(JSOp::Pop)) {
     //              [stack] NEXT ITER
     return false;
@@ -153,17 +160,19 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-  *tryNoteStart = bce->bytecodeSection().offset();
-
   // Explicit Resource Management Proposal
   // https://arai-a.github.io/ecma262-compare/?pr=3000&id=sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset
   // Step 9.k.i. Set result to
   // Completion(DisposeResources(iterationEnv.[[DisposeCapability]], result)).
-  NonLocalIteratorCloseUsingEmitter disposeBeforeIterClose(bce);
-
-  if (!disposeBeforeIterClose.prepareForIteratorClose(currentScope)) {
-    //              [stack] EXC-DISPOSE? DISPOSE-THROWING? ITER
-    return false;
+  //
+  // Dispose the loop head's own resources if it has any.
+  mozilla::Maybe<NonLocalIteratorCloseUsingEmitter> disposeBeforeIterClose;
+  if (forOfDisposalEmitter_.isSome()) {
+    disposeBeforeIterClose.emplace(bce);
+    if (!disposeBeforeIterClose->prepareForIteratorClose(currentScope)) {
+      //            [stack] EXC-DISPOSE? DISPOSE-THROWING? ITER
+      return false;
+    }
   }
 
   if (!bce->emit1(JSOp::Dup)) {
@@ -176,29 +185,66 @@ bool ForOfLoopControl::emitPrepareForNonLocalJumpFromScope(
     return false;
   }
 
-  if (!disposeBeforeIterClose.emitEnd()) {
-    //              [stack] ITER
+  if (disposeBeforeIterClose.isSome()) {
+    if (!disposeBeforeIterClose->emitEnd()) {
+      //            [stack] ITER
+      return false;
+    }
+  }
+
+  if (!bce->emit1(JSOp::Pop)) {
+    //              [stack]
     return false;
   }
 
-  if (isTarget) {
-    // At the level of the target block, there's bytecode after the
-    // loop that will pop the next method, the iterator, and the
-    // value, so push two undefineds to balance the stack.
-    if (!bce->emit1(JSOp::Undefined)) {
-      //            [stack] ITER UNDEF
+  return true;
+}
+
+bool ForOfLoopControl::emitEnd(BytecodeEmitter* bce) {
+  if (continuations_.empty()) {
+    // No non-local exits.
+    return true;
+  }
+
+  const int32_t normalDepth = bce->bytecodeSection().stackDepth();
+  MOZ_ASSERT(normalDepth == *nonLocalExitStackDepth() - 3);
+
+  JumpList done;
+  if (!bce->emitJumpNoFallthrough(JSOp::Goto, &done)) {
+    return false;
+  }
+
+  const size_t numContinuations = continuations_.length();
+
+  for (const auto& continuation : continuations_) {
+    bce->bytecodeSection().setStackDepth(*nonLocalExitStackDepth());
+    if (!bce->emitJumpTargetAndPatch(continuation.jumps)) {
+      //            [stack] NEXT ITER VALUE
       return false;
     }
-    if (!bce->emit1(JSOp::Undefined)) {
-      //            [stack] ITER UNDEF UNDEF
-      return false;
-    }
-  } else {
-    if (!bce->emit1(JSOp::Pop)) {
+
+    if (!emitIteratorCloseForNonLocalExits(bce)) {
       //            [stack]
       return false;
     }
+
+    if (continuation.target == this) {
+      // This loop is the target of the `break`, so jump to `done`.
+      if (!bce->emitJumpNoFallthrough(JSOp::Goto, &done)) {
+        return false;
+      }
+    } else {
+      // Continue the non-local exit.
+      NonLocalExitControl nle(bce, continuation.kind);
+      if (!nle.emitNonLocalJump(continuation.target, this)) {
+        return false;
+      }
+    }
+
+    MOZ_RELEASE_ASSERT(continuations_.length() == numContinuations,
+                       "iterator closing must not add new continuations");
   }
 
-  return true;
+  bce->bytecodeSection().setStackDepth(normalDepth);
+  return bce->emitJumpTargetAndPatch(done);
 }

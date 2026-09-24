@@ -20,6 +20,7 @@ const toolsNameMap = {
   viewBookmarksSidebar: "bookmarks",
   viewOpenTabsSidebar: "opentabs",
   viewCPMSidebar: "passwords",
+  viewResourceMonitorSidebar: "resourcemonitor",
 };
 const EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS = 1000;
 const LAUNCHER_SPLITTER_WIDTH = 4;
@@ -148,7 +149,7 @@ var SidebarController = {
           elementId: "sidebar-switcher-tabs",
           url: this.sidebarRevampEnabled
             ? "chrome://browser/content/sidebar/sidebar-syncedtabs.html"
-            : "chrome://browser/content/syncedtabs/sidebar.xhtml",
+            : "chrome://browser/content/syncedtabs/sidebar.html",
           menuId: "menu_tabsSidebar",
           classAttribute: "sync-ui-item",
           menuL10nId: "menu-view-synced-tabs-sidebar",
@@ -233,6 +234,20 @@ var SidebarController = {
         gleanEvent: Glean.contextualManager.sidebarToggle,
         gleanClickEvent: Glean.sidebar.passwordsIconClick,
         recordSidebarVersion: true,
+      }
+    );
+
+    this.registerPrefSidebar(
+      "browser.resourceMonitor.enabled",
+      "viewResourceMonitorSidebar",
+      {
+        name: "resourcemonitor",
+        elementId: "sidebar-switcher-resourcemonitor",
+        url: "about:processes?groupby=tab",
+        menuId: "menu_resourceMonitorSidebar",
+        menuL10nId: "menu-view-resource-monitor",
+        revampL10nId: "sidebar-menu-resource-monitor-label",
+        iconUrl: "chrome://browser/skin/lightning-bolt.svg",
       }
     );
 
@@ -369,6 +384,7 @@ var SidebarController = {
   _mainResizeObserver: null,
   _ongoingAnimations: [],
   _collapsedWidthMeasurementID: 0,
+  _expandOnHoverToggleID: 0,
 
   /**
    * @type {MutationObserver | null}
@@ -552,9 +568,7 @@ var SidebarController = {
       };
       window.addEventListener("keydown", this._sidebarMainKeydownHandler);
       this.revampComponentsLoaded = true;
-      this._state.initializeState(this._showLauncherAfterInit);
-      // clear the flag after we've used it
-      delete this._showLauncherAfterInit;
+      this._state.initializeState();
 
       // Revamp panels each provide their own header (the sidebar-panel-header
       // Lit element), including the "hide-launcher" panel switcher dropdown, so
@@ -690,15 +704,6 @@ var SidebarController = {
     this._splitterAriaUpdateTask = null;
     this._disableLauncherDragging();
     this._disablePinnedTabsDragging();
-  },
-
-  /**
-   * Keep track when sidebar.revamp is enabled by the user via about:preferences UI
-   *
-   * @param {boolean} isEnabled
-   */
-  enabledViaSettings(isEnabled = false) {
-    this._showLauncherAfterInit = isEnabled;
   },
 
   /**
@@ -903,10 +908,11 @@ var SidebarController = {
       return message?.attributes?.find(a => a.name === "label")?.value ?? "";
     };
     const items = [];
-    for (const tool of this.getTools().filter(t => !t.hidden && !t.disabled)) {
+    // Only filter out tools that are hidden (disabled by pref)
+    for (const tool of this.getTools().filter(t => !t.hidden)) {
       items.push({ view: tool.view, label: await resolveLabel(tool.l10nId) });
     }
-    for (const ext of this.getExtensions().filter(e => !e.disabled)) {
+    for (const ext of this.getExtensions()) {
       items.push({ view: ext.view, label: ext.tooltiptext ?? "" });
     }
     const customize = this.sidebars.get("viewCustomizeSidebar");
@@ -2743,6 +2749,7 @@ var SidebarController = {
   },
 
   async toggleExpandOnHover(isEnabled, isDragEnded) {
+    const toggleID = ++this._expandOnHoverToggleID;
     document.documentElement.toggleAttribute(
       "sidebar-expand-on-hover",
       isEnabled
@@ -2752,9 +2759,18 @@ var SidebarController = {
         this._state = new this.SidebarState(this);
       }
       await this.waitUntilStable();
+      if (toggleID !== this._expandOnHoverToggleID) {
+        // A later call superseded us while we were awaiting. It has already put
+        // the attribute and the listeners into its own state, so stop rather
+        // than reinstating ours over it.
+        return;
+      }
       MousePosTracker.addListener(this);
       if (!isDragEnded) {
         await this.setLauncherCollapsedWidth();
+        if (toggleID !== this._expandOnHoverToggleID) {
+          return;
+        }
       }
       document.addEventListener("popupshown", this);
       document.addEventListener("popuphidden", this);
@@ -2774,22 +2790,7 @@ var SidebarController = {
       document.removeEventListener("popuphidden", this);
       window.removeEventListener("uidensitychanged", this);
       this._launcherCollapsedWidthStale = false;
-      // Add back user-preferred height if defined
-      if (
-        this._state.launcherExpanded &&
-        this._state.expandedToolsHeight !== undefined &&
-        this.sidebarMain.buttonGroup
-      ) {
-        this.sidebarMain.buttonGroup.style.height =
-          this._state.expandedToolsHeight;
-      } else if (
-        !this._state.launcherExpanded &&
-        this._state.collapsedToolsHeight !== undefined &&
-        this.sidebarMain.buttonGroup
-      ) {
-        this.sidebarMain.buttonGroup.style.height =
-          this._state.collapsedToolsHeight;
-      }
+      this._state.updateToolsHeight();
     }
 
     document.documentElement.toggleAttribute(

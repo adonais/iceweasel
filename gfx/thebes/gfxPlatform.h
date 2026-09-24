@@ -969,7 +969,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static void InitOpenGLConfig();
 
-  static void VideoDecodingFailedChangedCallback(const char* aPref, void*);
+  static void HardwareVideoFailedChangedCallback(const char* aPref, void*);
 
   static void HWDRMFailedChangedCallback(const char* aPref, void*);
 
@@ -987,7 +987,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
   virtual void InitPlatformHardwareVideoConfig() {}
-  virtual void InitPlatformHardwarDRMConfig() {}
+  virtual void InitPlatformHardwareDRMConfig() {}
 
   // Gather telemetry data about the Gfx Platform and send it
   static void ReportTelemetry();

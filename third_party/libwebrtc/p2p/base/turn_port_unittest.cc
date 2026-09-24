@@ -450,7 +450,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
       return false;
     }
     for (const auto& kv : connections) {
-      if (!CheckConnectionFailedAndPruned(kv.second)) {
+      if (!CheckConnectionFailedAndPruned(kv.second.get())) {
         return false;
       }
     }

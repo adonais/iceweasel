@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.share
 
 import android.app.Dialog
+import android.content.Context
 import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -31,11 +32,17 @@ import mozilla.components.concept.sync.TabData
 import mozilla.components.concept.sync.TabPrivacy
 import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.share.RecentAppsStorage
+import mozilla.components.service.fxa.manager.SCOPE_PROFILE
+import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
-import mozilla.components.support.utils.ext.top
+import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.settings.account.SignOutFragment
 import org.mozilla.fenix.share.DefaultShareController.Companion.ACTION_COPY_LINK_TO_CLIPBOARD
 import org.mozilla.fenix.share.ShareViewModel
 import org.mozilla.fenix.share.listadapters.AppShareOption
@@ -86,6 +93,12 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
             },
             onSendToAll = {
                 sendAndDismiss { sendTabsToAllDevices(tabs) }
+            },
+            onSignInClicked = {
+                reconnectToSync(requireContext())
+            },
+            onSignOutClicked = {
+                removeAccountFromSync()
             },
         )
     }
@@ -143,6 +156,23 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
         super.onResume()
         // HomeActivity only shows this once signed in, so we can load the device list straight away.
         model.initDataLoad()
+    }
+
+    private fun reconnectToSync(context: Context) {
+        context.components.services.accountsAuthFeature.beginAuthentication(
+            context,
+            FenixFxAEntryPoint.ShareMenu,
+            setOf(SCOPE_PROFILE, SCOPE_SYNC),
+        )
+        SyncAuth.useEmailProblem.record(NoExtras())
+    }
+
+    private fun removeAccountFromSync() {
+        val fragmentManager = parentFragmentManager
+        dismiss()
+        if (fragmentManager.findFragmentByTag("SignOutFragment") == null) {
+            SignOutFragment().show(fragmentManager, "SignOutFragment")
+        }
     }
 
     private fun getCopyApp(): AppShareOption? {

@@ -1393,6 +1393,13 @@ SSL_IMPORT SSL3Statistics *SSL_GetStatistics(void);
  * client - when the second flight of messages have been sent.  This function
  * therefore produces unreliable results prior to receiving the
  * SSLHandshakeCallback or the SSLCanFalseStartCallback.
+ *
+ * This may be called from any thread, including while another thread is
+ * performing I/O on the same socket.  The fields are not captured atomically,
+ * however: if the peer replaces the session concurrently - by renegotiating,
+ * or by sending a new session ticket - the returned values can mix state from
+ * before and after that change.  Call this from a callback, or from the thread
+ * driving the handshake, if a coherent snapshot is required.
  */
 SSL_IMPORT SECStatus SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info,
                                         PRUintn len);
@@ -1406,6 +1413,9 @@ SSL_IMPORT SECStatus SSL_GetChannelInfo(PRFileDesc *fd, SSLChannelInfo *info,
  * SSLSNISocketConfig, and other callbacks that might be called during the
  * processing of the first flight of client of server handshake messages.
  * Values are marked as being unavailable when renegotiation is initiated.
+ *
+ * As with SSL_GetChannelInfo, this may be called from any thread, and the
+ * fields are not captured atomically.
  */
 SSL_IMPORT SECStatus
 SSL_GetPreliminaryChannelInfo(PRFileDesc *fd,

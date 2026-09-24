@@ -39,8 +39,17 @@ case ${target_platform} in
     Linux)
         prefix=lib
         extension=so
-        EXTRA_CXX_FLAGS="-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
-
+        # This library is shipped to users, so build it against the same sysroot
+        # Firefox itself uses rather than the build machine's system headers and
+        # libraries, which are much newer than what Firefox supports.
+        sysroot="$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu"
+        # Even the sysroot's libstdc++ is newer than the one Firefox targets, and
+        # std::filesystem, which onnxruntime uses, can't be shimmed the way
+        # build/unix/stdc++compat does it, so link it statically. Only the Ort* C
+        # entry points are exported, so no C++ symbols or objects cross into
+        # Gecko.
+        EXTRA_CXX_FLAGS="--sysroot=$sysroot -static-libstdc++ -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -fstack-clash-protection -fstack-protector-strong"
+        extra_args="--cmake_extra_defines CMAKE_C_FLAGS=--sysroot=$sysroot"
         ;;
     Android)
         extra_args="--android --android_ndk_path=$MOZ_FETCHES_DIR/android-ndk --android_sdk_path=$MOZ_FETCHES_DIR/android-sdk-linux --android_abi=$target_arch"
@@ -99,6 +108,17 @@ sed -i -e "s,;.*/,;$onnxruntime_depdir/,g"  cmake/deps.txt
 
 # Apply local patches
 find $GECKO_PATH/taskcluster/scripts/misc/onnxruntime.patches -type f -name '*.patch' -print0 | sort -z | while read -d '' patch ; do patch -p1 < $patch ; done
+
+if test "$target_platform" = Linux; then
+    # Linking libstdc++ statically needs __cxa_thread_atexit_impl, which would
+    # pull in GLIBC_2.18. See the source for the details. Build it as part of the
+    # shared library rather than separately, so that it gets the same flags as
+    # the rest of it. onnxruntime attaches its dummy __cxa_demangle to the
+    # library the same way.
+    cat >> cmake/onnxruntime.cmake <<EOF
+target_sources(onnxruntime PRIVATE "$GECKO_PATH/taskcluster/scripts/misc/onnxruntime-thread-atexit.cpp")
+EOF
+fi
 
 ###
 # Configure and build

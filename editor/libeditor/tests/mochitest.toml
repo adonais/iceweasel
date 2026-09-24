@@ -1,6 +1,7 @@
 [DEFAULT]
 prefs = [
   "apz.zoom-to-focused-input.enabled=false",
+  "dom.navigation.navigationRateLimit.count=0",
   "test.ime_content_observer.assert_invalid_cache=true",
   "ui.dragThresholdX=4", # Bug 1873142
   "ui.dragThresholdY=4", # Bug 1873142
@@ -656,6 +657,8 @@ skip-if = [
 ["test_paste_as_quote_in_text_control.html"]
 
 ["test_paste_clipboard_change.html"]
+
+["test_paste_command_data.html"]
 
 ["test_paste_no_formatting.html"]
 

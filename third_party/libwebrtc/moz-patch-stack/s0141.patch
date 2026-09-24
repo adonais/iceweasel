@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d619aaf26629db4f3
  1 file changed, 2 insertions(+)
 
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 761e5f30ca..82f72839a6 100644
+index 78ba20bcf4..69ca536cfc 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
-@@ -391,6 +391,7 @@ rtc_library("video_coding_utility") {
+@@ -392,6 +392,7 @@ rtc_library("video_coding_utility") {
  }
  
  rtc_library("av1_qp_parser") {
@@ -21,7 +21,7 @@ index 761e5f30ca..82f72839a6 100644
    testonly = true
    sources = [
      "utility/av1_qp_parser.cc",
-@@ -404,6 +405,7 @@ rtc_library("av1_qp_parser") {
+@@ -405,6 +406,7 @@ rtc_library("av1_qp_parser") {
    ]
    public_configs = [ "//third_party/libgav1:libgav1_public_config" ]
  }

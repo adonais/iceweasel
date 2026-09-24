@@ -48,6 +48,15 @@ The Firefox DevTools MCP server is **automatically configured** when using
 Claude Code in the Firefox repository, via the `.mcp.json` file at the root
 of the repository.
 
+On Windows, the server is started with the Python interpreter found as
+`python3` on the `PATH`, which the MozillaBuild shell provides. If Claude Code
+is started outside of the MozillaBuild shell, set `MACH_PYTHON` to the
+MozillaBuild Python before starting it, for instance:
+
+```powershell
+$env:MACH_PYTHON = "C:\mozilla-build\python3\python3.exe"
+```
+
 For installation in other projects or at user scope, Claude Code can configure
 the MCP server with a single command:
 
@@ -217,4 +226,8 @@ then quit when seeing "Ready to accept tool requests".
 
 1. Verify the `.mcp.json` at the root of the repository is present.
 2. Verify Node.js is available via `./mach npx --version`.
-3. Ask in #ai4dev or #developers on chat.mozilla.org
+3. On Windows, if the server fails to start with only a `CONNECTION_CLOSED`
+   error, `python3` is likely not on the `PATH`. Either start Claude Code from
+   the MozillaBuild shell, or set `MACH_PYTHON` as described in
+   [Installation and Configuration](#installation-and-configuration).
+4. Ask in #ai4dev or #developers on chat.mozilla.org

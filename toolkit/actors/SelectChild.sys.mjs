@@ -173,6 +173,12 @@ SelectContentHelper.prototype = {
       // well with it.
       return false;
     }
+    if (styles.color === "rgba(0, 0, 0, 0)") {
+      // If the select text color is transparent, we also can't reasonably
+      // support custom styling. Some pages use this combined with overlaying
+      // text in other ways to customize the button, see bug 2067761.
+      return false;
+    }
     return true;
   },
 

@@ -11,6 +11,7 @@ possible to define custom filters if the built-in ones are not enough.
 import functools
 import itertools
 import os
+from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import MutableSequence
 
@@ -315,33 +316,49 @@ class chunk_by_runtime(InstanceFilter):
         # Find runtimes for all relevant manifests.
         runtimes = [(self.runtimes[m], m) for m in manifests if m in self.runtimes]
 
-        # Compute the average to use as a default for manifests that don't exist.
-        times = [r[0] for r in runtimes]
-        # pylint --py3k W1619
-        # pylint: disable=W1633
-        avg = round(sum(times) / len(times), 2) if times else 0
-        missing = sorted([m for m in manifests if m not in self.runtimes])
-        self.logger.debug(
-            "Applying average runtime of {}s to the following missing manifests:\n{}".format(
-                avg, "  " + "\n  ".join(missing)
+        if len(runtimes) != len(self.runtimes):
+            # Compute the average to use as a default for manifests that don't exist.
+            times = [r[0] for r in runtimes]
+            # pylint --py3k W1619
+            # pylint: disable=W1633
+            avg = round(sum(times) / len(times), 2) if times else 0
+
+            missing = sorted([m for m in manifests if m not in self.runtimes])
+            self.logger.debug(
+                "Applying average runtime of {}s to the following missing manifests:\n{}".format(
+                    avg, "  " + "\n  ".join(missing)
+                )
             )
-        )
-        runtimes.extend([(avg, m) for m in missing])
+            runtimes.extend([(avg, m) for m in missing])
 
         # Each chunk is of the form [<runtime>, <manifests>].
         chunks = [[0, []] for i in range(self.total_chunks)]
+
+        def key(x):
+            return (x[0], len(x[1]))
 
         # Sort runtimes from slowest -> fastest.
         for runtime, manifest in sorted(runtimes, reverse=True):
             # Sort chunks from fastest -> slowest. This guarantees the fastest
             # chunk will be assigned the slowest remaining manifest.
-            chunks.sort(key=lambda x: (x[0], len(x[1]), x[1]))
-            chunks[0][0] += runtime
-            chunks[0][1].append(manifest)
+            chunk0 = chunks[0]
+            chunk0[0] += runtime
+            chunk0[1].append(manifest)
 
-        # Sort one last time so we typically get chunks ordered from fastest to
-        # slowest.
-        chunks.sort(key=lambda x: (x[0], len(x[1])))
+            # find location that would keep chunks sorted
+            insertion_point = bisect_left(chunks, key(chunk0), lo=1, key=key)
+
+            # To keep chunks sorted, we need to move from
+            #   [c_0, c_1, ... c_n]
+            # to
+            #   [c_1, ..., c_{insertion_point - 1}, c_0, c_{insertion_point},  ... c_n]
+            #
+            # Do this while avoiding reallocating pieces of the underlying list
+            # by rotating-left the first `insertion_point' elements.
+            for i in range(insertion_point - 1):
+                chunks[i] = chunks[i + 1]
+            chunks[insertion_point - 1] = chunk0
+
         return chunks
 
     def __call__(self, tests, values, strict=False):

@@ -629,8 +629,9 @@ gfx:
     type: custom_distribution
     description: >
       Reports results from the graphics sanity test to track which drivers are
-      having problems (0=TEST_PASSED, 1=TEST_FAILED_RENDER, 2=TEST_FAILED_VIDEO,
-      3=TEST_CRASHED)
+      having problems (0=TEST_PASSED, 1=TEST_FAILED_RENDER,
+      2=TEST_FAILED_VIDEO_DECODE, 3=TEST_CRASHED, 4=TEST_TIMEOUT,
+      5=TEST_FAILED_TO_RUN, 6=TEST_FAILED_VIDEO_ENCODE)
 
       This metric was generated to correspond to the Legacy Telemetry enumerated
       histogram GRAPHICS_SANITY_TEST.
@@ -640,11 +641,12 @@ gfx:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1950710
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067454
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1950710
     notification_emails:
       - gfx-telemetry-alerts@mozilla.com
-      - rhunt@mozilla.com
+      - aosmond@mozilla.com
     expires: never
     telemetry_mirror: GRAPHICS_SANITY_TEST
 

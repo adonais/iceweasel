@@ -29,7 +29,7 @@ class SVGEllipseElement final : public SVGEllipseElementBase {
       already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  public:
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   // SVGSVGElement methods:
   bool HasValidDimensions() const override;

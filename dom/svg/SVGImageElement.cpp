@@ -283,10 +283,9 @@ void SVGImageElement::DestroyContent() {
   SVGImageElementBase::DestroyContent();
 }
 
-NS_IMETHODIMP_(bool)
-SVGImageElement::IsAttributeMapped(const nsAtom* name) const {
+bool SVGImageElement::IsNoNamespaceAttrMapped(const nsAtom* name) const {
   return IsInLengthInfo(name, sLengthInfo) ||
-         SVGImageElementBase::IsAttributeMapped(name);
+         SVGImageElementBase::IsNoNamespaceAttrMapped(name);
 }
 
 //----------------------------------------------------------------------

@@ -1,0 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+pnpm:
+    description: pnpm package manager, used by `mach vendor node`
+    attributes:
+        local-fetch: true
+    fetch:
+        type: static-url
+        url: https://registry.npmjs.org/pnpm/-/pnpm-11.22.0.tgz
+        sha256: 57a97e6f23a3faffc03153a4ef8c770a0552612b8640aebe39bfdd5754d0ebdc
+        size: 9273377
+        strip-components: 1
+        add-prefix: pnpm/
+        artifact-name: pnpm.tar.zst

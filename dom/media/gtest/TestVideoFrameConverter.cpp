@@ -158,7 +158,8 @@ MATCHER_P(
   return multiples > 0 && remainder == 0;
 }
 
-VideoChunk GenerateChunk(int32_t aWidth, int32_t aHeight, TimeStamp aTime) {
+VideoChunk GenerateChunk(int32_t aWidth, int32_t aHeight, TimeStamp aTime,
+                         VideoRotation aRotation = VideoRotation::kDegree_0) {
   YUVBufferGenerator generator;
   generator.Init(gfx::IntSize(aWidth, aHeight));
   mozilla::VideoFrame f(generator.GenerateI420Image(),
@@ -167,6 +168,7 @@ VideoChunk GenerateChunk(int32_t aWidth, int32_t aHeight, TimeStamp aTime) {
   c.mFrame.TakeFrom(&f);
   c.mTimeStamp = aTime;
   c.mDuration = 0;
+  c.mRotation = aRotation;
   return c;
 }
 
@@ -183,6 +185,23 @@ TEST_F(VideoFrameConverterTest, BasicConversion) {
   EXPECT_EQ(frame.height(), 480);
   EXPECT_THAT(frame, Not(IsFrameBlack()));
   EXPECT_GT(conversionTime - now, TimeDuration::FromMilliseconds(0));
+}
+
+TEST_F(VideoFrameConverterTest, PropagatesRotation) {
+  auto framesPromise = TakeNConvertedFrames(2);
+  TimeStamp now = TimeStamp::Now();
+  TimeStamp future = now + TimeDuration::FromMilliseconds(100);
+  VideoChunk chunk = GenerateChunk(640, 480, now, VideoRotation::kDegree_90);
+  mConverter->SetActive(true);
+  mConverter->QueueVideoChunk(chunk, false);
+  chunk = GenerateChunk(640, 480, future, VideoRotation::kDegree_270);
+  mConverter->QueueVideoChunk(chunk, false);
+  auto frames = WaitFor(framesPromise).unwrap();
+  ASSERT_EQ(frames.size(), 2U);
+  const auto& [frame0, conversionTime0] = frames[0];
+  EXPECT_EQ(frame0.rotation(), webrtc::kVideoRotation_90);
+  const auto& [frame1, conversionTime1] = frames[1];
+  EXPECT_EQ(frame1.rotation(), webrtc::kVideoRotation_270);
 }
 
 TEST_F(VideoFrameConverterTest, BasicPacing) {
@@ -586,7 +605,7 @@ TEST_F(VideoFrameConverterTest, IgnoreOldFrames) {
     // to get ignored.
     mConverter->QueueForProcessing(
         GenerateChunk(800, 600, now + d3).mFrame.GetImage(), now + d3,
-        gfx::IntSize(800, 600), false);
+        gfx::IntSize(800, 600), false, VideoRotation::kDegree_0);
     return GenericPromise::CreateAndResolve(true, __func__);
   }));
 

@@ -6,13 +6,15 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 // Selectors for the Google Lens opt-out sheet and camera screen, which live in LensCameraActivity's Compose tree.
 // The search-bar Lens button itself stays in SearchBarSelectors: it belongs to the edit-mode search bar, this page
 // begins once that button has been tapped.
-object GoogleLensSelectors {
+object GoogleLensSelectors : SelectorContainer {
     // First-run opt-out bottom sheet raised by the first tap of the Lens button, BEFORE any camera access. This is the
     // deterministic launch boundary a UI test can assert without a real camera (the capture step beyond this needs
     // one).
@@ -21,7 +23,7 @@ object GoogleLensSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.lens_opt_out_title),
             description = "Google Lens first-run opt-out bottom sheet title",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     // "Try it now" on the opt-out sheet — accepts the first-run prompt, which requests CAMERA and opens the Lens camera
@@ -31,7 +33,6 @@ object GoogleLensSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.lens_opt_out_try_it_now_button),
             description = "Google Lens opt-out 'Try it now' button",
-            groups = listOf(),
         )
 
     // Gallery button on the Lens camera screen ("Choose from gallery to send to Google Lens"). Tapping it launches the
@@ -42,13 +43,5 @@ object GoogleLensSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.content_description_gallery),
             description = "Google Lens gallery button",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            OPT_OUT_SHEET_TITLE,
-            OPT_OUT_TRY_IT_NOW,
-            GALLERY_BUTTON,
         )
 }

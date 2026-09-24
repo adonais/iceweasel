@@ -106,8 +106,7 @@ def build_uniffi_targets(command_context):
     )
 
     # Read the staticlib, not the cdylib: bindgen extracts the `UNIFFI_META_*`
-    # statics, but the cdylib (linked from the staticlib via megazord_stub.c)
-    # drops any that the stub doesn't reference. The staticlib keeps them all.
+    # statics from the archive.
     # Like "$uniffi_objdir/aarch64-apple-darwin/release-megazord/libmegazord.a".
     megazord_build_kind = get_rust_build_kind(substs, megazord=True)
     megazord_path = mozpath.join(

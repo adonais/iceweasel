@@ -761,10 +761,6 @@ KyberParams
 seckey_GetKyberParamsByPkcs11ParamSet(CK_ML_KEM_PARAMETER_SET_TYPE paramSet)
 {
     switch (paramSet) {
-#ifndef NSS_DISABLE_KYBER
-        case CKP_NSS_KYBER_768_ROUND3:
-            return params_kyber768_round3;
-#endif
         case CKP_ML_KEM_512:
             return params_ml_kem512;
         case CKP_NSS_ML_KEM_768:
@@ -781,12 +777,8 @@ CK_ML_KEM_PARAMETER_SET_TYPE
 seckey_GetMLKEMPkcs11ParamsByKyberParams(KyberParams kyberParams)
 {
     switch (kyberParams) {
-#ifndef NSS_DISABLE_KYBER
-        case params_kyber768_round3:
-        case params_kyber768_round3_test_mode:
-            return CKP_NSS_KYBER_768_ROUND3;
-#endif
         case params_ml_kem512:
+        case params_ml_kem512_test_mode:
             return CKP_ML_KEM_512;
         case params_ml_kem768:
         case params_ml_kem768_test_mode:
@@ -822,6 +814,7 @@ seckey_KyberParamsToLen(KyberParams kyberParams, SECKEYSizeType type)
         case SECKEYPubKeyType:
             switch (kyberParams) {
                 case params_ml_kem512:
+                case params_ml_kem512_test_mode:
                     return MLKEM512_PUBLIC_KEY_BYTES;
                 case params_ml_kem768:
                 case params_ml_kem768_test_mode:
@@ -836,6 +829,7 @@ seckey_KyberParamsToLen(KyberParams kyberParams, SECKEYSizeType type)
         case SECKEYPrivKeyType:
             switch (kyberParams) {
                 case params_ml_kem512:
+                case params_ml_kem512_test_mode:
                     return MLKEM512_PRIVATE_KEY_BYTES;
                 case params_ml_kem768:
                 case params_ml_kem768_test_mode:

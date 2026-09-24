@@ -4,12 +4,13 @@
  */
 interface nsISupports;
 
-[Pref="media.webspeech.recognition.enable",
+[SecureContext,
+ Pref="media.webspeech.recognition.enable",
  Exposed=Window]
 interface SpeechRecognitionEvent : Event
 {
   constructor(DOMString type,
-              optional SpeechRecognitionEventInit eventInitDict = {});
+              SpeechRecognitionEventInit eventInitDict);
 
   readonly attribute unsigned long resultIndex;
   readonly attribute SpeechRecognitionResultList? results;
@@ -20,7 +21,7 @@ interface SpeechRecognitionEvent : Event
 dictionary SpeechRecognitionEventInit : EventInit
 {
   unsigned long resultIndex = 0;
-  SpeechRecognitionResultList? results = null;
+  required SpeechRecognitionResultList results;
   any interpretation = null;
   Document? emma = null;
 };

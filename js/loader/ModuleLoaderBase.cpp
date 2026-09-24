@@ -9,6 +9,7 @@
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptSettings.h"  // AutoJSAPI
 #include "mozilla/dom/ScriptTrace.h"
+#include "mozilla/mozalloc_oom.h"  // mozalloc_handle_oom
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"  // mozilla::StaticRefPtr
 #include "mozilla/StaticPrefs_dom.h"
@@ -26,8 +27,9 @@
 #include "js/Array.h"         // JS::GetArrayLength
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/CompilationAndEvaluation.h"
-#include "js/ContextOptions.h"        // JS::ContextOptionsRef
-#include "js/ErrorReport.h"           // JSErrorBase
+#include "js/ContextOptions.h"  // JS::ContextOptionsRef
+#include "js/ErrorReport.h"     // JSErrorBase
+#include "js/Exception.h"  // JS_IsExceptionPending, JS_IsThrowingOutOfMemory
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Modules.h"  // JS::FinishLoadingImportedModule, JS::{G,S}etModuleResolveHook, JS::Get{ModulePrivate,ModuleScript,RequestedModule{s,Specifier,SourcePos}}, JS::SetModule{Load,Metadata}Hook
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_GetElement
@@ -326,18 +328,26 @@ bool ModuleLoaderBase::FinishLoadingImportedModule(
 
   Rooted<JSScript*> referrer(aCx, aRequest->mReferrerScript);
   Rooted<JSObject*> moduleReqObj(aCx, aRequest->mModuleRequestObj);
-  Rooted<Value> statePrivate(aCx, aRequest->mPayload);
   Rooted<Value> payload(aCx, aRequest->mPayload);
 
   LOG(("ScriptLoadRequest (%p): FinishLoadingImportedModule module (%p)",
        aRequest, module.get()));
   bool usePromise = aRequest->HasScriptLoadContext();
-  MOZ_ALWAYS_TRUE(JS::FinishLoadingImportedModule(aCx, referrer, moduleReqObj,
-                                                  payload, module, usePromise));
+  bool ok = JS::FinishLoadingImportedModule(aCx, referrer, moduleReqObj,
+                                            payload, module, usePromise);
+  // FinishLoadingImportedModule returns false when OOM or
+  // RejectPromiseWithPendingError returns false, which means there is no
+  // exception pending or the exception is uncatchable.
+  if (!ok && JS_IsThrowingOutOfMemory(aCx)) {
+    mozalloc_handle_oom(0);
+  }
+
+  // RejectPromiseWithPendingError has already settled the promise so there is
+  // nothing left to do.
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
   aRequest->ClearImport();
 
-  return true;
+  return ok;
 }
 
 // static
@@ -666,8 +676,8 @@ ModuleLoaderBase::SetModuleFetchFinishedAndGetWaitingRequests(
     ModuleLoadRequest* aRequest, nsresult aResult) {
   // Update module map with the result of fetching a single module script.
   //
-  // If any requests for the same URL are waiting on this one to complete, call
-  // ModuleLoaded or LoadFailed to resume or fail them as appropriate.
+  // If any requests for the same URL are waiting on this one to complete, they
+  // are returned so they can be resumed or failed as appropriate.
 
   MOZ_ASSERT(aRequest->mLoader == this);
 
@@ -775,8 +785,8 @@ ModuleScript* ModuleLoaderBase::GetFetchedModule(
   return ms;
 }
 
-nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
-                                           nsresult aRv) {
+void ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
+                                       nsresult aRv) {
   LOG(("ScriptLoadRequest (%p): OnFetchComplete result %x", aRequest,
        (unsigned)aRv));
   MOZ_ASSERT(aRequest->mLoader == this);
@@ -799,8 +809,11 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
     }
 
     if (NS_FAILED(rv)) {
-      aRequest->LoadFailed();
-      return rv;
+      // Failing to create a module script leaves the request errored (its
+      // module script is null), which the shared error path below handles the
+      // same way as a failed fetch. A failed fetch is reported to the console
+      // by the caller, so report this failure here.
+      mLoader->ReportErrorToConsole(aRequest, rv);
     }
   }
 
@@ -827,11 +840,10 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
   }
 
   if (!waitingRequests) {
-    return NS_OK;
+    return;
   }
 
   ResumeWaitingRequests(waitingRequests, success);
-  return NS_OK;
 }
 
 void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
@@ -850,7 +862,12 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
       return;
     }
     JSContext* cx = jsapi.cx();
-    FinishLoadingImportedModule(cx, aRequest);
+    if (!FinishLoadingImportedModule(cx, aRequest)) {
+      // The graph load was abandoned by an uncatchable error, e.g. the script
+      // being terminated, so the parent request is never going to complete.
+      aRequest->Cancel();
+      return;
+    }
 
     aRequest->SetReady();
     aRequest->LoadFinished();
@@ -1353,12 +1370,18 @@ void ModuleLoaderBase::StartFetchingModuleDependencies(
 
   bool result = false;
 
-  // A microtask job is not executed if the global is being
-  // destroyed. As a result, the promise returned by LoadRequestedModules may
-  // neither resolve nor reject. To ensure module loading completes reliably in
-  // chrome pages, we use the synchronous variant of LoadRequestedModules.
+  // A microtask job is dropped if the global is being destroyed or if scripting
+  // is disabled. As a result, the promise returned by LoadRequestedModules
+  // never settles: module loading stalls, document loading is blocked, and the
+  // ModuleLoadRequest above is never released.
+  //
+  // Use the synchronous variant of LoadRequestedModules in those cases. The
+  // scheme checks cover chrome pages, whose global can be torn down after
+  // this point, while the dependency is still fetching.
+  Rooted<JSObject*> global(cx, mGlobalObject->GetGlobalJSObject());
   bool isSync = aRequest->URI()->SchemeIs("chrome") ||
-                aRequest->URI()->SchemeIs("resource");
+                aRequest->URI()->SchemeIs("resource") ||
+                !mGlobalObject->CanRunJSMicroTask(global);
 
   // TODO: Bug1973660: Use Promise version of LoadRequestedModules on Workers.
   if (aRequest->HasScriptLoadContext() && !isSync) {
@@ -1581,14 +1604,20 @@ void ModuleLoaderBase::CancelFetchingModules() {
 }
 
 void ModuleLoaderBase::Shutdown() {
-  CancelAndClearDynamicImports();
-
+  // Resume the waiting requests before cancelling the dynamic imports. A
+  // dynamic import waiting on another request's fetch is in both lists, and
+  // cancelling it first completes it and clears its import, which leaves
+  // ResumeWaitingRequest() calling OnFetchFailed() with no payload. Resuming
+  // first errors it through OnFetchFailed(), which rejects its promise and
+  // removes it from mDynamicImportRequests.
   for (const auto& entry : mFetchingModules) {
     RefPtr<LoadingRequest> loadingRequest(entry.GetData());
     if (loadingRequest) {
       ResumeWaitingRequests(loadingRequest, false);
     }
   }
+
+  CancelAndClearDynamicImports();
 
   for (const auto& entry : mFetchedModules) {
     if (entry.GetData()) {
@@ -1702,7 +1731,11 @@ void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   JSContext* cx = jsapi.cx();
 
   LOG(("ScriptLoadRequest (%p): ProcessDynamicImport", aRequest));
-  FinishLoadingImportedModule(cx, aRequest);
+  if (!FinishLoadingImportedModule(cx, aRequest)) {
+    // The import was abandoned by an uncatchable error, e.g. the script being
+    // terminated, so don't record it as a successful execution.
+    return;
+  }
 
   // TODO: Implement caching for wasm modules (Bug 1998240).
   if (!aRequest->IsWasmBytes()) {

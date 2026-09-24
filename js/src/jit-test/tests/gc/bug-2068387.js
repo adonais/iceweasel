@@ -1,0 +1,10 @@
+gczeal(0);
+grayRoot()[0] = function f() {};
+gczeal(25);
+startgc(1);
+var o = {};
+o.x = grayRoot()[0];
+setGrayBitsInvalid();
+finishgc();
+gczeal(0);
+gc();

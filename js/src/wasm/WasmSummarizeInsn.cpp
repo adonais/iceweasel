@@ -1756,6 +1756,10 @@ SummarizeResult SummarizeTrapInstruction(const InstructionBytes& insn) {
   }
 
   switch (INSN(31, 15) << 15) {
+    case op_amcas_db_b:
+    case op_amcas_db_h:
+    case op_amcas_db_w:
+    case op_amcas_db_d:
     case op_amswap_db_b:
     case op_amswap_db_h:
     case op_amswap_db_w:

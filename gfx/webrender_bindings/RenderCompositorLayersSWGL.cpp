@@ -182,7 +182,7 @@ LayoutDeviceIntSize RenderCompositorLayersSWGL::GetBufferSize() {
 
 void RenderCompositorLayersSWGL::Bind(wr::NativeTileId aId,
                                       wr::DeviceIntPoint* aOffset,
-                                      uint32_t* aFboId,
+                                      uint64_t* aSurfaceHandle,
                                       wr::DeviceIntRect aDirtyRect,
                                       wr::DeviceIntRect aValidRect) {
   MOZ_RELEASE_ASSERT(false);

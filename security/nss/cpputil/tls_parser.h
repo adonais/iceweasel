@@ -43,6 +43,7 @@ const uint8_t kTlsAlertBadRecordMac = 20;
 const uint8_t kTlsAlertRecordOverflow = 22;
 const uint8_t kTlsAlertHandshakeFailure = 40;
 const uint8_t kTlsAlertBadCertificate = 42;
+const uint8_t kTlsAlertUnsupportedCertificate = 43;
 const uint8_t kTlsAlertCertificateRevoked = 44;
 const uint8_t kTlsAlertCertificateExpired = 45;
 const uint8_t kTlsAlertIllegalParameter = 47;

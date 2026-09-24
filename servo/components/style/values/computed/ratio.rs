@@ -4,12 +4,12 @@
 
 //! `<ratio>` computed values.
 
+use crate::Zero;
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::NonNegativeNumber;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::ratio::Ratio as GenericRatio;
 use crate::values::generics::NonNegative;
-use crate::Zero;
+use crate::values::generics::ratio::Ratio as GenericRatio;
 use std::cmp::Ordering;
 
 /// A computed <ratio> value.
@@ -51,7 +51,7 @@ impl Animate for Ratio {
         // we simply use the first value as the result value.
         // Besides, the procedure for accumulation should be identical to addition here.
         if matches!(procedure, Procedure::Add | Procedure::Accumulate { .. }) {
-            return Ok(self.clone());
+            return Ok(*self);
         }
 
         // The interpolation of a <ratio> is defined by converting each <ratio> to a number by

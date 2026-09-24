@@ -118,7 +118,7 @@ export class InputPickerParentCommon extends JSWindowActorParent {
     }
     this.#oldFocus = doc.activeElement;
     this.#picker = this.createPickerImpl(panel);
-    this.#picker.openPicker(type, rect, detail);
+    this.#picker.openPicker(type, rect, detail, aData.isDarkBackground);
     this.addPickerListeners(panel);
   }
 

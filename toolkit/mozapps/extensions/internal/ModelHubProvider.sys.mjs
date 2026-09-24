@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
   isAddonEngineId: "chrome://global/content/ml/Utils.sys.mjs",
   engineIdToAddonId: "chrome://global/content/ml/Utils.sys.mjs",
+  fileDisplayInfoForEngineIds: "chrome://global/content/ml/Utils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -36,6 +37,7 @@ export class ModelHubAddonWrapper {
   updateDate;
   modelIconURL;
   engineIds;
+  displayInfo;
 
   constructor(params) {
     this.#provider = params.provider;
@@ -47,6 +49,7 @@ export class ModelHubAddonWrapper {
     this.updateDate = params.updateDate;
     this.modelIconURL = params.modelIconURL;
     this.engineIds = params.engineIds ?? [];
+    this.displayInfo = params.displayInfo ?? null;
   }
 
   async uninstall() {
@@ -70,11 +73,17 @@ export class ModelHubAddonWrapper {
   }
 
   get name() {
+    if (this.displayInfo) {
+      return this.displayInfo.name;
+    }
     const parts = this.model.split("/");
     return parts.slice(2).join("/");
   }
 
   get modelHomepageURL() {
+    if (this.displayInfo) {
+      return this.displayInfo.hfUrl;
+    }
     // Model card URL for models downloaded from "model-hub.mozilla.org" should point to the corresponding "https://huggingface.co" url.
     return `https://${this.model}/`.replace(
       "https://model-hub.mozilla.org/",
@@ -193,13 +202,17 @@ export const ModelHubProvider = {
     const models = await this.modelHub.listModels();
 
     for (const model of models) {
-      const { metadata } = await this.modelHub.listFiles({
+      const { files, metadata } = await this.modelHub.listFiles({
         model: model.name,
         revision: model.revision,
       });
 
       const modelIconURL = await this.modelHub.getOwnerIcon(model.name);
       const id = this.getWrapperIdForModel(model);
+      const displayInfo = await lazy.fileDisplayInfoForEngineIds(
+        metadata.engineIds,
+        files.map(file => file.path)
+      );
 
       const wrapper = new ModelHubAddonWrapper({
         provider: this,
@@ -211,6 +224,7 @@ export const ModelHubProvider = {
         updateDate: new Date(metadata.updateDate),
         modelIconURL,
         engineIds: metadata.engineIds,
+        displayInfo,
       });
       this.cache.set(wrapper.id, wrapper);
     }

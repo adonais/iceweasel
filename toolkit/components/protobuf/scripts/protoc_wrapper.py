@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 
 import functools
 import os
@@ -6,17 +10,17 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 import buildconfig
 from mach.util import get_state_dir
 from mozbuild.vendor.moz_yaml import load_moz_yaml
 
-
 TOPSRCDIR = Path(buildconfig.topsrcdir)
 COMPONENT_DIR = Path(__file__).parent.parent
 
 
-def protoc_binary(revision: None | str = None) -> Path:
+def protoc_binary(revision: Optional[str] = None) -> Path:
     if not revision:
         revision = _get_protobuf_revision_from_moz_yaml()
 
@@ -32,9 +36,9 @@ def protoc_binary(revision: None | str = None) -> Path:
 
 @functools.cache
 def _get_protobuf_revision_from_moz_yaml():
-    return load_moz_yaml(COMPONENT_DIR / "moz.yaml", verify=False, require_license_file=False)[
-        "origin"
-    ]["revision"]
+    return load_moz_yaml(
+        COMPONENT_DIR / "moz.yaml", verify=False, require_license_file=False
+    )["origin"]["revision"]
 
 
 def _get_protoc_dir(revision):
@@ -42,10 +46,10 @@ def _get_protoc_dir(revision):
 
 
 def _download_protoc_binary(revision):
-    import requests
-
     from tempfile import TemporaryFile
     from zipfile import ZipFile, ZipInfo
+
+    import requests
 
     with TemporaryFile() as temp:
         with requests.get(

@@ -41,6 +41,14 @@ gfx::IntSize RenderAndroidImageReaderImageTextureHost::GetSize() const {
   return mSize;
 }
 
+void RenderAndroidImageReaderImageTextureHost::SetReadFenceFd(
+    UniqueFileHandle&& aFenceFd) {
+  if (!mAndroidImageConsumer) {
+    return;
+  }
+  mAndroidImageConsumer->SetReadFenceFd(std::move(aFenceFd));
+}
+
 bool RenderAndroidImageReaderImageTextureHost::EnsureLockable() {
   MOZ_ASSERT(mGL);
 
@@ -62,8 +70,32 @@ bool RenderAndroidImageReaderImageTextureHost::EnsureLockable() {
   mAndroidImageConsumer->UpdateTexImage(mFrameId);
 
   if (!mAndroidImageConsumer->HasImage()) {
-    // XXX
     return false;
+  }
+
+  auto writeFenceFd = mAndroidImageConsumer->CloneWriteFenceFd();
+  if (writeFenceFd) {
+    const auto& gle = gl::GLContextEGL::Cast(mGL);
+    const auto& egl = gle->mEgl;
+
+    const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
+                              writeFenceFd.get(), LOCAL_EGL_NONE};
+
+    EGLSync sync =
+        egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+    if (sync) {
+      // Release fd here, since it is owned by EGLSync
+      (void)writeFenceFd.release();
+
+      if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
+        egl->fWaitSync(sync, 0);
+      } else {
+        egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+      }
+      egl->fDestroySync(sync);
+    } else {
+      gfxCriticalNote << "Failed to create EGLSync from acquire fence fd";
+    }
   }
 
   MOZ_RELEASE_ASSERT(mAndroidImageConsumer->GetSize() == mSize);

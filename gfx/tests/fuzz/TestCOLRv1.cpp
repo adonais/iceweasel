@@ -43,7 +43,7 @@ static int FuzzingRunCOLRv1(const uint8_t* data, size_t size) {
   Float f2p = kPixelSize / hb_face_get_upem(hb_data_face);
 
   auto colorPalette =
-      MakeUnique<nsTArray<sRGBColor>>(COLRFonts::CreateColorPalette(
+      MakeUnique<nsTArray<hb_color_t>>(COLRFonts::CreateColorPalette(
           hb_data_face, nullptr, nullptr, "dummy"_ns));
 
   for (unsigned i = 0; i <= glyph_count; ++i) {

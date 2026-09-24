@@ -66,6 +66,9 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   // This block will unconditionally bail out.
   bool alwaysBails_ = false;
 
+  // Set for loop header blocks with a generator resume dispatch block.
+  bool hasGeneratorResumeEntry_ = false;
+
   // Represents the execution frequency of this block, considered unknown by
   // default. Various passes can use this information for optimizations.
   Frequency frequency_ = Frequency::Unknown;
@@ -162,6 +165,12 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   void setAlwaysBails() { alwaysBails_ = true; }
   bool alwaysBails() const { return alwaysBails_; }
+
+  void setHasGeneratorResumeEntry() {
+    MOZ_ASSERT(isPendingLoopHeader());
+    hasGeneratorResumeEntry_ = true;
+  }
+  bool hasGeneratorResumeEntry() const { return hasGeneratorResumeEntry_; }
 
   // Move the definition to the top of the stack.
   void pick(int32_t depth);

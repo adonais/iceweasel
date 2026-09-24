@@ -147,7 +147,8 @@ class DateTimeTestHelper {
   }
 
   /**
-   * Clean up after tests. Remove the frame to prevent leak.
+   * Clean up after tests. The panel keeps its iframe for the lifetime of the
+   * window, which the shutdown leak check attributes to the test that opened it.
    */
   cleanup() {
     this.frame?.remove();

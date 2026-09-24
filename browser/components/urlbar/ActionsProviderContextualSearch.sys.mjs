@@ -4,10 +4,11 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import {
-  ActionsProvider,
-  ActionsResult,
-} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
+import { ActionsProvider } from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
+
+/**
+ * @import {ActionsResult} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs"
+ */
 
 const lazy = XPCOMUtils.declareLazy({
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -99,23 +100,20 @@ class ProviderContextualSearch extends ActionsProvider {
 
   async #createActionResult({ type, engine, key = "contextual-search" }) {
     let icon = engine?.icon || (await engine?.getIconURL?.()) || DEFAULT_ICON;
-    let result = {
+    return /** @type {ActionsResult} */ ({
       providerName: this.name,
       key,
       l10nId: "urlbar-result-search-with",
       l10nArgs: { engine: engine.name || engine.title },
       icon,
-    };
-
-    if (type == INSTALLED_ENGINE) {
-      result.engine = engine.name;
-      result.dataset = { providesSearchMode: true };
-      if (key != "matched-contextual-search") {
-        result.dataset.immediateSearch = true;
-      }
-    }
-
-    return new ActionsResult(result);
+      ...(type == INSTALLED_ENGINE && {
+        engine: engine.name,
+        dataset: {
+          providesSearchMode: true,
+          ...(key != "matched-contextual-search" && { immediateSearch: true }),
+        },
+      }),
+    });
   }
 
   /*

@@ -1,0 +1,210 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+<window title="Menupopup wheel scrolling"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
+  <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"/>
+
+  <body xmlns="http://www.w3.org/1999/xhtml">
+  <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=2069604"
+     target="_blank">Mozilla Bug 2069604</a>
+  </body>
+
+  <script type="application/javascript"><![CDATA[
+
+// The scroll distance is rounded to whole device pixels, so an item boundary is
+// only reachable to within a pixel.
+const EPSILON = 1;
+
+// Resolves true once the condition holds, false if it never does.
+function waitFor(condition) {
+  return new Promise(resolve => {
+    let attempts = 0;
+    (function check() {
+      let satisfied = condition();
+      if (satisfied || ++attempts > 100) {
+        resolve(satisfied);
+        return;
+      }
+      requestAnimationFrame(() => requestAnimationFrame(check));
+    })();
+  });
+}
+
+async function openOverflowingPopup({
+  type,
+  paddingBlock,
+  textPaddingBlock,
+  iconSize,
+  iconMarginBlock,
+} = {}) {
+  let popup = document.createXULElement("menupopup");
+  // macOS opens an anchored menupopup as a native menu, which has no
+  // arrowscrollbox and no CSS.
+  popup.setAttribute("nonnative", "");
+  if (type) {
+    popup.setAttribute("type", type);
+  }
+  if (paddingBlock) {
+    popup.style.setProperty("--menuitem-padding-block", paddingBlock);
+  }
+  if (textPaddingBlock) {
+    popup.style.setProperty("--menuitem-text-padding-block", textPaddingBlock);
+  }
+  if (iconSize) {
+    popup.style.setProperty("--icon-size", iconSize);
+  }
+  if (iconMarginBlock) {
+    popup.style.setProperty("--menuitem-icon-margin-block", iconMarginBlock);
+  }
+  // Enough items to overflow any screen.
+  for (let i = 0; i < 200; i++) {
+    let item = document.createXULElement("menuitem");
+    item.setAttribute("label", "Item " + i);
+    if (iconSize) {
+      // .menu-icon only takes up space on an item that has an image.
+      item.setAttribute("image", "chrome://global/skin/icons/info.svg");
+    }
+    popup.appendChild(item);
+  }
+  document.documentElement.appendChild(popup);
+
+  let shown = new Promise(resolve =>
+    popup.addEventListener("popupshown", resolve, { once: true })
+  );
+  popup.openPopup(document.documentElement, "overlap", 0, 0, false, false);
+  await shown;
+
+  ok(
+    await waitFor(() => popup.scrollBox.hasAttribute("overflowing")),
+    "The popup overflows, so its scrollbox is a scroll container."
+  );
+
+  // The scrollport is still resizing when popupshown fires, and a notch scrolls
+  // by whatever line scroll amount the scrollbox has when the wheel arrives.
+  // Hold out for a scrollport that survives a frame.
+  let scrollbox = popup.scrollBox.scrollbox;
+  let extent = () => `${scrollbox.clientHeight}x${scrollbox.scrollTopMax}`;
+  let previous = "";
+  let stableFrames = 0;
+  ok(
+    await waitFor(() => {
+      let now = extent();
+      stableFrames = now == previous ? stableFrames + 1 : 0;
+      previous = now;
+      return stableFrames > 1;
+    }),
+    "The scrollport settled."
+  );
+  return popup;
+}
+
+async function closePopup(popup) {
+  let hidden = new Promise(resolve =>
+    popup.addEventListener("popuphidden", resolve, { once: true })
+  );
+  popup.hidePopup();
+  await hidden;
+  popup.remove();
+}
+
+/**
+ * Sends one wheel notch and resolves with how far the items moved once they
+ * come to rest. The scroll buttons appear as the popup leaves its start edge
+ * and the scrollbox compensates for them with a border, so scrollTop moves by
+ * the button height on top of the scroll -- measure the items instead.
+ */
+async function scrollByANotch(popup, deltaY, description) {
+  let itemTop = () => popup.children[0].getBoundingClientRect().top;
+  let before = itemTop();
+
+  synthesizeWheel(popup.scrollBox.scrollbox, 20, 20, {
+    deltaMode: WheelEvent.DOM_DELTA_LINE,
+    deltaY,
+    lineOrPageDeltaY: deltaY,
+  });
+
+  // The scroll buttons come and go from a scroll listener, a tick behind the
+  // scroll itself, and each one reflows the scrollbox. Hold out for a position
+  // that survives it.
+  let previous = before;
+  let stableFrames = 0;
+  ok(
+    await waitFor(() => {
+      let now = itemTop();
+      stableFrames = now == previous && now != before ? stableFrames + 1 : 0;
+      previous = now;
+      return stableFrames > 1;
+    }),
+    description + ": the popup came to rest."
+  );
+  return before - itemTop();
+}
+
+/**
+ * A menupopup sets -moz-line-scroll-amount to the height of a menuitem, so a
+ * wheel notch moves it by whole items rather than leaving it partway through
+ * one. Nothing exposes the resolved value of that property to script, so scroll
+ * the popup and measure where it lands.
+ */
+add_task(async function scrollsByWholeMenuitems() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["general.smoothScroll", false],
+      // Scroll one line per notch, rather than the platform's multiple, so the
+      // distance is one menuitem on every platform.
+      ["mousewheel.system_scroll_override.enabled", false],
+    ],
+  });
+
+  for (let [description, options] of [
+    ["a menu", {}],
+    ["an arrow panel", { type: "arrow" }],
+    ["a menu with overridden padding", { paddingBlock: "13px" }],
+    ["a menu whose labels are padded", { textPaddingBlock: "5px" }],
+    ["a menu whose icons outgrow its labels", { iconSize: "32px" }],
+    [
+      "a menu whose icons have margins",
+      { iconSize: "32px", iconMarginBlock: "4px" },
+    ],
+  ]) {
+    let popup = await openOverflowingPopup(options);
+    // The scroll amount has to match the distance from one item to the next,
+    // which is the item plus its margins.
+    let itemHeight =
+      popup.children[1].getBoundingClientRect().top -
+      popup.children[0].getBoundingClientRect().top;
+
+    let down = await scrollByANotch(popup, 1, description);
+    isfuzzy(
+      down,
+      itemHeight,
+      EPSILON,
+      description + ": a notch scrolled one " + itemHeight + "px item."
+    );
+
+    // The first notch is the one that brings the scroll buttons in. Take a
+    // second so a scroll amount derived from the scrollport can't pass.
+    let again = await scrollByANotch(popup, 1, description);
+    isfuzzy(
+      again,
+      itemHeight,
+      EPSILON,
+      description + ": a second notch scrolled one more item."
+    );
+
+    let up = await scrollByANotch(popup, -1, description);
+    isfuzzy(
+      up,
+      -itemHeight,
+      EPSILON,
+      description + ": scrolling back up returned one item."
+    );
+
+    await closePopup(popup);
+  }
+});
+
+  ]]></script>
+</window>

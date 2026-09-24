@@ -394,7 +394,7 @@ EglDrmDevice::EglDrmDevice(EGLDisplay display, dev_t device_id)
 }
 
 EglDrmDevice::EglDrmDevice(std::string render_node, dev_t device_id)
-    : device_id_(device_id), render_node_(render_node) {}
+    : device_id_(device_id), render_node_(std::move(render_node)) {}
 
 RTC_NO_SANITIZE("cfi-icall")
 EglDrmDevice::~EglDrmDevice() {

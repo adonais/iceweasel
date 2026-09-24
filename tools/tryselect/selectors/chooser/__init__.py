@@ -63,13 +63,14 @@ def run(
     mod_presets=False,
     stage_changes=False,
     dry_run=False,
+    write_task_config=False,
     message="{msg}",
     closed_tree=False,
     push_to_vcs=False,
 ):
     from .app import create_application
 
-    push = not stage_changes and not dry_run
+    push = not stage_changes and not dry_run and not write_task_config
     check_working_directory(push)
 
     metrics.mach_try.taskgraph_generation_duration.start()
@@ -143,6 +144,7 @@ def run(
         ),
         stage_changes=stage_changes,
         dry_run=dry_run,
+        write_task_config=write_task_config,
         closed_tree=closed_tree,
         push_to_vcs=push_to_vcs,
     )

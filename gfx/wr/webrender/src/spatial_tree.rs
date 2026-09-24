@@ -12,7 +12,6 @@ use crate::print_tree::{PrintableTree, PrintTree, PrintTreePrinter};
 use crate::scene::SceneProperties;
 use crate::spatial_node::{ReferenceFrameInfo, SpatialNode, SpatialNodeDescriptor, SpatialNodeType, StickyFrameInfo};
 use crate::spatial_node::{ScrollFrameKind, SceneSpatialNode, SpatialNodeInfo};
-use std::{ops, u32};
 use crate::util::{FastTransform, LayoutToWorldFastTransform, MatrixHelpers, ScaleOffset, scale_factors};
 use smallvec::SmallVec;
 use crate::util::TransformedRectKind;
@@ -95,7 +94,7 @@ const MIN_SCROLL_ROOT_SIZE: f32 = 128.0;
 
 impl SpatialNodeIndex {
     pub fn new(index: usize) -> Self {
-        debug_assert!(index < ::std::u32::MAX as usize);
+        debug_assert!(index < u32::MAX as usize);
         SpatialNodeIndex(index as u32)
     }
 }
@@ -118,7 +117,7 @@ impl Default for VisibleFace {
     }
 }
 
-impl ops::Not for VisibleFace {
+impl std::ops::Not for VisibleFace {
     type Output = Self;
     fn not(self) -> Self {
         match self {
@@ -813,8 +812,40 @@ impl SpatialTree {
         node_index
     }
 
+    /// Whether `get_relative_transform(child_index, parent_index)` can be
+    /// computed, i.e. whether `parent_index`'s coordinate system is an ancestor
+    /// of (or the same as) `child_index`'s.
+    ///
+    /// Relative transforms are only available in that direction. Building one
+    /// walks from the child's coordinate system up to the parent's, accumulating
+    /// each system's transform, so there is nothing to walk when the parent is
+    /// not on that path. The other direction is deliberately not offered rather
+    /// than merely missing: a transform away from the root is not always
+    /// invertible, so there is not always a transform to return. A caller that
+    /// needs the reverse has to handle the answer not existing.
+    pub fn can_get_relative_transform(
+        &self,
+        child_index: SpatialNodeIndex,
+        parent_index: SpatialNodeIndex,
+    ) -> bool {
+        let target = self.get_spatial_node(parent_index).coordinate_system_id;
+        let mut current = self.get_spatial_node(child_index).coordinate_system_id;
+
+        loop {
+            if current == target {
+                return true;
+            }
+
+            match self.coord_systems[current.0 as usize].parent {
+                Some(parent) => current = parent,
+                None => return false,
+            }
+        }
+    }
+
     /// Calculate the relative transform from `child_index` to `parent_index`.
-    /// This method will panic if the nodes are not connected!
+    /// This method will panic if the nodes are not connected! See
+    /// `can_get_relative_transform` for what "connected" means here.
     pub fn get_relative_transform(
         &self,
         child_index: SpatialNodeIndex,

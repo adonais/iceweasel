@@ -4,24 +4,18 @@
 
 package org.mozilla.fenix.pdf
 
-import androidx.activity.compose.BackHandler
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.selector.selectedTab
-import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.support.base.feature.LifecycleAwareFeature
@@ -29,7 +23,8 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.PdfViewer
 import org.mozilla.fenix.components.share.createPdfShareAction
 import org.mozilla.fenix.pdf.ui.PdfTools
-import org.mozilla.fenix.pdf.ui.SignatureDialog
+import org.mozilla.fenix.pdf.ui.PdfToolsContent
+import org.mozilla.fenix.pdf.ui.SignatureDialogContent
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -46,7 +41,7 @@ class PdfToolsIntegration(
     private val isAddressBarAtBottom: Boolean,
 ) : LifecycleAwareFeature {
 
-    private var pdfTools: ComposeView? = null
+    private var overlays = emptyList<ComposeView>()
     private var isSigning by mutableStateOf(false)
     private val signature = TextFieldState()
 
@@ -70,36 +65,56 @@ class PdfToolsIntegration(
         )
 
     override fun start() {
-        if (pdfTools != null) {
+        if (overlays.isNotEmpty()) {
             return
         }
 
-        val view =
-            ComposeView(container.context).apply {
-                // The tools are positioned by their behavior, which insets them from the browser chrome.
-                layoutParams =
-                    CoordinatorLayout.LayoutParams(
-                            CoordinatorLayout.LayoutParams.MATCH_PARENT,
-                            CoordinatorLayout.LayoutParams.WRAP_CONTENT,
-                        )
-                        .apply { behavior = PdfToolsBehavior(isAddressBarAtBottom = isAddressBarAtBottom) }
+        val tools =
+            createOverlay(pdfToolsBehavior(isAddressBarAtBottom)) {
+                val isLargeWindow = AcornWindowSize.isLargeWindow()
 
-                setContent { PdfToolsHost() }
+                PdfToolsContent(
+                    browserStore = browserStore,
+                    isLargeWindow = isLargeWindow,
+                    isCoveredBySignatureDialog = isSigning && !isLargeWindow,
+                    onPdfGone = signatureActions.onPdfGone,
+                    toolActions = toolActions,
+                )
             }
-        pdfTools = view
+        val dialog =
+            createOverlay(signatureDialogBehavior(isAddressBarAtBottom)) {
+                SignatureDialogContent(signatureState = signatureState, signatureActions = signatureActions)
+            }
+
+        val created = listOf(tools, dialog)
+        overlays = created
 
         // Add once the container has attached, since the chrome removes a sibling during that pass (Bug 2065098).
         container.post {
-            if (pdfTools === view) {
-                container.addView(view)
+            if (overlays === created) {
+                created.forEach(container::addView)
             }
         }
     }
 
     override fun stop() {
-        container.removeView(pdfTools)
-        pdfTools = null
+        overlays.forEach(container::removeView)
+        overlays = emptyList()
     }
+
+    /**
+     * Creates a view drawn over the browser.
+     *
+     * @param overlayBehavior How the overlay should position itself in relationship to the browser.
+     * @param content The content for the overlay.
+     */
+    private fun createOverlay(overlayBehavior: PdfOverlayBehavior, content: @Composable () -> Unit) =
+        ComposeView(container.context).apply {
+            layoutParams =
+                CoordinatorLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { behavior = overlayBehavior }
+
+            setContent { FirefoxTheme(content = content) }
+        }
 
     /** Opens the dialog for adding a signature to the PDF. */
     internal fun handleSignClick() {
@@ -117,18 +132,26 @@ class PdfToolsIntegration(
 
     /** Adds the typed signature to the PDF and closes the dialog. */
     internal fun handleSignAddClick() {
-        isSigning = false
-        signature.clearText()
         PdfViewer.signDialogAddTapped.record(
             PdfViewer.SignDialogAddTappedExtra(signatureType = SignatureType.Typed.telemetryName)
         )
-        // Bug 2061298 will make the behavior available.
+
+        val engineSession = browserStore.state.selectedTab?.engineState?.engineSession
+        if (engineSession == null) {
+            dismissSignatureDialog()
+            return
+        }
+
+        engineSession.addSignatureToPdf(
+            text = signature.text.toString(),
+            onResult = ::dismissSignatureDialog,
+            onException = { dismissSignatureDialog() },
+        )
     }
 
     /** Closes the dialog and discards the signature. */
     internal fun handleSignCloseClick() {
-        isSigning = false
-        signature.clearText()
+        dismissSignatureDialog()
         PdfViewer.signDialogCloseTapped.record(
             PdfViewer.SignDialogCloseTappedExtra(signatureType = SignatureType.Typed.telemetryName)
         )
@@ -136,6 +159,10 @@ class PdfToolsIntegration(
 
     /** Clears out the state if the user navigates away. */
     internal fun handlePdfGone() {
+        dismissSignatureDialog()
+    }
+
+    private fun dismissSignatureDialog() {
         isSigning = false
         signature.clearText()
     }
@@ -164,69 +191,4 @@ class PdfToolsIntegration(
             browserStore.dispatch(it)
         }
     }
-
-    @Composable
-    private fun PdfToolsHost() {
-        FirefoxTheme {
-            PdfToolsContent(
-                browserStore = browserStore,
-                isLargeWindow = AcornWindowSize.isLargeWindow(),
-                signatureState = signatureState,
-                signatureActions = signatureActions,
-                toolActions = toolActions,
-            )
-        }
-    }
 }
-
-/**
- * [PdfTools] are only shown when the browser is on a PDF page.
- *
- * @param browserStore Used to observe the PDF status of the selected tab.
- * @param isLargeWindow Used to determine if the device should be treated as a tablet.
- * @param signatureState The signature being typed.
- * @param signatureActions The actions available on the signature dialog.
- * @param toolActions The actions available on the PDF tools themselves.
- */
-@Composable
-internal fun PdfToolsContent(
-    browserStore: BrowserStore,
-    isLargeWindow: Boolean,
-    signatureState: SignatureState,
-    signatureActions: SignatureActions,
-    toolActions: PdfToolActions,
-) {
-    val pdfTabId by remember {
-        browserStore.stateFlow.map { it.selectedPdfTabId }.distinctUntilChanged()
-    }
-        .collectAsStateWithLifecycle(initialValue = browserStore.state.selectedPdfTabId)
-
-    if (pdfTabId != null) {
-        val onPdfGone by rememberUpdatedState(signatureActions.onPdfGone)
-        DisposableEffect(pdfTabId) {
-            onDispose { onPdfGone() }
-        }
-
-        if (signatureState.isSigning) {
-            BackHandler(onBack = signatureActions.onCloseClick)
-
-            SignatureDialog(
-                state = signatureState.signature,
-                onCloseClick = signatureActions.onCloseClick,
-                onClearClick = signatureActions.onClearClick,
-                onAddClick = signatureActions.onAddClick,
-            )
-        } else {
-            PdfTools(
-                isLargeWindow = isLargeWindow,
-                onSignClick = toolActions.onSignClick,
-                onDownloadClick = toolActions.onDownloadClick,
-                onPrintClick = toolActions.onPrintClick,
-                onShareClick = toolActions.onShareClick,
-            )
-        }
-    }
-}
-
-private val BrowserState.selectedPdfTabId: String?
-    get() = selectedTab?.takeIf { it.content.isPdf }?.id

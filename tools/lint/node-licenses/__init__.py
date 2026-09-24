@@ -61,10 +61,13 @@ def lint(paths, config, binary=None, skip_reinstall=False, **lintargs):
         # - When the package is the top-level package.json, because the top level
         #   node_modules is looked after by the setup, and we don't want to be
         #   removing it from underneath ourselves.
+        # - When a pnpm-lock.yaml shows that pnpm owns the node_modules, which
+        #   npm cannot safely reinstall.
         if (
             not skip_reinstall
             and not os.environ.get("MOZ_AUTOMATION")
             and dirname != lintargs["root"]
+            and not os.path.exists(os.path.join(dirname, "pnpm-lock.yaml"))
         ):
             status = setup_helper.package_setup(
                 dirname, os.path.basename(dirname), skip_logging=True
@@ -80,6 +83,20 @@ def lint(paths, config, binary=None, skip_reinstall=False, **lintargs):
                         },
                     )
                 )
+        elif not skip_reinstall and not os.path.isdir(
+            os.path.join(dirname, "node_modules")
+        ):
+            issues.append(
+                result.from_config(
+                    config,
+                    **{
+                        "path": path,
+                        "message": "No node_modules to check for this package, so no dependency was checked",
+                        "level": "error",
+                    },
+                )
+            )
+            continue
 
         output = run_license_checker(binary, path, lintargs)
         if output == 1:

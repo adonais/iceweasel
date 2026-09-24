@@ -64,12 +64,10 @@
         "Client-Sign-RSA_PKCS1_SHA256_LEGACY-TLS13":"NSS uses one signature-scheme list (ss->ssl3.signatureSchemes, ssl3con.c:14252) for both signing and accepting, so BoGo's -signing-prefs also narrows what NSS accepts; the runner's server-signing list omits the legacy PKCS1 code point, so it can't sign its ServerKeyExchange with the single permitted scheme.",
         "Client-Sign-RSA_PKCS1_SHA512-TLS12":"NSS uses one signature-scheme list (ss->ssl3.signatureSchemes, ssl3con.c:14252) for both signing and accepting, so BoGo's -signing-prefs also narrows what NSS accepts; the runner's server-signing list omits rsa_pkcs1_sha512, so it can't sign its ServerKeyExchange with the single permitted scheme.",
 
-        "NotJustKyberKeyShare":"Boring always sends a pre-quantum share with Xyber768 (if one is configured)",
-        "KyberKeyShareIncludedSecond":"Boring sends Xyber768 even if is not the client's first preference",
-        "KyberKeyShareIncludedThird":"Boring sends Xyber768 even if is not the client's first preference",
+        "CurveTest-*Kyber-*":"NSS no longer supports the pre-standard xyber768d00 group. Bug 2060316",
         "PostQuantumNotEnabledByDefaultInClients":"NSS enables the X25519MLKEM768 post-quantum group by default; this test expects PQ off by default.",
-        "NotJustMLKEMKeyShare-*":"NSS sends only the hybrid MLKEM key share, not an additional classical share (RFC 8446 4.2.8 permits this). Analogous to NotJustKyberKeyShare.",
-        "MLKEMKeyShareIncluded*":"NSS orders/sends MLKEM key shares by its own preference (RFC 8446 4.2.8 permits this). Analogous to KyberKeyShareIncludedSecond/Third.",
+        "NotJustMLKEMKeyShare-*":"NSS sends only the hybrid MLKEM key share, not an additional classical share (RFC 8446 4.2.8 permits this).",
+        "MLKEMKeyShareIncluded*":"NSS orders/sends MLKEM key shares by its own preference (RFC 8446 4.2.8 permits this).",
 
         "NoCommonSignatureAlgorithms-TLS12-Fallback":"Boring will consider RSA key exchange if a common signature algorithm cannot be found",
 

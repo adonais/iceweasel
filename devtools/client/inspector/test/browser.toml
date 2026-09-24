@@ -207,6 +207,8 @@ skip-if = [
 
 ["browser_inspector_sidebarstate.js"]
 
+["browser_inspector_split-orientation.js"]
+
 ["browser_inspector_startup.js"]
 
 ["browser_inspector_switch-to-inspector-on-pick.js"]

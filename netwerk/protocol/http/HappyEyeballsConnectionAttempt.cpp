@@ -98,6 +98,10 @@ class DefaultHappyEyeballsConnMgrDelegate final
   void ProcessSpdyPendingQ(ConnectionEntry* aEntry) override {
     gHttpHandler->ConnMgr()->ProcessSpdyPendingQ(aEntry);
   }
+  already_AddRefed<ConnectionEntry> HandOffHttp3OnlyConnection(
+      HttpConnectionBase* aConn, ConnectionEntry* aFromEnt) override {
+    return gHttpHandler->ConnMgr()->HandOffHttp3OnlyConnection(aConn, aFromEnt);
+  }
   void InsertIntoActiveConns(ConnectionEntry* aEntry,
                              HttpConnectionBase* aConn) override {
     aEntry->InsertIntoActiveConns(aConn);
@@ -268,6 +272,25 @@ static Result<NetAddr, nsresult> ToNetAddr(
   }
 
   return addr;
+}
+
+// Inverse of ToNetAddr. The engine takes addresses as happy_eyeballs::IpAddr
+// rather than NetAddr, so cbindgen lays the element out for both sides. Every
+// caller already knows the family, so there is no error case here.
+static happy_eyeballs::IpAddr ToIpAddrV4(const NetAddr& aAddr) {
+  MOZ_ASSERT(aAddr.raw.family == AF_INET);
+  happy_eyeballs::IpAddr ip{};
+  ip.tag = happy_eyeballs::IpAddr::Tag::V4;
+  memcpy(ip.v4._0, &aAddr.inet.ip, 4);
+  return ip;
+}
+
+static happy_eyeballs::IpAddr ToIpAddrV6(const NetAddr& aAddr) {
+  MOZ_ASSERT(aAddr.raw.family == AF_INET6);
+  happy_eyeballs::IpAddr ip{};
+  ip.tag = happy_eyeballs::IpAddr::Tag::V6;
+  memcpy(ip.v6._0, &aAddr.inet6.ip, 16);
+  return ip;
 }
 
 HappyEyeballsConnectionAttempt::ConnResultOutcome
@@ -1463,8 +1486,21 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
     }
   }
 
+  // An h3-only attempt (eager Alt-Svc h3 validation) deliberately runs in its
+  // own connection entry so the speculative, TCP-less race cannot be claimed
+  // by normal transactions to the origin. What it produces is an ordinary h3
+  // connection to the origin though, so once it is established hand it over to
+  // the origin's entry.
+  RefPtr<ConnectionEntry> reportEntry = entry;
+  if (entry->mConnInfo->GetHttp3Only()) {
+    if (RefPtr<ConnectionEntry> originEntry =
+            mConnMgrDelegate->HandOffHttp3OnlyConnection(aConn, entry)) {
+      reportEntry = originEntry;
+    }
+  }
+
   aConn->SetIsRacing(false);
-  mConnMgrDelegate->ReportHttp3Connection(aConn, entry);
+  mConnMgrDelegate->ReportHttp3Connection(aConn, reportEntry);
 }
 
 void HappyEyeballsConnectionAttempt::EnterSucceeded() {
@@ -1976,7 +2012,7 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
       mOriginDnsLookupIds.Remove(aId);
       MaybeBuildOriginCoalescingKeys();
     }
-    nsTArray<NetAddr> emptyArray;
+    nsTArray<happy_eyeballs::IpAddr> emptyArray;
     rv = happy_eyeballs_process_dns_response_a(mHappyEyeballs, aId, &emptyArray,
                                                mDnsMetadata.mIsTRR, false);
     if (NS_FAILED(rv)) {
@@ -1990,10 +2026,12 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
 
   // Filter to only IPv4 addresses
   nsTArray<NetAddr> ipv4Addresses;
+  nsTArray<happy_eyeballs::IpAddr> ipv4IpAddrs;
   for (const auto& addr : addresses) {
     if (addr.raw.family == AF_INET) {
       LOG(("Addr=[%s]", addr.ToString().get()));
       ipv4Addresses.AppendElement(addr);
+      ipv4IpAddrs.AppendElement(ToIpAddrV4(addr));
     }
   }
 
@@ -2007,8 +2045,7 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
   (void)addrRecord->GetFromStaleCache(&aFromStaleCache);
 
   rv = happy_eyeballs_process_dns_response_a(
-      mHappyEyeballs, aId, &ipv4Addresses, mDnsMetadata.mIsTRR,
-      aFromStaleCache);
+      mHappyEyeballs, aId, &ipv4IpAddrs, mDnsMetadata.mIsTRR, aFromStaleCache);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -2037,7 +2074,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
       mOriginDnsLookupIds.Remove(aId);
       MaybeBuildOriginCoalescingKeys();
     }
-    nsTArray<NetAddr> emptyArray;
+    nsTArray<happy_eyeballs::IpAddr> emptyArray;
     rv = happy_eyeballs_process_dns_response_aaaa(
         mHappyEyeballs, aId, &emptyArray, mDnsMetadata.mIsTRR, false);
     if (NS_FAILED(rv)) {
@@ -2051,10 +2088,12 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
 
   // Filter to only IPv6 addresses
   nsTArray<NetAddr> ipv6Addresses;
+  nsTArray<happy_eyeballs::IpAddr> ipv6IpAddrs;
   for (const auto& addr : addresses) {
     if (addr.raw.family == AF_INET6) {
       LOG(("Addr=[%s]", addr.ToString().get()));
       ipv6Addresses.AppendElement(addr);
+      ipv6IpAddrs.AppendElement(ToIpAddrV6(addr));
     }
   }
 
@@ -2068,7 +2107,7 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
   (void)addrRecord->GetFromStaleCache(&aaaaFromStaleCache);
 
   rv = happy_eyeballs_process_dns_response_aaaa(
-      mHappyEyeballs, aId, &ipv6Addresses, mDnsMetadata.mIsTRR,
+      mHappyEyeballs, aId, &ipv6IpAddrs, mDnsMetadata.mIsTRR,
       aaaaFromStaleCache);
   if (NS_FAILED(rv)) {
     return rv;
@@ -2235,13 +2274,13 @@ nsresult HappyEyeballsConnectionAttempt::OnHTTPSRecord(nsIDNSRecord* aRecord,
     for (const auto& addr : ipv4Hint) {
       NetAddr netAddr;
       addr->GetNetAddr(&netAddr);
-      svcInfo.ipv4_hints.AppendElement(netAddr);
+      svcInfo.ipv4_hints.AppendElement(ToIpAddrV4(netAddr));
     }
 
     for (const auto& addr : ipv6Hint) {
       NetAddr netAddr;
       addr->GetNetAddr(&netAddr);
-      svcInfo.ipv6_hints.AppendElement(netAddr);
+      svcInfo.ipv6_hints.AppendElement(ToIpAddrV6(netAddr));
     }
 
     serviceInfos.AppendElement(std::move(svcInfo));

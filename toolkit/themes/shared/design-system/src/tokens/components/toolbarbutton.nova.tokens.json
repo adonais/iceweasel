@@ -31,7 +31,7 @@
           "nativeTheme": "{button.background.color.ghost.hover}",
           "light": "rgba(117, 102, 159, 0.25)",
           "dark": "rgba(182, 170, 217, 0.25)",
-          "forcedColors": "{button.background.color.hover}"
+          "forcedColors": "{button.background.color.ghost.hover}"
         }
       },
       "active": {
@@ -39,7 +39,7 @@
           "nativeTheme": "{button.background.color.ghost.active}",
           "light": "rgba(117, 102, 159, 0.4)",
           "dark": "rgba(182, 170, 217, 0.4)",
-          "forcedColors": "{button.background.color.active}"
+          "forcedColors": "{button.background.color.ghost.active}"
         }
       }
     }
@@ -50,18 +50,6 @@
         "value": {
           "default": "transparent",
           "forcedColors": "{button.border.color.@base}"
-        }
-      },
-      "hover": {
-        "value": {
-          "default": "transparent",
-          "forcedColors": "{button.border.color.hover}"
-        }
-      },
-      "active": {
-        "value": {
-          "default": "transparent",
-          "forcedColors": "{button.border.color.active}"
         }
       },
       "selected": {

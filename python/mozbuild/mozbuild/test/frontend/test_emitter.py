@@ -1363,6 +1363,16 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertIsInstance(deps[0], ObjDirPath)
         self.assertIsInstance(deps[1], SourcePath)
 
+    def test_extra_link_deps_shared_library(self):
+        """Test that EXTRA_LINK_DEPS is recorded on a shared library."""
+        reader = self.reader("extra-link-deps-shared")
+        objs = self.read_topsrcdir(reader)
+        libs = [o for o in objs if isinstance(o, SharedLibrary)]
+        self.assertEqual(len(libs), 1)
+        deps = libs[0].extra_link_deps
+        self.assertEqual([str(d) for d in deps], ["!generated.rsp"])
+        self.assertIsInstance(deps[0], ObjDirPath)
+
     def test_extra_link_deps_no_linkable(self):
         """Test that EXTRA_LINK_DEPS without a linkable is an error."""
         reader = self.reader("extra-link-deps-no-linkable")

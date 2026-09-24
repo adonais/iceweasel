@@ -31,6 +31,8 @@ DevToolsModules(
     "events.js",
     "focus.mjs",
     "inplace-editor.js",
+    "jsonl-mime-types.mjs",
+    "jsonl-utils.mjs",
     "key-shortcuts.js",
     "keycodes.js",
     "link.js",

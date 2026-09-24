@@ -177,8 +177,8 @@ RefPtr<AddFilesPromise> FileTransferPortal::AddFilesBatch(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [this, promise, keyCopy = std::move(keyCopy),
-           filesCopy = std::move(filesCopy),
-           nextStart](RefPtr<GVariant>&&) mutable {
+           filesCopy = std::move(filesCopy), nextStart](
+              std::pair<RefPtr<GVariant>, RefPtr<GUnixFDList>>&&) mutable {
             AddFilesBatch(keyCopy, filesCopy, nextStart)
                 ->Then(
                     GetCurrentSerialEventTarget(), __func__,

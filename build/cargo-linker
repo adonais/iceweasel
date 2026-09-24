@@ -65,6 +65,8 @@ args.extend(split(os.environ["MOZ_CARGO_WRAP_LDFLAGS"]))
 wrap_ld = split(wrap_ld)
 if sys.platform == "win32":
     # For some reason, os.execvp doesn't handle arguments properly on Windows.
+    # See https://github.com/python/cpython/issues/101191 and
+    # https://glandium.org/blog/?p=3051 for context.
     import subprocess
     sys.exit(subprocess.run(wrap_ld + args).returncode)
 

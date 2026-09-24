@@ -13,11 +13,11 @@ use crate::invalidation::element::invalidator::{Invalidation, InvalidationProces
 use crate::invalidation::element::state_and_attributes;
 use crate::stylist::CascadeData;
 use dom::DocumentState;
+use selectors::OpaqueElement;
 use selectors::matching::{
     MatchingContext, MatchingForInvalidation, MatchingMode, NeedsSelectorFlags, QuirksMode,
     SelectorCaches, VisitedHandlingMode,
 };
-use selectors::OpaqueElement;
 
 /// A struct holding the members necessary to invalidate document state
 /// selectors.

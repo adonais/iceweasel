@@ -14,7 +14,6 @@ geckoview:
   page_load_progress_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: GV_PAGE_LOAD_PROGRESS_MS
     description: >
       Time between page load progress starts (0) and completion (100).
       (Migrated from the geckoview metric of the same name).
@@ -31,7 +30,6 @@ geckoview:
   page_load_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: GV_PAGE_LOAD_MS
     description: >
       The time taken to load a page. This includes all static contents, no
       dynamic content.

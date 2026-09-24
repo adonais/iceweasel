@@ -41,11 +41,11 @@ from __future__ import annotations
 
 import itertools
 import os
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from fnmatch import fnmatchcase
 from glob import glob
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Mapping
+from typing import TYPE_CHECKING, ClassVar
 
 import _distutils_hack.override  # noqa: F401
 
@@ -71,7 +71,7 @@ class _Filter:
     the input matches at least one of the patterns.
     """
 
-    def __init__(self, *patterns: str):
+    def __init__(self, *patterns: str) -> None:
         self._patterns = dict.fromkeys(patterns)
 
     def __call__(self, item: str) -> bool:
@@ -84,8 +84,8 @@ class _Filter:
 class _Finder:
     """Base class that exposes functionality for module/package finders"""
 
-    ALWAYS_EXCLUDE: tuple[str, ...] = ()
-    DEFAULT_EXCLUDE: tuple[str, ...] = ()
+    ALWAYS_EXCLUDE: ClassVar[tuple[str, ...]] = ()
+    DEFAULT_EXCLUDE: ClassVar[tuple[str, ...]] = ()
 
     @classmethod
     def find(
@@ -95,22 +95,22 @@ class _Finder:
         include: Iterable[str] = ('*',),
     ) -> list[str]:
         """Return a list of all Python items (packages or modules, depending on
-        the finder implementation) found within directory 'where'.
+        the finder implementation) found within directory ``where``.
 
-        'where' is the root directory which will be searched.
+        ``where`` is the root directory which will be searched.
         It should be supplied as a "cross-platform" (i.e. URL-style) path;
         it will be converted to the appropriate local path syntax.
 
-        'exclude' is a sequence of names to exclude; '*' can be used
+        ``exclude`` is a sequence of names to exclude; ``*`` can be used
         as a wildcard in the names.
-        When finding packages, 'foo.*' will exclude all subpackages of 'foo'
-        (but not 'foo' itself).
+        When finding packages, ``foo.*`` will exclude all subpackages of ``foo``
+        (but not ``foo`` itself).
 
-        'include' is a sequence of names to include.
+        ``include`` is a sequence of names to include.
         If it's specified, only the named items will be included.
         If it's not specified, all found items will be included.
-        'include' can contain shell style wildcard patterns just like
-        'exclude'.
+        ``include`` can contain shell style wildcard patterns just like
+        ``exclude``.
         """
 
         exclude = exclude or cls.DEFAULT_EXCLUDE
@@ -300,7 +300,7 @@ class ConfigDiscovery:
     (from other metadata/options, the file system or conventions)
     """
 
-    def __init__(self, distribution: Distribution):
+    def __init__(self, distribution: Distribution) -> None:
         self.dist = distribution
         self._called = False
         self._disabled = False
@@ -335,7 +335,7 @@ class ConfigDiscovery:
 
     def __call__(
         self, force: bool = False, name: bool = True, ignore_ext_modules: bool = False
-    ):
+    ) -> None:
         """Automatically discover missing configuration fields
         and modifies the given ``distribution`` object in-place.
 
@@ -479,7 +479,7 @@ class ConfigDiscovery:
             """
             raise PackageDiscoveryError(cleandoc(msg))
 
-    def analyse_name(self):
+    def analyse_name(self) -> None:
         """The packages/modules are the essential contribution of the author.
         Therefore the name of the distribution can be derived from them.
         """

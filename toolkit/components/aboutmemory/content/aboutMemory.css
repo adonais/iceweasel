@@ -240,3 +240,548 @@ a.treemapEntry {
 .hasKids:hover {
   text-decoration: underline;
 }
+
+/* Below are styles for the GC/CC log analyzer UI */
+
+:root {
+  --cc-item-color: #005e5e;
+  --cc-item-root-color: color-mix(in srgb, var(--cc-item-color), var(--color-white) 20%);
+  --cc-item-color-hover: color-mix(in srgb, var(--cc-item-color), var(--color-white) 10%);
+  --gc-item-color: #48279b;
+  --gc-item-root-color: color-mix(in srgb, var(--gc-item-color), var(--color-white) 10%);
+  --gc-item-color-hover: color-mix(in srgb, var(--gc-item-color), var(--color-white) 5%);
+  --gc-gray-item-color1: color-mix(in srgb, var(--gc-item-color), #555 50%);
+  --gc-gray-item-color2: color-mix(in srgb, var(--gc-item-color), #555 70%);
+  --gc-gray-item-color-hover1: color-mix(in srgb, var(--gc-gray-item-color1), var(--color-white) 10%);
+  --gc-gray-item-color-hover2: color-mix(in srgb, var(--gc-gray-item-color2), var(--color-white) 10%);
+  --root-border-color: color-mix(in srgb, var(--background-color-box), transparent 10%);
+  --color-ccgc-node-text: #fbfbfe;
+  --background-color-grid-header: color-mix(in srgb, var(--color-gray-50) 10%, transparent);
+  --border-dead-row: 1px solid color-mix(in srgb, var(--color-gray-60) 30%, transparent);
+  --color-ccgc-log-filepath: color-mix(in srgb, currentColor 40%, transparent);
+
+  --box-shadow-color-selected-node: light-dark(#8f8f9d, #f9f9fa);
+  --color-copy-ptr-hover: var(--color-gray-80);
+  --background-color-copy-ptr-hover: var(--color-white);
+}
+
+.section.ccgcLogResults {
+  max-width: 70em;
+  position: relative;
+  margin: 0 auto;
+}
+
+.ccgcLogProcess {
+  color: FieldText;
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--background-color-canvas);
+  padding: var(--space-large);
+  opacity: 0.7;
+  margin-block-end: var(--space-small);
+
+  align-items: center;
+  justify-content: center;
+  display: flex;
+
+  &:hover {
+    background: var(--background-color-box);
+    opacity: 1;
+  }
+}
+
+.ccgcLogProcessNameAndPaths {
+  flex: auto;
+  padding-left: 2.5em;
+}
+
+.ccgcLogEntryPath {
+  display: block;
+  font-size: 0.8em;
+  font-family: monospace;
+  color: var(--color-ccgc-log-filepath);
+}
+
+.ccgcLogAnalyzer {
+  color: FieldText;
+  text-decoration: none;
+
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  border-top: none;
+
+  background: var(--background-color-canvas);
+  padding: var(--space-large);
+  opacity: 0.7;
+
+  margin: var(--space-small) var(--space-large);
+  margin-block-start: calc(-1 * var(--space-small));
+
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.ccgcLogAnalyzer > .nodesOuter {
+  width: 30em;
+  display: inline-block;
+  height: 50em;
+  margin: 0 var(--space-large);
+}
+
+.inspector {
+  position: relative;
+  width: 40em;
+  height: 50em;
+  margin: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--background-color-box);
+
+  > div {
+    display: none;
+  }
+}
+
+.inspector.loading > .progressBar {
+  display: block;
+}
+
+.inspector.path > .pathInspector {
+  position: relative;
+  display: flex;
+  color: FieldText;
+  height: 44em;
+  overflow: auto;
+  flex-direction: column;
+  padding: 3em 0;
+}
+
+.inspector.node > .nodeInspector {
+  position: relative;
+  color: FieldText;
+  height: 40em;
+  overflow: auto;
+  display: grid;
+  padding: 5em 1em;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-auto-rows: min-content;
+}
+
+.hoverPanel {
+  display: none;
+  position: absolute;
+}
+
+.hoverPanel.show {
+  display: block;
+}
+
+.inspectorLegend {
+  width: 55em;
+  bottom: var(--size-item-large);
+  inset-inline-end: var(--space-small);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-small);
+  background: var(--background-color-canvas);
+}
+
+.legendTable {
+  display: grid;
+  padding: var(--space-xxlarge) var(--space-large);
+  grid-template-columns: 1fr 6fr 12fr;
+}
+
+.legendTable > .legendItemKey {
+  align-content: center;
+}
+
+.legendTable > .legendItemKey > div {
+  display: inline-block;
+  padding: var(--space-large);
+  border-radius: var(--border-radius-small);
+
+  &.root,
+  &.soft-root {
+    padding: calc(var(--space-large) - var(--space-xsmall));
+    margin: var(--space-xsmall);
+  }
+}
+
+.legendTable > .legendItemDetail {
+  color: var(--text-color-deemphasized);
+  font-size: 14px;
+  padding: var(--space-large);
+}
+
+.legendTable > .legendItemLabel {
+  font-size: 16px;
+  align-content: center;
+}
+
+.nodeInspector .gridHeader {
+  height: 2.5em;
+  grid-column: 1/4;
+  grid-row-end: span 2;
+  text-align: center;
+  background-color: var(--background-color-grid-header);
+  align-content: center;
+  margin-top: 3em;
+  border-radius: var(--border-radius-medium);
+}
+
+.inspector:not(.loading) > .navButton {
+  position: absolute;
+  fill: var(--text-color-disabled);
+  -moz-context-properties: fill;
+  width: var(--size-item-medium);
+  height: var(--size-item-medium);
+  cursor: pointer;
+}
+
+.navButton.enabled {
+  display: block;
+  fill: color-mix(in srgb, var(--text-color) 70%, transparent);
+  &:hover {
+    fill: var(--text-color);
+  }
+}
+
+.navButton.inspectorBack {
+  background: url("chrome://global/skin/icons/arrow-left.svg") no-repeat center/24px;
+  top: var(--space-small);
+  inset-inline-start: var(--space-small);
+}
+
+.navButton.inspectorForward {
+  background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat center/24px;
+  top: var(--space-small);
+  inset-inline-end: var(--space-small);
+}
+
+.navButton.inspectorInfo {
+  background: url("chrome://global/skin/icons/info-filled.svg") no-repeat center/24px;
+  bottom: var(--space-small);
+  inset-inline-end: var(--space-small);
+}
+
+.ccgcLogAnalyzer > .nodesOuter > .nodesResults {
+  margin-block-start: var(--space-small);
+  max-height: 47.5em;
+  overflow: auto;
+  position: relative;
+}
+
+.nodesResultsEntry {
+  position: relative;
+  border-radius: var(--border-radius-small);
+  padding: var(--space-xsmall) var(--space-large);
+  margin: var(--space-xsmall);
+  display: flex;
+  color: var(--color-ccgc-node-text);
+  max-height: 3.5em;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8em;
+
+  &.selected {
+    box-shadow: calc(-1 * var(--space-xsmall)) 0 var(--box-shadow-color-selected-node);
+  }
+}
+
+.weakmapTag {
+  background-color: #f8b8;
+  padding: var(--space-small);
+  border-radius: var(--border-radius-small);
+  cursor: pointer;
+
+  width: 10em;
+  text-align: center;
+  margin: 0 auto;
+  margin-block-start: var(--space-small);
+  margin-block-end: -0.2em;
+
+  &:hover {
+    background-color: #f8bb;
+  }
+}
+
+.pathInspector .edgeArrow.weakMap {
+  color: #f8b8;
+}
+
+.gc-marked {
+  background-color: var(--gc-item-color);
+
+  &:hover {
+    background-color: var(--gc-item-color-hover);
+  }
+}
+
+.gc-marked.gc-gray {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--gc-gray-item-color1),
+    var(--gc-gray-item-color1) 5px,
+    var(--gc-gray-item-color2) 5px,
+    var(--gc-gray-item-color2) 10px
+  );
+
+  &:hover {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--gc-gray-item-color-hover1),
+      var(--gc-gray-item-color-hover1) 5px,
+      var(--gc-gray-item-color-hover2) 5px,
+      var(--gc-gray-item-color-hover2) 10px
+    );
+  }
+}
+
+.gc-white {
+  border: 2px dashed var(--gc-item-color);
+  padding: calc(0.25em) calc(1em - 4px);
+
+  &:hover {
+    border: 2px dashed var(--gc-item-color-hover);
+  }
+}
+
+.root,
+.soft-root {
+  margin: 6px 6px;
+  padding: calc(0.25em) calc(1em - 4px);
+}
+
+.root {
+  border: 2px solid var(--root-border-color);
+}
+
+.soft-root {
+  border: 2px dashed var(--root-border-color);
+}
+
+.root {
+  outline: 2px solid var(--gc-item-root-color);
+}
+
+.cc-managed {
+  background-color: var(--cc-item-color);
+  &:hover {
+    background-color: var(--cc-item-color-hover);
+  }
+}
+
+.cc-managed.root,
+.cc-managed.soft-root {
+  outline: 2px solid var(--cc-item-root-color);
+}
+
+.garbage {
+  background-color: #7778;
+  &:hover {
+    background-color: #777b;
+  }
+}
+
+.nodesResultsEntry > .labelAndPtr > .ptr {
+  color: var(--text-color-disabled);
+  font-size: 12px;
+  white-space: preserve nowrap;
+  cursor: pointer;
+  border-radius: var(--border-radius-small);
+  padding: 0 2px;
+  width: fit-content;
+
+  > .copyIcon {
+    display: none;
+  }
+
+  &:hover {
+    color: var(--color-copy-ptr-hover);
+    background-color: var(--background-color-copy-ptr-hover);
+
+    > .copyIcon {
+      display: inline-block;
+      position: absolute;
+      cursor: pointer;
+      width: 2em;
+      height: 1em;
+      place-self: center;
+      background: url(chrome://devtools/skin/images/copy.svg) no-repeat;
+      background-size: 1em;
+      background-position-x: 0.5em;
+      -moz-context-properties: fill;
+      fill: var(--text-color);
+    }
+  }
+}
+
+.nodesResultsEntry > .description {
+  color: var(--text-color-deemphasized);
+  margin-inline-start: var(--space-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nodesResultsEntry > .copyDescription {
+  display: none;
+  position: absolute;
+  cursor: pointer;
+  width: 2em;
+  height: 1em;
+  background: url(chrome://devtools/skin/images/copy.svg) no-repeat;
+  background-size: 1em;
+  background-position-x: var(--space-small);
+  -moz-context-properties: fill;
+  fill: var(--text-color-deemphasized);
+  inset-inline-end: 0;
+  bottom: var(--space-small);
+
+  &:hover {
+    fill: var(--text-color);
+  }
+}
+
+.nodesResultsEntry:hover > .copyDescription {
+  display: inline-block;
+}
+
+.nodesResultsEntry > .referenceCount {
+  position: absolute;
+  inset-inline-end: var(--space-small);
+  background: color-mix(in srgb, var(--background-color-box) 70%, transparent);
+  color: color-mix(in srgb, var(--text-color) 80%, transparent);
+  border-radius: var(--border-radius-medium);
+  padding: 0 var(--space-small);
+  font-size: 12px;
+}
+
+.pathInspector .nodesResultsEntry {
+  width: 26em;
+  margin: 0 auto;
+}
+
+.pathInspector .edgeArrow {
+  display: block;
+  text-align: center;
+  font-size: 16px;
+  width: 12px;
+  margin: 0 auto;
+  color: var(--text-color-deemphasized);
+}
+
+.pathInspector .edgeLabel {
+  font-size: 0.75em;
+  font-family: monospace;
+  color: color-mix(in srgb, var(--text-color) 70%, transparent);
+  display: inline;
+  padding: 0.25em 0.5em;
+  white-space: preserve nowrap;
+}
+
+.nodeInspector .edgeLabel {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--text-color) 70%, transparent);
+  padding: 0 var(--space-large);
+  align-content: center;
+}
+
+.nodeInspector .edgeLabel.right {
+  text-align: right;
+}
+
+.nodeInspector .nodesResultsEntry {
+  grid-column-end: span 2;
+}
+
+.nodeInspector .nodesResultsEntry.wide {
+  grid-column: 1/4;
+  width: 25em;
+  margin: auto;
+  max-height: 20em;
+}
+
+.nodeInspector .deadRow {
+  grid-column: 1/4;
+  border: var(--border-dead-row);
+  border-radius: var(--border-radius-small);
+  padding: var(--space-xsmall) var(--space-large);
+  width: 25em;
+  text-align: center;
+  align-content: center;
+  margin: var(--space-xsmall) auto;
+  color: var(--text-color-deemphasized);
+}
+
+.graphRoot {
+  width: 16em;
+  display: block;
+  margin: 0 auto;
+  margin-block-start: var(--space-large);
+  background: #8888;
+  text-align: center;
+  border-radius: var(--border-radius-small);
+  padding: var(--space-xsmall) var(--space-large);
+  color: var(--text-color);
+}
+
+.showMoreButton {
+  display: block;
+  width: fit-content;
+  margin: 0 auto;
+  margin-bottom: 4em;
+}
+
+.graphCanvas {
+  display: block;
+  position: absolute;
+}
+
+.progressBar {
+  width: 95%;
+  margin: 0 auto;
+  padding: 3px;
+}
+
+.progressBarFill {
+  display: block;
+  height: 1em;
+  background-color: #659cef;
+  border-radius: 3px;
+
+  transition: width 500ms ease-in-out;
+
+  &.failed {
+    background-color: #cf9c65;
+  }
+}
+
+.progressError {
+  font-family: monospace;
+  font-size: 0.9em;
+  padding: var(--space-large);
+  text-align: center;
+  border: 1px solid var(--border-color-card);
+  margin: var(--space-small) 0;
+  color: var(--text-color-error);
+}
+
+.copiedText {
+  display: inline-block;
+  position: absolute;
+  padding-inline-start: 2em;
+  color: var(--text-color);
+  transition:
+    visibility 0s 1s,
+    opacity 1s linear;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.copiedText.visible {
+  visibility: inherit;
+  opacity: 1;
+  transition: none;
+}

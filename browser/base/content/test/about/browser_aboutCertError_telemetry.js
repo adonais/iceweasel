@@ -87,31 +87,6 @@ async function checkTelemetryClickEvents(useFelt) {
       let tab = await openErrorPage(BAD_CERT, useFrame);
       let browser = tab.linkedBrowser;
 
-      let loadEvents = await TestUtils.waitForCondition(() => {
-        let events = Services.telemetry.snapshotEvents(
-          Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-          true
-        ).content;
-        if (events && events.length) {
-          events = events.filter(
-            e => e[1] == "security.ui.certerror" && e[2] == "load"
-          );
-          if (
-            events.length == 1 &&
-            events[0][5].is_frame == useFrame.toString()
-          ) {
-            return events;
-          }
-        }
-        return null;
-      }, "recorded telemetry for the load");
-
-      is(
-        loadEvents.length,
-        1,
-        `recorded telemetry for the load testing ${object}, useFrame: ${useFrame}`
-      );
-
       let bc = browser.browsingContext;
       if (useFrame) {
         bc = bc.children[0];

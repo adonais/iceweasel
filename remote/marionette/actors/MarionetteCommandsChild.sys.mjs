@@ -107,11 +107,16 @@ export class MarionetteCommandsChild extends JSWindowActorChild {
           );
       }
     } catch (e) {
-      if (e.message.includes("NS_ERROR_FAILURE")) {
+      // An XPCOM exception reports the result code via "name" and can have an
+      // empty message, so both properties have to be checked.
+      if (
+        e.name === "NS_ERROR_FAILURE" ||
+        e.message?.includes("NS_ERROR_FAILURE")
+      ) {
         // Event dispatch failed. Re-throwing as AbortError to allow retrying
         // to dispatch the event.
         throw new DOMException(
-          `Failed to dispatch event "${eventName}": ${e.message}`,
+          `Failed to dispatch event "${eventName}": ${e.message || e.name}`,
           "AbortError"
         );
       }

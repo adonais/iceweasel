@@ -19,43 +19,43 @@ let o11, o12, o13, o14, o15, o16, o17, o18, o19;
 try { o0 = document.createElement('audio'); } catch(e) {  }
 try { (document.body || document.documentElement).appendChild(o0); } catch(e) {  }
 try { o1 = new OfflineAudioContext(1, 10, (new AudioContext()).sampleRate); } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o1.listener.dopplerFactor = 1; } catch(e) {  }
 try { o2 = o1.createScriptProcessor(); } catch(e) {  }
 try { o3 = o1.createChannelMerger(4); } catch(e) {  }
 try { o1.listener.dopplerFactor = 3; } catch(e) {  }
 try { o1.listener.setPosition(0, 134217728, 64) } catch(e) {  }
 try { o1.listener.dopplerFactor = 15; } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o4 = new OfflineAudioContext(1, 10, (new AudioContext()).sampleRate); } catch(e) {  }
 try { o4.listener.speedOfSound = 2048; } catch(e) {  }
 try { o4.listener.setPosition(32768, 1, 1) } catch(e) {  }
 try { o5 = o1.createChannelSplitter(4); } catch(e) {  }
 try { o4.listener.setVelocity(4, 1, 0) } catch(e) {  }
-try { o4.startRendering(); } catch(e) {  }
-try { o4.startRendering(); } catch(e) {  }
+try { o4.startRendering().catch(() => {}); } catch(e) {  }
+try { o4.startRendering().catch(() => {}); } catch(e) {  }
 try { o4.listener.setPosition(64, 1, 0) } catch(e) {  }
 try { o1.listener.setOrientation(4194304, 15, 8388608, 15, 1, 1) } catch(e) {  }
 try { o1.listener.dopplerFactor = 256; } catch(e) {  }
 try { o6 = o4.createDelay(16); } catch(e) {  }
-try { o4.startRendering(); } catch(e) {  }
+try { o4.startRendering().catch(() => {}); } catch(e) {  }
 try { o4.listener.setOrientation(0, 1, 0, 0, 31, 1073741824) } catch(e) {  }
 try { o4.listener.speedOfSound = 1; } catch(e) {  }
 try { o1.listener.speedOfSound = 0; } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o6.connect(o3, 1, 0) } catch(e) {  }
 try { o1.listener.setPosition(4294967296, 32, 1) } catch(e) {  }
 try { o1.listener.speedOfSound = 0; } catch(e) {  }
 try { o1.listener.speedOfSound = 0; } catch(e) {  }
 try { o1.listener.setVelocity(1, 256, 0) } catch(e) {  }
-try { o4.startRendering(); } catch(e) {  }
+try { o4.startRendering().catch(() => {}); } catch(e) {  }
 try { o3.disconnect() } catch(e) {  }
-setTimeout("try { o4.startRendering(); } catch(e) {  }",50)
+setTimeout("try { o4.startRendering().catch(() => {}); } catch(e) {  }",50)
 try { o4.listener.setOrientation(0, 0, 2048, 128, 16384, 127) } catch(e) {  }
 try { o4.listener.setVelocity(0, 4, 1) } catch(e) {  }
 try { o7 = o4.createScriptProcessor(1024, 4, 1); } catch(e) {  }
 try { o8 = o4.createDynamicsCompressor(); } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o2.connect(o7); } catch(e) {  }
 try { o7.connect(o4); } catch(e) {  }
 try { o2.connect(o7); } catch(e) {  }
@@ -64,7 +64,7 @@ SpecialPowers.forceCC();
 SpecialPowers.forceGC();
 try { o4.listener.setOrientation(8192, 1, 1, 512, 0, 15) } catch(e) {  }
 setTimeout("try { o7.onaudioprocess = function() {}; } catch(e) {  }",50)
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o1.listener.speedOfSound = 1073741824; } catch(e) {  }
 try { o2.connect(o7); } catch(e) {  }
 try { o7.connect(o4); } catch(e) {  }
@@ -82,13 +82,13 @@ try { o7.connect(o1); } catch(e) {  }
 setTimeout("try { o5.disconnect() } catch(e) {  }",100)
 try { o2.connect(o9); } catch(e) {  }
 try { o7.connect(o4); } catch(e) {  }
-try { o4.startRendering(); } catch(e) {  }
+try { o4.startRendering().catch(() => {}); } catch(e) {  }
 setTimeout("try { o1.listener.dopplerFactor = 1; } catch(e) {  }",100)
 try { o5.disconnect() } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o10.disconnect() } catch(e) {  }
-try { o1.startRendering(); } catch(e) {  }
+try { o1.startRendering().catch(() => {}); } catch(e) {  }
 try { o11 = o1.createGain(); } catch(e) {  }
 try { o2.connect(o7); } catch(e) {  }
 try { o9.connect(o4); } catch(e) {  }

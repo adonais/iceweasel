@@ -1,6 +1,6 @@
 "use strict";
 
-const TEST_REMOTE_TYPE = "test";
+const TEST_REMOTE_TYPE = "inference";
 
 function allTestProcs() {
   return ChromeUtils.getAllDOMProcesses().filter(

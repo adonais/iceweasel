@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
@@ -30,7 +31,6 @@ import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.PrivateBrowsingState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.TabsTrayConfig
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
 
 private val EmptyPageWidth = 190.dp
 
@@ -80,6 +80,7 @@ internal fun PrivateTabsPage(
                 onCloseTabGroupClick = {},
                 onShareTabGroupClick = {},
                 onDeleteTabGroupClick = {},
+                onUngroupTabGroupClick = {},
                 onTabGroupOnboardingDismiss = {},
                 dragAndDropEnabled = false,
                 displayTabGroupOnboarding = false,

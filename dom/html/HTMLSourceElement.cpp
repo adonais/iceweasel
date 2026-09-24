@@ -131,7 +131,7 @@ void HTMLSourceElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
     }
   } else if (aNameSpaceID == kNameSpaceID_None &&
-             IsAttributeMappedToImages(aName) && IsInPicture()) {
+             IsNoNamespaceAttrMappedToImages(aName) && IsInPicture()) {
     BuildMappedAttributesForImage();
 
     nsCOMPtr<nsIContent> sibling = AsContent();

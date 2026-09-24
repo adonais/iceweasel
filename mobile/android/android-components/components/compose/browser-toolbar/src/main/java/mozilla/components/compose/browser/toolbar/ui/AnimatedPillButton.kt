@@ -5,7 +5,6 @@
 package mozilla.components.compose.browser.toolbar.ui
 
 import android.graphics.drawable.Drawable
-import android.view.SoundEffectConstants
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -38,7 +37,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -89,7 +87,6 @@ internal fun AnimatedPillButton(
     onAnimationFinished: BrowserToolbarEvent? = null,
 ) {
     // refactoring planned in https://bugzilla.mozilla.org/show_bug.cgi?id=2030770
-    val view = LocalView.current
     val density = LocalDensity.current
     var fullWidthPx by remember { mutableIntStateOf(0) }
     val contractionProgress = remember { Animatable(if (animated) 1f else 0f) }
@@ -126,7 +123,6 @@ internal fun AnimatedPillButton(
                 .clip(CircleShape)
                 .background(containerColor)
                 .clickable {
-                    view.playSoundEffect(SoundEffectConstants.CLICK)
                     if (onClick is BrowserToolbarEvent) {
                         onInteraction(onClick)
                     }

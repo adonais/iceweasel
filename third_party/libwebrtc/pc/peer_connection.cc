@@ -373,8 +373,9 @@ template <typename Observer,
               std::is_same_v<Observer, SetSessionDescriptionObserver*>,
               bool> = true>
 absl::AnyInvocable<void() &&> ReportFailure(Observer& o, RTCError error) {
-  return [o = scoped_refptr<SetSessionDescriptionObserver>(o),
-          error = std::move(error)]() { o->OnFailure(error); };
+  return
+      [o = scoped_refptr<SetSessionDescriptionObserver>(o),
+       error = std::move(error)]() mutable { o->OnFailure(std::move(error)); };
 }
 
 template <
@@ -384,8 +385,8 @@ template <
                        scoped_refptr<SetLocalDescriptionObserverInterface>>,
         bool> = true>
 absl::AnyInvocable<void() &&> ReportFailure(Observer& o, RTCError error) {
-  return [o = std::move(o), error = std::move(error)]() {
-    o->OnSetLocalDescriptionComplete(error);
+  return [o = std::move(o), error = std::move(error)]() mutable {
+    o->OnSetLocalDescriptionComplete(std::move(error));
   };
 }
 
@@ -396,8 +397,8 @@ template <
                        scoped_refptr<SetRemoteDescriptionObserverInterface>>,
         bool> = true>
 absl::AnyInvocable<void() &&> ReportFailure(Observer& o, RTCError error) {
-  return [o = std::move(o), error = std::move(error)]() {
-    o->OnSetRemoteDescriptionComplete(error);
+  return [o = std::move(o), error = std::move(error)]() mutable {
+    o->OnSetRemoteDescriptionComplete(std::move(error));
   };
 }
 
@@ -1743,9 +1744,6 @@ bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
 bool PeerConnection::StartRtcEventLog(
     std::unique_ptr<RtcEventLogOutput> output) {
   int64_t output_period_ms = 5000;
-  if (trials().IsDisabled("WebRTC-RtcEventLogNewFormat")) {
-    output_period_ms = RtcEventLog::kImmediateOutput;
-  }
   return StartRtcEventLog(std::move(output), output_period_ms);
 }
 
@@ -2501,12 +2499,12 @@ void PeerConnection::OnTransportControllerConnectionState(
           }
         }
 
-        network_thread()->PostTask(
-            SafeTask(network_thread_safety_,
-                     [this, transceiver_info = std::move(transceiver_info)] {
-                       RTC_DCHECK_RUN_ON(network_thread());
-                       ReportTransportStats(std::move(transceiver_info));
-                     }));
+        network_thread()->PostTask(SafeTask(
+            network_thread_safety_,
+            [this, transceiver_info = std::move(transceiver_info)]() mutable {
+              RTC_DCHECK_RUN_ON(network_thread());
+              ReportTransportStats(std::move(transceiver_info));
+            }));
       }
 
       SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
@@ -2765,8 +2763,8 @@ void PeerConnection::AddRemoteCandidate(absl::string_view mid,
   new_candidate.set_network_slice(NetworkSlice::NO_SLICE);
 
   network_thread()->PostTask(SafeTask(
-      network_thread_safety_,
-      [this, mid = std::string(mid), candidate = new_candidate] {
+      network_thread_safety_, [this, mid = std::string(mid),
+                               candidate = std::move(new_candidate)]() mutable {
         RTC_DCHECK_RUN_ON(network_thread());
         std::vector<Candidate> candidates = {candidate};
         RTCError error =
@@ -2774,7 +2772,7 @@ void PeerConnection::AddRemoteCandidate(absl::string_view mid,
         if (error.ok()) {
           signaling_thread()->PostTask(SafeTask(
               signaling_thread_safety_.flag(),
-              [this, candidate = std::move(candidate)] {
+              [this, candidate = std::move(candidate)]() mutable {
                 ReportRemoteIceCandidateAdded(candidate);
                 // Candidates successfully submitted for checking.
                 if (ice_connection_state() ==

@@ -24,9 +24,11 @@ bool WarpBuilderShared::resumeAfter(MInstruction* ins, BytecodeLocation loc) {
   // 1. MInt64ToBigInt, which is used to convert the result of either a call
   //    into Wasm code or loading from a BigIntArray, so we attach the resume
   //    point to that instead of to the call resp. load.
-  // 2. MPostIntPtrConversion which is used after conversion from IntPtr.
+  // 2. MUnsignedToDouble, which is used to convert the result of loading from a
+  //    Uint32Array, so we attach the resume point to that instead of the load.
+  // 3. MPostIntPtrConversion which is used after conversion from IntPtr.
   MOZ_ASSERT(ins->isEffectful() || ins->isInt64ToBigInt() ||
-             ins->isPostIntPtrConversion());
+             ins->isUnsignedToDouble() || ins->isPostIntPtrConversion());
   MOZ_ASSERT(!ins->isMovable());
 
   MResumePoint* resumePoint = MResumePoint::New(

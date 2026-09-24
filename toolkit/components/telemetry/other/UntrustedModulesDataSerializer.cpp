@@ -374,6 +374,20 @@ nsresult UntrustedModulesDataSerializer::GetPerProcObject(
     return NS_ERROR_FAILURE;
   }
 
+  JS::Rooted<JS::Value> jsUnverifiableLoads(mCx);
+  jsUnverifiableLoads.setNumber(aData.mUnverifiableLoads);
+  if (!JS_DefineProperty(mCx, aObj, "unverifiableLoads", jsUnverifiableLoads,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::Rooted<JS::Value> jsRejectedSections(mCx);
+  jsRejectedSections.setNumber(aData.mRejectedSections);
+  if (!JS_DefineProperty(mCx, aObj, "rejectedSections", jsRejectedSections,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
+
   JS::Rooted<JSObject*> eventsArray(mCx);
   if (!ContainerToJSArray(mCx, &eventsArray, aData.mEvents, &SerializeEvent,
                           mIndexMap)) {

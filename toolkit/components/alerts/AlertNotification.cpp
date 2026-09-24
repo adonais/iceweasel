@@ -325,16 +325,19 @@ AlertNotification::GetAction(const nsAString& aName,
 
 NS_IMPL_ISUPPORTS(AlertAction, nsIAlertAction)
 
-AlertAction::AlertAction(const nsAString& aAction, const nsAString& aTitle)
-    : mAction(aAction), mTitle(aTitle) {}
+AlertAction::AlertAction(const nsAString& aAction, const nsAString& aTitle,
+                         nsIURI* aNavigate)
+    : mAction(aAction), mTitle(aTitle), mNavigate(aNavigate) {}
 
 Result<already_AddRefed<AlertAction>, nsresult> AlertAction::Copy(
     nsIAlertAction& aAction) {
   nsAutoString action;
   nsAutoString title;
+  nsCOMPtr<nsIURI> navigate;
   MOZ_TRY(aAction.GetAction(action));
   MOZ_TRY(aAction.GetTitle(title));
-  return do_AddRef(new AlertAction(action, title));
+  MOZ_TRY(aAction.GetNavigate(getter_AddRefs(navigate)));
+  return do_AddRef(new AlertAction(action, title, navigate));
 }
 
 NS_IMETHODIMP
@@ -352,6 +355,12 @@ AlertAction::GetTitle(nsAString& aTitle) {
 NS_IMETHODIMP
 AlertAction::GetIconURL(nsAString& aTitle) {
   aTitle.Truncate();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+AlertAction::GetNavigate(nsIURI** aNavigate) {
+  NS_IF_ADDREF(*aNavigate = mNavigate);
   return NS_OK;
 }
 

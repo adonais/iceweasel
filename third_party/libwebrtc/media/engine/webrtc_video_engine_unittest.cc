@@ -5306,7 +5306,8 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithPacketization) {
   EXPECT_EQ(config.rtp.raw_payload_types.count(vp8_codec.id), 1U);
 }
 
-TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithPacketizationRecreatesStream) {
+TEST_F(WebRtcVideoChannelTest,
+       SetRecvCodecsWithPacketizationDoesNotRecreateStream) {
   VideoReceiverParameters parameters;
   parameters.codecs = {GetEngineCodec("VP8"), GetEngineCodec("VP9")};
   parameters.codecs.back().packetization = kPacketizationParamRaw;
@@ -5316,10 +5317,17 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithPacketizationRecreatesStream) {
   AddRecvStream(params);
   ASSERT_THAT(fake_call_->GetVideoReceiveStreams(), testing::SizeIs(1));
   EXPECT_EQ(fake_call_->GetNumCreatedReceiveStreams(), 1);
+  EXPECT_EQ(fake_call_->GetVideoReceiveStreams()[0]
+                ->GetConfig()
+                .rtp.raw_payload_types.count(parameters.codecs.back().id),
+            1U);
 
   parameters.codecs.back().packetization.reset();
   EXPECT_TRUE(receive_channel_->SetReceiverParameters(parameters));
-  EXPECT_EQ(fake_call_->GetNumCreatedReceiveStreams(), 2);
+  EXPECT_EQ(fake_call_->GetNumCreatedReceiveStreams(), 1);
+  EXPECT_TRUE(fake_call_->GetVideoReceiveStreams()[0]
+                  ->GetConfig()
+                  .rtp.raw_payload_types.empty());
 }
 
 TEST_F(WebRtcVideoChannelTest, DuplicateUlpfecCodecIsDropped) {
@@ -6749,10 +6757,11 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   stats.render_delay_ms = 8;
   stats.width = 9;
   stats.height = 10;
-  stats.frame_counts.key_frames = 11;
-  stats.frame_counts.delta_frames = 12;
+  stats.received_frame_counts.key_frames = 11;
+  stats.received_frame_counts.delta_frames = 12;
   stats.frames_rendered = 13;
   stats.frames_decoded = 14;
+  stats.key_frames_decoded = 4;
   stats.qp_sum = 15;
   stats.corruption_score_sum = 0.3;
   stats.corruption_score_squared_sum = 0.05;
@@ -6792,12 +6801,13 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   EXPECT_EQ(stats.render_delay_ms, receive_info.receivers[0].render_delay_ms);
   EXPECT_EQ(stats.width, receive_info.receivers[0].frame_width);
   EXPECT_EQ(stats.height, receive_info.receivers[0].frame_height);
-  EXPECT_EQ(checked_cast<unsigned int>(stats.frame_counts.key_frames +
-                                       stats.frame_counts.delta_frames),
-            receive_info.receivers[0].frames_received);
+  EXPECT_EQ(
+      checked_cast<unsigned int>(stats.received_frame_counts.key_frames +
+                                 stats.received_frame_counts.delta_frames),
+      receive_info.receivers[0].frames_received);
   EXPECT_EQ(stats.frames_rendered, receive_info.receivers[0].frames_rendered);
   EXPECT_EQ(stats.frames_decoded, receive_info.receivers[0].frames_decoded);
-  EXPECT_EQ(checked_cast<unsigned int>(stats.frame_counts.key_frames),
+  EXPECT_EQ(stats.key_frames_decoded,
             receive_info.receivers[0].key_frames_decoded);
   EXPECT_EQ(stats.qp_sum, receive_info.receivers[0].qp_sum);
   EXPECT_EQ(stats.corruption_score_sum,

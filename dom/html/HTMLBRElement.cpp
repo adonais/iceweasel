@@ -68,8 +68,7 @@ void HTMLBRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLBRElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLBRElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {{nsGkAtoms::clear},
                                                     {nullptr}};
 

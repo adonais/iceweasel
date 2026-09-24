@@ -1526,7 +1526,7 @@ ROLE(SUMMARY,
      @"AXSummary",
      ROLE_SYSTEM_PUSHBUTTON,
      ROLE_SYSTEM_PUSHBUTTON,
-     java::SessionAccessibility::CLASSNAME_BUTTON,
+     java::SessionAccessibility::CLASSNAME_VIEW,
      IsAccessibilityElementRule::Yes,
      UIA_ButtonControlTypeId,
      eNameFromSubtreeRule)

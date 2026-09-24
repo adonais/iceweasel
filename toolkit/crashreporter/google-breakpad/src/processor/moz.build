@@ -72,3 +72,10 @@ include('/toolkit/crashreporter/crashreporter.mozbuild')
 
 if CONFIG['CC_TYPE'] == 'clang-cl':
     AllowCompilerWarnings()  # workaround for bug 1090497
+
+if CONFIG["CC_TYPE"] == "gcc":
+    CXXFLAGS += [
+        "-Wno-mismatched-dealloc",
+        "-Wno-nonnull",
+        "-Wno-maybe-uninitialized",
+    ]

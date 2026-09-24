@@ -156,6 +156,10 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   mData.mPictureRect = aData.mPictureRect;
   mData.mStereoMode = aData.mStereoMode;
   mData.mYUVColorSpace = aData.mYUVColorSpace;
+  mData.mColorPrimaries = aData.mColorPrimaries;
+  mData.mTransferFunction = aData.mTransferFunction;
+  mData.mHDRMetadata = aData.mHDRMetadata;
+  mData.mColorRange = aData.mColorRange;
   mData.mColorDepth = aData.mColorDepth;
   mData.mChromaSubsampling = aData.mChromaSubsampling;
   // those members are not always equal to aData's, due to potentially different

@@ -158,6 +158,36 @@ bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
     options.setEagerDelazificationStrategy(strategy);
   }
 
+  if (!JS_GetProperty(cx, opts, "eagerBaselineStrategy", &v)) {
+    return false;
+  }
+  if (v.isString()) {
+    s = JS::ToString(cx, v);
+    if (!s) {
+      return false;
+    }
+
+    JSLinearString* str = JS_EnsureLinearString(cx, s);
+    if (!str) {
+      return false;
+    }
+
+    JS::EagerBaselineOption strategy;
+    if (JS_LinearStringEqualsLiteral(str, "None")) {
+      strategy = JS::EagerBaselineOption::None;
+    } else if (JS_LinearStringEqualsLiteral(str, "JitHints")) {
+      strategy = JS::EagerBaselineOption::JitHints;
+    } else if (JS_LinearStringEqualsLiteral(str, "Aggressive")) {
+      strategy = JS::EagerBaselineOption::Aggressive;
+    } else {
+      JS_ReportErrorASCII(cx,
+                          "eagerBaselineStrategy must be 'None', 'JitHints', "
+                          "or 'Aggressive'");
+      return false;
+    }
+    options.setEagerBaselineStrategy(strategy);
+  }
+
   return true;
 }
 

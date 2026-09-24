@@ -24,12 +24,6 @@ add_setup(async function () {
   let gCUITestUtils = new CustomizableUITestUtils(window);
   searchbar = await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => gCUITestUtils.removeSearchBar());
-
-  // The searchbar shows itself as a popover once it has set up its breakout
-  // dimensions, which happens off a document flush and an animation frame. The
-  // background is only part of the a11y tree while the popover is open, so the
-  // tree isn't stable until this settles.
-  await TestUtils.waitForCondition(() => searchbar.matches(":popover-open"));
 });
 
 // eslint-disable-next-line camelcase
@@ -38,33 +32,23 @@ add_task(async function test_searchbar_a11y_tree() {
     role: ROLE_GROUPING,
 
     children: [
-      // background
+      // The background and the input container are decorative, so neither is
+      // in the tree.
+
+      // search mode switcher
       {
-        role: ROLE_SECTION,
+        role: ROLE_PUSHBUTTON,
+        // not testing the structure inside the switcher
+      },
+
+      // input element
+      {
+        role: ROLE_EDITCOMBOBOX,
         children: [],
       },
 
-      // input container
-      {
-        role: ROLE_SECTION,
-
-        children: [
-          // search mode switcher
-          {
-            role: ROLE_PUSHBUTTON,
-            // not testing the structure inside the switcher
-          },
-
-          // input element
-          {
-            role: ROLE_EDITCOMBOBOX,
-            children: [],
-          },
-
-          // The go button is hidden and the result list is empty, so neither
-          // shows up in the tree.
-        ],
-      },
+      // The go button is hidden and the result list is empty, so neither
+      // shows up in the tree.
     ],
   });
 });
@@ -85,41 +69,31 @@ add_task(async function test_searchbar_a11y_tree_with_results() {
     role: ROLE_GROUPING,
 
     children: [
-      // background
+      // The background and the input container are decorative, so neither is
+      // in the tree.
+
+      // search mode switcher
       {
-        role: ROLE_SECTION,
-        children: [],
+        role: ROLE_PUSHBUTTON,
+        // not testing the structure inside the switcher
       },
 
-      // input container
+      // input element
       {
-        role: ROLE_SECTION,
-
+        role: ROLE_EDITCOMBOBOX,
         children: [
-          // search mode switcher
           {
-            role: ROLE_PUSHBUTTON,
-            // not testing the structure inside the switcher
-          },
-
-          // input element
-          {
-            role: ROLE_EDITCOMBOBOX,
-            children: [
-              {
-                role: ROLE_TEXT_LEAF,
-                name: "example",
-                children: [],
-              },
-            ],
-          },
-
-          // go button
-          {
-            role: ROLE_PUSHBUTTON,
+            role: ROLE_TEXT_LEAF,
+            name: "example",
             children: [],
           },
         ],
+      },
+
+      // go button
+      {
+        role: ROLE_PUSHBUTTON,
+        children: [],
       },
 
       // result view

@@ -3,6 +3,7 @@
 
 from fluent.migrate.helpers import transforms_from
 
+
 def migrate(ctx):
     """Bug 2039292 - Move urlbar result menu labels to message values, part {index}."""
 

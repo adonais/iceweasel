@@ -58,6 +58,6 @@ If you prefer real-time chat, ask your questions
 on [#webdriver:mozilla.org](https://chat.mozilla.org/#/room/#webdriver:mozilla.org).
 
 [geckodriver]: /testing/geckodriver/
-[marionette python client]: /python/marionette_driver.rst
+[marionette python client]: /python/marionette_driver.md
 [protocol]: Protocol.md
 [webdriver]: https://w3c.github.io/webdriver/

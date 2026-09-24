@@ -36,9 +36,9 @@ class nsContentSecurityManager : public nsIContentSecurityManager,
   static void ReportBlockedDataURI(nsIURI* aURI, nsILoadInfo* aLoadInfo,
                                    bool aIsRedirect = false);
   static bool AllowInsecureRedirectToDataURI(nsIChannel* aNewChannel);
-  static void MeasureUnexpectedPrivilegedLoads(nsILoadInfo* aLoadInfo,
-                                               nsIURI* aFinalURI,
-                                               const nsACString& aRemoteType);
+  static void MeasureUnexpectedPrivilegedLoads(
+      nsILoadInfo* aLoadInfo, nsIURI* aFinalURI,
+      const mozilla::dom::RemoteType& aRemoteType);
 
   enum CORSSecurityMapping {
     // Disables all CORS checking overriding the value of aCORSMode. All checks

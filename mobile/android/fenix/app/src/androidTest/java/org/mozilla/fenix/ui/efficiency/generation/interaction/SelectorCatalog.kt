@@ -33,7 +33,7 @@ object SelectorCatalog {
         return selectors.map { selector ->
             SelectorRef(
                 pagePropertyName = pagePropertyName,
-                selectorName = selector.name ?: inferName(selector),
+                selectorName = selector.id?.value ?: inferName(selector),
                 selector = selector,
             )
         }

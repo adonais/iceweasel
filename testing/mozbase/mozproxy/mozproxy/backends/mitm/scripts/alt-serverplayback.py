@@ -12,6 +12,8 @@
 # * TO DO: remove the replay packages that don't have any content in their response package,
 # see Bug 1739418: https://bugzilla.mozilla.org/show_bug.cgi?id=1739418
 
+from __future__ import annotations
+
 import hashlib
 import traceback
 import urllib

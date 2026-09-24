@@ -324,8 +324,9 @@ def geckodriver(configuration, firefox_options):
 
     yield _geckodriver
 
-    if _geckodriver_state["current"] is not None:
-        _geckodriver_state["current"].kill()
+    current = _geckodriver_state["current"]
+    if current is not None:
+        current.kill()
         _geckodriver_state["current"] = None
 
     if custom_profile is not None:

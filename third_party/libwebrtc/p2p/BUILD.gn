@@ -573,6 +573,7 @@ rtc_library("port") {
     "../rtc_base:span_helpers",
     "../rtc_base:stringutils",
     "../rtc_base:weak_ptr",
+    "../rtc_base/containers:flat_map",
     "../rtc_base/network:received_packet",
     "../rtc_base/network:sent_packet",
     "../rtc_base/system:rtc_export",

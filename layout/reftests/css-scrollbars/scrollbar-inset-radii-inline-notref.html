@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<title>The mirrored inset keeps the bottom-right corner instead</title>
+<style>
+
+.contain { position: relative; height: 140px }
+
+.test {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 100px;
+  border: 10px solid blue;
+  border-radius: 20px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  -moz-scrollbar-inset-inline: 0 30px;
+}
+
+/* Covers the whole padding box, so only the border ring is compared and the
+   scrollbar itself can't contribute pixels. */
+.cover {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 200px;
+  height: 100px;
+  background: blue;
+}
+
+</style>
+
+<div class="contain">
+  <div class="test"></div>
+  <div class="cover"></div>
+</div>

@@ -25,6 +25,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.navigation.findNavController
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.iconpicker.AppIcon
@@ -34,8 +36,6 @@ import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
 import org.mozilla.fenix.settings.ComposePreference
 import org.mozilla.fenix.settings.CustomizationFragmentDirections
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 private val IconSize = 40.dp
 

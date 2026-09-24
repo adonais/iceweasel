@@ -190,6 +190,61 @@ add_task(async function test_bounce_back_button() {
   });
 });
 
+add_task(async function test_bounce_chrome_navigation() {
+  await doTest(async () => {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      window.gBrowser,
+      "example.com"
+    );
+
+    let browser = window.gBrowser.selectedBrowser;
+    await openPopup("test");
+    await doEnter();
+
+    // Anchor the stubbed interactions around now (see test_bounce_tab_close).
+    let now = Date.now();
+    const stub = sinon
+      .stub(Interactions, "getRecentInteractionsForBrowser")
+      .returns([
+        { created_at: now - 60000, totalViewTime: 300 },
+        { created_at: now + 60000, totalViewTime: 200 },
+        { created_at: now + 120000, totalViewTime: 1000 },
+      ]);
+
+    let loaded = BrowserTestUtils.browserLoaded(
+      browser,
+      false,
+      "https://example.org/"
+    );
+    window.openTrustedLinkIn("https://example.org/", "current");
+    await loaded;
+
+    await Interactions.interactionUpdatePromise;
+
+    await assertBounceTelemetry([
+      {
+        view_time: "1.2",
+        selected_result: expected.selected_result,
+        results: expected.results,
+        n_results: expected.n_results,
+        interaction: expected.interaction,
+        search_mode: expected.search_mode,
+        search_engine_default_id: expected.search_engine_default_id,
+        n_chars: expected.n_chars,
+        n_words: expected.n_words,
+        engagement_type: expected.engagement_type,
+        provider: expected.provider,
+        threshold: expected.threshold,
+        window_mode: "classic",
+      },
+    ]);
+
+    stub.restore();
+    await PlacesUtils.history.clear();
+    await BrowserTestUtils.removeTab(tab);
+  });
+});
+
 add_task(async function test_other_engagement() {
   await doTest(async () => {
     let tab = await BrowserTestUtils.openNewForegroundTab(

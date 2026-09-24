@@ -1,5 +1,8 @@
 "use strict";
 
+// Set-Cookie headers inside the parts of a multipart/x-mixed-replace response
+// must never set a cookie.
+
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -25,34 +28,15 @@ function contentHandler(metadata, response) {
   response.bodyOutputStream.write(multipartBody, multipartBody.length);
 }
 
-let first = true;
-
 function responseHandler(request, buffer) {
   let channel = request.QueryInterface(Ci.nsIChannel);
   Assert.equal(buffer, "Some text");
   Assert.equal(channel.contentType, "text/plain");
 
-  // two runs: pref on and off
-  if (first) {
-    // foo=bar should not be visible here
-    Assert.equal(
-      Services.cookies.getCookieStringFromHttp(channel.URI, channel),
-      ""
-    );
-    first = false;
-    Services.prefs.setBoolPref(
-      "network.cookie.prevent_set_cookie_from_multipart",
-      false
-    );
-    createConverterAndRequest();
-  } else {
-    // validate that the pref is working
-    Assert.equal(
-      Services.cookies.getCookieStringFromHttp(channel.URI, channel),
-      "foo=bar"
-    );
-    httpserver.stop(do_test_finished);
-  }
+  // The part's Set-Cookie header must have been ignored.
+  Assert.equal(Services.cookies.cookies.length, 0, "no cookie was set");
+
+  httpserver.stop(do_test_finished);
 }
 
 var multipartListener = {
@@ -70,7 +54,6 @@ var multipartListener = {
   onDataAvailable(request, stream, offset, count) {
     try {
       this._buffer = this._buffer.concat(read_stream(stream, count));
-      dump("BUFFEEE: " + this._buffer + "\n\n");
     } catch (ex) {
       do_throw("Error in onDataAvailable: " + ex);
     }

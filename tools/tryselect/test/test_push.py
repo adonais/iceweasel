@@ -163,6 +163,40 @@ def test_large_push_warning_message(capsys):
         assert "lowest priority" in captured.out
 
 
+def test_write_task_config(tmp_path, capsys):
+    """Test that --write-task-config writes try_task_config.json and doesn't push."""
+    mock_vcs = MagicMock()
+    mock_vcs.path = str(tmp_path)
+    try_task_config = push.generate_try_task_config("fuzzy", ["task-foo"])
+
+    with ExitStack() as stack:
+        stack.enter_context(patch("tryselect.push.vcs", mock_vcs))
+        stack.enter_context(
+            patch("tryselect.push.MACH_TRY_REMOTE", "https://example.com/fake-try-repo")
+        )
+        stack.enter_context(patch("tryselect.push.check_working_directory"))
+        stack.enter_context(patch("tryselect.push.write_task_config_history"))
+
+        push._is_hg_try.cache_clear()
+
+        assert (
+            push.push_to_try(
+                "fuzzy",
+                "try: test",
+                MagicMock(),
+                try_task_config=try_task_config,
+                write_task_config=True,
+            )
+            is None
+        )
+
+    mock_vcs.push_to_try.assert_not_called()
+    mock_vcs.stage_changes.assert_not_called()
+
+    written = tmp_path / "try_task_config.json"
+    assert json.loads(written.read_text()) == try_task_config
+
+
 def test_get_sys_argv():
     input_argv = [
         "./mach",

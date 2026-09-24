@@ -28,9 +28,7 @@ def check_cbindgen_version(cbindgen, fatal=False):
     Please update using 'cargo install cbindgen --force' or running
     './mach bootstrap', after removing the existing executable located at
     {}.
-    """.format(
-                version, cbindgen_min_version, cbindgen
-            )
+    """.format(version, cbindgen_min_version, cbindgen)
         )
     )
 
@@ -187,8 +185,7 @@ def bindgen_libclang_path(libclang_path, clang, library_name_info, host):
     if not clang:
         if libclang_path:
             die(
-                "--with-libclang-path is not valid without a clang compiler "
-                "for bindgen"
+                "--with-libclang-path is not valid without a clang compiler for bindgen"
             )
         return
 
@@ -301,9 +298,7 @@ def min_libclang_version(libclang):
 
         Please make sure to update it or point to a newer libclang using
         --with-libclang-path.
-        """.format(
-                    libclang
-                )
+        """.format(libclang)
             )
         )
         return False

@@ -30,8 +30,7 @@ include protocol PSandboxTesting;
 include "mozilla/ipc/ByteBufUtils.h";
 
 include GraphicsMessages;
-
-using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
+include ProfilerTypes;
 
 // Telemetry
 using mozilla::Telemetry::HistogramAccumulation from "mozilla/TelemetryComms.h";
@@ -43,7 +42,7 @@ using mozilla::Telemetry::DiscardedData from "mozilla/TelemetryComms.h";
 
 #if defined(XP_WIN)
 [MoveOnly] using mozilla::UntrustedModulesData from "mozilla/UntrustedModulesData.h";
-[MoveOnly] using mozilla::ModulePaths from "mozilla/UntrustedModulesData.h";
+[MoveOnly] using mozilla::ModuleIdentifiers from "mozilla/UntrustedModulesData.h";
 [MoveOnly] using mozilla::ModulesMapResult from "mozilla/UntrustedModulesData.h";
 #endif  // defined(XP_WIN)
 
@@ -71,7 +70,7 @@ parent:
   async GeckoTraceExport(ByteBuf aBuf);
 
 #if defined(XP_WIN)
-  async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
+  async GetModulesTrust(ModuleIdentifiers aModIdents, bool aRunAtNormalPriority)
       returns (ModulesMapResult? modMapResult);
 #endif  // defined(XP_WIN)
 
@@ -84,6 +83,18 @@ parent:
   async RecordDiscardedData(DiscardedData data);
 
   async InitCompleted();
+
+  /**
+   * If the profiler is running when the process shuts down, this sends the
+   * profile data collected so far.
+   */
+  async ShutdownProfile(ProfileAndAdditionalInformation aProfileAndAdditionalInformation);
+
+  /**
+   * Notifies the parent to continue shutting down after the child performs
+   * its shutdown tasks.
+   */
+  async FinishShutdown();
 
 child:
   async Init(FileDescriptor? sandboxBroker, bool canRecordReleaseTelemetry, bool aIsReadyForBackgroundProcessing);
@@ -135,6 +146,12 @@ child:
 #ifndef ANDROID
   async StartHWInferenceService(Endpoint<PHWInferenceChild> aEndpoint);
 #endif  // !ANDROID
+
+  /**
+   * Notify the child to shutdown. The child will in turn call FinishShutdown
+   * and let the parent close the channel.
+   */
+  async Shutdown();
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
   async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);

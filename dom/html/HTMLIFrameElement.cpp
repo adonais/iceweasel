@@ -133,8 +133,8 @@ void HTMLIFrameElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLIFrameElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLIFrameElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::width},
       {nsGkAtoms::height},
@@ -305,8 +305,8 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
 
     if (!allow.IsEmpty()) {
       // Set or reset the FeaturePolicy directives.
-      mFeaturePolicy->SetDeclaredPolicy(OwnerDoc(), allow, NodePrincipal(),
-                                        origin);
+      mFeaturePolicy->SetDeclaredAttributePolicy(OwnerDoc(), allow,
+                                                 NodePrincipal(), origin);
     }
   }
 

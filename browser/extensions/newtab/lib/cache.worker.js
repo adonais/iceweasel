@@ -35,8 +35,6 @@ importScripts("resource://gre/modules/workers/require.js");
   // eslint-disable-next-line no-implicit-globals, no-global-assign
   ChromeUtils = undefined;
 
-  /* import-globals-from ../data/content/vendor.bundle.js */
-  /* import-globals-from ../data/content/activity-stream.bundle.js */
   importScripts(
     "resource://newtab/data/content/vendor.bundle.js",
     "resource://newtab/data/content/activity-stream.bundle.js"

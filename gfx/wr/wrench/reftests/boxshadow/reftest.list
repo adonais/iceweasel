@@ -3,6 +3,7 @@ scale(*) != inset-spread.yaml inset-spread-ref.yaml
 scale(*) != inset-fake-border-snap.yaml inset-fake-border-snap-notref.yaml
 == inset-fake-border-anchor.yaml inset-fake-border-anchor-ref.yaml
 == inset-fake-border-tie.yaml inset-fake-border-tie-ref.yaml
+== outset-abutting-fill-snap.yaml outset-abutting-fill-snap-ref.yaml
 fuzzy-if(platform(swgl),3,2) == inset-no-blur-radius.yaml inset-no-blur-radius-ref.png
 scale(*) == inset-spread-large.yaml inset-spread-large-ref.yaml
 platform(linux,mac) == inset-alpha.yaml inset-alpha.png

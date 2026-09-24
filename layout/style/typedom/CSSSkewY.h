@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "mozilla/dom/DOMMatrixBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 template <class T>
@@ -53,6 +54,8 @@ class CSSSkewY final : public CSSTransformComponent {
   void SetAy(CSSNumericValue& aArg, ErrorResult& aRv);
 
   // end of CSSSkewY Web IDL declarations
+
+  already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;

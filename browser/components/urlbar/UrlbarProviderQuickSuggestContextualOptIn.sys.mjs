@@ -232,6 +232,13 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     row.ariaNotify(alertText);
   }
 
+  /**
+   * @param {string} state
+   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarParentController} _controller
+   * @param {{index: number, result: UrlbarResult}[]} _resultsAndIndexes
+   * @param {object|null} details
+   */
   onImpression(state, _queryContext, _controller, _resultsAndIndexes, details) {
     if (state == "engagement" && details.provider == this.name) {
       return;
@@ -256,6 +263,11 @@ export class UrlbarProviderQuickSuggestContextualOptIn extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     // The clicked control's command rides `selType` (set from its data-command),
     // so it crosses the actor boundary; `details.element` is content-only.

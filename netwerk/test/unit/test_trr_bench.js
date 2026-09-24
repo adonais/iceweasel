@@ -176,6 +176,11 @@ var perfMetadata = {
   supportedBrowsers: ["Firefox"],
   supportedPlatforms: ["Desktop"],
   options: {
-    default: { perfherder: true },
+    default: {
+      perfherder: true,
+      perfherder_metrics: [
+        { name: "average", unit: "ms", shouldAlert: true, lowerIsBetter: true },
+      ],
+    },
   },
 };

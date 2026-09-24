@@ -138,6 +138,54 @@ langpack-contributors = { "" }
         )
         self.assertEqual(data["author"], "Suomennosprojekti")
 
+    def test_manifest_chrome_resources_sorted(self):
+        ctx = {
+            "langpack-creator": "Suomennosprojekti",
+            "langpack-contributors": "Joe Smith, Mary White",
+        }
+        os.environ["MOZ_BUILD_DATE"] = "20210928100000"
+        chrome_entries = [
+            {
+                "type": "locale",
+                "alias": "necko",
+                "platforms": None,
+                "path": "necko/",
+            },
+            {
+                "type": "locale",
+                "alias": "branding",
+                "platforms": ["win"],
+                "path": "branding-win/",
+            },
+            {
+                "type": "locale",
+                "alias": "branding",
+                "platforms": ["macosx"],
+                "path": "branding-macosx/",
+            },
+            {
+                "type": "locale",
+                "alias": "alerts",
+                "platforms": None,
+                "path": "alerts/",
+            },
+        ]
+        manifest = langpack_manifest.create_webmanifest(
+            "fi",
+            "57.0.1",
+            "57.0",
+            "57.0.*",
+            "Firefox",
+            "/var/vcs/l10n-central",
+            "langpack-fi@firefox.mozilla.og",
+            ctx,
+            chrome_entries,
+        )
+
+        resources = json.loads(manifest)["languages"]["fi"]["chrome_resources"]
+        self.assertEqual(list(resources), ["alerts", "branding", "necko"])
+        self.assertEqual(list(resources["branding"]), ["macosx", "win"])
+
     def test_manifest_truncation(self):
         locale = (
             "Long locale code that will be truncated and will cause both "

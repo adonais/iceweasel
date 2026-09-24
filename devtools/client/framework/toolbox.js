@@ -1053,7 +1053,6 @@ class Toolbox extends EventEmitter {
       this.#buildInitialPanelDefinitions();
       this.#setDebugTargetData();
 
-      this.#addWindowListeners();
       this.#addChromeEventHandlerEvents();
 
       // Get the tab bar of the ToolboxController to attach the "keypress" event listener to.
@@ -2000,12 +1999,14 @@ class Toolbox extends EventEmitter {
   postMessage(msg) {
     // We sometime try to send messages in middle of destroy(), where the
     // toolbox iframe may already be detached.
-    if (!this.#destroyer) {
-      // Toolbox document is still chrome and disallow identifying message
-      // origin via event.source as it is null. So use a custom id.
-      msg.frameId = this.frameId;
-      this.topWindow.postMessage(msg, "*");
+    if (this.#destroyer) {
+      return;
     }
+
+    // Toolbox document is still chrome and disallow identifying message
+    // origin via event.source as it is null. So use a custom id.
+    msg.frameId = this.frameId;
+    this.topWindow.postMessage(msg, "*");
   }
 
   /**
@@ -2077,6 +2078,10 @@ class Toolbox extends EventEmitter {
         this.#URL
       );
     });
+
+    // We have to wait for the document to be loaded, otherwise we may receive
+    // unexpected "unload" events.
+    this.#addWindowListeners();
 
     // Setup the Toolbox Browser Loader, used to load React component modules
     // which expect to be loaded with toolbox.xhtml document as global scope.

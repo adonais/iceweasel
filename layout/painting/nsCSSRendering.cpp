@@ -1856,51 +1856,28 @@ bool nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(
     WebRenderLayerManager* aManager, nsPresContext& aPresCtx, nsIFrame* aFrame,
     const nsStyleBackground* aBackgroundStyle, int32_t aLayer,
     uint32_t aPaintFlags) {
-  if (!aBackgroundStyle) {
-    return false;
-  }
-
-  MOZ_ASSERT(aFrame && aLayer >= 0 &&
+  MOZ_ASSERT(aBackgroundStyle);
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aLayer >= 0 &&
              (uint32_t)aLayer < aBackgroundStyle->mImage.mLayers.Length());
 
-  // We cannot draw native themed backgrounds
-  StyleAppearance appearance = aFrame->StyleDisplay()->EffectiveAppearance();
-  if (appearance != StyleAppearance::None) {
-    nsITheme* theme = aPresCtx.Theme();
-    if (theme->ThemeSupportsWidget(&aPresCtx, aFrame, appearance)) {
-      return false;
-    }
-  }
-
-  // We only support painting gradients and image for a single style image
-  // layer, and we don't support crop-rects.
   const auto& styleImage =
       aBackgroundStyle->mImage.mLayers[aLayer].mImage.FinalImage();
-  if (styleImage.IsImageRequestType()) {
-    imgRequestProxy* requestProxy = styleImage.GetImageRequest();
-    if (!requestProxy) {
-      return false;
-    }
-
-    uint32_t imageFlags = imgIContainer::FLAG_NONE;
-    if (aPaintFlags & nsCSSRendering::PAINTBG_SYNC_DECODE_IMAGES) {
-      imageFlags |= imgIContainer::FLAG_SYNC_DECODE;
-    }
-
-    nsCOMPtr<imgIContainer> srcImage;
-    requestProxy->GetImage(getter_AddRefs(srcImage));
-    if (!srcImage ||
-        !srcImage->IsImageContainerAvailable(aManager, imageFlags)) {
-      return false;
-    }
-
-    return true;
+  switch (styleImage.tag) {
+    case StyleImage::Tag::ImageSet:
+    case StyleImage::Tag::LightDark:
+      MOZ_FALLTHROUGH_ASSERT("Should've been resolved");
+    case StyleImage::Tag::Url:
+    case StyleImage::Tag::Gradient:
+    case StyleImage::Tag::MozSymbolicIcon:
+    case StyleImage::Tag::Image:
+    case StyleImage::Tag::None:
+    case StyleImage::Tag::CrossFade:
+      return true;
+    case StyleImage::Tag::Element:
+      // Try to not add to this branch.
+      break;
   }
-
-  if (styleImage.IsGradient()) {
-    return true;
-  }
-
   return false;
 }
 

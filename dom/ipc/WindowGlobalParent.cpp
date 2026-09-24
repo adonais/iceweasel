@@ -676,16 +676,16 @@ IPCResult WindowGlobalParent::RecvRawMessage(const JSActorMessageMeta& aMeta,
   return IPC_OK();
 }
 
-const nsACString& WindowGlobalParent::GetRemoteType() const {
+const RemoteType& WindowGlobalParent::GetRemoteType() const {
   if (RefPtr<BrowserParent> browserParent = GetBrowserParent()) {
     return browserParent->Manager()->GetRemoteType();
   }
 
-  return NOT_REMOTE_TYPE;
+  return RemoteType::NotRemote();
 }
 
 void WindowGlobalParent::GetRemoteType(nsACString& aRemoteType) const {
-  aRemoteType = GetRemoteType();
+  aRemoteType = GetRemoteType().Stringify();
 }
 
 void WindowGlobalParent::NotifyContentBlockingEvent(
@@ -1327,9 +1327,8 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   }
 
   nscolor color;
-  if (NS_WARN_IF(!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0),
-                                               aBackgroundColor, &color,
-                                               nullptr, nullptr))) {
+  if (NS_WARN_IF(
+          !ServoCSSParser::ComputeColor(nullptr, aBackgroundColor, &color))) {
     aRv = NS_ERROR_FAILURE;
     return nullptr;
   }
@@ -1343,11 +1342,8 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
     flags |= gfx::CrossProcessPaintFlags::ResetScrollPosition;
   }
 
-  if (!gfx::CrossProcessPaint::Start(this, aRect, (float)aScale, color, flags,
-                                     promise)) {
-    aRv = NS_ERROR_FAILURE;
-    return nullptr;
-  }
+  gfx::CrossProcessPaint::Start(this, aRect, (float)aScale, color, flags,
+                                promise);
   return promise.forget();
 }
 
@@ -1888,36 +1884,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
 
   if (GetBrowsingContext()->IsTopContent() &&
       !mDocumentPrincipal->SchemeIs("about")) {
-    // Record the mixed content status of the docshell in Telemetry
-    enum {
-      NO_MIXED_CONTENT = 0,  // There is no Mixed Content on the page
-      MIXED_DISPLAY_CONTENT =
-          1,  // The page attempted to load Mixed Display Content
-      MIXED_ACTIVE_CONTENT =
-          2,  // The page attempted to load Mixed Active Content
-      MIXED_DISPLAY_AND_ACTIVE_CONTENT = 3  // The page attempted to load Mixed
-                                            // Display & Mixed Active Content
-    };
-
-    bool hasMixedDisplay =
-        mSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT);
-    bool hasMixedActive =
-        mSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT);
-
-    uint32_t mixedContentLevel = NO_MIXED_CONTENT;
-    if (hasMixedDisplay && hasMixedActive) {
-      mixedContentLevel = MIXED_DISPLAY_AND_ACTIVE_CONTENT;
-    } else if (hasMixedActive) {
-      mixedContentLevel = MIXED_ACTIVE_CONTENT;
-    } else if (hasMixedDisplay) {
-      mixedContentLevel = MIXED_DISPLAY_CONTENT;
-    }
-    glean::mixed_content::page_load.AccumulateSingleSample(mixedContentLevel);
-
     if (GetDocTreeHadMedia()) {
       glean::media::element_in_page_count.Add(1);
     }
@@ -2065,8 +2031,7 @@ bool WindowGlobalParent::ShouldTrackSiteOriginTelemetry() {
   }
 
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  if (!browserParent ||
-      !IsWebRemoteType(browserParent->Manager()->GetRemoteType())) {
+  if (!browserParent || !browserParent->Manager()->GetRemoteType().IsWeb()) {
     return false;
   }
 

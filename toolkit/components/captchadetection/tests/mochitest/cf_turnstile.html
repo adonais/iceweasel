@@ -24,6 +24,16 @@
           bodyShadowRoot.getElementById("success").style.display = "block";
         }
       };
+
+      // Tests pass ?state=success|fail to show the result while this document
+      // is still parsing, i.e. before the actor is created on DOMContentLoaded
+      // and starts observing. Covers the case where the result is already
+      // visible by the time the MutationObserver is registered.
+      const initialState = new URLSearchParams(location.search).get("state");
+      if (initialState === "success" || initialState === "fail") {
+        bodyShadowRoot.getElementById(initialState).style.display = "block";
+      }
+
       window.parent.postMessage("ready", "*");
     </script>
   </body>

@@ -43,8 +43,9 @@ A conversion is done only when the **named** test:
 
 ## Triage: is it the harness, or a real bug? (scan before assuming product bug)
 
-- **Page-arrival timeout (most common, A6).** `navigateToPage` → `mozWaitForPageToLoad` can't find the
-  `requiredForPage` anchor in 10s. Use the `ScreenDump` that fires on failure to separate "selector wrong"
+- **Page-readiness timeout (most common, A6).** `navigateToPage` cannot satisfy a page's named readiness
+  profile in 10s. The structured event includes the page, profile, applied/skipped rules, navigation facts,
+  and every missing selector. Use the `ScreenDump` that fires on failure to separate "selector wrong"
   (element is in the dump) from "screen wrong" (element absent / wrong page / wrong launch state).
 - **Slow ≠ flaky (E1).** UIAutomator list rendering can take ~3s; `mozVerify` polls-until-present (logs
   "not found" retries, then finds it). If it passed on try #1 with retries _inside_ the poll, that's fine —

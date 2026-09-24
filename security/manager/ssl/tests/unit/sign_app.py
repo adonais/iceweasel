@@ -9,6 +9,7 @@ Given a directory of files, packages them up and signs the
 resulting zip file. Mainly for creating test inputs to the
 nsIX509CertDB.openSignedAppFileAsync API.
 """
+
 from base64 import b64encode
 from cbor2 import CBORTag, dumps
 from hashlib import sha1, sha256
@@ -132,7 +133,9 @@ def addManifestEntry(filename, hashes, contents, entries):
     entries.append(entry)
 
 
-def getCert(subject, keyName, issuerName, ee, issuerKey="", validity="", tamperSpki=False):
+def getCert(
+    subject, keyName, issuerName, ee, issuerKey="", validity="", tamperSpki=False
+):
     """Helper function to create an X509 cert from a specification.
     Takes the subject, the subject key name to use, the issuer name,
     a bool whether this is an EE cert or not, and optionally an issuer key
@@ -163,7 +166,9 @@ def getCert(subject, keyName, issuerName, ee, issuerKey="", validity="", tamperS
     return pycert.Certificate(certSpecificationStream)
 
 
-def coseAlgorithmToSignatureParams(coseAlgorithm, issuerName, issuerKey, certValidity, tamperSpki):
+def coseAlgorithmToSignatureParams(
+    coseAlgorithm, issuerName, issuerKey, certValidity, tamperSpki
+):
     """Given a COSE algorithm ('ES256', 'ES384', 'ES512'), an issuer
     name, the name of the issuer's key, and a validity period, returns a
     (algorithm id, pykey.ECCKey, encoded certificate) triplet for use

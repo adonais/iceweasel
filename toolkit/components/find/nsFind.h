@@ -40,6 +40,9 @@ class nsFind : public nsIFind {
   void SetNodeIndexCache(nsContentUtils::NodeIndexCache* aCache) {
     mNodeIndexCache = aCache;
   }
+  void SetSkipNativeAnonymousContent(bool aSkipNativeAnonymousContent) {
+    mSkipNativeAnonymousContent = aSkipNativeAnonymousContent;
+  }
 
   already_AddRefed<nsRange> FindFromRangeBoundaries(
       const nsAString& aPatText, const mozilla::RangeBoundary& aStartPoint,
@@ -55,6 +58,7 @@ class nsFind : public nsIFind {
 
   bool mWordStartBounded = false;
   bool mWordEndBounded = false;
+  bool mSkipNativeAnonymousContent = false;
   mozilla::intl::WordBreakIteratorUtf16 mWordBreakIter{nullptr};
   nsContentUtils::NodeIndexCache* mNodeIndexCache = nullptr;
   struct State;

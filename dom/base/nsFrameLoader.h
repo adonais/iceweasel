@@ -25,6 +25,7 @@
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -406,7 +407,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   // `TryRemoteBrowser`, and a script blocker must be on the stack.
   //
   // |aContentParent|, if set, must have the remote type |aRemoteType|.
-  void ConfigRemoteProcess(const nsACString& aRemoteType,
+  void ConfigRemoteProcess(const mozilla::dom::RemoteType& aRemoteType,
                            mozilla::dom::ContentParent* aContentParent);
 
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
@@ -526,7 +527,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   // refcounted cycles early.
   RefPtr<mozilla::dom::SessionStoreChild> mSessionStoreChild;
 
-  nsCString mRemoteType;
+  mozilla::dom::RemoteType mRemoteType;
 
   bool mInitialized : 1;
   bool mDepthTooGreat : 1;

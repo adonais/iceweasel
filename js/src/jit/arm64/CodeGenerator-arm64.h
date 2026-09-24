@@ -67,30 +67,9 @@ class CodeGeneratorARM64 : public CodeGeneratorShared {
   template <typename T1, typename T2>
   void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
                     LSnapshot* snapshot) {
-    if constexpr (std::is_same_v<T1, Register> && std::is_same_v<T2, Imm32>) {
-      if (rhs.value == 0) {
-        switch (c) {
-          case Assembler::Equal:
-          case Assembler::BelowOrEqual:
-            bailoutIfTest(Assembler::Zero, ARMRegister(lhs, 32), snapshot);
-            return;
-          case Assembler::NotEqual:
-          case Assembler::Above:
-            bailoutIfTest(Assembler::NonZero, ARMRegister(lhs, 32), snapshot);
-            return;
-          case Assembler::LessThan:
-            bailoutIfTest(Assembler::Signed, ARMRegister(lhs, 32), snapshot);
-            return;
-          case Assembler::GreaterThanOrEqual:
-            bailoutIfTest(Assembler::NotSigned, ARMRegister(lhs, 32), snapshot);
-            return;
-          default:
-            break;
-        }
-      }
-    }
-    masm.cmp32(lhs, rhs);
-    return bailoutIf(c, snapshot);
+    Label bail;
+    masm.branch32(c, lhs, rhs, &bail);
+    bailoutFrom(&bail, snapshot);
   }
   template <typename T1, typename T2>
   void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,

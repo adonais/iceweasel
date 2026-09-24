@@ -50,6 +50,17 @@ void MacroAssemblerX86::loadConstantFloat32(float f, FloatRegister dest) {
   propagateOOM(flt->uses.append(CodeOffset(masm.size())));
 }
 
+void MacroAssemblerX86::loadConstantDoubleZeroHighWord(double d,
+                                                       FloatRegister dest) {
+  // No inline code path, always loads from memory.
+  Double* dbl = getDouble(d);
+  if (!dbl) {
+    return;
+  }
+  masm.vmovq_mr(nullptr, dest.encoding());
+  propagateOOM(dbl->uses.append(CodeOffset(masm.size())));
+}
+
 void MacroAssemblerX86::loadConstantSimd128Int(const SimdConstant& v,
                                                FloatRegister dest) {
   if (maybeInlineSimd128Int(v, dest)) {

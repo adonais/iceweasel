@@ -662,6 +662,41 @@ class MacroAssemblerX86Shared : public Assembler {
     moveSimd128Int(src, dest);
     return dest;
   }
+  // Three-operand SIMD operations require AVX. Without it, we may need to
+  // shuffle the operands to use a two-operand encoding, which requires
+  // dest == lhs. If rhs is already in dest, then commutative operations
+  // can reverse the order of the operands.
+  FloatRegister moveSimd128IntIfNotAVXCommutative(FloatRegister lhs,
+                                                  FloatRegister* rhs,
+                                                  FloatRegister dest) {
+    MOZ_ASSERT(lhs.isSimd128() && rhs->isSimd128() && dest.isSimd128());
+    if (HasAVX()) {
+      return lhs;
+    }
+    if (*rhs == dest) {
+      *rhs = lhs;
+      return dest;
+    }
+    moveSimd128Int(lhs, dest);
+    return dest;
+  }
+  // As above, but non-commutative operations need a scratch register if
+  // rhs is already in dest.
+  FloatRegister moveSimd128IntIfNotAVX(FloatRegister lhs, FloatRegister* rhs,
+                                       FloatRegister dest,
+                                       FloatRegister scratch) {
+    MOZ_ASSERT(lhs.isSimd128() && rhs->isSimd128() && dest.isSimd128());
+    MOZ_ASSERT_IF(*rhs == dest, lhs != scratch && dest != scratch);
+    if (HasAVX() || lhs == dest) {
+      return lhs;
+    }
+    if (*rhs == dest) {
+      moveSimd128Int(*rhs, scratch);
+      *rhs = scratch;
+    }
+    moveSimd128Int(lhs, dest);
+    return dest;
+  }
   FloatRegister selectDestIfAVX(FloatRegister src, FloatRegister dest) {
     MOZ_ASSERT(src.isSimd128() && dest.isSimd128());
     return HasAVX() ? dest : src;
@@ -747,6 +782,37 @@ class MacroAssemblerX86Shared : public Assembler {
       return src;
     }
     moveSimd128Float(src, dest);
+    return dest;
+  }
+  // See moveSimd128IntIfNotAVXCommutative.
+  FloatRegister moveSimd128FloatIfNotAVXCommutative(FloatRegister lhs,
+                                                    FloatRegister* rhs,
+                                                    FloatRegister dest) {
+    MOZ_ASSERT(lhs.isSimd128() && rhs->isSimd128() && dest.isSimd128());
+    if (HasAVX()) {
+      return lhs;
+    }
+    if (*rhs == dest) {
+      *rhs = lhs;
+      return dest;
+    }
+    moveSimd128Float(lhs, dest);
+    return dest;
+  }
+  // See moveSimd128IntIfNotAVX.
+  FloatRegister moveSimd128FloatIfNotAVX(FloatRegister lhs, FloatRegister* rhs,
+                                         FloatRegister dest,
+                                         FloatRegister scratch) {
+    MOZ_ASSERT(lhs.isSimd128() && rhs->isSimd128() && dest.isSimd128());
+    MOZ_ASSERT_IF(*rhs == dest, lhs != scratch && dest != scratch);
+    if (HasAVX() || lhs == dest) {
+      return lhs;
+    }
+    if (*rhs == dest) {
+      moveSimd128Float(*rhs, scratch);
+      *rhs = scratch;
+    }
+    moveSimd128Float(lhs, dest);
     return dest;
   }
   FloatRegister moveSimd128FloatIfEqual(FloatRegister src, FloatRegister dest,

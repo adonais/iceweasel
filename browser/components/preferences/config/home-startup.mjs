@@ -8,11 +8,6 @@
 // extension as part of Bug 2048379 so downstream builds without the
 // newtab extension still get homepage configuration UI. The `home`
 // group (Firefox Home content) stays in newtab.
-//
-// @backward-compat { version 155 }
-// On Firefox <155 the newtab extension still registers homepage and
-// customHomepage itself via a version-guarded path in
-// AboutPreferences.sys.mjs. Drop that path once 155 reaches Release.
 
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
@@ -832,6 +827,14 @@ function setupCustomHomepageGroup(prefWindow) {
 }
 
 if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+  // Load the extension-settings modules so that "extension-setting-changed"
+  // events fire reliably for the listeners registered in the setup() hooks
+  // below, and so ExtensionPreferencesManager.selectSetting() can resolve
+  // "homepage_override" when the user picks an extension in the dropdown.
+  lazy.Management.asyncLoadSettingsModules().catch(e =>
+    console.error("Failed to load extension settings modules", e)
+  );
+
   SettingGroupManager.registerGroups({
     defaultBrowserHome: window.createDefaultBrowserConfig(),
     startupHome: window.createStartupConfig(),

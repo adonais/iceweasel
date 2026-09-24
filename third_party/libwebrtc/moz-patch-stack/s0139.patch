@@ -17,7 +17,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bc8a96604aaa6f1fb
  6 files changed, 25 insertions(+), 23 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 248a3e14bb..43c0f1ad26 100644
+index 8e0b0432d5..9a7a0db776 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
 @@ -95,7 +95,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
@@ -145,10 +145,10 @@ index 231f448056..4304685ddb 100644
  
   protected:
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index e50560df29..045eb998cf 100644
+index a0108d61cc..262c87aa55 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -129,7 +129,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -132,7 +132,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
      PacketRouter* packet_router,
      bool non_sender_rtt_measurement,
      RtcpEventObserver* rtcp_event_observer,
@@ -158,7 +158,7 @@ index e50560df29..045eb998cf 100644
    RtpRtcpInterface::Configuration configuration;
    configuration.audio = false;
    configuration.receiver_only = true;
-@@ -145,14 +146,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
+@@ -148,14 +149,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
    configuration.remote_ssrc = remote_ssrc;
  
    auto rtp_rtcp = ModuleRtpRtcpImpl2::CreateReceiveModule(
@@ -174,7 +174,7 @@ index e50560df29..045eb998cf 100644
  
    return rtp_rtcp;
  }
-@@ -325,7 +319,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -329,7 +323,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
            packet_router,
            config_.rtp.rtcp_xr.receiver_reference_time_report,
            config_.rtp.rtcp_event_observer,

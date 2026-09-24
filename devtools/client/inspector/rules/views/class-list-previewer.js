@@ -125,11 +125,24 @@ class ClassListPreviewer {
   }
 
   /**
+   * Return {Boolean} true if the selected node supports adding classes.
+   */
+  get selectionSupportsClasses() {
+    // The model's currentNode returns the selected node only if its an ELEMENT_NODE,
+    // otherwise returns null.
+    return this.model.currentNode !== null;
+  }
+
+  /**
    * Render the content of the panel. You typically don't need to call this as the panel
    * renders itself on inspector selection changes.
    */
   render() {
     this.classesEl.innerHTML = "";
+
+    if (this.addEl) {
+      this.addEl.disabled = !this.selectionSupportsClasses;
+    }
 
     for (const { name, isApplied } of this.model.currentClasses) {
       const checkBox = this.renderCheckBox(name, isApplied);

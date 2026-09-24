@@ -15,6 +15,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/RemoteType.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
@@ -293,7 +294,9 @@ class Preferences final : public nsIPrefService,
   // boundaries: the callback fires for aPref itself and for any pref that
   // extends it by one or more whole '.'-delimited segments, but not for a pref
   // that merely shares a leading substring (e.g. a "foo.bar" prefix does not
-  // match "foo.barbaz"). A trailing '.' is optional and is normalized away.
+  // match "foo.barbaz"). A trailing '.' is optional and is normalized away;
+  // a domain ending in more than one '.' is rejected with
+  // NS_ERROR_INVALID_ARG.
   template <typename T = void>
   static nsresult RegisterPrefixCallback(PrefChangedFunc aCallback,
                                          const nsACString& aPref,
@@ -436,7 +439,7 @@ class Preferences final : public nsIPrefService,
   // used to pass the update to content processes.
   static void GetPreference(dom::Pref* aPref,
                             const GeckoProcessType aDestinationProcessType,
-                            const nsACString& aDestinationRemoteType);
+                            const dom::RemoteType& aDestinationRemoteType);
   static void SetPreference(const dom::Pref& aPref);
 
 #ifdef DEBUG

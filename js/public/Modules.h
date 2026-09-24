@@ -230,6 +230,13 @@ extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
 /**
+ * Create a source phase module record for a WebAssembly.Module object
+ * produced by JS::FinishCompileForESM.
+ */
+extern JS_PUBLIC_API JSObject* CreateWasmSourcePhaseModule(
+    JSContext* cx, Handle<JSObject*> wasmModuleObject);
+
+/**
  * Set a private value associated with a source text module record.
  */
 extern JS_PUBLIC_API void SetModulePrivate(JSObject* module,

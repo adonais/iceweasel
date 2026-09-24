@@ -1048,6 +1048,58 @@ void nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection* conn,
   }
 }
 
+already_AddRefed<ConnectionEntry>
+nsHttpConnectionMgr::HandOffHttp3OnlyConnection(HttpConnectionBase* aConn,
+                                                ConnectionEntry* aFromEnt) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (!aConn || !aConn->ConnectionInfo() || !aFromEnt) {
+    return nullptr;
+  }
+
+  RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(aConn);
+  if (!connUDP) {
+    return nullptr;
+  }
+
+  RefPtr<nsHttpConnectionInfo> allowedCI = aConn->ConnectionInfo()->Clone();
+  allowedCI->SetHttp3Policy(Http3Policy::Allowed);
+
+  bool unused = false;
+  RefPtr<ConnectionEntry> originEnt =
+      GetOrCreateConnectionEntry(allowedCI, true, false, false, &unused);
+  if (!originEnt || originEnt == aFromEnt) {
+    return nullptr;
+  }
+
+  // The origin can already have its own h3 connection, because its Happy
+  // Eyeballs race runs an h3 leg too. Handing this one over would only add a
+  // second, which UpdateCoalescingForNewConn retires again straight away --
+  // after CloseIdleConnections() below has thrown away the entry's idle
+  // connections for nothing. Leave it here to be reclaimed instead. A merely
+  // in-flight h3 attempt is not a reason to bail: this connection is already
+  // established, and that attempt may still fail.
+  if (originEnt->HasUsableH3Connection()) {
+    LOG(
+        ("nsHttpConnectionMgr::HandOffHttp3OnlyConnection conn %p not handed "
+         "off, ent %p already has a usable h3 connection\n",
+         aConn, originEnt.get()));
+    return nullptr;
+  }
+
+  LOG(
+      ("nsHttpConnectionMgr::HandOffHttp3OnlyConnection conn %p from ent %p to "
+       "ent %p, CI %s -> %s\n",
+       aConn, aFromEnt, originEnt.get(),
+       aConn->ConnectionInfo()->HashKey().get(), allowedCI->HashKey().get()));
+
+  aFromEnt->MoveConnection(aConn, originEnt);
+  connUDP->RekeyAfterHttp3OnlyHandOff(allowedCI);
+
+  originEnt->CloseIdleConnections();
+
+  return originEnt.forget();
+}
+
 void nsHttpConnectionMgr::ReportHttp3Connection(HttpConnectionBase* conn,
                                                 ConnectionEntry* entry) {
   LOG(("nsHttpConnectionMgr::ReportHttp3Connection conn=%p", conn));
@@ -3745,12 +3797,27 @@ void nsHttpConnectionMgr::DoSpeculativeConnectionInternal(
           ("DoSpeculativeConnectionInternal Transport socket creation "
            "failure: %" PRIx32 "\n",
            static_cast<uint32_t>(rv)));
+      // Nothing will complete this transaction now, so release whoever is
+      // waiting on it. See the fallback comment below.
+      if (aTrans->IsForFallback()) {
+        aTrans->InvokeCallback();
+      }
     }
   } else {
     LOG(
         ("DoSpeculativeConnectionInternal Transport ci=%s "
          "not created due to existing connection count:%d",
          aEnt->mConnInfo->HashKey().get(), parallelSpeculativeConnectLimit));
+    // An ordinary speculative connection is only a warm-up and can be skipped,
+    // but a fallback transaction has a real transaction waiting on its
+    // callback to move off a connection that may never come up (e.g. HTTP/3 to
+    // an endpoint that blackholes QUIC). Dropping the callback would leave that
+    // transaction stalled until the HTTP/3 connection times out, so let it fall
+    // back anyway; it will get a connection from the fallback entry through the
+    // regular dispatch path once one is free.
+    if (aTrans->IsForFallback()) {
+      aTrans->InvokeCallback();
+    }
   }
 }
 

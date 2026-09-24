@@ -181,8 +181,7 @@ std::unique_ptr<VCMTiming> CreateVCMTiming(
       config.video_jitter_timing_factory
           ? config.video_jitter_timing_factory->Create(env)
           : nullptr;
-  return std::make_unique<VCMTiming>(&env.clock(), env.field_trials(),
-                                     RenderingSimulator::kRenderDelay,
+  return std::make_unique<VCMTiming>(env, RenderingSimulator::kRenderDelay,
                                      std::move(video_jitter_timing));
 }
 

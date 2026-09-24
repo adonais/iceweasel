@@ -10,13 +10,14 @@ add_setup(async function () {
   useHttpServer();
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   appDefaultEngine = await SearchService.getDefault();
 });
@@ -92,7 +93,7 @@ add_task(
     );
 
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       false
     );
 

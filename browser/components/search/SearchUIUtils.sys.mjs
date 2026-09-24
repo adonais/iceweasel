@@ -588,6 +588,12 @@ export class SearchNewTabComponentsRegistrant extends BaseAboutNewTabComponentRe
     }
   }
 
+  onPrefChanged(pref) {
+    if (pref == "browser.nova.enabled") {
+      this.updated();
+    }
+  }
+
   getComponents() {
     if (lazy.UrlbarPrefs.get("newtabFeatureGate")) {
       return [];

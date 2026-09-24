@@ -48,18 +48,17 @@ Texture::~Texture() = default;
 
 already_AddRefed<TextureView> Texture::CreateView(
     const dom::GPUTextureViewDescriptor& aDesc) {
-  ffi::WGPUTextureViewDescriptor desc = {};
+  ffi::WGPUFfiTextureViewDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
-  ffi::WGPUTextureFormat format = {ffi::WGPUTextureFormat_Sentinel};
+  ffi::WGPUTextureFormat format;
   if (aDesc.mFormat.WasPassed()) {
     format = ConvertTextureFormat(aDesc.mFormat.Value());
     desc.format = &format;
   }
-  ffi::WGPUTextureViewDimension dimension =
-      ffi::WGPUTextureViewDimension_Sentinel;
+  ffi::WGPUTextureViewDimension dimension;
   if (aDesc.mDimension.WasPassed()) {
     dimension = ffi::WGPUTextureViewDimension(aDesc.mDimension.Value());
     desc.dimension = &dimension;

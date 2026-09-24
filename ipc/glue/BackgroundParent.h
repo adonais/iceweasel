@@ -87,7 +87,8 @@ class BackgroundParent final {
 
   static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);
 
-  static nsCString GetRemoteType(PBackgroundParent* aBackgroundActor);
+  static mozilla::dom::RemoteType GetRemoteType(
+      PBackgroundParent* aBackgroundActor);
 
   // Whenever receiving a Principal we need to validate that Principal case
   // by case. The options can customize the behaviour of the checks.

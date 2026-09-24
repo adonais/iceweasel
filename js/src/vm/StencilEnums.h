@@ -26,11 +26,10 @@ namespace js {
 //    which must be cleaned up (by calling IteratorClose) during
 //    exception unwinding.
 //
-// 3. ForOf and ForOfIterclose: For-of loops handle unwinding using
-//    catch blocks. These trynotes are used for for-of breaks/returns,
-//    which create regions that are lexically within a for-of block,
-//    but logically outside of it. See TryNoteIter::settle for more
-//    details.
+// 3. ForOf: For-of loops handle unwinding using a synthetic catch
+//    block. Like Loop below, this try note is unnecessary for exception
+//    unwinding. Used by the debugger to skip the synthetic catch block in
+//    DebuggerScript::IsInCatchScopeMatcher.
 //
 // 4. Loop: This represents normal for/while/do-while loops. It is
 //    unnecessary for exception unwinding, but storing the boundaries
@@ -42,7 +41,6 @@ enum class TryNoteKind : uint8_t {
   ForIn,
   Destructuring,
   ForOf,
-  ForOfIterClose,
   Loop
 };
 

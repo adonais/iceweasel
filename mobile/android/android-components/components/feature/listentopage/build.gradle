@@ -16,41 +16,33 @@ android {
 }
 
 dependencies {
-    implementation platform(libs.androidx.compose.bom)
-    implementation project(':components:lib-state')
+    implementation libs.kotlinx.coroutines
 
-    implementation libs.androidx.activity.compose
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.core
-    implementation libs.androidx.lifecycle.viewmodel
-    implementation libs.androidx.lifecycle.viewmodel.compose
 
     implementation libs.androidx.media3.session
     implementation libs.androidx.media3.exoplayer
 
-    implementation libs.kotlinx.coroutines
+    implementation project(':components:lib-state')
     implementation project(':components:compose-base')
-
-    implementation project(':components:browser-state')
-    implementation project(':components:concept-engine')
     implementation project(':components:support-base')
-    implementation project(':components:support-ktx')
-    implementation project(':components:support-utils')
-
-    implementation libs.androidx.core
-    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
-    testImplementation project(':components:support-test-libstate')
 
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit4
-    testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
+
+    debugImplementation libs.androidx.compose.ui.tooling
 }
 
 apply from: '../../../common-config.gradle'

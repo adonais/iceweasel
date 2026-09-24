@@ -26,6 +26,7 @@ enum class RelationType;
 
 struct UiaRegistrations {
   PROPERTYID mAccessibleActions = 0;
+  PROPERTYID mIsWebContentRoot = 0;
 };
 
 /**
@@ -211,6 +212,7 @@ class uiaRawElmProvider : public IAccessibleEx,
   long GetLandmarkType() const;
   void GetLocalizedLandmarkType(nsAString& aLocalized) const;
   long GetLiveSetting() const;
+  bool IsWebContentRoot() const;
 };
 
 SAFEARRAY* AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs);

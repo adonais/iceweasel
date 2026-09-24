@@ -9,8 +9,8 @@ use crate::custom_properties::CssEnvironment;
 #[cfg(feature = "servo")]
 use crate::derives::*;
 use crate::properties::ComputedValues;
-use crate::values::computed::font::QueryFontMetricsFlags;
 use crate::values::computed::Length;
+use crate::values::computed::font::QueryFontMetricsFlags;
 use parking_lot::RwLock;
 use servo_arc::Arc;
 use std::mem;
@@ -81,11 +81,10 @@ pub struct Device {
     /// The CssEnvironment object responsible of getting CSS environment
     /// variables.
     environment: CssEnvironment,
-    /// The body text color, stored as an `nscolor`, used for the "tables
-    /// inherit from body" quirk.
+    /// The body text color, used for the "tables inherit from body" quirk.
     ///
     /// <https://quirks.spec.whatwg.org/#the-tables-inherit-color-from-body-quirk>
-    body_text_color: AtomicU32,
+    body_text_color: RwLock<AbsoluteColor>,
 
     /// Extra Gecko-specific or Servo-specific data.
     extra: ExtraDeviceData,
@@ -212,12 +211,12 @@ impl Device {
     /// the font metrics have changed since the previous restyle.
     pub fn update_root_font_metrics(&self) -> bool {
         let root_style = self.root_style.read();
-        let root_effective_zoom = (*root_style).effective_zoom;
+        let root_effective_zoom = root_style.effective_zoom;
         let root_font_size = (*root_style).get_font().clone_font_size().computed_size();
 
         let root_font_metrics = self.query_font_metrics(
-            (*root_style).writing_mode.is_upright(),
-            &(*root_style).get_font(),
+            root_style.writing_mode.is_upright(),
+            (*root_style).get_font(),
             root_font_size,
             QueryFontMetricsFlags::USE_USER_FONT_SET
                 | QueryFontMetricsFlags::NEEDS_CH
@@ -234,7 +233,7 @@ impl Device {
                 root_font_metrics
                     .zero_advance_measure_or_default(
                         root_font_size,
-                        (*root_style).writing_mode.is_upright(),
+                        root_style.writing_mode.is_upright(),
                     )
                     .px(),
             ),
@@ -281,15 +280,14 @@ impl Device {
 
     /// Returns the body text color.
     pub fn body_text_color(&self) -> AbsoluteColor {
-        AbsoluteColor::from_nscolor(self.body_text_color.load(Ordering::Relaxed))
+        *self.body_text_color.read()
     }
 
     /// Sets the body text color for the "inherit color from body" quirk.
     ///
     /// <https://quirks.spec.whatwg.org/#the-tables-inherit-color-from-body-quirk>
     pub fn set_body_text_color(&self, color: AbsoluteColor) {
-        self.body_text_color
-            .store(color.to_nscolor(), Ordering::Relaxed)
+        *self.body_text_color.write() = color;
     }
 
     /// Applies text zoom to a font-size or line-height value (see nsStyleFont::ZoomText).

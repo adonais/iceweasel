@@ -9,4 +9,10 @@
 <resources>
   <!-- Description for the button to accept the search suggestion and continue editing the search. -->
   <string name="mozac_browser_awesomebar_edit_suggestion">Kuvi jee natee sugerencia</string>
+  <!-- Description for the button to remove the search suggestion from the displayed results. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion">Sna sugerencia</string>
+  <!-- Description for the button to share the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_share_website_details">Kua´a</string>
+  <!-- Description for the button to copy the highlighted awesomebar element (URL, search query, etc.) -->
+  <string name="mozac_browser_awesomebar_copy_website_details">Tɨɨn</string>
 </resources>

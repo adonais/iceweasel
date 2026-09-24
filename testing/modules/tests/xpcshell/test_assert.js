@@ -399,6 +399,16 @@ add_task(function test_basic_asserts() {
     e => e == "AssertionError: 'NaN' is not a number or date."
   );
 
+  assert.throws(
+    () => assert.greater(null, 0),
+    e => e == "AssertionError: 'null' is not a number or date."
+  );
+
+  assert.throws(
+    () => assert.greater(undefined, 0),
+    e => e == "AssertionError: 'undefined' is not a number or date."
+  );
+
   let now = new Date();
   let firefoxReleaseDate = new Date("2004-11-09");
   assert.less(firefoxReleaseDate, now);

@@ -265,6 +265,8 @@ A Python module can be used to run functions during a run lifecycle. Available h
 - **before_iterations(args)** runs before everything is started. Gets the args, which
   can be changed. The **args** argument also contains a **virtualenv** variable that
   can be used for installing Python packages (e.g. through {searchfox}`install_package <python/mozperftest/mozperftest/utils.py#115-144>`).
+  This runs both for the hooks module given on the command line, and for a hooks
+  module a test declares in its own options.
 - **before_runs(env)** runs before the test is launched. Can be used to
   change the running environment.
 - **after_runs(env)** runs after the test is done.
@@ -292,6 +294,13 @@ common_options = [("processStartTime", "true"),
 
 def before_runs(env, **kw):
     add_options(env, common_options)
+```
+
+A test can also declare its own hooks module in its options, which is the
+preferred way for a test to install the Python packages it needs:
+
+```
+#options: {"default": {"hooks": "testing/performance/mobile-startup/hooks_opencv.py"}}
 ```
 
 To use this hook module, it can be passed to the `--hooks` option:

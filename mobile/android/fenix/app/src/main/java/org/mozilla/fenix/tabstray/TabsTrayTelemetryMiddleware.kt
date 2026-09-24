@@ -192,6 +192,14 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
                 TabsTray.tabGroupDeleted.record(NoExtras())
             }
 
+            is TabGroupAction.UngroupConfirmed -> {
+                TabsTray.tabGroupUngrouped.record(NoExtras())
+
+                if (action.dontAskAgain && !store.state.tabGroupState.skipUngroupConfirmation) {
+                    TabsTray.ungroupConfirmationDisabled.record(NoExtras())
+                }
+            }
+
             is TabGroupAction.TabAddedToGroup,
             is TabGroupAction.SelectedTabsAddedToGroup -> {
                 handleTabAdditionToGroupAction(store, action)
@@ -219,6 +227,14 @@ class TabsTrayTelemetryMiddleware(private val nimbusEventStore: NimbusEventStore
 
             is TabGroupAction.CloseTabGroupClicked -> {
                 TabsTray.tabGroupClosed.record(NoExtras())
+            }
+
+            is TabGroupAction.OnboardingShown -> {
+                TabsTray.tabGroupOnboardingShown.record(NoExtras())
+            }
+
+            is TabGroupAction.OnboardingDismissed -> {
+                TabsTray.tabGroupOnboardingDismissed.record(NoExtras())
             }
 
             else -> {

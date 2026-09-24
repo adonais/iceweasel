@@ -13,7 +13,7 @@ def migrate(ctx):
         target,
         target,
         transforms_from(
-"""
+            """
 main-context-menu-send-to-mobile-enable-sync2 = {COPY_PATTERN(from_path, "main-context-menu-send-to-mobile-enable-sync.label")}
 main-context-menu-send-to-mobile-connect-phone2 = {COPY_PATTERN(from_path, "main-context-menu-send-to-mobile-connect-phone.label")}
 main-context-menu-send-to-mobile-device-missing2 = {COPY_PATTERN(from_path, "main-context-menu-send-to-mobile-device-missing.label")}

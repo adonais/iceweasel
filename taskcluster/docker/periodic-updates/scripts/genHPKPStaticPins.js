@@ -397,8 +397,8 @@ function downloadAndParseChromePins(
 
 // Returns a pair of maps [certNameToSKD, certSKDToName] between cert
 // nicknames and digests of the SPKInfo for the mozilla trust store
-function loadNSSCertinfo(extraCertificates) {
-  let allCerts = gCertDB.getCerts();
+async function loadNSSCertinfo(extraCertificates) {
+  let allCerts = await gCertDB.getCerts();
   let certNameToSKD = {};
   let certSKDToName = {};
   for (let cert of allCerts) {
@@ -642,26 +642,46 @@ function loadExtraCertificates(certStringList) {
   return constructedCerts;
 }
 
-var extraCertificates = loadExtraCertificates(gStaticPins.extra_certificates);
-var [certNameToSKD, certSKDToName] = loadNSSCertinfo(extraCertificates);
-var [chromeNameToHash, chromeNameToMozName] = downloadAndParseChromeCerts(
-  gStaticPins.chromium_data.cert_file_url,
-  certNameToSKD,
-  certSKDToName
-);
-var [chromeImportedPinsets, chromeImportedEntries] = downloadAndParseChromePins(
-  gStaticPins.chromium_data.json_file_url,
-  chromeNameToHash,
-  chromeNameToMozName,
-  certNameToSKD,
-  certSKDToName
-);
+async function run() {
+  let extraCertificates = loadExtraCertificates(gStaticPins.extra_certificates);
+  let [certNameToSKD, certSKDToName] = await loadNSSCertinfo(extraCertificates);
+  let [chromeNameToHash, chromeNameToMozName] = downloadAndParseChromeCerts(
+    gStaticPins.chromium_data.cert_file_url,
+    certNameToSKD,
+    certSKDToName
+  );
+  let [chromeImportedPinsets, chromeImportedEntries] =
+    downloadAndParseChromePins(
+      gStaticPins.chromium_data.json_file_url,
+      chromeNameToHash,
+      chromeNameToMozName,
+      certNameToSKD,
+      certSKDToName
+    );
 
-writeFile(
-  certNameToSKD,
-  certSKDToName,
-  chromeImportedPinsets,
-  chromeImportedEntries
-);
+  writeFile(
+    certNameToSKD,
+    certSKDToName,
+    chromeImportedPinsets,
+    chromeImportedEntries
+  );
 
-FileUtils.closeSafeFileOutputStream(gFileOutputStream);
+  FileUtils.closeSafeFileOutputStream(gFileOutputStream);
+}
+
+let done = false;
+let error;
+run()
+  .catch(e => {
+    error = e;
+  })
+  .then(() => {
+    done = true;
+  });
+Services.tm.spinEventLoopUntil(
+  "genHPKPStaticPins.js: waiting for completion",
+  () => done
+);
+if (error) {
+  throw error;
+}

@@ -17,7 +17,7 @@ add_task(async function test_maxResults() {
   }
   let provider = registerBasicTestProvider(matches);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   async function test_count(count) {
     let promise = promiseControllerNotification(controller, "onQueryFinished");

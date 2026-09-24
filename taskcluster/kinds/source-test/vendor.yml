@@ -45,3 +45,31 @@ rust:
             - 'python/mozbuild/mozbuild/vendor/vendor_rust.py'
             - 'supply-chain/**'
             - 'third_party/rust/**'
+
+node:
+    description: Node vendoring validation
+    attributes:
+        code-review: false
+    treeherder:
+        symbol: node(vendor)
+    worker:
+        artifacts: []
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+    run:
+        clone-with: hg
+        cwd: '{checkout}'
+        command: >-
+            ./mach vendor node --ignore-modified &&
+            test -z "$(hg status third_party/node)"
+    fetches:
+        toolchain:
+            - linux64-node
+        fetch:
+            - pnpm
+    when:
+        files-changed:
+            - 'third_party/node/**'
+            - 'browser/extensions/newtab/package.json'
+            - 'python/mozbuild/mozbuild/vendor/vendor_node.py'
+            - 'taskcluster/kinds/fetch/pnpm.yml'

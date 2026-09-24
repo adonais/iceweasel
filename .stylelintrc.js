@@ -279,9 +279,11 @@ module.exports = {
     // unrelated errors in the same query.
     "media-query-no-invalid": null,
     "stylelint-plugin-mozilla/media-query-no-invalid": true,
+    "stylelint-plugin-mozilla/no-background-without-text-color": true,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
     "stylelint-plugin-mozilla/no-has-selector": true,
     "stylelint-plugin-mozilla/use-design-tokens": true,
+    "stylelint-plugin-mozilla/use-paired-color-tokens": true,
   },
 
   overrides: [

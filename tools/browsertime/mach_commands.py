@@ -29,7 +29,6 @@ All arguments are passed through to browsertime.
 """
 
 import argparse
-import collections
 import contextlib
 import json
 import logging
@@ -306,9 +305,7 @@ def setup_browsertime(
             )
 
         with open(package_json_path) as f:
-            existing_body = json.loads(
-                f.read(), object_pairs_hook=collections.OrderedDict
-            )
+            existing_body = json.loads(f.read())
 
         existing_body["devDependencies"]["browsertime"] = new_upstream_url
 

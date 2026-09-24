@@ -4,9 +4,10 @@
 
 #![forbid(unsafe_code)]
 
+use crate::FxHashMap;
+use hashbrown::hash_map;
 use malloc_size_of::{MallocShallowSizeOf, MallocSizeOfOps};
-use rustc_hash::FxHashMap;
-use std::collections::hash_map;
+use rustc_hash::FxBuildHasher;
 use std::hash::Hash;
 use std::mem;
 
@@ -26,7 +27,7 @@ pub(super) struct MapIter<'a, K, V> {
 
 enum MapIterInner<'a, K, V> {
     One(std::option::IntoIter<&'a V>),
-    Map(std::collections::hash_map::Values<'a, K, V>),
+    Map(hash_map::Values<'a, K, V>),
 }
 
 pub(super) enum Entry<'a, K, V> {
@@ -40,7 +41,7 @@ pub(super) struct VacantEntry<'a, K, V> {
 
 enum VacantEntryInner<'a, K, V> {
     One(&'a mut MapInner<K, V>),
-    Map(hash_map::VacantEntry<'a, K, V>),
+    Map(hash_map::VacantEntry<'a, K, V, FxBuildHasher>),
 }
 
 impl<K, V> Default for Map<K, V> {
@@ -170,7 +171,7 @@ where
     }
 }
 
-impl<'a, K, V> VacantEntry<'a, K, V> {
+impl<'a, K: Hash, V> VacantEntry<'a, K, V> {
     pub(super) fn insert(self, value: V) -> &'a mut V {
         match self.inner {
             VacantEntryInner::One(map) => {

@@ -13,7 +13,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 raptor_dir = os.path.join(os.path.dirname(here), "raptor")
 sys.path.insert(0, raptor_dir)
 
-from utils import bool_from_str, transform_platform, write_yml_file
+from utils import bool_from_str, flatten, transform_platform, write_yml_file
 
 
 @pytest.mark.parametrize("platform", ["win", "mac", "linux64"])
@@ -105,6 +105,29 @@ def test_bool_from_str(value, expected_result):
 def test_bool_from_str_with_invalid_values(invalid_value):
     with pytest.raises(ValueError):
         bool_from_str(invalid_value)
+
+
+@pytest.mark.parametrize(
+    "data,expected",
+    [
+        # A zero inside a list is a measurement, not a missing value. This is the
+        # shape power data arrives in.
+        ({"powerUsage": {"cpu_package": [0, 5]}}, {"powerUsage/cpu_package": [0, 5]}),
+        ({"a": {"b": [0]}}, {"a/b": [0]}),
+        ({"a": {"b": 0}}, {"a/b": [0]}),
+        ({"a": {"b": 0.0}}, {"a/b": [0.0]}),
+        # Empty containers and non-numeric falsy values still stop the walk, and a
+        # bool is not a measurement.
+        ({"a": {"b": []}}, {}),
+        ({"a": {"b": {}}}, {}),
+        ({"a": {"b": None}}, {}),
+        ({"a": {"b": ""}}, {}),
+        ({"a": {"b": False}}, {}),
+        ({"a": {"b": [1, 2]}}, {"a/b": [1, 2]}),
+    ],
+)
+def test_flatten(data, expected):
+    assert flatten(data, (), sep="/") == expected
 
 
 if __name__ == "__main__":

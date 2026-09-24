@@ -24,22 +24,24 @@ add_task(async function test() {
    * to the docshell that will first execute a DNS request.
    */
   async function testVal(str, passthrough) {
-    sandbox.stub(gURLBar.controller, "loadURL").callsFake(({ loadRequest }) => {
-      if (passthrough) {
-        Assert.equal(
-          loadRequest.urlLoad.url,
-          str,
-          "Should pass a url load for the unmodified search string"
-        );
-      } else {
-        Assert.ok(
-          loadRequest.engineSearch ||
-            loadRequest.urlLoad.url.startsWith("http"),
-          "Should pass an engine search or a fixed up url"
-        );
-      }
-      return {};
-    });
+    sandbox
+      .stub(gURLBar.parentController, "loadURL")
+      .callsFake(({ loadRequest }) => {
+        if (passthrough) {
+          Assert.equal(
+            loadRequest.urlLoad.url,
+            str,
+            "Should pass a url load for the unmodified search string"
+          );
+        } else {
+          Assert.ok(
+            loadRequest.engineSearch ||
+              loadRequest.urlLoad.url.startsWith("http"),
+            "Should pass an engine search or a fixed up url"
+          );
+        }
+        return {};
+      });
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: str,

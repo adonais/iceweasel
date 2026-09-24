@@ -410,7 +410,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                           const AsyncDragMetrics& aDragMetrics) override;
 
-  bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
+  void StartAutoscroll(const ScrollableLayerGuid& aGuid,
                        const ScreenPoint& aAnchorLocation) override;
 
   void StopAutoscroll(const ScrollableLayerGuid& aGuid) override;
@@ -669,8 +669,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     MutexAutoLock lock(mMapLock);
     aCallback(lock);
   }
-
-  LayersId GetRootLayersId() const { return mRootLayersId; }
 
  private:
   using GuidComparator = ScrollableLayerGuid::Comparator;

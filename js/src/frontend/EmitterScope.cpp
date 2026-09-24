@@ -354,7 +354,7 @@ bool EmitterScope::prepareForDisposableAssignment(UsingHint hint) {
 bool EmitterScope::emitDisposableScopeBodyEnd(BytecodeEmitter* bce) {
   // For-of loops emit the dispose loop in the different place and timing.
   // (See ForOfEmitter::emitInitialize,
-  // ForOfLoopControl::emitPrepareForNonLocalJumpFromScope and
+  // ForOfLoopControl::emitIteratorCloseForNonLocalExits and
   // ForOfLoopControl::emitEndCodeNeedingIteratorClose())
   if (hasDisposables() && (blockKind_ != BlockKind::ForOf)) {
     if (!usingEmitter_->emitEnd()) {

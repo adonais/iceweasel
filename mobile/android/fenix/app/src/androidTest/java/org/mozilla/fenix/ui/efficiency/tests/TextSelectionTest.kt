@@ -11,9 +11,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class TextSelectionTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326832
     @SmokeTest
     @Test
@@ -72,6 +69,27 @@ class TextSelectionTest : BaseTest() {
         on.searchBar
             .navigateToPage()
             .clickClearButton()
+            .verifySearchBarPlaceholder()
+            .longClickToolbar()
+            .clickContextMenuItem("Paste")
+            .verifyTypedToolbarText("Crossing", exists = true)
+    }
+
+    @Test
+    fun verifyCopyPDFTextOptionWithinAddressBarInFocusedModeTest() {
+        composeRule.activityRule.applySettingsExceptions { it.showAddressBarInFocusMode = true }
+        val genericURL = mockWebServer.getGenericAsset(3)
+
+        on.home.navigateToPage()
+        on.browserPage
+            .navigateToPage(genericURL.url.toString())
+            .clickPageContent("PDF form file")
+            .clickStayInAppPromptButtonIfPresent()
+            .longClickWebContentText("Crossing")
+            .clickContextMenuItem("Copy")
+
+        on.searchBar
+            .navigateToPage()
             .verifySearchBarPlaceholder()
             .longClickToolbar()
             .clickContextMenuItem("Paste")

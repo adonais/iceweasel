@@ -92,12 +92,19 @@ impl Default for SnapshotImageKey {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ExternalImageId(pub u64);
 
+/// An opaque handle to a GPU texture owned by the application. Its meaning
+/// depends on the graphics API the renderer runs on; with OpenGL it is the
+/// texture name.
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct ExternalTextureHandle(pub u64);
+
 /// The source for an external image.
 pub enum ExternalImageSource<'a> {
     /// A raw pixel buffer.
     RawData(&'a [u8]),
-    /// A gl::GLuint texture handle.
-    NativeTexture(u32),
+    /// A texture created by the application.
+    NativeTexture(ExternalTextureHandle),
     /// An invalid source.
     Invalid,
 }

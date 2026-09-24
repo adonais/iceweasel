@@ -102,6 +102,22 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   }
 
   /**
+   * Retrieve the grid fragments of this grid container.
+   *
+   * @return {Array} The grid fragments.
+   */
+  async getFragments() {
+    // @backward-compat { version 157 } Older servers do not support getFragments
+    // and instead gridFragments are always returned in the form.
+    // When 157 is no longer on the release channel, delete this whole method.
+    if (!this.targetFront?.getTrait("supportsGridGetFragments")) {
+      return this._form.gridFragments || [];
+    }
+
+    return super.getFragments();
+  }
+
+  /**
    * In some cases, the GridActor already knows the NodeActor ID of the node where the
    * grid is located. In such cases, this getter returns the NodeFront for it.
    */
@@ -125,13 +141,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
    */
   get direction() {
     return this._form.direction;
-  }
-
-  /**
-   * Getter for the grid fragments data.
-   */
-  get gridFragments() {
-    return this._form.gridFragments;
   }
 
   /**

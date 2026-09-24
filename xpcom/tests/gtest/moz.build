@@ -13,6 +13,7 @@ UNIFIED_SOURCES += [
     "TestBase64.cpp",
     "TestCallTemplates.cpp",
     "TestCloneInputStream.cpp",
+    "TestCollectorLogLoading.cpp",
     "TestCOMPtrEq.cpp",
     "TestCRT.cpp",
     "TestDafsa.cpp",

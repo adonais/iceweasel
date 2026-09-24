@@ -446,7 +446,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
 
       switch (selType) {
         case FEEDBACK_COMMAND:
-          controller.view.acknowledgeFeedback(details.result);
+          controller.view.acknowledgeFeedback(details.result.id);
           break;
         case DISMISS_ONE_COMMAND:
           controller.removeResult(details.result, {

@@ -8,6 +8,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -24,11 +25,16 @@ EX_SOFTWARE = 70
 EX_USAGE = 64
 
 
+def exit_with_error(code, msg):
+    print(msg, file=sys.stderr)
+    sys.exit(code)
+
+
 def setup():
     # add node and npm from mozbuild to front of system path
     npm, _ = nodeutil.find_npm_executable()
     if not npm:
-        exit(EX_CONFIG, "could not find npm executable")
+        exit_with_error(EX_CONFIG, "could not find npm executable")
     path = os.path.abspath(os.path.join(npm, os.pardir))
     os.environ["PATH"] = "{}{}{}".format(path, os.pathsep, os.environ["PATH"])
 
@@ -182,9 +188,9 @@ def git(*args, **kwargs):
 
     # use error from first program that failed
     if git_p.returncode > 0:
-        exit(EX_SOFTWARE, git_err)
+        exit_with_error(EX_SOFTWARE, git_err)
     if pipe and pipe_p.returncode > 0:
-        exit(EX_SOFTWARE, pipe_err)
+        exit_with_error(EX_SOFTWARE, pipe_err)
 
     return out
 
@@ -197,9 +203,16 @@ def run_npm(*args, **kwargs):
         print(
             "Timed out after {} seconds of no output".format(kwargs["output_timeout"])
         )
+        kill_proc(proc)
 
     env = os.environ.copy()
     npm, _ = nodeutil.find_npm_executable()
+
+    # The "audit" and "funding" checks still query npm, and are triggered via
+    # "npm run test" (which itself calls "npx ./tools/mocha-runner").
+    env["npm_config_audit"] = "false"
+    env["npm_config_fund"] = "false"
+
     if kwargs.get("env"):
         env.update(kwargs["env"])
 
@@ -223,16 +236,33 @@ def run_npm(*args, **kwargs):
     return p.returncode
 
 
-def post_wait_proc(p, cmd=None, exit_on_fail=True):
-    if p.poll() is None:
+def kill_proc(p):
+    """Kill a process, its process group, and wait until it is reaped."""
+    if p.poll() is not None:
+        return
+    try:
+        if os.name == "nt":
+            p.kill()
+        else:
+            # mozprocess starts processes in their own session, so kill the
+            # whole group to also terminate nested npm, node and browser
+            # processes.
+            os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+    except OSError:
         p.kill()
-    if exit_on_fail and p.returncode > 0:
-        msg = (
-            "%s: exit code %s" % (cmd, p.returncode)
-            if cmd
-            else "exit code %s" % p.returncode
-        )
-        exit(p.returncode, msg)
+    p.wait()
+
+
+def post_wait_proc(p, cmd=None, exit_on_fail=True):
+    kill_proc(p)
+    returncode = p.returncode
+    if returncode is None or returncode < 0:
+        # The process was killed, for instance after an output timeout, and
+        # has no meaningful exit code.
+        returncode = EX_SOFTWARE
+    if exit_on_fail and returncode != 0:
+        msg = f"{cmd}: exit code {returncode}" if cmd else f"exit code {returncode}"
+        exit_with_error(returncode, msg)
 
 
 class MochaOutputHandler:
@@ -441,6 +471,9 @@ class PuppeteerRunner(MozbuildObject):
             "HEADLESS": str(headless),
             # Causes some tests to be skipped due to assumptions about install
             "PUPPETEER_ALT_INSTALL": "1",
+            # Everything needed to run the tests is already on disk. Fail fast
+            # instead of blocking on the registry if npm decides otherwise.
+            "npm_config_offline": "true",
         }
 
         if product == "firefox":
@@ -738,7 +771,7 @@ def puppeteer_test(
         logger.info(e.help())
         exit(1)
     except Exception as e:
-        exit(EX_SOFTWARE, e)
+        exit_with_error(EX_SOFTWARE, e)
 
 
 def install_puppeteer(command_context, product, ci):

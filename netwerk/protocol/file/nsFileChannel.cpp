@@ -572,7 +572,7 @@ nsresult nsFileChannel::MaybeSendFileOpenNotification() {
 
 /* static */
 nsresult nsFileChannel::DoNotifyFileChannelOpened(
-    const nsACString& aRemoteType,
+    const mozilla::dom::RemoteType& aRemoteType,
     const mozilla::net::FileChannelInfo& aFileChannelInfo) {
   nsCOMPtr<nsIObserverService> obsService = components::Observer::Service();
   if (!obsService) {

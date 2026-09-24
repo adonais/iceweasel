@@ -418,10 +418,19 @@ already_AddRefed<Notification> Notification::ValidateAndCreate(
     }
   }
 
-  // Step 12: If options["icon"] exists, then parse it using baseURL, and if
+  // 10. If options["navigate"] exists, then parse it using baseURL, and if that
+  // does not return failure, set notification’s navigation URL to the return
+  // value. (Otherwise notification’s navigation URL remains null.)
+  RefPtr<nsIURI> navigateUrl;
+  if (StaticPrefs::dom_webnotifications_navigate_enabled() &&
+      aOptions.mNavigate.WasPassed()) {
+    navigateUrl = ResolveURL(aGlobal, aOptions.mNavigate.Value());
+  }
+
+  // Step 13: If options["icon"] exists, then parse it using baseURL, and if
   // that does not return failure, set notification’s icon URL to the return
   // value. (Otherwise icon URL is not set.)
-  RefPtr<nsIURI> iconUrl = ResolveIconURL(aGlobal, aOptions.mIcon);
+  RefPtr<nsIURI> iconUrl = ResolveURL(aGlobal, aOptions.mIcon);
 
   // Step 19: Set notification’s actions to « ».
   nsTArray<IPCNotificationAction> actions;
@@ -435,9 +444,16 @@ already_AddRefed<Notification> Notification::ValidateAndCreate(
       action.name() = entry.mAction;
       // Step 20.3: Set action’s title to entry["title"].
       action.title() = entry.mTitle;
-      // Step 20.4: (Skipping icon support, see
+      if (StaticPrefs::dom_webnotifications_navigate_enabled() &&
+          entry.mNavigate.WasPassed()) {
+        // Step 20.4: If entry["navigate"] exists, then parse it using baseURL,
+        // and if that does not return failure, set action’s navigation URL to
+        // the return value. (Otherwise action’s navigation URL remains null.)
+        action.navigate() = ResolveURL(aGlobal, entry.mNavigate.Value());
+      }
+      // Step 20.5: (Skipping icon support, see
       // https://github.com/whatwg/notifications/issues/233)
-      // Step 20.5: Append action to notification’s actions.
+      // Step 20.6: Append action to notification’s actions.
       actions.AppendElement(std::move(action));
       if (actions.Length() == kMaxActions) {
         break;
@@ -449,8 +465,8 @@ already_AddRefed<Notification> Notification::ValidateAndCreate(
       nsString(), IPCNotificationOptions(
                       nsString(aTitle), aOptions.mDir, nsString(aOptions.mLang),
                       nsString(aOptions.mBody), nsString(aOptions.mTag),
-                      iconUrl, aOptions.mRequireInteraction, silent, vibrate,
-                      nsString(dataResult.unwrap()), actions));
+                      iconUrl, navigateUrl, aOptions.mRequireInteraction,
+                      silent, vibrate, nsString(dataResult.unwrap()), actions));
 
   RefPtr<Notification> notification =
       new Notification(aGlobal, ipcNotification, aScope);
@@ -588,11 +604,11 @@ uint32_t Notification::MaxActions(const GlobalObject& aGlobal) {
   return kMaxActions;
 }
 
-already_AddRefed<nsIURI> Notification::ResolveIconURL(
-    nsIGlobalObject* aGlobal, const nsACString& aIconUrl) {
+already_AddRefed<nsIURI> Notification::ResolveURL(nsIGlobalObject* aGlobal,
+                                                  const nsACString& aUrl) {
   nsresult rv = NS_OK;
 
-  if (aIconUrl.IsEmpty()) {
+  if (aUrl.IsEmpty()) {
     return nullptr;
   }
 
@@ -602,7 +618,7 @@ already_AddRefed<nsIURI> Notification::ResolveIconURL(
   }
 
   nsCOMPtr<nsIURI> srcUri;
-  rv = NS_NewURI(getter_AddRefs(srcUri), aIconUrl, nullptr, baseUri);
+  rv = NS_NewURI(getter_AddRefs(srcUri), aUrl, nullptr, baseUri);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
@@ -679,6 +695,12 @@ void Notification::GetActions(nsTArray<NotificationAction>& aRetVal) {
     RootedDictionary<NotificationAction> action(RootingCx());
     action.mAction = entry.name();
     action.mTitle = entry.title();
+    if (entry.navigate() &&
+        StaticPrefs::dom_webnotifications_navigate_enabled()) {
+      nsAutoCString spec;
+      entry.navigate()->GetSpec(spec);
+      action.mNavigate.Construct(spec);
+    }
     aRetVal.AppendElement(action);
   }
 }

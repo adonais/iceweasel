@@ -6,8 +6,6 @@ use crate::animate::{AnimationFieldAttrs, AnimationInputAttrs, AnimationVariantA
 use crate::cg;
 use proc_macro2::TokenStream;
 use quote::TokenStreamExt;
-use syn;
-use synstructure;
 
 pub fn derive(mut input: syn::DeriveInput) -> TokenStream {
     let animation_input_attrs = cg::parse_input_attrs::<AnimationInputAttrs>(&input);
@@ -31,7 +29,7 @@ pub fn derive(mut input: syn::DeriveInput) -> TokenStream {
         let bindings_pairs = variant.bindings().iter().zip(mapped_bindings);
         let mut computations = quote!();
         computations.append_all(bindings_pairs.map(|(binding, mapped_binding)| {
-            let field_attrs = cg::parse_field_attrs::<AnimationFieldAttrs>(&binding.ast());
+            let field_attrs = cg::parse_field_attrs::<AnimationFieldAttrs>(binding.ast());
             if field_attrs.constant {
                 quote! {
                     let #mapped_binding = std::clone::Clone::clone(#binding);

@@ -52,7 +52,7 @@ export class SidebarPanelHeader extends MozLitElement {
           @click=${this.closeSidebarPanel}
           view=${this.view}
           size="default"
-          type="icon primary"
+          type="icon ghost"
         >
         </moz-button>
       </div>

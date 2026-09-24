@@ -22,6 +22,10 @@ pub mod ${property.ident} {
     #[allow(unused_imports)]
     use crate::properties::{longhands, LonghandId, CSSWideKeyword, PropertyDeclaration};
 
+    /// # Safety
+    ///
+    /// `declaration` must be a declaration of this longhand, since its value is
+    /// read back with `unchecked_value_as`.
     #[allow(unused_variables)]
     pub unsafe fn cascade_property(
         declaration: &PropertyDeclaration,
@@ -72,7 +76,7 @@ pub mod ${property.ident} {
                                 let specified = Box::new(specified);
                                 % endif
                                 let decl = PropertyDeclaration::${property.camel_case}(specified);
-                                cascade_property(&decl, context);
+                                unsafe { cascade_property(&decl, context) };
                                 context.builder.effective_zoom = old_zoom;
                                 return;
                             }

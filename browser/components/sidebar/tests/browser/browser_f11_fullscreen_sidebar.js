@@ -5,7 +5,8 @@
 // hidden when the nav toolbox is autohidden in F11 fullscreen mode, and
 // restored when exiting fullscreen, while sidebar panels (bookmarks, history,
 // etc.) stay visible and toggleable like they do with horizontal tabs.
-// This should not be run on macOS because we don't hide the toolbars there.
+// macOS leaves browser.fullscreen.autohide off by default, so this only runs
+// there because the setup below turns it on.
 
 "use strict";
 
@@ -145,6 +146,127 @@ add_task(async function test_f11_fullscreen_hides_sidebar() {
     tabbox.hasAttribute("sidebar-shown"),
     "tabbrowser-tabbox has sidebar-shown attribute after exiting fullscreen"
   );
+});
+
+// Regression test for Bug 2064638: the launcher is gone while the chrome is
+// collapsed, so reaching for the vertical tabs at the screen edge has to bring
+// it back - and the rect that hides the chrome again has to exclude the
+// launcher from that first read, or moving onto the tabs sends it all away.
+add_task(async function test_launcher_edge_reveals_sidebar() {
+  await SidebarTestUtils.ensureLauncherVisible(window);
+  const { sidebarMain } = SidebarController;
+  // Settle the launcher first: entering fullscreen mid-animation would capture
+  // the rect below against a launcher that is not its full width yet.
+  await SidebarController.waitUntilStable();
+
+  await enterFullscreenAndWaitForHiddenToolbox();
+
+  const onToolboxShown = TestUtils.topicObserved(
+    "fullscreen-nav-toolbox",
+    (subject, data) => data == "shown"
+  );
+  EventUtils.synthesizeMouse(
+    document.documentElement,
+    0,
+    Math.round(window.innerHeight / 2),
+    { type: "mousemove" },
+    window
+  );
+  await onToolboxShown;
+  Assert.greater(
+    FullScreen.getMouseTargetRect().left,
+    0,
+    "Mouse target rect excludes the launcher as soon as the toolbox is shown"
+  );
+
+  await SidebarController.waitUntilStable();
+  ok(BrowserTestUtils.isVisible(sidebarMain), "Sidebar main is revealed");
+
+  await EventUtils.synthesizeMouseAtCenter(
+    sidebarMain,
+    { type: "mousemove" },
+    window
+  );
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  ok(!FullScreen.navToolboxHidden, "Nav toolbox stays shown over the launcher");
+
+  // The launcher can be moved to the other side while the chrome is collapsed,
+  // and the watched edge has to follow it there.
+  await hideNavToolbox();
+  const watchedEdge = () =>
+    FullScreen._launcherEdgeListener.getMouseTargetRect().left;
+  Assert.equal(watchedEdge(), 0, "The launcher's edge is watched");
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.position_start", false]],
+  });
+  await window.promiseDocumentFlushed(() => {});
+  Assert.greater(watchedEdge(), 0, "Watched edge follows the launcher");
+  await SpecialPowers.popPrefEnv();
+
+  await exitFullscreen();
+});
+
+// Regression test for Bug 2064638: the macOS menubar sliding down reveals the
+// chrome with the pointer already in the content, and sends an update for every
+// frame of the slide. Moving in the content still has to put the chrome away,
+// later frames must not pull it back, and while the shift holds the toolbox
+// over the launcher the tabs have to make room.
+add_task(async function test_menubar_reveal_with_pointer_in_content() {
+  await SidebarTestUtils.ensureLauncherVisible(window);
+  await enterFullscreenAndWaitForHiddenToolbox();
+
+  const moveTo = (x, y) =>
+    EventUtils.synthesizeMouse(
+      document.documentElement,
+      x,
+      y,
+      { type: "mousemove" },
+      window
+    );
+  const contentX = Math.round(window.innerWidth / 2);
+  const contentY = Math.round(window.innerHeight / 2);
+  moveTo(contentX, contentY);
+
+  const onShown = TestUtils.topicObserved(
+    "fullscreen-nav-toolbox",
+    (subject, data) => data == "shown"
+  );
+  FullScreen.shiftMacToolbarDown(10);
+  await onShown;
+  Assert.equal(
+    getComputedStyle(document.getElementById("vertical-tabs"))
+      .paddingBlockStart,
+    "10px",
+    "Vertical tabs make room for the shifted toolbar"
+  );
+
+  const onHidden = TestUtils.topicObserved(
+    "fullscreen-nav-toolbox",
+    (subject, data) => data == "hidden"
+  );
+  moveTo(contentX + 5, contentY + 5);
+  await onHidden;
+  Assert.equal(
+    gNavToolbox.style.translate,
+    "",
+    "Collapsed toolbar drops the menubar's shift"
+  );
+
+  const { width } = gBrowser.tabpanels.getBoundingClientRect();
+  FullScreen.shiftMacToolbarDown(20);
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  ok(
+    FullScreen.navToolboxHidden,
+    "A later frame of the same reveal leaves the chrome alone"
+  );
+  Assert.equal(
+    gBrowser.tabpanels.getBoundingClientRect().width,
+    width,
+    "Content does not move"
+  );
+
+  FullScreen.shiftMacToolbarDown(0);
+  await exitFullscreen();
 });
 
 // Regression test for Bug 2052706: while the mouse is over the sidebar, the

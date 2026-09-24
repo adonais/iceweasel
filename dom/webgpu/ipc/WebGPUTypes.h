@@ -10,38 +10,13 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "nsString.h"
-
-namespace mozilla::dom {
-enum class GPUErrorFilter : uint8_t;
-}  // namespace mozilla::dom
 
 namespace mozilla::webgpu {
 
 using RawId = uint64_t;
 using BufferAddress = uint64_t;
-
-struct ErrorScope {
-  dom::GPUErrorFilter filter;
-  Maybe<nsCString> firstMessage;
-};
-
-enum class PopErrorScopeResultType : uint8_t {
-  NoError,
-  ThrowOperationError,
-  ValidationError,
-  OutOfMemory,
-  InternalError,
-  DeviceLost,
-  _LAST = DeviceLost,
-};
-
-struct PopErrorScopeResult {
-  PopErrorScopeResultType resultType;
-  nsCString message;
-};
 
 enum class WebGPUCompilationMessageType { Error, Warning, Info };
 

@@ -28,6 +28,7 @@
 #include "net/dcsctp/packet/chunk/iforward_tsn_chunk.h"
 #include "net/dcsctp/packet/chunk/sack_chunk.h"
 #include "net/dcsctp/packet/data.h"
+#include "net/dcsctp/public/dcsctp_handover_state.h"
 #include "net/dcsctp/public/types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -619,5 +620,68 @@ void OutstandingData::ResetSequenceNumbers(UnwrappedTSN last_cumulative_tsn) {
 
 void OutstandingData::BeginResetStreams() {
   stream_reset_breakpoint_tsns_.insert(next_tsn());
+}
+
+void OutstandingData::AddHandoverState(webrtc::Timestamp now,
+                                       DcSctpSocketHandoverState& state) const {
+  UnwrappedTSN tsn = last_cumulative_tsn_ack_;
+  for (const Item& item : outstanding_data_) {
+    tsn.Increment();
+    DcSctpSocketHandoverState::OutstandingData msg;
+    msg.mid = item.data().mid.value();
+    msg.stream_id = item.data().stream_id.value();
+    msg.ssn = item.data().ssn.value();
+    msg.fsn = item.data().fsn.value();
+    msg.ppid = item.data().ppid.value();
+    msg.payload.assign(item.data().payload.begin(), item.data().payload.end());
+    msg.expires_in_ms =
+        item.expires_at().IsInfinite()
+            ? std::nullopt
+            : std::optional((item.expires_at() - now).ms<int32_t>());
+    msg.max_retransmissions = item.max_retransmissions().value();
+    msg.is_beginning = item.data().is_beginning.value();
+    msg.is_end = item.data().is_end.value();
+    msg.is_unordered = item.data().is_unordered.value();
+    msg.lifecycle_id = item.lifecycle_id().value();
+    msg.time_since_sent_ms = (now - item.time_sent()).ms<int32_t>();
+    msg.retransmission_count = item.num_retransmissions();
+    msg.acked = item.is_acked();
+    msg.message_id = item.message_id().value();
+    state.tx.outstanding_data.push_back(msg);
+  }
+}
+
+void OutstandingData::RestoreFromState(webrtc::Timestamp now,
+                                       UnwrappedTSN last_cumulative_tsn_ack,
+                                       const DcSctpSocketHandoverState& state) {
+  last_cumulative_tsn_ack_ = last_cumulative_tsn_ack;
+  outstanding_data_.clear();
+  unacked_payload_bytes_ = 0;
+  unacked_packet_bytes_ = 0;
+  unacked_items_ = 0;
+
+  for (const DcSctpSocketHandoverState::OutstandingData& msg :
+       state.tx.outstanding_data) {
+    Data data(StreamID(msg.stream_id), SSN(msg.ssn), MID(msg.mid), FSN(msg.fsn),
+              PPID(msg.ppid), msg.payload, Data::IsBeginning(msg.is_beginning),
+              Data::IsEnd(msg.is_end), IsUnordered(msg.is_unordered));
+    size_t chunk_size = GetSerializedChunkSize(data);
+    if (!msg.acked) {
+      unacked_payload_bytes_ += data.size();
+      unacked_packet_bytes_ += chunk_size;
+      ++unacked_items_;
+    }
+    Item& item = outstanding_data_.emplace_back(
+        OutgoingMessageId(msg.message_id), std::move(data),
+        now - webrtc::TimeDelta::Millis(msg.time_since_sent_ms),
+        MaxRetransmits(msg.max_retransmissions),
+        msg.expires_in_ms.has_value()
+            ? now + webrtc::TimeDelta::Millis(*msg.expires_in_ms)
+            : Timestamp::PlusInfinity(),
+        LifecycleId(msg.lifecycle_id), msg.retransmission_count);
+    if (msg.acked) {
+      item.Ack();
+    }
+  }
 }
 }  // namespace dcsctp

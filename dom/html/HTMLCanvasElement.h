@@ -265,7 +265,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
                               const nsAString& aValue,
                               nsIPrincipal* aMaybeScriptedPrincipal,
                               nsAttrValue& aResult) override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                       AttrModType aModType) const override;
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
@@ -319,6 +319,8 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
                              JS::Handle<JSObject*> aGivenProto) override;
 
   CSSIntSize GetWidthHeight() override;
+
+  bool CanCreateContext() const override { return !mOffscreenCanvas; }
 
   virtual already_AddRefed<nsICanvasRenderingContextInternal> CreateContext(
       CanvasContextType aContextType) override;

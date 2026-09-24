@@ -3,6 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import sys
+import types
 from fnmatch import fnmatch
 
 import mozunit
@@ -12,6 +14,7 @@ from mozlint import pathutils
 
 here = os.path.abspath(os.path.dirname(__file__))
 root = os.path.join(here, "filter")
+definition = os.path.join(here, "linters", "external.yml")
 
 
 def assert_paths(a, b):
@@ -226,6 +229,44 @@ def test_collapse(paths, expected):
 
     print(f"inputs: {inputs}")
     assert_paths(pathutils.collapse(inputs), expected)
+
+
+def test_findobject_loads_from_root(monkeypatch):
+    monkeypatch.setitem(sys.modules, "external", types.ModuleType("external"))
+    monkeypatch.delitem(sys.modules, "mozlint.linters.external", raising=False)
+
+    func = pathutils.findobject("external:external", definition)
+    assert func.__module__ == "mozlint.linters.external"
+    assert os.path.samefile(
+        func.__code__.co_filename, os.path.join(here, "linters", "external.py")
+    )
+    assert pathutils.findobject("external:external", definition) is func
+
+
+def test_findobject_loads_from_linter_paths(monkeypatch):
+    monkeypatch.setitem(sys.modules, "external", types.ModuleType("external"))
+    monkeypatch.delitem(sys.modules, "mozlint.linters.external", raising=False)
+
+    elsewhere = os.path.join(here, "filter", "external.yml")
+    func = pathutils.findobject(
+        "external:external", elsewhere, [os.path.join(here, "linters")]
+    )
+    assert os.path.samefile(
+        func.__code__.co_filename, os.path.join(here, "linters", "external.py")
+    )
+
+
+def test_findobject_missing_module():
+    with pytest.raises(ImportError):
+        pathutils.findobject("does_not_exist:lint", definition)
+
+    with pytest.raises(ImportError):
+        pathutils.findobject("does_not_exist:lint", definition, [here])
+
+
+def test_findobject_invalid_path():
+    with pytest.raises(ValueError):
+        pathutils.findobject("external.external", definition)
 
 
 if __name__ == "__main__":

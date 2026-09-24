@@ -6,9 +6,9 @@
 /** @import { DeferredTask } from "../../../modules/DeferredTask.sys.mjs" */
 /** @import { OpenedConnection, Sqlite } from "../../../modules/Sqlite.sys.mjs" */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
@@ -16,13 +16,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   RemoteSettingsSyncError:
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
-});
 
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("NimbusEnrollments");
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("NimbusEnrollments");
+  },
 });
 
 /**

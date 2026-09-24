@@ -508,7 +508,11 @@ export class NetworkObserver {
 
     dump(" Override " + channel.URI.spec + " to " + overridePath + "\n");
     try {
-      lazy.NetworkOverride.overrideChannelWithFilePath(channel, overridePath);
+      lazy.NetworkOverride.overrideChannelWithFilePath(
+        channel,
+        overridePath,
+        true
+      );
       // Handle the activity as being from the cache to avoid looking up
       // typical information from the http channel, which would error for
       // overridden channels.

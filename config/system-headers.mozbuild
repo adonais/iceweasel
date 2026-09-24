@@ -714,6 +714,8 @@ system_headers = [
     "sane/saneopts.h",
     "sanitizer/asan_interface.h",
     "sanitizer/common_interface_defs.h",
+    "sanitizer/lsan_interface.h",
+    "sanitizer/tsan_interface.h",
     "sched.h",
     "Scrap.h",
     "Screen.h",

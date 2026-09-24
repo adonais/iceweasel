@@ -844,7 +844,7 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
 }
 
 #ifdef DEBUG
-void PlainObjectAssignCache::assertValid() const {
+void PlainObjectCopyPropsCache::assertValid() const {
   MOZ_ASSERT(emptyToShape_);
   MOZ_ASSERT(fromShape_);
   MOZ_ASSERT(newToShape_);
@@ -877,8 +877,7 @@ void PlainObjectAssignCache::assertValid() const {
   if (fromPlain->getDenseInitializedLength() > 0 || fromPlain->isIndexed()) {
     return true;
   }
-  MOZ_ASSERT(!fromPlain->getClass()->getNewEnumerate());
-  MOZ_ASSERT(!fromPlain->getClass()->getEnumerate());
+  MOZ_ASSERT(!ClassCanHaveExtraEnumeratedProperties(fromPlain->getClass()));
 
   // Empty |from| objects are common, so check for this first.
   if (fromPlain->empty()) {
@@ -893,30 +892,19 @@ void PlainObjectAssignCache::assertValid() const {
 
   const bool toWasEmpty = toPlain->empty();
   if (toWasEmpty) {
-    const PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
+    const PlainObjectCopyPropsCache& cache =
+        cx->realm()->plainObjectAssignCache;
     SharedShape* newShape = cache.lookup(toPlain->shape(), fromPlain->shape());
     if (newShape) {
       *optimized = true;
-      uint32_t oldSpan = 0;
-      uint32_t newSpan = newShape->slotSpan();
-      if (!toPlain->setShapeAndAddNewSlots(cx, newShape, oldSpan, newSpan)) {
-        return false;
-      }
-      MOZ_ASSERT(fromPlain->slotSpan() == newSpan);
-      for (size_t i = 0; i < newSpan; i++) {
-        toPlain->initSlot(i, fromPlain->getSlot(i));
-      }
-      return true;
+      return CopyPropertiesWithNewShape(cx, toPlain, fromPlain, newShape,
+                                        newShape->slotSpan());
     }
   }
 
   // Get a list of all enumerable |from| properties.
 
   Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
-
-#ifdef DEBUG
-  Rooted<Shape*> fromShape(cx, fromPlain->shape());
-#endif
 
   bool hasPropsWithNonDefaultAttrs = false;
   bool hasOnlyEnumerableProps = true;
@@ -957,47 +945,24 @@ void PlainObjectAssignCache::assertValid() const {
   // enumerable/writable/configurable data properties, try to use its shape or
   // property map.
   if (toWasEmpty && !hasPropsWithNonDefaultAttrs) {
-    CanReuseShape canReuse =
-        toPlain->canReuseShapeForNewProperties(fromPlain->shape());
-    if (canReuse != CanReuseShape::NoReuse) {
-      SharedShape* newShape;
-      if (canReuse == CanReuseShape::CanReuseShape) {
-        newShape = fromPlain->sharedShape();
-      } else {
-        // Get a shape with fromPlain's PropMap and ObjectFlags (because we need
-        // the HasEnumerable flag checked in canReuseShapeForNewProperties) and
-        // the other fields (BaseShape, numFixedSlots) unchanged.
-        MOZ_ASSERT(canReuse == CanReuseShape::CanReusePropMap);
-        ObjectFlags objectFlags = fromPlain->sharedShape()->objectFlags();
-        Rooted<SharedPropMap*> map(cx, fromPlain->sharedShape()->propMap());
-        uint32_t mapLength = fromPlain->sharedShape()->propMapLength();
-        BaseShape* base = toPlain->sharedShape()->base();
-        uint32_t nfixed = toPlain->sharedShape()->numFixedSlots();
-        newShape = SharedShape::getPropMapShape(cx, base, nfixed, map,
-                                                mapLength, objectFlags);
-        if (!newShape) {
-          return false;
-        }
-      }
-      uint32_t oldSpan = 0;
-      uint32_t newSpan = props.length();
-      if (!toPlain->setShapeAndAddNewSlots(cx, newShape, oldSpan, newSpan)) {
-        return false;
-      }
-      MOZ_ASSERT(fromPlain->slotSpan() == newSpan);
-      MOZ_ASSERT(toPlain->slotSpan() == newSpan);
-      for (size_t i = 0; i < newSpan; i++) {
-        toPlain->initSlot(i, fromPlain->getSlot(i));
-      }
-      PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
-      cache.fill(&origToShape->asShared(), fromPlain->sharedShape(), newShape);
+    bool copied;
+    if (!TryCopyPropertiesReusingShapeOrPropMap(cx, toPlain, fromPlain,
+                                                props.length(), &copied)) {
+      return false;
+    }
+    if (copied) {
+      PlainObjectCopyPropsCache& cache = cx->realm()->plainObjectAssignCache;
+      cache.fill(&origToShape->asShared(), fromPlain->sharedShape(),
+                 toPlain->sharedShape());
       return true;
     }
   }
 
   RootedValue propValue(cx);
   RootedId nextKey(cx);
-
+#ifdef DEBUG
+  Rooted<Shape*> fromShape(cx, fromPlain->shape());
+#endif
   for (size_t i = props.length(); i > 0; i--) {
     // Assert |from| still has the same properties.
     MOZ_ASSERT(fromPlain->shape() == fromShape);
@@ -1031,7 +996,7 @@ void PlainObjectAssignCache::assertValid() const {
   // definition order and the slots may contain holes).
   if (toWasEmpty && hasOnlyEnumerableProps && !fromPlain->inDictionaryMode() &&
       !toPlain->inDictionaryMode()) {
-    PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
+    PlainObjectCopyPropsCache& cache = cx->realm()->plainObjectAssignCache;
     cache.fill(&origToShape->asShared(), fromPlain->sharedShape(),
                toPlain->sharedShape());
   }
@@ -1051,9 +1016,7 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
   // properties.
   NativeObject* fromNative = &from->as<NativeObject>();
   if (fromNative->getDenseInitializedLength() > 0 || fromNative->isIndexed() ||
-      fromNative->is<TypedArrayObject>() ||
-      fromNative->getClass()->getNewEnumerate() ||
-      fromNative->getClass()->getEnumerate()) {
+      ClassCanHaveExtraEnumeratedProperties(fromNative->getClass())) {
     return true;
   }
 

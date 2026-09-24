@@ -305,8 +305,11 @@ panelview {
     --panel-padding: var(--panel-subview-body-padding);
     --panel-box-shadow-margin: inherit;
     --menuitem-border-radius: var(--panel-menuitem-border-radius);
-    --menuitem-padding: var(--panel-menuitem-padding);
+    --menuitem-padding-block: var(--panel-menuitem-padding-block);
+    --menuitem-padding-inline: var(--panel-menuitem-padding-inline);
     --menuitem-margin: var(--panel-menuitem-margin);
+    --menuitem-text-padding-block: 0px;
+    --menuitem-icon-margin-block: 0px;
   }
 
   menupopup {
@@ -344,8 +347,7 @@ panelview {
   .menu-accel,
   menu::after {
     /* Reset spacing set by menu.css */
-    margin: 0;
-    padding: 0;
+    margin-inline: 0;
   }
 
   menuitem:not(.menuitem-iconic, [image]) > .menu-icon,
@@ -580,8 +582,6 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 .appMenu-update-banner-text {
-  /* A couple pixels of padding so the two-line text block visually centers
-     against the leading icon. */
   padding-block: var(--space-xsmall);
 }
 
@@ -594,7 +594,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     transform: scale(1);
     opacity: var(--opacity-deemphasized-strong);
   }
-  50% {
+  85% {
     transform: scale(1.75);
     opacity: 0;
   }
@@ -616,21 +616,20 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     .panel-banner-item,
     .addon-banner-item {
       --panel-banner-item-color: var(--promo-message-text-color-vibrant);
-      --panel-banner-item-background-color: var(--promo-background-color-vibrant);
+      --panel-banner-item-icon-color: light-dark(var(--icon-color-accent-primary-desaturated), var(--icon-color-information));
+      --panel-banner-item-background-color: light-dark(var(--promo-background-color-vibrant), var(--background-color-information));
       --panel-banner-item-hover-bgcolor: color-mix(in srgb, var(--panel-banner-item-background-color) 85%, currentColor);
       --panel-banner-item-active-bgcolor: color-mix(in srgb, var(--panel-banner-item-background-color) 70%, currentColor);
       align-items: center;
-      gap: var(--space-medium);
+      gap: var(--space-small);
       border: var(--promo-border-width) solid var(--promo-border-color-vibrant);
       border-radius: var(--promo-border-radius);
-      margin-inline: var(--promo-padding);
-      margin-block-end: var(--space-small);
       padding-inline: var(--promo-padding);
       padding-block: var(--space-large);
     }
 
     .panel-banner-item > .toolbarbutton-icon {
-      --icon-color: var(--icon-color-accent-primary-desaturated);
+      --icon-color: var(--panel-banner-item-icon-color);
       order: 0;
       flex-shrink: 0;
       fill: var(--icon-color);
@@ -659,7 +658,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       align-items: flex-start;
 
       > .appMenu-update-banner-pulse-ring {
-        --border-color: var(--icon-color-accent-primary-desaturated);
+        --border-color: var(--panel-banner-item-icon-color);
         display: block;
         position: absolute;
         width: var(--icon-size-small);
@@ -672,7 +671,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
         pointer-events: none;
 
         @media (prefers-reduced-motion: no-preference) {
-          animation: appMenu-update-banner-pulse 4s var(--animation-easing-function) infinite;
+          animation: appMenu-update-banner-pulse 2s ease-out infinite;
         }
       }
 
@@ -683,6 +682,39 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
       .appMenu-update-banner-text {
         display: flex;
       }
+
+      &[no-description] {
+        align-items: center;
+        padding-block: var(--space-medium);
+
+        .appMenu-update-banner-description {
+          display: none;
+        }
+        .appMenu-update-banner-title {
+          margin-block-start: 0;
+        }
+        > .appMenu-update-banner-pulse-ring {
+          inset-block: 0;
+          margin-block: auto;
+        }
+      }
+    }
+
+    /* Inset the top cards by the panel body's block padding so top, inline and
+       bottom gaps match at any density. */
+    #appMenu-mainView > .panel-subview-body {
+      > #appMenu-update-banner,
+      > #appMenu-menu-message,
+      > #appMenu-fxa-sign-in-promo,
+      > #appMenu-addon-banners > .addon-banner-item {
+        margin-inline: var(--panel-separator-padding-inline);
+        margin-block: 0 var(--panel-separator-padding-block);
+      }
+    }
+
+    /* menu-message sets its own :host margin in menu-message.css */
+    #appMenu-menu-message menu-message {
+      margin: 0;
     }
   }
 }
@@ -720,6 +752,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     /* Without some padding the button gets too crowded even for compact mode
       when the text wraps to a newline. */
     padding-block: var(--space-xsmall);
+    margin-block-start: var(--space-xsmall);
   }
 }
 
@@ -795,6 +828,11 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   display: none;
 }
 
+#appMenu-menu-message,
+#PanelUI-fxa-menu-message {
+  contain: inline-size;
+}
+
 #appMenu-mainView[showing-fxa-menu-message] {
   & #appMenu-fxa-status2,
   & #appMenu-fxa-separator {
@@ -802,16 +840,17 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   }
 }
 
-/* When signed out with no menu message or update banner taking up the top of
-   the app menu, show the richer sign-in promo in place of the compact
-   "Sync and Save Data" sign-in row. */
+/* When the user has never signed in and no menu message or update banner is
+   taking up the top of the app menu, show the richer sign-in promo in place of
+   the compact "Sync and Save Data" sign-in row. A user who signed out keeps the
+   compact row, which tells them so. */
 #appMenu-fxa-sign-in-promo {
   display: none;
 }
 
 /* FIXME(bug 2061145): Remove :has() usage, use showing-* selectors instead */
 /* stylelint-disable-next-line stylelint-plugin-mozilla/no-has-selector */
-:root[fxastatus="not_configured"]:not([fxadisabled="true"])
+:root[fxastatus="not_configured"]:not([fxadisabled="true"], [fxasignedout])
   #appMenu-mainView:not([showing-fxa-menu-message], [showing-default-cta-menu-message]):not(:has(#appMenu-update-banner:not([hidden]))) {
   & #appMenu-fxa-status2 {
     display: none;
@@ -832,11 +871,12 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 #appMenu-fxa-sign-in-promo {
   background-color: var(--promo-background-color-vibrant);
   border-radius: var(--promo-border-radius);
-  color: var(--promo-message-text-color-vibrant);
+  @media not (forced-colors) {
+    color: var(--promo-message-text-color-vibrant);
+  }
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: 10px;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--dimension-8);
+  gap: var(--space-small);
   margin: 0 var(--space-medium) var(--space-medium);
 
   & .fxa-menu-sign-in-promo-image {
@@ -846,8 +886,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   }
 
   & .fxa-menu-sign-in-promo-text {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    gap: var(--dimension-2);
+    gap: var(--space-xxsmall);
   }
 
   & .fxa-menu-sign-in-promo-heading {
@@ -859,14 +898,27 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   & .fxa-menu-sign-in-promo-message {
     margin: 0;
     font-size: var(--font-size-small);
+
+    :root[uidensity="compact"] & {
+      display: none;
+    }
+  }
+
+  :root[uidensity="compact"] & {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    padding: 6px;
   }
 }
 
-#PanelUI-fxa-menu-signed-out-card {
+/* The account menu's signed-out card and the app menu's signed-out row are the
+   same component: copy explaining the state, next to a "Sign in" button. They
+   are spaced like the sync status card, which plays the same role further down
+   the account menu. */
+#PanelUI-fxa-menu-signed-out-card,
+#appMenu-fxa-signed-out-row {
   gap: var(--space-medium);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding: var(--panel-subview-body-padding-block) var(--space-medium);
-  margin: var(--panel-padding-block) var(--panel-padding-block);
+  padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 
   & .fxa-menu-signed-out-avatar {
     width: var(--icon-size-small);
@@ -878,8 +930,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
   & .fxa-menu-signed-out-text {
     min-width: 0;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    gap: var(--dimension-2);
+    gap: var(--space-xxsmall);
   }
 
   & .fxa-menu-signed-out-email {
@@ -1054,6 +1105,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
   padding: var(--space-small) var(--space-medium);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 0.9em;
   font-weight: var(--font-weight-semibold);
@@ -2839,7 +2891,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   @media not (prefers-contrast) {
     fieldset > label,
     details > summary {
-      color: var(--button-text-color);
+      color: var(--button-text-color-menu);
       background-color: var(--button-background-color-menu);
 
       &:hover {

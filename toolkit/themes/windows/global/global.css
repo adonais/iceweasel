@@ -85,17 +85,21 @@ xul|separator.groove[orient="vertical"] {
 
 #ContentSelectDropdown > menupopup {
   font: -moz-list;
+  --menuitem-padding-block: 0px;
+  --menuitem-padding-inline: 6px;
+  /* Padding should follow the 4/12 ratio, where 12px is the default font-size
+     with 4px being the preferred padding size. */
+  --menuitem-text-padding-block: 0.3333em;
+
+  &.isOpenedViaTouch {
+    /* Touch padding should follow the 11/12 ratio, where 12px is the default
+       font-size with 11px being the preferred padding size. */
+    --menuitem-text-padding-block: 0.9167em;
+  }
 
   > menucaption,
   > menuitem {
-    padding: 0 6px;
     border-width: 0;
-
-    > .menu-text {
-      /* Padding should follow the 4/12 ratio, where 12px is the default font-size
-         with 4px being the preferred padding size. */
-      padding-block: 0.3333em;
-    }
   }
 
   > menucaption > .menu-text {
@@ -114,11 +118,4 @@ xul|separator.groove[orient="vertical"] {
   > menucaption[disabled] {
     color: GrayText;
   }
-}
-
-#ContentSelectDropdown > .isOpenedViaTouch > menucaption > .menu-text,
-#ContentSelectDropdown > .isOpenedViaTouch > menuitem > .menu-text {
-  /* Touch padding should follow the 11/12 ratio, where 12px is the default
-     font-size with 11px being the preferred padding size. */
-  padding-block: 0.9167em;
 }

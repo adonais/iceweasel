@@ -84,6 +84,28 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
   return support;
 }
 
+RefPtr<RemoteDecoderModule::SupportsDecoderPromise>
+RemoteDecoderModule::SupportsAsync(const SupportDecoderParams& aParams) const {
+  // SupportDecoderParams is stack-only and holds a reference to its config, so
+  // clone the bits we need to survive the asynchronous wait below.
+  UniquePtr<TrackInfo> config = aParams.mConfig.Clone();
+  const media::VideoFrameRate rate = aParams.mRate;
+  const Maybe<uint64_t> mediaEngineId = aParams.mMediaEngineId;
+
+  RefPtr<const RemoteDecoderModule> self = this;
+  return RemoteMediaManagerChild::EnsureCodecSupportFor(mLocation)->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self, config = std::move(config), rate, mediaEngineId](bool) {
+        SupportDecoderParams params{*config, rate};
+        params.mMediaEngineId = mediaEngineId;
+        return SupportsDecoderPromise::CreateAndResolve(
+            self->Supports(params, nullptr), __func__);
+      },
+      [](nsresult aRv) {
+        return SupportsDecoderPromise::CreateAndReject(aRv, __func__);
+      });
+}
+
 RefPtr<RemoteDecoderModule::CreateDecoderPromise>
 RemoteDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
   if (aParams.mConfig.IsAudio()) {

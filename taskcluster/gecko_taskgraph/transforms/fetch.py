@@ -19,11 +19,15 @@ from taskgraph.util.schema import Schema, validate_schema
 from taskgraph.util.treeherder import join_symbol
 
 import gecko_taskgraph
+from gecko_taskgraph import GECKO
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
+from gecko_taskgraph.util.hash import hash_paths
 
 from ..util.cached_tasks import add_optimization
 
 CACHE_TYPE = "content.v1"
+
+CRX3_SCRIPT = "taskcluster/scripts/misc/fetch-crx3.py"
 
 
 class FetchTypeSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -387,6 +391,55 @@ class ChromiumFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     revision: Optional[str] = None
     # The name to give to the generated artifact.
     artifact_name: str
+
+
+class Crx3UrlFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    type: Literal["crx3-url"]
+    # The URL of the CRX3 to download.
+    url: str
+    # The SHA-256 of the downloaded content.
+    sha256: str
+    # Size of the downloaded entity, in bytes.
+    size: int
+    # The name to give to the generated artifact. Must end with .tar.zst.
+    artifact_name: str
+    # Add the given prefix to each file entry in the archive.
+    add_prefix: Optional[str] = None
+    # IMPORTANT: when adding anything that changes the behavior of the task,
+    # it is important to update the digest data used to compute cache hits.
+
+
+@fetch_builder("crx3-url", schema=Crx3UrlFetchSchema)
+def create_crx3_fetch_task(config, name, fetch):
+    artifact_name = fetch["artifact-name"]
+    if not artifact_name.endswith(".tar.zst"):
+        raise Exception(f"Only producing .tar.zst archives is supported: {name}")
+
+    add_prefix = fetch.get("add-prefix", "")
+    command = [
+        "/builds/worker/bin/fetch-crx3.py",
+        "--sha256",
+        fetch["sha256"],
+        "--size",
+        str(fetch["size"]),
+    ]
+    if add_prefix:
+        command.extend(["--add-prefix", add_prefix])
+    command.extend([fetch["url"], f"/builds/worker/artifacts/{artifact_name}"])
+
+    return {
+        "command": command,
+        "artifact_name": artifact_name,
+        "docker-image": "fetch-more",
+        # The script decides the layout of the archive, so a change to it has
+        # to produce a new archive rather than a hit on the old one.
+        "digest_data": [
+            fetch["sha256"],
+            add_prefix,
+            artifact_name,
+            hash_paths(GECKO, [CRX3_SCRIPT]),
+        ],
+    }
 
 
 @fetch_builder("chromium-fetch", schema=ChromiumFetchSchema)

@@ -30,6 +30,7 @@ UNIFIED_SOURCES = [
     "TestFlatten.cpp",
     "TestForwardDecls.cpp",
     "TestMozPromiseUtils.cpp",
+    "TestNSSCipherStrategy.cpp",
     "TestNSSRandomAccessCipherStrategy.cpp",
     "TestOpenClientDirectoryInfo.cpp",
     "TestOriginParser.cpp",

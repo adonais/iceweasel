@@ -20,6 +20,7 @@
 #include "absl/algorithm/container.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_headers.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
@@ -240,8 +241,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
       EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                       kPayloadType, false));
       video_header.frame_type = VideoFrameType::kVideoFrameDelta;
-      EXPECT_TRUE(rtp_sender_video_->SendVideo(
-          kPayloadType, VideoCodecType::kVideoCodecGeneric, timestamp,
+      EXPECT_TRUE(rtp_sender_video_->SendVideoFrame(
+          kPayloadType, VideoCodecType::kVideoCodecGeneric,
+          RtpTimestampWithOffset{timestamp},
           /*capture_time=*/Timestamp::Millis(timestamp / 90), payload_data,
           sizeof(payload_data), video_header, TimeDelta::Zero(), {}));
       // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
@@ -292,10 +294,11 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
     EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
                                                     kPayloadType, false));
     video_header.frame_type = VideoFrameType::kVideoFrameDelta;
-    EXPECT_TRUE(rtp_sender_video_->SendVideo(
-        kPayloadType, VideoCodecType::kVideoCodecGeneric, timestamp,
-        Timestamp::Millis(timestamp / 90), payload_data, sizeof(payload_data),
-        video_header, TimeDelta::Zero(), {}));
+    EXPECT_TRUE(rtp_sender_video_->SendVideoFrame(
+        kPayloadType, VideoCodecType::kVideoCodecGeneric,
+        RtpTimestampWithOffset{timestamp}, Timestamp::Millis(timestamp / 90),
+        payload_data, sizeof(payload_data), video_header, TimeDelta::Zero(),
+        {}));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock_.AdvanceTimeMilliseconds(33);

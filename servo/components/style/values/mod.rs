@@ -8,13 +8,13 @@
 
 #![deny(missing_docs)]
 
+use crate::Atom;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{KeywordValue, NumericType, NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::position::IsTreeScoped;
-use crate::Atom;
-pub use cssparser::{serialize_identifier, serialize_name, CowRcStr, Parser};
+pub use cssparser::{CowRcStr, Parser, serialize_identifier, serialize_name};
 pub use cssparser::{SourceLocation, Token};
 use num_traits::Zero;
 use precomputed_hash::PrecomputedHash;
@@ -41,11 +41,7 @@ pub type CSSFloat = f32;
 /// it into NaN.
 #[inline]
 pub fn normalize(v: CSSFloat) -> CSSFloat {
-    if v.is_nan() {
-        0.0
-    } else {
-        v
-    }
+    if v.is_nan() { 0.0 } else { v }
 }
 
 /// Computes the minimum value of the two floats. The CSS Values and Units definition
@@ -255,7 +251,7 @@ impl PrecomputedHash for AtomString {
     }
 }
 
-impl<'a> From<&'a str> for AtomString {
+impl From<&str> for AtomString {
     #[inline]
     fn from(string: &str) -> Self {
         Self(Atom::from(string))
@@ -432,7 +428,7 @@ impl PrecomputedHash for AtomIdent {
 }
 
 #[cfg(feature = "gecko")]
-impl<'a> From<&'a str> for AtomIdent {
+impl From<&str> for AtomIdent {
     #[inline]
     fn from(string: &str) -> Self {
         Self(Atom::from(string))
@@ -452,16 +448,18 @@ impl AtomIdent {
     where
         F: FnOnce(&Self) -> R,
     {
-        Atom::with(ptr, |atom: &Atom| {
-            // safety: repr(transparent)
-            let atom = atom as *const Atom as *const AtomIdent;
-            callback(&*atom)
-        })
+        unsafe {
+            Atom::with(ptr, |atom: &Atom| {
+                // safety: repr(transparent)
+                let atom = atom as *const Atom as *const AtomIdent;
+                callback(&*atom)
+            })
+        }
     }
 
     /// Cast an atom ref to an AtomIdent ref.
     #[inline]
-    pub fn cast<'a>(atom: &'a Atom) -> &'a Self {
+    pub fn cast(atom: &Atom) -> &Self {
         let ptr = atom as *const _ as *const Self;
         // safety: repr(transparent)
         unsafe { &*ptr }
@@ -577,10 +575,12 @@ impl<A: Debug, B: Debug> Debug for Either<A, B> {
     Clone,
     Debug,
     Default,
+    Deserialize,
     Eq,
     Hash,
     MallocSizeOf,
     PartialEq,
+    Serialize,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToComputedValue,

@@ -6,7 +6,6 @@ from marionette_harness import MarionetteTestCase
 
 
 class TestWindowRect(MarionetteTestCase):
-
     def test_get_window_rect_types(self):
         rect = self.marionette.window_rect
 

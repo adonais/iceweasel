@@ -3,7 +3,6 @@
   "exclude": [
     "GroupsList.sys.mjs",
     "SmartTabGrouping.sys.mjs",
-    "Tabbrowser.sys.mjs",
     "TabsList.sys.mjs"
   ],
   "extends": "../../../tools/@types/tsconfig.json",

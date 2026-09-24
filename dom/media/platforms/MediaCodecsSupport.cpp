@@ -230,6 +230,11 @@ MCSInfo::MCSInfo() {
 
   GetMainThreadSerialEventTarget()->Dispatch(
       NS_NewRunnableFunction("MCSInfo::MCSInfo", [] {
+        if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown)) {
+          StaticMutexAutoLock lock(sMutex);
+          sInstance = nullptr;
+          return;
+        }
         RunOnShutdown(
             [] {
               StaticMutexAutoLock lock(sMutex);

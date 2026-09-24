@@ -80,5 +80,12 @@ def test_global_skipped(lint, lintdir, files):
     assert len(result.issues) == 0
 
 
+def test_global_skipped_directory(lint, lintdir, filedir):
+    lint.read(os.path.join(lintdir, "global_skipped.yml"))
+    result = lint.roll([filedir])
+    assert result.failed == set()
+    assert len(result.issues) == 0
+
+
 if __name__ == "__main__":
     mozunit.main()

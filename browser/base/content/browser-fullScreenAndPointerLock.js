@@ -483,6 +483,7 @@ var FullScreen = {
   },
 
   _currentToolbarShift: 0,
+  _menubarShift: 0,
 
   /**
    * Shifts the browser toolbar down when it is moused over on macOS in
@@ -497,24 +498,40 @@ var FullScreen = {
       return;
     }
 
-    // shiftSize is sent from Cocoa widget code as a very precise double. We
-    // don't need that kind of precision in our CSS.
+    let wasRevealed = this._menubarShift > 0;
+    this._menubarShift = shiftSize;
+
+    // Only the frame that starts the slide reveals the toolbox, in case the
+    // mouse tracking missed the fullScreenToggler: taking every frame as a
+    // reveal would pull it back right after the pointer returning to the
+    // content sent it away, which reads as the content jumping (bug 2064638).
+    if (shiftSize > 0 && !wasRevealed && !this.fullScreenToggler.hidden) {
+      this.showNavToolbox();
+    }
+
+    this.updateMacToolbarShift();
+  },
+
+  /**
+   * Apply the menubar's shift, unless the toolbar is collapsed: it is parked
+   * offscreen by exactly its own height, so shifting it down would leave that
+   * much of it hanging over the content. Collapsing and revealing both come
+   * through here, since either can happen with the menubar already down.
+   */
+  updateMacToolbarShift() {
+    let shiftSize = this._isChromeCollapsed ? 0 : this._menubarShift;
+    // _menubarShift originates from Cocoa widget code as a very precise
+    // double. We don't need that kind of precision in our CSS.
     shiftSize = shiftSize.toFixed(2);
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
     gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
     gNavToolbox.style.translate = translate;
-    gURLBar.style.setProperty("--toolbar-shift-translate", translate);
-    document
-      .getElementById("searchbar-new")
-      ?.style.setProperty("--toolbar-shift-translate", translate);
-    if (shiftSize > 0) {
-      // If the mouse tracking missed our fullScreenToggler, then the toolbox
-      // might not have been shown before the menubar is animated down. Make
-      // sure it is shown now.
-      if (!this.fullScreenToggler.hidden) {
-        this.showNavToolbox();
-      }
-    }
+    // The shifted toolbox floats over what is below it, which with vertical
+    // tabs is the launcher rather than the content (bug 2064638).
+    document.documentElement.style.setProperty(
+      "--fullscreen-menubar-shift",
+      shiftSize > 0 ? `${shiftSize}px` : ""
+    );
 
     this._currentToolbarShift = shiftSize;
   },
@@ -678,9 +695,11 @@ var FullScreen = {
 
   cleanup() {
     if (!window.fullScreen) {
+      this._expandedMouseTargetRect = null;
       this._mouseTargetRectObserver?.disconnect();
       this._collapsedToolboxObserver?.disconnect();
       MousePosTracker.removeListener(this);
+      MousePosTracker.removeListener(this._launcherEdgeListener);
       document.removeEventListener("keypress", this._keyToggleCallback);
       document.removeEventListener("popupshown", this._setPopupOpen);
       document.removeEventListener("popuphidden", this._setPopupOpen);
@@ -862,6 +881,59 @@ var FullScreen = {
     return gMultiProcessBrowser && aBrowser.hasAttribute("remote");
   },
 
+  // The mouse-target rect measured while the chrome was last expanded. The
+  // collapsed layout is not usable for this: the sidebar takes no space there.
+  _expandedMouseTargetRect: null,
+
+  // Reaching the launcher's edge of the screen brings the chrome back, since
+  // the launcher collapses with the toolbox and its tabs would otherwise only
+  // be reachable from the top (bug 2064638). Watching the pointer rather than
+  // putting a hover target at the edge keeps a pointer that merely rests there
+  // from reviving the chrome the moment it collapsed, and off the content.
+  _launcherEdgeListener: {
+    _suppressEnter: false,
+    // Measured on demand, as SidebarController's own listener does: the
+    // launcher can be moved to the other edge, or turned off, while the chrome
+    // is collapsed. getBoundsWithoutFlushing never forces a flush, and the
+    // collapsed launcher's own box only says which side it lives on.
+    getMouseTargetRect() {
+      let { width, height } = window.windowUtils.getBoundsWithoutFlushing(
+        document.documentElement
+      );
+      let container = SidebarController.sidebarContainer;
+      if (!container || container.hidden) {
+        // Nothing to reach for: a rect no pointer can be inside.
+        return { top: 0, bottom: -1, left: 0, right: -1 };
+      }
+      let atStart =
+        window.windowUtils.getBoundsWithoutFlushing(container).left < width / 2;
+      return {
+        top: 0,
+        bottom: height,
+        left: atStart ? 0 : width - 2,
+        right: atStart ? 2 : width,
+      };
+    },
+    onMouseEnter() {
+      if (!this._suppressEnter) {
+        FullScreen.showNavToolbox();
+      }
+    },
+  },
+
+  _watchLauncherEdge() {
+    let listener = this._launcherEdgeListener;
+    MousePosTracker.removeListener(listener);
+    if (document.documentElement.hasAttribute("inDOMFullscreen")) {
+      return;
+    }
+    // Record where the pointer is without taking a pointer already at the edge
+    // as an arrival, or the chrome would come straight back up.
+    listener._suppressEnter = true;
+    MousePosTracker.addListener(listener);
+    listener._suppressEnter = false;
+  },
+
   getMouseTargetRect() {
     return this._mouseTargetRect;
   },
@@ -1023,12 +1095,16 @@ var FullScreen = {
     // without flushing layout on every mouse move.
     if (trackMouse) {
       // Seed a synchronous initial value so MousePosTracker.addListener, which
-      // reads getMouseTargetRect() immediately, always has a rect. It may be
-      // stale (the sidebar hasn't settled yet); _updateMouseTargetRect corrects
-      // it on the next tick. getBoundsWithoutFlushing never forces a flush.
-      this._mouseTargetRect = this._mouseTargetRectFromBounds(
-        window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
-      );
+      // reads getMouseTargetRect() immediately, always has a rect. Prefer the
+      // one captured while the chrome was expanded, since showing it restores
+      // that layout: measured now, the strip the vertical tabs are about to
+      // reveal into would count as content and hide the chrome again as the
+      // pointer reaches them (bug 2064638).
+      this._mouseTargetRect =
+        this._expandedMouseTargetRect ??
+        this._mouseTargetRectFromBounds(
+          window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+        );
       this._updateMouseTargetRect();
       if (!this._mouseTargetRectObserver) {
         this._mouseTargetRectObserver = new ResizeObserver(() =>
@@ -1040,10 +1116,18 @@ var FullScreen = {
       // the pointer already sits in the target rect. Keep _isChromeCollapsed
       // set until after it so hideNavToolbox bails out instead of undoing the
       // toolbox we're showing.
+      MousePosTracker.removeListener(this._launcherEdgeListener);
       MousePosTracker.addListener(this);
+      // That enter bailed out but is recorded, and the tracker only reports
+      // transitions, so leaving it be would keep the chrome up for good
+      // (bug 2064638).
+      this._hover = false;
     }
 
     this._isChromeCollapsed = false;
+    if (this._menubarShift) {
+      this.updateMacToolbarShift();
+    }
     document.documentElement.removeAttribute("fullscreenNavToolboxHidden");
     Services.obs.notifyObservers(
       gNavToolbox,
@@ -1110,6 +1194,11 @@ var FullScreen = {
       gNavToolbox.setAttribute("fullscreenShouldAnimate", true);
     }
 
+    // For the next reveal to seed its mouse-target rect from.
+    this._expandedMouseTargetRect = this._mouseTargetRectFromBounds(
+      window.windowUtils.getBoundsWithoutFlushing(gBrowser.tabpanels)
+    );
+
     // Seed the margin synchronously so the collapse starts on this tick.
     // getBoundsWithoutFlushing never forces a flush, so this height can be
     // stale; the ResizeObserver set up below always delivers an initial
@@ -1118,6 +1207,9 @@ var FullScreen = {
       window.windowUtils.getBoundsWithoutFlushing(gNavToolbox).height
     );
     this._isChromeCollapsed = true;
+    if (this._menubarShift) {
+      this.updateMacToolbarShift();
+    }
     document.documentElement.toggleAttribute(
       "fullscreenNavToolboxHidden",
       true
@@ -1130,6 +1222,7 @@ var FullScreen = {
 
     this._mouseTargetRectObserver?.disconnect();
     MousePosTracker.removeListener(this);
+    this._watchLauncherEdge();
 
     // The toolbox can still change height after it has been collapsed, which
     // would leave the bottom of the toolbars peeking into view. On Windows the

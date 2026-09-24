@@ -8,6 +8,31 @@
 
 import("../../webrtc.gni")
 
+group("sframe") {
+if (!build_with_mozilla) {
+  deps = [
+    ":sframe_context_factory",
+    ":sframe_decryptor",
+    ":sframe_encryptor",
+    ":sframe_media_decryptor_interface",
+    ":sframe_media_encryptor_interface",
+  ]
+}
+}
+
+rtc_library("sframe_context_factory") {
+  visibility = [ ":*" ]
+  sources = [
+    "sframe_context_factory.cc",
+    "sframe_context_factory.h",
+  ]
+  deps = [
+    "../../api:sframe_types",
+    "//third_party/abseil-cpp/absl/base:nullability",
+    "//third_party/sframe",
+  ]
+}
+
 rtc_library("sframe_media_encryptor_interface") {
   visibility = [ "*" ]
   sources = [ "sframe_media_encryptor_interface.h" ]
@@ -25,6 +50,7 @@ rtc_library("sframe_encryptor") {
     "sframe_encryptor.h",
   ]
   deps = [
+    ":sframe_context_factory",
     ":sframe_media_encryptor_interface",
     "../../api:make_ref_counted",
     "../../api:rtc_error",
@@ -38,14 +64,46 @@ rtc_library("sframe_encryptor") {
   ]
 }
 
+rtc_library("sframe_media_decryptor_interface") {
+  visibility = [ "*" ]
+  sources = [ "sframe_media_decryptor_interface.h" ]
+  deps = [ "../../api:sframe_decryptor_interface" ]
+}
+
+rtc_library("sframe_decryptor") {
+  visibility = [ "*" ]
+  sources = [
+    "sframe_decryptor.cc",
+    "sframe_decryptor.h",
+  ]
+  deps = [
+    ":sframe_context_factory",
+    ":sframe_media_decryptor_interface",
+    "../../api:make_ref_counted",
+    "../../api:rtc_error",
+    "../../api:scoped_refptr",
+    "../../api:sequence_checker",
+    "../../api:sframe_decryptor_interface",
+    "../../api:sframe_types",
+    "../../rtc_base:checks",
+    "../../rtc_base:macromagic",
+    "../../rtc_base/system:no_unique_address",
+    "//third_party/abseil-cpp/absl/base:nullability",
+    "//third_party/sframe",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_library("sframe_unittests") {
     testonly = true
     sources = [ "sframe_encryptor_decryptor_unittest.cc" ]
     deps = [
+      ":sframe_decryptor",
       ":sframe_encryptor",
+      ":sframe_media_decryptor_interface",
       "../../api:rtc_error",
       "../../api:scoped_refptr",
+      "../../api:sframe_decryptor_interface",
       "../../api:sframe_types",
       "../../test:test_support",
     ]

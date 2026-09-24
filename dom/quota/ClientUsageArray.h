@@ -12,16 +12,16 @@
 
 namespace mozilla::dom::quota {
 
-class ClientUsageArray final : public Array<Maybe<uint64_t>, Client::TYPE_MAX> {
+class ClientUsageArray final : public Array<Maybe<int64_t>, Client::TYPE_MAX> {
  public:
-  Maybe<uint64_t>& operator[](size_t aIndex) {
+  Maybe<int64_t>& operator[](size_t aIndex) {
     if (MOZ_UNLIKELY(aIndex >= Client::TypeMax())) {
       MOZ_CRASH("indexing into invalid element");
     }
     return Array::operator[](aIndex);
   }
 
-  const Maybe<uint64_t>& operator[](size_t aIndex) const {
+  const Maybe<int64_t>& operator[](size_t aIndex) const {
     if (MOZ_UNLIKELY(aIndex >= Client::TypeMax())) {
       MOZ_CRASH("indexing into invalid element");
     }

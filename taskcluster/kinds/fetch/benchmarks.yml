@@ -18,6 +18,33 @@ web-tooling-benchmark:
         sha256: 93b0b51df0cec3ca9bfa0bdf81d782306dcf18532e39b3ff3180409125daaff1
         size: 5444135
 
+# Keep this in sync with the version used in performance testing by updating:
+#   1. `testing/raptor/raptor/tests/benchmarks/motionmark-1-3-desktop.toml`
+#   2. `testing/raptor/raptor/tests/benchmarks/motionmark-1-3-mobile.toml`
+motionmark:
+    description: MotionMark 1.3 benchmark suite
+    fetch:
+        type: static-url
+        url: https://github.com/webkit/motionmark/archive/be2a5fea89b6ef411b053ebeb95a6302b3dc0ecb.tar.gz
+        sha256: 0b6f84fc56985e7bfc1896059275d585b49293d2b36701922393bc61ea7a6bcb
+        size: 576396
+        artifact-name: motionmark.tar.zst
+        strip-components: 1
+        add-prefix: motionmark/
+
+# Keep this in sync with the version used in performance testing by updating
+# `testing/raptor/raptor/tests/benchmarks/speedometer-desktop.toml`.
+speedometer-experimental:
+    description: Speedometer benchmark suite, experimental subtests
+    fetch:
+        type: static-url
+        url: https://github.com/mozilla/Speedometer/archive/89435e5dfb97cf793516449370f14b2176b4aed7.tar.gz
+        sha256: 9b9393f281b7421d3eded909ad3435792c6ed42536617a2dc69936b5e25d5195
+        size: 64205598
+        artifact-name: speedometer-experimental.tar.zst
+        strip-components: 1
+        add-prefix: Speedometer/
+
 # A collection of benchmarks for use in PGO profiling runs. Currently it is
 # just JetStream3.
 #

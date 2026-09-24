@@ -30,6 +30,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
+#include <cmath>
 #include <float.h>
 #include <limits>
 
@@ -1488,8 +1489,11 @@ bool Simulator::setFCSRRoundError(double original, double rounded) {
     ret = true;
   }
 
-  if ((long double)rounded > (long double)std::numeric_limits<T>::max() ||
-      (long double)rounded < (long double)std::numeric_limits<T>::min()) {
+  // When T is int64_t, the true value of max(T) is not representable as double,
+  // but max(T)+1 is. Construct it with ldexp to avoid overflow. min(T) is
+  // always representable as double, so simply cast it.
+  if (rounded >= std::ldexp(1.0, std::numeric_limits<T>::digits) ||
+      rounded < static_cast<double>(std::numeric_limits<T>::min())) {
     setFCSRBit(kFCSROverflowFlagBit, true);
     setFCSRBit(kFCSROverflowCauseBit, true);
     // The reference is not really clear but it seems this is required:

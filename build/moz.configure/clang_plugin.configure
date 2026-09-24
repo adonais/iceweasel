@@ -79,9 +79,12 @@ def clang_plugin_flags(
     ]
 
     if enable_mozsearch_plugin:
-        clang_plugin_flags.extend(
-            ["-Xclang", "-add-plugin", "-Xclang", "mozsearch-index"]
-        )
+        clang_plugin_flags.extend([
+            "-Xclang",
+            "-add-plugin",
+            "-Xclang",
+            "mozsearch-index",
+        ])
         # Parameters are: srcdir, outdir (path where output JSON is stored), objdir.
         parameters = [
             build_environment.topsrcdir,
@@ -89,9 +92,12 @@ def clang_plugin_flags(
             build_environment.topobjdir,
         ]
         for parameter in parameters:
-            clang_plugin_flags.extend(
-                ["-Xclang", "-plugin-arg-mozsearch-index", "-Xclang", parameter]
-            )
+            clang_plugin_flags.extend([
+                "-Xclang",
+                "-plugin-arg-mozsearch-index",
+                "-Xclang",
+                parameter,
+            ])
 
     return namespace(
         plugin_flags=clang_plugin_flags,

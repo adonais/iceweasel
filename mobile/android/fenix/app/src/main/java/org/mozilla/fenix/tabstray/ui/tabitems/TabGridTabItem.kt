@@ -50,19 +50,20 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.compose.base.theme.ThemedValue
+import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.TabThumbnail
+import org.mozilla.fenix.compose.swipeToDismissFade
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.ThemedValue
-import org.mozilla.fenix.theme.ThemedValueProvider
 
 private val TabHeaderFaviconSize = 12.dp
 
@@ -118,7 +119,7 @@ fun TabGridTabItem(
         onDismiss = onDismiss,
     ) {
         TabContent(
-            modifier = Modifier.fadeOnSwipeToDismiss(swipeToDismissBoxState),
+            modifier = Modifier.swipeToDismissFade(swipeToDismissBoxState),
             tab = tab,
             thumbnailSize = thumbnailSizePx,
             selectionState = selectionState,

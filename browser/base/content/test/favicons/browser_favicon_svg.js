@@ -22,8 +22,9 @@ async function testIconImage(browser, tabIconImg, dark) {
     colorScheme: dark ? "dark" : "light",
     contentParentId:
       browser.browsingContext.currentWindowGlobal.contentParentId,
-    width: 16,
-    height: 16,
+    width: 16 * window.devicePixelRatio,
+    height: 16 * window.devicePixelRatio,
+    stretch: true,
   });
 
   is(
@@ -39,13 +40,17 @@ async function testIconImage(browser, tabIconImg, dark) {
     );
   }
 
-  let screenshotDataURL = TestUtils.screenshotArea(tabIconImg, window);
-  await ImageTestUtils.assertEqualImage(
-    window,
-    screenshotDataURL,
-    dark ? DARK_PNG_BLUE : LIGHT_PNG_GREEN,
-    `Got ${dark ? "blue" : "green"} favicon`
-  );
+  if (window.devicePixelRatio != 1) {
+    info("window.devicePixelRatio != 1, skipping assertEqualImage");
+  } else {
+    let screenshotDataURL = TestUtils.screenshotArea(tabIconImg, window);
+    await ImageTestUtils.assertEqualImage(
+      window,
+      screenshotDataURL,
+      dark ? DARK_PNG_BLUE : LIGHT_PNG_GREEN,
+      `Got ${dark ? "blue" : "green"} favicon`
+    );
+  }
 }
 
 add_task(async function () {

@@ -56,7 +56,7 @@ class TabsPopup(
         isFocusable = true
         width = FrameLayout.LayoutParams.WRAP_CONTENT
         height = FrameLayout.LayoutParams.WRAP_CONTENT
-        animationStyle = android.R.style.Animation_Dialog
+        animationStyle = 0
         binding.root.setOnClickListener { dismiss() }
     }
 

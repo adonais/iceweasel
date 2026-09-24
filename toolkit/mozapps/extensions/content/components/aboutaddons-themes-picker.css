@@ -18,9 +18,15 @@ moz-card::part(heading) {
 
 .theme-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: var(--space-medium);
   padding: var(--space-small);
+  grid-template-columns: 1fr 1fr;
+
+  /* Switch to 1 column when the width is too narrow to fix 2 theme card
+   * on each grid row. */
+  @media (max-width: 400px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .theme-card {
@@ -54,6 +60,16 @@ theme-preview img {
    * (the default theme when enabled doesn't have a Disable button because it can't
    * be disabled, another theme should be enabled instead) */
   flex: 1;
+
+  /* Allow install/enable/disable button to be moved below the Nova theme name
+   * when the page width gets too narrow to fit both in a single row. */
+  @media (max-width: 500px) {
+    flex-direction: column;
+
+    moz-button {
+      width: -moz-available;
+    }
+  }
 }
 
 .theme-name {

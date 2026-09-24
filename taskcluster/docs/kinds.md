@@ -89,12 +89,12 @@ across distros, install methods, channels, locales, and architectures.
 The nightly l10n kind repacks a shippable build (from the same source code)
 in order to provide localized versions of the same source.
 
-## shippable-l10n-signing
+## l10n-signing
 
-The shippable l10n signing kind takes artifacts from the shippable-l10n kind and
+The l10n signing kind takes artifacts from the shippable-l10n and l10n kinds and
 passes them to signing servers to have their contents signed appropriately, based
-on an appropriate signing format. One signing job is created for each shippable-l10n
-job (usually chunked).
+on an appropriate signing format. One signing job is created for each upstream l10n
+job (the shippable-l10n jobs are usually chunked; the l10n jobs are not).
 
 ## shippable-l10n-mac-signing
 
@@ -154,11 +154,6 @@ Valgrind tasks produce builds instrumented by valgrind.
 ## searchfox
 
 Searchfox builds generate C++ index data for Searchfox.
-
-## static-analysis-autotest
-
-Static analysis autotest utility in order to be sure that there is no regression
-when upgrading utilities that impact static-analysis.
 
 ## toolchain
 

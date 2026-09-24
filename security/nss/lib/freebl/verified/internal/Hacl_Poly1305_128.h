@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __internal_Hacl_Poly1305_128_H
 #define __internal_Hacl_Poly1305_128_H
 
@@ -42,8 +43,9 @@ Hacl_Impl_Poly1305_Field32xN_128_load_acc2(Lib_IntVector_Intrinsics_vec128 *acc,
 
 void
 Hacl_Impl_Poly1305_Field32xN_128_fmul_r2_normalize(
-    Lib_IntVector_Intrinsics_vec128 *out,
-    Lib_IntVector_Intrinsics_vec128 *p);
+  Lib_IntVector_Intrinsics_vec128 *out,
+  Lib_IntVector_Intrinsics_vec128 *p
+);
 
 #if defined(__cplusplus)
 }

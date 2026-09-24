@@ -32,6 +32,7 @@
 #include "jit/JitOptions.h"
 #include "jit/Simulator.h"
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
+#include "js/Context.h"       // js::AssertHeapIsIdle
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Printf.h"
@@ -46,6 +47,7 @@
 #include "vm/GlobalObject.h"       // js::GlobalObject
 #include "vm/HelperThreadState.h"  // js::PromiseHelperTask
 #include "vm/Interpreter.h"
+#include "vm/JSContext.h"  // CHECK_THREAD
 #include "vm/JSFunction.h"
 #include "vm/PlainObject.h"    // js::PlainObject
 #include "vm/PromiseObject.h"  // js::PromiseObject
@@ -592,12 +594,11 @@ static bool ReportCompileWarnings(JSContext* cx,
 }
 
 // https://webassembly.github.io/esm-integration/js-api/index.html#esm-integration
-bool js::wasm::CompileForESM(JSContext* cx,
-                             const JS::ReadOnlyCompileOptions& options,
-                             const BytecodeSource& bytecodeSource,
-                             MutableHandleObject moduleObj) {
-  // Step 1. Let stableBytes be a copy of the bytes held by the buffer bytes.
-  // (Performed by caller)
+JS_PUBLIC_API JS::SharedWasmCompileArgs JS::BuildCompileArgsForESM(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
 
   FeatureOptions featureOptions;
   // Step 4 (reordered). Let builtinSetNames be « "js-string" ».
@@ -606,56 +607,82 @@ bool js::wasm::CompileForESM(JSContext* cx,
   featureOptions.jsStringConstants = true;
   UniqueChars ns = DuplicateString(cx, "wasm:js/string-constants");
   if (!ns) {
-    return false;
+    return nullptr;
   }
   featureOptions.jsStringConstantsNamespace =
       cx->new_<ShareableChars>(std::move(ns));
   if (!featureOptions.jsStringConstantsNamespace) {
-    return false;
+    return nullptr;
   }
 
-  // Step 2. Compile the WebAssembly module stableBytes and store the result
-  //         as module.
   ScriptedCaller scriptedCaller;
   if (options.filename()) {
     scriptedCaller.source = DuplicateString(cx, options.filename().c_str());
     if (!scriptedCaller.source) {
-      return false;
+      return nullptr;
     }
     scriptedCaller.kind = ScriptedCallerKind::Url;
   }
-  SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
-      cx, std::move(scriptedCaller), featureOptions, /* reportOOM */ true);
-  if (!compileArgs) {
-    return false;
+  return CompileArgs::buildAndReport(cx, std::move(scriptedCaller),
+                                     featureOptions, /* reportOOM */ true);
+}
+
+JS_PUBLIC_API JS::ESMCompileResult JS::CompileForESM(
+    const WasmCompileArgs& compileArgs, const uint8_t* bytes, size_t length) {
+  // Step 1. Let stableBytes be a copy of the bytes held by the buffer bytes.
+  // (Performed by caller)
+  BytecodeSource bytecodeSource(bytes, length);
+
+  // Step 2. Compile the WebAssembly module stableBytes and store the result
+  //         as module.
+  ESMCompileResult result;
+  result.module = CompileModule(static_cast<const CompileArgs&>(compileArgs),
+                                BytecodeBufferOrSource(bytecodeSource),
+                                &result.error, &result.warnings, nullptr);
+  if (result.module) {
+    result.status = ESMCompileResult::Status::Success;
+  } else if (result.error) {
+    result.status = ESMCompileResult::Status::Failed;
+  } else {
+    result.status = ESMCompileResult::Status::OutOfMemory;
   }
+  return result;
+}
 
-  UniqueChars error;
-  UniqueCharsVector warnings;
-  SharedModule module =
-      CompileModule(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
-                    &error, &warnings, nullptr);
+JS_PUBLIC_API bool JS::FinishCompileForESM(
+    JSContext* cx, const WasmCompileArgs& compileArgs,
+    const JS::ESMCompileResult& compileResult, MutableHandleObject moduleObj) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
 
-  if (!ReportCompileWarnings(cx, warnings)) {
+  const Module* module = static_cast<const Module*>(compileResult.module.get());
+
+  if (!ReportCompileWarnings(cx, compileResult.warnings)) {
     return false;
   }
 
   // Step 3. If module is error, throw a CompileError exception.
-  if (!module) {
-    if (!error) {
+  switch (compileResult.status) {
+    case ESMCompileResult::Status::OutOfMemory:
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_OUT_OF_MEMORY);
       return false;
-    }
-    RootedObject errorObj(cx);
-    RootedObject nullStack(cx, nullptr);
-    if (!CreateCompileError(cx, compileArgs->scriptedCaller, nullStack,
-                            error.get(), &errorObj)) {
+    case ESMCompileResult::Status::Failed: {
+      RootedObject errorObj(cx);
+      RootedObject nullStack(cx, nullptr);
+      if (!CreateCompileError(
+              cx, static_cast<const CompileArgs&>(compileArgs).scriptedCaller,
+              nullStack, compileResult.error.get(), &errorObj)) {
+        return false;
+      }
+      RootedValue errorVal(cx, ObjectValue(*errorObj));
+      cx->setPendingException(errorVal, js::ShouldCaptureStack::Maybe);
       return false;
     }
-    RootedValue errorVal(cx, ObjectValue(*errorObj));
-    cx->setPendingException(errorVal, js::ShouldCaptureStack::Maybe);
-    return false;
+    case ESMCompileResult::Status::Success:
+      MOZ_ASSERT(module);
+      break;
   }
 
   // Step 6. Construct a WebAssembly module object from module, bytes,

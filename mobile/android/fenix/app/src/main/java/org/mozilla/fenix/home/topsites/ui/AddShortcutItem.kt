@@ -38,9 +38,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
-import org.mozilla.fenix.home.topsites.TOP_SITES_FAVICON_CARD_SIZE
-import org.mozilla.fenix.home.topsites.TOP_SITES_ITEM_SIZE
 import org.mozilla.fenix.home.topsites.TopSiteColors
+import org.mozilla.fenix.home.topsites.TopSiteItemLayout
 import org.mozilla.fenix.home.topsites.TopSitesTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -48,6 +47,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 internal fun AddShortcutItem(
     topSiteColors: TopSiteColors,
     onClick: () -> Unit,
+    itemLayout: TopSiteItemLayout = TopSiteItemLayout.sizes(),
 ) {
     Box(
         modifier =
@@ -64,13 +64,13 @@ internal fun AddShortcutItem(
                         role = Role.Button,
                         onClick = onClick,
                     )
-                    .width(TOP_SITES_ITEM_SIZE.dp),
+                    .width(itemLayout.itemWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Card(
-                modifier = Modifier.size(TOP_SITES_FAVICON_CARD_SIZE.dp),
+                modifier = Modifier.size(itemLayout.faviconCardSize),
                 shape = CircleShape,
                 colors = CardDefaults.cardColors(containerColor = topSiteColors.faviconCardBackgroundColor),
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -89,7 +89,7 @@ internal fun AddShortcutItem(
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
-                modifier = Modifier.width(TOP_SITES_ITEM_SIZE.dp),
+                modifier = Modifier.width(itemLayout.itemWidth),
                 horizontalArrangement = Arrangement.Absolute.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

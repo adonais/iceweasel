@@ -123,6 +123,11 @@ async function runManageTabsFlow(state, toolHandler) {
     // Keep token -> permanentKey on the chrome side until the user confirms;
     // the map can't ride through the confirmation actor round-trip.
     lazy.ToolUI.registerTabKeys(state.toolCallId, gatheredResult.tabKeyByToken);
+    // ToolUI records the matching `browser_action_complete` after user confirmation.
+    state.conversation.stashPendingBrowserActionTelemetry(
+      state.toolCallId,
+      state.baseTelemetryInfo
+    );
     return {
       toolResult: {
         description: `The following tabs were found. User confirmation is required to ${toolHandler.verb} them.`,
@@ -270,12 +275,10 @@ const closeTabsToolHandler = {
 
     const closedCount = closedTabs.filter(tab => tab.closed).length;
     const failedCount = closedTabs.length - closedCount;
-    let telemetryResult = "success";
-    if (failedCount && closedCount === 0) {
-      telemetryResult = "error";
-    } else if (failedCount) {
-      telemetryResult = "partial_success";
-    }
+    const telemetryResult = lazy.ToolUITelemetry.browserActionResult(
+      closedCount,
+      closedTabs.length
+    );
 
     return {
       description: failedCount
@@ -363,12 +366,10 @@ function makeGroupTabsToolHandler(rawLabel) {
 
       const groupedCount = groupedTabs.filter(tab => tab.grouped).length;
       const failedCount = groupedTabs.length - groupedCount;
-      let telemetryResult = "success";
-      if (failedCount && groupedCount === 0) {
-        telemetryResult = "error";
-      } else if (failedCount) {
-        telemetryResult = "partial_success";
-      }
+      const telemetryResult = lazy.ToolUITelemetry.browserActionResult(
+        groupedCount,
+        groupedTabs.length
+      );
 
       return {
         description: failedCount

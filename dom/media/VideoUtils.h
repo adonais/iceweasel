@@ -219,7 +219,6 @@ struct VideoColorSpace {
   gfx::ColorRange mRange = gfx::ColorRange::LIMITED;
 
   bool operator==(const VideoColorSpace& aOther) const = default;
-  bool operator!=(const VideoColorSpace& aOther) const = default;
 };
 
 // Extracts the VPX codecs parameter string.

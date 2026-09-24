@@ -4,7 +4,7 @@ header = """/* This Source Code Form is subject to the terms of the Mozilla Publ
 autogen_warning = """/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
  */
 
-namespace mozilla { namespace net { class HappyEyeballs; union NetAddr; } }
+namespace mozilla { namespace net { class HappyEyeballs; } }
 """
 include_guard = "mozilla_net_happy_eyeballs_glue_h"
 include_version = true
@@ -18,7 +18,7 @@ namespaces = ["mozilla", "net", "happy_eyeballs"]
 trailer = ""
 
 [export]
-exclude = ["HappyEyeballs", "NetAddr"]
+exclude = ["HappyEyeballs"]
 item_types = ["globals", "enums", "structs", "unions", "typedefs", "opaque", "functions", "constants"]
 
 [export.rename]

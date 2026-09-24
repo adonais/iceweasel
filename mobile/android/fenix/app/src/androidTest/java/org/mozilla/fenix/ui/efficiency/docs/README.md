@@ -1,82 +1,90 @@
-# ui/efficiency — Android UI test framework
+# ui/efficiency — Android UI test harness
 
-A page-object + navigation-graph framework for Fenix UI tests. It makes UI tests **cheap to write and
-cheap to maintain**: a test describes only the _what_ (reach this screen, do this, verify that); the
-harness owns the _how_ (navigation, element resolution, retries). Most tests are ~5–20 lines.
+The efficiency harness is Fenix's executable model of the app under test. It centralizes selectors,
+page identity, readiness, navigation, execution state, and evidence so tests and factories can express
+product intent without reimplementing the mechanics that make the result trustworthy.
 
-## Why it exists (the two problems)
+"Efficiency" therefore means more than short test methods or fast helpers. The long-term goal is to
+lower the marginal cost of maintaining coverage, expose an analyzable testing space, and make it
+possible to select useful release evidence under a time and risk budget.
 
-1. **Maintenance cost.** Hand-written UI tests duplicate selectors/navigation until upkeep outruns value
-   and teams abandon them. Here the expensive layer (selectors, page objects, navigation) is centralized
-   and shared, so a UI change is fixed once, not once per test.
-2. **Trust in failures.** Product bugs, harness bugs, and environment noise get conflated. The harness
-   attributes failures (structured `Eff` logs, on-failure screen dumps) so a red is actionable.
+## Choose a reading path
 
-See `architecture.md` for the model and the rationale.
+| If you want to understand… | Start with… |
+| --- | --- |
+| Why this work exists and how it supports release testing | [`purpose-and-strategy.md`](purpose-and-strategy.md) |
+| The model-based-testing and oracle design | [`model-and-oracles.md`](model-and-oracles.md) |
+| The current implementation and its boundaries | [`architecture.md`](architecture.md) |
+| Test setup, cleanup, and optional resources | [`test-execution-contracts.md`](test-execution-contracts.md) |
+| How to convert or author a test | [`converting-a-test.md`](converting-a-test.md) |
+| Known failure modes and review checks | [`gotchas.md`](gotchas.md) |
+| Developer tools | [`tooling.md`](tooling.md) |
+
+The documents above move from programme intent to implementation. The guides below are the daily
+authoring reference and should describe only behavior that exists in the tree.
 
 ## Directory map
 
-```
+```text
 efficiency/
-├── core/         resolve() seam, UiElement facade, ScreenDump — the low-level element plumbing
-├── helpers/      BaseTest, BasePage (the moz* verb library + navigateToPage BFS routing)
-├── navigation/   NavigationEdge · NavigationRegistry · NavigationStep · PageCatalog  (the 4-file graph core)
-├── generation/   case-building infra + factories (reachability / pairs / interaction / behavior)
-├── devtools/     dev/debug tools, atomic test runners, effpretty (log renderer)
-├── logging/      structured test logging (the `Eff` logcat tag)
-├── pageObjects/  one <Screen>Page.kt per screen — models it, registers how to reach it
-├── selectors/    one <Screen>Selectors.kt per screen — the element locator catalog
-├── tests/        the actual @Test classes
-└── docs/         you are here
+├── core/         selector resolution, UI actions, waits, and failure primitives
+├── helpers/      BaseTest, BasePage, PageContext, readiness, and state boundaries
+├── navigation/   the state-aware graph, routes, facts, effects, and launch contracts
+├── generation/   case-building infrastructure and test factories
+├── devtools/     developer tools, contract tests, and atomic test runners
+├── logging/      structured execution evidence and its schema
+├── pageObjects/  one modeled page or component per file
+├── selectors/    the shared element-locator catalog
+├── tests/        authored behavior tests
+└── docs/         strategy, architecture, contracts, and authoring guides
 ```
 
 ## Quickstart — a minimal test
 
 ```kotlin
 class BookmarksTest : BaseTest() {
-    private val mockWebServer get() = fenixTestRule.mockWebServer
-
-    @SmokeTest @Test
-    fun openBookmarkInNewTabTest() {
-        val page = mockWebServer.getGenericAsset(1)
-        on.browserPage.navigateToPage(page.url.toString())   // reach a state
-        on.mainMenu.navigateToPage()                          // route via the nav graph
-            .mozClick(MainMenuSelectors.BOOKMARKS_BUTTON)     // interact
-        on.bookmarks.navigateToPage()                         // arriving here verifies it opened
+    @SmokeTest
+    @Test
+    fun openBookmarksTest() {
+        on.bookmarks
+            .navigateToPage()
+            .mozVerify(BookmarksSelectors.TOOLBAR_TITLE)
     }
 }
 ```
 
-`on` is the `PageContext` (every modeled screen hangs off it). `navigateToPage()` BFS-routes over the
-graph. Selectors are referenced from their catalog (`<Screen>Selectors.NAME`), never inlined.
+`on` is the per-test `PageContext`. `navigateToPage()` selects an executable path through the
+state-aware graph and verifies every visited page before the model advances. Selectors come from the
+screen's catalog and element checks resolve against the live UI; they are not cached snapshots.
 
-## How you actually work
+The harness does not retry a failed test in-process. A retry-only pass is flaky evidence, not a harness
+success. See [`test-execution-contracts.md`](test-execution-contracts.md) for the exact setup and
+cleanup boundary.
 
-Follow the gate loop in **`converting-a-test.md`** (the daily driver for converting a legacy smoke test),
-and read the building-block guide for whatever piece is missing:
+## Authoring guides
 
-| To…                                                       | Read                               |
-| --------------------------------------------------------- | ---------------------------------- |
-| Convert a legacy test end-to-end                          | `converting-a-test.md`             |
-| Find an element's real handles before choosing a selector | `guides/discovering-selectors.md`  |
-| Add locators to a catalog                                 | `guides/authoring-selectors.md`    |
-| Model a new screen                                        | `guides/creating-a-page-object.md` |
-| Reach a screen / add graph edges                          | `guides/adding-navigation.md`      |
-| Compose the test method                                   | `guides/writing-a-test.md`         |
-| Add a `moz*` verb or page helper                          | `guides/extending-basepage.md`     |
-| Run & debug a test                                        | `guides/debugging-tests.md`        |
-| The harness gotchas + review checklist                    | `gotchas.md`                       |
-| The helper scripts (run by hand)                          | `tooling.md`                       |
+| To… | Read… |
+| --- | --- |
+| Find an element's real handles | [`guides/discovering-selectors.md`](guides/discovering-selectors.md) |
+| Add locators and readiness metadata | [`guides/authoring-selectors.md`](guides/authoring-selectors.md) |
+| Model a page or component | [`guides/creating-a-page-object.md`](guides/creating-a-page-object.md) |
+| Add graph routes and state constraints | [`guides/adding-navigation.md`](guides/adding-navigation.md) |
+| Compose a test | [`guides/writing-a-test.md`](guides/writing-a-test.md) |
+| Extend the shared verb layer | [`guides/extending-basepage.md`](guides/extending-basepage.md) |
+| Run and debug a test | [`guides/debugging-tests.md`](guides/debugging-tests.md) |
 
-## Best practices
+## Core authoring rules
 
-- Tests describe the _what_; wrap all Espresso/UIAutomator/Compose in page objects and `moz*` verbs.
-- Reuse an existing capability before adding one; add the smallest general block, not a test-specific hack.
-- Selector priority: Compose `testTag` → resource id → content-description → text (last resort).
-- Verify handles against the live UI (dump the screen), not against how a legacy robot matched.
-- A test that only passes on retry is flaky, not done.
+- Keep product intent in tests and shared mechanics in the harness.
+- Treat a page, app state, route, selector, and oracle as different concepts.
+- Prefer stable semantic handles over rendered text.
+- Make setup and state requirements explicit; do not depend on test order.
+- Require an observable result. An action or element-presence check alone may not prove the behavior.
+- Preserve independent test evidence instead of deriving the model from the app's own router.
+- Treat generated cases as candidates until their setup, action, oracle, and supported context are known.
 
 ---
 
-_Maintenance note:_ these docs are the human source of truth; the `efficiency-test-authoring` skill distills
-them for agent use — keep them in sync.
+_Maintenance note:_ these in-tree docs are the reviewed source of truth for implemented harness
+behavior. Strategy documents should distinguish current capability from planned work, and authoring
+guides must not promise APIs that do not exist.

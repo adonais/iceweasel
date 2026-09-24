@@ -18,9 +18,22 @@ const FAILED_HOST = "www.doesnotexist-searchcta.com";
 const REGISTRABLE_DOMAIN = "doesnotexist-searchcta.com";
 const SEARCH_URL = `https://example.com/?q=${REGISTRABLE_DOMAIN}`;
 const BAD_CERT = "https://expired.example.com/";
+// A subdomain of the same registrable domain, for the failed load in
+// test_introNamesFailedSubdomain.
+const SUBDOMAIN_HOST = `bogus.${REGISTRABLE_DOMAIN}`;
+
+const lazy = {};
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "gDNSOverride",
+  "@mozilla.org/network/native-dns-override;1",
+  Ci.nsINativeDNSResolverOverride
+);
 
 add_setup(async function () {
   stubSearchCTASupportedEngine();
+  pinSearchCTADecisionDeadline();
   // A deterministic default engine so the search submission URL is known.
   await SearchTestUtils.installSearchExtension(
     {
@@ -100,10 +113,22 @@ add_task(async function test_ctaRendersWhenEnabled() {
           "Search button uses the unbranded fallback icon"
         );
 
+        // The intro shows the same display host as every other error page
+        // string, rather than a separately derived one (bug 2067835).
         is(
           card.errorIntro.getAttribute("data-l10n-args"),
-          JSON.stringify({ domain: registrableDomain }),
-          "Intro names the registrable domain, not the full host"
+          JSON.stringify({ hostname: card.hostname }),
+          "Intro is given the page's display host"
+        );
+
+        const emphasizedHost = await ContentTaskUtils.waitForCondition(
+          () => card.errorIntro.querySelector("strong"),
+          "Fluent's DOM overlay renders the emphasized host"
+        );
+        is(
+          emphasizedHost.textContent,
+          card.hostname,
+          "Only the host is emphasized, not the whole sentence"
         );
 
         const hint = card.shadowRoot.querySelector(
@@ -115,9 +140,6 @@ add_task(async function test_ctaRendersWhenEnabled() {
           JSON.stringify({ query: registrableDomain }),
           "The hint names the exact query Search will submit"
         );
-        // The one wait left in this task: Fluent applies its DOM overlay after
-        // the card has already finished rendering, so the emphasized query
-        // appears later than the attributes asserted above.
         const emphasized = await ContentTaskUtils.waitForCondition(
           () => hint.querySelector("strong"),
           "Fluent's DOM overlay renders the emphasized query"
@@ -160,6 +182,130 @@ add_task(async function test_ctaRendersWhenEnabled() {
   });
 });
 
+// The page originally showed placeholder wording while the parent was still
+// deciding, then swap in the real content a frame later, which made the UI
+// flicker (bug 2067882).
+add_task(async function test_nothingRendersBeforeTheDecision() {
+  const sandbox = sinon.createSandbox();
+  let releaseDecision;
+  const decisionHeld = new Promise(resolve => {
+    releaseDecision = resolve;
+  });
+  const realDecide = NetErrorParent.prototype.decideSearchCTA;
+  sandbox
+    .stub(NetErrorParent.prototype, "decideSearchCTA")
+    .callsFake(async function (failedURL) {
+      await decisionHeld;
+      return realDecide.call(this, failedURL);
+    });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CTA_PREF, true],
+      [FRESHNESS_PREF, ALWAYS_FRESH],
+    ],
+  });
+
+  try {
+    await BrowserTestUtils.withNewTab("about:blank", async browser => {
+      const url = `about:neterror?e=dnsNotFound&u=http%3A%2F%2F${encodeURIComponent(
+        FAILED_HOST
+      )}%2F`;
+      SpecialPowers.spawn(browser, [url], errorUrl => {
+        content.location = errorUrl;
+      });
+      await TestUtils.waitForCondition(
+        () => browser.currentURI.spec.startsWith("about:neterror"),
+        "The error document became current"
+      );
+
+      await SpecialPowers.spawn(browser, [], async () => {
+        const card = await ContentTaskUtils.waitForCondition(
+          () =>
+            content.document.querySelector("net-error-card")?.wrappedJSObject,
+          "The net-error-card is created"
+        );
+        ok(!card.searchCTAResolved, "The parent has not answered yet");
+        ok(
+          !card.hasUpdated,
+          "The card has not rendered while the answer is out"
+        );
+        is(
+          card.shadowRoot.childElementCount,
+          0,
+          "Nothing at all is rendered before the answer arrives"
+        );
+      });
+
+      releaseDecision();
+      await waitForSettledNetErrorCard(browser);
+
+      await SpecialPowers.spawn(browser, [REGISTRABLE_DOMAIN], async query => {
+        const card =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        ok(card.hasUpdated, "The card renders once the answer is in");
+        ok(card.searchCTAButton, "The render it does has the Search button");
+        const hint = card.shadowRoot.querySelector(
+          '[data-l10n-id="neterror-search-cta-hint-search-query"]'
+        );
+        ok(hint, "The render it does names the query");
+        is(
+          hint.getAttribute("data-l10n-args"),
+          JSON.stringify({ query }),
+          "The named query is the one Search will submit"
+        );
+      });
+    });
+  } finally {
+    await SpecialPowers.popPrefEnv();
+    sandbox.restore();
+  }
+});
+
+// The intro has to name the host that actually failed, subdomain included, so
+// "bogus.example.com" is never reported as "example.com" (bug 2067835).
+add_task(async function test_introNamesFailedSubdomain() {
+  lazy.gDNSOverride.addIPOverride(SUBDOMAIN_HOST, "N/A");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [CTA_PREF, true],
+      [FRESHNESS_PREF, ALWAYS_FRESH],
+      // Keep the dnsNotFound "did you mean www.<host>?" suggestion from firing
+      // a second DNS lookup that no override covers.
+      ["browser.fixup.alternate.enabled", false],
+    ],
+  });
+
+  const tab = BrowserTestUtils.addTab(gBrowser, `https://${SUBDOMAIN_HOST}/`);
+  gBrowser.selectedTab = tab;
+  const browser = tab.linkedBrowser;
+  try {
+    await BrowserTestUtils.waitForErrorPage(browser);
+    await waitForSettledNetErrorCard(browser);
+    await SpecialPowers.spawn(browser, [SUBDOMAIN_HOST], async host => {
+      const card =
+        content.document.querySelector("net-error-card").wrappedJSObject;
+      is(
+        card.errorIntro.getAttribute("data-l10n-id"),
+        "neterror-search-cta-intro2",
+        "The failed load lands on the search CTA intro"
+      );
+      const emphasized = await ContentTaskUtils.waitForCondition(
+        () => card.errorIntro.querySelector("strong"),
+        "Fluent's DOM overlay renders the emphasized host"
+      );
+      is(
+        emphasized.textContent,
+        host,
+        "The intro names the host that failed, subdomain included"
+      );
+    });
+  } finally {
+    BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+    lazy.gDNSOverride.clearHostOverride(SUBDOMAIN_HOST);
+  }
+});
+
 add_task(async function test_searchClickOpensNewTab() {
   await withDnsNotFoundPage(true, async browser => {
     const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
@@ -191,7 +337,6 @@ add_task(async function test_genericHintWhenNoSearchButton() {
     action: SEARCH_CTA_ACTIONS.NONE,
     query: "",
     reason: SEARCH_CTA_REASONS.HOST_UNUSABLE,
-    domain: FAILED_HOST,
     hasEngine: false,
   });
   try {
@@ -315,5 +460,61 @@ add_task(async function test_noCtaWhenDisabled() {
       is(card.searchCTAButton, null, "No Search button with the pref off");
       is(card.reloadButton, null, "No Reload button with the pref off");
     });
+  });
+});
+
+add_task(async function test_ctaButtonAccessKeys() {
+  await withDnsNotFoundPage(true, async browser => {
+    await waitForSettledNetErrorCard(browser);
+    await SpecialPowers.spawn(
+      browser,
+      [getAccessKeyModifiers()],
+      async mods => {
+        const card =
+          content.document.querySelector("net-error-card").wrappedJSObject;
+        const searchButton = card.searchCTAButton;
+        const reloadButton = card.reloadButton;
+
+        await ContentTaskUtils.waitForCondition(
+          () => searchButton.accessKey && reloadButton.accessKey,
+          "Waiting for accesskeys to be set by Fluent"
+        );
+
+        is(searchButton.accessKey, "c", "Search button has accesskey 'c'");
+        is(reloadButton.accessKey, "R", "Reload button has accesskey 'R'");
+        isnot(
+          searchButton.accessKey,
+          reloadButton.accessKey,
+          "The two CTA buttons take different access keys"
+        );
+
+        // Listen on the card's shadow root, above the button, so the capture
+        // phase reaches this before the template's own @click and the search
+        // never actually runs. The capture flag has to be the boolean form.
+        let clickedId = null;
+        const onClick = e => {
+          e.stopPropagation();
+          clickedId = e.target.id;
+        };
+        card.shadowRoot.addEventListener("click", onClick, true);
+
+        EventUtils.synthesizeKey("s", mods, content);
+        is(
+          clickedId,
+          null,
+          "Access key S no longer activates the Search button"
+        );
+
+        clickedId = null;
+        EventUtils.synthesizeKey("c", mods, content);
+        is(
+          clickedId,
+          "searchCTAButton",
+          "Access key c activated the Search button"
+        );
+
+        card.shadowRoot.removeEventListener("click", onClick, true);
+      }
+    );
   });
 });

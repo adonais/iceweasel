@@ -114,6 +114,14 @@ interface nsIURIFixup : nsISupports
     const unsigned long FIXUP_FLAG_FIX_SCHEME_TYPOS = 8;
 
     /**
+     * Like FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP, but does the lookup even when
+     * keyword.enabled is false. It decides only what becomes of a string that
+     * doesn't parse as a URI; one that parses is still a URI. For a search bar,
+     * which searches such a string whatever the pref says.
+     */
+    const unsigned long FIXUP_FLAG_FORCE_KEYWORD_LOOKUP = 16;
+
+    /**
      * Tries to converts the specified string into a URI, first attempting
      * to correct any errors in the syntax or other vagaries.
      * It returns information about what it corrected

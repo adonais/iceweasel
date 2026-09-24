@@ -53,9 +53,14 @@ class CustomTabActivity : EdgeToEdgeActivity() {
 
         startupPathProvider.attachOnActivityOnCreate(lifecycle, intent.unsafe)
         startupTypeTelemetry =
-            StartupTypeTelemetry(components.startupStateProvider, startupPathProvider).apply {
-                attachOnMainActivityOnCreate(lifecycle)
-            }
+            StartupTypeTelemetry(
+                    components.startupStateProvider,
+                    startupPathProvider,
+                    components.applicationScope,
+                )
+                .apply {
+                    attachOnMainActivityOnCreate(lifecycle)
+                }
 
         onBackPressedDispatcher.addCallback(
             this,

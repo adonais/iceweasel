@@ -10,8 +10,64 @@ clicking the generated URL.
 """
 
 import argparse
+import configparser
+import json
+import os
 import sys
+import urllib.error
+import urllib.request
 from urllib.parse import urlencode
+
+BUGZILLA = "https://bugzilla.mozilla.org"
+BUGZILLA_HOST = "bugzilla.mozilla.org"
+
+# python-bugzilla's own search order, hardcoded on every platform.
+BUGZILLARC_PATHS = (
+    "/etc/bugzillarc",
+    "~/.bugzillarc",
+    "~/.config/python-bugzilla/bugzillarc",
+)
+
+
+ASK = (
+    "Ask the filer for their Bugzilla account email, which "
+    f"{BUGZILLA}/userprefs.cgi shows, and pass it with --mentor. Never "
+    "substitute another address for it."
+)
+
+
+def resolve_mentor():
+    """The filer's Bugzilla account email, from their API key.
+
+    Never replace this with an address from elsewhere: a Bugzilla account
+    often uses one of its own (a `+bmo` alias is common).
+    """
+    config = configparser.ConfigParser()
+    try:
+        config.read([os.path.expanduser(path) for path in BUGZILLARC_PATHS])
+    except configparser.Error as error:
+        raise SystemExit(f"Unreadable bugzillarc ({error}). {ASK}")
+    # Only a key the file ties to this host: a bugzillarc commonly describes
+    # some other Bugzilla, and [DEFAULT] alone does not say which.
+    if not config.has_option(BUGZILLA_HOST, "api_key"):
+        raise SystemExit(
+            "No Bugzilla API key for "
+            + BUGZILLA_HOST
+            + " in "
+            + ", ".join(BUGZILLARC_PATHS)
+            + f". {ASK}"
+        )
+    key = config.get(BUGZILLA_HOST, "api_key")
+    request = urllib.request.Request(
+        f"{BUGZILLA}/rest/whoami", headers={"X-BUGZILLA-API-KEY": key}
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.load(response)["name"]
+    except urllib.error.URLError as error:
+        raise SystemExit(
+            f"Could not read the account behind the API key ({error}). {ASK}"
+        )
 
 
 def build_url(
@@ -56,9 +112,11 @@ def main(argv=None):
     parser.add_argument("--lang")
     parser.add_argument(
         "--mentor",
-        help="Email of the mentor (typically the bug filer) to prefill the bug_mentor field.",
+        help="Bugzilla account email of the mentor, for the bug_mentors field. "
+        "Defaults to the owner of the API key in the bugzillarc.",
     )
     args = parser.parse_args(argv)
+    mentor = args.mentor if args.mentor is not None else resolve_mentor()
     print(
         build_url(
             args.title,
@@ -68,7 +126,7 @@ def main(argv=None):
             tracker=args.tracker,
             keywords=args.keywords,
             lang=args.lang,
-            mentor=args.mentor,
+            mentor=mentor,
         )
     )
 

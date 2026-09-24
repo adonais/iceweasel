@@ -167,6 +167,11 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
     );
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
     if (details.selType == "dismiss" && result.payload.isBlockable) {

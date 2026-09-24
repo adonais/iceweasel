@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.generation.behavior
 
 import android.util.Log
-import org.mozilla.fenix.ui.efficiency.generation.NavigationGraphBootstrap
 import org.mozilla.fenix.ui.efficiency.generation.ShardUtils
 import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
 
@@ -16,8 +15,6 @@ object BehaviorCaseFactory {
         runState: String,
         includeNonRunnable: Boolean = false,
     ): List<BehaviorCase> {
-        NavigationGraphBootstrap.ensureInitialized()
-
         val plans = BehaviorTestPlanner.buildBehaviorCasePlans().filter { it.isRunnable }
 
         val pageRefsByProperty = PageCatalog.discoverPages().associateBy { it.propertyName }

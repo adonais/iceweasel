@@ -22,9 +22,18 @@ import React from "react";
  *   // Array of locale ids to display.
  *   message_body: ["confirm_history_delete_p1", "confirm_history_delete_notice_p2"],
  *   // Text for primary button.
- *   confirm_button_string_id: "menu_action_delete"
+ *   confirm_button_string_id: "menu_action_delete",
+ *   // moz-button type for the primary button. Defaults to "destructive".
+ *   confirm_button_type: "primary"
  * },
  */
+// The first line names the dialog, the second describes it. Anything after
+// that is read as part of the dialog rather than announced up front.
+const CONFIRMATION_DIALOG_IDS = [
+  "confirmation-dialog-title",
+  "confirmation-dialog-description",
+];
+
 export class _ConfirmDialog extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -73,11 +82,7 @@ export class _ConfirmDialog extends React.PureComponent {
     return (
       <span>
         {message_body.map((msg, index) => (
-          <p
-            key={msg}
-            data-l10n-id={msg}
-            id={index === 0 ? "confirmation-dialog-title" : undefined}
-          />
+          <p key={msg} data-l10n-id={msg} id={CONFIRMATION_DIALOG_IDS[index]} />
         ))}
       </span>
     );
@@ -89,6 +94,11 @@ export class _ConfirmDialog extends React.PureComponent {
         ref={this.dialogRef}
         className="confirmation-dialog"
         aria-labelledby="confirmation-dialog-title"
+        aria-describedby={
+          this.props.data.body_string_id?.length > 1
+            ? "confirmation-dialog-description"
+            : undefined
+        }
         onClick={e => {
           // Close modal when clicking on the backdrop pseudo element (the background of the modal)
           if (e.target === this.dialogRef.current) {
@@ -113,7 +123,7 @@ export class _ConfirmDialog extends React.PureComponent {
                 data-l10n-id={this.props.data.cancel_button_string_id}
               ></moz-button>
               <moz-button
-                type="destructive"
+                type={this.props.data.confirm_button_type || "destructive"}
                 onClick={this._handleConfirmBtn}
                 data-l10n-id={this.props.data.confirm_button_string_id}
                 data-l10n-args={JSON.stringify(

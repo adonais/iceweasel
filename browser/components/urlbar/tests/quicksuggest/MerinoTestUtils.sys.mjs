@@ -477,6 +477,11 @@ class MockMerinoServer {
             iab_category: "22 - Shopping",
             is_sponsored: true,
             score: 1,
+            custom_details: {
+              amp: {
+                suggestion_id: "amp-suggestion-id",
+              },
+            },
           },
         ],
       },

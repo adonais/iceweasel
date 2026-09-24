@@ -42,7 +42,7 @@ static void GetColor(const char* aPrefName, ColorScheme aColorScheme,
     return;
   }
   nscolor result;
-  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), value, &result)) {
+  if (!ServoCSSParser::ComputeColor(nullptr, value, &result)) {
     return;
   }
   aColor = result;

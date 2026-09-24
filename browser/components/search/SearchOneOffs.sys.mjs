@@ -1140,10 +1140,13 @@ export class SearchOneOffs {
 
     if (
       Services.prefs.getBoolPref(
-        "browser.search.separatePrivateDefault.ui.enabled",
+        "browser.search.separatePrivateDefault.featureGate",
         false
       ) &&
-      Services.prefs.getBoolPref("browser.search.separatePrivateDefault", false)
+      Services.prefs.getBoolPref(
+        "browser.search.separatePrivateDefault.enabled",
+        false
+      )
     ) {
       privateDefaultItem.hidden = false;
       privateDefaultItem.setAttribute(

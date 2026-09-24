@@ -327,7 +327,6 @@ add_task(async function test_undefined_reason() {
 add_task(async function test_remove_rollouts() {
   const { sandbox, manager, cleanup } = await setupTest();
   sandbox.spy(manager.store, "deactivateEnrollment");
-  const rollout = NimbusTestUtils.factories.rollout("foo");
 
   await manager.enroll(
     NimbusTestUtils.factories.recipe("foo", { isRollout: true }),
@@ -338,7 +337,7 @@ add_task(async function test_remove_rollouts() {
 
   Assert.ok(
     manager.store.deactivateEnrollment.calledOnceWithExactly(
-      rollout.slug,
+      "foo",
       "some-reason"
     ),
     "Called with expected parameters"
@@ -387,7 +386,7 @@ add_task(async function testUnenrollBogusReason() {
 
   await manager.enroll(
     NimbusTestUtils.factories.recipe("bogus", {
-      branches: [NimbusTestUtils.factories.recipe.branches[0]],
+      branches: NimbusTestUtils.factories.branches(true),
     }),
     "test"
   );

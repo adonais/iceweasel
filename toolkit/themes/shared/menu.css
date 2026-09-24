@@ -4,27 +4,49 @@
 
 @import url("chrome://global/content/elements/moz-badge.tokens.css");
 
+/* Terms of a menuitem's height, applied by the .menu-text and .menu-icon rules
+ * and summed up in --menuitem-height. On the root so that a menuitem outside a
+ * popup gets them as well, and a popup can still override them for its own
+ * items. */
+:root {
+  --menuitem-text-padding-block: 0px;
+  --menuitem-icon-margin-block: 0px;
+
+  @media (-moz-platform: macos) {
+    --menuitem-icon-margin-block: calc(-1 * var(--space-xxsmall));
+  }
+  @media (-moz-platform: windows) {
+    --menuitem-text-padding-block: 1px;
+    --menuitem-icon-margin-block: calc(var(--space-xxsmall) / 2);
+  }
+}
+
 menupopup,
 panel {
   --menu-arrow-opacity: 1;
   --menu-arrow-size: 1em;
   --menuitem-border-radius: var(--border-radius-xsmall);
   --menuitem-margin: 0;
-  --menuitem-padding: 0.5em 1em;
+  --menuitem-padding-block: 0.5em;
+  --menuitem-padding-inline: 1em;
   --menuitem-max-width: 42em;
+  --menuitem-height: calc(
+    2 * var(--menuitem-padding-block) + max(1lh + 2 * var(--menuitem-text-padding-block), var(--icon-size) + 2 * var(--menuitem-icon-margin-block))
+  );
 
   @media (-moz-platform: linux) {
-    --menuitem-padding: 0.25em 0.5em;
+    --menuitem-padding-block: 0.25em;
+    --menuitem-padding-inline: 0.5em;
   }
   @media (-moz-platform: macos) {
     /* Space tokens don't match native macOS dimensions. */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    --menuitem-padding: 3px 9px;
+    --menuitem-padding-block: 3px;
+    --menuitem-padding-inline: 9px;
 
     @media (-moz-mac-tahoe-theme) {
       /* Space tokens don't match native macOS dimensions. */
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      --menuitem-padding: 4px 11px;
+      --menuitem-padding-block: 4px;
+      --menuitem-padding-inline: 11px;
       --menuitem-border-radius: var(--border-radius-medium);
     }
   }
@@ -136,12 +158,16 @@ menuseparator {
   }
 }
 
-/* Scroll buttons */
+/* Menupopup arrowscrollbox */
 
 /* Hide arrow buttons when there's nothing to scroll in that direction */
 .menupopup-arrowscrollbox[scrolledtostart]::part(scrollbutton-up),
 .menupopup-arrowscrollbox[scrolledtoend]::part(scrollbutton-down) {
   display: none;
+}
+
+.menupopup-arrowscrollbox::part(scrollbox) {
+  -moz-line-scroll-amount: var(--menuitem-height);
 }
 
 /* Prevent the scrolled contents of the menupopup from jumping vertically when
@@ -170,6 +196,8 @@ menuseparator {
   margin-bottom: calc(-1 * var(--scrollbutton-height));
   border-bottom: var(--scrollbutton-height) solid transparent;
 }
+
+/* Menu bar */
 
 menubar {
   font: menu;
@@ -227,9 +255,9 @@ menu,
 menuitem,
 menucaption {
   border-radius: var(--menuitem-border-radius);
-  /* --menuitem-padding uses px values on macOS to match native menus. */
+  /* --menuitem-padding-* use px values on macOS to match native menus. */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding: var(--menuitem-padding);
+  padding: var(--menuitem-padding-block) var(--menuitem-padding-inline);
   margin: var(--menuitem-margin);
   align-items: center;
   flex-shrink: 0;
@@ -301,9 +329,7 @@ menupopup > menu:-moz-locale-dir(rtl)::after {
 .menu-text,
 .menu-accel {
   margin: 0;
-  @media (-moz-platform: windows) {
-    padding: 1px 0;
-  }
+  padding-block: var(--menuitem-text-padding-block);
   @media (-moz-platform: linux) {
     /* --space-xxsmall (0.125rem) only equals 2px at a 16px root font, causing
      * rounding differences in layout at other font sizes.
@@ -352,6 +378,7 @@ menuitem[highlightable] > .menu-text {
   width: var(--icon-size);
   height: var(--icon-size);
   box-sizing: border-box;
+  margin-block: var(--menuitem-icon-margin-block);
 
   /* Empty icons shouldn't take up any space */
   display: none;
@@ -363,12 +390,7 @@ menuitem[highlightable] > .menu-text {
     /* Matches inline menuitem padding */
     margin-inline-end: 0.5em;
   }
-  @media (-moz-platform: windows) {
-    margin-top: var(--space-xxsmall);
-    margin-inline-end: var(--space-small);
-  }
-  @media (-moz-platform: macos) {
-    margin-block: calc(-1 * var(--space-xxsmall));
+  @media (-moz-platform: windows) or (-moz-platform: macos) {
     margin-inline-end: var(--space-small);
   }
 

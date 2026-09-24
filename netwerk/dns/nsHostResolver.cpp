@@ -13,6 +13,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <ctime>
 
 #include "GetAddrInfo.h"
@@ -176,7 +177,7 @@ nsresult nsHostResolver::Init() MOZ_NO_THREAD_SAFETY_ANALYSIS {
 #elif defined(MOZ_WIDGET_ANDROID)
   // android_res_nquery only got added in API level 29
   sNativeHTTPSSupported = jni::GetAPIVersion() >= 29;
-#elif defined(XP_LINUX) || defined(XP_MACOSX)
+#elif defined(XP_LINUX) || defined(XP_MACOSX) || defined(XP_FREEBSD)
   sNativeHTTPSSupported = true;
 #endif
   LOG(("Native HTTPS records supported=%d", bool(sNativeHTTPSSupported)));
@@ -1339,12 +1340,9 @@ static bool different_rrset(AddrInfo* rrset1, AddrInfo* rrset2) {
     return true;
   }
 
-  nsTArray<NetAddr> orderedSet1 = rrset1->Addresses().Clone();
-  nsTArray<NetAddr> orderedSet2 = rrset2->Addresses().Clone();
-  orderedSet1.Sort();
-  orderedSet2.Sort();
-
-  bool eq = orderedSet1 == orderedSet2;
+  bool eq = std::is_permutation(
+      rrset1->Addresses().begin(), rrset1->Addresses().end(),
+      rrset2->Addresses().begin(), rrset2->Addresses().end());
   if (!eq) {
     LOG(("different_rrset true due to content change\n"));
   } else {

@@ -14,15 +14,16 @@ import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.NotificationSelectors
 
 class NotificationPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "NotificationPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "HomePage",
             to = pageName,
             steps = listOf(NavigationStep.OpenNotificationsTray),
@@ -31,8 +32,12 @@ class NotificationPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
 
     // Narrowed return type so the helpers below stay reachable when chained off navigateToPage(), which
     // otherwise hands back a BasePage. Same pattern as SettingsAutofillPage and TabHistoryPage.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): NotificationPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): NotificationPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 
@@ -204,9 +209,7 @@ class NotificationPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTes
             .findObject(UiSelector().resourceId(NotificationSelectors.NOTIFICATION_STACK_SCROLLER_RES_ID))
             .exists() || mDevice.currentPackageName == SYSTEM_UI_PACKAGE
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return NotificationSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = NotificationSelectors
 
     private companion object {
         const val SWIPE_STEPS = 10

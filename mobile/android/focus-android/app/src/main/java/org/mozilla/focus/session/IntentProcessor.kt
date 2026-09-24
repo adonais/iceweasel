@@ -43,6 +43,7 @@ class IntentProcessor(
             tabsUseCases,
             searchUseCases.newTabSearch,
             isPrivate = true,
+            applicationScope = context.components.applicationScope,
         )
 
     private val customTabIntentProcessor =

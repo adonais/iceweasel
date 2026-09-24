@@ -656,6 +656,15 @@ bool nsAccUtils::IsEditableARIACombobox(const LocalAccessible* aAccessible) {
          aAccessible->Elm()->State().HasState(dom::ElementState::READWRITE);
 }
 
+bool nsAccUtils::ShouldFireValueChangeForDescendantChanges(
+    const LocalAccessible* aAccessible) {
+  if (aAccessible->IsCombobox() || aAccessible->IsPassword()) {
+    return true;
+  }
+  role accRole = aAccessible->Role();
+  return accRole == roles::ENTRY || accRole == roles::SPINBUTTON;
+}
+
 bool nsAccUtils::IsValidDetailsTargetForAnchor(const Accessible* aTarget,
                                                const Accessible* aAnchor) {
   if (aAnchor->IsAncestorOf(aTarget)) {

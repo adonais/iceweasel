@@ -419,12 +419,9 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   const LAllocation index =
       useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
-  // If the target is a floating register then we need a temp at the
-  // lower level; that temp must be eax.
-  //
-  // Otherwise the target (if used) is an integer register, which
-  // must be eax.  If the target is not used the machine code will
-  // still clobber eax, so just pretend it's used.
+  // The target (if used) is an integer register, which must be eax.  If the
+  // target is not used the machine code will still clobber eax, so just
+  // pretend it's used.
   //
   // oldval must be in a register.
   //
@@ -434,32 +431,18 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   //
   // Bug #1077036 describes some further optimization opportunities.
 
-  bool fixedOutput = false;
-  LDefinition tempDef = LDefinition::BogusTemp();
+  LAllocation oldval = useRegister(ins->oldval());
+
   LAllocation newval;
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    tempDef = tempFixed(eax);
+  if (useI386ByteRegisters && ins->isByteArray()) {
+    newval = useFixed(ins->newval(), ebx);
+  } else {
     newval = useRegister(ins->newval());
-  } else {
-    fixedOutput = true;
-    if (useI386ByteRegisters && ins->isByteArray()) {
-      newval = useFixed(ins->newval(), ebx);
-    } else {
-      newval = useRegister(ins->newval());
-    }
   }
 
-  const LAllocation oldval = useRegister(ins->oldval());
-
-  LCompareExchangeTypedArrayElement* lir =
-      new (alloc()) LCompareExchangeTypedArrayElement(elements, index, oldval,
-                                                      newval, tempDef);
-
-  if (fixedOutput) {
-    defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
-  } else {
-    define(lir, ins);
-  }
+  auto* lir = new (alloc())
+      LCompareExchangeTypedArrayElement(elements, index, oldval, newval);
+  defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
 }
 
 void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
@@ -477,21 +460,12 @@ void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
   // The underlying instruction is XCHG, which can operate on any
   // register.
   //
-  // If the target is a floating register (for Uint32) then we need
-  // a temp into which to exchange.
-  //
   // If the source is a byte array then we need a register that has
   // a byte size; in this case -- on x86 only -- pin the output to
   // an appropriate register and use that as a temp in the back-end.
 
-  LDefinition tempDef = LDefinition::BogusTemp();
-  if (ins->arrayType() == Scalar::Uint32) {
-    MOZ_ASSERT(ins->type() == MIRType::Double);
-    tempDef = temp();
-  }
-
-  LAtomicExchangeTypedArrayElement* lir = new (alloc())
-      LAtomicExchangeTypedArrayElement(elements, index, value, tempDef);
+  auto* lir =
+      new (alloc()) LAtomicExchangeTypedArrayElement(elements, index, value);
 
   if (useI386ByteRegisters && ins->isByteArray()) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
@@ -514,7 +488,7 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
   // Case 1: the result of the operation is not used.
   //
   // We'll emit a single instruction: LOCK ADD, LOCK SUB, LOCK AND,
-  // LOCK OR, or LOCK XOR.  We can do this even for the Uint32 case.
+  // LOCK OR, or LOCK XOR.
 
   if (ins->isForEffect()) {
     LAllocation value;
@@ -525,9 +499,8 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
       value = useRegisterOrConstant(ins->value());
     }
 
-    LAtomicTypedArrayElementBinopForEffect* lir = new (alloc())
+    auto* lir = new (alloc())
         LAtomicTypedArrayElementBinopForEffect(elements, index, value);
-
     add(lir, ins);
     return;
   }
@@ -554,14 +527,9 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
   // *mem does not have the expected value, so reloading it at the
   // top of the loop would be redundant.
   //
-  // If the array is not a uint32 array then:
-  //  - eax should be the output (one result of the cmpxchg)
-  //  - there is a temp, which must have a byte register if
-  //    the array has 1-byte elements elements
-  //
-  // If the array is a uint32 array then:
-  //  - eax is the first temp
-  //  - we also need a second temp
+  // - eax should be the output (one result of the cmpxchg)
+  // - there is a temp, which must have a byte register if
+  //   the array has 1-byte elements elements
   //
   // There are optimization opportunities:
   //  - better register allocation in the x86 8-bit case, Bug #1077036.
@@ -570,31 +538,21 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
       !(ins->operation() == AtomicOp::Add || ins->operation() == AtomicOp::Sub);
   bool fixedOutput = true;
   bool reuseInput = false;
-  LDefinition tempDef1 = LDefinition::BogusTemp();
-  LDefinition tempDef2 = LDefinition::BogusTemp();
+  LDefinition tempDef = LDefinition::BogusTemp();
   LAllocation value;
 
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    value = useRegisterOrConstant(ins->value());
-    fixedOutput = false;
-    if (bitOp) {
-      tempDef1 = tempFixed(eax);
-      tempDef2 = temp();
-    } else {
-      tempDef1 = temp();
-    }
-  } else if (useI386ByteRegisters && ins->isByteArray()) {
+  if (useI386ByteRegisters && ins->isByteArray()) {
     if (ins->value()->isConstant()) {
       value = useRegisterOrConstant(ins->value());
     } else {
       value = useFixed(ins->value(), ebx);
     }
     if (bitOp) {
-      tempDef1 = tempFixed(ecx);
+      tempDef = tempFixed(ecx);
     }
   } else if (bitOp) {
     value = useRegisterOrConstant(ins->value());
-    tempDef1 = temp();
+    tempDef = temp();
   } else if (ins->value()->isConstant()) {
     fixedOutput = false;
     value = useRegisterOrConstant(ins->value());
@@ -604,8 +562,8 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
     value = useRegisterAtStart(ins->value());
   }
 
-  LAtomicTypedArrayElementBinop* lir = new (alloc())
-      LAtomicTypedArrayElementBinop(elements, index, value, tempDef1, tempDef2);
+  auto* lir = new (alloc())
+      LAtomicTypedArrayElementBinop(elements, index, value, tempDef);
 
   if (fixedOutput) {
     defineFixed(lir, ins, LAllocation(AnyRegister(eax)));
@@ -652,7 +610,7 @@ void LIRGenerator::visitCopySign(MCopySign* ins) {
 // defineReuseInput.
 
 void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->v0()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->v1()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->v2()->type() == MIRType::Simd128);
@@ -716,7 +674,7 @@ void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
 }
 
 void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* lhs = ins->lhs();
   MDefinition* rhs = ins->rhs();
   wasm::SimdOp op = ins->simdOp();
@@ -983,7 +941,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
 #endif
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
     int8_t shuffle[16]) {
   if (simdOp() != wasm::SimdOp::V128Bitselect) {
@@ -1169,7 +1127,7 @@ bool MWasmBinarySimd128::specializeForConstantRhs() {
 
 void LIRGenerator::visitWasmBinarySimd128WithConstant(
     MWasmBinarySimd128WithConstant* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* lhs = ins->lhs();
 
   MOZ_ASSERT(lhs->type() == MIRType::Simd128);
@@ -1206,7 +1164,7 @@ void LIRGenerator::visitWasmBinarySimd128WithConstant(
 }
 
 void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MDefinition* lhs = ins->lhs();
   MDefinition* rhs = ins->rhs();
 
@@ -1312,7 +1270,7 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->rhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
@@ -1410,7 +1368,7 @@ void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
@@ -1447,7 +1405,7 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
   switch (ins->input()->type()) {
@@ -1483,7 +1441,7 @@ void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   MOZ_ASSERT(ins->input()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
@@ -1584,7 +1542,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
 }
 
 void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // A trick: On 32-bit systems, the base pointer is 32 bits (it was bounds
   // checked and then chopped).  On 64-bit systems, it can be 32 bits or 64
   // bits.  Either way, it fits in a GPR so we can ignore the
@@ -1605,7 +1563,7 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 }
 
 void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   // See comment above.
 #  ifndef JS_64BIT
   MOZ_ASSERT(ins->base()->type() == MIRType::Int32);
@@ -1622,7 +1580,7 @@ void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
 #endif
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 bool LIRGeneratorX86Shared::canFoldReduceSimd128AndBranch(wasm::SimdOp op) {
   switch (op) {
@@ -1665,10 +1623,10 @@ bool LIRGeneratorX86Shared::canEmitWasmReduceSimd128AtUses(
   return iter == ins->usesEnd();
 }
 
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
 void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   if (canEmitWasmReduceSimd128AtUses(ins)) {
     emitAtUses(ins);
     return;

@@ -41,6 +41,9 @@
 
 #if defined(MOZ_SUPPORTS_RT_SIGNALS)
 #  include <fcntl.h>
+#  if defined(__FreeBSD__)
+#    include <signal.h>
+#  endif
 #  include <sys/stat.h>
 #  include <sys/types.h>
 #endif

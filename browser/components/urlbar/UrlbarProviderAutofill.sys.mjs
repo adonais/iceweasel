@@ -507,6 +507,11 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   async onEngagement(queryContext, controller, details) {
     let { result } = details;
     let didRemove = false;

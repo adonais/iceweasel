@@ -14,6 +14,11 @@
 @import "chrome://devtools/content/shared/components/MdnLink.css";
 @import "chrome://devtools/content/shared/components/NotificationBox.css";
 @import "chrome://devtools/content/shared/components/AppErrorBoundary.css";
+@import "chrome://devtools/content/shared/components/DebuggerImage.css";
+@import "chrome://devtools/content/shared/components/SearchModifiers.css";
+@import "chrome://devtools/content/shared/components/CloseButton.css";
+@import "chrome://devtools/content/shared/components/FileSearchBar.css";
+@import "chrome://devtools/content/shared/components/SearchInput.css";
 
 /* Network panel components & styles */
 @import "chrome://devtools/content/netmonitor/src/assets/styles/variables.css";

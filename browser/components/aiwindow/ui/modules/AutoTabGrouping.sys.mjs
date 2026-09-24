@@ -9,6 +9,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AutoTabGroupingSuggestions:
     "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -46,6 +48,10 @@ const PANEL_ID = "smartwindow-group-tabs-panel";
 const FLYOUT_ID = "smartwindow-group-tabs-flyout";
 const CARD_TAG = "smartwindow-group-tabs-card";
 const FLYOUT_HIDE_DELAY_MS = 160;
+const GROUPS_CHANGED_TOPICS = [
+  "browser-tabgroup-removed-from-dom",
+  "sessionstore-saved-tab-groups-changed",
+];
 
 /**
  * Total length of the given tabs' titles. The titles are the only text the
@@ -107,7 +113,10 @@ export const AutoTabGrouping = {
    * computePromise memoizes the in-flight clustering run (it resolves to
    * undefined once suggestions are stored) so a panel reopened while it is
    * still running awaits the same computation instead of getting stuck on the
-   * loading state.
+   * loading state. A panel stops waiting on it after timeoutMs and shows what
+   * it has, but the run itself is never given up: models that are slow to
+   * load, typically right after startup, still deliver their groups to the
+   * open panel or to the next one.
    *
    * recent holds the groups created from suggestions (newest first); the panel
    * lists them under "Just created" and the "Ungroup" button reverses all of
@@ -162,6 +171,17 @@ export const AutoTabGrouping = {
   },
 
   /**
+   * Get the "Organize Tabs" button in `win`, or the overflow menu's chevron
+   * button if the widget has been moved or overflowed into that menu.
+   *
+   * @param {ChromeWindow} win
+   * @returns {Element}
+   */
+  _getButtonAnchor(win) {
+    return lazy.CustomizableUI.getWidget(BUTTON_ID).forWindow(win).anchor;
+  },
+
+  /**
    * Build the panel, show it, then populate it once the clustering models have
    * run (or immediately if suggestions were already computed).
    *
@@ -180,6 +200,8 @@ export const AutoTabGrouping = {
     if (!button || !popupSet) {
       return;
     }
+    const anchor = this._getButtonAnchor(win);
+    lazy.CustomizableUI.hidePanelForNode(button);
 
     Glean.smartWindow.autoTabGroupMenuOpened.record({
       source,
@@ -190,15 +212,16 @@ export const AutoTabGrouping = {
     popupSet.appendChild(panel);
     this._panels.set(win, panel);
 
-    // Both panels are noautohide so hovering the flyout (a second popup) cannot
-    // roll up the main panel; dismiss it ourselves on Escape or a click outside
-    // both popups and the toolbar button.
+    // The panel is noautohide so hovering the flyout (a second popup) cannot
+    // roll it up; dismiss it ourselves on Escape or a click outside both popups
+    // and the toolbar button.
     const onMouseDown = event => {
       const target = event.target;
+      const trigger = target.closest?.("menupopup")?.triggerNode ?? target;
       if (
-        panel.contains(target) ||
-        panel._flyoutPanel?.contains(target) ||
-        button.contains(target)
+        panel.contains(trigger) ||
+        panel._flyoutPanel?.contains(trigger) ||
+        button.contains(trigger)
       ) {
         return;
       }
@@ -217,6 +240,11 @@ export const AutoTabGrouping = {
       panel._restoreFocus = true;
       panel.hidePopup();
     };
+    // The flyout is a preview of the row the user is on, so it has no business
+    // floating over whatever they switched to.
+    const onDeactivate = () => this._hideFlyout(panel);
+    const groupsObserver = { observe: () => this._onGroupsChanged(win, panel) };
+    let observingGroups = false;
 
     panel.addEventListener(
       "popupshown",
@@ -225,30 +253,44 @@ export const AutoTabGrouping = {
         panel._card.focus();
         win.addEventListener("mousedown", onMouseDown, true);
         win.addEventListener("keydown", onKeyDown, true);
-      },
-      { once: true }
-    );
-    panel.addEventListener(
-      "popuphidden",
-      () => {
-        button.setAttribute("aria-expanded", "false");
-        win.removeEventListener("mousedown", onMouseDown, true);
-        win.removeEventListener("keydown", onKeyDown, true);
-        this._cancelHideFlyout(panel);
-        panel._flyoutPanel?.remove();
-        this._getState(win).recent = [];
-        if (this._panels.get(win) === panel) {
-          this._panels.delete(win);
-        }
-        panel.remove();
-        if (panel._restoreFocus) {
-          button.focus();
+        win.addEventListener("deactivate", onDeactivate);
+        observingGroups = true;
+        for (const topic of GROUPS_CHANGED_TOPICS) {
+          Services.obs.addObserver(groupsObserver, topic);
         }
       },
       { once: true }
     );
+    const teardown = () => {
+      win.removeEventListener("unload", teardown);
+      button.setAttribute("aria-expanded", "false");
+      win.removeEventListener("mousedown", onMouseDown, true);
+      win.removeEventListener("keydown", onKeyDown, true);
+      win.removeEventListener("deactivate", onDeactivate);
+      // The panel can be hidden without ever having been shown.
+      if (observingGroups) {
+        observingGroups = false;
+        for (const topic of GROUPS_CHANGED_TOPICS) {
+          Services.obs.removeObserver(groupsObserver, topic);
+        }
+      }
+      this._cancelHideFlyout(panel);
+      panel._flyoutPanel?.remove();
+      this._getState(win).recent = [];
+      if (this._panels.get(win) === panel) {
+        this._panels.delete(win);
+      }
+      panel.remove();
+      if (panel._restoreFocus) {
+        anchor.focus();
+      }
+    };
+    panel.addEventListener("popuphidden", teardown, { once: true });
+    // Closing the window tears the panel down without a popuphidden event,
+    // and the observers would otherwise keep the window alive until shutdown.
+    win.addEventListener("unload", teardown, { once: true });
 
-    panel.openPopup(button, "after_end", 0, 6, false, false);
+    panel.openPopup(anchor, "after_end", 0, 6, false, false);
 
     const state = this._getState(win);
     if (!state.computing) {
@@ -257,10 +299,14 @@ export const AutoTabGrouping = {
     }
     const done = this._computeSuggestions(win);
     this._syncCard(win, panel);
-    await done;
+    const finished = await this._withTimeout(done, lazy.timeoutMs).then(
+      () => true,
+      () => false
+    );
     if (this._panels.get(win) !== panel) {
       return;
     }
+    panel._waitedOut = !finished;
     this._syncCard(win, panel);
 
     await panel._card.updateComplete;
@@ -271,6 +317,7 @@ export const AutoTabGrouping = {
       suggested_groups: state.suggestions.length,
       groups: state.recent.length,
       time: Date.now() - openedAt,
+      waited_out: !finished,
     });
   },
 
@@ -283,6 +330,7 @@ export const AutoTabGrouping = {
     const doc = win.document;
 
     const panel = this._createPanel(win, PANEL_ID);
+    panel.setAttribute("noautohide", "true");
 
     const card = doc.createElement(CARD_TAG);
     card.addEventListener("create-all", () =>
@@ -297,11 +345,11 @@ export const AutoTabGrouping = {
       this._createById(win, panel, e.detail.id)
     );
     card.addEventListener("ungroup", () => this._ungroupRecent(win, panel));
+    card.addEventListener("select-group", e =>
+      this._selectGroup(win, panel, e.detail.id)
+    );
     card.addEventListener("close-duplicates", () =>
       this._closeDuplicateTabs(win, panel)
-    );
-    card.addEventListener("view-tab-groups", e =>
-      this._showGroupsFlyout(win, panel, e.detail.anchor)
     );
     card.addEventListener("preview", e => {
       // Focusing a row whose flyout was just dismissed must not reopen it;
@@ -310,9 +358,6 @@ export const AutoTabGrouping = {
         e.detail.source === "focus" &&
         panel._dismissedRow === e.detail.anchor
       ) {
-        return;
-      }
-      if (e.detail.source === "hover" && this._flyoutHasFocus(panel)) {
         return;
       }
       panel._dismissedRow = null;
@@ -337,12 +382,13 @@ export const AutoTabGrouping = {
     panel._dismissedRow = null;
     panel._focusFlyoutController = null;
     panel._restoreFocus = false;
+    panel._waitedOut = false;
     return panel;
   },
 
   /**
-   * Create a non-auto-hiding panel that hosts one of our cards. Shared by the
-   * main panel and the hover flyout. `type="arrow"` is what makes popup.css
+   * Create a panel that hosts one of our cards. Shared by the main panel and
+   * the hover flyout. `type="arrow"` is what makes popup.css
    * paint the panel from the --panel-* design tokens; the rest of the styling
    * lives in the smartwindowGroupTabs.css theme sheet, scoped to the panel ids
    * and swgt- classes.
@@ -357,7 +403,6 @@ export const AutoTabGrouping = {
     panel.setAttribute("type", "arrow");
     panel.setAttribute("orient", "vertical");
     panel.setAttribute("noautofocus", "true");
-    panel.setAttribute("noautohide", "true");
     panel.setAttribute("ignorekeys", "true");
     return panel;
   },
@@ -375,7 +420,11 @@ export const AutoTabGrouping = {
       return panel._flyoutPanel;
     }
     const flyoutPanel = this._createPanel(win, FLYOUT_ID);
+    // Unlike the panel it hangs off, the flyout is an ordinary dismissable
+    // popup.
+    flyoutPanel.setAttribute("consumeoutsideclicks", "never");
     flyoutPanel.setAttribute("animate", "false");
+    flyoutPanel.setAttribute("keepopenongroupdelete", "true");
     // Slide along the block axis to stay on screen near the bottom edge, and
     // keep flipping to the panel's other side when there is no room beside it.
     flyoutPanel.setAttribute("flip", "slide");
@@ -395,8 +444,23 @@ export const AutoTabGrouping = {
     flyoutPanel.addEventListener("focusin", () =>
       this._cancelHideFlyout(panel)
     );
-    flyoutPanel.addEventListener("focusout", () =>
-      this._scheduleHideFlyout(panel)
+    flyoutPanel.addEventListener("focusout", event => {
+      // Re-rendering the flyout destroys the row focus was on, which leaves
+      // nothing behind and is not focus leaving the flyout.
+      if (event.relatedTarget) {
+        this._scheduleHideFlyout(panel);
+      }
+    });
+    // A click elsewhere rolls the flyout up without going through _hideFlyout
+    // or _leaveFlyout. Hiding a popup that holds focus hands it back to the
+    // row, whose own preview would reopen the flyout.
+    flyoutPanel.addEventListener("popuphiding", () => {
+      if (this._flyoutHasFocus(panel)) {
+        panel._dismissedRow = panel._activeRow;
+      }
+    });
+    flyoutPanel.addEventListener("popuphidden", () =>
+      this._releaseActiveRow(panel)
     );
     flyoutPanel._flyoutEl = flyoutEl;
 
@@ -419,12 +483,78 @@ export const AutoTabGrouping = {
     const hidden = this._hideFlyout(panel);
 
     const card = panel._card;
-    card.computing = state.computing;
+    card.computing = state.computing && !panel._waitedOut;
     card.suggestions = [...state.suggestions];
     card.recent = [...state.recent];
     card.duplicates = win.gBrowser.getAllDuplicateTabsToClose().length;
     card.tabGroups = this._tabGroupCount(win);
     return hidden;
+  },
+
+  /**
+   * Catch up with a tab group that went away while the panel was open: the
+   * "Just created" list, the "View Tab Groups" row and the list it opens all
+   * name groups the user can still act on.
+   *
+   * @param {ChromeWindow} win
+   * @param {XULElement} panel
+   */
+  _onGroupsChanged(win, panel) {
+    const card = panel._card;
+    this._pruneRecent(win);
+    card.recent = [...this._getState(win).recent];
+    card.tabGroups = this._tabGroupCount(win);
+    if (!this._flyoutListsGroups(panel)) {
+      return;
+    }
+    if (!card.tabGroups) {
+      this._hideFlyout(panel);
+      return;
+    }
+    // Focus on a panel row is the user's and stays put, and _renderFlyout
+    // re-seats the flyout's own focus across the rebuild. Focus anywhere
+    // else has been dropped by the deletion (the context menu parks it on
+    // the content browser), so putting it on the rebuilt list restores it.
+    const active = win.document.activeElement;
+    const focusInUse =
+      panel.contains(active) || !!panel._flyoutPanel?.contains(active);
+    this._renderFlyout(panel, { groups: true }, true);
+    if (!focusInUse) {
+      this._focusFlyout(panel);
+    }
+  },
+
+  /**
+   * @param {XULElement} panel
+   * @returns {boolean} Whether the flyout on screen is listing tab groups.
+   */
+  _flyoutListsGroups(panel) {
+    const flyoutPanel = panel._flyoutPanel;
+    const state = flyoutPanel?.state;
+    return (
+      (state === "open" || state === "showing") &&
+      !flyoutPanel._flyoutEl.suggestion &&
+      !flyoutPanel._flyoutEl.duplicates &&
+      !!flyoutPanel._flyoutEl.groupsListId
+    );
+  },
+
+  /**
+   * Names of the groups the "View Tab Groups" list offers. Despite hanging off
+   * one window's gBrowser, getAllTabGroups() spans every window that shares
+   * this one's privacy, and saved groups are global.
+   *
+   * @param {ChromeWindow} win
+   * @returns {string[]}
+   */
+  _takenGroupLabels(win) {
+    const saved = lazy.PrivateBrowsingUtils.isWindowPrivate(win)
+      ? []
+      : win.SessionStore.savedGroups.map(group => group.name);
+    return [
+      ...win.gBrowser.getAllTabGroups().map(group => group.label),
+      ...saved,
+    ].filter(Boolean);
   },
 
   /**
@@ -452,12 +582,15 @@ export const AutoTabGrouping = {
    *
    * @param {ChromeWindow} win
    * @param {XULElement} panel
-   * @param {{id: ?number, duplicates: ?boolean, anchor: Element}} detail - The
-   *   preview event's detail: a suggestion id, or the duplicates flag the
-   *   "Close Duplicate Tabs" row sets.
+   * @param {{id: ?number, duplicates: ?boolean, groups: ?boolean, anchor: Element}} detail -
+   *   The preview event's detail: a suggestion id, the duplicates flag the
+   *   "Close Duplicate Tabs" row sets, or the groups flag the "View Tab
+   *   Groups" row sets.
    */
-  _showPreview(win, panel, { id, duplicates, anchor }) {
-    if (duplicates) {
+  _showPreview(win, panel, { id, duplicates, groups, anchor }) {
+    if (groups) {
+      this._showFlyout(win, panel, anchor, { groups: true });
+    } else if (duplicates) {
       this._showDuplicatesFlyout(win, panel, anchor);
     } else {
       this._showFlyoutById(win, panel, id, anchor);
@@ -469,16 +602,6 @@ export const AutoTabGrouping = {
     if (suggestion) {
       this._showFlyout(win, panel, anchorRow, { suggestion });
     }
-  },
-
-  /**
-   * @param {ChromeWindow} win
-   * @param {XULElement} panel
-   * @param {Element} anchorRow
-   */
-  _showGroupsFlyout(win, panel, anchorRow) {
-    this._showFlyout(win, panel, anchorRow, { groups: true });
-    this._focusFlyout(panel);
   },
 
   /**
@@ -525,9 +648,18 @@ export const AutoTabGrouping = {
   ) {
     this._cancelHideFlyout(panel);
     const flyoutPanel = this._ensureFlyoutPanel(win, panel);
-    flyoutPanel._flyoutEl.suggestion = suggestion;
-    flyoutPanel._flyoutEl.duplicates = duplicates;
-    flyoutPanel._flyoutEl.groupsListId = groups ? this._nextId++ : 0;
+    const showing =
+      flyoutPanel.state === "open" || flyoutPanel.state === "showing";
+    // A suggestion's rows are only replaced when the suggestion changes, the
+    // duplicates are read fresh on every show, and the groups list already on
+    // screen keeps its own rows.
+    let rebuilding = true;
+    if (groups) {
+      rebuilding = !this._flyoutListsGroups(panel);
+    } else if (suggestion) {
+      rebuilding = flyoutPanel._flyoutEl.suggestion !== suggestion;
+    }
+    this._renderFlyout(panel, { suggestion, duplicates, groups }, rebuilding);
 
     if (panel._activeRow && panel._activeRow !== anchorRow) {
       panel._activeRow.classList.remove("is-active");
@@ -541,11 +673,42 @@ export const AutoTabGrouping = {
     // moveToAnchor repositions without a hide/show flicker when the pointer
     // slides between rows; the panel is an arrow panel, so it keeps following
     // its anchor instead of freezing to the screen position of the first row.
-    const flyoutState = flyoutPanel.state;
-    if (flyoutState === "open" || flyoutState === "showing") {
+    if (showing) {
       flyoutPanel.moveToAnchor(anchorRow, "end_before", 0, 0);
     } else {
       flyoutPanel.openPopup(anchorRow, "end_before", 0, 0, false, false);
+    }
+  },
+
+  /**
+   * Put content in the flyout: one suggestion's tabs, the duplicate tabs a
+   * close would remove, or the tab groups list, which a new id rebuilds since
+   * it only reads the groups as it is connected.
+   *
+   * @param {XULElement} panel
+   * @param {object} content
+   * @param {GroupSuggestion} [content.suggestion]
+   * @param {object[]} [content.duplicates] - Tab infos for panel._duplicateTabs.
+   * @param {boolean} [content.groups] - List the existing tab groups.
+   * @param {boolean} rebuilding - Whether the rows on screen, including the
+   *   one focus is on, are being replaced rather than left alone.
+   */
+  _renderFlyout(
+    panel,
+    { suggestion = null, duplicates = null, groups = false },
+    rebuilding
+  ) {
+    const flyoutEl = panel._flyoutPanel._flyoutEl;
+    const refocus = rebuilding && this._flyoutHasFocus(panel);
+    flyoutEl.suggestion = suggestion;
+    flyoutEl.duplicates = duplicates;
+    if (!groups) {
+      flyoutEl.groupsListId = 0;
+    } else if (rebuilding) {
+      flyoutEl.groupsListId = this._nextId++;
+    }
+    if (refocus) {
+      this._focusFlyout(panel);
     }
   },
 
@@ -565,14 +728,25 @@ export const AutoTabGrouping = {
             flyoutPanel.addEventListener("popuphidden", resolve, { once: true })
           )
         : Promise.resolve();
-    panel._focusFlyoutController?.abort();
     flyoutPanel?.hidePopup();
+    this._releaseActiveRow(panel);
+    return hidden;
+  },
+
+  /**
+   * Let go of the row the flyout was opened for, and of any focus request
+   * waiting on the flyout. Runs whenever the flyout hides, whether we hid it or
+   * a click elsewhere rolled it up.
+   *
+   * @param {XULElement} panel
+   */
+  _releaseActiveRow(panel) {
+    panel._focusFlyoutController?.abort();
     if (panel._activeRow) {
       panel._activeRow.classList.remove("is-active");
       panel._activeRow.setAttribute("aria-expanded", "false");
       panel._activeRow = null;
     }
-    return hidden;
   },
 
   async _focusFlyout(panel) {
@@ -605,8 +779,7 @@ export const AutoTabGrouping = {
    */
   _leaveFlyout(panel) {
     const row = panel._activeRow;
-    // Hiding a popup that holds focus hands it back to the row, whose own
-    // preview would reopen the flyout we are closing.
+    // Focusing the row would reopen the flyout we are closing.
     panel._dismissedRow = row;
     this._hideFlyout(panel);
     row?.focus();
@@ -633,24 +806,40 @@ export const AutoTabGrouping = {
     panel.hidePopup();
   },
 
+  /**
+   * Switch to a group listed under "Just created", the way the tab groups list
+   * switches to one of the user's own groups.
+   *
+   * @param {ChromeWindow} win
+   * @param {XULElement} panel
+   * @param {number} id - Recent group id.
+   */
+  _selectGroup(win, panel, id) {
+    const entry = this._getState(win).recent.find(e => e.id === id);
+    if (!entry || !this._isGroupLive(win, entry.group)) {
+      return;
+    }
+    entry.group.select();
+    panel.hidePopup();
+  },
+
   _flyoutHasFocus(panel) {
     const active = panel.ownerDocument.activeElement;
     return !!active && !!panel._flyoutPanel?.contains(active);
   },
 
   _dismissPreviewOnRow(panel, event) {
-    if (!panel._activeRow || this._flyoutHasFocus(panel)) {
+    if (!panel._activeRow) {
       return;
     }
-    // .swgt-row is every row the card makes actionable ("Create Groups", the
-    // suggestions, "Ungroup Tabs", "Close Duplicate Tabs"); .swgt-recent-row is
-    // a "Just created" entry, which is only there to be read. The rows with a
-    // flyout of their own are left out because they reposition it instead.
-    const row = event.target.closest(".swgt-row, .swgt-recent-row");
+    // The rows that own a flyout are left out because they reposition it
+    // instead. Pointing at any other row takes the flyout over, even when the
+    // keyboard opened it.
+    const row = event.target.closest(".swgt-row");
     if (
       row &&
       row !== panel._activeRow &&
-      !row.matches(".swgt-suggestion, .swgt-close-duplicates")
+      !row.classList.contains("swgt-flyout-row")
     ) {
       this._hideFlyout(panel);
     }
@@ -894,7 +1083,7 @@ export const AutoTabGrouping = {
 
     try {
       win.gBrowser.removeAllDuplicateTabs({
-        confirmationAnchor: win.document.getElementById(BUTTON_ID),
+        confirmationAnchor: this._getButtonAnchor(win),
       });
     } catch (e) {
       lazy.console.warn("removeAllDuplicateTabs failed", e);
@@ -979,9 +1168,9 @@ export const AutoTabGrouping = {
       let suggestions = [];
       let errorType = "";
       try {
-        const proposals = await this._withTimeout(
-          lazy.AutoTabGroupingSuggestions.buildProposals(candidates),
-          lazy.timeoutMs
+        const proposals = await lazy.AutoTabGroupingSuggestions.buildProposals(
+          candidates,
+          this._takenGroupLabels(win)
         );
         suggestions = proposals.map((proposal, index) => ({
           id: this._nextId++,
@@ -1013,6 +1202,11 @@ export const AutoTabGrouping = {
           total_length: titleLength(suggestion.tabs),
           grouped_id: suggestion.id,
         });
+      }
+      // A panel that stopped waiting on this run is filled in now.
+      const panel = this._panels.get(win);
+      if (panel?._waitedOut) {
+        this._syncCard(win, panel);
       }
     })();
     return state.computePromise;

@@ -6,7 +6,7 @@
 @template
 def keyfile(desc, default=None, help=None, callback=lambda x: x):
     help = help or (
-        "Use the secret key contained in the given keyfile " "for %s requests" % desc
+        "Use the secret key contained in the given keyfile for %s requests" % desc
     )
     name = desc.lower().replace(" ", "-")
     no_key = callback("no-%s-key" % name)

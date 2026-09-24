@@ -12,6 +12,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.compose.browser.awesomebar.internal.CurrentTabData
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
@@ -95,7 +96,7 @@ sealed class SearchEngineSource {
  * The state for the Search Screen
  *
  * @property query The current search query string.
- * @property url The current URL of the tab (if this fragment is shown for an already existing tab).
+ * @property currentTabData The current tab details (if search was started from an already existing tab).
  * @property searchTerms The search terms used to search previously in this tab (if this fragment is shown for an
  *   already existing tab).
  * @property searchEngineSource The current selected search engine with the context of how it was selected.
@@ -143,7 +144,7 @@ sealed class SearchEngineSource {
  */
 data class SearchFragmentState(
     val query: String,
-    val url: String,
+    val currentTabData: CurrentTabData?,
     val searchTerms: String,
     val searchEngineSource: SearchEngineSource,
     val defaultEngine: SearchEngine?,
@@ -183,7 +184,7 @@ data class SearchFragmentState(
         val EMPTY =
             SearchFragmentState(
                 query = "",
-                url = "",
+                currentTabData = null,
                 searchTerms = "",
                 searchEngineSource = SearchEngineSource.None,
                 defaultEngine = null,
@@ -233,7 +234,13 @@ fun createInitialSearchFragmentState(
     val settings = components.settings
     val browsingMode = components.appStore.state.mode
     val tab = tabId?.let { components.core.store.state.findTab(it) }
-    val url = tab?.content?.url.orEmpty()
+    val currentTabData = tab?.let {
+        CurrentTabData(
+            title = it.content.title,
+            url = it.content.url,
+            icon = it.content.icon,
+        )
+    }
 
     val searchEngineSource =
         if (searchEngine != null) {
@@ -243,8 +250,8 @@ fun createInitialSearchFragmentState(
         }
 
     return SearchFragmentState(
-        query = url,
-        url = url,
+        query = currentTabData?.url.orEmpty(),
+        currentTabData = currentTabData,
         searchTerms = tab?.content?.searchTerms.orEmpty(),
         searchEngineSource = searchEngineSource,
         searchSuggestionsProviders = emptyList(),
@@ -386,6 +393,18 @@ sealed class SearchFragmentAction : Action {
 
     /** Action indicating the user allowed to show suggestions in private mode. */
     data object PrivateSuggestionsCardAccepted : SearchFragmentAction()
+
+    /** Action indicating the user wants to reload the current website. */
+    data object ReloadCurrentWebsiteClicked : SearchFragmentAction()
+
+    /** Action indicating the user wants to share the current website details. */
+    data object ShareCurrentWebsiteDetailsClicked : SearchFragmentAction()
+
+    /** Action indicating the user wants to share the current website details. */
+    data object CopyCurrentWebsiteDetailsClicked : SearchFragmentAction()
+
+    /** Action indicating the user wants to edit the current website URL. */
+    data object EditCurrentWebsiteDetailsClicked : SearchFragmentAction()
 }
 
 /** The SearchState Reducer. */
@@ -579,7 +598,11 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
 
         is SearchFragmentAction.SuggestionClicked,
         is SearchFragmentAction.PrivateSuggestionsCardAccepted,
-        is SearchFragmentAction.SuggestionSelected -> {
+        is SearchFragmentAction.SuggestionSelected,
+        is SearchFragmentAction.ReloadCurrentWebsiteClicked,
+        is SearchFragmentAction.ShareCurrentWebsiteDetailsClicked,
+        is SearchFragmentAction.CopyCurrentWebsiteDetailsClicked,
+        is SearchFragmentAction.EditCurrentWebsiteDetailsClicked -> {
             // no-op. Expected to be handled in middlewares.
             state
         }

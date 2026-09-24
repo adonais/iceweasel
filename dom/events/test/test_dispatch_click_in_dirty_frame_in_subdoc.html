@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<style>
+body {
+  margin: 0;
+}
+
+iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 300px;
+  border: none;
+}
+</style>
+<script>
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+
+addEventListener("load", async () => {
+  const iframe = document.querySelector("iframe");
+  function waitForTick() {
+    return new Promise(
+      resolve => requestAnimationFrame(
+        () => requestAnimationFrame(resolve)
+      )
+    );
+  }
+  await waitForTick();
+  const svgRect = iframe.contentDocument.querySelector("rect");
+  for (let i = 0; i < 20; i++) {
+    svgRect.style.display = "";
+    document.body.offsetHeight; // flush pending notifications
+    await waitForTick();
+    svgRect.style.display = "none"; // make the target frame dirty
+    synthesizeMouseAtPoint(100, 100, {}, iframe.contentWindow);
+  }
+  ok(true, "Not crashed");
+  SimpleTest.finish();
+}, {once: true});
+</script>
+</head>
+<body>
+<iframe srcdoc='<body style="margin:0"><svg width="300" height="300"><g><rect x="0" y="0" width="200" height="200" fill="red"/></g></svg></body>'></iframe>
+</body>
+</html>

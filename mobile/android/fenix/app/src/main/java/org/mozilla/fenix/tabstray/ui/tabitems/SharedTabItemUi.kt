@@ -26,9 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SwipeToDismissBoxDefaults
-import androidx.compose.material3.SwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,7 +60,6 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.compose.base.RadioCheckmarkColors
 import mozilla.components.compose.base.button.IconButton
@@ -438,7 +434,6 @@ fun tabGridItemContainerColor(selectionState: TabsTrayItemSelectionState): Color
 object Alpha {
     const val TAB_ITEM_DRAGGED = 0.7f
     const val TAB_ITEM_NO_INTERACTION = 1f
-    const val TAB_ITEM_MIN_SWIPE_FADE = 0.1f
 }
 
 /** Animates the tab item's alpha value to be slightly transparent when it is dragged. */
@@ -786,61 +781,6 @@ fun Modifier.defaultListItemAnimation(
             fadeInSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
         )
     }
-
-/**
- * Creates a [SwipeToDismissBoxState] for the tab item identified by [tabId].
- *
- * Deliberately not [androidx.compose.material3.rememberSwipeToDismissBoxState], which saves its current value: a lazy
- * layout keeps an item's saved state around after the item leaves the list, so a tab restored through the undo snackbar
- * would return as swiped away and be dismissed again on its first composition.
- *
- * @param tabId The id of the tab the state belongs to.
- */
-@Composable
-fun rememberTabSwipeToDismissBoxState(tabId: String): SwipeToDismissBoxState {
-    val positionalThreshold = SwipeToDismissBoxDefaults.positionalThreshold
-
-    return remember(tabId) {
-        SwipeToDismissBoxState(
-            initialValue = SwipeToDismissBoxValue.Settled,
-            positionalThreshold = positionalThreshold,
-        )
-    }
-}
-
-/**
- * Custom modifier that fades an item to transparent as it is swiped to dismiss. The minimum alpha is 10%, so the item
- * will at least be 10% visible.
- */
-fun Modifier.fadeOnSwipeToDismiss(state: SwipeToDismissBoxState) = graphicsLayer {
-    // state.progress is tied to targetValue which has a fixed threshold,
-    // so we need to pull the offset to get a linear fade animation.
-    val offset =
-        try {
-            if (state.dismissDirection == SwipeToDismissBoxValue.Settled) {
-                0f
-            } else {
-                state.requireOffset()
-            }
-        } catch (e: IllegalStateException) {
-            e.printStackTrace()
-            // It should be safe to call requireOffset() here, but there's no
-            // reason to risk a crash for a fade animation.
-            0f
-        }
-    alpha = swipeFadeAlpha(offset = offset, width = size.width)
-}
-
-internal fun swipeFadeAlpha(offset: Float, width: Float): Float {
-    return if (width <= 0f || offset.isNaN()) {
-        Alpha.TAB_ITEM_NO_INTERACTION
-    } else {
-        maxOf(
-            Alpha.TAB_ITEM_MIN_SWIPE_FADE,
-            Alpha.TAB_ITEM_NO_INTERACTION - (abs(offset) / width).coerceIn(0f, 1f),
-        )
-    }
-}
 
 /**
  * Semantic property for accessing a Composable item's current graphical scale property. This is intended to be applied

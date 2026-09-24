@@ -214,6 +214,13 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     return filteredSuggestions;
   }
 
+  /**
+   * @param {string} state
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {{index: number, result: UrlbarResult}[]} resultsAndIndexes
+   * @param {object|null} details
+   */
   onImpression(state, queryContext, controller, resultsAndIndexes, details) {
     // Build a map from each feature to its results in `resultsAndIndexes`.
     let resultsByFeature = resultsAndIndexes.reduce((memo, { result }) => {
@@ -241,6 +248,11 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
 
@@ -266,6 +278,11 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onSearchSessionEnd(queryContext, controller, details) {
     for (let backend of lazy.QuickSuggest.enabledBackends) {
       backend.onSearchSessionEnd(queryContext, controller, details);

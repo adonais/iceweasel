@@ -109,7 +109,7 @@ const CAPS = {
 
 // The empty-state message (count 0). Fixed, not part of the rotation pool.
 export const EMPTY_MESSAGE = {
-  id: "newtab-privacy-empty",
+  id: "newtab-privacy-empty-state",
   category: CATEGORY.EMPTY,
   icon: "shield",
   countSource: "none",

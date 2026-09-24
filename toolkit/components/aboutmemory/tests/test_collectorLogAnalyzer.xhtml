@@ -1,0 +1,307 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/css" href="chrome://global/skin"?>
+<?xml-stylesheet type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"?>
+<window title="CollectorLogAnalyzer"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"/>
+
+  <body xmlns="http://www.w3.org/1999/xhtml">
+    <iframe id="amFrame" height="400" src="about:memory"></iframe>
+  </body>
+
+  <script type="application/javascript">
+  <![CDATA[
+  "use strict";
+
+  SimpleTest.waitForExplicitFinish();
+
+  const CC_LOG =
+    "0x1000 [rc=2] nsDocument\n" +
+    "> 0x2000 mWindow\n" +
+    "0x2000 [rc=1] nsWindow\n" +
+    "> 0x1000 mDoc\n" +
+    "0x3000 [rc=1] nsElement\n" +
+    "==========\n" +
+    "0x1000 [known=1]\n" +
+    "0x2000 [known=1]\n" +
+    "0x3000 [garbage]\n";
+
+  function writeTempFile(contents) {
+    let file = Services.dirsvc.get("TmpD", Ci.nsIFile);
+    file.append("test_collectorLog_" + Math.random().toString(36).slice(2));
+    let ostream = Cc["@mozilla.org/network/file-output-stream;1"]
+      .createInstance(Ci.nsIFileOutputStream);
+    ostream.init(file, -1, -1, 0);
+    let data = new TextEncoder().encode(contents);
+    ostream.write(String.fromCharCode(...data), data.length);
+    ostream.close();
+    return file;
+  }
+
+  async function runAPITests() {
+    let ccFile = writeTempFile(CC_LOG);
+
+    try {
+      let analyzer = new CollectorLogAnalyzer(ccFile.path, "");
+      await analyzer.init();
+      ok(true, "Analyzer initialized successfully");
+
+      // queryNodes returns matching nodes
+      let results = await analyzer.queryNodes("nsDocument");
+      is(results.length, 1, "queryNodes('nsDocument') returns 1 result");
+      is(results[0].label, "nsDocument", "Result label matches");
+      is(results[0].ptr, "0x1000", "Result pointer matches");
+      is(results[0].referenceCount, 2, "Reference count is correct");
+      ok(results[0].flags & CollectorNodeFlags.CC_MANAGED,
+         "nsDocument has CC_MANAGED flag");
+      ok(results[0].flags & CollectorNodeFlags.ROOT,
+         "nsDocument is a hard root (rc=2 > known=1)");
+
+      // queryNodes with no match
+      let noMatch = await analyzer.queryNodes("NoSuchThing");
+      is(noMatch.length, 0, "queryNodes with no match returns empty");
+
+      // queryNodes finds garbage nodes
+      let garbageResults = await analyzer.queryNodes("nsElement");
+      is(garbageResults.length, 1, "queryNodes finds garbage nodes");
+      ok(garbageResults[0].flags & CollectorNodeFlags.GARBAGE,
+         "nsElement has GARBAGE flag");
+
+      // sampleNodes returns non-garbage nodes
+      let sample = await analyzer.sampleNodes();
+      ok(!!sample.length, "sampleNodes returns results");
+      for (let node of sample) {
+        ok(!(node.flags & CollectorNodeFlags.GARBAGE),
+           "Sample node " + node.label + " is not garbage");
+      }
+
+      // getNodeAdjacents
+      let docNode = results[0];
+      let adjacents = await analyzer.getNodeAdjacents(docNode);
+      ok(!!adjacents.fromSelf.length, "nsDocument has outgoing edges");
+      ok(!!adjacents.toSelf.length, "nsDocument has incoming edges");
+
+      let outLabels = adjacents.fromSelf.map(e => e.label);
+      ok(outLabels.includes("mWindow"),
+         "nsDocument has outgoing edge labeled mWindow");
+
+      let inLabels = adjacents.toSelf.map(e => e.other.label);
+      ok(inLabels.includes("nsWindow"),
+         "nsDocument has incoming edge from nsWindow");
+
+      // getPathToRoot
+      let winResults = await analyzer.queryNodes("nsWindow");
+      is(winResults.length, 1, "Found nsWindow");
+      let pathResult = await analyzer.getPathToRoot(winResults[0]);
+      is(pathResult.kind, "hard",
+         "Path to root for nsWindow is hard");
+      ok(pathResult.path.length >= 2,
+         "Path has at least 2 nodes (root and target)");
+      is(pathResult.path[pathResult.path.length - 1].other.label, "nsWindow",
+         "Last node in path is nsWindow");
+      is(pathResult.path[0].other.label, "nsDocument",
+         "First node in path is nsDocument (the hard root)");
+
+      // Path to root for garbage node
+      let garbagePath = await analyzer.getPathToRoot(garbageResults[0]);
+      is(garbagePath.kind, "none",
+         "No path to root for garbage node");
+    } finally {
+      ccFile.remove(false);
+    }
+  }
+
+  async function runUITests() {
+    let ccFile = writeTempFile(CC_LOG);
+    let frame = document.getElementById("amFrame");
+    let win = frame.contentWindow;
+    let doc = win.document;
+
+    // Wait for about:memory's own onload to populate the body.
+    await new Promise(resolve => {
+      let check = () => {
+        if (doc.body && doc.body.children.length) {
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    });
+
+    try {
+      // Use displayCCGCLogItem (a function-decl, so on win) to inject a log
+      // entry with an Analyze button into about:memory's DOM.
+      let container = doc.createElement("div");
+      doc.body.appendChild(container);
+      win.displayCCGCLogItem(container, { cc: ccFile.path, gc: "" });
+
+      // Click "Analyze" and wait for init to complete. The section is created
+      // internally and builds its UI as a sibling of the container.
+      let analyzeBtn = container.querySelector(".ccgcLogAnalyzeButton");
+      ok(analyzeBtn, "Analyze button exists");
+      analyzeBtn.click();
+
+      // Wait for the analyzer section to appear (progress bar then results).
+      let analyzerEl;
+      await new Promise(resolve => {
+        let observer = new MutationObserver(() => {
+          analyzerEl = container.parentNode.querySelector(".ccgcLogAnalyzer");
+          if (analyzerEl && analyzerEl.querySelector(".nodesResults")) {
+            observer.disconnect();
+            resolve();
+          }
+        });
+        observer.observe(container.parentNode, {
+          childList: true,
+          subtree: true,
+        });
+      });
+      ok(analyzerEl, "Analyzer section appeared in DOM");
+
+      // Wait for sample nodes to render (they load async after init).
+      await new Promise(resolve => {
+        let check = () => {
+          if (analyzerEl.querySelectorAll(".nodesResultsEntry").length) {
+            resolve();
+          } else {
+            setTimeout(check, 50);
+          }
+        };
+        check();
+      });
+
+      let nodeEntries = analyzerEl.querySelectorAll(
+        ".nodesResults .nodesResultsEntry"
+      );
+      ok(!!nodeEntries.length, "Sample nodes rendered in results panel");
+
+      let backBtn = analyzerEl.querySelector(".inspectorBack");
+      let fwdBtn = analyzerEl.querySelector(".inspectorForward");
+      ok(backBtn, "Back button exists");
+      ok(fwdBtn, "Forward button exists");
+
+      // Initially neither back nor forward should be enabled.
+      ok(!backBtn.classList.contains("enabled"),
+         "Back button initially disabled");
+      ok(!fwdBtn.classList.contains("enabled"),
+         "Forward button initially disabled");
+
+      // Click first node -> opens path inspector (state 0).
+      nodeEntries[0].click();
+      await waitForInspectorIdle(analyzerEl);
+
+      ok(analyzerEl.querySelector(".inspector").classList.contains("path"),
+         "Inspector shows path view after clicking node");
+      ok(!backBtn.classList.contains("enabled"),
+         "Back button disabled at first state");
+      ok(!fwdBtn.classList.contains("enabled"),
+         "Forward button disabled at first state");
+
+      // Click a node in the path view -> opens node inspector (state 1).
+      let pathNodes = analyzerEl.querySelectorAll(
+        ".pathInspector .nodesResultsEntry"
+      );
+      ok(pathNodes.length >= 1, "Path inspector shows node entries");
+      pathNodes[0].click();
+      await waitForInspectorIdle(analyzerEl);
+
+      ok(analyzerEl.querySelector(".inspector").classList.contains("node"),
+         "Inspector shows node view after clicking path node");
+      ok(backBtn.classList.contains("enabled"),
+         "Back button enabled at second state");
+      ok(!fwdBtn.classList.contains("enabled"),
+         "Forward button disabled at second state (no forward history)");
+
+      // Click a node in the adjacents list -> state 2.
+      let adjNodes = analyzerEl.querySelectorAll(
+        ".nodeInspector .nodesResultsEntry"
+      );
+      if (adjNodes.length) {
+        adjNodes[0].click();
+        await waitForInspectorIdle(analyzerEl);
+        ok(backBtn.classList.contains("enabled"),
+           "Back enabled at third state");
+
+        // Go back -> state 1.
+        backBtn.click();
+        await waitForInspectorIdle(analyzerEl);
+        ok(backBtn.classList.contains("enabled"),
+           "Back still enabled (state 1 > 0)");
+        ok(fwdBtn.classList.contains("enabled"),
+           "Forward enabled after going back");
+
+        // Go back again -> state 0.
+        backBtn.click();
+        await waitForInspectorIdle(analyzerEl);
+        ok(!backBtn.classList.contains("enabled"),
+           "Back disabled at state 0");
+        ok(fwdBtn.classList.contains("enabled"),
+           "Forward still enabled");
+
+        // Go forward -> state 1.
+        fwdBtn.click();
+        await waitForInspectorIdle(analyzerEl);
+        ok(backBtn.classList.contains("enabled"),
+           "Back enabled after going forward to state 1");
+        ok(fwdBtn.classList.contains("enabled"),
+           "Forward enabled (state 2 still ahead)");
+
+        // Push a new state from state 1 -> truncates forward history.
+        // Click a node in the current view to push state 2'.
+        let currentNodes = analyzerEl.querySelectorAll(
+          ".nodeInspector .nodesResultsEntry"
+        );
+        if (currentNodes.length) {
+          currentNodes[0].click();
+          await waitForInspectorIdle(analyzerEl);
+          ok(!fwdBtn.classList.contains("enabled"),
+             "Forward disabled after pushing new state (forward history truncated)");
+          ok(backBtn.classList.contains("enabled"),
+             "Back still enabled after push");
+        }
+      }
+    } finally {
+      ccFile.remove(false);
+    }
+  }
+
+  function waitForInspectorIdle(analyzerEl) {
+    return new Promise(resolve => {
+      let check = () => {
+        let inspector = analyzerEl.querySelector(".inspector");
+        if (inspector && !inspector.classList.contains("loading")) {
+          // Give a tick for classes to settle after displayInspectorState.
+          setTimeout(resolve, 50);
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      // Give a tick for the loading class to be set first.
+      setTimeout(check, 50);
+    });
+  }
+
+  async function runTests() {
+    // Wait for the about:memory iframe to load before running UI tests.
+    let frame = document.getElementById("amFrame");
+    await new Promise(resolve => {
+      if (frame.contentDocument.readyState === "complete") {
+        resolve();
+      } else {
+        frame.addEventListener("load", resolve, { once: true });
+      }
+    });
+
+    await runAPITests();
+    await runUITests();
+    SimpleTest.finish();
+  }
+
+  runTests().catch(err => {
+    ok(false, "Test failed with exception: " + err + "\n" + err.stack);
+    SimpleTest.finish();
+  });
+
+  ]]></script>
+</window>

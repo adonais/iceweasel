@@ -4,6 +4,7 @@
 
 //! Computed types for text properties.
 
+use crate::Zero;
 use crate::derives::*;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::bindings;
@@ -11,15 +12,14 @@ use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::animated::text::TextDecorationInset as AnimatedTextDecorationInset;
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::length::{CSSPixelLength, LengthPercentage};
+use crate::values::generics::NumberOrAuto;
 use crate::values::generics::text::{
     GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationInset,
     GenericTextDecorationLength, GenericTextIndent,
 };
-use crate::values::generics::NumberOrAuto;
 use crate::values::specified::text as specified;
 use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyword};
 use crate::values::{CSSFloat, CSSInteger, ComputeSquaredDistance};
-use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;

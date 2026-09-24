@@ -4,10 +4,10 @@
 
 //! Generic types for box properties.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::Optional;
-use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::values::SequenceWriter;
 use style_traits::{CssWriter, ToCss};
@@ -342,7 +342,7 @@ impl<I: ToCss> ToCss for LineClamp<I> {
         if !self.block_ellipsis.is_ellipsis() {
             writer.item(&self.block_ellipsis)?;
         }
-        if self.webkit_legacy && static_prefs::pref!("layout.css.line-clamp.enabled") {
+        if self.webkit_legacy && crate::pref!("layout.css.line-clamp.enabled") {
             writer.raw_item("-webkit-legacy")?;
         }
         Ok(())
@@ -496,6 +496,56 @@ impl<L: Zero + ToCss> ToCss for OverflowClipMargin<L> {
         if !self.offset.is_zero() {
             dest.write_char(' ')?;
             self.offset.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+/// The two insets of one scrollbar, for the chrome-only
+/// `-moz-scrollbar-inset-block` / `-moz-scrollbar-inset-inline`. Each property
+/// names the axis the scrollbar runs along, so `start` and `end` are the logical
+/// start and end of that axis and flip with the writing mode.
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(C)]
+pub struct GenericScrollbarInset<L> {
+    /// The inset at the logical start of the axis.
+    pub start: L,
+    /// The inset at the logical end of the axis.
+    pub end: L,
+}
+
+pub use self::GenericScrollbarInset as ScrollbarInset;
+
+impl<L: Zero> ScrollbarInset<L> {
+    /// Returns the initial, all-zero value.
+    pub fn zero() -> Self {
+        Self {
+            start: Zero::zero(),
+            end: Zero::zero(),
+        }
+    }
+}
+
+impl<L: PartialEq + ToCss> ToCss for ScrollbarInset<L> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.start.to_css(dest)?;
+        if self.end != self.start {
+            dest.write_char(' ')?;
+            self.end.to_css(dest)?;
         }
         Ok(())
     }

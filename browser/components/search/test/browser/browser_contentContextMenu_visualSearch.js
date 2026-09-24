@@ -102,10 +102,7 @@ SearchTestUtils.init(this);
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["browser.search.visualSearch.featureGate", true],
-    ],
+    set: [["browser.search.visualSearch.featureGate", true]],
   });
 
   await SearchTestUtils.updateRemoteSettingsConfig(SEARCH_CONFIG);
@@ -386,8 +383,8 @@ async function withPrivateWindow({ callback, privateDefaultEngineId = null }) {
   if (privateDefaultEngineId) {
     await SpecialPowers.pushPrefEnv({
       set: [
-        ["browser.search.separatePrivateDefault", true],
-        ["browser.search.separatePrivateDefault.ui.enabled", true],
+        ["browser.search.separatePrivateDefault.enabled", true],
+        ["browser.search.separatePrivateDefault.featureGate", true],
       ],
     });
 

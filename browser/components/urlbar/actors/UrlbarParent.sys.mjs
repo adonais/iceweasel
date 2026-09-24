@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { blobAsDataURL } from "moz-src:///toolkit/modules/FaviconUtils.sys.mjs";
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 const lazy = {};
 
@@ -15,7 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 /**
  * @import {UrlbarParentController} from "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs"
- * @import {SearchEngineStore} from "chrome://browser/content/urlbar/SearchEngineStore.mjs"
+ * @import {UrlbarInput} from "chrome://browser/content/urlbar/UrlbarInput.mjs"
+ * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  */
 
 /**
@@ -27,7 +28,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * by the child-assigned `instanceId`, routing subsequent messages to it. There is
  * one actor per window global, so that `Map` holds a controller for each
  * message-path input in that global. The controller's notifications go back to
- * the child as `Notify` messages (dispatched through a parent-side
+ * the child as `InvokeContentAction` messages (dispatched through a parent-side
  * `UrlbarChildControllerProxy` stand-in). The controller is torn down on the
  * `Destroy` message the child sends when its input is collected (via a
  * `FinalizationRegistry`), and in `didDestroy` for a global that goes away whole.
@@ -66,7 +67,7 @@ export class UrlbarParent extends JSWindowActorParent {
       // The real child controller lives across the boundary, so hand the
       // parent controller a proxy that forwards its notifications over the
       // actor.
-      controller.setChild(new UrlbarChildControllerProxy(this, instanceId));
+      controller.setChild(makeChildControllerProxy(this, instanceId));
       this.#messageControllers.set(instanceId, controller);
       return undefined;
     }
@@ -103,11 +104,8 @@ export class UrlbarParent extends JSWindowActorParent {
       case "ResetEngagement":
         controller.resetEngagement();
         break;
-      case "HandleBounceTrigger":
-        controller.handleBounceTrigger(message.data.payload);
-        break;
-      case "TrackBounceBrowser":
-        controller.trackBounceBrowser(message.data.browserId);
+      case "StartTrackingBuiltBounce":
+        controller.startTrackingBuiltBounce(message.data.payload);
         break;
       case "RecordAutofillBackspace":
         controller.recordAutofillBackspace(message.data.url);
@@ -133,6 +131,9 @@ export class UrlbarParent extends JSWindowActorParent {
       case "RecordSearchInOpenedTab":
         controller.recordSearchInOpenedTab(message.data.searchData);
         break;
+      case "RecordZeroPrefix":
+        controller.recordZeroPrefix(message.data.kind);
+        break;
       case "CheckKeywordURIFixup":
         controller.checkKeywordURIFixup(
           message.data.searchString,
@@ -153,7 +154,7 @@ export class UrlbarParent extends JSWindowActorParent {
         break;
       case "SpeculativeConnect":
         controller.speculativeConnect(
-          lazy.UrlbarResult.fromWire(message.data.result),
+          this.#resultFromWire(controller, message.data.result),
           lazy.UrlbarQueryContext.fromWire(message.data.queryContext),
           message.data.reason
         );
@@ -177,7 +178,7 @@ export class UrlbarParent extends JSWindowActorParent {
         break;
       case "RemoveResult":
         controller.removeResult(
-          lazy.UrlbarResult.fromWire(message.data.result),
+          this.#resultFromWire(controller, message.data.result),
           message.data.options
         );
         break;
@@ -196,20 +197,19 @@ export class UrlbarParent extends JSWindowActorParent {
       // provider.
       case "OnBeforeSelection":
         controller.onBeforeSelection(
-          lazy.UrlbarResult.fromWire(message.data.result)
+          this.#resultFromWire(controller, message.data.result)
         );
         break;
       case "OnSelection":
-        controller.onSelection(lazy.UrlbarResult.fromWire(message.data.result));
+        controller.onSelection(
+          this.#resultFromWire(controller, message.data.result)
+        );
         break;
       case "InitEngineStore":
         controller.initEngineStore();
         break;
       case "GetEngineIconURL":
-        return this.#getSerializableEngineIcon(
-          controller,
-          message.data.engineId
-        );
+        return controller.getEngineIconURL(message.data.engineId);
       case "MarkEngineAsUsed":
         controller.markEngineAsUsed(message.data.engineId);
         break;
@@ -230,35 +230,25 @@ export class UrlbarParent extends JSWindowActorParent {
           message.data.browserId
         );
         break;
+      case "OpenPreferences":
+        controller.openPreferences(message.data.paneID);
+        break;
     }
     return undefined;
   }
 
   /**
-   * Returns an engine's icon URL in a form that resolves in the child's
-   * process.
+   * Deserializes a result the child sent, resolving it to the controller's own
+   * result. See `UrlbarResult.fromWire()`.
    *
    * @param {UrlbarParentController} controller
-   * @param {string} engineId
-   * @returns {Promise<?string>}
-   *   The icon URL, or null if the engine or its icon could not be found.
+   *   The controller the message is routed to.
+   * @param {object} wire
+   *   The result's wire form.
+   * @returns {UrlbarResult} The deserialized result.
    */
-  async #getSerializableEngineIcon(controller, engineId) {
-    let url = await controller.getEngineIconURL(engineId);
-
-    // A blob URL only resolves in the process that created it, so the icon
-    // travels as a data URL instead.
-    if (!url?.startsWith("blob:")) {
-      return url;
-    }
-
-    try {
-      let response = await fetch(url);
-      return await blobAsDataURL(await response.blob());
-    } catch (ex) {
-      console.error(`Could not read the icon of engine ${engineId}`, ex);
-      return null;
-    }
+  #resultFromWire(controller, wire) {
+    return lazy.UrlbarResult.fromWire(wire, controller.liveResults);
   }
 
   didDestroy() {
@@ -295,146 +285,71 @@ function sendToChild(actor, name, data) {
 }
 
 /**
- * Parent-side stand-in for the `UrlbarChildController`, mirroring
- * `UrlbarParentControllerProxy` on the content side. The parent controller
- * calls `notify()` here, and we forward each notification to the real child
- * controller across the boundary as a `Notify` message, serializing any
- * `UrlbarQueryContext` argument.
+ * Parent-side stand-in for UrlbarChildController.
+ * Forwards allowed method calls to the real UrlbarChildController.
+ *
+ * @typedef {Pick<UrlbarChildController,
+ *   (typeof UrlbarShared.INVOKABLE_CONTENT_ACTIONS.controller)[number]>
+ *   & { input: UrlbarInputProxy, view: UrlbarViewProxy, isProxy: true }}
+ *   UrlbarChildControllerProxy
  */
-class UrlbarChildControllerProxy {
-  /** @type {UrlbarParent} */
-  #actor;
 
-  /** @type {number} */
-  #instanceId;
+/**
+ * Parent-side stand-in for UrlbarInput.
+ * Forwards allowed method calls to the real UrlbarInput.
+ *
+ * @typedef {Pick<UrlbarInput,
+ *   (typeof UrlbarShared.INVOKABLE_CONTENT_ACTIONS.input)[number]>}
+ *   UrlbarInputProxy
+ */
 
-  constructor(actor, instanceId) {
-    this.#actor = actor;
-    this.#instanceId = instanceId;
-  }
+/**
+ * Parent-side stand-in for UrlbarView.
+ * Forwards allowed method calls to the real UrlbarView.
+ *
+ * @typedef {Pick<UrlbarView,
+ *   (typeof UrlbarShared.INVOKABLE_CONTENT_ACTIONS.view)[number]>}
+ *   UrlbarViewProxy
+ */
 
-  notify(name, ...params) {
-    sendToChild(this.#actor, "Notify", {
-      instanceId: this.#instanceId,
-      name,
-      params: params.map(param =>
-        param instanceof lazy.UrlbarQueryContext
-          ? { serializedQueryContext: param.toWire() }
-          : param
-      ),
-    });
-  }
-
-  /**
-   * @type {typeof SearchEngineStore.prototype.receive}
-   */
-  updateEngineStore(...args) {
-    sendToChild(this.#actor, "UpdateEngineStore", {
-      instanceId: this.#instanceId,
-      args,
-    });
-  }
-
-  get input() {
-    return new InputProxy(this.#actor, this.#instanceId);
-  }
-
-  get view() {
-    return new ViewProxy(this.#actor, this.#instanceId);
-  }
+/**
+ * Builds a UrlbarChildControllerProxy.
+ *
+ * @param {UrlbarParent} actor
+ * @param {number} instanceId
+ * @returns {UrlbarChildControllerProxy}
+ */
+function makeChildControllerProxy(actor, instanceId) {
+  return makeProxy(actor, instanceId, "controller", {
+    input: makeProxy(actor, instanceId, "input", {}),
+    view: makeProxy(actor, instanceId, "view", {}),
+    isProxy: true,
+  });
 }
 
 /**
- * Parent-side stand-in for the content `UrlbarView` a provider engagement hook
- * reaches through `controller.view` on the message path. Each method forwards
- * to the real view as an `InvokeContentAction` message; the content side runs
- * the genuine method (so its normal notifications fire once, no loops).
+ * Adds parent process forwarders for all functions allowed in
+ * INVOKABLE_CONTENT_ACTIONS[target].
+ *
+ * @param {UrlbarParent} actor
+ * @param {number} instanceId
+ * @param {"controller"|"input"|"view"} target
+ * @param {object} proxy
+ *   The object to add the forwarders to. May contain additional members.
+ * @returns {any}
  */
-class ViewProxy {
-  /** @type {UrlbarParent} */
-  #actor;
+function makeProxy(actor, instanceId, target, proxy) {
+  proxy[Symbol.toStringTag] = target + "Proxy";
 
-  /** @type {number} */
-  #instanceId;
-
-  constructor(actor, instanceId) {
-    this.#actor = actor;
-    this.#instanceId = instanceId;
+  for (let method of UrlbarShared.INVOKABLE_CONTENT_ACTIONS[target]) {
+    proxy[method] = (...args) =>
+      sendToChild(actor, "InvokeContentAction", {
+        instanceId,
+        target,
+        method,
+        args,
+      });
   }
 
-  #invoke(method, args) {
-    sendToChild(this.#actor, "InvokeContentAction", {
-      instanceId: this.#instanceId,
-      target: "view",
-      method,
-      args,
-    });
-  }
-
-  acknowledgeFeedback(result) {
-    this.#invoke("acknowledgeFeedback", [result.toWire()]);
-  }
-
-  clearL10nCache() {
-    this.#invoke("clearL10nCache", []);
-  }
-
-  clearTopSitesCache() {
-    this.#invoke("clearTopSitesCache", []);
-  }
-
-  close(options) {
-    this.#invoke("close", options ? [options] : []);
-  }
-
-  startTail150() {
-    this.#invoke("startTail150", []);
-  }
-
-  updateResultMenuCommands(resultId, commands) {
-    this.#invoke("updateResultMenuCommands", [resultId, commands]);
-  }
-}
-
-/**
- * Parent-side stand-in for the content `UrlbarInput` a provider engagement hook
- * reaches through `controller.input` on the message path. See `ViewProxy`; args
- * must be structured-cloneable (search strings, plain option objects).
- */
-class InputProxy {
-  /** @type {UrlbarParent} */
-  #actor;
-
-  /** @type {number} */
-  #instanceId;
-
-  constructor(actor, instanceId) {
-    this.#actor = actor;
-    this.#instanceId = instanceId;
-  }
-
-  #invoke(method, args) {
-    sendToChild(this.#actor, "InvokeContentAction", {
-      instanceId: this.#instanceId,
-      target: "input",
-      method,
-      args,
-    });
-  }
-
-  search(value, options) {
-    this.#invoke("search", [value, options]);
-  }
-
-  setValue(value) {
-    this.#invoke("setValue", [value]);
-  }
-
-  startQuery(options) {
-    this.#invoke("startQuery", [options]);
-  }
-
-  get view() {
-    return new ViewProxy(this.#actor, this.#instanceId);
-  }
+  return proxy;
 }

@@ -1010,7 +1010,9 @@ const MESSAGES = () => {
               position: "callout",
               logo: {
                 imageURL:
-                  "chrome://browser/content/asrouter/assets/fox-with-profiles.svg",
+                  "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260826181028--7f65b212-972a-4d49-a896-27c687ba149f--ea3315b7-2b00-4a73-95ec-492d30d1c736.svg",
+                darkModeImageURL:
+                  "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260826164831--30a2ac66-7a85-41e8-98c1-caf29c5d3c65--9ddf04c9-fc70-43b4-8e60-bdfbca425f16.svg",
                 height: "100%",
                 width: "100%",
               },

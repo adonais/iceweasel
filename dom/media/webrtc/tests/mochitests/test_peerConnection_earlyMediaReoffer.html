@@ -1,0 +1,653 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <script type="application/javascript" src="pc.js"></script>
+  <script type="application/javascript" src="iceTestUtils.js"></script>
+</head>
+<body>
+<pre id="test">
+<script type="application/javascript">
+  createHTML({
+    bug: "2019381",
+    title: "Early media: receiving before our own answer is processed, across various reoffer changes"
+  });
+
+  // Note: pranswer-based early media is not covered here, since pranswer is
+  // not yet implemented (bug 1004510).
+
+  // Some of the reoffer scenarios below (RTP extensions, RTX, rtcp-fb) have
+  // no live API/pref that can toggle them on an already-constructed
+  // RTCPeerConnection -- support for each is baked into the prototype codec
+  // list once, in PeerConnectionImpl::Initialize(). So instead we strip the
+  // attribute from round 1's offer at the SDP level, then let round 2's
+  // natural (unmunged) reoffer reintroduce it, since the underlying codec
+  // object was never actually changed -- only round 1's wire bytes were.
+
+  function removeExtmap(sdp, uri) {
+    const regex = new RegExp(`a=extmap:[0-9]+(/[a-z]+)? ${uri}\r?\n`, 'g');
+    return sdp.replace(regex, '');
+  }
+
+  function removeRtcpFb(sdp, feedback) {
+    const regex = new RegExp(`a=rtcp-fb:[0-9]+ ${feedback}\r?\n`, 'g');
+    return sdp.replace(regex, '');
+  }
+
+  // Strips RTX (and its associated fmtp/rtcp-fb/ssrc-group/ssrc lines) for
+  // a given media type out of an SDP.
+  function removeRtx(sdp, mediaType) {
+    const mLineRegex = new RegExp(`^m=${mediaType} (\\d+) ([^ \r\n]+) ([^\r\n]*)`, 'm');
+    const mLineMatch = sdp.match(mLineRegex);
+    if (!mLineMatch) {
+      return sdp;
+    }
+    const [, port, proto, ptList] = mLineMatch;
+
+    const rtxPts = new Set();
+    {
+      const rtpmapRtxRegex = /a=rtpmap:(\d+) rtx\/\d+\r?\n/g;
+      let m;
+      while ((m = rtpmapRtxRegex.exec(sdp))) {
+        rtxPts.add(m[1]);
+      }
+    }
+    if (!rtxPts.size) {
+      return sdp;
+    }
+
+    const newPts = ptList.split(' ').filter(pt => !rtxPts.has(pt));
+    let newSdp = sdp.replace(
+      mLineRegex, `m=${mediaType} ${port} ${proto} ${newPts.join(' ')}`);
+
+    for (const pt of rtxPts) {
+      newSdp = newSdp.replace(new RegExp(`a=rtpmap:${pt} rtx\\/\\d+\r?\n`), '');
+      newSdp = newSdp.replace(new RegExp(`a=fmtp:${pt} apt=\\d+\r?\n`), '');
+      newSdp = newSdp.replace(new RegExp(`a=rtcp-fb:${pt}[^\r\n]*\r?\n`, 'g'), '');
+    }
+
+    const rtxSsrcs = new Set();
+    {
+      const fidRegex = /a=ssrc-group:FID \d+ (\d+)\r?\n/g;
+      let m;
+      while ((m = fidRegex.exec(newSdp))) {
+        rtxSsrcs.add(m[1]);
+      }
+    }
+    newSdp = newSdp.replace(/a=ssrc-group:FID \d+ \d+\r?\n/g, '');
+    for (const ssrc of rtxSsrcs) {
+      newSdp = newSdp.replace(new RegExp(`a=ssrc:${ssrc}[^\r\n]*\r?\n`, 'g'), '');
+    }
+    return newSdp;
+  }
+
+  // Polls getStats() until an inbound-rtp with packetsReceived > 0 shows up,
+  // or we give up. Mirrors rtp-stats-lifetime.https.html's
+  // getStatsTypePollUntilItExists, bounded so a genuinely-broken case fails
+  // instead of hanging the test run.
+  async function pollForInboundRtp(pc, timeoutMs = 10000) {
+    const start = performance.now();
+    while (performance.now() - start < timeoutMs) {
+      const stats = await pc.getStats();
+      const inbound = [...stats.values()].find(
+        s => s.type === "inbound-rtp" && s.packetsReceived > 0);
+      if (inbound) {
+        return inbound;
+      }
+      await wait(200);
+    }
+    return null;
+  }
+
+  // Like pollForInboundRtp(), but scoped to a single receiver via
+  // RTCRtpReceiver.getStats(), for tests with multiple transceivers where
+  // only one is expected to actually receive.
+  async function pollForInboundRtpOnReceiver(receiver, timeoutMs = 10000) {
+    const start = performance.now();
+    while (performance.now() - start < timeoutMs) {
+      const stats = await receiver.getStats();
+      const inbound = [...stats.values()].find(
+        s => s.type === "inbound-rtp" && s.packetsReceived > 0);
+      if (inbound) {
+        return inbound;
+      }
+      await wait(200);
+    }
+    return null;
+  }
+
+  // Forwards ICE candidates between pc1 and pc2 for as long as both are
+  // around, unlike trickleIce() (which stops listening once one round of
+  // gathering completes) -- needed here since a later reoffer can trigger
+  // its own round of gathering for a newly-added m-section.
+  function forwardIceCandidates(pc1, pc2) {
+    pc1.addEventListener('icecandidate', e => e.candidate && pc2.addIceCandidate(e.candidate));
+    pc2.addEventListener('icecandidate', e => e.candidate && pc1.addIceCandidate(e.candidate));
+  }
+
+  // Negotiates a datachannel between pc1 and pc2, alongside whatever
+  // transceivers the caller already added to pc1, giving us a transport
+  // that's already negotiated to bundle everything else onto. Waits for
+  // pc1 and pc2 to actually finish DTLS, so callers can rely on the
+  // transport genuinely being live afterward, not just on SDP having been
+  // exchanged.
+  async function connectWithDataChannel(pc1, pc2) {
+    forwardIceCandidates(pc1, pc2);
+
+    pc1.createDataChannel('early-media-test');
+
+    await pc1.setLocalDescription();
+    await pc2.setRemoteDescription(pc1.localDescription);
+    await pc2.setLocalDescription();
+    await pc1.setRemoteDescription(pc2.localDescription);
+
+    await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+  }
+
+  const tests = [
+    // Mimics hold/resume (SIP<->WebRTC gateways, "unhold" buttons): a
+    // transceiver negotiated sendonly is reoffered as sendrecv.
+    async function reofferSetsRecvBit() {
+      const pc1 = new RTCPeerConnection();
+      const pc2 = new RTCPeerConnection();
+
+      const stream1 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const transceiver1 =
+        pc1.addTransceiver(stream1.getTracks()[0], {direction: 'sendonly'});
+
+      await connectWithDataChannel(pc1, pc2);
+
+      // pc2's mirrored audio transceiver is now negotiated recvonly. Give it
+      // a track to send back once pc1 upgrades to sendrecv.
+      const stream2 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const transceiver2 = pc2.getTransceivers()[0];
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+
+      // Reoffer: pc1 sets the recv bit on the already-negotiated audio
+      // transceiver.
+      transceiver1.direction = 'sendrecv';
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      transceiver2.direction = 'sendrecv';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media once the reoffer sets the recv bit (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Mimics a capability upgrade mid-call: a reoffer widens the recv codec
+    // list to include a codec that wasn't previously offered. Uses the real
+    // setCodecPreferences() API on both sides -- no munging needed.
+    async function reofferAddsRecvCodec() {
+      const pc1 = new RTCPeerConnection();
+      const pc2 = new RTCPeerConnection();
+
+      const stream1 = await navigator.mediaDevices.getUserMedia({video: true});
+      const transceiver1 =
+        pc1.addTransceiver(stream1.getTracks()[0], {direction: 'sendrecv'});
+
+      const videoCodecs = RTCRtpSender.getCapabilities('video').codecs;
+      const vp8 = videoCodecs.filter(c => c.mimeType === 'video/VP8');
+      const vp9 = videoCodecs.filter(c => c.mimeType === 'video/VP9');
+      ok(vp8.length && vp9.length, 'VP8 and VP9 should both be supported');
+      transceiver1.setCodecPreferences(vp8);
+
+      await connectWithDataChannel(pc1, pc2);
+
+      // pc2's mirrored video transceiver is now negotiated recvonly, with
+      // no track yet. Restrict it to VP9 and flip it to sendrecv now, but
+      // don't attach a track until after the reoffer's answer is applied
+      // locally below -- otherwise a prematurely-sent VP8 frame could make
+      // the stats check pass regardless of whether early media on the
+      // newly-offered VP9 codec actually works.
+      const transceiver2 = pc2.getTransceivers()[0];
+      transceiver2.setCodecPreferences(vp9);
+      transceiver2.direction = 'sendrecv';
+
+      // Reoffer: widen pc1's recv codec list to include VP9, a codec we
+      // hadn't previously offered to receive.
+      transceiver1.setCodecPreferences(videoCodecs);
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+      await pc2.setLocalDescription();
+
+      // Only attach pc2's track now that its VP9 answer has been applied
+      // locally, so the only RTP that can possibly flow is on VP9.
+      const stream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media on the newly-offered codec (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Mimics enabling client-to-mixer audio level reporting mid-call: a
+    // reoffer includes an RTP header extension (ssrc-audio-level) that was
+    // absent from the first negotiation. No live API/pref survives a
+    // reoffer on the same connection for this (see top-of-file note), so
+    // round 1's offer is munged instead. Combined with a recv-bit flip,
+    // since otherwise there would be nothing to receive either way.
+    // We don't have a way to verify an RTP header extension is actually
+    // being processed by the receiver yet, so this is mostly a "does it
+    // crash?" test as far as the extension itself goes; the real
+    // assertion is that early media reception still works once it's
+    // restored.
+    async function reofferAddsRtpExtension() {
+      const pc1 = new RTCPeerConnection();
+      const pc2 = new RTCPeerConnection();
+      forwardIceCandidates(pc1, pc2);
+
+      const stream1 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const transceiver1 =
+        pc1.addTransceiver(stream1.getTracks()[0], {direction: 'sendonly'});
+      pc1.createDataChannel('early-media-test');
+
+      // Strip ssrc-audio-level from round 1's offer, so it's genuinely
+      // absent from the first negotiation (not just unused).
+      // TODO(bug 2062781): use RTCRtpTransceiver.setHeaderExtensionsToNegotiate
+      // instead of SDP munging, once it's implemented.
+      const offer = await pc1.createOffer();
+      offer.sdp = removeExtmap(offer.sdp, 'urn:ietf:params:rtp-hdrext:ssrc-audio-level');
+      await pc1.setLocalDescription(offer);
+      await pc2.setRemoteDescription(pc1.localDescription);
+      await pc2.setLocalDescription();
+      await pc1.setRemoteDescription(pc2.localDescription);
+      await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+
+      const stream2 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const transceiver2 = pc2.getTransceivers()[0];
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+
+      // Let RTP from round 1 begin flowing before the second negotiation
+      // (no need to wait for it to actually arrive) -- if reception having
+      // already started could break anything, this is where it would show
+      // up, and it's also a prerequisite for someday checking the
+      // extension itself once we can.
+      await wait(200);
+
+      // Reoffer: sets the recv bit, and (being unmunged this time)
+      // naturally re-includes ssrc-audio-level.
+      transceiver1.direction = 'sendrecv';
+      await pc1.setLocalDescription();
+      ok(pc1.localDescription.sdp.includes('urn:ietf:params:rtp-hdrext:ssrc-audio-level'),
+         'reoffer should include ssrc-audio-level again');
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      transceiver2.direction = 'sendrecv';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media once the reoffer adds back the extension (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Mimics enabling loss recovery after initial negotiation: a reoffer
+    // includes RTX for a codec that was negotiated without it. No live
+    // API/pref survives a reoffer on the same connection for this (see
+    // top-of-file note), so round 1's offer is munged instead. Combined
+    // with a recv-bit flip, since otherwise there would be nothing to
+    // receive either way.
+    async function reofferAddsRtx() {
+      const pc1 = new RTCPeerConnection();
+      const pc2 = new RTCPeerConnection();
+      forwardIceCandidates(pc1, pc2);
+
+      const stream1 = await navigator.mediaDevices.getUserMedia({video: true});
+      const transceiver1 =
+        pc1.addTransceiver(stream1.getTracks()[0], {direction: 'sendonly'});
+      pc1.createDataChannel('early-media-test');
+
+      // Strip RTX from round 1's offer, so it's genuinely absent from the
+      // first negotiation.
+      const offer = await pc1.createOffer();
+      offer.sdp = removeRtx(offer.sdp, 'video');
+      ok(!/a=rtpmap:\d+ rtx\//.test(offer.sdp), 'RTX should be stripped from round 1');
+      await pc1.setLocalDescription(offer);
+      await pc2.setRemoteDescription(pc1.localDescription);
+      await pc2.setLocalDescription();
+      await pc1.setRemoteDescription(pc2.localDescription);
+      await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+
+      const stream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      const transceiver2 = pc2.getTransceivers()[0];
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+
+      // Reoffer: sets the recv bit, and (being unmunged) naturally
+      // re-includes RTX.
+      transceiver1.direction = 'sendrecv';
+      await pc1.setLocalDescription();
+      ok(/a=rtpmap:\d+ rtx\//.test(pc1.localDescription.sdp),
+         'reoffer should include RTX again');
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      transceiver2.direction = 'sendrecv';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media once the reoffer adds back RTX (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Mimics a feature upgrade (e.g. enabling transport-cc mid-call): a
+    // reoffer includes an rtcp-fb type that was absent from the first
+    // negotiation. No live API/pref survives a reoffer on the same
+    // connection for this (see top-of-file note), so round 1's offer is
+    // munged instead. Combined with a recv-bit flip, since otherwise there
+    // would be nothing to receive either way. Note that a new rtcp-fb type
+    // mainly affects feedback/BWE rather than primary reception, so this
+    // mostly exercises the same recv-bit code path as reofferSetsRecvBit;
+    // a JSEP-level (gtest) check would be needed for a true behavioral
+    // distinction. We also don't have a way here to verify transport-cc
+    // itself is actually being processed by the receiver, so as far as
+    // that goes this is mostly a "does it crash?" test.
+    async function reofferAddsRtcpFb() {
+      const pc1 = new RTCPeerConnection();
+      const pc2 = new RTCPeerConnection();
+      forwardIceCandidates(pc1, pc2);
+
+      const stream1 = await navigator.mediaDevices.getUserMedia({video: true});
+      const transceiver1 =
+        pc1.addTransceiver(stream1.getTracks()[0], {direction: 'sendonly'});
+      pc1.createDataChannel('early-media-test');
+
+      // Strip transport-cc from round 1's offer, so it's genuinely absent
+      // from the first negotiation.
+      const offer = await pc1.createOffer();
+      offer.sdp = removeRtcpFb(offer.sdp, 'transport-cc');
+      ok(!offer.sdp.includes('transport-cc'), 'transport-cc should be stripped from round 1');
+      await pc1.setLocalDescription(offer);
+      await pc2.setRemoteDescription(pc1.localDescription);
+      await pc2.setLocalDescription();
+      await pc1.setRemoteDescription(pc2.localDescription);
+      await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+
+      const stream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      const transceiver2 = pc2.getTransceivers()[0];
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+
+      // Let RTP from round 1 begin flowing before the second negotiation
+      // (no need to wait for it to actually arrive) -- if reception having
+      // already started could break anything, this is where it would show
+      // up, and it's also a prerequisite for someday checking transport-cc
+      // itself once we can.
+      await wait(200);
+
+      // Reoffer: sets the recv bit, and (being unmunged) naturally
+      // re-includes transport-cc.
+      transceiver1.direction = 'sendrecv';
+      await pc1.setLocalDescription();
+      ok(pc1.localDescription.sdp.includes('transport-cc'),
+         'reoffer should include transport-cc again');
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      transceiver2.direction = 'sendrecv';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media once the reoffer adds back transport-cc (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Mimics adding screen-share or a new participant's video mid-
+    // conference (SFU pattern): a reoffer adds a brand new m-section,
+    // bundled onto a transport that's already live. Uses max-bundle: with
+    // the default (balanced) policy, a new m-section only gets bundle-only
+    // if there's already an m-section of the same media type, so a video
+    // section added after a datachannel-only round 1 would speculatively
+    // get its own separate, unconnected transport instead of adopting the
+    // live one, since our own pending offer is all JSEP has to go on before
+    // an answer exists.
+    async function reofferAddsNewBundledMSection() {
+      const pc1 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      const pc2 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+
+      await connectWithDataChannel(pc1, pc2);
+
+      // Offer a brand new bundled m-section to receive on.
+      pc1.addTransceiver('video', {direction: 'recvonly'});
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      const transceiver2 = pc2.getTransceivers()[0];
+      const stream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+      transceiver2.direction = 'sendonly';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media on the newly-added bundled m-section (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // Same as reofferAddsNewBundledMSection above, but for audio instead of
+    // video (e.g. adding a new participant's audio to an existing
+    // conference call).
+    async function reofferAddsNewBundledAudioMSection() {
+      const pc1 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      const pc2 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+
+      await connectWithDataChannel(pc1, pc2);
+
+      // Offer a brand new bundled m-section to receive on.
+      pc1.addTransceiver('audio', {direction: 'recvonly'});
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      const transceiver2 = pc2.getTransceivers()[0];
+      const stream2 = await navigator.mediaDevices.getUserMedia({audio: true});
+      await transceiver2.sender.replaceTrack(stream2.getTracks()[0]);
+      transceiver2.direction = 'sendonly';
+      await pc2.setLocalDescription();
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtp(pc1);
+      ok(inbound,
+         'pc1 should receive early media on the newly-added bundled audio ' +
+         'm-section (bug 2019381)');
+
+      await pc1.setRemoteDescription(pc2.localDescription);
+    },
+
+    // A harder MID/SSRC demux scenario: once a reoffer restores the MID
+    // extension, CanReceiveEarlyMedia() should correctly demux early
+    // media to the right transceiver even with no SSRC information at all
+    // in the answer -- the actual hard case for demuxing, unlike
+    // reofferAddsRtpExtension above (only one transceiver, so there's
+    // nothing to actually demux between).
+    async function reofferRestoresMidDemuxing() {
+      const pc1 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      const pc2 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      forwardIceCandidates(pc1, pc2);
+
+      const NUM_TRANSCEIVERS = 3;
+      const activeIndex = 1;
+
+      for (let i = 0; i < NUM_TRANSCEIVERS; i++) {
+        pc1.addTransceiver('audio', {direction: 'recvonly'});
+      }
+
+      // Round 1 (deliberately ambiguous): strip the MID extension, so pc2
+      // has no way to tell pc1 which of its 3 mirrored transceivers is
+      // which.
+      const offer = await pc1.createOffer();
+      offer.sdp = removeExtmap(offer.sdp, 'urn:ietf:params:rtp-hdrext:sdes:mid');
+      await pc1.setLocalDescription(offer);
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      // Set every one of pc2's mirrored transceivers to sendrecv, but only
+      // attach a track to one arbitrarily-chosen "active" index, so round 2
+      // has exactly one real stream to demux.
+      const transceivers2 = pc2.getTransceivers();
+      for (const transceiver of transceivers2) {
+        transceiver.direction = 'sendrecv';
+      }
+      const activeStream2 = await navigator.mediaDevices.getUserMedia({audio: true});
+      await transceivers2[activeIndex].sender.replaceTrack(activeStream2.getTracks()[0]);
+      await pc2.setLocalDescription();
+
+      // Strip the answer's SSRCs too, so pc1 has neither MID nor SSRC to go
+      // on for whatever early media might already be arriving from the
+      // active transceiver. The outcome here is deliberately unconstrained
+      // -- maybe dropped, maybe routed to the wrong transceiver -- there's
+      // no assertion until round 2 restores MID.
+      await pc1.setRemoteDescription({
+        type: 'answer',
+        sdp: sdputils.removeSSRCs(pc2.localDescription.sdp),
+      });
+      await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+
+      const transceiver1 = pc1.getTransceivers()[activeIndex];
+
+      // Control: verify pc1 doesn't receive anything at all on the active
+      // transceiver while it has neither MID nor SSRC to demux on, so
+      // round 2's assertion below actually demonstrates that restoring MID
+      // is what makes early media reception work.
+      const noInbound = await pollForInboundRtpOnReceiver(transceiver1.receiver, 1000);
+      ok(!noInbound,
+         'pc1 should not receive anything on the active transceiver without MID or SSRC to demux on');
+
+      // Round 2 (the actual early-media assertion): flip the active
+      // transceiver's direction so LocalOfferedRecvParamsChanged() is
+      // guaranteed true and CanReceiveEarlyMedia() engages, then reoffer
+      // unmunged so MID comes back naturally.
+      transceiver1.direction = 'sendrecv';
+      await pc1.setLocalDescription();
+      ok(pc1.localDescription.sdp.includes('urn:ietf:params:rtp-hdrext:sdes:mid'),
+         'reoffer should include the MID extension again');
+
+      await pc2.setRemoteDescription(pc1.localDescription);
+      transceivers2[activeIndex].direction = 'sendrecv';
+      await pc2.setLocalDescription();
+
+      // SSRCs stay stripped even though MID is restored -- that's the
+      // whole point of this test -- but don't hand pc1 the answer yet.
+      const mungedAnswer2 = sdputils.removeSSRCs(pc2.localDescription.sdp);
+
+      is(pc1.signalingState, 'have-local-offer',
+         'pc1 should not have processed the answer yet');
+
+      const inbound = await pollForInboundRtpOnReceiver(transceiver1.receiver);
+      ok(inbound,
+         'pc1 should receive early media on the active transceiver via ' +
+         'MID demux, despite no SSRC hint at all (bug 2019381)');
+
+      await pc1.setRemoteDescription({type: 'answer', sdp: mungedAnswer2});
+    },
+
+    // Mimics dropping a call's audio and a fresh video participant landing
+    // on what's left (SFU renegotiation pattern): a reoffer stops the
+    // m-section that has owned the shared bundle transport so far, and adds
+    // a brand new m-section in that *same* reoffer, which ends up bundled
+    // onto the surviving, already-negotiated m-section instead. That
+    // survivor's own BundleLevel() gets speculatively cleared this round by
+    // EnsureHasOwnTransport() (see JsepSessionImpl::SetLocalDescription()),
+    // since with max-bundle every m-section but the very first now-enabled
+    // one is marked bundle-only, and stopping the old first m-section makes
+    // the survivor look like a first m-section too. The new transceiver's
+    // early reception has to correctly recognize the survivor as already
+    // negotiated despite that.
+    async function reofferReplacesBundleOwner() {
+      const pc1 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      const pc2 = new RTCPeerConnection({bundlePolicy: 'max-bundle'});
+      forwardIceCandidates(pc1, pc2);
+
+      const audioStream1 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const videoStream1 = await navigator.mediaDevices.getUserMedia({video: true});
+      const audioTransceiver1 =
+        pc1.addTransceiver(audioStream1.getTracks()[0], {direction: 'sendrecv'});
+      pc1.addTransceiver(videoStream1.getTracks()[0], {direction: 'sendrecv'});
+
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      const audioStream2 = await navigator.mediaDevices.getUserMedia({audio: true});
+      const videoStream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      const [audioTransceiver2, videoTransceiver2] = pc2.getTransceivers();
+      await audioTransceiver2.sender.replaceTrack(audioStream2.getTracks()[0]);
+      await videoTransceiver2.sender.replaceTrack(videoStream2.getTracks()[0]);
+      audioTransceiver2.direction = 'sendrecv';
+      videoTransceiver2.direction = 'sendrecv';
+      await pc2.setLocalDescription();
+      await pc1.setRemoteDescription(pc2.localDescription);
+      await Promise.all([dtlsConnected(pc1), dtlsConnected(pc2)]);
+
+      // Stop audio (the m-section that has owned the bundle transport so
+      // far), and add a brand-new recvonly video transceiver in the same
+      // reoffer -- it will end up owned by the surviving, already-
+      // negotiated video transceiver instead.
+      audioTransceiver1.stop();
+      const newTransceiver1 = pc1.addTransceiver('video', {direction: 'recvonly'});
+
+      await pc1.setLocalDescription();
+      await pc2.setRemoteDescription(pc1.localDescription);
+
+      const newTransceiver2 = pc2.getTransceivers()[2];
+      const newStream2 = await navigator.mediaDevices.getUserMedia({video: true});
+      await newTransceiver2.sender.replaceTrack(newStream2.getTracks()[0]);
+      newTransceiver2.direction = 'sendonly';
+      await pc2.setLocalDescription();
+
+      // Unlike the other scenarios in this file, we don't assert early
+      // media here. Our bundle implementation still enforces "bundle tag
+      // owns the transport" (see bug 2065274): the promoted survivor
+      // (video) was never itself a negotiated transport owner, so
+      // whether its transport can be reused before pc1 processes the
+      // real answer isn't reliably defined today -- confirmed flaky when
+      // tried. This whole comment and the early-answer wait below should
+      // be removed once bug 2065274 lands, at which point this scenario
+      // should assert early media the same way the other scenarios do.
+      await pc1.setRemoteDescription(pc2.localDescription);
+
+      const inbound = await pollForInboundRtpOnReceiver(newTransceiver1.receiver);
+      ok(inbound,
+         'pc1 should receive media on the new transceiver once the real ' +
+         'answer is processed, even though the bundle owner was replaced ' +
+         'in the same reoffer (bug 2019381)');
+    },
+  ];
+
+  runNetworkTest(async () => {
+    for (const test of tests) {
+      info(`Running test: ${test.name}`);
+      await test();
+      info(`Done running test: ${test.name}`);
+    }
+  });
+
+</script>
+</pre>
+</body>
+</html>

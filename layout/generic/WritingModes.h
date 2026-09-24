@@ -2314,6 +2314,14 @@ inline bool nsStyleMargin::HasAuto(
                                                : HasBlockAxisAuto(aWM, aParams);
 }
 
+inline mozilla::LogicalMargin nsStyleDisplay::GetScrollbarInset(
+    mozilla::WritingMode aWM) const {
+  return mozilla::LogicalMargin(aWM, mScrollbarInsetBlock.start.ToAppUnits(),
+                                mScrollbarInsetInline.end.ToAppUnits(),
+                                mScrollbarInsetBlock.end.ToAppUnits(),
+                                mScrollbarInsetInline.start.ToAppUnits());
+}
+
 inline AnchorResolvedMargin nsStyleMargin::GetMargin(
     mozilla::LogicalSide aSide, mozilla::WritingMode aWM,
     const AnchorPosResolutionParams& aParams) const {

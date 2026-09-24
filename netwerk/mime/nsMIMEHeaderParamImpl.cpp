@@ -6,24 +6,27 @@
 
 #include <string.h>
 
+#include "mozilla/Base64.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 #include "nsCRT.h"
 #include "nsEscape.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsTArray.h"
-#include "plbase64.h"
-#include "prmem.h"
 #include "prprf.h"
 
 using mozilla::Encoding;
 using mozilla::IsAscii;
 using mozilla::IsUtf8;
+using mozilla::Maybe;
+using mozilla::Nothing;
+using mozilla::Some;
 
 // static functions declared below are moved from mailnews/mime/src/comi18n.cpp
 
-static char* DecodeQ(const char*, uint32_t);
+static Maybe<nsCString> DecodeQ(const char*, uint32_t);
 static bool Is7bitNonAsciiString(const char*, uint32_t);
 static void CopyRawHeader(const char*, uint32_t, const nsACString&,
                           nsACString&);
@@ -192,18 +195,20 @@ nsresult nsMIMEHeaderParamImpl::DoGetParameter(
 }
 
 // remove backslash-encoded sequences from quoted-strings
-// modifies string in place, potentially shortening it
-void RemoveQuotedStringEscapes(char* src) {
-  char* dst = src;
+// modifies aValue, potentially shortening it
+void RemoveQuotedStringEscapes(nsCString& aValue) {
+  nsAutoCString unescaped;
+  unescaped.SetCapacity(aValue.Length());
 
-  for (char* c = src; *c; ++c) {
-    if (c[0] == '\\' && c[1]) {
+  for (uint32_t i = 0; i < aValue.Length(); ++i) {
+    if (aValue[i] == '\\' && i + 1 < aValue.Length()) {
       // skip backslash if not at end
-      ++c;
+      ++i;
     }
-    *dst++ = *c;
+    unescaped.Append(aValue[i]);
   }
-  *dst = 0;
+
+  aValue = std::move(unescaped);
 }
 
 // true is character is a hex digit
@@ -214,16 +219,32 @@ bool IsHexDigit(char aChar) {
          (c >= '0' && c <= '9');
 }
 
-// validate that a C String containing %-escapes is syntactically valid
-bool IsValidPercentEscaped(const char* aValue, int32_t len) {
-  for (int32_t i = 0; i < len; i++) {
+// validate that a string containing %-escapes is syntactically valid
+bool IsValidPercentEscaped(const nsACString& aValue) {
+  for (uint32_t i = 0; i < aValue.Length(); i++) {
     if (aValue[i] == '%') {
-      if (!IsHexDigit(aValue[i + 1]) || !IsHexDigit(aValue[i + 2])) {
+      if (i + 2 >= aValue.Length() || !IsHexDigit(aValue[i + 1]) ||
+          !IsHexDigit(aValue[i + 2])) {
         return false;
       }
     }
   }
   return true;
+}
+
+// A NUL anywhere in a decoded value would silently truncate it in any later
+// C-string based processing. Note that this is stricter than
+// ContainsTrailingCharPastNull, which tolerates a value whose tail past the
+// NUL is only more NULs.
+static bool ContainsNull(const nsACString& aValue) {
+  return aValue.Contains('\0');
+}
+
+// Percent-decode aValue in place (which happens whether or not this succeeds),
+// returning false if the decoded value contains a NUL.
+static bool UnescapeRejectingNull(nsCString& aValue) {
+  NS_UnescapeURL(aValue);
+  return !ContainsNull(aValue);
 }
 
 // Support for continuations (RFC 2231, Section 3)
@@ -257,45 +278,35 @@ class Continuation {
   bool wasQuotedString;
 };
 
-// combine segments into a single string, returning the allocated string
-// (or nullptr) while emptying the list
-char* combineContinuations(nsTArray<Continuation>& aArray) {
-  // Sanity check
-  if (aArray.Length() == 0) return nullptr;
+// combine segments into a single string, up to the first segment that is
+// missing. Returns Nothing() if that leaves nothing at all, or, with
+// aContainedNull set, if percent-decoding a segment produced a NUL.
+Maybe<nsCString> combineContinuations(const nsTArray<Continuation>& aArray,
+                                      bool& aContainedNull) {
+  nsCString result;
 
-  // Get an upper bound for the length
-  uint32_t length = 0;
-  for (uint32_t i = 0; i < aArray.Length(); i++) {
-    length += aArray[i].length;
-  }
-
-  // Allocate
-  char* result = (char*)moz_xmalloc(length + 1);
-
-  // Concatenate
-  *result = '\0';
-
-  for (uint32_t i = 0; i < aArray.Length(); i++) {
-    Continuation cont = aArray[i];
+  for (const Continuation& cont : aArray) {
     if (!cont.value) break;
 
-    char* c = result + strlen(result);
-    strncat(result, cont.value, cont.length);
+    nsAutoCString segment(cont.value, cont.length);
     if (cont.needsPercentDecoding) {
-      nsUnescape(c);
+      if (!UnescapeRejectingNull(segment)) {
+        aContainedNull = true;
+        return Nothing();
+      }
     }
     if (cont.wasQuotedString) {
-      RemoveQuotedStringEscapes(c);
+      RemoveQuotedStringEscapes(segment);
     }
+    result.Append(segment);
   }
 
-  // return null if empty value
-  if (*result == '\0') {
-    free(result);
-    result = nullptr;
+  // no result if empty value
+  if (result.IsEmpty()) {
+    return Nothing();
   }
 
-  return result;
+  return Some(std::move(result));
 }
 
 // add a continuation, return false on error if segment already has been seen
@@ -363,12 +374,11 @@ int32_t parseSegmentNumber(const char* aValue, int32_t aLen) {
 // validate a given octet sequence for compliance with the specified
 // encoding
 bool IsValidOctetSequenceForCharset(const nsACString& aCharset,
-                                    const char* aOctets) {
-  nsAutoCString tmpRaw;
-  tmpRaw.Assign(aOctets);
+                                    const nsACString& aOctets) {
   nsAutoCString tmpDecoded;
 
-  nsresult rv = ConvertStringToUTF8(tmpRaw, aCharset, false, false, tmpDecoded);
+  nsresult rv =
+      ConvertStringToUTF8(aOctets, aCharset, false, false, tmpDecoded);
 
   if (rv != NS_OK) {
     // we can't decode; charset may be unsupported, or the octet sequence
@@ -444,8 +454,7 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
     }
     if (str == start) return NS_ERROR_FIRST_HEADER_FIELD_COMPONENT_EMPTY;
 
-    *aResult = (char*)moz_xmemdup(start, (str - start) + 1);
-    (*aResult)[str - start] = '\0';  // null-terminate
+    *aResult = ToNewCString(Substring(start, str - start));
     return NS_OK;
   }
 
@@ -479,9 +488,14 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
   // collect results for the different algorithms (plain filename,
   // RFC5987/2231-encoded filename, + continuations) separately and decide
   // which to use at the end
-  char* caseAResult = nullptr;
-  char* caseBResult = nullptr;
-  char* caseCDResult = nullptr;
+  Maybe<nsCString> caseAResult;
+  Maybe<nsCString> caseBResult;
+  Maybe<nsCString> caseCDResult;
+
+  // set when percent-decoding produced a NUL, which makes us reject the
+  // parameter outright rather than fall back to a value the sender did not
+  // intend to be used
+  bool containedNull = false;
 
   // collect continuation segments
   nsTArray<Continuation> segments;
@@ -567,14 +581,12 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
 
       // if the parameter spans across multiple lines we have to strip out the
       //     line continuation -- jht 4/29/98
-      nsAutoCString tempStr(valueStart, valueEnd - valueStart);
+      nsCString tempStr(valueStart, valueEnd - valueStart);
       tempStr.StripCRLF();
-      char* res = ToNewCString(tempStr, mozilla::fallible);
-      NS_ENSURE_TRUE(res, NS_ERROR_OUT_OF_MEMORY);
 
-      if (isQuotedString) RemoveQuotedStringEscapes(res);
+      if (isQuotedString) RemoveQuotedStringEscapes(tempStr);
 
-      caseAResult = res;
+      caseAResult.emplace(std::move(tempStr));
       // keep going, we may find a RFC 2231/5987 encoded alternative
     }
     // case B, C, and D
@@ -661,16 +673,16 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
         // non-empty value part
         if (rawValLength > 0) {
           if (!caseBResult && caseB) {
-            if (!IsValidPercentEscaped(rawValStart, rawValLength)) {
+            nsCString rawVal(rawValStart, rawValLength);
+            if (!IsValidPercentEscaped(rawVal)) {
               goto increment_str;
             }
 
-            // allocate buffer for the raw value
-            char* tmpResult = (char*)moz_xmemdup(rawValStart, rawValLength + 1);
-            *(tmpResult + rawValLength) = 0;
-
-            nsUnescape(tmpResult);
-            caseBResult = tmpResult;
+            if (!UnescapeRejectingNull(rawVal)) {
+              containedNull = true;
+              break;
+            }
+            caseBResult.emplace(std::move(rawVal));
           } else {
             // caseC
             bool added = addContinuation(segments, 0, rawValStart, rawValLength,
@@ -713,45 +725,42 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
     while (nsCRT::IsAsciiSpace(*str)) ++str;
   }
 
-  caseCDResult = combineContinuations(segments);
+  if (!containedNull) {
+    caseCDResult = combineContinuations(segments, containedNull);
+  }
+
+  if (containedNull) {
+    // Percent-decoding produced a NUL, which would truncate the value.
+    return NS_ERROR_INVALID_ARG;
+  }
 
   if (caseBResult && !charsetB.IsEmpty()) {
     // check that the 2231/5987 result decodes properly given the
     // specified character set
-    if (!IsValidOctetSequenceForCharset(charsetB, caseBResult)) {
-      free(caseBResult);
-      caseBResult = nullptr;
+    if (!IsValidOctetSequenceForCharset(charsetB, *caseBResult)) {
+      caseBResult.reset();
     }
   }
 
   if (caseCDResult && !charsetCD.IsEmpty()) {
     // check that the 2231/5987 result decodes properly given the
     // specified character set
-    if (!IsValidOctetSequenceForCharset(charsetCD, caseCDResult)) {
-      free(caseCDResult);
-      caseCDResult = nullptr;
+    if (!IsValidOctetSequenceForCharset(charsetCD, *caseCDResult)) {
+      caseCDResult.reset();
     }
   }
 
   if (caseBResult) {
     // prefer simple 5987 format over 2231 with continuations
-    *aResult = caseBResult;
-    caseBResult = nullptr;
+    *aResult = ToNewCString(*caseBResult);
     charset.Assign(charsetB);
   } else if (caseCDResult) {
     // prefer 2231/5987 with or without continuations over plain format
-    *aResult = caseCDResult;
-    caseCDResult = nullptr;
+    *aResult = ToNewCString(*caseCDResult);
     charset.Assign(charsetCD);
   } else if (caseAResult) {
-    *aResult = caseAResult;
-    caseAResult = nullptr;
+    *aResult = ToNewCString(*caseAResult);
   }
-
-  // free unused stuff
-  free(caseAResult);
-  free(caseBResult);
-  free(caseCDResult);
 
   // if we have a result
   if (*aResult) {
@@ -826,19 +835,6 @@ bool IsRFC5987AttrChar(char aChar) {
           c == '|' || c == '~');
 }
 
-// percent-decode a value
-// returns false on failure
-bool PercentDecode(nsACString& aValue) {
-  char* c = (char*)moz_xmalloc(aValue.Length() + 1);
-
-  strcpy(c, PromiseFlatCString(aValue).get());
-  nsUnescape(c);
-  aValue.Assign(c);
-  free(c);
-
-  return true;
-}
-
 // Decode a parameter value using the encoding defined in RFC 5987
 //
 // charset  "'" [ language ] "'" value-chars
@@ -905,8 +901,8 @@ nsMIMEHeaderParamImpl::DecodeRFC5987Param(const nsACString& aParamVal,
   }
 
   // percent-decode
-  if (!PercentDecode(value)) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  if (!UnescapeRejectingNull(value)) {
+    return NS_ERROR_INVALID_ARG;
   }
 
   // return the encoding
@@ -985,51 +981,43 @@ nsMIMEHeaderParamImpl::DecodeParameter(const nsACString& aParamValue,
    (0x41 <= uint8_t(c) && uint8_t(c) <= 0x46) || \
    (0x61 <= uint8_t(c) && uint8_t(c) <= 0x66))
 
-// Decode Q encoding (RFC 2047).
+// Decode Q encoding (RFC 2047). Returns Nothing() on bad syntax.
 // static
-char* DecodeQ(const char* in, uint32_t length) {
-  char *out, *dest = nullptr;
+Maybe<nsCString> DecodeQ(const char* in, uint32_t length) {
+  nsCString dest;
+  dest.SetCapacity(length);
 
-  out = dest = (char*)calloc(length + 1, sizeof(char));
-  if (dest == nullptr) return nullptr;
   while (length > 0) {
     unsigned c = 0;
     switch (*in) {
       case '=':
         // check if |in| in the form of '=hh'  where h is [0-9a-fA-F].
         if (length < 3 || !ISHEXCHAR(in[1]) || !ISHEXCHAR(in[2])) {
-          goto badsyntax;
+          return Nothing();
         }
         // Can't fail because of the test above
         (void)PR_sscanf(in + 1, "%2X", &c);
-        *out++ = (char)c;
+        dest.Append((char)c);
         in += 3;
         length -= 3;
         break;
 
       case '_':
-        *out++ = ' ';
+        dest.Append(' ');
         in++;
         length--;
         break;
 
       default:
-        if (*in & 0x80) goto badsyntax;
-        *out++ = *in++;
+        if (*in & 0x80) return Nothing();
+        dest.Append(*in++);
         length--;
     }
   }
-  *out++ = '\0';
 
-  for (out = dest; *out; ++out) {
-    if (*out == '\t') *out = ' ';
-  }
+  dest.ReplaceChar('\t', ' ');
 
-  return dest;
-
-badsyntax:
-  free(dest);
-  return nullptr;
+  return Some(std::move(dest));
 }
 
 // check if input is HZ (a 7bit encoding for simplified Chinese : RFC 1842))
@@ -1135,33 +1123,34 @@ void CopyRawHeader(const char* aInput, uint32_t aLen,
 
 nsresult DecodeQOrBase64Str(const char* aEncoded, size_t aLen, char aQOrBase64,
                             const nsACString& aCharset, nsACString& aResult) {
-  char* decodedText;
-  bool b64alloc = false;
+  nsCString decodedText;
   NS_ASSERTION(aQOrBase64 == 'Q' || aQOrBase64 == 'B', "Should be 'Q' or 'B'");
   if (aQOrBase64 == 'Q') {
-    decodedText = DecodeQ(aEncoded, aLen);
+    Maybe<nsCString> decoded = DecodeQ(aEncoded, aLen);
+    if (!decoded) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    decodedText = std::move(*decoded);
   } else if (aQOrBase64 == 'B') {
-    decodedText = PL_Base64Decode(aEncoded, aLen, nullptr);
-    b64alloc = true;
+    if (NS_FAILED(
+            mozilla::Base64Decode(Substring(aEncoded, aLen), decodedText))) {
+      return NS_ERROR_INVALID_ARG;
+    }
   } else {
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (!decodedText) {
+  if (ContainsNull(decodedText)) {
+    // a NUL would truncate the decoded value
     return NS_ERROR_INVALID_ARG;
   }
 
   nsAutoCString utf8Text;
   // skip ASCIIness/UTF8ness test if aCharset is 7bit non-ascii charset.
   nsresult rv = ConvertStringToUTF8(
-      nsDependentCString(decodedText), aCharset,
+      decodedText, aCharset,
       IS_7BIT_NON_ASCII_CHARSET(PromiseFlatCString(aCharset).get()), true,
       utf8Text);
-  if (b64alloc) {
-    PR_Free(decodedText);
-  } else {
-    free(decodedText);
-  }
   if (NS_FAILED(rv)) {
     return rv;
   }

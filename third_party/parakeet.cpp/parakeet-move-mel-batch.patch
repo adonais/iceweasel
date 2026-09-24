@@ -1,0 +1,26 @@
+# Firefox-local: move the mel buffer into the 1-item MelBatch instead of copying
+# it. The sub_tile > 0 branch is the long-audio path, where feats is n_mels * T
+# floats (tens of MB for minutes of audio), and feats is dead after the
+# assignment. Reported as Coverity CID 1700839 / 1700842. Pending upstream at
+# mudler/parakeet.cpp; drop this patch once it lands there.
+#
+--- a/src/model.cpp
++++ b/src/model.cpp
+@@ -150,7 +150,7 @@ std::string Model::transcribe_16k(const std::vector<float>& pcm16k,
+     if (sub_tile > 0) {
+         MelBatch mb1;
+         mb1.B = 1; mb1.n_mels = n_mels; mb1.T_max = T; mb1.valid_T = { T };
+-        mb1.data = feats;   // feats is [n_mels,T] = the B=1 batch buffer
++        mb1.data = std::move(feats);   // feats is [n_mels,T] = the B=1 batch buffer
+         std::vector<std::vector<float>> eo; std::vector<int> vT;
+         int dm1 = 0, To1 = 0;
+         encoder.forward_batch_tiled(mb1, eo, dm1, To1, vT, sub_tile);
+@@ -402,7 +402,7 @@ Transcription Model::transcribe_16k_with_timestamps(
+     if (sub_tile > 0) {
+         MelBatch mb1;
+         mb1.B = 1; mb1.n_mels = n_mels; mb1.T_max = T; mb1.valid_T = { T };
+-        mb1.data = feats;   // feats is [n_mels,T] = the B=1 batch buffer
++        mb1.data = std::move(feats);   // feats is [n_mels,T] = the B=1 batch buffer
+         std::vector<std::vector<float>> eo; std::vector<int> vT;
+         int dm1 = 0, To1 = 0;
+         encoder.forward_batch_tiled(mb1, eo, dm1, To1, vT, sub_tile);

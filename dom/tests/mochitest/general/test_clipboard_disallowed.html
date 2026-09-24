@@ -32,6 +32,7 @@ function checkAllowed(event)
     "text/x-moz-place",
     "text/x-moz-place-container",
     "text/x-moz-some-made-up-type",
+    "text/x-moz-url-priv",
   ];
 
   for (let type of disallowedTypes) {
@@ -48,6 +49,9 @@ function checkAllowed(event)
     "application/something",
     "x-moz-/something",
     "something/ax-moz-",
+    "text/x-moz-url",
+    "text/x-moz-url-data",
+    "text/x-moz-url-desc",
   ];
 
   for (let type of allowedTypes) {

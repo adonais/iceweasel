@@ -54,13 +54,13 @@ import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
+import mozilla.components.compose.base.theme.ThemedValue
+import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.DeleteDialogAction
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.FieldChanged
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.ThemedValue
-import org.mozilla.fenix.theme.ThemedValueProvider
 
 /** Weight for the expiration month dropdown. */
 private const val EXPIRATION_MONTH_WEIGHT = 5f

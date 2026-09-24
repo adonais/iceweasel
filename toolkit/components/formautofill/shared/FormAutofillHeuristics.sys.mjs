@@ -35,6 +35,29 @@ const WORD_RE = /\s*([\p{L}\p{N}]+)/u;
 const ADJACENT_BEFORE_PREFIX = "bb";
 const ADJACENT_AFTER_PREFIX = "aa";
 
+// strip_common / strip_frequent apply only to forms with at least this many
+// fields -- below it, a "shared" token is likely coincidental and removing it is
+// risky (see _stripSharedTokens).
+const MIN_FIELDS_FOR_STRIP = 3;
+// strip_frequent removes a token present in at least this fraction of a form's
+// fields; strip_common uses 1.0 (present in every field).
+const STRIP_FREQUENT_FRACTION = 0.85;
+
+// Max characters kept from each side of a <select>'s option-value range token
+// (see tokenizeSelectOptionRange).
+const SELECT_OPTION_RANGE_MAX = 16;
+
+// Only emit a "**maxlen<N>" token for explicit small maxlength values (below
+// this cap); larger/unset limits carry little field-type signal and add noise
+// (see tokenizeInputAttributes).
+const INPUT_MAXLENGTH_CAP = 16;
+
+// A "pattern" made only of a digit character class plus quantifiers/anchors is
+// treated as a numeric hint; a bare "{N}" quantifier gives a fixed length. Any
+// other (rarer) pattern is ignored.
+const DIGIT_PATTERN_RE =
+  /^\^?(?:\\d|\[0-9\]|\[\\d\])(?:(\{(\d+)(?:,\d*)?\})|[+*])?\$?$/;
+
 /**
  * Returns the autocomplete information of fields according to heuristics.
  */
@@ -911,6 +934,166 @@ export const FormAutofillHeuristics = {
     if (elementType != "text") {
       words.push("**" + elementType);
     }
+
+    const features = FormAutofill.mlFeatures;
+    if (features.has("select_option")) {
+      this.tokenizeSelectOptionRange(element, words);
+    }
+
+    if (features.has("input_attributes")) {
+      this.tokenizeInputAttributes(element, words);
+    }
+  },
+
+  /**
+   * Append discrete input-attribute tokens that carry field-type signal but are
+   * otherwise lost by word tokenization: a small explicit maxlength and a
+   * non-text inputmode. The most common digit-only "pattern" values are mapped
+   * onto these two signals (numeric inputmode, plus a fixed {N} length when
+   * maxlength is not set); rarer patterns are ignored. Especially useful for the
+   * split telephone subfields (area code=3, prefix=3, suffix=4, country code).
+   *
+   * @param {Element} element The field element being tokenized.
+   * @param {Array<string>} words The token list to append to.
+   */
+  tokenizeInputAttributes(element, words) {
+    // maxLength is -1 when unset (and undefined for elements without it).
+    let maxLength = element.maxLength;
+    // inputMode reflects the inputmode content attribute ("" when unset).
+    let inputMode = (element.inputMode || "").toLowerCase();
+
+    // Map the common digit-only patterns onto inputmode/maxLength; ignore the
+    // rest so we don't emit noisy free-form pattern tokens.
+    const pattern = element.getAttribute?.("pattern")?.trim();
+    if (pattern) {
+      const match = pattern.match(DIGIT_PATTERN_RE);
+      if (match) {
+        if (!inputMode) {
+          inputMode = "numeric";
+        }
+        // A fixed "{N}" length fills in for a missing maxlength attribute.
+        if (match[2] && !(maxLength > 0)) {
+          maxLength = parseInt(match[2], 10);
+        }
+      }
+    }
+
+    if (inputMode && inputMode != "text") {
+      words.push("**inputmode" + inputMode);
+    }
+
+    if (maxLength > 0 && maxLength < INPUT_MAXLENGTH_CAP) {
+      words.push("**maxlen" + maxLength);
+    }
+  },
+
+  /**
+   * For a <select>, append a single token describing its option-value range:
+   * "<first>...<last>", built from each option's visible text (falling back to
+   * its value), lowercased and truncated to SELECT_OPTION_RANGE_MAX chars per
+   * side. This surfaces the field's value domain (e.g. a month dropdown ->
+   * "1...12") in the exported mlData. No-op for non-selects or empty selects.
+   *
+   * @param {Element} element The field element being tokenized.
+   * @param {Array<string>} words The token list to append to.
+   */
+  tokenizeSelectOptionRange(element, words) {
+    if (!HTMLSelectElement.isInstance(element)) {
+      return;
+    }
+    const options = element.options;
+    if (!options?.length) {
+      return;
+    }
+    // Collapse all internal whitespace so the range stays a single token: the
+    // aa/bb neighbor-context system space-joins and re-splits token lists, so a
+    // token containing a space would fragment (and lose its prefix) in
+    // neighbors' context.
+    const label = option =>
+      (option?.text || option?.value || "")
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .slice(0, SELECT_OPTION_RANGE_MAX);
+    // Skip leading/trailing options that are blank after normalization (both
+    // text and value empty) -- e.g. the placeholder <option value=""></option>
+    // most dropdowns start with, which would otherwise waste half the range
+    // token. Non-blank placeholders ("please select") are kept, since their
+    // text can still carry signal.
+    let lo = 0;
+    let hi = options.length - 1;
+    while (lo < hi && !label(options[lo])) {
+      lo++;
+    }
+    while (hi > lo && !label(options[hi])) {
+      hi--;
+    }
+    const first = label(options[lo]);
+    const last = label(options[hi]);
+    if (first || last) {
+      words.push(`${first}...${last}`);
+    }
+  },
+
+  /**
+   * Remove form-wide boilerplate tokens (e.g. "form1", "ctl00") from every
+   * field's own token list, so they don't dilute each field's representation. A
+   * token is stripped when it appears in enough of the form's fields:
+   *   strip_common   -> in ALL fields
+   *   strip_frequent -> in >= STRIP_FREQUENT_FRACTION of fields
+   * Only applies to forms with >= MIN_FIELDS_FOR_STRIP fields. Structural markers
+   * ("**<type>", "**maxlen<N>", option-range "a...b") are never counted or
+   * stripped. Mutates the `words` arrays in `elementDataList` in place, before
+   * neighbor (aa/bb) context is built, so own and neighbor copies stay in sync.
+   *
+   * @param {Array<{words: string[]}>} elementDataList
+   */
+  _stripSharedTokens(elementDataList) {
+    const features = FormAutofill.mlFeatures;
+    const stripCommon = features.has("strip_common");
+    const stripFrequent = features.has("strip_frequent");
+    if (
+      (!stripCommon && !stripFrequent) ||
+      elementDataList.length < MIN_FIELDS_FOR_STRIP
+    ) {
+      return;
+    }
+
+    const isStructural = token =>
+      token.startsWith("**") || token.includes("...");
+
+    // Count how many fields each non-structural token appears in (once per field).
+    const fieldCount = new Map();
+    for (const { words } of elementDataList) {
+      for (const token of new Set(words)) {
+        if (!isStructural(token)) {
+          fieldCount.set(token, (fieldCount.get(token) || 0) + 1);
+        }
+      }
+    }
+
+    // Lowest per-field count at which a token is stripped. strip_frequent is the
+    // broader (lower) threshold, so it wins when both flags are set.
+    const total = elementDataList.length;
+    let minCount = Infinity;
+    if (stripCommon) {
+      minCount = total;
+    }
+    if (stripFrequent) {
+      minCount = Math.min(minCount, STRIP_FREQUENT_FRACTION * total);
+    }
+
+    const toStrip = new Set();
+    for (const [token, count] of fieldCount) {
+      if (count >= minCount) {
+        toStrip.add(token);
+      }
+    }
+    if (!toStrip.size) {
+      return;
+    }
+    for (const data of elementDataList) {
+      data.words = data.words.filter(token => !toStrip.has(token));
+    }
   },
 
   tokenizeElements(elements) {
@@ -930,10 +1113,14 @@ export const FormAutofillHeuristics = {
       elementDataList.push({ element, words });
     }
 
+    // Optionally drop form-wide boilerplate tokens before building neighbor
+    // context (gated by the strip_common / strip_frequent features).
+    this._stripSharedTokens(elementDataList);
+
     let resultsMap = new Map();
 
-    // The tokens are made up of the list of words in the text
-    // and the prefixed tokens for the previous and next elements.
+    // Each field's tokens plus its immediate neighbors' tokens, prefixed "bb"
+    // (previous) and "aa" (next) so the model can tell own vs adjacent context.
     for (let e = 0; e < elementDataList.length; e++) {
       let words = elementDataList[e].words.copyWithin();
 
@@ -1144,6 +1331,39 @@ export const FormAutofillHeuristics = {
   },
 
   /**
+   * Get the subset of `fieldNames` the regexp-based heuristics should try to
+   * match for an element.
+   *
+   * Without ML the heuristics classify every field type they can. When the ML
+   * model classifies the form, they only run for the field types the model is
+   * not trusted with, so a bad prediction for one field type can be avoided
+   * without giving up ML for the whole form.
+   *
+   * Note that `_findMatchedFieldNames` tries the rules in the order of the
+   * names it is given, so dropping a name also drops the shadowing it did:
+   * with only "tel" left, the broad tel rule claims a field that
+   * "tel-country-code" would otherwise have matched. Related field types
+   * therefore belong on the list together.
+   *
+   * @param {Array<string>} fieldNames
+   *        The field names this element could be, see `_getPossibleFieldNames`.
+   * @param {boolean} useML
+   *        Whether the ML model classifies this element.
+   * @returns {Array<string>}
+   *        The field names to match with the regexp heuristics. Empty means no
+   *        regexp heuristic should run for this element.
+   */
+  _getRegexpHeuristicFieldNames(fieldNames, useML) {
+    if (!useML) {
+      return fieldNames;
+    }
+
+    return fieldNames.filter(fieldName =>
+      lazy.FormAutofillUtils.mlIgnoreFieldTypes.includes(fieldName)
+    );
+  },
+
+  /**
    * Get inferred information about an input element using autocomplete info, fathom and regex-based heuristics.
    *
    * @param {HTMLElement} element - The input element to infer information about.
@@ -1225,22 +1445,36 @@ export const FormAutofillHeuristics = {
       return [passportFieldName, inferredInfo];
     }
 
-    if (mlTokens) {
-      // If ML is desired, skip heuristics and use the ML data instead.
+    const regexpFields = this._getRegexpHeuristicFieldNames(fields, !!mlTokens);
+    if (!regexpFields.length) {
+      // No regexp heuristic runs for this element, leave it to the model.
       return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
     }
+
+    // Whether the checks below should consider `fieldName` for this element.
+    // Only the ML path restricts this, so the regexp-only path keeps
+    // considering every field type it did before.
+    const shouldCheck = fieldName =>
+      !mlTokens || regexpFields.includes(fieldName);
 
     // Check every select for options that
     // match credit card network names in value or label.
     if (HTMLSelectElement.isInstance(element)) {
-      if (this._isExpirationMonthLikely(element)) {
+      if (
+        shouldCheck("cc-exp-month") &&
+        this._isExpirationMonthLikely(element)
+      ) {
         return ["cc-exp-month", inferredInfo];
-      } else if (this._isExpirationYearLikely(element)) {
+      } else if (
+        shouldCheck("cc-exp-year") &&
+        this._isExpirationYearLikely(element)
+      ) {
         return ["cc-exp-year", inferredInfo];
       }
 
       const options = Array.from(element.querySelectorAll("option"));
       if (
+        shouldCheck("cc-type") &&
         options.find(
           option =>
             lazy.CreditCard.getNetworkFromName(option.value) ||
@@ -1255,6 +1489,7 @@ export const FormAutofillHeuristics = {
       // options rather than the first, as selects often start with a non-country display option.
       const countryDisplayNames = Array.from(FormAutofill.countries.values());
       if (
+        (shouldCheck("country") || shouldCheck("tel-country-code")) &&
         options.length >= 2 &&
         options
           .slice(-2)
@@ -1265,29 +1500,49 @@ export const FormAutofillHeuristics = {
           )
       ) {
         // Now that it is likely a country dropdown field, check if it is
-        // a telephone country prefix or a separate country field.
-        return this._findMatchedFieldNames(element, ["tel-country-code"])
-          ?.length
-          ? ["tel-country-code", inferredInfo]
-          : ["country", inferredInfo];
+        // a telephone country prefix or a separate country field. The check
+        // above only tells us the field is one of the two, so make sure the
+        // one we settled on is a field name we may match.
+        const fieldName = this._findMatchedFieldNames(element, [
+          "tel-country-code",
+        ])?.length
+          ? "tel-country-code"
+          : "country";
+        if (shouldCheck(fieldName)) {
+          return [fieldName, inferredInfo];
+        }
       }
     }
 
     // Find a matched field name using regexp-based heuristics
     const heuristicMatchedFieldNames = this._findMatchedFieldNames(
       element,
-      fields,
+      regexpFields,
       fathomFoundType
     );
     matchedFieldNames.push(...heuristicMatchedFieldNames);
 
     // If regular expression based heuristics doesn't find any matched field name,
     // and the input type is "tel", just use "tel" as the field name.
-    if (!matchedFieldNames.length && element.type == "tel") {
+    if (
+      !matchedFieldNames.length &&
+      element.type == "tel" &&
+      shouldCheck("tel")
+    ) {
       return ["tel", inferredInfo];
     }
 
-    return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
+    // Withholding the tokens keeps a field the heuristics classified out of
+    // the model's batch. `#applyResults` would skip it anyway because it has a
+    // name, so this only saves encoding it. Note it asks whether the regexp
+    // heuristics matched rather than whether the field has a name, because
+    // `matchedFieldNames` may hold a name fathom found.
+    const classifiedByRegexp = !!heuristicMatchedFieldNames.length;
+    return [
+      matchedFieldNames,
+      inferredInfo,
+      classifiedByRegexp ? undefined : mlTokens?.get(element),
+    ];
   },
 
   /**

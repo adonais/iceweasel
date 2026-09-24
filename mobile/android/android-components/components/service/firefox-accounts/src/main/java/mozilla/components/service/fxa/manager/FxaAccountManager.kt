@@ -47,11 +47,12 @@ import mozilla.components.service.fxa.SharedPrefAccountStorage
 import mozilla.components.service.fxa.StorageWrapper
 import mozilla.components.service.fxa.emitSyncFailedFact
 import mozilla.components.service.fxa.into
+import mozilla.components.service.fxa.sync.SharedPrefsSyncStateStorage
 import mozilla.components.service.fxa.sync.SyncManager
 import mozilla.components.service.fxa.sync.SyncReason
+import mozilla.components.service.fxa.sync.SyncStateStorage
 import mozilla.components.service.fxa.sync.SyncStatusObserver
 import mozilla.components.service.fxa.sync.WorkManagerSyncManager
-import mozilla.components.service.fxa.sync.clearSyncState
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
@@ -148,9 +149,15 @@ open class FxaAccountManager(
     // Note that trying to perform a sync while account isn't authenticated will not succeed.
     @GuardedBy("this") private var syncManager: SyncManager? = null
 
+    /** Provider for retrieving a [SyncStateStorage] instance. */
+    private val syncStateStorageProvider by lazy {
+        SharedPrefsSyncStateStorage.SingletonProvider(context, coroutineContext)
+    }
+
     init {
         registerForAccountEvents(accountStateEventsObserver, ProcessLifecycleOwner.get(), false)
 
+        GlobalAccountManager.setSyncStateStorageProvider(syncStateStorageProvider)
         syncConfig?.let {
             // Initialize sync manager with the passed-in config.
             require(syncConfig.supportedEngines.isNotEmpty()) {
@@ -583,7 +590,7 @@ open class FxaAccountManager(
         // layers as well; if they're already empty (unused), nothing bad will happen
         // and extra overhead is quite small.
         SyncEnginesStorage(context).clear()
-        clearSyncState(context)
+        syncStateStorageProvider.get().clear()
     }
 
     private fun persistDeclinedEngines(declinedEngines: Set<SyncEngine>) {

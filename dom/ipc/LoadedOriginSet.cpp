@@ -9,17 +9,17 @@
 
 namespace mozilla::dom {
 
-LoadedOriginSet::LoadedOriginSet(const nsACString& aRemoteType)
+LoadedOriginSet::LoadedOriginSet(const RemoteType& aRemoteType)
     : mRemoteType(aRemoteType) {}
 
-nsCString LoadedOriginSet::GetRemoteType() {
+RemoteType LoadedOriginSet::GetRemoteType() {
   MutexAutoLock lock(mMutex);
   return mRemoteType;
 }
 
-void LoadedOriginSet::SetRemoteType(const nsACString& aRemoteType) {
+void LoadedOriginSet::SetRemoteType(const RemoteType& aRemoteType) {
   MutexAutoLock lock(mMutex);
-  MOZ_ASSERT(mRemoteType == PREALLOC_REMOTE_TYPE);
+  MOZ_ASSERT(mRemoteType.IsPrealloc());
   mRemoteType = aRemoteType;
 }
 
@@ -90,7 +90,7 @@ LoadedOriginSet::Level LoadedOriginSet::AddInternal(nsIPrincipal* aPrincipal,
 bool LoadedOriginSet::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
-  nsCString remoteType = GetRemoteType();
+  RemoteType remoteType = GetRemoteType();
   auto isPrincipalLoaded = [&](nsIPrincipal* prin) {
     // FIXME: Currently we only match site, and ignore OAs. This is consistent
     // with ValidatePrincipal behaviour prior to bug 2055554. In the future, we

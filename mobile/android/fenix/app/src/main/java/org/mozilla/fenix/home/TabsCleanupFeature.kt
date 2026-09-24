@@ -22,6 +22,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.actualInactiveTabs
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.removeAllActiveNormalTabs
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.tabsClosedUndoMessage
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_ACTIVE_NORMAL_TABS
@@ -129,15 +130,8 @@ class TabsCleanupFeature(
 
     private fun removeAllNormalTabs(): Int = browserStore.state.normalTabs.size.also { tabsUseCases.removeNormalTabs() }
 
-    private fun removeAllActiveNormalTabs(): Int {
-        val inactiveTabIds = browserStore.state.actualInactiveTabs(settings = settings).map { it.id }.toSet()
-        val normalTabIds = browserStore.state.normalTabs.map { it.id }
-        val tabsToRemove = normalTabIds.filter { it !in inactiveTabIds }
-
-        tabsUseCases.removeTabs(ids = tabsToRemove, excludedTabIds = inactiveTabIds)
-
-        return tabsToRemove.size
-    }
+    private fun removeAllActiveNormalTabs(): Int =
+        tabsUseCases.removeAllActiveNormalTabs(state = browserStore.state, settings = settings)
 
     private fun removeTabAndShowSnackbar(sessionId: String) {
         val tab = browserStore.state.findTab(sessionId) ?: return
@@ -153,7 +147,7 @@ class TabsCleanupFeature(
 
         val inactiveTabs = browserStore.state.actualInactiveTabs(settings = settings)
 
-        tabsUseCases.removeTab(tabId = sessionId, excludedTabIds = inactiveTabs.map { it.id }.toSet())
+        tabsUseCases.removeTab(tabId = sessionId, excludedFallbackTabIds = inactiveTabs.map { it.id }.toSet())
 
         var tabId = ""
         if (settings.enableHomepageAsNewTab && !hasTabsRemaining) {

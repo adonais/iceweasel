@@ -169,7 +169,6 @@ class BitSet {
   }
 
   bool operator==(const BitSet<N, StorageType>& aOther) const = default;
-  bool operator!=(const BitSet<N, StorageType>& aOther) const = default;
 
   size_t Count() const {
     size_t count = 0;

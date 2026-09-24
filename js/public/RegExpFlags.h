@@ -91,7 +91,6 @@ class RegExpFlags {
   RegExpFlags& operator=(const RegExpFlags&) = default;
 
   bool operator==(const RegExpFlags& other) const = default;
-  bool operator!=(const RegExpFlags& other) const = default;
 
   RegExpFlags& operator&=(const RegExpFlags& rhs) {
     flags_ &= rhs.flags_;

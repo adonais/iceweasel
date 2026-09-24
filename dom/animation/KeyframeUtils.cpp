@@ -360,7 +360,16 @@ double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
   // Note: [range.first, range.second] is calculated based on the whole timeline
   // range as well.
   const auto& range = vt->IntervalForAttachmentRange(*aRange);
-  return (*offset - range.first) / (range.second - range.first);
+  const double rangeDelta = range.second - range.first;
+  // The zero animation attachment range causes the division by zero below and
+  // we may get a positive or negative Infinity, which doesn't make sense
+  // because we cannot find a valid keyframe offset in this range. Instead, we
+  // return NaN because it represents the unresolved computed offset, and it
+  // matches other browsers as well.
+  if (!rangeDelta) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  return (*offset - range.first) / rangeDelta;
 }
 
 /* static */

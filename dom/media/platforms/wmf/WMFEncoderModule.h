@@ -10,6 +10,9 @@
 namespace mozilla {
 class WMFEncoderModule final : public PlatformEncoderModule {
  public:
+  // Discards any encoder state cached from the hardware encoding gfxVars.
+  static void ClearCache();
+
   media::EncodeSupportSet Supports(const EncoderConfig& aConfig) const override;
   media::EncodeSupportSet SupportsCodec(CodecType aCodecType) const override;
 

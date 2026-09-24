@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "api/rtp_packet_info.h"
 #include "api/video/video_codec_type.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
@@ -65,6 +66,7 @@ class PacketBuffer {
 
     CopyOnWriteBuffer video_payload;
     RTPVideoHeader video_header;
+    RtpPacketInfo rtp_packet_info;
   };
   struct InsertResult {
     std::vector<std::unique_ptr<Packet>> packets;

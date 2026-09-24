@@ -43,8 +43,8 @@ nsBaseParentChannel::Delete() {
 }
 
 NS_IMETHODIMP
-nsBaseParentChannel::GetRemoteType(nsACString& aRemoteType) {
-  aRemoteType = mRemoteType;
+nsBaseParentChannel::GetRemoteType(mozilla::dom::RemoteType& _retval) {
+  _retval = mRemoteType;
   return NS_OK;
 }
 

@@ -866,7 +866,7 @@ add_task(async function test_search_mode_switcher_engine_no_icon() {
 add_task(async function test_search_mode_switcher_private_engine_icon() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
+      ["browser.search.separatePrivateDefault.featureGate", true],
       // This test also asserts the switcher's icon in a window it opens itself;
       // see test_icon_new_window.
       ["browser.urlbar.ipc.chromeMessagePassing", false],

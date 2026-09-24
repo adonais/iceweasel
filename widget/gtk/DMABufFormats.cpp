@@ -379,6 +379,7 @@ void DMABufFormats::EnsureBasicFormats() {
   EnsureBasicFormat(GBM_FORMAT_P010);
   EnsureBasicFormat(GBM_FORMAT_NV12);
   EnsureBasicFormat(GBM_FORMAT_YUV420);
+  EnsureBasicFormat(GBM_FORMAT_ABGR2101010);
 
   mDMABufFeedback->PendingTrancheDone();
 }
@@ -471,6 +472,7 @@ void GlobalDMABufFormats::SetModifiersToGfxVars() {
   }
 
   ConfigureFormat(formats, mFormatYUV420, GBM_FORMAT_YUV420);
+  ConfigureFormat(formats, mFormatABGR2101010, GBM_FORMAT_ABGR2101010);
 }
 
 void GlobalDMABufFormats::GetModifiersFromGfxVars() {
@@ -502,6 +504,8 @@ DRMFormat* GlobalDMABufFormats::GetDRMFormat(int32_t aFOURCCFormat) {
       return mFormatNV12;
     case GBM_FORMAT_YUV420:
       return mFormatYUV420;
+    case GBM_FORMAT_ABGR2101010:
+      return mFormatABGR2101010;
     default:
       gfxCriticalNoteOnce << "DMABufDevice::GetDRMFormat() unknow format: "
                           << aFOURCCFormat;
@@ -523,6 +527,8 @@ bool GlobalDMABufFormats::SupportsDirectComposition(
       return !!mFormatYUV420;
     case gfx::SurfaceFormat::P010:
       return !!mFormatP010;
+    case gfx::SurfaceFormat::R10G10B10A2_UINT32:
+      return !!mFormatABGR2101010;
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
       return false;

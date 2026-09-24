@@ -438,6 +438,31 @@ nsresult PosixSerialPlatformService::EnumeratePortsImpl(
     *aLikelyAccessDenied =
         aPorts.IsEmpty() && (errors == ErrorKind::eAccessDenied);
   }
+#elif defined(XP_FREEBSD)
+  DIR* devDir = opendir("/dev");
+  if (devDir) {
+    auto cleanupDir = MakeScopeExit([&]() { closedir(devDir); });
+    while (struct dirent* ent = readdir(devDir)) {
+      const char* name = ent->d_name;
+      bool isTtyU = strncmp(name, "ttyU", 4) == 0;
+      bool isTtyu = strncmp(name, "ttyu", 4) == 0;
+      if ((!isTtyU && !isTtyu) || name[4] < '0' || name[4] > '9') {
+        continue;
+      }
+      nsAutoCString devpath("/dev/");
+      devpath.Append(name);
+      auto isReal = IsRealSerialPort(devpath.get());
+      if (isReal.isErr()) {
+        continue;
+      }
+      NS_ConvertUTF8toUTF16 path(devpath);
+      IPCSerialPortInfo info;
+      info.id() = path;
+      info.path() = path;
+      info.friendlyName() = NS_ConvertUTF8toUTF16(nsDependentCString(name));
+      aPorts.AppendElement(info);
+    }
+  }
 #endif
 
   MOZ_LOG(gWebSerialLog, LogLevel::Debug,

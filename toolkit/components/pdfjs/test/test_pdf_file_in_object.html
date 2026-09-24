@@ -115,8 +115,7 @@ async function changeMimeHandler(preferredAction, alwaysAskBeforeHandling) {
 }
 
 add_task(async function test_not_default() {
-  // Unlike in iframes, we expect to load pdf.js in an object/embed element even
-  // if we are not configured to open pdfs within Firefox.
+  // Object/embed PDFs use PDF.js even when another handler is configured.
   let oldAction = await changeMimeHandler(SpecialPowers.Ci.nsIHandlerInfo.useSystemDefault, true);
   try {
     await test_object();

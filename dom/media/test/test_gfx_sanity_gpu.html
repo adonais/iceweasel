@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Test the graphics sanity test checks</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+<script type="application/javascript">
+
+// Runs the graphics startup sanity test exactly as users get it, and asserts
+// on the result instead of writing it to the prefs that gate hardware video.
+// The checks open a chrome window and snapshot it, which only the parent
+// process may do.
+async function runSanityChecksInParent() {
+  return SpecialPowers.spawnChrome([], async () => {
+    const { SanityCheckResult, runSanityTest } = ChromeUtils.importESModule(
+      "resource://gre/modules/SanityTestChecks.sys.mjs"
+    );
+
+    const result = await runSanityTest();
+
+    // Return the name rather than the raw value, so the result survives the
+    // process boundary as plain data and failures name the outcome.
+    return (
+      Object.keys(SanityCheckResult).find(
+        key => SanityCheckResult[key] === result
+      ) ?? String(result)
+    );
+  });
+}
+
+add_task(async function test_sanity_checks() {
+  const result = await runSanityChecksInParent();
+
+  info(`sanity test result: ${result}`);
+  is(result, "Passed", "the graphics sanity test should pass");
+});
+
+</script>
+</head>
+<body>
+</body>
+</html>

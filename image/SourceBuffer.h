@@ -483,7 +483,14 @@ class SourceBuffer final {
   //////////////////////////////////////////////////////////////////////////////
 
   void AddWaitingConsumer(IResumable* aConsumer) MOZ_REQUIRES(mMutex);
-  void ResumeWaitingConsumers() MOZ_REQUIRES(mMutex);
+
+  // Releasing the last reference to a waiting consumer can destroy an
+  // image::Decoder, whose SourceBufferIterator member reacquires mMutex from
+  // its destructor. ResumeWaitingConsumers and HandleError therefore hand our
+  // references to aOutConsumers instead of dropping them; callers must declare
+  // aOutConsumers outside the scope which holds mMutex.
+  void ResumeWaitingConsumers(nsTArray<RefPtr<IResumable>>* aOutConsumers)
+      MOZ_REQUIRES(mMutex);
 
   typedef SourceBufferIterator::State State;
 
@@ -499,7 +506,9 @@ class SourceBuffer final {
   // Helper methods.
   //////////////////////////////////////////////////////////////////////////////
 
-  nsresult HandleError(nsresult aError) MOZ_REQUIRES(mMutex);
+  nsresult HandleError(nsresult aError,
+                       nsTArray<RefPtr<IResumable>>* aOutConsumers)
+      MOZ_REQUIRES(mMutex);
   bool IsEmpty() MOZ_REQUIRES(mMutex);
   bool IsLastChunk(uint32_t aChunk) MOZ_REQUIRES(mMutex);
 

@@ -8,7 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
-  waitForObserverTopic: "chrome://remote/content/marionette/sync.sys.mjs",
+  waitForObserverTopic: "chrome://remote/content/shared/Sync.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());

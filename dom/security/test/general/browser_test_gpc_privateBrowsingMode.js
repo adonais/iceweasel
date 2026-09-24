@@ -11,7 +11,6 @@ add_task(async function test_privateModeGPCEnabled() {
     set: [
       ["privacy.globalprivacycontrol.enabled", false],
       ["privacy.globalprivacycontrol.pbmode.enabled", true],
-      ["privacy.globalprivacycontrol.functionality.enabled", true],
     ],
   });
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
@@ -41,7 +40,6 @@ add_task(async function test_privateModeGPCDisabled() {
     set: [
       ["privacy.globalprivacycontrol.enabled", false],
       ["privacy.globalprivacycontrol.pbmode.enabled", false],
-      ["privacy.globalprivacycontrol.functionality.enabled", true],
     ],
   });
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: true });

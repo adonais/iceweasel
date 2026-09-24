@@ -111,11 +111,7 @@ fn interpolation_value_to_s(v: f32) -> f32 {
     let convex_half_corner = if v < 0.5 { 1.0 - v } else { v };
     let k = 0.5f32.ln() / convex_half_corner.ln();
     let s = k.log2();
-    if v < 0.5 {
-        -s
-    } else {
-        s
-    }
+    if v < 0.5 { -s } else { s }
 }
 
 impl Animate for CornerShape {

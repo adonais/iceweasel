@@ -68,7 +68,7 @@
         "firefox_enterprise": { "version_added": "149.0.2" }
       },
       "x-restart-required": true,
-      "description": "Controls access to AI features: Translations, PDF alt text generation, smart tab groups, display summaries in link previews, AI chatbot in the sidebar and smart windows. The `Default` value applies to all AI features, unless overridden by a specific feature.",
+      "description": "Controls access to AI features: Translations, PDF alt text generation, smart tab groups, display summaries in link previews, AI chatbot in the sidebar, smart windows and on-device speech recognition. The `Default` value applies to all AI features, unless overridden by a specific feature.",
       "examples": [
         {
           "Default": {
@@ -237,6 +237,18 @@
                   "description": "The feature is off and unavailable to users."
                 }
               ]
+            },
+            "Locked": {
+              "type": "boolean"
+            }
+          }
+        },
+        "SpeechRecognition": {
+          "type": "object",
+          "properties": {
+            "Value": {
+              "type": "string",
+              "enum": ["available", "blocked"]
             },
             "Locked": {
               "type": "boolean"

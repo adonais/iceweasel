@@ -197,8 +197,7 @@ nsMapRuleToAttributesFunc HTMLBodyElement::GetAttributeMappingFunction() const {
   return &MapAttributesIntoRule;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLBodyElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLBodyElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::link},
       {nsGkAtoms::vlink},

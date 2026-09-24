@@ -172,7 +172,7 @@ assertEq(i.starExportEntries.length, 1);
 assertEq(i.starExportEntries[0].exportName, null);
 assertEq(i.starExportEntries[0].moduleRequest.specifier, "b");
 assertEq(i.starExportEntries[0].importName, null);
-assertEq(i.starExportEntries[0].importNameValueType, 'all-but-default');
+assertEq(i.starExportEntries[0].importNameValueType, 'all');
 assertEq(i.starExportEntries[0].localName, null);
 assertEq(i.starExportEntries[0].lineNumber, 2);
 assertEq(i.starExportEntries[0].columnNumber, 8);

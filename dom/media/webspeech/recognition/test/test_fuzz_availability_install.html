@@ -1,0 +1,72 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: interleaved available()/install() stress</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// Fuzz-style stress test: fire overlapping available()/install() calls with no
+// serialization, across several languages, to shake out races in the shared
+// IPC-thread lifecycle.
+//
+// This is a stress net, not a targeted regression test: it does not assert a
+// specific bug is fixed, only that nothing crashes/hangs under heavy
+// interleaving.
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestFlakyTimeout("stress test intentionally interleaves IPC operations with short delays");
+
+const LANGS = [["en-US"], ["en-GB"], ["fr-FR"], ["invalid lang"], []];
+
+function randLangs() {
+  return LANGS[Math.floor(Math.random() * LANGS.length)];
+}
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const pending = [];
+    for (let round = 0; round < 40; round++) {
+      const opts = { langs: randLangs(), processLocally: true };
+      // Fire without awaiting: available() and install() calls overlap freely,
+      // including two concurrent install() calls for the same options.
+      // Not for autoplay (already unblocked by the test-profile defaults):
+      // install() requires and consumes transient user activation, which this
+      // synthesizes before each call.
+      pending.push(SpeechRecognition.available(opts).catch(() => {}));
+      SpecialPowers.wrap(document).notifyUserGestureActivation();
+      pending.push(SpeechRecognition.install(opts).catch(() => {}));
+      SpecialPowers.wrap(document).notifyUserGestureActivation();
+      pending.push(SpeechRecognition.install(opts).catch(() => {}));
+      if (round % 5 === 0) {
+        // Occasionally let a handful settle before continuing, so IPC-thread
+        // acquire/release cycles overlap in different phases.
+        await Promise.race([
+          Promise.all(pending.splice(0, pending.length)),
+          new Promise(r => setTimeout(r, 50)),
+        ]);
+      }
+    }
+    await Promise.all(pending);
+    ok(true, "Survived interleaved available()/install() stress without crashing");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

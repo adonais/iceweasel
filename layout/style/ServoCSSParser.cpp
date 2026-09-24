@@ -26,22 +26,28 @@ bool ServoCSSParser::IsValidCSSImage(const nsACString& aValue) {
 
 /* static */
 bool ServoCSSParser::ComputeColor(const StylePerDocumentStyleData* aStyleData,
-                                  nscolor aCurrentColor,
                                   const nsACString& aValue,
                                   nscolor* aResultColor, bool* aWasCurrentColor,
                                   css::Loader* aLoader) {
-  return Servo_ComputeColor(aStyleData, aCurrentColor, &aValue, aResultColor,
-                            aWasCurrentColor, aLoader);
+  auto absolute =
+      ComputeAbsoluteColor(aStyleData, aValue, aWasCurrentColor, aLoader);
+  if (!absolute) {
+    return false;
+  }
+  *aResultColor = absolute->ToColor();
+  return true;
 }
 
 /* static */
 Maybe<StyleAbsoluteColor> ServoCSSParser::ComputeAbsoluteColor(
-    const StylePerDocumentStyleData* aStyleData, const nsACString& aValue) {
+    const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
+    bool* aWasCurrentColor, css::Loader* aLoader) {
   StyleAbsoluteColor color{};
-  if (Servo_ComputeAbsoluteColor(aStyleData, &aValue, &color)) {
-    return Some(color);
+  if (!Servo_ComputeColor(aStyleData, &aValue, &color, aWasCurrentColor,
+                          aLoader)) {
+    return Nothing();
   }
-  return Nothing();
+  return Some(color);
 }
 
 /* static */

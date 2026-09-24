@@ -29,7 +29,7 @@ bool BaseCompiler::isAvailableRef(RegRef r) { return ra.isAvailableRef(r); }
 bool BaseCompiler::isAvailablePtr(RegPtr r) { return ra.isAvailablePtr(r); }
 bool BaseCompiler::isAvailableF32(RegF32 r) { return ra.isAvailableF32(r); }
 bool BaseCompiler::isAvailableF64(RegF64 r) { return ra.isAvailableF64(r); }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool BaseCompiler::isAvailableV128(RegV128 r) { return ra.isAvailableV128(r); }
 #endif
 
@@ -39,7 +39,7 @@ bool BaseCompiler::isAvailableV128(RegV128 r) { return ra.isAvailableV128(r); }
 [[nodiscard]] RegPtr BaseCompiler::needPtr() { return ra.needPtr(); }
 [[nodiscard]] RegF32 BaseCompiler::needF32() { return ra.needF32(); }
 [[nodiscard]] RegF64 BaseCompiler::needF64() { return ra.needF64(); }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 [[nodiscard]] RegV128 BaseCompiler::needV128() { return ra.needV128(); }
 #endif
 
@@ -49,7 +49,7 @@ void BaseCompiler::needRef(RegRef specific) { ra.needRef(specific); }
 void BaseCompiler::needPtr(RegPtr specific) { ra.needPtr(specific); }
 void BaseCompiler::needF32(RegF32 specific) { ra.needF32(specific); }
 void BaseCompiler::needF64(RegF64 specific) { ra.needF64(specific); }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::needV128(RegV128 specific) { ra.needV128(specific); }
 #endif
 
@@ -63,7 +63,7 @@ void BaseCompiler::freeRef(RegRef r) { ra.freeRef(r); }
 void BaseCompiler::freePtr(RegPtr r) { ra.freePtr(r); }
 void BaseCompiler::freeF32(RegF32 r) { ra.freeF32(r); }
 void BaseCompiler::freeF64(RegF64 r) { ra.freeF64(r); }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::freeV128(RegV128 r) { ra.freeV128(r); }
 #endif
 
@@ -84,7 +84,7 @@ void BaseCompiler::freeAny(AnyReg r) {
     case AnyReg::F64:
       freeF64(r.f64());
       break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case AnyReg::V128:
       freeV128(r.v128());
       break;
@@ -124,7 +124,7 @@ inline void BaseCompiler::free<RegF64>(RegF64 r) {
   freeF64(r);
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 template <>
 inline void BaseCompiler::free<RegV128>(RegV128 r) {
   freeV128(r);
@@ -182,7 +182,7 @@ void BaseCompiler::maybeFree(RegPtr r) {
   }
 }
 
-#ifdef ENABLE_WASM_SIMD128
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::maybeFree(RegV128 r) {
   if (r.isValid()) {
     freeV128(r);
@@ -294,7 +294,7 @@ inline RegF64 BaseCompiler::pop<RegF64>() {
   return popF64();
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 template <>
 inline RegV128 BaseCompiler::need<RegV128>() {
   return needV128();
@@ -331,7 +331,7 @@ void BaseCompiler::needResultRegisters(ResultType type, ResultRegKind which) {
         needI64(RegI64(result.gpr64()));
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         if (which == ResultRegKind::All) {
           needV128(RegV128(result.fpr()));
         }
@@ -391,7 +391,7 @@ void BaseCompiler::freeResultRegisters(ResultType type, ResultRegKind which) {
         freeI64(RegI64(result.gpr64()));
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         if (which == ResultRegKind::All) {
           freeV128(RegV128(result.fpr()));
         }

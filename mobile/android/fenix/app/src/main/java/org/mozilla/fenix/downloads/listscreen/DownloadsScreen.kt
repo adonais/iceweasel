@@ -7,7 +7,6 @@ package org.mozilla.fenix.downloads.listscreen
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,10 +62,11 @@ import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
-import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.base.theme.ThemedValue
+import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.ExpandableListHeader
@@ -84,8 +84,6 @@ import org.mozilla.fenix.downloads.listscreen.ui.FileListItem
 import org.mozilla.fenix.downloads.listscreen.ui.Filters
 import org.mozilla.fenix.downloads.listscreen.ui.ToolbarConfig
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.ThemedValue
-import org.mozilla.fenix.theme.ThemedValueProvider
 
 /**
  * Downloads screen that displays the list of downloads.
@@ -269,8 +267,8 @@ fun DownloadsScreen(
             onRetryClick = {
                 downloadsStore.dispatch(DownloadUIAction.RetryDownload(downloadId = it))
             },
-            onDeleteClick = { item ->
-                downloadsStore.dispatch(DownloadUIAction.RequestDelete(item))
+            onDeleteClick = { item, isSwipe ->
+                downloadsStore.dispatch(DownloadUIAction.RequestDelete(item, isSwipe))
             },
             onShareUrlClick = { downloadsStore.dispatch(DownloadUIAction.ShareUrlClicked(it.url)) },
             onShareFileClick = {
@@ -373,7 +371,7 @@ private fun DownloadsScreenContent(
     onPauseClick: (id: String) -> Unit,
     onResumeClick: (id: String) -> Unit,
     onRetryClick: (id: String) -> Unit,
-    onDeleteClick: (FileItem) -> Unit,
+    onDeleteClick: (FileItem, Boolean) -> Unit,
     onShareUrlClick: (FileItem) -> Unit,
     onShareFileClick: (FileItem) -> Unit,
     onRenameFileClick: (FileItem) -> Unit,
@@ -418,12 +416,12 @@ private fun DownloadsScreenContent(
                     items = uiState.itemsState.items,
                     mode = uiState.mode,
                     listState = listState,
+                    onDeleteClick = onDeleteClick,
                     onClick = onItemClick,
                     onSelectionChange = onSelectionChange,
                     onPauseClick = onPauseClick,
                     onResumeClick = onResumeClick,
                     onRetryClick = onRetryClick,
-                    onDeleteClick = onDeleteClick,
                     onShareUrlClick = onShareUrlClick,
                     onShareFileClick = onShareFileClick,
                     onRenameFileClick = onRenameFileClick,
@@ -439,13 +437,13 @@ private fun DownloadsContent(
     items: List<DownloadListItem>,
     mode: Mode,
     listState: LazyListState,
+    onDeleteClick: (FileItem, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onClick: (FileItem) -> Unit,
     onSelectionChange: (FileItem, Boolean) -> Unit,
     onPauseClick: (id: String) -> Unit,
     onResumeClick: (id: String) -> Unit,
     onRetryClick: (id: String) -> Unit,
-    onDeleteClick: (FileItem) -> Unit,
     onShareUrlClick: (FileItem) -> Unit,
     onShareFileClick: (FileItem) -> Unit,
     onRenameFileClick: (FileItem) -> Unit,
@@ -476,11 +474,12 @@ private fun DownloadsContent(
                 }
 
                 is FileItem -> {
+                    val isCompleted = listItem.status is FileItem.Status.Completed
                     FileListItem(
                         fileItem = listItem,
-                        isSelected = mode.selectedItems.contains(listItem),
-                        areAfterListItemIconsVisible =
-                            mode is Mode.Normal || listItem.status !is FileItem.Status.Completed,
+                        isSelected = listItem in mode.selectedItems,
+                        areAfterListItemIconsVisible = mode is Mode.Normal || !isCompleted,
+                        swipingEnabled = mode is Mode.Normal,
                         onPauseClick = onPauseClick,
                         onDeleteClick = onDeleteClick,
                         onResumeClick = onResumeClick,
@@ -488,32 +487,22 @@ private fun DownloadsContent(
                         onShareUrlClick = onShareUrlClick,
                         onShareFileClick = onShareFileClick,
                         onRenameFileClick = onRenameFileClick,
+                        onClick = {
+                                if (mode is Mode.Normal) {
+                                    onClick(listItem)
+                                } else {
+                                    onSelectionChange(listItem, listItem !in mode.selectedItems)
+                                }
+                            }
+                                .takeIf { isCompleted },
+                        onLongClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onSelectionChange(listItem, true)
+                            }
+                                .takeIf { isCompleted && mode is Mode.Normal },
                         modifier =
                             Modifier.animateItem()
                                 .width(FirefoxTheme.layout.size.containerMaxWidth)
-                                .thenConditional(
-                                    modifier =
-                                        Modifier.combinedClickable(
-                                            onClick = {
-                                                if (mode is Mode.Normal) {
-                                                    onClick(listItem)
-                                                } else {
-                                                    onSelectionChange(
-                                                        listItem,
-                                                        !mode.selectedItems.contains(listItem),
-                                                    )
-                                                }
-                                            },
-                                            onLongClick = {
-                                                if (mode is Mode.Normal) {
-                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                    onSelectionChange(listItem, true)
-                                                }
-                                            },
-                                        )
-                                ) {
-                                    listItem.status is FileItem.Status.Completed
-                                }
                                 .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM}.${listItem.fileName}"),
                     )
 

@@ -25,7 +25,8 @@ def _tc_client(service):
 
 def _get_task(branch, revision):
     if branch and revision:
-        index = f"gecko.v2.{branch}.revision.{revision}.taskgraph.decision"
+        trust_domain = "comm" if "comm" in branch else "gecko"
+        index = f"{trust_domain}.v2.{branch}.revision.{revision}.taskgraph.decision"
     else:
         index = "gecko.v2.mozilla-central.latest.taskgraph.decision"
     task = find_task_from_index([index])

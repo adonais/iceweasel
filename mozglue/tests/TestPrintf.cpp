@@ -264,5 +264,11 @@ int main()
   // and the negative sign.
   MOZ_RELEASE_ASSERT(strlen(dbl_max.get()) == 317);
 
+  // Avoid a stack buffer overflow when formatting DBL_MAX with the maximum
+  // precision.
+  mozilla::SmprintfPointer dbl_max_100 = mozilla::Smprintf("%.100f", DBL_MAX);
+  MOZ_RELEASE_ASSERT(dbl_max_100);
+  MOZ_RELEASE_ASSERT(strlen(dbl_max_100.get()) == 410);
+
   return 0;
 }

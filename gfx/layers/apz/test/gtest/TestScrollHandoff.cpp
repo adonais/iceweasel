@@ -179,12 +179,7 @@ class APZCNestedFlingScrollHandoffTester : public APZCTreeManagerTester {
       const ScreenIntPoint& aStartPoint,
       std::initializer_list<int32_t> aXDeltas,
       std::initializer_list<int32_t> aYDeltas) {
-    APZEventResult result = TouchDown(subframeApzc, aStartPoint, mcc->Time());
-
-    // Allowed touch behaviours must be set after sending touch-start.
-    if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-      SetDefaultAllowedTouchBehavior(subframeApzc, result.mInputBlockId);
-    }
+    TouchDown(subframeApzc, aStartPoint, mcc->Time());
 
     const TimeDuration kTouchTimeDelta100Hz =
         TimeDuration::FromMilliseconds(10);

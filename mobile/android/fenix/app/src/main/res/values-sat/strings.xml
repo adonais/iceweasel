@@ -145,6 +145,12 @@
   <string name="home_screen_shortcut_passwords">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱠᱚ</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">ᱚᱪᱚᱜᱼᱟ, ᱪᱮᱫᱟᱜ?</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">ᱞᱮᱛᱟᱲ</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">ᱡᱷᱚᱛᱚ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -281,8 +287,12 @@
   <string name="browser_menu_summarize_page">ᱥᱟᱦᱴᱟ ᱩᱥᱟᱹᱨ ᱥᱟᱹᱦᱤᱡ ᱫᱮᱠᱷᱟᱣ ᱢᱮ</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">ᱱᱟᱶᱟ</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">ᱱᱟᱶᱟ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">ᱨᱟᱹᱯᱩᱫ ᱥᱟᱭᱤᱴ ᱨᱤᱯᱚᱨᱴ ᱢᱮ</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">ᱜᱟᱫᱮᱞ ᱨᱮ ᱥᱮᱞᱮᱫ ᱢᱮ</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">ᱛᱚᱨᱡᱚᱢᱟ ᱟᱠᱟᱱᱟ</string>
   <!-- Browser menu label for the print feature -->
@@ -896,6 +906,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ᱱᱚᱣᱟ ᱯᱷᱚᱞᱰᱟᱨ ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱟᱢ ᱴᱷᱮᱱ ᱟᱹᱭᱫᱟᱹᱨ ᱵᱟᱹᱱᱩᱜᱼᱟ ᱾ ᱮᱴᱟᱜ ᱵᱟᱪᱷᱟᱣ ᱨᱮᱭᱟᱜ ᱠᱩᱨᱩᱢᱩᱴᱩᱭ ᱢᱮ᱾</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">ᱮᱴᱟᱜ ᱮᱯ ᱥᱟᱶ ᱰᱟᱣᱱᱞᱳᱰ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">ᱱᱚᱣᱟ ᱥᱟᱫᱷᱚᱱ ᱨᱮ ᱯᱷᱚᱞᱰᱟᱨ ᱵᱟᱪᱷᱟᱣᱤᱡ ᱵᱟᱝ ᱡᱷᱤᱡᱽ ᱫᱟᱲᱮᱭᱟᱜ ᱠᱟᱱᱟ ᱾</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">ᱰᱟᱩᱱᱞᱳᱰ ᱠᱚ ᱰᱤᱞᱤᱴ ᱢᱮ ᱟᱨᱵᱟᱝ ᱚᱪᱚᱜᱽ ᱢᱮ</string>
   <string name="preferences_downloads_delete_from_device">ᱥᱟᱫᱷᱚᱱ ᱠᱷᱚᱱ ᱢᱮᱴᱟᱣ ᱢᱮ</string>
@@ -969,6 +981,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">ᱱᱤᱥᱚᱱ ᱠᱷᱚᱵᱚᱨ</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">ᱞᱮᱛᱟᱲ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">ᱵᱩᱠᱢᱟᱨᱠᱠᱚ</string>
   <!--
@@ -1300,6 +1314,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">ᱴᱮᱵᱽ ᱵᱟᱨ ᱩᱫᱩᱜᱽ ᱢᱮ</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">ᱴᱮᱵᱽ ᱵᱟᱨ ᱴᱷᱟᱶ</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">ᱪᱮᱛᱟᱱ</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">ᱞᱟᱛᱟᱨ</string>
   <!--
     Gestures Preferences
 
@@ -1402,6 +1422,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">ᱠᱦᱩᱞᱟᱹ ᱠᱟᱱ ᱴᱮᱵᱽ ᱠᱚ ᱟᱡᱛᱮ ᱵᱚᱸᱫ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">ᱢᱤᱰᱤᱭᱟ ᱪᱟᱹᱞᱩᱜ ᱠᱟᱱᱟ</string>
   <!--
     Opening screen
 
@@ -2391,6 +2413,8 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\n%2$s ᱠᱷᱚᱱ ᱠᱩᱞ ᱟᱠᱟᱱᱟ 🦊 ᱢᱚᱵᱟᱭᱤᱞ ᱵᱽᱨᱟᱣᱡᱚᱨ ᱪᱮᱥᱴᱟᱭ ᱢᱮ: %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nᱠᱷᱚᱱ ᱵᱷᱮᱡᱟ ᱠᱟᱱᱟ %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">ᱥᱟᱫᱷᱚᱱ ᱠᱚ ᱛᱟᱞᱟ ᱨᱮ ᱴᱮᱵᱽ ᱵᱷᱮᱡᱟ ᱞᱟᱹᱜᱤᱫ ᱫᱚᱦᱲᱟᱹ ᱥᱩᱦᱤ ᱮᱢ ᱢᱮ</string>
   <!--
     Notifications
 

@@ -41,14 +41,17 @@ function waitForTabChange(sourceEvent) {
 }
 
 /**
- * Gets the displayed sources text from an autocomplete row.
+ * Gets the displayed sources text from an autocomplete row. The value renders
+ * as a sibling of the fixed label rather than in an element of its own.
  *
  * @param {HTMLElement} row Smart Form Fill autocomplete row.
  *
  * @returns {string} Displayed sources text.
  */
 function getSourcesValue(row) {
-  return row.renderRoot.querySelector(".sources-value").textContent.trim();
+  const sources = row.renderRoot.querySelector(".smart-form-fill-sources");
+  const label = sources.querySelector(".sources-label").textContent;
+  return sources.textContent.replace(label, "").trim();
 }
 
 describe("Smart Form Fill autocomplete row item menu", () => {
@@ -140,18 +143,18 @@ describe("Smart Form Fill autocomplete row item menu", () => {
         "Source metadata should not be exposed to the content process"
       );
 
-      const pill = row.renderRoot.querySelector(".source-pill");
+      const pill = row.renderRoot.querySelector(".sources-pill");
 
       Assert.ok(pill, "The relevant source should render as a pill");
       Assert.equal(
         pill.querySelector(".source-label").textContent.trim(),
         lazy.sanitizeUntrustedContent(sourceTab.label),
-        "The source pill should show the tab title"
+        "The sources pill should show the tab title"
       );
       Assert.equal(
         pill.querySelector(".source-favicon").getAttribute("src"),
         `page-icon:${SOURCE_URL}`,
-        "The source pill should use the tab favicon"
+        "The sources pill should use the tab favicon"
       );
       Assert.ok(
         row.renderRoot.querySelector("moz-button.secondary-action"),

@@ -8,6 +8,7 @@
 #include "mozilla/Try.h"    // MOZ_TRY*
 
 #include "builtin/Math.h"
+#include "frontend/FrontendContext.h"  // FrontendContext
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
 #include "frontend/ParseNodeVisitor.h"
@@ -1581,5 +1582,9 @@ static bool Fold(FoldInfo info, ParseNode** pnp) {
 bool frontend::FoldConstants(FrontendContext* fc, ParserAtomsTable& parserAtoms,
                              BigIntStencilVector& bigInts, ParseNode** pnp,
                              FullParseHandler* handler) {
+  if (!fc->checkCompilationCancellation()) {
+    return false;
+  }
+
   return Fold(fc, parserAtoms, bigInts, handler, pnp);
 }

@@ -14,6 +14,22 @@ set -e
 
 cwd=$(cd $(dirname $0); pwd -P)
 dist_dir="$cwd/../dist"
+
+# --dist has to be resolved before the main argument loop, because --rebuild
+# reads the saved argument list from inside the dist directory.
+dist_flag_pending=0
+for arg in "$@"; do
+    if [ "$dist_flag_pending" = 1 ]; then
+        dist_dir="$arg"
+        dist_flag_pending=0
+        continue
+    fi
+    case "$arg" in
+        --dist=?*) dist_dir="${arg#*=}" ;;
+        --dist) dist_flag_pending=1 ;;
+    esac
+done
+
 argsfile="$dist_dir/build_args"
 source "$cwd/coreconf/nspr.sh"
 source "$cwd/coreconf/sanitizers.sh"
@@ -64,6 +80,7 @@ fuzz_tls=0
 fuzz_oss=0
 no_local_nspr=0
 sslkeylogfile=1
+static_libs=0
 
 gyp_params=(--depth="$cwd" --generator-output=".")
 ninja_params=()
@@ -116,12 +133,14 @@ while [ $# -gt 0 ]; do
         --sancov=?*) enable_sancov "${1#*=}"; gyp_params+=(-Dcoverage=1) ;;
         --emit-llvm) gyp_params+=(-Demit_llvm=1 -Dsign_libs=0) ;;
         --no-zdefs) gyp_params+=(-Dno_zdefs=1) ;;
-        --static) gyp_params+=(-Dstatic_libs=1) ;;
+        --static) static_libs=1; gyp_params+=(-Dstatic_libs=1) ;;
         --ct-verif) gyp_params+=(-Dct_verif=1) ;;
         --nspr) nspr_clean; rebuild_nspr=1 ;;
         --nspr-test-build) build_nspr_tests=1 ;;
         --nspr-test-run) run_nspr_tests=1 ;;
         --nspr-only) exit_after_nspr=1 ;;
+        --dist=?*) ;; # resolved before this loop
+        --dist) shift ;; # resolved before this loop
         --with-nspr=?*) set_nspr_path "${1#*=}"; no_local_nspr=1 ;;
         --system-nspr) set_nspr_path "/usr/include/nspr/:"; no_local_nspr=1 ;;
         --system-sqlite) gyp_params+=(-Duse_system_sqlite=1) ;;
@@ -297,3 +316,89 @@ else
 fi
 
 run_scanbuild "$ninja" -C "$target_dir" "${ninja_params[@]}"
+
+# pkg-config metadata, so that programs can link against this dist without
+# hand-written -l and -I flags.
+generate_pkg_config()
+{
+    local obj_dir="$dist_dir/$target"
+    local nss_h="$cwd/lib/nss/nss.h"
+    [ -f "$nss_h" ] || return 0
+
+    local vmajor vminor vpatch nspr_version
+    vmajor=$(sed -n 's/^#define NSS_VMAJOR \([0-9]*\).*/\1/p' "$nss_h")
+    vminor=$(sed -n 's/^#define NSS_VMINOR \([0-9]*\).*/\1/p' "$nss_h")
+    vpatch=$(sed -n 's/^#define NSS_VPATCH \([0-9]*\).*/\1/p' "$nss_h")
+    [ -n "$vmajor" ] || return 0
+
+    nspr_version=$(sed -n 's/^Version: *//p' \
+        "$obj_dir/lib/pkgconfig/nspr.pc" 2>/dev/null)
+    : "${nspr_version:=4.32}"
+
+    mkdir -p "$obj_dir/lib/pkgconfig"
+    sed -e "s|%prefix%|$obj_dir|g" \
+        -e "s|%exec_prefix%|\${prefix}|g" \
+        -e "s|%libdir%|\${exec_prefix}/lib|g" \
+        -e "s|%includedir%|$dist_dir/public/nss|g" \
+        -e "s|%NSS_VERSION%|$vmajor.$vminor.$vpatch|g" \
+        -e "s|%NSPR_VERSION%|$nspr_version|g" \
+        "$cwd/pkg/pkg-config/nss.pc.in" > "$obj_dir/lib/pkgconfig/nss.pc"
+
+    if [ "$static_libs" = 1 ]; then
+        # A static link needs the internal libraries too, and which those are
+        # depends on the architecture and on how NSS is currently divided up
+        # into gyp targets. Ask gyp for the dependency graph of the build we
+        # just did rather than keeping a list here that has to be remembered
+        # whenever code moves between targets.
+        local dump_params=("${gyp_params[@]}" -Dnss_dist_obj_dir="$obj_dir")
+        if [ "$no_local_nspr" = 0 ]; then
+            dump_params+=(-Dnspr_include_dir="$obj_dir/include/nspr"
+                          -Dnspr_lib_dir="$obj_dir/lib")
+        fi
+        # A configuration that builds no NSS libraries at all, such as
+        # --mozpkix-only, has nothing to describe here; warn rather than
+        # failing a build that otherwise succeeded.
+        local static_libs_flags=""
+        if run_verbose ${GYP} -f dump_dependency_json -Goutput_dir="$target_dir" \
+               "${dump_params[@]}" "$cwd/nss.gyp" &&
+           static_libs_flags=$(${python:-python3} "$cwd/coreconf/static_libs.py" \
+               "$target_dir/dump.json" "$obj_dir/lib"); then
+            sed -e "s|%prefix%|$obj_dir|g" \
+                -e "s|%exec_prefix%|\${prefix}|g" \
+                -e "s|%libdir%|\${exec_prefix}/lib|g" \
+                -e "s|%includedir%|$dist_dir/public/nss|g" \
+                -e "s|%NSS_VERSION%|$vmajor.$vminor.$vpatch|g" \
+                -e "s|%NSPR_VERSION%|$nspr_version|g" \
+                -e "s|%STATIC_LIBS%|$static_libs_flags|g" \
+                "$cwd/pkg/pkg-config/nss-static.pc.in" \
+                > "$obj_dir/lib/pkgconfig/nss-static.pc"
+        else
+            echo "Warning: could not determine the static libraries;" \
+                 "not writing nss-static.pc" 1>&2
+        fi
+    fi
+
+    # The template resolves exec_prefix/libdir/includedir through pkg-config,
+    # which cannot see an uninstalled dist tree. Seed them from the dist layout
+    # instead; the command line flags still override, as they are parsed later.
+    mkdir -p "$obj_dir/bin"
+    sed -e "s|@prefix@|$obj_dir|g" \
+        -e "s|@MOD_MAJOR_VERSION@|$vmajor|g" \
+        -e "s|@MOD_MINOR_VERSION@|$vminor|g" \
+        -e "s|@MOD_PATCH_VERSION@|$vpatch|g" \
+        "$cwd/pkg/pkg-config/nss-config.in" \
+    | awk -v inc="$dist_dir/public/nss" '
+        /^prefix=/ && !done {
+            print
+            print "exec_prefix=${prefix}"
+            print "libdir=${prefix}/lib"
+            print "includedir=" inc
+            done = 1
+            next
+        }
+        { print }
+      ' > "$obj_dir/bin/nss-config"
+    chmod +x "$obj_dir/bin/nss-config"
+}
+
+generate_pkg_config

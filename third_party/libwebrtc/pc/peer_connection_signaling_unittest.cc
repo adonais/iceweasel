@@ -1404,7 +1404,9 @@ TEST_F(PeerConnectionSignalingUnifiedPlanTest, LoopbackSdpIsPossible) {
 
 TEST_F(PeerConnectionSignalingUnifiedPlanTest,
        ParameterlessSetLocalDescriptionUsesLastCreatedOffer) {
-  auto caller = CreatePeerConnection();
+  RTCConfiguration config;
+  config.type = PeerConnectionInterface::kNone;
+  auto caller = CreatePeerConnection(config);
   caller->AddTransceiver(MediaType::AUDIO);
 
   // Create offer. This populates last_created_offer_.

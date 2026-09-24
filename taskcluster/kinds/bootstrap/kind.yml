@@ -12,11 +12,6 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 tasks:
-    debian11:
-        image: debian:bullseye
-        pre-commands:
-            - apt-get update
-            - apt-get install -y --no-install-recommends curl git python3-pip
     debian12:
         image: debian:bookworm
         pre-commands:
@@ -98,7 +93,10 @@ tasks:
     rockylinux9:
         image: rockylinux/rockylinux:9
         pre-commands:
-            - dnf install -y git python3-pip
+            - dnf install -y git python3.11 python3.11-pip
+            - mkdir -p /usr/local/pybin
+            - ln -sf /usr/bin/python3.11 /usr/local/pybin/python3
+            - export PATH=/usr/local/pybin:$PATH
     rockylinux10:
         image: rockylinux/rockylinux:10
         pre-commands:

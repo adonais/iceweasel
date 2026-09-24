@@ -416,7 +416,7 @@ def build_src(install_dir, host, targets, patches):
     # This is the default of `install.sh`, but for whatever reason
     # `x.py install` has its own default of `/etc` which we don't want.
     base_config = textwrap.dedent(
-        f"""
+        """
         [build]
         docs = false
         sanitizers = true
@@ -424,7 +424,14 @@ def build_src(install_dir, host, targets, patches):
         extended = true
         tools = ["analysis", "cargo", "rustdoc", "rustfmt", "clippy", "src", "rust-analyzer"]
         cargo-native-static = true
+        """
+    )
 
+    if any("android" in target for target in targets):
+        base_config += f"""android-ndk = "{fetches}/android-ndk"\n"""
+
+    base_config += textwrap.dedent(
+        f"""
         [rust]
         {omit_git_hash} = false
         use-lld = true
@@ -447,32 +454,41 @@ def build_src(install_dir, host, targets, patches):
             CMAKE_ASM_MASM_COMPILER = "ml64.exe"
             """
         )
-        target_config = textwrap.dedent(
-            """
-            [target.{target}]
-            cc = "clang-cl.bat"
-            cxx = "clang-cl.bat"
-            linker = "lld-link.bat"
-            ar = "llvm-lib"
-
-            """
-        )
     else:
         assert all("msvc" not in target for target in targets)
-        # Rust requires these to be specified per-target
-        target_config = textwrap.dedent(
-            """
-            [target.{target}]
-            cc = "clang"
-            cxx = "clang++"
-            linker = "clang"
 
-            """
-        )
+    def target_config(target):
+        if "msvc" in target:
+            return textwrap.dedent(
+                f"""
+                [target.{target}]
+                cc = "clang-cl.bat"
+                cxx = "clang-cl.bat"
+                linker = "lld-link.bat"
+                ar = "llvm-lib"
+                """
+            )
+        elif "android" in target:
+            # Let x.py pick the compiler from the NDK
+            return textwrap.dedent(
+                f"""
+                [target.{target}]
+                """
+            )
+        else:
+            # Rust requires these to be specified per-target
+            return textwrap.dedent(
+                f"""
+                [target.{target}]
+                cc = "clang"
+                cxx = "clang++"
+                linker = "clang"
+                """
+            )
 
     final_config = base_config
     for target in sorted(set(targets) | set([host])):
-        final_config = final_config + target_config.format(target=target)
+        final_config = final_config + target_config(target)
 
     with open(os.path.join(rust_dir, "config.toml"), "w") as file:
         file.write(final_config)
@@ -529,9 +545,18 @@ def build_src(install_dir, host, targets, patches):
 
         # x.py install does everything we need for us.
         # If you're running into issues, consider using `-vv` to debug it.
-        command = ["python3", "x.py", "install", "-v", "--host", host, "--build", host]
-        for target in targets:
-            command.extend(["--target", target])
+        command = [
+            "python3",
+            "x.py",
+            "install",
+            "-v",
+            "--host",
+            host,
+            "--build",
+            host,
+            "--target",
+            ",".join(targets),
+        ]
 
         subprocess.check_call(command, stderr=subprocess.STDOUT, env=env, cwd=rust_dir)
 

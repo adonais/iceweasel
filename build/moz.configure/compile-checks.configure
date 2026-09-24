@@ -446,8 +446,10 @@ def check_and_add_warning(
         dependable(max_clang_version) if max_clang_version else clang_latest_release
     )
     is_compatible_clang = depends(c_compiler, max_clang_version)(
-        lambda c, max_clang_version: c.type in ("clang", "clang-cl")
-        and min_clang_version <= c.version <= max_clang_version
+        lambda c, max_clang_version: (
+            c.type in ("clang", "clang-cl")
+            and min_clang_version <= c.version <= max_clang_version
+        )
     )
     is_clang = depends(c_compiler.type)(lambda t: t in ("clang", "clang-cl"))
     res_clang = check_and_add_warning_impl(

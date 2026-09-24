@@ -1,0 +1,42 @@
+---
+# Bug 2070481: an outset, zero-blur box-shadow abutting a same-coloured fill on
+# its own element -- the "huge spread + negative offset extends the field"
+# idiom, where the element paints the rest of the shape with a border or a
+# background. The shadow's inner ClipOut is the element rect itself, so it has
+# to snap exactly the way the element's own fill does, or the join between them
+# is left partially covered and the backdrop bleeds through as a seam.
+#
+# Unlike the inset arm, this ClipOut must NOT be anchored via a snap outset:
+# anchoring computes snap(element.inflate(spread)) inset by the spread, which
+# is only equal to snap(element) when spread * device_scale is an integer.
+#
+# Here spread * scale = 10.5, so anchoring displaces the ClipOut's left and top
+# edges 0.5px off the element fill's snapped position and opens a half-pixel
+# seam down the left of the fill and across its top.
+#
+#   element    (100.5, 20.5)-(140.5, 60.5)  ->  snapped (101, 21)-(141, 61)
+#   shadow rect ( 79.5, 10.0)-(140.5, 71.0)  ->  snapped ( 80, 10)-(141, 71)
+#
+# The element sits inside the shadow rect and is filled in the same colour, so
+# the correct rendering is exactly the snapped shadow rect, solid: the
+# integer-aligned rect in outset-abutting-fill-snap-ref.yaml. Not annotated
+# scale(*) on purpose -- an even scale makes spread * scale an integer, which
+# is precisely the case the bug is invisible in.
+root:
+  items:
+    - type: stacking-context
+      bounds: [0, 0, 250, 100]
+      items:
+        - type: rect
+          bounds: [0, 0, 250, 100]
+          color: [255, 255, 255]
+        - type: box-shadow
+          bounds: [100.5, 20.5, 40, 40]
+          color: [0, 0, 0, 1]
+          clip-mode: outset
+          offset: [-10.5, 0]
+          blur-radius: 0
+          spread-radius: 10.5
+        - type: rect
+          bounds: [100.5, 20.5, 40, 40]
+          color: [0, 0, 0]

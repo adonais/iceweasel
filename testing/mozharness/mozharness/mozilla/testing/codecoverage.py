@@ -46,15 +46,6 @@ code_coverage_config_options = [
             "help": "Whether test run should package and upload code coverage data.",
         },
     ],
-    [
-        ["--java-code-coverage"],
-        {
-            "action": "store_true",
-            "dest": "java_code_coverage",
-            "default": False,
-            "help": "Whether Java code coverage should be run.",
-        },
-    ],
 ]
 
 
@@ -109,13 +100,6 @@ class CodeCoverageMixin(SingleTestMixin):
         except (AttributeError, KeyError, TypeError):
             return False
 
-    @property
-    def java_code_coverage_enabled(self):
-        try:
-            return bool(self.config.get("java_code_coverage"))
-        except (AttributeError, KeyError, TypeError):
-            return False
-
     def _setup_cpp_js_coverage_tools(self):
         fetches_dir = os.environ["MOZ_FETCHES_DIR"]
         with open(os.path.join(fetches_dir, "target.mozinfo.json")) as f:
@@ -134,28 +118,9 @@ class CodeCoverageMixin(SingleTestMixin):
         url_to_chrome_map = self.query_build_dir_url("chrome-map.json")
         self.download_file(url_to_chrome_map, parent_dir=self.grcov_dir)
 
-    def _setup_java_coverage_tools(self):
-        # Download and extract jacoco-cli from the build task.
-        url_to_jacoco = self.query_build_dir_url("target.jacoco-cli.jar")
-        self.jacoco_jar = os.path.join(tempfile.mkdtemp(), "target.jacoco-cli.jar")
-        self.download_file(url_to_jacoco, self.jacoco_jar)
-
-        # Download and extract class files from the build task.
-        self.classfiles_dir = tempfile.mkdtemp()
-        for archive in ["target.geckoview_classfiles.zip", "target.app_classfiles.zip"]:
-            url_to_classfiles = self.query_build_dir_url(archive)
-            classfiles_zip_path = os.path.join(self.classfiles_dir, archive)
-            self.download_file(url_to_classfiles, classfiles_zip_path)
-            with zipfile.ZipFile(classfiles_zip_path, "r") as z:
-                z.extractall(self.classfiles_dir)
-            os.remove(classfiles_zip_path)
-
-        # Create the directory where the emulator coverage file will be placed.
-        self.java_coverage_output_dir = tempfile.mkdtemp()
-
     @PostScriptAction("download-and-extract")
     def setup_coverage_tools(self, action, success=None):
-        if not self.code_coverage_enabled and not self.java_code_coverage_enabled:
+        if not self.code_coverage_enabled:
             return
 
         self.grcov_dir = os.path.join(os.environ["MOZ_FETCHES_DIR"], "grcov")
@@ -166,9 +131,6 @@ class CodeCoverageMixin(SingleTestMixin):
 
         if self.code_coverage_enabled:
             self._setup_cpp_js_coverage_tools()
-
-        if self.java_code_coverage_enabled:
-            self._setup_java_coverage_tools()
 
     @PostScriptAction("download-and-extract")
     def find_tests_for_coverage(self, action, success=None):
@@ -540,65 +502,6 @@ class CodeCoverageMixin(SingleTestMixin):
                 z.write(jsvm_output_file)
 
         shutil.rmtree(self.grcov_dir)
-
-    @PostScriptAction("run-tests")
-    def process_java_coverage_data(self, action, success=None):
-        """
-        Run JaCoCo on the coverage.ec file in order to get a XML report.
-        After that, run grcov on the XML report to get a lcov report.
-        Finally, archive the lcov file and upload it, as process_coverage_data is doing.
-        """
-        if not self.java_code_coverage_enabled:
-            return
-
-        # If the emulator became unresponsive, the task has failed and we don't
-        # have any coverage report file, so stop running this function and
-        # allow the task to be retried automatically.
-        if not success and not os.listdir(self.java_coverage_output_dir):
-            return
-
-        report_files = [
-            os.path.join(self.java_coverage_output_dir, f)
-            for f in os.listdir(self.java_coverage_output_dir)
-        ]
-        assert len(report_files) > 0, "JaCoCo coverage data files were not found."
-
-        dirs = self.query_abs_dirs()
-        xml_path = tempfile.mkdtemp()
-        jacoco_command = (
-            ["java", "-jar", self.jacoco_jar, "report"]
-            + report_files
-            + [
-                "--classfiles",
-                self.classfiles_dir,
-                "--name",
-                "geckoview-junit",
-                "--xml",
-                os.path.join(xml_path, "geckoview-junit.xml"),
-            ]
-        )
-        self.run_command(jacoco_command, halt_on_failure=True)
-
-        grcov_command = [
-            os.path.join(self.grcov_dir, self.grcov_bin),
-            "-t",
-            "lcov",
-            xml_path,
-        ]
-        tmp_output_file, _ = self.get_output_from_command(
-            grcov_command,
-            silent=True,
-            save_tmpfiles=True,
-            return_type="files",
-            throw_exception=True,
-        )
-
-        if not self.ccov_upload_disabled:
-            grcov_zip_path = os.path.join(
-                dirs["abs_blob_upload_dir"], "code-coverage-grcov.zip"
-            )
-            with zipfile.ZipFile(grcov_zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-                z.write(tmp_output_file, "grcov_lcov_output.info")
 
 
 def rm_baseline_cov(baseline_coverage, test_coverage):

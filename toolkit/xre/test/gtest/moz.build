@@ -5,18 +5,25 @@
 Library("xretest")
 
 UNIFIED_SOURCES = [
+    "TestCheckCompatibility.cpp",
     "TestCmdLineAndEnvUtils.cpp",
     "TestCompatVersionCompare.cpp",
     "TestGeckoArgs.cpp",
 ]
 
 LOCAL_INCLUDES += [
+    "/toolkit/components/jsoncpp/include",
     "/toolkit/components/remote",
 ]
 
 if CONFIG["OS_TARGET"] == "WINNT":
     UNIFIED_SOURCES += [
         "TestAssembleCommandLineWin.cpp",
+    ]
+
+if CONFIG["MOZ_BLOCK_PROFILE_DOWNGRADE"]:
+    UNIFIED_SOURCES += [
+        "TestDowngradePing.cpp",
     ]
 
 FINAL_LIBRARY = "xul-gtest"

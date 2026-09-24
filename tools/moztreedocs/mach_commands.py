@@ -409,9 +409,8 @@ def _find_doc_dir(path):
         if os.path.isdir(p):
             path = p
 
-    for index_file in ["index.rst", "index.md"]:
-        if os.path.exists(os.path.join(path, index_file)):
-            return path
+    if os.path.exists(os.path.join(path, "index.md")):
+        return path
 
 
 def _s3_upload(root, project, unique_id, version=None):
@@ -546,8 +545,8 @@ def transform_error_regexp():
 
     # This regexp matches a couple of styles of message:
     #
-    # path/to/simpletest.rst: WARNING: document isn't included in any toctree
-    # path/to/index.rst:2: WARNING: Title underline too short.
+    # path/to/simpletest.md: WARNING: document isn't included in any toctree
+    # path/to/index.md:2: WARNING: Unknown directive type.
     #
     # The distinction is that some of them give a line number and some of them don't.
     # We need to replace the path, and split the text of the message so

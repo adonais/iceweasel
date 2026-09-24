@@ -24,8 +24,10 @@
 #  endif
 #endif
 
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
-#include "nsStringFwd.h"
+#include "nsIFile.h"
+#include "nsString.h"
 #include "nsXULAppAPI.h"
 #ifdef MOZ_HAS_REMOTE
 #  include "nsIRemoteService.h"
@@ -83,6 +85,37 @@ void BuildCompatVersion(const char* aAppVersion, const char* aAppBuildID,
  */
 int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
                               const nsACString& aNewCompatVersion);
+
+void ExtractCompatVersionInfo(const nsACString& aCompatVersion,
+                              nsACString& aAppVersion, nsACString& aAppBuildID);
+
+struct CompatCheckResult {
+  bool isCompatible = false;
+  bool cachesOK = false;
+  bool isDowngrade = false;
+  bool isDifferentInstall = false;
+  bool hasEncryptedDatabases = false;
+  nsCString lastAppVersion{VoidCString()};
+  nsCString lastAppBuildID{VoidCString()};
+  nsCString lastVersion;
+};
+
+CompatCheckResult CheckCompatibility(nsIFile* aProfileDir,
+                                     const nsCString& aVersion,
+                                     const nsCString& aOSABI,
+                                     nsIFile* aXULRunnerDir, nsIFile* aAppDir,
+                                     nsIFile* aFlagFile);
+
+#ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
+mozilla::Maybe<mozilla::PathString> GenerateDowngradeTelemetry(
+    const nsACString& aPingId, const nsCString& aLastVersion, bool aHasSync,
+    int32_t aButton, const nsACString& aChannel,
+    const nsACString& aProfileSelectionReason,
+    mozilla::Maybe<PRTime> aReplacedLockTime, bool aIsDifferentInstall);
+
+bool BuildDowngradePingUrl(const nsACString& aPingId,
+                           const nsACString& aChannel, nsACString& aUrlOut);
+#endif
 
 /**
  * Create the nativeappsupport implementation.

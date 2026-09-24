@@ -31,14 +31,33 @@ async function getLauncherButton() {
     { childList: true, subtree: true },
     () => sidebarMain.shadowRoot.querySelector(selector)
   );
-  return sidebarMain.shadowRoot.querySelector(selector);
+  const button = sidebarMain.shadowRoot.querySelector(selector);
+  // The button is in the shadow DOM before it has rendered its own contents,
+  // and so before it has any height. Necessary but not sufficient: the
+  // launcher keeps reflowing around the button afterwards, which is what the
+  // retry in hoverLauncherButton() is for.
+  await button.updateComplete;
+  return button;
+}
+
+function moveMouseTo(target) {
+  window.windowUtils.disableNonTestMouseEvents(true);
+  EventUtils.synthesizeMouseAtCenter(target, { type: "mousemove" });
+  window.windowUtils.disableNonTestMouseEvents(false);
 }
 
 async function hoverLauncherButton() {
   const button = await getLauncherButton();
-  window.windowUtils.disableNonTestMouseEvents(true);
-  EventUtils.synthesizeMouseAtCenter(button, { type: "mousemove" });
-  window.windowUtils.disableNonTestMouseEvents(false);
+  if (button.matches(":hover")) {
+    // The preview opens from a mouseover, and a move within the element the
+    // pointer is already over produces none: without this the loop below is
+    // satisfied on its first poll without anything having been hovered.
+    moveMouseTo(gBrowser.selectedBrowser);
+  }
+  await TestUtils.waitForCondition(() => {
+    moveMouseTo(button);
+    return button.matches(":hover");
+  }, "waiting for the pointer to land on the launcher button");
 }
 
 async function showPreview() {
@@ -52,22 +71,11 @@ async function showPreview() {
 
 async function hidePreview() {
   const preview = getPreview();
-  const wasOpen = preview.panel.state != "closed";
-  const hidden = wasOpen
-    ? BrowserTestUtils.waitForEvent(preview.panel, "popuphidden")
-    : null;
-
-  // Move the pointer off the launcher button, so that the next hover produces
-  // a fresh mouseenter rather than a no-op move within the same element.
-  window.windowUtils.disableNonTestMouseEvents(true);
-  EventUtils.synthesizeMouseAtCenter(SidebarController.contentArea, {
-    type: "mousemove",
-  });
-  window.windowUtils.disableNonTestMouseEvents(false);
-
-  if (!wasOpen) {
+  if (preview.panel.state == "closed") {
     return;
   }
+
+  const hidden = BrowserTestUtils.waitForEvent(preview.panel, "popuphidden");
   preview.hide();
   await hidden;
 }
@@ -153,7 +161,15 @@ add_task(async function test_close_button_closes_tab() {
   );
   Assert.ok(row, "The tab appears in the preview.");
 
-  row.querySelector(".close-button").click();
+  // The close button is only visible while the row is hovered, and clicking it
+  // while it is not gives it no accessible.
+  moveMouseTo(row);
+  const closeButton = row.querySelector(".close-button");
+  await TestUtils.waitForCondition(
+    () => closeButton.checkVisibility({ visibilityProperty: true }),
+    "waiting for the close button of the hovered row to become visible"
+  );
+  closeButton.click();
   await BrowserTestUtils.waitForMutationCondition(
     gBrowser.tabContainer,
     { childList: true, subtree: true },

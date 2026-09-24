@@ -176,6 +176,7 @@ class DataTransfer;
 enum class DeprecatedOperations : uint16_t;
 class Document;
 class DocumentFragment;
+class Sanitizer;
 class DOMArena;
 class Element;
 class Event;
@@ -2030,6 +2031,11 @@ class nsContentUtils {
    * for setHTML(), which already does its own sanitization.
    * @param aCustomElementRegistry the (scoped) registry to use for custom
    * element definitions.
+   * @param aSanitizer the Sanitizer API configuration to apply while parsing
+   * (the spec's "parser sanitizer configuration"), or nullptr not to sanitize
+   * while parsing.
+   * @param aSanitizerSafe safely sanitize, i.e.
+   * "remove javascript navigation URLs".
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
    *         long and NS_OK otherwise.
@@ -2039,7 +2045,9 @@ class nsContentUtils {
       nsAtom* aContextLocalName, int32_t aContextNamespace, bool aQuirks,
       bool aPreventScriptExecution, int32_t aFlags,
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
-          aCustomElementRegistry);
+          aCustomElementRegistry,
+      mozilla::dom::Sanitizer* aSanitizer = nullptr,
+      bool aSanitizerSafe = false);
 
   /**
    * Invoke the fragment parsing algorithm (innerHTML) using the XML parser.
@@ -2077,13 +2085,20 @@ class nsContentUtils {
    *                        child nodes.
    * @param aScriptingEnabledForNoscriptParsing whether <noscript> is parsed
    *                                            as if scripting was enabled
+   * @param aSanitizer the Sanitizer API configuration to apply while parsing
+   * (the spec's "parser sanitizer configuration"), or nullptr not to sanitize
+   * while parsing.
+   * @param aSanitizerSafe safely sanitize, i.e.
+   * "remove javascript navigation URLs".
    * @return NS_ERROR_DOM_INVALID_STATE_ERR if a re-entrant attempt to parse
    *         fragments is made, NS_ERROR_OUT_OF_MEMORY if aSourceBuffer is too
    *         long and NS_OK otherwise.
    */
-  static nsresult ParseDocumentHTML(const nsAString& aSourceBuffer,
-                                    Document* aTargetDocument,
-                                    bool aScriptingEnabledForNoscriptParsing);
+  static nsresult ParseDocumentHTML(
+      const nsAString& aSourceBuffer, Document* aTargetDocument,
+      bool aScriptingEnabledForNoscriptParsing,
+      mozilla::dom::Sanitizer* aSanitizer = nullptr,
+      bool aSanitizerSafe = false);
 
   /**
    * Converts HTML source to plain text by parsing the source and using the
@@ -2581,6 +2596,9 @@ class nsContentUtils {
    */
   static already_AddRefed<mozilla::dom::ContentList> GetElementsByClassName(
       nsINode* aRootNode, const nsAString& aClasses);
+
+  static bool MatchClassNames(mozilla::dom::Element* aElement,
+                              int32_t aNamespaceID, nsAtom* aAtom, void* aData);
 
   /**
    * Returns a presshell for this document, if there is one. This will be
@@ -3754,8 +3772,6 @@ class nsContentUtils {
 
   static void DropFragmentParsers();
 
-  static bool MatchClassNames(mozilla::dom::Element* aElement,
-                              int32_t aNamespaceID, nsAtom* aAtom, void* aData);
   static void DestroyClassNameArray(void* aData);
   static void* AllocClassMatchingInfo(nsINode* aRootNode,
                                       const nsString* aClasses);

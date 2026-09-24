@@ -191,6 +191,78 @@ import {
  */
 
 const MAX_FIELDS_PER_GENERATION_REQUEST = 20;
+const MAX_CONCURRENT_VALUES_BATCH_REQUESTS = 2;
+
+let activeValuesBatchRequests = 0;
+const pendingValuesBatchRequests = [];
+
+/**
+ * Starts executing queued batches from generateFormValues()
+ */
+function startPendingValuesBatchRequests() {
+  while (
+    activeValuesBatchRequests < MAX_CONCURRENT_VALUES_BATCH_REQUESTS &&
+    pendingValuesBatchRequests.length
+  ) {
+    const pendingRequest = pendingValuesBatchRequests.shift();
+    const { request, options, resolve, reject } = pendingRequest;
+
+    options.signal?.removeEventListener("abort", pendingRequest.onAbort);
+    activeValuesBatchRequests++;
+
+    generateFormValuesBatch(request, options).then(
+      value => {
+        activeValuesBatchRequests--;
+        resolve(value);
+        startPendingValuesBatchRequests();
+      },
+      error => {
+        activeValuesBatchRequests--;
+        reject(error);
+        startPendingValuesBatchRequests();
+      }
+    );
+  }
+}
+
+/**
+ * Adds a request to the queue for generating values.
+ *
+ * @param {GenerateFormValuesRequestBody} request
+ * @param {object} [options={}]
+ * @param {AbortSignal} [options.signal]
+ *
+ * @returns {Promise<GenerateFormValuesBatchResponse>}
+ */
+function queueValuesBatchRequest(request, options) {
+  const { signal } = options;
+  signal?.throwIfAborted();
+
+  const { promise, resolve, reject } = Promise.withResolvers();
+  const pendingRequest = {
+    request,
+    options,
+    resolve,
+    reject,
+    onAbort: null,
+  };
+
+  if (signal) {
+    pendingRequest.onAbort = () => {
+      const index = pendingValuesBatchRequests.indexOf(pendingRequest);
+      if (index === -1) {
+        return;
+      }
+      pendingValuesBatchRequests.splice(index, 1);
+      reject(signal.reason);
+    };
+    signal.addEventListener("abort", pendingRequest.onAbort, { once: true });
+  }
+
+  pendingValuesBatchRequests.push(pendingRequest);
+  startPendingValuesBatchRequests();
+  return promise;
+}
 
 const FIELD_CLASSIFICATION_RESPONSE_SCHEMA = {
   type: "object",
@@ -561,7 +633,7 @@ export const SmartFormFillModel = {
       index += MAX_FIELDS_PER_GENERATION_REQUEST
     ) {
       requests.push(
-        generateFormValuesBatch(
+        queueValuesBatchRequest(
           {
             ...request,
             fields: request.fields.slice(
@@ -574,7 +646,6 @@ export const SmartFormFillModel = {
       );
     }
 
-    // TODO - Bug 2059870 cap for fields/concurrency
     const results = await Promise.allSettled(requests);
     signal?.throwIfAborted();
 

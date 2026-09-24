@@ -184,8 +184,7 @@ void HTMLEmbedElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLEmbedElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLEmbedElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {
       sCommonAttributeMap,
       sImageMarginSizeAttributeMap,

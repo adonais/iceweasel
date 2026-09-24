@@ -14,7 +14,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -39,6 +38,7 @@
 #include "p2p/base/transport_description.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/callback_list.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/network.h"
@@ -311,7 +311,7 @@ class RTC_EXPORT Port : public PortInterface {
   void SendPortDestroyed(Port* port);
   // Returns a map containing all of the connections of this port, keyed by the
   // remote address.
-  typedef std::map<SocketAddress, Connection*> AddressMap;
+  using AddressMap = flat_map<SocketAddress, std::unique_ptr<Connection>>;
   const AddressMap& connections() { return connections_; }
 
   // Returns the connection to the given address or NULL if none exists.
@@ -525,17 +525,13 @@ class RTC_EXPORT Port : public PortInterface {
   void PostDestroyIfDead(bool delayed);
   void DestroyIfDead();
 
-  // Called internally when deleting a connection object.
-  // Returns true if the connection object was removed from the `connections_`
-  // list and the state updated accordingly. If the connection was not found
-  // in the list, the return value is false. Note that this may indicate
-  // incorrect behavior of external code that might be attempting to delete
-  // connection objects from within a 'on destroyed' callback notification
-  // for the connection object itself.
-  bool OnConnectionDestroyed(Connection* conn);
-
   // Private implementation of DestroyConnection to keep the async usage
-  // distinct.
+  // distinct. If the connection is found in connections_, it is removed and the
+  // state updated accordingly. If the connection is not found, the function
+  // returns without doing anything. Note that this may indicate incorrect
+  // behavior of external code that might be attempting to delete connection
+  // objects from within a 'on destroyed' callback notification for the
+  // connection object itself.
   void DestroyConnectionInternal(Connection* conn, bool async);
 
   void OnNetworkTypeChanged(const ::webrtc::Network* network);

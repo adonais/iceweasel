@@ -34,7 +34,7 @@ class SVGForeignObjectElement final : public SVGGraphicsElement {
   bool HasValidDimensions() const override;
 
   // nsIContent interface
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* name) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* name) const override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

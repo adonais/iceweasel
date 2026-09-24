@@ -50,6 +50,10 @@ add_task(async function () {
   Assert.equal(defaultBranch.getCharPref("distribution.id"), "disttest");
   Assert.equal(defaultBranch.getCharPref("distribution.version"), "1.0");
   Assert.equal(
+    defaultBranch.getCharPref("extensions.activeThemeID"),
+    "test-theme@example.com"
+  );
+  Assert.equal(
     defaultBranch.getStringPref("distribution.about"),
     "Tèƨƭ δïƨƭřïβúƭïôñ ƒïℓè"
   );

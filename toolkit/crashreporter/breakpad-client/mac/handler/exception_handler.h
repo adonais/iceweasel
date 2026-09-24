@@ -37,8 +37,10 @@
 #define CLIENT_MAC_HANDLER_EXCEPTION_HANDLER_H__
 
 #include <mach/mach.h>
+#include <signal.h>
 #include <TargetConditionals.h>
 
+#include <array>
 #include <string>
 
 #include "mac/handler/ucontext_compat.h"
@@ -214,8 +216,11 @@ class ExceptionHandler {
   // pthread with |this| as the argument
   static void *WaitForMessage(void *exception_handler_class);
 
-  // Signal handler for SIGABRT.
+  // Signal handler for supported signals.
   static void SignalHandler(int sig, siginfo_t* info, void* uc);
+
+  // Supported signals.
+  static constexpr auto kCaughtSignals = std::to_array({SIGABRT, SIGSYS});
 
   // disallow copy ctor and operator=
   explicit ExceptionHandler(const ExceptionHandler &);
@@ -282,9 +287,8 @@ class ExceptionHandler {
   // True, if we're using the mutext to indicate when mindump writing occurs
   bool use_minidump_write_mutex_;
 
-  // Old signal handler for SIGABRT. Used to be able to restore it when
-  // uninstalling.
-  scoped_ptr<struct sigaction> old_handler_;
+  // Old signal handlers. Used to be able to restore them when uninstalling.
+  std::array<scoped_ptr<struct sigaction>, kCaughtSignals.size()> old_handlers_;
 
 #if !TARGET_OS_IPHONE
   // Client for out-of-process dump generation.

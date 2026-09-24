@@ -52,7 +52,7 @@ bool VRProcessParent::Launch() {
 
   mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
   if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_VR,
-                                                /* remoteType */ ""_ns)) {
+                                                /* remoteType */ {})) {
     return false;
   }
   mPrefSerializer->AddSharedPrefCmdLineArgs(*this, extraArgs);

@@ -27,7 +27,6 @@ from mozpack.files import ExecutableFile
 import mozpack.path as mozpath
 import buildconfig
 from argparse import ArgumentParser
-from collections import OrderedDict
 from createprecomplete import generate_precomplete
 import os
 import plistlib
@@ -36,12 +35,12 @@ import subprocess
 
 
 class PackagerFileFinder(FileFinder):
-    def get(self, path):
-        f = super(PackagerFileFinder, self).get(path)
+    def get(self, path, known_to_exist=False):
+        f = super(PackagerFileFinder, self).get(path, known_to_exist)
         # Normalize Info.plist files, and remove the MozillaDeveloper*Path
         # entries which are only needed on unpackaged builds.
         if mozpath.basename(path) == "Info.plist":
-            info = plistlib.load(f.open(), dict_type=OrderedDict)
+            info = plistlib.load(f.open())
             info.pop("MozillaDeveloperObjPath", None)
             info.pop("MozillaDeveloperRepoPath", None)
             return GeneratedFile(plistlib.dumps(info, sort_keys=False))

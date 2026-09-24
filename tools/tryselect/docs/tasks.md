@@ -33,6 +33,15 @@ watchman watch .
 watchman -j < tools/tryselect/watchman.json
 ```
 
+:::{note}
+PowerShell on Windows does not support the `<` redirection operator. Run the
+last command through `cmd` instead:
+
+```shell
+cmd /d /c "watchman -j < tools/tryselect/watchman.json"
+```
+:::
+
 You should see output like:
 
 ```json

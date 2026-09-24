@@ -17,7 +17,7 @@ using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 // Specialization analysis for SIMD operations.  This is still x86-centric but
 // generalizes fairly easily to other architectures.
@@ -828,4 +828,4 @@ SimdShuffle jit::AnalyzeSimdShuffle(SimdConstant control, MDefinition* lhs,
 #  undef R
 }
 
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD

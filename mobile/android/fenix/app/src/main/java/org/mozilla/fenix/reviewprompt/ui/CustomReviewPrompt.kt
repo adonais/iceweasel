@@ -41,6 +41,10 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
+import mozilla.components.compose.base.theme.ThemedValue
+import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction
@@ -50,10 +54,6 @@ import org.mozilla.fenix.reviewprompt.CustomReviewPromptState.PrePrompt
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptState.Rate
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptStore
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemedValue
-import org.mozilla.fenix.theme.ThemedValueProvider
 
 /**
  * Prompt that can show either:

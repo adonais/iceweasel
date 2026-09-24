@@ -82,12 +82,6 @@ bool DcompSurfaceTexture::Serialize(SurfaceDescriptor& aOutDescriptor) {
   return true;
 }
 
-void DcompSurfaceTexture::GetSubDescriptor(
-    RemoteDecoderVideoSubDescriptor* aOutDesc) {
-  *aOutDesc = SurfaceDescriptorDcompSurface(ipc::FileDescriptor(mHandle), mSize,
-                                            mFormat);
-}
-
 DcompSurfaceImage::DcompSurfaceImage(HANDLE aHandle, gfx::IntSize aSize,
                                      gfx::SurfaceFormat aFormat,
                                      KnowsCompositor* aKnowsCompositor)
@@ -109,6 +103,7 @@ TextureClient* DcompSurfaceImage::GetTextureClient(
 DcompSurfaceHandleHost::DcompSurfaceHandleHost(
     TextureFlags aFlags, const SurfaceDescriptorDcompSurface& aDescriptor)
     : TextureHost(TextureHostType::DcompSurface, aFlags),
+      mDescriptor(aDescriptor),
       mHandle(const_cast<ipc::FileDescriptor&>(aDescriptor.handle())
                   .TakePlatformHandle()),
       mSize(aDescriptor.size()),
@@ -191,6 +186,10 @@ void DcompSurfaceHandleHost::PushDisplayItems(
       wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
       aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE),
       SupportsExternalCompositing(aBuilder.GetBackendType()));
+}
+
+SurfaceDescriptor DcompSurfaceHandleHost::GetSurfaceDescriptor() {
+  return mDescriptor;
 }
 
 }  // namespace mozilla::layers

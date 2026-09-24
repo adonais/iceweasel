@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: interleaved start()/stop()/abort() stress</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// Fuzz-style stress test: create many SpeechRecognition instances and call
+// start()/stop()/abort() on them in overlapping, randomized order, including
+// calling stop()/abort() before start() has finished initializing (before the
+// resampling thread / IPC session exists).
+//
+// Stress net: asserts survival (no crash/hang/leaked session slot), not a
+// single specific bug.
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestFlakyTimeout("stress test intentionally races IPC/session teardown");
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["media.webspeech.test.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const instances = [];
+    for (let i = 0; i < 15; i++) {
+      const sr = new SpeechRecognition();
+      sr.continuous = true;
+      // Swallow all events/errors: we only care that nothing crashes.
+      sr.onerror = () => {};
+      sr.onresult = () => {};
+      instances.push(sr);
+    }
+
+    // Randomized interleaving of start/stop/abort across all instances, with
+    // no delay between calls on the same tick and small random delays across
+    // ticks, to hit different points in each instance's async init sequence.
+    for (let round = 0; round < 60; round++) {
+      const sr = pick(instances);
+      const action = pick(["start", "stop", "abort", "start-then-stop"]);
+      try {
+        if (action === "start") {
+          sr.start();
+        } else if (action === "stop") {
+          sr.stop();
+        } else if (action === "abort") {
+          sr.abort();
+        } else {
+          sr.start();
+          sr.stop();
+        }
+      } catch (e) {
+        // InvalidStateError (e.g. already started) is expected under fuzzing;
+        // anything else is worth seeing in the log.
+        if (!e || e.name !== "InvalidStateError") {
+          info("Unexpected exception from " + action + ": " + e);
+        }
+      }
+      if (round % 7 === 0) {
+        await new Promise(r => setTimeout(r, 10));
+      }
+    }
+
+    // Let everything settle, then make sure the object is still usable
+    // (no leaked "concurrent session" state from the fuzzing above).
+    await new Promise(r => setTimeout(r, 500));
+    for (const sr of instances) {
+      try {
+        sr.abort();
+      } catch (e) {}
+    }
+    await new Promise(r => setTimeout(r, 200));
+
+    const probe = new SpeechRecognition();
+    const started = await new Promise(resolve => {
+      probe.onstart = () => resolve(true);
+      probe.onerror = () => resolve(false);
+      try {
+        probe.start();
+      } catch (e) {
+        resolve(false);
+      }
+    });
+    ok(started, "A fresh SpeechRecognition can still start after the fuzz run " +
+       "(no leaked single-session slot)");
+    probe.abort();
+
+    ok(true, "Survived interleaved start()/stop()/abort() stress without crashing");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

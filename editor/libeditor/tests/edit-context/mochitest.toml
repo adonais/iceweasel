@@ -7,6 +7,8 @@ support-files = ["common.js"]
 
 ["test_editcontext_allow_canvas_pref.html"]
 
+["test_editcontext_anonymous_content_flow.html"]
+
 ["test_editcontext_blur_in_textupdate.html"]
 
 ["test_editcontext_characterboundsupdate_focus.html"]

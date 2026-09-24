@@ -32,9 +32,7 @@ class TestExecuteIsolationContent(MarionetteTestCase):
             """
         let [resolve] = arguments;
         setTimeout(function() {{ resolve(10{}); }}, 5000);
-        """.format(
-                multiplier
-            )
+        """.format(multiplier)
         )
         self.assertEqual(result, 30 if self.content else 10)
 

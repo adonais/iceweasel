@@ -11,7 +11,7 @@ export RUST_LOG=warn
 export RUSTFLAGS="-C instrument-coverage"
 
 cp -a "${VCS_PATH}/nss" .
-[ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
+bash nss/automation/taskcluster/scripts/clone_nspr.sh
 
 if [[ -f nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
     cd nspr

@@ -485,6 +485,9 @@ LoadDLLs() {
 #define DECL_FUNCTION_PTR(FunctionName, ...) \
   typedef HRESULT(STDMETHODCALLTYPE* FunctionName##Ptr_t)(__VA_ARGS__)
 
+constinit UniquePtr<MediaFoundationInitializer>
+    MediaFoundationInitializer::sInitializer;
+
 HRESULT
 MediaFoundationInitializer::MFStartup() {
   HRESULT hr = LoadDLLs();

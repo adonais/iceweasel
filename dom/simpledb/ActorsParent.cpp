@@ -35,6 +35,7 @@
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientDirectoryLockHandle.h"
 #include "mozilla/dom/quota/ClientImpl.h"
+#include "mozilla/dom/quota/ConditionalCompilation.h"
 #include "mozilla/dom/quota/FileStreams.h"
 #include "mozilla/dom/quota/PrincipalUtils.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
@@ -449,7 +450,7 @@ class CloseOp final : public ConnectionOperationBase {
  ******************************************************************************/
 
 class QuotaClient final : public mozilla::dom::quota::Client {
-  static QuotaClient* sInstance;
+  DEBUGONLY(static QuotaClient* sInstance);
 
  public:
   QuotaClient();
@@ -776,6 +777,15 @@ bool Connection::VerifyRequestParams(const SDBRequestParams& aParams) const {
 
   switch (aParams.type()) {
     case SDBRequestParams::TSDBRequestOpenParams: {
+      const auto& name = aParams.get_SDBRequestOpenParams().name();
+
+      // The name becomes part of a path passed to NUL-terminated OS APIs.
+      // Reject embedded NULs before they can truncate the on-disk leaf name.
+      if (NS_WARN_IF(name.Contains(u'\0'))) {
+        MOZ_CRASH_UNLESS_FUZZING();
+        return false;
+      }
+
       if (NS_WARN_IF(mOpen)) {
         MOZ_CRASH_UNLESS_FUZZING();
         return false;
@@ -1641,20 +1651,20 @@ void CloseOp::OnSuccess() {
  * QuotaClient
  ******************************************************************************/
 
-QuotaClient* QuotaClient::sInstance = nullptr;
+DEBUGONLY(QuotaClient* QuotaClient::sInstance = nullptr);
 
 QuotaClient::QuotaClient() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!sInstance, "We expect this to be a singleton!");
 
-  sInstance = this;
+  DEBUGONLY(sInstance = this);
 }
 
 QuotaClient::~QuotaClient() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(sInstance == this, "We expect this to be a singleton!");
 
-  sInstance = nullptr;
+  DEBUGONLY(sInstance = nullptr);
 }
 
 mozilla::dom::quota::Client::Type QuotaClient::GetType() {

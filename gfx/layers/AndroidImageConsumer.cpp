@@ -82,5 +82,19 @@ gfx::IntSize AndroidImageConsumer::GetSize() {
   return mCurrentImage->mSize;
 }
 
+mozilla::UniqueFileHandle AndroidImageConsumer::CloneWriteFenceFd() {
+  if (!mCurrentImage) {
+    return nullptr;
+  }
+  return mCurrentImage->CloneWriteFenceFd();
+}
+
+void AndroidImageConsumer::SetReadFenceFd(UniqueFileHandle&& aFenceFd) {
+  if (!mCurrentImage) {
+    return;
+  }
+  mCurrentImage->SetReadFenceFd(std::move(aFenceFd));
+}
+
 }  // namespace layers
 }  // namespace mozilla

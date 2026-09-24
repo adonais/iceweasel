@@ -6,7 +6,7 @@ catch them. Use it two ways: (1) a **review checklist** against new page objects
 
 Each entry: **symptom → cause → check**. Add new ones as we find them; link the Jira/bug where relevant.
 
-Last updated: 2026-07-22.
+Last updated: 2026-09-04.
 
 ---
 
@@ -40,7 +40,7 @@ Last updated: 2026-07-22.
   (text = unmerged; tag/content-desc = merged) and add the other tree only as fallback. `resolve()` now
   tries both and picks the _displayed_ match — keep that behavior.
 
-### A4. Any shared-resolution change touches all ~185 tests
+### A4. Any shared-resolution change can touch the whole suite
 
 - **Symptom:** a small tweak in `core/` — `Resolvers`, `Verbs`, `UiActions` — breaks a large, uniform
   swath of tests.
@@ -62,9 +62,9 @@ Last updated: 2026-07-22.
   expect the harness to absorb it. The legacy suite's shared `RetryTestRule(3)` still retries and still has
   the masking problem.
 
-### A6. Page-arrival timeouts are the most common failure shape
+### A6. Page-readiness timeouts are the most common failure shape
 
-- **Symptom:** `navigateToPage` → `mozWaitForPageToLoad` can't find a page's `requiredForPage` anchor
+- **Symptom:** `navigateToPage` cannot satisfy a page's `IDENTIFIED`, `NAVIGATION_READY`, or `INTERACTIVE` profile
   within 10s.
 - **Cause:** usually timing/flakiness (slow arrival), sometimes a wrong/absent anchor selector,
   sometimes the screen genuinely isn't there (wrong launch/state — see A8).
@@ -101,19 +101,17 @@ Last updated: 2026-07-22.
 
 - **Why:** the Reachability factory **auto-registers every page object** (it discovers them by reflection
   over `PageContext` via `PageCatalog`) and generates a "can I reach this page?" case for each. A page
-  with no reachable path — empty/absent `NavigationRegistry` steps AND no handling for a special launch —
+  with no reachable path — no contributed route and no handling for a special launch —
   produces a reachability case that always fails.
 - **What happened:** `OnboardingPage` registered `AppEntry → OnboardingPage` with `steps = listOf()`. The
   reachability run launches with the harness default (`skipOnboarding = true`), so onboarding never shows,
-  so the `requiredForPage` anchor (ToU card title) is never found → the generated case fails.
+  so the readiness anchor (ToU card title) is never found → the generated case fails.
 - **Check for every new page object:**
-  - It registers at least one `NavigationRegistry` edge with real steps that reach it from `AppEntry`
-    (directly or transitively), **or**
-  - if it only exists under a special app launch (e.g. onboarding), it declares a `LaunchConfig` on its
-    `AppEntry` edge. The Reachability factory now threads that config per case and launches the activity
-    with it, so the page is genuinely reached — not skipped. See
-    `onboarding-branch-staging/onboarding-reachability-fix.md`.
-  - Never leave `steps = listOf()` on the only edge into a page without one of the above.
+  - The graph contains a directed route from `AppEntry` to it, **or**
+  - if it only exists under a special app launch (e.g. onboarding), an `AppEntry` route declares both
+    its `LaunchConfig` and `arrival = NavigationArrival.LAUNCH_REACHED`. The Reachability factory threads
+    that config per case and launches the activity with it, so the page is genuinely reached.
+  - Never leave a zero-step route with the default `ACTION` arrival; graph construction rejects it.
   - Note: Pairs can't vary launch per case, so special-launch pages are excluded from Pairs only.
 
 ### B2. Selectors live in the catalog, not in page objects
@@ -158,22 +156,25 @@ Last updated: 2026-07-22.
 - **Check:** per-strategy tree semantics preserved (A3), a presence check still never throws (A2),
   and validated with a full-suite run (A4).
 
-### B7. Nav entry/arrival selectors must cover EVERY runtime state (2026-07-23, bit us twice)
+### B7. Identity selectors must cover every state; conditional readiness must name the state
 
 - **Why:** a screen's arrival signal or entry control can change with app state. (1) RecentlyClosed's
-  `requiredForPage` was the empty-state view — absent once the list is populated, so populated tests
+  identity was the empty-state view — absent once the list is populated, so populated tests
   couldn't confirm arrival. (2) The UnifiedTrustPanel entry button's testTag depends on the page's
   security and tracking protection state: `SITE_INFO_SECURE` vs `SITE_INFO_INSECURE_CONNECTION` vs
   `SITE_INFO_TRACKING_PROTECTION_OFF` vs `SITE_INFO_UNKNOWN` — the secure-only edge never opened
   the panel on an http page.
-- **Check:** `requiredForPage` must be an element present in ALL states (e.g. a toolbar title, never an
-  empty-list placeholder). A nav edge whose entry control is state-dependent must `ClickIfPresent` every
+- **Check:** `IDENTIFIED` must use evidence present in all states (e.g. a toolbar title, never an
+  empty-list placeholder). Put state-specific requirements in a named `PageReadinessRule` using `AnyOf`
+  or `appliesWhen`. An edge whose entry control is state-dependent must still `ClickIfPresent` every
   variant. effcheck can't see this — verify by hand whenever you build/modify nav.
 
-### B8. Test-class boilerplate (now enforced by effcheck MWS/IMP)
+### B8. Test execution resources are owned once
 
-- A test class using `mockWebServer` must declare `private val mockWebServer get() = fenixTestRule.mockWebServer`
-  — `BaseTest` does not expose it. (effcheck: MWS)
+- An ordinary test using MockWebServer uses the protected `BaseTest.mockWebServer`. Its resolved
+  `EfficiencyExecutionRequirements` must be `AVAILABLE` (the current default) rather than `NOT_NEEDED`.
+  A separately owned server is permitted only as a documented legacy-parity exception with independent
+  teardown; do not copy that pattern into new tests.
 - `TestAssetHelper` members (`getGenericAsset`, `enhancedTrackingProtectionAsset`, …) must be imported even
   when called on a receiver (`mockWebServer.getGenericAsset(...)`). (effcheck: IMP)
 - `navigateToPage()` returns `BasePage`: chain only `moz*`/BasePage methods off it. Call a page-specific

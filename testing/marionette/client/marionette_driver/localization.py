@@ -6,11 +6,12 @@
 class L10n:
     """An API which allows Marionette to handle localized content.
 
-    The `localization`_ of UI elements in Gecko based applications is done via
-    entities and properties. For static values entities are used, which are located
-    in .dtd files. Whereby for dynamically updated content the values come from
-    .property files. Both types of elements can be identifed via a unique id,
-    and the translated content retrieved.
+    The `localization <https://firefox-source-docs.mozilla.org/l10n/>`_ of UI
+    elements in Gecko based
+    applications is done via entities and properties. For static values entities
+    are used, which are located in .dtd files. Whereby for dynamically updated
+    content the values come from .property files. Both types of elements can be
+    identifed via a unique id, and the translated content retrieved.
 
     For example::
 
@@ -18,8 +19,6 @@ class L10n:
         l10n = L10n(marionette)
 
         l10n.localize_property(["chrome://global/locale/findbar.properties"], "FastFind"))
-
-    .. _localization: https://mzl.la/2eUMjyF
     """
 
     def __init__(self, marionette):

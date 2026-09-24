@@ -220,8 +220,8 @@ void HTMLObjectElement::MapAttributesIntoRule(
   MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLObjectElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLObjectElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {
       sCommonAttributeMap,
       sImageMarginSizeAttributeMap,

@@ -132,13 +132,12 @@ input:is([type="number"], [type="text"]) {
 }
 
 input[type="number"] {
-  box-sizing: content-box;
+  box-sizing: border-box;
   min-height: unset;
-  padding: 0;
-  padding-inline-start: var(--space-small);
+  padding-block: var(--space-xsmall);
+  padding-inline: var(--space-small);
   margin: 0;
-  height: 1.5em;
-  width: 4em;
+  width: 5em;
 }
 
 input:is([type="checkbox"], [type="radio"]):disabled + label,

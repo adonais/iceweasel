@@ -20,9 +20,8 @@ use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::segment::EdgeMask;
 use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
-use crate::device::Device;
 use crate::space::SpaceMapper;
-use std::{ops, u64, os::raw::c_void, hash};
+use std::{ops, os::raw::c_void, hash};
 use std::num::NonZeroUsize;
 
 /*
@@ -1368,6 +1367,20 @@ impl NativeTileId {
     };
 }
 
+/// An opaque handle to a native compositor surface that WR can draw to. Its
+/// meaning depends on the graphics API the renderer runs on; with OpenGL it
+/// is the name of a framebuffer object.
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct NativeSurfaceHandle(pub u64);
+
+impl NativeSurfaceHandle {
+    /// Refers to whatever the embedder has already bound as the default
+    /// draw target, for example after `LayerCompositor::bind_layer`, or a
+    /// DirectComposition surface bound as the default framebuffer.
+    pub const DEFAULT: Self = NativeSurfaceHandle(0);
+}
+
 /// Information about a bound surface that the native compositor
 /// returns to WR.
 #[repr(C)]
@@ -1379,14 +1392,11 @@ pub struct NativeSurfaceInfo {
     /// be returned into the larger texture where WR should draw. This
     /// can be (0, 0) if texture atlases are not used.
     pub origin: DeviceIntPoint,
-    /// The ID of the FBO that WR should bind to, in order to draw to
-    /// the bound surface. On Windows (ANGLE) this will always be 0,
-    /// since creating a p-buffer sets the default framebuffer to
-    /// be the DirectComposition surface. On Mac, this will be non-zero,
-    /// since it identifies the IOSurface that has been bound to draw to.
-    // TODO(gw): This may need to be a larger / different type for WR
-    //           backends that are not GL.
-    pub fbo_id: u32,
+    /// The surface that WR should draw to. On Windows (ANGLE) this is
+    /// `NativeSurfaceHandle::DEFAULT`, since creating a p-buffer sets the
+    /// default framebuffer to be the DirectComposition surface. On Mac it
+    /// identifies the IOSurface that has been bound to draw to.
+    pub handle: NativeSurfaceHandle,
 }
 
 #[repr(C)]
@@ -1486,7 +1496,6 @@ pub trait Compositor {
     /// Create a new OS compositor surface with the given properties.
     fn create_surface(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
         virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
@@ -1499,7 +1508,6 @@ pub trait Compositor {
     /// and not create_tile/destroy_tile/bind/unbind.
     fn create_external_surface(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
         is_opaque: bool,
     );
@@ -1507,7 +1515,6 @@ pub trait Compositor {
     /// Create a new OS backdrop surface that will display a color.
     fn create_backdrop_surface(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
         color: ColorF,
     );
@@ -1520,21 +1527,18 @@ pub trait Compositor {
     /// by the operating system).
     fn destroy_surface(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
     );
 
     /// Create a new OS compositor tile with the given properties.
     fn create_tile(
         &mut self,
-        device: &mut Device,
         id: NativeTileId,
     );
 
     /// Destroy an existing compositor tile.
     fn destroy_tile(
         &mut self,
-        device: &mut Device,
         id: NativeTileId,
     );
 
@@ -1544,7 +1548,6 @@ pub trait Compositor {
     /// many different images attached (like one for each video frame).
     fn attach_external_image(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
         external_image: ExternalImageId
     );
@@ -1555,7 +1558,6 @@ pub trait Compositor {
     /// surfaces can be composited early while others are still updating.
     fn invalidate_tile(
         &mut self,
-        _device: &mut Device,
         _id: NativeTileId,
         _valid_rect: DeviceIntRect
     ) {}
@@ -1573,7 +1575,6 @@ pub trait Compositor {
     /// affect the coordinates of the returned origin).
     fn bind(
         &mut self,
-        device: &mut Device,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
         valid_rect: DeviceIntRect,
@@ -1583,11 +1584,10 @@ pub trait Compositor {
     /// finished issuing OpenGL commands on the current surface.
     fn unbind(
         &mut self,
-        device: &mut Device,
     );
 
     /// Begin the frame
-    fn begin_frame(&mut self, device: &mut Device);
+    fn begin_frame(&mut self);
 
     /// Add a surface to the visual tree to be composited. Visuals must
     /// be added every frame, between the begin/end transaction call. The
@@ -1600,7 +1600,6 @@ pub trait Compositor {
     // TODO(gw): We might need to add a concept of a hierachy in future.
     fn add_surface(
         &mut self,
-        device: &mut Device,
         id: NativeSurfaceId,
         transform: CompositorSurfaceTransform,
         clip_rect: DeviceIntRect,
@@ -1617,7 +1616,6 @@ pub trait Compositor {
     /// opaque, this is currently only computed if the caller is SwCompositor.
     fn start_compositing(
         &mut self,
-        _device: &mut Device,
         _clear_color: ColorF,
         _dirty_rects: &[DeviceIntRect],
         _opaque_rects: &[DeviceIntRect],
@@ -1626,20 +1624,20 @@ pub trait Compositor {
     /// Commit any changes in the compositor tree for this frame. WR calls
     /// this once when all surface and visual updates are complete, to signal
     /// that the OS composite transaction should be applied.
-    fn end_frame(&mut self, device: &mut Device);
+    fn end_frame(&mut self);
 
     /// Enable/disable native compositor usage
-    fn enable_native_compositor(&mut self, device: &mut Device, enable: bool);
+    fn enable_native_compositor(&mut self, enable: bool);
 
     /// Safely deinitialize any remaining resources owned by the compositor.
-    fn deinit(&mut self, device: &mut Device);
+    fn deinit(&mut self);
 
     /// Get the capabilities struct for this compositor. This is used to
     /// specify what features a compositor supports, depending on the
     /// underlying platform
-    fn get_capabilities(&self, device: &mut Device) -> CompositorCapabilities;
+    fn get_capabilities(&self) -> CompositorCapabilities;
 
-    fn get_window_visibility(&self, device: &mut Device) -> WindowVisibility;
+    fn get_window_visibility(&self) -> WindowVisibility;
 }
 
 // Describes the configuration for an input layer that the compositor
@@ -1740,7 +1738,6 @@ pub trait MappableCompositor: Compositor {
     /// while supporting some form of native layers.
     fn map_tile(
         &mut self,
-        device: &mut Device,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
         valid_rect: DeviceIntRect,
@@ -1748,16 +1745,15 @@ pub trait MappableCompositor: Compositor {
 
     /// Unmap a tile that was was previously mapped via map_tile to signal
     /// that SWGL is done rendering to the buffer.
-    fn unmap_tile(&mut self, device: &mut Device);
+    fn unmap_tile(&mut self);
 
     fn lock_composite_surface(
         &mut self,
-        device: &mut Device,
         ctx: *mut c_void,
         external_image_id: ExternalImageId,
         composite_info: *mut SWGLCompositeSurfaceInfo,
     ) -> bool;
-    fn unlock_composite_surface(&mut self, device: &mut Device, ctx: *mut c_void, external_image_id: ExternalImageId);
+    fn unlock_composite_surface(&mut self, ctx: *mut c_void, external_image_id: ExternalImageId);
 }
 
 /// Defines an interface to a non-native (application-level) Compositor which handles

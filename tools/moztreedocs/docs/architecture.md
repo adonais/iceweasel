@@ -7,7 +7,7 @@ The documentation code is in two main directories:
 - {searchfox}`docs`
 - {searchfox}`tools/moztreedocs`
 
-Our documentation supports both rst & markdown syntaxes.
+Our documentation is written in Markdown, parsed by MyST.
 
 ## Configuration
 
@@ -30,7 +30,7 @@ contains:
 
 - `mach doc` arguments managements
 - Detection/configuration of the environment (nodejs for jsdoc, pip for dependencies, etc)
-- Symlink the doc sources (.rst & .md) from the source tree into the staging directory
+- Symlink the doc sources (.md) from the source tree into the staging directory
 - Fails the build if any critical warnings have been identified
 - Starts the sphinx build (and serve it if the option is set)
 - Manages telemetry

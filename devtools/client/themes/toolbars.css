@@ -147,11 +147,11 @@
 }
 
 .devtools-sidebar-tabs tabs > tab:hover {
-  background: rgba(0, 0, 0, 0.12);
+  background: rgb(0 0 0 / 0.12);
 }
 
 .devtools-sidebar-tabs tabs > tab:hover:active {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgb(0 0 0 / 0.2);
 }
 
 .devtools-sidebar-tabs tabs > tab[selected],

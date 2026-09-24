@@ -741,12 +741,8 @@ class RelayOffered {
         `failed to notify server that terms are accepted : ${response?.status}:${response?.statusText}`
       );
 
-      let error;
-      try {
-        error = await response?.json();
-      } catch {}
       await showErrorAsync(browser, "firefox-relay-mask-generation-failed", {
-        status: error?.detail || response.status,
+        status: response.status,
       });
       return false;
     }

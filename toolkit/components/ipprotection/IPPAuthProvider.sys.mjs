@@ -15,6 +15,7 @@ export const AUTH_ERRORS = Object.freeze({
   NOT_ENTITLED: "not_entitled", // Valid credentials, but no entitlement assigned to the user
   QUOTA_EXCEEDED: "quota_exceeded", // The bandwidth limit was reached
   REGION_UNAVAILABLE: "region_unavailable", // Unavailable for legal reasons
+  NETWORK_ERROR: "network_error", // The request failed at the network layer
   SERVER_ERROR: "server_error", // The service failed to answer
   INVALID_RESPONSE: "invalid_response", // The response did not match the schema
   PARSE_ERROR: "parse_error", // The response could not be parsed

@@ -109,7 +109,8 @@ HTMLSelectElement::HTMLSelectElement(
       mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mAutocompleteInfoState(nsContentUtils::eAutocompleteAttrState_Unknown),
       mIsDoneAddingChildren(!aFromParser),
-      mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)) {
+      mInhibitStateRestoration(!!(aFromParser & FROM_PARSER_FRAGMENT)),
+      mDefaultSelectionSet(!aFromParser) {
   SetHasWeirdParserInsertionMode();
   // Set up our default state: enabled, optional, and valid.
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
@@ -582,6 +583,92 @@ HTMLCollection* HTMLSelectElement::SelectedOptions() {
   return mSelectedOptions;
 }
 
+// https://html.spec.whatwg.org/#option-element-nearest-ancestor-select
+// Generalised to any node, so that the same walk decides the option, optgroup
+// and hr membership of a select's option list.
+/* static */
+auto HTMLSelectElement::ComputeNearestAncestors(const nsINode& aNode)
+    -> NearestAncestors {
+  // 1. Let ancestorOptgroup be null.
+  HTMLOptGroupElement* ancestorOptGroup = nullptr;
+  // 2. For each ancestor of element's ancestors, in reverse tree order:
+  for (nsINode* ancestor : Ancestors(aNode)) {
+    // 2.1. If ancestor is a datalist, hr, or option element, return null.
+    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::datalist, nsGkAtoms::hr,
+                                      nsGkAtoms::option)) {
+      return {nullptr, ancestorOptGroup};
+    }
+    // 2.2. If ancestor is an optgroup element:
+    if (auto* optgroup = HTMLOptGroupElement::FromNode(ancestor)) {
+      // 2.2.1. If ancestorOptgroup is not null, return null.
+      if (ancestorOptGroup) {
+        return {nullptr, ancestorOptGroup};
+      }
+      // 2.2.2. Set ancestorOptgroup to ancestor.
+      ancestorOptGroup = optgroup;
+      continue;
+    }
+    // 2.3. If ancestor is a select element, return ancestor.
+    if (auto* select = FromNode(ancestor)) {
+      return {select, ancestorOptGroup};
+    }
+  }
+  // 3. Return null.
+  return {nullptr, ancestorOptGroup};
+}
+
+/* static */
+bool HTMLSelectElement::IsOptionListItem(const Element& aElement,
+                                         const nsINode& aRoot) {
+  MOZ_ASSERT(aRoot.IsAnyOfHTMLElements(nsGkAtoms::optgroup, nsGkAtoms::select),
+             "Why are we providing a non-select/optgroup root?");
+  const bool isOptGroup = aElement.IsHTMLElement(nsGkAtoms::optgroup);
+  if (!isOptGroup &&
+      !aElement.IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::hr)) {
+    return false;
+  }
+  const auto ancestors = ComputeNearestAncestors(aElement);
+  if (const auto* group = HTMLOptGroupElement::FromNode(&aRoot)) {
+    // The members of a group. An optgroup never groups another optgroup.
+    return !isOptGroup && ancestors.mOptGroup == group;
+  }
+  // The items of a select that no optgroup groups.
+  return ancestors.mSelect == &aRoot && !ancestors.mOptGroup;
+}
+
+// Calls `aCallback` for each item of the option list rooted at `aRoot`, in tree
+// order.
+template <typename Callback>
+static void ForEachOptionListItem(nsINode& aRoot, Callback&& aCallback) {
+  for (nsIContent* c = aRoot.GetFirstChild(); c; c = c->GetNextNode(&aRoot)) {
+    Element* element = Element::FromNode(c);
+    if (element && HTMLSelectElement::IsOptionListItem(*element, aRoot)) {
+      aCallback(*element);
+    }
+  }
+}
+
+uint32_t HTMLSelectElement::CountRenderedRows() {
+  uint32_t count = 0;
+  auto countOption = [&count](Element& aItem) {
+    if (auto* option = HTMLOptionElement::FromNode(&aItem)) {
+      count += !!option->GetPrimaryFrame();
+    }
+  };
+  ForEachOptionListItem(*this, [&](Element& aItem) {
+    if (auto* group = HTMLOptGroupElement::FromNode(&aItem)) {
+      nsAutoString label;
+      group->GetLabel(label);
+      // XXX bug 1499176: skip empty <optgroup> labels for now.
+      count += !label.IsEmpty();
+      ForEachOptionListItem(*group, countOption);
+      return;
+    }
+    countOption(aItem);
+  });
+  return count;
+}
+
 HTMLOptionElement* HTMLSelectElement::GetSelectedOption(
     IgnoredOptionList aIgnored) const {
   uint32_t len = Length();
@@ -863,20 +950,9 @@ bool HTMLSelectElement::IsOptionDisabled(HTMLOptionElement* aOption) const {
   if (aOption->Disabled()) {
     return true;
   }
-
   // https://html.spec.whatwg.org/#concept-option-disabled
-  // Walk ancestors looking for a disabled optgroup. Wrapper elements (div,
-  // span, etc.) are transparent; only boundary elements stop the walk.
-  for (Element* node = aOption->GetParentElement(); node;
-       node = node->GetParentElement()) {
-    if (HTMLOptionElement::IsOptionListBoundary(*node)) {
-      return false;
-    }
-    if (auto* optGroupElement = HTMLOptGroupElement::FromNode(node)) {
-      return optGroupElement->Disabled();
-    }
-  }
-  return false;
+  auto* optgroup = ComputeNearestAncestors(*aOption).mOptGroup;
+  return optgroup && optgroup->Disabled();
 }
 
 void HTMLSelectElement::GetValue(nsAString& aValue) const {
@@ -1168,8 +1244,8 @@ nsChangeHint HTMLSelectElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLSelectElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLSelectElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sCommonAttributeMap,
                                                     sImageAlignAttributeMap};
 
@@ -1415,7 +1491,10 @@ bool HTMLSelectElement::IsValueMissing(IgnoredOptionList aIgnored) const {
         continue;
       }
       first = false;
-      if (!Multiple() && Size() <= 1 && option->GetParent() == this) {
+      // https://html.spec.whatwg.org/#placeholder-label-option
+      // The option must be in our option list directly, rather than via an
+      // optgroup. Wrapper elements are transparent.
+      if (IsCombobox() && !ComputeNearestAncestors(*option).mOptGroup) {
         nsAutoString value;
         option->GetValue(value);
         if (value.IsEmpty()) {

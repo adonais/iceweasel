@@ -5,9 +5,9 @@ Implements the Distutils 'build_scripts' command."""
 import os
 import re
 import tokenize
-from distutils import sysconfig
 from distutils._log import log
 from stat import ST_MODE
+from typing import ClassVar
 
 from .._modified import newer
 from ..core import Command
@@ -25,13 +25,13 @@ first_line_re = shebang_pattern
 class build_scripts(Command):
     description = "\"build\" scripts (copy and fixup #! line)"
 
-    user_options = [
+    user_options: ClassVar[list[tuple[str, str, str]]] = [
         ('build-dir=', 'd', "directory to \"build\" (copy) to"),
         ('force', 'f', "forcibly build everything (ignore file timestamps"),
         ('executable=', 'e', "specify final destination interpreter path"),
     ]
 
-    boolean_options = ['force']
+    boolean_options: ClassVar[list[str]] = ['force']
 
     def initialize_options(self):
         self.build_dir = None
@@ -75,7 +75,7 @@ class build_scripts(Command):
 
         return outfiles, updated_files
 
-    def _copy_script(self, script, outfiles, updated_files):  # noqa: C901
+    def _copy_script(self, script, outfiles, updated_files):
         shebang_match = None
         script = convert_path(script)
         outfile = os.path.join(self.build_dir, os.path.basename(script))
@@ -87,40 +87,24 @@ class build_scripts(Command):
 
         # Always open the file, but ignore failures in dry-run mode
         # in order to attempt to copy directly.
-        try:
-            f = tokenize.open(script)
-        except OSError:
-            if not self.dry_run:
-                raise
-            f = None
-        else:
-            first_line = f.readline()
-            if not first_line:
-                self.warn(f"{script} is an empty file (skipping)")
-                return
+        f = tokenize.open(script)
 
-            shebang_match = shebang_pattern.match(first_line)
+        first_line = f.readline()
+        if not first_line:
+            self.warn(f"{script} is an empty file (skipping)")
+            return
+
+        shebang_match = shebang_pattern.match(first_line)
 
         updated_files.append(outfile)
         if shebang_match:
             log.info("copying and adjusting %s -> %s", script, self.build_dir)
-            if not self.dry_run:
-                if not sysconfig.python_build:
-                    executable = self.executable
-                else:
-                    executable = os.path.join(
-                        sysconfig.get_config_var("BINDIR"),
-                        "python{}{}".format(
-                            sysconfig.get_config_var("VERSION"),
-                            sysconfig.get_config_var("EXE"),
-                        ),
-                    )
-                post_interp = shebang_match.group(1) or ''
-                shebang = "#!" + executable + post_interp + "\n"
-                self._validate_shebang(shebang, f.encoding)
-                with open(outfile, "w", encoding=f.encoding) as outf:
-                    outf.write(shebang)
-                    outf.writelines(f.readlines())
+            post_interp = shebang_match.group(1) or ''
+            shebang = "#!" + self.executable + post_interp + "\n"
+            self._validate_shebang(shebang, f.encoding)
+            with open(outfile, "w", encoding=f.encoding) as outf:
+                outf.write(shebang)
+                outf.writelines(f.readlines())
             if f:
                 f.close()
         else:
@@ -136,10 +120,6 @@ class build_scripts(Command):
             self._change_mode(file)
 
     def _change_mode(self, file):
-        if self.dry_run:
-            log.info("changing mode of %s", file)
-            return
-
         oldmode = os.stat(file)[ST_MODE] & 0o7777
         newmode = (oldmode | 0o555) & 0o7777
         if newmode != oldmode:

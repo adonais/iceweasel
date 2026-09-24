@@ -206,6 +206,12 @@ class NeckoParent : public PNeckoParent {
       nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
       GetMozNewTabWallpaperStreamResolver&& aResolve);
 
+#ifdef MOZ_THUNDERBIRD
+  mozilla::ipc::IPCResult RecvGetMailMessageStream(
+      nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+      GetMailMessageStreamResolver&& aResolve);
+#endif
+
   mozilla::ipc::IPCResult RecvInitSocketProcessBridge(
       InitSocketProcessBridgeResolver&& aResolver);
   mozilla::ipc::IPCResult RecvResetSocketProcessBridge();

@@ -23,8 +23,8 @@ rtc_library("timing_module") {
   ]
   deps = [
     ":decode_time_percentile_filter",
-    "../../../api:field_trials_view",
     "../../../api:sequence_checker",
+    "../../../api/environment",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
     "../../../api/video:video_frame",
@@ -35,7 +35,6 @@ rtc_library("timing_module") {
     "../../../rtc_base:macromagic",
     "../../../rtc_base/synchronization:mutex",
     "../../../rtc_base/system:no_unique_address",
-    "../../../system_wrappers",
     "../../../video/timing:default_video_jitter_timing",
   ]
 }
@@ -54,14 +53,14 @@ rtc_library("timing_unittest") {
   sources = [ "timing_unittest.cc" ]
   deps = [
     ":timing_module",
-    "../../../api:field_trials",
+    "../../../api/environment",
     "../../../api/units:data_size",
     "../../../api/units:frequency",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
     "../../../api/video/timing:video_jitter_timing_interface",
     "../../../system_wrappers",
-    "../../../test:create_test_field_trials",
+    "../../../test:create_test_environment",
     "../../../test:test_support",
   ]
 }

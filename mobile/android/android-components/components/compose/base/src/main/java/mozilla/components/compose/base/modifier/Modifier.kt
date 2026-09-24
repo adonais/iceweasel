@@ -90,10 +90,12 @@ fun Modifier.dashedBorder(
 /**
  * Used when clickable needs to be debounced to prevent rapid successive clicks from calling the onClick function.
  *
+ * @param role The type of user interface element (used by accessibility services).
  * @param debounceInterval The length of time to wait between click events in milliseconds
  * @param onClick Callback for when item this modifier effects is clicked
  */
 fun Modifier.debouncedClickable(
+    role: Role? = null,
     debounceInterval: Long = 1000L,
     onClick: () -> Unit,
 ) = composed {
@@ -101,13 +103,14 @@ fun Modifier.debouncedClickable(
 
     this.then(
         Modifier.clickable(
+            role = role,
             onClick = {
                 val currentSystemTime = SystemClock.elapsedRealtime()
                 if (currentSystemTime - lastClickTime > debounceInterval) {
                     onClick()
                     lastClickTime = currentSystemTime
                 }
-            }
+            },
         )
     )
 }

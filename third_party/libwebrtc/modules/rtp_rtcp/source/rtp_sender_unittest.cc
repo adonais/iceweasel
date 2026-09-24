@@ -20,6 +20,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_packet_sender.h"
 #include "api/rtp_parameters.h"
@@ -1377,10 +1378,11 @@ TEST_F(RtpSenderTest, MarksPacketsWithKeyframeStatus) {
     RTPVideoHeader video_header;
     video_header.frame_type = VideoFrameType::kVideoFrameKey;
     Timestamp capture_time = env_.clock().CurrentTime();
-    EXPECT_TRUE(rtp_sender_video.SendVideo(
+    EXPECT_TRUE(rtp_sender_video.SendVideoFrame(
         kPayloadType, kCodecType,
-        capture_time.ms() * kCaptureTimeMsToRtpTimestamp, capture_time,
-        kPayloadData, sizeof(kPayloadData), video_header,
+        RtpTimestampWithOffset{static_cast<uint32_t>(
+            capture_time.ms() * kCaptureTimeMsToRtpTimestamp)},
+        capture_time, kPayloadData, sizeof(kPayloadData), video_header,
         kDefaultExpectedRetransmissionTime, {}));
 
     time_controller_.AdvanceTime(TimeDelta::Millis(33));
@@ -1394,10 +1396,11 @@ TEST_F(RtpSenderTest, MarksPacketsWithKeyframeStatus) {
     RTPVideoHeader video_header;
     video_header.frame_type = VideoFrameType::kVideoFrameDelta;
     Timestamp capture_time = env_.clock().CurrentTime();
-    EXPECT_TRUE(rtp_sender_video.SendVideo(
+    EXPECT_TRUE(rtp_sender_video.SendVideoFrame(
         kPayloadType, kCodecType,
-        capture_time.ms() * kCaptureTimeMsToRtpTimestamp, capture_time,
-        kPayloadData, sizeof(kPayloadData), video_header,
+        RtpTimestampWithOffset{static_cast<uint32_t>(
+            capture_time.ms() * kCaptureTimeMsToRtpTimestamp)},
+        capture_time, kPayloadData, sizeof(kPayloadData), video_header,
         kDefaultExpectedRetransmissionTime, {}));
 
     time_controller_.AdvanceTime(TimeDelta::Millis(33));

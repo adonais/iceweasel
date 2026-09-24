@@ -338,6 +338,8 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
           persist,
           isPrivate,
           classification,
+          null,
+          false,
           null
         );
         persist.progressListener = transfer;

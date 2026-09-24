@@ -16,8 +16,8 @@ class SearchDispatcher extends WorkerDispatcher {
     super(SEARCH_WORKER_URL);
   }
 
-  // The search worker support just one task at this point,
-  // which is searching through specified resource.
+  // Expose the tasks implemented by the NetMonitor search worker.
+  getMatches = this.task("getMatches");
   searchInResource = this.task("searchInResource");
 }
 

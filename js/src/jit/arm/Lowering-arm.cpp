@@ -596,20 +596,6 @@ void LIRGeneratorARM::lowerUMod(MMod* mod) {
   defineReturn(lir, mod);
 }
 
-void LIRGenerator::visitWasmUnsignedToDouble(MWasmUnsignedToDouble* ins) {
-  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
-  LWasmUint32ToDouble* lir =
-      new (alloc()) LWasmUint32ToDouble(useRegisterAtStart(ins->input()));
-  define(lir, ins);
-}
-
-void LIRGenerator::visitWasmUnsignedToFloat32(MWasmUnsignedToFloat32* ins) {
-  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
-  LWasmUint32ToFloat32* lir =
-      new (alloc()) LWasmUint32ToFloat32(useRegisterAtStart(ins->input()));
-  define(lir, ins);
-}
-
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   MDefinition* base = ins->base();
   MOZ_ASSERT(base->type() == MIRType::Int32);
@@ -743,18 +729,8 @@ void LIRGenerator::visitAtomicExchangeTypedArrayElement(
 
   const LAllocation value = useRegister(ins->value());
 
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
-
-  LDefinition tempDef = LDefinition::BogusTemp();
-  if (ins->arrayType() == Scalar::Uint32) {
-    MOZ_ASSERT(ins->type() == MIRType::Double);
-    tempDef = temp();
-  }
-
-  LAtomicExchangeTypedArrayElement* lir = new (alloc())
-      LAtomicExchangeTypedArrayElement(elements, index, value, tempDef);
-
+  auto* lir =
+      new (alloc()) LAtomicExchangeTypedArrayElement(elements, index, value);
   define(lir, ins);
 }
 
@@ -791,34 +767,23 @@ void LIRGenerator::visitAtomicTypedArrayElementBinop(
     return;
   }
 
-  const LAllocation value = useRegister(ins->value());
-
-  if (ins->isForEffect()) {
-    LAtomicTypedArrayElementBinopForEffect* lir = new (alloc())
-        LAtomicTypedArrayElementBinopForEffect(elements, index, value,
-                                               /* flagTemp= */ temp());
-    add(lir, ins);
-    return;
-  }
-
-  // For a Uint32Array with a known double result we need a temp for
-  // the intermediate output.
-  //
   // Optimization opportunity (bug 1077317): We can do better by
   // allowing 'value' to remain as an imm32 if it is small enough to
   // fit in an instruction.
 
-  LDefinition flagTemp = temp();
-  LDefinition outTemp = LDefinition::BogusTemp();
+  const LAllocation value = useRegister(ins->value());
 
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    outTemp = temp();
+  LDefinition flagTemp = temp();
+
+  if (ins->isForEffect()) {
+    auto* lir = new (alloc()) LAtomicTypedArrayElementBinopForEffect(
+        elements, index, value, flagTemp);
+    add(lir, ins);
+    return;
   }
 
-  // On arm, map flagTemp to temp1 and outTemp to temp2, at least for now.
-
-  LAtomicTypedArrayElementBinop* lir = new (alloc())
-      LAtomicTypedArrayElementBinop(elements, index, value, flagTemp, outTemp);
+  auto* lir = new (alloc())
+      LAtomicTypedArrayElementBinop(elements, index, value, flagTemp);
   define(lir, ins);
 }
 
@@ -845,25 +810,15 @@ void LIRGenerator::visitCompareExchangeTypedArrayElement(
     return;
   }
 
-  const LAllocation oldval = useRegister(ins->oldval());
-  const LAllocation newval = useRegister(ins->newval());
-
-  // If the target is a floating register then we need a temp at the
-  // CodeGenerator level for creating the result.
-  //
   // Optimization opportunity (bug 1077317): We could do better by
   // allowing oldval to remain an immediate, if it is small enough
   // to fit in an instruction.
 
-  LDefinition tempDef = LDefinition::BogusTemp();
-  if (ins->arrayType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
-    tempDef = temp();
-  }
+  const LAllocation oldval = useRegister(ins->oldval());
+  const LAllocation newval = useRegister(ins->newval());
 
-  LCompareExchangeTypedArrayElement* lir =
-      new (alloc()) LCompareExchangeTypedArrayElement(elements, index, oldval,
-                                                      newval, tempDef);
-
+  auto* lir = new (alloc())
+      LCompareExchangeTypedArrayElement(elements, index, oldval, newval);
   define(lir, ins);
 }
 
@@ -1079,7 +1034,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   MOZ_CRASH("binary SIMD NYI");
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
     int8_t shuffle[16]) {
   return false;

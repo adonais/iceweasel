@@ -18,7 +18,7 @@ import { AUTH_ERRORS } from "moz-src:///toolkit/components/ipprotection/IPPAuthP
  * The subset of AuthError that the Guardian client reports, i.e. the status
  * errors plus the ones raised without a usable response.
  *
- * @typedef {GuardianStatusError | "login_needed" | "invalid_response" | "parse_error"} GuardianError
+ * @typedef {GuardianStatusError | "login_needed" | "network_error" | "invalid_response" | "parse_error"} GuardianError
  */
 
 const lazy = {};
@@ -197,15 +197,22 @@ export class GuardianClient {
    * @returns {Promise<{error?: GuardianError, status?:number, pass?: ProxyPass, usage?: ProxyUsage|null, retryAfter?: string|null}>} Resolves with an object containing either an error or the proxy pass data and a status code.
    */
   async fetchProxyPass(tokenHandle, abortSignal = null) {
-    const response = await fetch(this.#tokenURL, {
-      method: "GET",
-      cache: "no-cache",
-      headers: {
-        Authorization: `Bearer ${tokenHandle.token}`,
-        "Content-Type": "application/json",
-      },
-      signal: abortSignal,
-    });
+    let response;
+    try {
+      response = await fetch(this.#tokenURL, {
+        method: "GET",
+        cache: "no-cache",
+        headers: {
+          Authorization: `Bearer ${tokenHandle.token}`,
+          "Content-Type": "application/json",
+        },
+        signal: abortSignal,
+      });
+    } catch (error) {
+      abortSignal?.throwIfAborted();
+      lazy.logConsole.error("Proxy pass fetch failed:", error);
+      return { error: AUTH_ERRORS.NETWORK_ERROR, usage: null };
+    }
     if (!response) {
       return { error: AUTH_ERRORS.LOGIN_NEEDED, usage: null };
     }
@@ -252,15 +259,22 @@ export class GuardianClient {
    * - 401: The auth token was rejected, probably a guardian/auth provider environment mismatch.
    */
   async fetchUserInfo(tokenHandle, abortSignal = null) {
-    const response = await fetch(this.#statusURL, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tokenHandle.token}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-cache",
-      signal: abortSignal,
-    });
+    let response;
+    try {
+      response = await fetch(this.#statusURL, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokenHandle.token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-cache",
+        signal: abortSignal,
+      });
+    } catch (error) {
+      abortSignal?.throwIfAborted();
+      lazy.logConsole.error("User info fetch failed:", error);
+      return { error: AUTH_ERRORS.NETWORK_ERROR };
+    }
     if (!response) {
       return { error: AUTH_ERRORS.LOGIN_NEEDED };
     }
@@ -287,15 +301,22 @@ export class GuardianClient {
    * @returns {ProxyUsage | null}
    */
   async fetchProxyUsage(tokenHandle, abortSignal) {
-    const response = await fetch(this.#tokenURL, {
-      method: "HEAD",
-      cache: "no-cache",
-      signal: abortSignal,
-      headers: {
-        Authorization: `Bearer ${tokenHandle.token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    let response;
+    try {
+      response = await fetch(this.#tokenURL, {
+        method: "HEAD",
+        cache: "no-cache",
+        signal: abortSignal,
+        headers: {
+          Authorization: `Bearer ${tokenHandle.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      abortSignal?.throwIfAborted();
+      lazy.logConsole.error("Proxy usage fetch failed:", error);
+      return null;
+    }
     if (!response) {
       return null;
     }
@@ -322,15 +343,22 @@ export class GuardianClient {
     if (!tokenHandle) {
       return { ok: false, error: AUTH_ERRORS.LOGIN_NEEDED };
     }
-    const response = await fetch(this.#activateURL, {
-      method: "POST",
-      cache: "no-cache",
-      headers: {
-        Authorization: `Bearer ${tokenHandle.token}`,
-        "Content-Type": "application/json",
-      },
-      signal: abortSignal,
-    });
+    let response;
+    try {
+      response = await fetch(this.#activateURL, {
+        method: "POST",
+        cache: "no-cache",
+        headers: {
+          Authorization: `Bearer ${tokenHandle.token}`,
+          "Content-Type": "application/json",
+        },
+        signal: abortSignal,
+      });
+    } catch (error) {
+      abortSignal?.throwIfAborted();
+      lazy.logConsole.error("Activate fetch failed:", error);
+      return { ok: false, error: AUTH_ERRORS.NETWORK_ERROR };
+    }
     if (!response.ok) {
       return { ok: false, error: `status_${response.status}` };
     }

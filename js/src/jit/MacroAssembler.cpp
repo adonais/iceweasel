@@ -4188,10 +4188,8 @@ void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
 }
 
 void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {
-  if (framePtr != dest) {
-    movePtr(framePtr, dest);
-  }
-  subPtr(Imm32(BaselineFrame::Size()), dest);
+  computeEffectiveAddress(Address(framePtr, -int32_t(BaselineFrame::Size())),
+                          dest);
 }
 
 void MacroAssembler::handleFailure() {
@@ -6180,7 +6178,6 @@ uint8_t MacroAssembler::getByteAtOffset(size_t offset) const {
 #endif
 }
 
-mozilla::Atomic<uint32_t> ctr(0);
 void MacroAssembler::appendAndVerify(wasm::Trap trap,
                                      wasm::TrapMachineInsn insn,
                                      FaultingCodeRange fcr,
@@ -6209,13 +6206,14 @@ void MacroAssembler::appendAndVerify(const wasm::MemoryAccessDesc& access,
   appendAndVerify(wasm::Trap::OutOfBounds, insn, fcr, access.trapDesc());
 }
 
-void MacroAssembler::wasmTrap(wasm::Trap trap,
-                              const wasm::TrapSiteDesc& trapSiteDesc) {
+FaultingCodeRange MacroAssembler::wasmTrap(
+    wasm::Trap trap, const wasm::TrapSiteDesc& trapSiteDesc) {
   FaultingCodeRange fcr = wasmTrapInstruction();
   MOZ_ASSERT_IF(!oom(),
                 currentOffset() - fcr.get() == WasmTrapInstructionLength);
 
   appendAndVerify(trap, wasm::TrapMachineInsn::OfficialUD, fcr, trapSiteDesc);
+  return fcr;
 }
 
 uint32_t MacroAssembler::wasmReserveStackChecked(uint32_t amount, Label* fail) {

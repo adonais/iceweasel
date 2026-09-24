@@ -106,6 +106,7 @@ class gfxFT2FontBase : public gfxFont {
  protected:
   ~gfxFT2FontBase() override;
   void InitMetrics();
+  void InitExtraMetrics(gfxFloat aEmHeight, gfxFloat aLineHeight);
   const Metrics& GetHorizontalMetrics() const override { return mMetrics; }
   FT_Vector GetEmboldenStrength(FT_Face aFace) const;
 

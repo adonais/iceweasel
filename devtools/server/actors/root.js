@@ -146,6 +146,9 @@ class RootActor extends Actor {
       // updated (https://github.com/firefox-devtools/vscode-firefox-debug/issues/391).
       // Contact Holger Benl (hbenl) for topics related to the extension.
       supportsEnableWindowGlobalThreadActors: true,
+      // @backward-compat { version 157 } Grid actor now exposes a getFragments.
+      // When 157 is no longer on the release channel, we can remove this trait.
+      supportsGridGetFragments: true,
     };
   }
 

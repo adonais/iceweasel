@@ -6,6 +6,7 @@ package mozilla.components.service.pocket.recommendations.api
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
+import java.util.Locale
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
@@ -55,7 +56,7 @@ class ContentRecommendationsEndpointRawTest {
 
     @Test
     fun `WHEN requesting content recommendations with a custom request config THEN ensure the correct request parameters are used`() {
-        val locale = "en"
+        val locale = Locale.forLanguageTag("en-CA")
         val region = "ca"
         val count = 10
         val topics = listOf("business", "health")
@@ -94,7 +95,7 @@ class ContentRecommendationsEndpointRawTest {
                             it.bufferedReader().readText()
                         }
                     )
-                assertEquals(locale, requestBody.get(REQUEST_BODY_LOCALE_KEY))
+                assertEquals(locale.toLanguageTag(), requestBody.get(REQUEST_BODY_LOCALE_KEY))
                 assertEquals(region, requestBody.get(REQUEST_BODY_REGION_KEY))
                 assertEquals(count, requestBody.get(REQUEST_BODY_COUNT_KEY))
                 assertEquals(

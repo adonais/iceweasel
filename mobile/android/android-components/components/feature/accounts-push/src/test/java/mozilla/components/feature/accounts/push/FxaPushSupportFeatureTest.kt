@@ -4,6 +4,7 @@
 
 package mozilla.components.feature.accounts.push
 
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.accounts.push.FxaPushSupportFeature.Companion.PUSH_SCOPE_PREFIX
@@ -76,9 +77,8 @@ class FxaPushSupportFeatureTest {
             context = testContext,
             accountManager = accountManager,
             pushFeature = pushFeature,
-            crashReporter = null,
-            coroutineScope = this,
-            uiContext = this.coroutineContext,
+            applicationScope = this,
+            ioDispatcher = StandardTestDispatcher(testScheduler),
         )
     }
 }

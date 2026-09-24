@@ -7,4 +7,10 @@ def Program(name):
     PROGRAM = name
 
 
-DIRS += ["subdir"]
+@template
+def SharedLibrary(name):
+    FORCE_SHARED_LIB = True
+    LIBRARY_NAME = name
+
+
+DIRS += ["sharedlib", "subdir", "unrelated"]

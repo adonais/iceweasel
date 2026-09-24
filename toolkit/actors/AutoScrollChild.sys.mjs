@@ -219,17 +219,38 @@ export class AutoScrollChild extends JSWindowActorChild {
       // No view ID - leave this._scrollId as null. Receiving side will check.
     }
     let presShellId = domUtils.getPresShellId();
-    let { autoscrollEnabled, usingApz } = await this.sendQuery(
-      "Autoscroll:Start",
-      {
-        scrolldir: this._scrolldir,
-        screenXDevPx: event.screenX * content.devicePixelRatio,
-        screenYDevPx: event.screenY * content.devicePixelRatio,
-        scrollId: this._scrollId,
-        presShellId,
-      }
-    );
+
+    // APZ notifies us of a rejection over a different channel than the reply
+    // below, so the two are not ordered. Observe before asking, otherwise a
+    // rejection that wins the race is dropped and nothing scrolls at all.
+    // And before beginning observation, we have to initialize the coordinates.
+    this._startX = event.screenX;
+    this._startY = event.screenY;
+    this._screenX = event.screenX;
+    this._screenY = event.screenY;
+    this._scrollErrorX = 0;
+    this._scrollErrorY = 0;
+    this._autoscrollHandledByApz = true;
+    Services.obs.addObserver(this.observer, "autoscroll-rejected-by-apz");
+
+    let autoscrollEnabled, usingApz;
+    try {
+      ({ autoscrollEnabled, usingApz } = await this.sendQuery(
+        "Autoscroll:Start",
+        {
+          scrolldir: this._scrolldir,
+          screenXDevPx: event.screenX * content.devicePixelRatio,
+          screenYDevPx: event.screenY * content.devicePixelRatio,
+          scrollId: this._scrollId,
+          presShellId,
+        }
+      ));
+    } catch {
+      // The actor was destroyed before the reply arrived.
+      autoscrollEnabled = false;
+    }
     if (!autoscrollEnabled) {
+      this.stopObservingApzRejection();
       this._scrollable = null;
       return;
     }
@@ -244,27 +265,24 @@ export class AutoScrollChild extends JSWindowActorChild {
     });
     this.document.addEventListener("pagehide", this, true);
 
-    this._startX = event.screenX;
-    this._startY = event.screenY;
-    this._screenX = event.screenX;
-    this._screenY = event.screenY;
-    this._scrollErrorX = 0;
-    this._scrollErrorY = 0;
-    this._autoscrollHandledByApz = usingApz;
-
     if (!usingApz) {
-      // If the browser didn't hand the autoscroll off to APZ,
-      // scroll here in the main thread.
+      // The browser didn't hand the autoscroll off to APZ, so scroll here in
+      // the main thread.
+      this.stopObservingApzRejection();
       this.startMainThreadScroll();
-    } else {
-      // Even if the browser did hand the autoscroll to APZ,
-      // APZ might reject it in which case it will notify us
-      // and we need to take over.
-      Services.obs.addObserver(this.observer, "autoscroll-rejected-by-apz");
     }
 
     if (Cu.isInAutomation) {
       Services.obs.notifyObservers(content, "autoscroll-start");
+    }
+  }
+
+  // Removes the "autoscroll-rejected-by-apz" observer if it is still
+  // registered. Safe to call more than once.
+  stopObservingApzRejection() {
+    if (this._autoscrollHandledByApz) {
+      this._autoscrollHandledByApz = false;
+      Services.obs.removeObserver(this.observer, "autoscroll-rejected-by-apz");
     }
   }
 
@@ -288,12 +306,7 @@ export class AutoScrollChild extends JSWindowActorChild {
         mozSystemGroup: true,
       });
       this.document.removeEventListener("pagehide", this, true);
-      if (this._autoscrollHandledByApz) {
-        Services.obs.removeObserver(
-          this.observer,
-          "autoscroll-rejected-by-apz"
-        );
-      }
+      this.stopObservingApzRejection();
     }
   }
 
@@ -452,9 +465,8 @@ export class AutoScrollChild extends JSWindowActorChild {
   rejectedByApz(data) {
     // The caller passes in the scroll id via 'data'.
     if (data == this._scrollId) {
-      this._autoscrollHandledByApz = false;
+      this.stopObservingApzRejection();
       this.startMainThreadScroll();
-      Services.obs.removeObserver(this.observer, "autoscroll-rejected-by-apz");
     }
   }
 }

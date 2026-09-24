@@ -202,6 +202,13 @@ RenderTextureHostSWGL* RenderTextureHostWrapper::EnsureRenderTextureHostSWGL()
   return mTextureHost->AsRenderTextureHostSWGL();
 }
 
+void RenderTextureHostWrapper::SetReadFenceFd(UniqueFileHandle&& aFenceFd) {
+  if (!mTextureHost) {
+    return;
+  }
+  mTextureHost->SetReadFenceFd(std::move(aFenceFd));
+}
+
 void RenderTextureHostWrapper::SetIsSoftwareDecodedVideo() {
   if (!mTextureHost) {
     return;

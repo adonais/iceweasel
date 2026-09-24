@@ -823,7 +823,7 @@ export class BaseContext {
    *        The optional caller frame which triggered this callback, to be used
    *        in error reporting.
    * @param {Function} callback The callback to call.
-   * @returns {*} The return value of callback.
+   * @returns {any} The return value of callback.
    */
   withLastError(error, caller, callback) {
     this.lastError = this.normalizeError(error);
@@ -998,7 +998,7 @@ export class SchemaAPIInterface {
    *
    * @abstract
    * @param {Array} _args The parameters for the function.
-   * @returns {*} The return value of the invoked function.
+   * @returns {any} The return value of the invoked function.
    */
   callFunction(_args) {
     throw new Error("Not implemented");
@@ -1034,7 +1034,7 @@ export class SchemaAPIInterface {
    * Retrieves the value of this as a property.
    *
    * @abstract
-   * @returns {*} The value of the property.
+   * @returns {any} The value of the property.
    */
   getProperty() {
     throw new Error("Not implemented");
@@ -1311,7 +1311,7 @@ class CanOfAPIs {
    *
    * @param {string} path
    *        The "."-separated path to find.
-   * @returns {*}
+   * @returns {any}
    */
   findAPIPath(path) {
     if (this.apiPaths.has(path)) {
@@ -1581,7 +1581,7 @@ class SchemaAPIManager extends EventEmitter {
    * @param {string} entry
    *        The name of the top-level manifest entry.
    *
-   * @returns {*}
+   * @returns {any}
    */
   emitManifestEntry(extension, entry) {
     let apiName = this.manifestKeys.get(entry);

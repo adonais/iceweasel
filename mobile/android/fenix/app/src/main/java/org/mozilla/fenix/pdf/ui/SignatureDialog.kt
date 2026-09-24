@@ -24,8 +24,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -126,7 +130,7 @@ private fun SignatureHeader(onCloseClick: () -> Unit) {
         Text(
             text = stringResource(id = R.string.pdf_tools_signature_title),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = FirefoxTheme.typography.headline6,
+            style = FirefoxTheme.typography.headline7,
             modifier = Modifier.semantics { heading() },
         )
 
@@ -151,14 +155,18 @@ private fun SignatureHeader(onCloseClick: () -> Unit) {
 @Composable
 private fun SignatureField(state: TextFieldState) {
     val placeholder = stringResource(id = R.string.pdf_tools_signature_placeholder)
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
     val signatureStyle =
         TextStyle(
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 36.sp,
             fontFamily = FontFamily.Cursive,
             letterSpacing = 1.25.sp,
             textAlign = TextAlign.Center,
         )
+    val placeholderStyle = signatureStyle.copy(color = MaterialTheme.colorScheme.secondary)
 
     Box(
         modifier =
@@ -180,18 +188,19 @@ private fun SignatureField(state: TextFieldState) {
     ) {
         if (state.text.isEmpty()) {
             // The content description is set on the field, so this does not need to be double processed.
-            Text(text = placeholder, style = signatureStyle, modifier = Modifier.clearAndSetSemantics {})
+            Text(text = placeholder, style = placeholderStyle, modifier = Modifier.clearAndSetSemantics {})
         }
 
         BasicTextField(
             state = state,
             textStyle = signatureStyle,
             lineLimits = TextFieldLineLimits.SingleLine,
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.secondary),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             modifier =
-                Modifier.fillMaxWidth().testTag(PdfToolsTestTag.SIGNATURE_INPUT).semantics {
-                    contentDescription = placeholder
-                },
+                Modifier.fillMaxWidth()
+                    .testTag(PdfToolsTestTag.SIGNATURE_INPUT)
+                    .focusRequester(focusRequester)
+                    .semantics { contentDescription = placeholder },
         )
     }
 }

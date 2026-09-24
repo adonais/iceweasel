@@ -282,10 +282,8 @@ class AdjustMetricsService(
                         isUserRedditAttributed -> controller.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID)
                         isUserXTwitterAttributed -> controller.enableThirdPartySharingForPartner(X_TWITTER_PARTNER_ID)
                         isUserMolocoAttributed -> controller.enableThirdPartySharingForPartner(MOLOCO_PARTNER_ID)
-                        isUserRakutenAttributed -> controller.enableThirdPartySharingForPartner(DYNAMIC_CALLBACK_ID)
-                        isUserSkyflagAttributed -> {
-                            // no-op
-                        }
+                        isUserRakutenAttributed || isUserSkyflagAttributed ->
+                            controller.enableThirdPartySharingForPartner(DYNAMIC_CALLBACK_ID)
                         else -> controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }
                 }

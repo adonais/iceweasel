@@ -29,7 +29,7 @@
             <image class="tab-icon-overlay" role="presentation"/>
             <image class="tab-note-icon-overlay" role="presentation"/>
           </stack>
-          <html:moz-button type="icon ghost" size="small" class="tab-audio-button" tabindex="-1"></html:moz-button>
+          <html:moz-button type="icon toolbar" size="small" class="tab-audio-button" tabindex="-1"></html:moz-button>
           <vbox class="tab-label-container"
                 align="start"
                 pack="center"

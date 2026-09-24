@@ -8,6 +8,7 @@
 
 #include "GeckoProfiler.h"
 #include "ScriptLoader.h"
+#include "ScriptTrace.h"        // TRACE_FOR_TEST
 #include "js/CompileOptions.h"  // JS::CompileOptions, JS::InstantiateOptions
 #include "js/ContextOptions.h"  // JS::ContextOptionsRef
 #include "js/MemoryFunctions.h"
@@ -34,6 +35,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
 #include "nsError.h"
 #include "nsIContent.h"
 #include "nsIPrincipal.h"
@@ -105,22 +107,36 @@ void ModuleLoader::DisallowImportMapsForModuleFetch(
   }
 }
 
+// Skip module CORS checks for resource: principals loading trusted schemes.
+// Other URI security checks still apply.
+static bool IsResourceDocumentLoadingTrustedURI(ModuleLoadRequest* aRequest) {
+  nsIPrincipal* triggeringPrincipal = aRequest->TriggeringPrincipal();
+  if (!triggeringPrincipal->GetIsContentPrincipal() ||
+      !triggeringPrincipal->SchemeIs("resource")) {
+    return false;
+  }
+
+  return nsContentSecurityUtils::IsTrustedScheme(aRequest->URI());
+}
+
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
     DisallowImportMapsForModuleFetch(aRequest);
     GetScriptLoader()->EmulateNetworkEvents(aRequest, Nothing());
     SetModuleFetchStarted(aRequest);
-    return aRequest->OnFetchComplete(NS_OK);
+    aRequest->OnFetchComplete(NS_OK);
+    return NS_OK;
   }
 
-  // According to the spec, module scripts have different behaviour to classic
-  // scripts and always use CORS. Only exception: Non linkable about: pages
-  // which load local module scripts.
-  bool isAboutPageLoadingChromeURI = ScriptLoader::IsAboutPageLoadingChromeURI(
-      aRequest, GetScriptLoader()->GetDocument());
+  // Module scripts normally require CORS. Disable it for non-linkable about:
+  // pages loading chrome: URLs and resource: principals loading trusted
+  // schemes.
+  bool skipCORSChecks = ScriptLoader::IsAboutPageLoadingChromeURI(
+                            aRequest, GetScriptLoader()->GetDocument()) ||
+                        IsResourceDocumentLoadingTrustedURI(aRequest);
 
   nsContentSecurityManager::CORSSecurityMapping corsMapping =
-      isAboutPageLoadingChromeURI
+      skipCORSChecks
           ? nsContentSecurityManager::CORSSecurityMapping::DISABLE_CORS_CHECKS
           : nsContentSecurityManager::CORSSecurityMapping::REQUIRE_CORS_CHECKS;
 
@@ -220,15 +236,12 @@ void ModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
 nsresult ModuleLoader::CompileFetchedModule(
     JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
     ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
-  if (!nsJSUtils::IsScriptable(aGlobal)) {
-    return NS_ERROR_FAILURE;
-  }
-
   switch (aRequest->mModuleType) {
     case JS::ModuleType::Unknown:
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScriptOrWasm:
-      return CompileJavaScriptOrWasmModule(aCx, aOptions, aRequest, aModuleOut);
+      return CompileJavaScriptOrWasmModule(aCx, aGlobal, aOptions, aRequest,
+                                           aModuleOut);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
     case JS::ModuleType::CSS:
@@ -242,28 +255,100 @@ nsresult ModuleLoader::CompileFetchedModule(
   MOZ_CRASH("Unhandled module type");
 }
 
-nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+// https://html.spec.whatwg.org/#creating-a-javascript-module-script
+// Step 1: If scripting is disabled, set source to empty string
+nsresult ModuleLoader::CompileEmptyJavaScriptModule(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     JS::MutableHandle<JSObject*> aModuleOut) {
+  JS::SourceText<char16_t> srcBuf;
+  if (!srcBuf.init(aCx, u"", 0, JS::SourceOwnership::Borrowed)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  RefPtr<JS::Stencil> stencil =
+      JS::CompileModuleScriptToStencil(aCx, aOptions, srcBuf);
+  if (!stencil) {
+    return NS_ERROR_FAILURE;
+  }
+  aRequest->SetStencil(stencil);
+  JS::InstantiateOptions instantiateOptions(aOptions);
+  aModuleOut.set(
+      JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  return aModuleOut ? NS_OK : NS_ERROR_FAILURE;
+}
+
+#ifdef NIGHTLY_BUILD
+nsresult ModuleLoader::CompileWasmModuleBytes(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    WasmBytesBuffer& aBytes, JS::MutableHandle<JSObject*> aModuleOut) {
+  JSObject* wasmModule;
+  if (aRequest->IsSourcePhaseRequest(aCx)) {
+    wasmModule = JS::CompileWasmModuleAsSource(aCx, aOptions, aBytes);
+  } else {
+    wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
+  }
+  if (!wasmModule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(wasmModule);
+  return NS_OK;
+}
+
+// https://html.spec.whatwg.org/#creating-a-webassembly-module-script
+nsresult ModuleLoader::CompileEmptyWasmModule(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
+  TRACE_FOR_TEST(aRequest, "compile:wasm empty");
+
+  // Step 1: If scripting is disabled, set bodyBytes to the byte sequence
+  // 0x00 0x61 0x73 0x6D 0x01 0x00 0x00 0x00
+  static constexpr uint8_t kEmptyWasmModule[] = {0x00, 0x61, 0x73, 0x6D,
+                                                 0x01, 0x00, 0x00, 0x00};
+
+  WasmBytesBuffer bytes;
+  if (!bytes.append(kEmptyWasmModule, sizeof(kEmptyWasmModule))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  return CompileWasmModuleBytes(aCx, aOptions, aRequest, bytes, aModuleOut);
+}
+#endif
+
+nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
+    JSContext* aCx, JS::Handle<JSObject*> aGlobal, JS::CompileOptions& aOptions,
+    ModuleLoadRequest* aRequest, JS::MutableHandle<JSObject*> aModuleOut) {
   GetScriptLoader()->CalculateCacheFlag(aRequest);
+
+  if (!nsJSUtils::IsScriptable(aGlobal)) {
+    aRequest->GetScriptLoadContext()->MaybeCancelOffThreadScript();
+
+#ifdef NIGHTLY_BUILD
+    if (aRequest->HasWasmMimeTypeEssence()) {
+      MOZ_ASSERT(aRequest->IsWasmBytes());
+      return CompileEmptyWasmModule(aCx, aOptions, aRequest, aModuleOut);
+    }
+#endif
+
+    return CompileEmptyJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
+  }
 
 #ifdef NIGHTLY_BUILD
   if (aRequest->HasWasmMimeTypeEssence()) {
     MOZ_ASSERT(aRequest->IsWasmBytes());
-    JS::Rooted<JSObject*> moduleReq(aCx, aRequest->mModuleRequestObj);
-    JSObject* wasmModule;
-    if (moduleReq && JS::ModuleRequestIsSourcePhase(aCx, moduleReq)) {
-      wasmModule =
-          JS::CompileWasmModuleAsSource(aCx, aOptions, aRequest->WasmBytes());
-    } else {
-      wasmModule = JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes());
-    }
-    if (!wasmModule) {
-      return NS_ERROR_FAILURE;
+    // Only source phase requests are compiled off-thread, and the request's
+    // bytes were moved into the WasmCompileTask, so the result has to be taken
+    // from the task rather than recompiled.
+    if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
+      MOZ_ASSERT(aRequest->IsSourcePhaseRequest(aCx));
+      if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
+              aCx, aModuleOut)) {
+        return NS_ERROR_FAILURE;
+      }
+      return NS_OK;
     }
 
-    aModuleOut.set(wasmModule);
-    return NS_OK;
+    return CompileWasmModuleBytes(aCx, aOptions, aRequest,
+                                  aRequest->WasmBytes(), aModuleOut);
   }
 #endif
   MOZ_ASSERT(!aRequest->IsWasmBytes());

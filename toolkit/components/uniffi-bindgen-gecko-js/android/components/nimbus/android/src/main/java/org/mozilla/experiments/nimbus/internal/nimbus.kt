@@ -771,6 +771,8 @@ internal object IntegrityCheckingUniffiLib {
         Native.register(IntegrityCheckingUniffiLib::class.java, findLibraryName(componentName = "nimbus"))
         uniffiCheckContractApiVersion(this)
     }
+    external fun uniffi_nimbus_checksum_func_get_active_enrollments(
+    ): Short
     external fun uniffi_nimbus_checksum_func_get_calculated_attributes(
     ): Short
     external fun uniffi_nimbus_checksum_func_validate_event_queries(
@@ -1042,6 +1044,8 @@ external fun uniffi_nimbus_fn_method_recordedcontext_record(`ptr`: Long,uniffi_o
 external fun uniffi_nimbus_fn_method_recordedcontext_set_event_query_values(`ptr`: Long,`eventQueryValues`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_nimbus_fn_method_recordedcontext_to_json(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_nimbus_fn_func_get_active_enrollments(`dbPath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_nimbus_fn_func_get_calculated_attributes(`installationDate`: RustBuffer.ByValue,`dbPath`: RustBuffer.ByValue,`locale`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
@@ -4767,6 +4771,44 @@ public object FfiConverterTypeEnrollmentChangeEvent: FfiConverterRustBuffer<Enro
 
 
 
+data class EnrollmentSlugs (
+    var `slug`: kotlin.String
+    , 
+    var `branchSlug`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeEnrollmentSlugs: FfiConverterRustBuffer<EnrollmentSlugs> {
+    override fun read(buf: ByteBuffer): EnrollmentSlugs {
+        return EnrollmentSlugs(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: EnrollmentSlugs) = (
+            FfiConverterString.allocationSize(value.`slug`) +
+            FfiConverterString.allocationSize(value.`branchSlug`)
+    )
+
+    override fun write(value: EnrollmentSlugs, buf: ByteBuffer) {
+            FfiConverterString.write(value.`slug`, buf)
+            FfiConverterString.write(value.`branchSlug`, buf)
+    }
+}
+
+
+
 data class EnrollmentStatusExtraDef (
     var `branch`: kotlin.String?
     , 
@@ -6257,6 +6299,34 @@ public object FfiConverterSequenceTypeEnrollmentChangeEvent: FfiConverterRustBuf
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeEnrollmentSlugs: FfiConverterRustBuffer<List<EnrollmentSlugs>> {
+    override fun read(buf: ByteBuffer): List<EnrollmentSlugs> {
+        val len = buf.getInt()
+        return List<EnrollmentSlugs>(len) {
+            FfiConverterTypeEnrollmentSlugs.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<EnrollmentSlugs>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeEnrollmentSlugs.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<EnrollmentSlugs>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeEnrollmentSlugs.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeEnrollmentStatusExtraDef: FfiConverterRustBuffer<List<EnrollmentStatusExtraDef>> {
     override fun read(buf: ByteBuffer): List<EnrollmentStatusExtraDef> {
         val len = buf.getInt()
@@ -6627,6 +6697,23 @@ public object FfiConverterTypeJsonObject: FfiConverter<JsonObject, RustBuffer.By
 public typealias PrefValue = kotlin.String
 public typealias FfiConverterTypePrefValue = FfiConverterString
 
+
+        /**
+         * Return the list of active experiments.
+         *
+         * Intended to be called in instances where a full Nimbus Client cannot be
+         * instantiated (e.g., in crash reporting infrastructure).
+         */
+    @Throws(NimbusException::class) fun `getActiveEnrollments`(`dbPath`: kotlin.String): List<EnrollmentSlugs> {
+            return FfiConverterSequenceTypeEnrollmentSlugs.lift(
+    uniffiRustCallWithError(NimbusException) { _status ->
+    UniffiLib.uniffi_nimbus_fn_func_get_active_enrollments(
+    
+        FfiConverterString.lower(`dbPath`),_status)
+}
+    )
+    }
+    
 
         /**
 

@@ -100,6 +100,10 @@
 #include "nsThreadUtils.h"
 #include "nscore.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -459,6 +463,11 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
   if (delta) {
     ChangeEditableState(delta);
+#ifdef ACCESSIBILITY
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->NotifyOfEditContextAttachmentChange(this);
+    }
+#endif
   }
 }
 
@@ -1161,7 +1170,8 @@ bool nsGenericHTMLElement::ParseBackgroundAttribute(int32_t aNamespaceID,
   return false;
 }
 
-bool nsGenericHTMLElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool nsGenericHTMLElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sCommonAttributeMap};
 
   return FindAttributeDependence(aAttribute, map);
@@ -1299,31 +1309,6 @@ bool nsGenericHTMLElement::ParseImageAttribute(nsAtom* aAttribute,
   return false;
 }
 
-static constexpr nsAttrValue::EnumTableEntry kReferrerPolicyTable[] = {
-    {GetEnumString(ReferrerPolicy::No_referrer).get(),
-     static_cast<int16_t>(ReferrerPolicy::No_referrer)},
-    {GetEnumString(ReferrerPolicy::Origin).get(),
-     static_cast<int16_t>(ReferrerPolicy::Origin)},
-    {GetEnumString(ReferrerPolicy::Origin_when_cross_origin).get(),
-     static_cast<int16_t>(ReferrerPolicy::Origin_when_cross_origin)},
-    {GetEnumString(ReferrerPolicy::No_referrer_when_downgrade).get(),
-     static_cast<int16_t>(ReferrerPolicy::No_referrer_when_downgrade)},
-    {GetEnumString(ReferrerPolicy::Unsafe_url).get(),
-     static_cast<int16_t>(ReferrerPolicy::Unsafe_url)},
-    {GetEnumString(ReferrerPolicy::Strict_origin).get(),
-     static_cast<int16_t>(ReferrerPolicy::Strict_origin)},
-    {GetEnumString(ReferrerPolicy::Same_origin).get(),
-     static_cast<int16_t>(ReferrerPolicy::Same_origin)},
-    {GetEnumString(ReferrerPolicy::Strict_origin_when_cross_origin).get(),
-     static_cast<int16_t>(ReferrerPolicy::Strict_origin_when_cross_origin)},
-};
-
-bool nsGenericHTMLElement::ParseReferrerAttribute(const nsAString& aString,
-                                                  nsAttrValue& aResult) {
-  using mozilla::dom::ReferrerInfo;
-  return aResult.ParseEnumValue(aString, kReferrerPolicyTable, false);
-}
-
 bool nsGenericHTMLElement::ParseFrameborderValue(const nsAString& aString,
                                                  nsAttrValue& aResult) {
   return aResult.ParseEnumValue(aString, kFrameborderTable, false);
@@ -1361,8 +1346,10 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
   // so that code checking for particular codes can assume canonical casing.
   // Note that in some cases this will also map 3-character ISO 639-3 tags to
   // their corresponding 2-char ISO 639-1 tags.
+  //
+  // FIXME(emilio): We don't bother doing this for xml:lang... Should we?
   RefPtr<nsAtom> lang = langValue->GetAtomValue();
-  nsAtomCString langStr(lang);
+  nsAutoAtomCString langStr(lang);
   intl::Locale loc;
   if (intl::LocaleParser::TryParse(langStr, loc).isOk() &&
       loc.Canonicalize().isOk()) {
@@ -1373,7 +1360,7 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
     }
   }
 
-  aBuilder.SetIdentAtomValueIfUnset(eCSSProperty__x_lang, lang);
+  aBuilder.SetIdentAtomValue(eCSSProperty__x_lang, lang);
   if (!aBuilder.PropertyIsSet(eCSSProperty_text_emphasis_position)) {
     if (nsStyleUtil::MatchesLanguagePrefix(lang, u"zh")) {
       aBuilder.SetKeywordValue(eCSSProperty_text_emphasis_position,
@@ -1394,6 +1381,8 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
 void nsGenericHTMLElement::MapCommonAttributesIntoExceptHidden(
     MappedDeclarationsBuilder& aBuilder) {
   MapLangAttributeInto(aBuilder);
+  // Intentionally after `lang`, so it overrides if needed.
+  MapXmlLangAttrInto(aBuilder);
 }
 
 void nsGenericHTMLElement::MapCommonAttributesInto(
@@ -1989,7 +1978,7 @@ void nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID,
                                              bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None && IsFormAssociatedElement()) {
     nsAutoString tmp;
-    HTMLFormElement* form = GetFormInternal();
+    HTMLFormElement* form = GetFormIfRegistered();
 
     // remove the control from the hashtable as needed
 
@@ -2045,7 +2034,7 @@ void nsGenericHTMLFormElement::AfterSetAttr(
         // Ensure that empty @form value clears the form owner.
         ClearForm(true, false);
       }
-    } else if (HTMLFormElement* form = GetFormInternal()) {
+    } else if (HTMLFormElement* form = GetFormIfRegistered()) {
       // add the control to the hashtable as needed
       if (aName == nsGkAtoms::type) {
         nsAutoString tmp;
@@ -2683,8 +2672,15 @@ nsGenericHTMLFormControlElement::~nsGenericHTMLFormControlElement() {
   NS_ASSERTION(!mForm, "mForm should be null at this point!");
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
-                                   nsGenericHTMLFormElement, mForm)
+NS_IMPL_CYCLE_COLLECTION_CLASS(nsGenericHTMLFormControlElement)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(nsGenericHTMLFormControlElement,
+                                                nsGenericHTMLFormElement)
+  tmp->ClearForm(true, true);
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(
+    nsGenericHTMLFormControlElement, nsGenericHTMLFormElement)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mForm)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsGenericHTMLFormControlElement,
                                              nsGenericHTMLFormElement,

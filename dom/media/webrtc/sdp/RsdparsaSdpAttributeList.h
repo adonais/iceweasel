@@ -5,10 +5,9 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_RSDPARSASDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_RSDPARSASDPATTRIBUTELIST_H_
 
-#include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
-#include "sdp/SdpAttributeList.h"
+#include "sdp/SdpAttributeListImpl.h"
 
 namespace mozilla {
 
@@ -16,65 +15,11 @@ class RsdparsaSdp;
 class RsdparsaSdpMediaSection;
 class SdpParser;
 
-class RsdparsaSdpAttributeList : public SdpAttributeList {
+class RsdparsaSdpAttributeList final : public SdpAttributeListImpl {
   friend class RsdparsaSdpMediaSection;
   friend class RsdparsaSdp;
 
  public:
-  // Make sure we don't hide the default arg thunks
-  using SdpAttributeList::GetAttribute;
-  using SdpAttributeList::HasAttribute;
-
-  bool HasAttribute(const AttributeType type,
-                    const bool sessionFallback) const override;
-  const SdpAttribute* GetAttribute(const AttributeType type,
-                                   const bool sessionFallback) const override;
-  void SetAttribute(UniquePtr<SdpAttribute>&& attr) override;
-  void RemoveAttribute(const AttributeType type) override;
-  void Clear() override;
-  uint32_t Count() const override;
-
-  const SdpConnectionAttribute& GetConnection() const override;
-  const SdpFingerprintAttributeList& GetFingerprint() const override;
-  const SdpGroupAttributeList& GetGroup() const override;
-  const SdpOptionsAttribute& GetIceOptions() const override;
-  const SdpRtcpAttribute& GetRtcp() const override;
-  const SdpRemoteCandidatesAttribute& GetRemoteCandidates() const override;
-  const SdpSetupAttribute& GetSetup() const override;
-  const SdpSsrcAttributeList& GetSsrc() const override;
-  const SdpSsrcGroupAttributeList& GetSsrcGroup() const override;
-  const SdpDtlsMessageAttribute& GetDtlsMessage() const override;
-
-  // These attributes can appear multiple times, so the returned
-  // classes actually represent a collection of values.
-  const std::vector<std::string>& GetCandidate() const override;
-  const SdpExtmapAttributeList& GetExtmap() const override;
-  const SdpFmtpAttributeList& GetFmtp() const override;
-  const SdpImageattrAttributeList& GetImageattr() const override;
-  const SdpSimulcastAttribute& GetSimulcast() const override;
-  const SdpMsidAttributeList& GetMsid() const override;
-  const SdpMsidSemanticAttributeList& GetMsidSemantic() const override;
-  const SdpRidAttributeList& GetRid() const override;
-  const SdpRtcpFbAttributeList& GetRtcpFb() const override;
-  const SdpRtpmapAttributeList& GetRtpmap() const override;
-  const SdpSctpmapAttributeList& GetSctpmap() const override;
-
-  // These attributes are effectively simple types, so we'll make life
-  // easy by just returning their value.
-  uint32_t GetSctpPort() const override;
-  uint32_t GetMaxMessageSize() const override;
-  const std::string& GetIcePwd() const override;
-  const std::string& GetIceUfrag() const override;
-  const std::string& GetIdentity() const override;
-  const std::string& GetLabel() const override;
-  unsigned int GetMaxptime() const override;
-  const std::string& GetMid() const override;
-  unsigned int GetPtime() const override;
-
-  SdpDirectionAttribute::Direction GetDirection() const override;
-
-  void Serialize(std::ostream&) const override;
-
   virtual ~RsdparsaSdpAttributeList() = default;
 
   RsdparsaSdpAttributeList(const RsdparsaSdpAttributeList& orig) = delete;
@@ -86,10 +31,9 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
   using RustMediaSection = sdp::ffi::SdpMedia;
 
   explicit RsdparsaSdpAttributeList(RsdparsaSessionHandle session)
-      : mSession(std::move(session)),
-        mSessionAttributes(nullptr),
-        mIsVideo(false),
-        mAttributes() {
+      : SdpAttributeListImpl(nullptr),
+        mSession(std::move(session)),
+        mIsVideo(false) {
     RustAttributeList* attributes = get_sdp_session_attributes(mSession.get());
     LoadAll(attributes);
   }
@@ -97,25 +41,20 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
   RsdparsaSdpAttributeList(RsdparsaSessionHandle session,
                            const RustMediaSection* const msection,
                            const RsdparsaSdpAttributeList* sessionAttributes)
-      : mSession(std::move(session)),
-        mSessionAttributes(sessionAttributes),
-        mAttributes() {
+      : SdpAttributeListImpl(sessionAttributes), mSession(std::move(session)) {
     mIsVideo =
         sdp_rust_get_media_type(msection) == sdp::ffi::RustSdpMediaValue::Video;
     RustAttributeList* attributes = sdp_get_media_attribute_list(msection);
     LoadAll(attributes);
   }
 
-  static const std::string kEmptyString;
-  static const size_t kNumAttributeTypes = SdpAttribute::kLastAttribute + 1;
-
   const RsdparsaSessionHandle mSession;
-  const RsdparsaSdpAttributeList* mSessionAttributes;
   bool mIsVideo;
 
-  bool AtSessionLevel() const { return !mSessionAttributes; }
+  const RsdparsaSdpAttributeList* SessionAttributes() const {
+    return static_cast<const RsdparsaSdpAttributeList*>(mSessionLevel);
+  }
 
-  bool IsAllowedHere(const SdpAttribute::AttributeType type) const;
   void LoadAll(RustAttributeList* attributeList);
   void LoadAttribute(RustAttributeList* attributeList,
                      const AttributeType type);
@@ -152,8 +91,6 @@ class RsdparsaSdpAttributeList : public SdpAttributeList {
 
   void WarnAboutMisplacedAttribute(SdpAttribute::AttributeType type,
                                    uint32_t lineNumber, SdpParser& errorHolder);
-
-  UniquePtr<SdpAttribute> mAttributes[kNumAttributeTypes];
 };
 
 }  // namespace mozilla

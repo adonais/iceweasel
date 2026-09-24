@@ -18,7 +18,7 @@
   <![CDATA[
   "use strict";
 
-  function onFocus() {
+  async function onFocus() {
     let frame = document.getElementById("amFrame");
     frame.focus();
 
@@ -37,33 +37,44 @@
       return exists;
     }
 
-    // Given a save log button, triggers the action and checks if both CC & GC
-    // logs were written to disk.
-    function saveLogs(aLogButton, aCCLogType)
+    // Given a save log button, triggers the action and checks that both CC &
+    // GC logs were written to disk for every listed process.
+    async function saveLogs(aLogButton)
     {
       // trigger the log saving
       aLogButton.click();
 
       // mainDiv
       // |-> section
-      //        | -> div gc log path
-      //        | -> div cc log path
+      //        | -> div per process
+      //               | -> div name and paths
+      //                      | -> div process name
+      //                      | -> div cc log path
+      //                      | -> div gc log path
+      //               | -> buttons
       let mainDiv = frame.contentWindow.document.getElementById("mainDiv");
-      let logNodes = mainDiv.childNodes[0];
+      let section = mainDiv.childNodes[0];
 
-      // we expect 2 logs listed
-      let numOfLogs = logNodes.childNodes.length;
-      ok(numOfLogs == 2, "two log entries generated")
+      // The log list is rendered asynchronously once all dumps finished.
+      await SimpleTest.promiseWaitForCondition(
+        () => section.querySelector(".ccgcLogProcess"),
+        "log entries rendered");
 
-      // grab the path portion of the text
-      let gcLogPath = logNodes.childNodes[0].textContent
-                        .replace("Saved GC log to ", "");
-      let ccLogPath = logNodes.childNodes[1].textContent
-                        .replace("Saved " + aCCLogType + " CC log to ", "");
+      let entries = section.querySelectorAll(".ccgcLogProcess");
+      ok(entries.length >= 1, "at least one process log entry generated");
 
-      // check that the files actually exist
-      ok(checkForFileAndRemove(gcLogPath), "GC log file exists");
-      ok(checkForFileAndRemove(ccLogPath), "CC log file exists");
+      for (let entry of entries) {
+        let paths = entry.querySelectorAll(".ccgcLogEntryPath");
+        is(paths.length, 2, "two log paths listed for the process");
+
+        for (let path of paths) {
+          let match = path.textContent.match(/^(GC|CC): (.+)$/);
+          ok(match, "log path has the expected format: " + path.textContent);
+          if (match) {
+            ok(checkForFileAndRemove(match[2]), match[1] + " log file exists");
+          }
+        }
+      }
     }
 
     // get the log buttons to test
@@ -72,8 +83,8 @@
     let saveVerbose = frame.contentWindow.document
                         .getElementById("saveLogsVerbose");
 
-    saveLogs(saveConcise, "concise");
-    saveLogs(saveVerbose, "verbose");
+    await saveLogs(saveConcise);
+    await saveLogs(saveVerbose);
 
     SimpleTest.finish();
   }

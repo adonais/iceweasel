@@ -25,7 +25,7 @@ requesttimeoutfactor = 2  # Slow on Windows
 ["test_quicksuggest_amp.js"]
 
 ["test_quicksuggest_defaultPrefs.js"]
-requesttimeoutfactor = 2  # Slow on Linux and Windows
+requesttimeoutfactor = 10  # Checks all regions and locales where Suggest is enabled, takes a long time
 
 ["test_quicksuggest_dynamicSuggestions.js"]
 

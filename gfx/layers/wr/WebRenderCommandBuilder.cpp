@@ -14,6 +14,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SVGGeometryFrame.h"
 #include "mozilla/SVGImageFrame.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -42,7 +43,7 @@ namespace mozilla::layers {
 
 using namespace gfx;
 using namespace image;
-static int sIndent;
+[[maybe_unused]] static int sIndent;
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -1429,12 +1430,11 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
         sIndent++;
         // Note: this call to CreateWebRenderCommands can recurse back into
         // this function.
-        bool createdWRCommands = item->CreateWebRenderCommands(
+        WebRenderCommandsResult result = item->CreateWebRenderCommands(
             aBuilder, aResources, aSc, manager, mDisplayListBuilder);
-        MOZ_RELEASE_ASSERT(
-            createdWRCommands,
-            "active transforms should always succeed at creating "
-            "WebRender commands");
+        MOZ_RELEASE_ASSERT(result.isOk(),
+                           "active transforms should always succeed at "
+                           "creating WebRender commands");
         sIndent--;
       }
 
@@ -1869,10 +1869,13 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
 
   // Note: this call to CreateWebRenderCommands can recurse back into
   // this function if the |item| is a wrapper for a sublist.
-  const bool createdWRCommands = aItem->CreateWebRenderCommands(
+  const WebRenderCommandsResult result = aItem->CreateWebRenderCommands(
       aBuilder, aResources, aSc, manager, aDisplayListBuilder);
 
-  if (!createdWRCommands) {
+  if (result.isErr()) {
+    AUTO_PROFILER_MARKER_TEXT(
+        "WebRenderCommandBuilder::CreateWebRenderCommands fallback", GRAPHICS,
+        {}, nsDependentCString(result.inspectErr()));
     PushItemAsImage(aItem, aBuilder, aResources, aSc, aDisplayListBuilder);
   }
 }

@@ -36,6 +36,10 @@
       add_task(async function testMozInputUrlEvents() {
         await testHelpers.testTextBasedInputEvents("moz-input-url");
       });
+
+      add_task(async function testMozInputUrlRequiredProperty() {
+        await testHelpers.verifyRequired("moz-input-url");
+      });
     </script>
   </head>
   <body>

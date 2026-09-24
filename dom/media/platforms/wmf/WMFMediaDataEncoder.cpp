@@ -15,6 +15,7 @@
 #include "WMFUtils.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/dom/WebCodecsUtils.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 
@@ -26,12 +27,8 @@ using ReconfigurationPromise = MediaDataEncoder::ReconfigurationPromise;
 
 WMFMediaDataEncoder::WMFMediaDataEncoder(const EncoderConfig& aConfig,
                                          const RefPtr<TaskQueue>& aTaskQueue)
-    : mConfig(aConfig),
-      mTaskQueue(aTaskQueue),
-      mHardwareNotAllowed(aConfig.mHardwarePreference ==
-                          HardwarePreference::RequireSoftware) {
-  WMF_ENC_LOGE("WMFMediaDataEncoder ctor: {}, (hw not allowed: {})",
-               aConfig.ToString().get(), mHardwareNotAllowed ? "yes" : "no");
+    : mConfig(aConfig), mTaskQueue(aTaskQueue) {
+  WMF_ENC_LOGE("WMFMediaDataEncoder ctor: {}", aConfig.ToString().get());
   MOZ_ASSERT(mTaskQueue);
 }
 
@@ -132,9 +129,36 @@ RefPtr<InitPromise> WMFMediaDataEncoder::ProcessInit() {
         __func__);
   }
 
-  RefPtr<MFTEncoder> encoder = new MFTEncoder(
-      mHardwareNotAllowed ? MFTEncoder::HWPreference::SoftwareOnly
-                          : MFTEncoder::HWPreference::PreferHardware);
+  Maybe<MFTEncoder::HWPreference> hwPref;
+  switch (mConfig.mHardwarePreference) {
+    case HardwarePreference::RequireSoftware:
+      if (!XRE_IsGPUProcess()) {
+        hwPref = Some(MFTEncoder::HWPreference::SoftwareOnly);
+      }
+      break;
+    case HardwarePreference::RequireHardware:
+      if (XRE_IsGPUProcess()) {
+        hwPref = Some(MFTEncoder::HWPreference::HardwareOnly);
+      }
+      break;
+    case HardwarePreference::None:
+      if (!XRE_IsGPUProcess()) {
+        hwPref = Some(MFTEncoder::HWPreference::SoftwareOnly);
+      } else if (CanUseWMFHwEncoder(mConfig)) {
+        hwPref = Some(MFTEncoder::HWPreference::HardwareOnly);
+      }
+      break;
+  }
+
+  if (!hwPref) {
+    return InitPromise::CreateAndReject(
+        MediaResult(
+            NS_ERROR_DOM_MEDIA_FATAL_ERR,
+            RESULT_DETAIL("Hardware preference disallowed for process.")),
+        __func__);
+  }
+
+  RefPtr<MFTEncoder> encoder = new MFTEncoder(*hwPref);
   HRESULT hr;
   mscom::EnsureMTA([&]() { hr = InitMFTEncoder(encoder); });
 

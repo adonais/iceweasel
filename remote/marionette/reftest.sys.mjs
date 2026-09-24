@@ -17,6 +17,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   print: "chrome://remote/content/shared/PDF.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "aboutBlankURI", () =>
+  Services.io.newURI("about:blank")
+);
+
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
   lazy.Log.get(lazy.Log.TYPES.MARIONETTE)
 );
@@ -92,7 +96,10 @@ reftest.Runner = class {
   setup(urlCount, screenshotMode, isPrint = false, cacheScreenshots = true) {
     this.isPrint = isPrint;
 
-    lazy.assert.open(this.driver.getBrowsingContext({ top: true }));
+    // The reftest harness controls the window and the content it loads.
+    lazy.assert.open(
+      this.driver.getBrowsingContext({ skipPrivilegeCheck: true, top: true })
+    );
     this.parentWindow = this.driver.getCurrentWindow();
 
     this.screenshotMode =
@@ -153,8 +160,11 @@ reftest.Runner = class {
       lazy.logger.debug("Using current window");
       reftestWin = this.parentWindow;
       await lazy.navigate.waitForNavigationCompleted(this.driver, () => {
-        const browsingContext = this.driver.getBrowsingContext();
-        lazy.navigate.navigateTo(browsingContext, URL.parse("about:blank"));
+        // The reftest harness controls the window and the content it loads.
+        const browsingContext = this.driver.getBrowsingContext({
+          skipPrivilegeCheck: true,
+        });
+        lazy.navigate.navigateTo(browsingContext, lazy.aboutBlankURI);
       });
     } else {
       lazy.logger.debug("Using separate window");
@@ -652,7 +662,11 @@ reftest.Runner = class {
   }
 
   async loadTestUrl(win, url, timeout, warnOnOverflow = true) {
-    const browsingContext = this.driver.getBrowsingContext({ top: true });
+    // The reftest harness controls the window and the content it loads.
+    const browsingContext = this.driver.getBrowsingContext({
+      skipPrivilegeCheck: true,
+      top: true,
+    });
     const webProgress = browsingContext.webProgress;
 
     lazy.logger.debug(`Starting load of ${url}`);
@@ -669,7 +683,7 @@ reftest.Runner = class {
       //
       // See bug 1636169.
       this.updateBrowserRemotenessByURL(win.gBrowser, url);
-      lazy.navigate.navigateTo(browsingContext, URL.parse(url));
+      lazy.navigate.navigateTo(browsingContext, Services.io.newURI(url));
 
       this.lastURL = url;
     }

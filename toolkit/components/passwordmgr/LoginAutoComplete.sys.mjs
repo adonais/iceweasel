@@ -33,6 +33,17 @@ ChromeUtils.defineLazyGetter(lazy, "dateAndTimeFormatter", () => {
     dateStyle: "medium",
   });
 });
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["toolkit/main-window/autocomplete.ftl"], true)
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "removeRecordsEnabled",
+  "browser.autocomplete.removeRecords.enabled",
+  false
+);
 
 function loginSort(formHostPort, a, b) {
   let maybeHostPortA = lazy.LoginHelper.maybeGetHostPortForURL(a.origin);
@@ -93,10 +104,6 @@ class AutocompleteItem {
     this.style = style;
     this.value = "";
   }
-
-  removeFromStorage() {
-    /* Do nothing by default */
-  }
 }
 
 class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
@@ -116,18 +123,10 @@ class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
 
 class LoginAutocompleteItem extends AutocompleteItem {
   login;
-  #actor;
 
-  constructor(
-    login,
-    hasBeenTypePassword,
-    duplicateUsernames,
-    actor,
-    isOriginMatched
-  ) {
+  constructor(login, hasBeenTypePassword, duplicateUsernames, isOriginMatched) {
     super("loginWithOrigin");
     this.login = login.QueryInterface(Ci.nsILoginMetaInfo);
-    this.#actor = actor;
 
     const isDuplicateUsername =
       login.username && duplicateUsernames.has(login.username);
@@ -156,25 +155,38 @@ class LoginAutocompleteItem extends AutocompleteItem {
         isOriginMatched && login.httpRealm === null
           ? getLocalizedString("displaySameOrigin")
           : login.displayOrigin,
-      secondaryAction: {
-        type: "edit",
-        label: getLocalizedString("autocompleteEditLogin"),
-        fillMessageName: "PasswordManager:OpenPreferences",
-        fillMessageData: { loginGuid: login.guid, entryPoint: "Autocomplete" },
-      },
+      secondaryAction: lazy.removeRecordsEnabled
+        ? {
+            type: "menupopup",
+            label: lazy.l10n.formatValueSync("autocomplete-more-actions2", {
+              entry: username,
+            }),
+            actions: [
+              {
+                label: lazy.l10n.formatValueSync("autocomplete-edit-password"),
+              },
+              {
+                label: lazy.l10n.formatValueSync(
+                  "autocomplete-delete-password"
+                ),
+                fillMessageName: "PasswordManager:DeleteLogin",
+                fillMessageData: {
+                  loginGuid: login.guid,
+                },
+              },
+            ],
+          }
+        : {
+            type: "edit",
+            label: getLocalizedString("autocompleteEditLogin"),
+            fillMessageName: "PasswordManager:OpenPreferences",
+            fillMessageData: {
+              loginGuid: login.guid,
+              entryPoint: "Autocomplete",
+            },
+          },
     });
     this.image = `page-icon:${login.origin}`;
-  }
-
-  async removeFromStorage() {
-    if (this.#actor) {
-      let vanilla = lazy.LoginHelper.loginToVanillaObject(this.login);
-      this.#actor.sendAsyncMessage("PasswordManager:removeLogin", {
-        login: vanilla,
-      });
-    } else {
-      await Services.logins.removeLoginAsync(this.login);
-    }
   }
 }
 
@@ -251,13 +263,6 @@ class ImportableLoginsAutocompleteItem extends AutocompleteItem {
     this.#actor.sendAsyncMessage(
       "PasswordManager:decreaseSuggestImportCount",
       1
-    );
-  }
-
-  removeFromStorage() {
-    this.#actor.sendAsyncMessage(
-      "PasswordManager:decreaseSuggestImportCount",
-      100
     );
   }
 }
@@ -359,7 +364,6 @@ export class LoginAutoCompleteResult {
         login,
         hasBeenTypePassword,
         duplicateUsernames,
-        actor,
         lazy.LoginHelper.isOriginMatching(login.origin, formOrigin, {
           schemeUpgrades: lazy.LoginHelper.schemeUpgrades,
         })

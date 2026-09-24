@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-08-26T08:46:25.532097+00:00'
+updated_at: '2026-09-08T16:24:19.337520+00:00'
 export:
   path: ./docs/mots/index.md
   format: md
@@ -1324,6 +1324,7 @@ modules:
       group: ai4dev-reviewers
       components:
         - Developer Infrastructure::AI for Development
+      review_group: ai4dev-reviewers
   - machine_name: android_components
     name: Android Components
     description: A collection of independent, reusable Android library components
@@ -1378,6 +1379,7 @@ modules:
       url: <https://developer.mozilla.org/docs/Web/Accessibility>
       components:
         - Core::Disability Access APIs
+      review_group: accessibility-platform-reviewers
     owners:
       - *Jamie
     peers:
@@ -1468,6 +1470,7 @@ modules:
       url: <https://wiki.mozilla.org/ReleaseEngineering>
       components:
         - Release Engineering::*
+      review_group: releng-reviewers
     owners:
       - *jcristau
     peers:
@@ -1732,6 +1735,7 @@ modules:
         - *molly
       components:
         - Core::DLL Services
+      review_group: win-reviewers
     owners:
       - *handyman
     peers:
@@ -1756,6 +1760,7 @@ modules:
       group: dev-platform
       components:
         - 'Core::DOM: Navigation'
+      review_group: dom-core-reviewers
     owners:
       - *smaug
       - *nika
@@ -1820,6 +1825,7 @@ modules:
       url: <http://developer.mozilla.org/en/docs/DOM>
       components:
         - 'Core::DOM: File'
+      review_group: dom-storage-reviewers
     owners:
       - *baku
     peers:
@@ -1875,6 +1881,7 @@ modules:
       components:
         - 'Core::DOM: Events'
         - 'Core::DOM: UI Events & Focus Handling'
+      review_group: dom-core-reviewers
     owners:
       - *smaug
       - *masayuki
@@ -1920,6 +1927,7 @@ modules:
       url: <https://firefox-source-docs.mozilla.org/tools/profiler/>
       components:
         - Core::Gecko Profiler
+      review_group: profiler-reviewers
     owners:
       - *mstange
     peers:
@@ -1974,6 +1982,7 @@ modules:
         - 'Core::Keyboard: Navigation'
       peers_emeritus:
         - Neil Rashbrook
+      review_group: dom-core-reviewers
     owners:
       - *masayuki
     machine_name: core_global_key_bindings
@@ -2055,6 +2064,7 @@ modules:
         - 'Core::DOM: HTML Parser'
       peers_emeritus:
         - William Chen
+      review_group: dom-core-reviewers
     owners:
       - *hsivonen
     machine_name: core_html_parser
@@ -2096,6 +2106,7 @@ modules:
       group: dev-platform
       components:
         - Core::ImageLib
+      review_group: gfx-reviewers
     owners:
       - *tnikkel
     peers:
@@ -2289,6 +2300,7 @@ modules:
       url: <http://www.mozilla.org/newlayout/doc/parser.html>
       components:
         - 'Core::HTML: Parser'
+      review_group: dom-core-reviewers
     owners: []
     peers:
       - *rbs
@@ -2309,6 +2321,7 @@ modules:
       group: dev-platform
       components:
         - 'Core::Networking: JAR'
+      review_group: necko-reviewers
     owners:
       - *valentin
     peers:
@@ -2330,6 +2343,7 @@ modules:
       - *asuth
       - *farre
     meta:
+      review_group: dom-storage-reviewers
   - machine_name: core_machine_learning
     name: 'Core: Machine Learning'
     description: AI services and local inference
@@ -2400,6 +2414,7 @@ modules:
         - Robert O'Callahan
       owners_emeritus:
         - *karlt
+      review_group: layout-reviewers
     owners:
       - *emilio
     peers:
@@ -2486,13 +2501,17 @@ modules:
       group: dev-platform
       components:
         - Core::MFBT
+      review_group: mfbt-reviewers
       owners_emeritus:
         - Jeff Walden
       peers_emeritus:
         - *Ms2ger
     owners:
       - *glandium
-    peers: []
+    peers:
+      - *emilio
+      - *nika
+      - *sergesanspaille
     machine_name: core_mfbt
 
   - name: 'Core: Moz2D (Graphics submodule)'
@@ -2504,6 +2523,7 @@ modules:
       url: <https://wiki.mozilla.org/Platform/GFX/Moz2D>
       components:
         - Core::Graphics
+      review_group: gfx-reviewers
     owners:
       - *basschouten
     peers:
@@ -2685,6 +2705,7 @@ modules:
       url: <https://github.com/mozilla/pdf.js>
       components:
         - Core::PDF
+      review_group: pdfjs-reviewers
     owners:
       - *calixte
     peers:
@@ -2833,6 +2854,7 @@ modules:
       - *asuth
       - *jstutte
     meta:
+      review_group: dom-storage-reviewers
   - name: 'Core: Sandboxing (Linux)'
     description: Sandboxing for the Linux platform
     includes:
@@ -2842,6 +2864,7 @@ modules:
       url: <https://wiki.mozilla.org/Security/Sandbox>
       components:
         - 'Core::Security: Process Sandboxing'
+      review_group: sandbox-reviewers
     owners:
       - *jld
     peers:
@@ -3084,6 +3107,7 @@ modules:
       url: <https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/User-Agent/Firefox>
       components:
         - 'Core::Networking: HTTP'
+      review_group: necko-reviewers
     owners:
       - *tantek
     peers:
@@ -3106,6 +3130,7 @@ modules:
       group: dev-platform
       components:
         - 'Core::Layout: View Rendering'
+      review_group: layout-reviewers
     owners:
       - *tnikkel
     peers:
@@ -3125,6 +3150,7 @@ modules:
       url: <https://wiki.mozilla.org/Web_Audio_API>
       components:
         - Core::Web Audio
+      review_group: media-playback-reviewers
     owners:
       - *padenot
     peers:
@@ -3146,6 +3172,7 @@ modules:
       peers_emeritus:
         - David Baron
         - Robert O'Callahan
+      review_group: layout-reviewers
     owners:
     peers:
       - *tnikkel
@@ -3276,6 +3303,7 @@ modules:
           url: <https://wiki.mozilla.org/Media/webrtc>
           components:
             - Core::WebRTC (Audio/Video)
+          review_group: webrtc-reviewers
         owners:
           - *jesup
         peers:
@@ -3299,6 +3327,7 @@ modules:
           url: <https://wiki.mozilla.org/Media/webrtc>
           components:
             - Core::WebRTC (Signaling)
+          review_group: webrtc-reviewers
         owners:
           - *bwc
         peers:
@@ -3544,6 +3573,7 @@ modules:
         - Josh 'timeless' Soref
       group: dev-tech-xpcom
       url: '{ref}`XPIDL`'
+      review_group: xpcom-reviewers
     owners:
       - *nika
     peers:
@@ -3813,6 +3843,7 @@ modules:
           - *kcochrane
           - *jsudiaman
         meta:
+          review_group: fxview-reviewers
       - name: Form Autofill
         description: Form detection and autocomplete.
         includes:
@@ -3829,6 +3860,7 @@ modules:
             - Toolkit::Autocomplete
             - Toolkit::Form Autofill
             - Toolkit::Form Manager
+          review_group: credential-management-reviewers
         owners:
           - *dimi
         peers:
@@ -3970,6 +4002,7 @@ modules:
             - 'Toolkit::Password Manager: Site'
             - Compatibility
             - Firefox::about:logins
+          review_group: credential-management-reviewers
         owners:
           - *joschmidt
           - *micah
@@ -3991,6 +4024,7 @@ modules:
           owners_emeritus:
             - *micah
             - *molly
+          review_group: pip-reviewers
         excludes: []
         owners:
           - *mconley
@@ -4002,7 +4036,8 @@ modules:
         description: Migrating data from other browsers.
         includes:
           - browser/components/migration/**/*
-        meta: {}
+        meta:
+          review_group: migration-reviewers
         owners:
           - *Gijs
         peers:
@@ -4247,6 +4282,7 @@ modules:
     meta:
       peers_emeritus:
         - Rahul Sainani
+      review_group: android-reviewers
     submodules:
 
       - machine_name: fenix_addons
@@ -4287,6 +4323,7 @@ modules:
     peers:
       - *giorga
     meta:
+      review_group: android-reviewers
   - machine_name: javascript_usage
     name: JavaScript usage, tools, and style
     description: Aspects of JavaScript use such as language feature usage, tooling
@@ -4350,6 +4387,7 @@ modules:
     meta:
       components:
         - 'Developer Infrastructure :: Lint and Formatting'
+      review_group: linter-reviewers
 
   - machine_name: remote_protocol
     name: Remote Protocol
@@ -4482,6 +4520,7 @@ modules:
       url: <https://wiki.mozilla.org/Services/Process/Code_Review>
       components:
         - Sync
+      review_group: sync-reviewers
 
   - machine_name: testing_firefox_ui
     name: firefox-ui
@@ -4728,6 +4767,7 @@ modules:
           url: '{ref}`Telemetry`'
           peers_emeritus:
             - *perrymcmanis
+          review_group: toolkit-telemetry-reviewers-rotation
         owners:
           - *chutten
         peers:
@@ -4869,5 +4909,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 2a527868daa58f879b3f1ad9feb19f5573158362
-  export: fa50618a86a1ec2c9bff94fdf93f978b870927dc
+  config: 69bde0cdf6c276324fec624ba24eb478776f7f76
+  export: 19e7bf3cb5b7ad587a0456981c724895c4921d2b

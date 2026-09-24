@@ -264,8 +264,13 @@ Object.assign(PushServiceParent.prototype, {
     }
   },
 
+  /**
+   * Start the Push Service.
+   *
+   * @returns {Promise<void>} Resolves once the Push Service has started.
+   */
   ensureReady() {
-    this.service.init();
+    return this.service.init();
   },
 
   _toPageRecord(principal, data) {

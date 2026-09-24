@@ -13,6 +13,8 @@
 
 # Flank: https://flank.github.io/flank/
 
+from __future__ import annotations
+
 import argparse
 import logging
 import os

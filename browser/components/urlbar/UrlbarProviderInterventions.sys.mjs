@@ -659,6 +659,11 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     // `selType` is "tip" when the tip's main button is picked. Ignore clicks on
     // the help command ("help"), which is handled by UrlbarInput since we

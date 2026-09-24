@@ -96,7 +96,6 @@ class Directives {
     return *this;
   }
   bool operator==(const Directives& rhs) const = default;
-  bool operator!=(const Directives& rhs) const = default;
 };
 
 // The kind of this-binding for the current scope. Note that arrow functions

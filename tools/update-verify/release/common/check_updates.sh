@@ -156,14 +156,17 @@ check_updates () {
   fi
   cd ../..
 
+  # `update_telemetry.json` is created in the install directory when an update is
+  # applied; because it is not part of the installer package, it will always be
+  # absent from the target side
+  ignore_missing="--ignore-missing=update_telemetry.json --ignore-missing=Contents/Resources/update_telemetry.json"
+
   # If we are testing an OSX mar to update from a production-signed/notarized
   # build to a dep-signed one, ignore Contents/CodeResources which won't be
   # present in the target, to avoid spurious failures
   # Same applies to provisioning profiles, since we don't have them outside of prod
   if ${update_to_dep}; then
-    ignore_coderesources="--ignore-missing=Contents/CodeResources --ignore-missing=Contents/embedded.provisionprofile"
-  else
-    ignore_coderesources=
+    ignore_missing="${ignore_missing} --ignore-missing=Contents/CodeResources --ignore-missing=Contents/embedded.provisionprofile"
   fi
 
   # On Mac, there are two Frameworks that are not included with updates, and
@@ -187,7 +190,7 @@ check_updates () {
 
   # This check is disabled because we rely on glob expansion here
   # shellcheck disable=SC2086
-  ${UV_SRC}/release/compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_coderesources} > "${diff_file}"
+  ${UV_SRC}/release/compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_missing} > "${diff_file}"
   diffErr=$?
   cat "${diff_file}"
   if [ $diffErr == 2 ]

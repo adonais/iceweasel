@@ -405,13 +405,45 @@ interface FeatureCallout {
         // Predefined content modules. These are poorly documented but can be
         // investigated in ContentTiles.jsx. The example here is a multiselect
         // tile, which shows a list of checkboxes or radio buttons.
+        //
+        // A tile with `type: "text"` is the exception to the pattern: instead
+        // of a module it renders a `LinkParagraph` (see LinkParagraphOrImage
+        // below) from its own `text` and `font_styles` keys, so a paragraph can
+        // be positioned in the tiles order rather than only in
+        // `above_button_content`. It is ignored unless `text` is set.
         tiles?: {
           type: "multiselect";
+          // A clickable header that collapses and expands the tile's content.
+          // With a header the tile starts collapsed; without one its content is
+          // always shown. Only one tile can be expanded at a time.
+          header?: {
+            title: Label;
+            subtitle?: Label;
+            // Render the header as a centred link with a chevron instead of a
+            // bordered button, for a disclosure that should read as secondary
+            // to the content above it. It stays a <button> with
+            // `aria-expanded`, so the disclosure semantics are unchanged.
+            linkStyle?: boolean;
+            style?: {
+              backgroundColor?: string;
+              border?: string;
+              padding?: string;
+              margin?: string;
+              width?: string;
+              height?: string;
+            };
+          };
           // Alternate presentations for the items. "picker" renders them as
-          // pill-shaped chips with an emoji icon. "select-card" renders them
-          // as full-width rows with the label on the inline-start edge and the
-          // checkbox on the inline-end edge. Omit for the default list.
-          multiSelectItemDesign?: "picker" | "select-card";
+          // pill-shaped chips with an emoji icon. "select-card" renders each
+          // item as its own full-width filled row, with the label on the
+          // inline-start edge and the checkbox on the inline-end edge.
+          // "grouped-card" is the same row layout, but with a single card
+          // around the whole group instead of one per item, for items that
+          // should read as one unit. Omit for the default list.
+          //
+          // In both card designs an item's `description` renders as a second
+          // line beneath its `label`, with the checkbox centred across both.
+          multiSelectItemDesign?: "picker" | "select-card" | "grouped-card";
           data: MultiSelectItem[];
           // Allows CSS overrides of the multiselect container.
           style?: {
@@ -777,6 +809,11 @@ interface MultiSelectItem {
   // Set to true to make it selected/checked by default.
   defaultValue: false;
   label?: Label;
+  // Supporting copy for the item, rendered as a paragraph after the label and
+  // wired to the checkbox with `aria-describedby`. In the "select-card" and
+  // "grouped-card" designs it becomes a second, deemphasized line beneath the
+  // label.
+  description?: Label;
   // By default, multiselect items appear in the order they're listed
   // in the data array. Set this to true to randomize the order. This
   // is most commonly used to randomize the order of answer choices

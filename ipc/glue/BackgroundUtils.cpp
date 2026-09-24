@@ -439,7 +439,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
     SerializeURI(resultPrincipalURI, optionalResultPrincipalURI);
   }
 
-  nsCString triggeringRemoteType;
+  RemoteType triggeringRemoteType;
   rv = aLoadInfo->GetTriggeringRemoteType(triggeringRemoteType);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -602,11 +602,11 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetAllowDeprecatedSystemRequests(),
       aLoadInfo->GetIsInDevToolsContext(), aLoadInfo->GetParserCreatedScript(),
       requestMode, aLoadInfo->GetIsFromProcessingFrameAttributes(),
-      aLoadInfo->GetIsMediaRequest(), aLoadInfo->GetIsFromObjectOrEmbed(),
-      cookieJarSettingsArgs, aLoadInfo->GetRequestBlockingReason(),
-      maybePolicyContainerToInherit, aLoadInfo->GetStoragePermission(),
-      aLoadInfo->GetParentIpAddressSpace(), aLoadInfo->GetIpAddressSpace(),
-      overriddenFingerprintingSettingsArg, aLoadInfo->GetIsMetaRefresh(),
+      aLoadInfo->GetIsMediaRequest(), cookieJarSettingsArgs,
+      aLoadInfo->GetRequestBlockingReason(), maybePolicyContainerToInherit,
+      aLoadInfo->GetStoragePermission(), aLoadInfo->GetParentIpAddressSpace(),
+      aLoadInfo->GetIpAddressSpace(), overriddenFingerprintingSettingsArg,
+      aLoadInfo->GetIsMetaRefresh(),
       aLoadInfo->GetActivatedFromNavigationalPrefetch(),
       aLoadInfo->GetLoadingEmbedderPolicy(),
       aLoadInfo->GetIsOriginTrialCoepCredentiallessEnabledForTopLevel(),
@@ -618,13 +618,13 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
 }
 
 nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
+                                const RemoteType& aOriginRemoteType,
                                 nsILoadInfo** outLoadInfo) {
   return LoadInfoArgsToLoadInfo(aLoadInfoArgs, aOriginRemoteType, nullptr,
                                 outLoadInfo);
 }
 nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
+                                const RemoteType& aOriginRemoteType,
                                 nsINode* aCspToInheritLoadingContext,
                                 nsILoadInfo** outLoadInfo) {
   RefPtr<LoadInfo> loadInfo;
@@ -638,13 +638,13 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& aLoadInfoArgs,
 }
 
 nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
+                                const RemoteType& aOriginRemoteType,
                                 LoadInfo** outLoadInfo) {
   return LoadInfoArgsToLoadInfo(aLoadInfoArgs, aOriginRemoteType, nullptr,
                                 outLoadInfo);
 }
 nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
-                                const nsACString& aOriginRemoteType,
+                                const RemoteType& aOriginRemoteType,
                                 nsINode* aCspToInheritLoadingContext,
                                 LoadInfo** outLoadInfo) {
   nsCOMPtr<nsIPrincipal> loadingPrincipal;
@@ -725,8 +725,8 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
   // This means that the triggering remote type will be reset if a LoadInfo is
   // bounced through a content process, as the LoadInfo can no longer be
   // validated to be coming from the originally specified remote type.
-  nsCString triggeringRemoteType = loadInfoArgs.triggeringRemoteType();
-  if (aOriginRemoteType != NOT_REMOTE_TYPE &&
+  RemoteType triggeringRemoteType = loadInfoArgs.triggeringRemoteType();
+  if (!aOriginRemoteType.IsNotRemote() &&
       aOriginRemoteType != triggeringRemoteType) {
     triggeringRemoteType = aOriginRemoteType;
   }

@@ -189,6 +189,8 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   virtual void SetDefaultCodecs(const nsTArray<UniquePtr<JsepCodecDescription>>&
                                     aPreferredCodecs) override;
 
+  virtual bool LocalOfferedRecvParamsChanged(const std::string& aMid) override;
+
  private:
   friend class JsepSessionTest;
   virtual const std::vector<JsepTransceiver>& GetTransceivers() const override {

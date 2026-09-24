@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: item() with an out-of-range index</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognitionresultlist
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognitionresult
+// The item() getters of both collections return null past the end, which is
+// what their indexed getters already report as an absent index.
+//
+// This needs a session that returns a result, since neither collection can be
+// constructed from script: that is also why the coverage is here rather than
+// in a web-platform test, where nothing automated can reach a result (every
+// speech-api test that touches one is -manual).
+//
+// Requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("createResumedAudioContext() bounds its wait on AudioContext.resume()");
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function item_past_the_end_returns_null() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+  const audio = await loadTestAudio("kennedy-appolo.opus");
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  // Interim results, so the first "result" event arrives as soon as the engine
+  // has a hypothesis rather than at the end of the utterance.
+  sr.interimResults = true;
+  sr.lang = LANG;
+
+  let errorFired = null;
+  sr.onerror = e => { errorFired = e.error; };
+  const gotResult = new Promise(r =>
+    sr.addEventListener("result", r, { once: true }));
+  const ended = new Promise(r => sr.addEventListener("end", r));
+
+  sr.start(dst.stream.getAudioTracks()[0]);
+  await audio.play();
+  const event = await gotResult;
+  is(errorFired, null, "the session produced no error");
+
+  const list = event.results;
+  ok(!!list.length, `the event carries ${list.length} result(s)`);
+  is(list.item(list.length - 1), list[list.length - 1],
+     "SpeechRecognitionResultList.item() returns the result at the last index");
+  is(list.item(list.length), null,
+     "SpeechRecognitionResultList.item() past the end returns null");
+  is(list.item(255), null,
+     "SpeechRecognitionResultList.item(255) returns null");
+  is(list[list.length], undefined,
+     "the indexed getter reports an index past the end as absent");
+
+  const result = list[0];
+  ok(!!result.length, `the result carries ${result.length} alternative(s)`);
+  is(result.item(result.length - 1), result[result.length - 1],
+     "SpeechRecognitionResult.item() returns the alternative at the last index");
+  is(result.item(result.length), null,
+     "SpeechRecognitionResult.item() past the end returns null");
+  is(result.item(255), null,
+     "SpeechRecognitionResult.item(255) returns null");
+  is(result[result.length], undefined,
+     "the indexed getter reports an index past the end as absent");
+
+  sr.abort();
+  await ended;
+  audio.pause();
+  await ctx.close();
+});
+</script>
+</pre>
+</body>
+</html>

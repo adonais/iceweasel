@@ -1,5 +1,7 @@
 [DEFAULT]
 
+["test_print_to_pdf_guard.js"]
+
 ["test_signature_bridge.js"]
 skip-if = [
   "os == 'android'", # PdfJsParent.sys.mjs isn't packaged on Android (see jar.mn)

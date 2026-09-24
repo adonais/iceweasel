@@ -107,7 +107,7 @@ pkix_pl_OID_Equals(
         PKIX_Boolean *pResult,
         void *plContext)
 {
-        PKIX_Int32 cmpResult;
+        PKIX_Int32 cmpResult = 0;
 
         PKIX_ENTER(OID, "pkix_pl_OID_Equals");
         PKIX_NULLCHECK_THREE(first, second, pResult);

@@ -492,8 +492,8 @@ random-if(gtkWidget) != text-language-01.xhtml text-language-01-ref.xhtml # Fail
 fuzzy-if(cocoaWidget,0-1,0-3) == text-layout-06.svg text-layout-06-ref.svg
 == text-layout-07.svg text-layout-07-ref.svg
 == text-layout-08.svg text-layout-08-ref.svg
-== text-layout-09.svg pass.svg
-== text-layout-10.svg pass.svg # Bug 1392106
+fuzzy-if(cocoaWidget,0-43,0-579) == text-layout-09.svg pass.svg # Antialiasing fringe
+== text-layout-10.svg pass.svg
 == text-scale-01.svg text-scale-01-ref.svg
 fuzzy(0-2,0-1000) == text-scale-02.svg text-scale-02-ref.svg
 == text-scale-03.svg text-scale-03-ref.svg

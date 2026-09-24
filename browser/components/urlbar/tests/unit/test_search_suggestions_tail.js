@@ -7,7 +7,7 @@
  */
 
 const SUGGEST_ENABLED_PREF = "browser.search.suggest.enabled";
-const PRIVATE_SEARCH_PREF = "browser.search.separatePrivateDefault.ui.enabled";
+const PRIVATE_SEARCH_PREF = "browser.search.separatePrivateDefault.featureGate";
 const TAIL_SUGGESTIONS_PREF = "browser.urlbar.richSuggestions.tail";
 
 var suggestionsFn;

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test modules created while script is disabled</title>
+<script src="/tests/SimpleTest/SimpleTest.js"></script>
+<link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+<script>
+"use strict";
+
+const SIMPLE_MODULE = "./scriptDisabled_module.mjs";
+const CACHEABLE_MODULE = "./scriptDisabledDiskCache_module.sjs";
+const LARGE_MODULE = "./module_large1.mjs";
+const WASM_MODULE = "./exports-fun.wasm";
+
+// Serve a large off-the-main-thread-compiled wasm module.
+const LARGE_WASM_MODULE = "../file_wasm_offthread_module.sjs";
+const WASM_ESM_PREF = "javascript.options.experimental.wasm_esm_integration";
+
+function addFrame() {
+  return new Promise(resolve => {
+    const frame = document.createElement("iframe");
+    frame.src = "scriptDisabled_frame.html";
+    frame.addEventListener("load", () => resolve(frame), { once: true });
+    document.body.appendChild(frame);
+  });
+}
+
+function importInFrame(frame, url) {
+  return SpecialPowers.spawn(frame, [url], async moduleUrl => {
+    const ns = await content.wrappedJSObject.importModule(moduleUrl);
+    return ns.wrappedJSObject.marker;
+  });
+}
+
+// https://html.spec.whatwg.org/#fetch-a-single-module-script
+// Step 5. If moduleMap[(url, moduleType)] is a module script, run onComplete
+//         given moduleMap[(url, moduleType)], and return.
+//
+// If the module is loaded before, the same module should return even if the
+// scripting is disabled.
+add_task(async function importAlreadyLoadedModule() {
+  const frame = await addFrame();
+
+  is(await importInFrame(frame, SIMPLE_MODULE), "module", "the module loads");
+
+  // The import completes from a task the ScriptLoader dispatches, so script
+  // stays blocked until the next spawn.
+  await SpecialPowers.spawn(frame, [SIMPLE_MODULE], url => {
+    Cu.blockScriptForGlobal(content);
+    content.wrappedJSObject.importModule(url);
+  });
+
+  await SpecialPowers.spawn(frame, [], () => {
+    Cu.unblockScriptForGlobal(content);
+  });
+
+  is(
+    await importInFrame(frame, SIMPLE_MODULE),
+    "module",
+    "the module still loads once script is enabled again"
+  );
+
+  frame.remove();
+});
+
+add_task(async function moduleWithDiskCacheReference() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.script_loader.experimental.navigation_cache", false],
+      ["dom.script_loader.bytecode_cache.enabled", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const frame = await addFrame();
+
+  // The import is started and script blocked in the same task, so the fetch is
+  // necessarily still in flight when the realm becomes unscriptable.
+  await SpecialPowers.spawn(frame, [CACHEABLE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    content.wrappedJSObject.importModule(url);
+    Cu.blockScriptForGlobal(content);
+    try {
+      // The empty module must not keep its disk cache reference.
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          traces.some(
+            data =>
+              data.includes("event:diskcache:disabled") &&
+              data.includes(fileName)
+          ),
+        "the empty module reached the disk cache bookkeeping"
+      );
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    // The empty module is in this realm's module map, so importing again
+    // returns it rather than fetching.
+    const ns = await content.wrappedJSObject.importModule(url);
+    is(ns.wrappedJSObject.marker, undefined, "the module was created empty");
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function moduleCompiledOffMainThread() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["javascript.options.parallel_parsing", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const frame = await addFrame();
+
+  await SpecialPowers.spawn(frame, [LARGE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    // The script element is inserted and script blocked in the same task, so
+    // the module is necessarily compiled and created while this realm is
+    // unscriptable.
+    const script = content.wrappedJSObject.startModuleScript(url);
+    const processed = new Promise(resolve => {
+      script.addEventListener("load", () => resolve("load"), { once: true });
+      script.addEventListener("error", () => resolve("error"), { once: true });
+    });
+    Cu.blockScriptForGlobal(content);
+
+    try {
+      is(await processed, "load", "the empty module was created and evaluated");
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    is(
+      content.wrappedJSObject.results.length,
+      0,
+      "the module's source did not run"
+    );
+    ok(
+      !traces.some(
+        data =>
+          data.includes("event:compile:main thread") && data.includes(fileName)
+      ),
+      "the module was compiled off the main thread"
+    );
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+// The LoadedScript mutated by the scripting-disabled path is the in-memory
+// cache entry shared with the later loads of the same URL.
+add_task(async function moduleWithMemoryCacheEntry() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.script_loader.experimental.navigation_cache", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const populatingFrame = await addFrame();
+  is(
+    await importInFrame(populatingFrame, CACHEABLE_MODULE),
+    "module",
+    "the module loads and is inserted into the in-memory cache"
+  );
+  populatingFrame.remove();
+
+  const disabledFrame = await addFrame();
+  await SpecialPowers.spawn(disabledFrame, [CACHEABLE_MODULE], async url => {
+    // The module is served from the in-memory cache, so the whole load,
+    // including creating the empty module, happens synchronously here.
+    Cu.blockScriptForGlobal(content);
+    content.wrappedJSObject.importModule(url);
+    Cu.unblockScriptForGlobal(content);
+
+    const ns = await content.wrappedJSObject.importModule(url);
+    is(
+      ns.wrappedJSObject.marker,
+      undefined,
+      "the module was created empty in the realm where script was disabled"
+    );
+  });
+  disabledFrame.remove();
+
+  const frame = await addFrame();
+  await SpecialPowers.spawn(frame, [CACHEABLE_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    try {
+      const ns = await content.wrappedJSObject.importModule(url);
+      is(
+        ns.wrappedJSObject.marker,
+        "module",
+        "the module still loads in a realm where script is enabled"
+      );
+    } finally {
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    ok(
+      traces.some(
+        data =>
+          data.includes("event:load:memorycache") && data.includes(fileName)
+      ),
+      "the in-memory cache entry survived the empty module"
+    );
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+// https://html.spec.whatwg.org/#creating-a-webassembly-module-script
+// Step 1. If scripting is disabled for settings, then set bodyBytes to the byte
+//         sequence 0x00 0x61 0x73 0x6D 0x01 0x00 0x00 0x00.
+add_task(async function wasmModuleCreatedEmpty() {
+  // The WebAssembly ESM integration, and so its pref, only exists on Nightly.
+  if (
+    SpecialPowers.Services.prefs.getPrefType(WASM_ESM_PREF) ==
+    SpecialPowers.Ci.nsIPrefBranch.PREF_INVALID
+  ) {
+    info("skipped: the WebAssembly ESM integration is not available");
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [WASM_ESM_PREF, true],
+      ["javascript.options.experimental.source_phase_imports", true],
+    ],
+  });
+
+  const countExports = frame =>
+    SpecialPowers.spawn(frame, [WASM_MODULE], async url => {
+      const source = await content.wrappedJSObject.importSource(url);
+      return content.wrappedJSObject.WebAssembly.Module.exports(source).length;
+    });
+
+  // Control, in its own frame so that it gets its own module map: the module
+  // served is not empty to begin with.
+  const control = await addFrame();
+  is(
+    await countExports(control),
+    1,
+    "the module has an export when script is enabled"
+  );
+  control.remove();
+
+  const frame = await addFrame();
+
+  // Start an import and block script in the same task.
+  await SpecialPowers.spawn(frame, [WASM_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const loadGroup =
+      content.docShell.QueryInterface(Ci.nsIDocumentLoader).loadGroup;
+    const moduleIsFetching = () => {
+      for (const request of loadGroup.requests) {
+        if (request.name.endsWith(fileName)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    content.wrappedJSObject.importSource(url);
+    Cu.blockScriptForGlobal(content);
+    try {
+      ok(moduleIsFetching(), "the module's fetch is in flight");
+      await ContentTaskUtils.waitForCondition(
+        () => !moduleIsFetching(),
+        "the module's fetch completed while script was disabled"
+      );
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+    }
+  });
+
+  // The empty wasm module is in this realm's module map, so importing again
+  // returns it rather than fetching.
+  is(
+    await countExports(frame),
+    0,
+    "the module was created as an empty WebAssembly module"
+  );
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+
+// Only source phase wasm modules at or above OffThreadMinimumWasmLength are
+// compiled off the main thread. Creating the empty module has to discard that
+// pending compilation rather than adopt its result.
+add_task(async function wasmModuleCompiledOffMainThreadCreatedEmpty() {
+  if (
+    SpecialPowers.Services.prefs.getPrefType(WASM_ESM_PREF) ==
+    SpecialPowers.Ci.nsIPrefBranch.PREF_INVALID
+  ) {
+    info("skipped: the WebAssembly ESM integration is not available");
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [WASM_ESM_PREF, true],
+      ["javascript.options.experimental.source_phase_imports", true],
+      ["javascript.options.parallel_parsing", true],
+      // Enables the ScriptLoaderTest notifications checked below.
+      ["dom.expose_test_interfaces", true],
+    ],
+  });
+
+  const frame = await addFrame();
+
+  await SpecialPowers.spawn(frame, [LARGE_WASM_MODULE], async url => {
+    const fileName = url.split("/").pop();
+    const traces = [];
+    const observer = (subject, topic, data) => traces.push(data);
+    Services.obs.addObserver(observer, "ScriptLoaderTest");
+
+    const loadGroup =
+      content.docShell.QueryInterface(Ci.nsIDocumentLoader).loadGroup;
+    const moduleIsFetching = () => {
+      for (const request of loadGroup.requests) {
+        if (request.name.endsWith(fileName)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    const traced = event =>
+      traces.some(
+        data => data.includes(`event:${event}`) && data.includes(fileName)
+      );
+
+    content.wrappedJSObject.importSource(url);
+    Cu.blockScriptForGlobal(content);
+    try {
+      ok(moduleIsFetching(), "the module's fetch is in flight");
+
+      // Waiting for the empty wasm module is created.
+      await ContentTaskUtils.waitForCondition(
+        () => traced("compile:wasm empty"),
+        "the empty module was created while script was disabled"
+      );
+
+      ok(
+        traced("compile:off thread"),
+        "the module was compiled off the main thread"
+      );
+    } finally {
+      Cu.unblockScriptForGlobal(content);
+      Services.obs.removeObserver(observer, "ScriptLoaderTest");
+    }
+
+    // The empty module is in this realm's module map, so importing again
+    // returns it rather than fetching.
+    const source = await content.wrappedJSObject.importSource(url);
+    is(
+      content.wrappedJSObject.WebAssembly.Module.exports(source).length,
+      0,
+      "the off-thread compiled module was created as an empty WebAssembly module"
+    );
+  });
+
+  frame.remove();
+  await SpecialPowers.popPrefEnv();
+});
+</script>
+<body></body>

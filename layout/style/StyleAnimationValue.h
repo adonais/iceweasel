@@ -55,7 +55,7 @@ struct AnimationValue {
 
   // Returns nscolor value in this AnimationValue.
   // Currently only background-color is supported.
-  nscolor GetColor(nscolor aForegroundColor) const;
+  nscolor GetColor(const StyleAbsoluteColor& aForegroundColor) const;
 
   // Returns true if this AnimationValue is current-color.
   // Currently only background-color is supported.

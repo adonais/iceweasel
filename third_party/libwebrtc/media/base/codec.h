@@ -201,11 +201,11 @@ struct RTC_EXPORT Codec {
     if (c.packetization) {
       absl::Format(&sink, ",packetization=%s", *c.packetization);
     }
-    for (auto param : c.params) {
+    for (const auto& [key, value] : c.params) {
       sink.Append(";");
-      sink.Append(param.first);
+      sink.Append(key);
       sink.Append("=");
-      sink.Append(param.second);
+      sink.Append(value);
     }
     sink.Append("]");
   }
@@ -214,15 +214,17 @@ struct RTC_EXPORT Codec {
   // Creates an empty codec.
   explicit Codec(Type type);
   // Creates a codec with the given parameters.
-  Codec(Type type, PayloadType id, const std::string& name, int clockrate);
+  Codec(Type type, PayloadType id, absl::string_view name, int clockrate);
   Codec(Type type,
         PayloadType id,
-        const std::string& name,
+        absl::string_view name,
         int clockrate,
         size_t channels);
 
   explicit Codec(const SdpAudioFormat& c);
+  explicit Codec(SdpAudioFormat&& c);
   explicit Codec(const SdpVideoFormat& c);
+  explicit Codec(SdpVideoFormat&& c);
 
   friend Codec CreateAudioCodec(PayloadType id,
                                 absl::string_view name,

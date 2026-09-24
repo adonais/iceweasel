@@ -101,9 +101,8 @@ void nsHttpConnectionInfo::Init(const nsACString& host, int32_t port,
   mTRRMode = nsIRequest::TRR_DEFAULT_MODE;
   mIPv4Disabled = false;
   mIPv6Disabled = false;
-  mHttp3Disabled = false;
+  mHttp3Policy = Http3Policy::Allowed;
   mHasIPHintAddress = false;
-  mHttp3Only = false;
   mIsWildCard = host.Equals("*"_ns);
 
   mUsingHttpsProxy = (proxyInfo && proxyInfo->IsHTTPS());
@@ -267,6 +266,8 @@ void nsHttpConnectionInfo::BuildHashKey() {
 
   if (GetHttp3Disabled()) {
     mHashKey.AppendLiteral("[!h3]");
+  } else if (GetHttp3Only()) {
+    mHashKey.AppendLiteral("[h3only]");
   }
 
   if (mProxyInfo) {
@@ -357,9 +358,8 @@ already_AddRefed<nsHttpConnectionInfo> nsHttpConnectionInfo::Clone() const {
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
-  clone->SetHttp3Disabled(GetHttp3Disabled());
+  clone->SetHttp3Policy(GetHttp3Policy());
   clone->SetHasIPHintAddress(HasIPHintAddress());
-  clone->SetHttp3Only(GetHttp3Only());
   clone->SetEchConfig(GetEchConfig());
   clone->SetWebTransportId(GetWebTransportId());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
@@ -417,7 +417,7 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
-  clone->SetHttp3Disabled(GetHttp3Disabled());
+  clone->SetHttp3Policy(GetHttp3Policy());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
   bool hasIPHint = false;
@@ -470,7 +470,7 @@ nsHttpConnectionInfo::CloneAndAdoptPortAndAlpn(
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
-  clone->SetHttp3Disabled(GetHttp3Disabled());
+  clone->SetHttp3Policy(GetHttp3Policy());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
   // Preserve the WebTransport id so the clone hashes to the same connection
   // entry as the origin connection info — WebTransport server cert hashes are
@@ -503,10 +503,9 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
   aArgs.trrMode() = aInfo->GetTRRMode();
   aArgs.isIPv4Disabled() = aInfo->GetIPv4Disabled();
   aArgs.isIPv6Disabled() = aInfo->GetIPv6Disabled();
-  aArgs.isHttp3Disabled() = aInfo->GetHttp3Disabled();
+  aArgs.http3Policy() = static_cast<uint8_t>(aInfo->GetHttp3Policy());
   aArgs.isHttp3() = aInfo->IsHttp3();
   aArgs.hasIPHintAddress() = aInfo->HasIPHintAddress();
-  aArgs.http3Only() = aInfo->GetHttp3Only();
   aArgs.echConfig() = aInfo->GetEchConfig();
   aArgs.webTransport() = aInfo->GetWebTransport();
   aArgs.webTransportId() = aInfo->GetWebTransportId();
@@ -558,9 +557,12 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
   cinfo->SetTRRMode(static_cast<nsIRequest::TRRMode>(aInfoArgs.trrMode()));
   cinfo->SetIPv4Disabled(aInfoArgs.isIPv4Disabled());
   cinfo->SetIPv6Disabled(aInfoArgs.isIPv6Disabled());
-  cinfo->SetHttp3Disabled(aInfoArgs.isHttp3Disabled());
+  uint8_t http3Policy = aInfoArgs.http3Policy();
+  if (http3Policy > static_cast<uint8_t>(Http3Policy::Only)) {
+    http3Policy = static_cast<uint8_t>(Http3Policy::Allowed);
+  }
+  cinfo->SetHttp3Policy(static_cast<Http3Policy>(http3Policy));
   cinfo->SetHasIPHintAddress(aInfoArgs.hasIPHintAddress());
-  cinfo->SetHttp3Only(aInfoArgs.http3Only());
   cinfo->SetEchConfig(aInfoArgs.echConfig());
   cinfo->SetHappyEyeballsEnabled(aInfoArgs.happyEyeballsEnabled());
 
@@ -589,9 +591,13 @@ void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI,
   clone->SetTRRMode(GetTRRMode());
   clone->SetIPv4Disabled(GetIPv4Disabled());
   clone->SetIPv6Disabled(GetIPv6Disabled());
-  clone->SetHttp3Disabled(GetHttp3Disabled());
+  // This clone is deliberately not h3 (empty npnToken, isHttp3 = false), so an
+  // Only policy would contradict it. Unlike CloneAndAdoptHTTPSSVCRecord and
+  // CloneAndAdoptPortAndAlpn, which describe the endpoint an h3-only attempt is
+  // dialling and must keep it.
+  clone->SetHttp3Policy(GetHttp3Only() ? Http3Policy::Allowed
+                                       : GetHttp3Policy());
   clone->SetHasIPHintAddress(HasIPHintAddress());
-  clone->SetHttp3Only(GetHttp3Only());
   clone->SetEchConfig(GetEchConfig());
   clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
 
@@ -652,9 +658,9 @@ void nsHttpConnectionInfo::SetIPv6Disabled(bool aNoIPv6) {
   }
 }
 
-void nsHttpConnectionInfo::SetHttp3Disabled(bool aHttp3Disabled) {
-  if (mHttp3Disabled != aHttp3Disabled) {
-    mHttp3Disabled = aHttp3Disabled;
+void nsHttpConnectionInfo::SetHttp3Policy(Http3Policy aPolicy) {
+  if (mHttp3Policy != aPolicy) {
+    mHttp3Policy = aPolicy;
     RebuildHashKey();
   }
 }

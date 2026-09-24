@@ -8,6 +8,7 @@
 #include "mozilla/StaticMonitor.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/WindowsUserHandleValidation.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/SynchronousTask.h"
 #include "transport/runnable_utils.h"
@@ -19,6 +20,19 @@ static StaticRefPtr<WinCompositorWindowThread> sWinCompositorWindowThread;
 
 static StaticMonitor sShutdownMonitor;
 static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
+
+// Ensures the flag that forces user32 handle validation calls onto the slow
+// kernel path is cleared for this thread, since it creates, destroys and
+// dispatches messages to its own HWNDs. Overriding Init() (rather than
+// posting a task after Start()) guarantees this runs on every OS thread this
+// object drives, including after a Stop()/StartWithOptions() restart.
+class CompositorWindowThread final : public base::Thread {
+ public:
+  CompositorWindowThread() : base::Thread("WinCompositor") {}
+
+ protected:
+  void Init() override { ForceToGuiThreadAndFixTebValidateHandlesFlag(); }
+};
 
 /// A window procedure that logs when an input event is received to the gfx
 /// error log
@@ -90,7 +104,7 @@ void WinCompositorWindowThread::Start() {
     sWinCompositorWindowThread = nullptr;
   }
 
-  base::Thread* thread = new base::Thread("WinCompositor");
+  base::Thread* thread = new CompositorWindowThread();
   if (!thread->StartWithOptions(options)) {
     delete thread;
     return;

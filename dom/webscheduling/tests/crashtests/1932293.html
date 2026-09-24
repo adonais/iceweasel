@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<script id="worker" type="javascript/worker">
+self.onmessage = async function() {
+  const task = async function() {
+    self.postMessage("suspended");
+    await self.fonts.ready;
+  };
+  const controller = new AbortController();
+  await self.scheduler.postTask(task, { signal: controller.signal });
+};
+</script>
+<script>
+window.addEventListener("load", () => {
+  const source = document.getElementById("worker").textContent;
+  const blob = new Blob([source], { type: "text/javascript" });
+  const worker = new Worker(URL.createObjectURL(blob));
+  worker.onmessage = () => {
+    worker.terminate();
+    setTimeout(() => document.documentElement.removeAttribute("class"), 500);
+  };
+  worker.postMessage("start");
+});
+</script>
+</html>

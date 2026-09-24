@@ -18,30 +18,11 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
-import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
-import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 import org.mozilla.fenix.ui.efficiency.selectors.SystemSettingsSelectors
 
 class SystemSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "SystemSettingsPage"
-
-    init {
-        NavigationRegistry.register(
-            from = "HomePage",
-            to = pageName,
-            steps =
-                listOf(
-                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
-                    NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                    NavigationStep.Swipe(SettingsSelectors.NOTIFICATIONS_BUTTON),
-                    NavigationStep.Click(SettingsSelectors.NOTIFICATIONS_BUTTON),
-                ),
-        )
-    }
 
     /** Open the Permissions list from the Android App info screen. */
     fun openAppPermissions(): SystemSettingsPage {
@@ -73,8 +54,9 @@ class SystemSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentT
 
     /** Grant [permissionName] from the app-permissions list. */
     fun allowAppPermission(permissionName: String): SystemSettingsPage {
-        mozVerify(SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName), timeout = waitingTime)
-        mozClick(SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName))
+        val permissionRow = SystemSettingsSelectors.APP_PERMISSION_ROW(permissionName)
+        mozSwipeTo(permissionRow, direction = SwipeDirection.UP)
+        mozClick(permissionRow)
         mozVerify(SystemSettingsSelectors.APP_PERMISSION_ALLOW_OPTION, timeout = waitingTime)
         mozClick(SystemSettingsSelectors.APP_PERMISSION_ALLOW_OPTION)
         return this
@@ -127,9 +109,7 @@ class SystemSettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentT
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SystemSettingsSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SystemSettingsSelectors
 
     /**
      * Assert [permissionName] is granted, both in the settings UI and according to the OS.

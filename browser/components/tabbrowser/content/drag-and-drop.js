@@ -11,6 +11,7 @@
   ChromeUtils.defineESModuleGetters(lazy, {
     OpenInTabsUtils:
       "moz-src:///browser/components/tabbrowser/OpenInTabsUtils.sys.mjs",
+    Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
   });
 
   const isTab = element => gBrowser.isTab(element);
@@ -2514,7 +2515,7 @@
           dropElementSize
         );
 
-        moveOverThreshold = gBrowser.tabGroupsEnabled
+        moveOverThreshold = lazy.Tabbrowser.prefs.tabGroupsEnabled
           ? Services.prefs.getIntPref(
               "browser.tabs.dragDrop.moveOverThresholdPercent"
             ) / 100
@@ -2587,7 +2588,7 @@
       }
 
       if (
-        gBrowser.tabGroupsEnabled &&
+        lazy.Tabbrowser.prefs.tabGroupsEnabled &&
         (isTab(draggedTab) || isSplitViewWrapper(draggedTab)) &&
         !isPinned &&
         (!numPinned || newDropElementIndex >= numPinned)

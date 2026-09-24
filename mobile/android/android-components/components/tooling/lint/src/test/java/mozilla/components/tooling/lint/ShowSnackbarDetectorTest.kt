@@ -81,7 +81,7 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
             val coroutineContext: CoroutineContext
         }
 
-        object GlobalScope : CoroutineScope {
+        object Scope : CoroutineScope {
             override val coroutineContext: CoroutineContext = kotlin.coroutines.EmptyCoroutineContext
             fun launch(block: suspend CoroutineScope.() -> Unit): Job = object : Job {}
         }
@@ -112,12 +112,12 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
         import androidx.compose.material3.SnackbarHostState
         import androidx.compose.runtime.Composable
-        import kotlinx.coroutines.GlobalScope
+        import kotlinx.coroutines.Scope
 
         @Composable
         fun MyScreen() {
             val hostState = SnackbarHostState()
-            GlobalScope.launch {
+            Scope.launch {
                 hostState.showSnackbar("Hello") // VIOLATION
             }
         }
@@ -132,12 +132,12 @@ class ShowSnackbarDetectorTest : LintDetectorTest() {
 
         import com.example.subclass.MySnackbarHostStateSubclass
         import androidx.compose.runtime.Composable
-        import kotlinx.coroutines.GlobalScope
+        import kotlinx.coroutines.Scope
 
         @Composable
         fun MySubclassScreen() {
             val hostStateSubclass = MySnackbarHostStateSubclass()
-            GlobalScope.launch {
+            Scope.launch {
                 hostStateSubclass.showSnackbar("Hello from subclass") // VIOLATION
             }
         }

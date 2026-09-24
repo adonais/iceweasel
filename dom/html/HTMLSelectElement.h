@@ -34,6 +34,7 @@ class FormData;
 class HTMLButtonElement;
 class HTMLCollection;
 class HTMLElementOrLong;
+class HTMLOptGroupElement;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
 class HTMLSelectedContentElement;
@@ -156,6 +157,43 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   HTMLCollection* SelectedOptions();
 
+  /**
+   * https://html.spec.whatwg.org/#concept-select-option-list
+   * Elements whose children are excluded from a select's option list. Callers
+   * handle optgroup separately, since that is context-dependent.
+   */
+  static bool IsOptionListBoundary(const nsINode& aNode) {
+    return aNode.IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::hr,
+                                     nsGkAtoms::option, nsGkAtoms::datalist);
+  }
+
+  /**
+   * The nearest ancestor `select` and `optgroup` of `aNode`, as computed by
+   * https://html.spec.whatwg.org/#concept-option-nearest-ancestor-select
+   * `mSelect` is the select whose option list `aNode` takes part in, or null.
+   * `mOptGroup` is the optgroup that groups `aNode` and provides its inherited
+   * disabled state, or null. Wrapper elements are transparent, so this walks
+   * past them.
+   */
+  struct NearestAncestors {
+    HTMLSelectElement* mSelect = nullptr;
+    HTMLOptGroupElement* mOptGroup = nullptr;
+  };
+  static NearestAncestors ComputeNearestAncestors(const nsINode&);
+
+  /**
+   * Whether `aElement` is an item of the option list rooted at `aRoot`: the
+   * option, optgroup and hr elements of a select that no optgroup groups, or
+   * the option and hr members of an optgroup.
+   */
+  static bool IsOptionListItem(const Element& aElement, const nsINode& aRoot);
+
+  /**
+   * The number of rows the option list renders as: one per option with a frame,
+   * plus one per optgroup with a label.
+   */
+  uint32_t CountRenderedRows();
+
   int32_t SelectedIndex() const;
   // During removal handling we might need to ignore some options that are
   // getting removed.
@@ -245,7 +283,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                       AttrModType aModType) const override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
@@ -502,7 +540,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   /** https://html.spec.whatwg.org/#user-interacted */
   bool mUserInteracted : 1 = false;
   /** True if the default selected option has been set. */
-  bool mDefaultSelectionSet : 1 = false;
+  bool mDefaultSelectionSet : 1;
   /** True if we're open in the parent process */
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;

@@ -10,6 +10,8 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSSkewYBinding.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -42,12 +44,16 @@ JSObject* CSSSkewY::WrapObject(JSContext* aCx,
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssskewy-cssskewy
 //
-// XXX This is not yet fully implemented!
-//
 // static
 already_AddRefed<CSSSkewY> CSSSkewY::Constructor(const GlobalObject& aGlobal,
                                                  CSSNumericValue& aAy,
                                                  ErrorResult& aRv) {
+  // Step 1.
+  if (!aAy.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ay must match <angle>");
+    return nullptr;
+  }
+
   // Step 2.
   return MakeAndAddRef<CSSSkewY>(aGlobal.GetAsSupports(), /* aIs2D */ true,
                                  &aAy);
@@ -56,10 +62,25 @@ already_AddRefed<CSSSkewY> CSSSkewY::Constructor(const GlobalObject& aGlobal,
 CSSNumericValue* CSSSkewY::Ay() const { return mAy; }
 
 void CSSSkewY::SetAy(CSSNumericValue& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (!aArg.GetNumericType().MatchesAngle()) {
+    aRv.ThrowTypeError("Ay must match <angle>");
+    return;
+  }
+
+  mAy = &aArg;
 }
 
 // end of CSSSkewY Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSSkewY::ToMatrix(ErrorResult& aRv) {
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  auto ay = mAy->ToStyleUnitValue("deg"_ns);
+
+  matrix->SkewYSelf(ay.value);
+
+  return matrix.forget();
+}
 
 void CSSSkewY::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                      nsACString& aDest) const {

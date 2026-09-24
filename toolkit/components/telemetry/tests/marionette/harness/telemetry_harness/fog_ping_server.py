@@ -4,11 +4,11 @@
 
 import json
 import zlib
+from urllib import parse as urlparse
 
 import wptserve.logger
 from marionette_harness.runner import httpd
 from mozlog import get_default_logger
-from six.moves.urllib import parse as urlparse
 
 
 class FOGPingServer:

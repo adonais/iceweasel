@@ -700,6 +700,12 @@ class LocalAccessible : public nsISupports, public Accessible {
   }
 
   /**
+   * Return true if this accessible has a parent or ancestor whose value
+   * depends on this accessible.
+   */
+  bool HasValueDependent() const { return mContextFlags & eHasValueDependent; }
+
+  /**
    * Return true if the element is inside an alert.
    */
   bool IsInsideAlert() const { return mContextFlags & eInsideAlert; }
@@ -864,8 +870,9 @@ class LocalAccessible : public nsISupports, public Accessible {
     eHasNameDependent = 1 << 0,  // See HasNameDependent().
     eInsideAlert = 1 << 1,
     eHasDescriptionDependent = 1 << 2,  // See HasDescriptionDependent().
+    eHasValueDependent = 1 << 3,        // See HasValueDependent().
 
-    eLastContextFlag = eHasDescriptionDependent
+    eLastContextFlag = eHasValueDependent
   };
 
  protected:
@@ -1003,7 +1010,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   RefPtr<const ComputedStyle> mOldComputedStyle;
 
   static const uint8_t kStateFlagsBits = 11;
-  static const uint8_t kContextFlagsBits = 3;
+  static const uint8_t kContextFlagsBits = 4;
 
   /**
    * Keep in sync with StateFlags, ContextFlags, and AccTypes.

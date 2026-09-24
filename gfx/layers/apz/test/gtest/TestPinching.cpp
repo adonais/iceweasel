@@ -49,6 +49,9 @@ class APZCPinchTester : public APZCBasicTester {
 
   void DoPinchTest(bool aShouldTriggerPinch,
                    nsTArray<uint32_t>* aAllowedTouchBehaviors = nullptr) {
+    if (aAllowedTouchBehaviors) {
+      apzc->DisableDefaultTouchBehaviors();
+    }
     apzc->SetFrameMetrics(GetPinchableFrameMetrics());
     MakeApzcZoomable();
 
@@ -569,13 +572,12 @@ TEST_F(APZCPinchGestureDetectorTester, Pinch_NoSpan) {
 
   const TimeDuration TIME_BETWEEN_TOUCH_EVENT =
       TimeDuration::FromMilliseconds(50);
-  const auto touchBehaviors = Some(nsTArray<uint32_t>{kDefaultTouchBehavior});
 
   MultiTouchInput mtiStart =
       MultiTouchInput(MultiTouchInput::MULTITOUCH_START, 0, mcc->Time(), 0);
   mtiStart.mTouches.AppendElement(CreateSingleTouchData(inputId, focus));
   mtiStart.mTouches.AppendElement(CreateSingleTouchData(inputId + 1, focus));
-  apzc->ReceiveInputEvent(mtiStart, touchBehaviors);
+  apzc->ReceiveInputEvent(mtiStart);
   mcc->AdvanceBy(TIME_BETWEEN_TOUCH_EVENT);
 
   focus.y -= 35 + 1;  // this is to get over the PINCH_START_THRESHOLD in

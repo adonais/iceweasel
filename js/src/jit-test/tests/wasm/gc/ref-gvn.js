@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 // Tests that exercise GVN and LICM. The general pattern for these tests is to
 // create values near the top of the function and then create situations where
 // equivalent values are created below, including in loops.

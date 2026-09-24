@@ -6,17 +6,19 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_SEARCH_ITEM
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object BookmarkSearchSelectors {
+object BookmarkSearchSelectors : SelectorContainer {
 
     val SEARCH_BOX =
         Selector(
             strategy = SelectorStrategy.COMPOSE_EDITABLE_BY_ANCESTOR_TAG,
             value = ADDRESSBAR_SEARCH_BOX,
             description = "Bookmark search box",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val SEARCH_ITEM =
@@ -24,12 +26,5 @@ object BookmarkSearchSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BOOKMARK_SEARCH_ITEM,
             description = "Bookmark search item",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            SEARCH_BOX,
-            SEARCH_ITEM,
         )
 }

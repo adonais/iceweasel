@@ -1042,7 +1042,7 @@ class nsDisplayTableCellSelection final : public nsPaintedDisplayItem {
   }
   NS_DISPLAY_DECL_NAME("TableCellSelection", TYPE_TABLE_CELL_SELECTION)
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -1050,7 +1050,10 @@ class nsDisplayTableCellSelection final : public nsPaintedDisplayItem {
       nsDisplayListBuilder* aDisplayListBuilder) override {
     RefPtr<nsFrameSelection> frameSelection =
         mFrame->PresShell()->FrameSelection();
-    return !frameSelection->IsInTableSelectionMode();
+    if (frameSelection->IsInTableSelectionMode()) {
+      return Err("table selection decoration needs the fallback paint path");
+    }
+    return Ok();
   }
 };
 

@@ -5,11 +5,12 @@
 package org.mozilla.fenix.ui.efficiency.generation.interaction
 
 import kotlin.text.contains
+import org.mozilla.fenix.ui.efficiency.generation.NavigationGraphBootstrap
 import org.mozilla.fenix.ui.efficiency.generation.NavigationTestPlanner
 import org.mozilla.fenix.ui.efficiency.generation.toDisplayLabel
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.PageContext
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorId
 
 object InteractionTestPlanner {
 
@@ -19,27 +20,31 @@ object InteractionTestPlanner {
         val page: PageContext.() -> BasePage,
         val interactionSelectorName: String,
         val interactionDescription: String,
-        val expectedGroup: String,
+        val expectedResultOf: SelectorId,
         val expectedSelectorNames: List<String>,
         val pathCount: Int,
         val isRunnable: Boolean,
     )
 
     fun buildInteractionCases(): List<InteractionCasePlan> {
-        return NavigationTestPlanner.buildReachabilityCases()
+        val graph = NavigationGraphBootstrap.buildGraph()
+        return NavigationTestPlanner.buildReachabilityCases(graph)
             .filter { it.propertyName.contains("bookmark", ignoreCase = true) }
             .flatMap { pageCase ->
                 val pageName = pageCase.propertyName.toDisplayLabel()
-                val pathCount = NavigationRegistry.findAllPaths("AppEntry", pageName).size
+                val pathCount = graph.findAllPaths("AppEntry", pageName).size
                 val selectorRefs = SelectorCatalog.discoverSelectorsForPage(pageCase.propertyName)
 
                 selectorRefs
                     .filter { it.selectorName.endsWith("_BUTTON") }
                     .map { button ->
-                        val expectedGroup = "resultOf:${button.selectorName}"
+                        val expectedResultOf = button.selector.id ?: SelectorId(button.selectorName)
 
                         val expectedSelectors =
-                            selectorRefs.filter { expectedGroup in it.selector.groups }.map { it.selectorName }.sorted()
+                            selectorRefs
+                                .filter { expectedResultOf in it.selector.appearsAfter }
+                                .map { it.selectorName }
+                                .sorted()
 
                         InteractionCasePlan(
                             pagePropertyName = pageCase.propertyName,
@@ -47,7 +52,7 @@ object InteractionTestPlanner {
                             page = pageCase.page,
                             interactionSelectorName = button.selectorName,
                             interactionDescription = button.selector.description,
-                            expectedGroup = expectedGroup,
+                            expectedResultOf = expectedResultOf,
                             expectedSelectorNames = expectedSelectors,
                             pathCount = pathCount,
                             isRunnable = expectedSelectors.isNotEmpty(),

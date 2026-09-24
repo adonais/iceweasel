@@ -104,6 +104,7 @@ load audiocontext-after-unload-1.html
 load audiocontext-after-xhr.html
 load audiocontext-double-suspend.html
 skip-if(Android) load audioworkletnode-after-unload-1.html # Needs secure context
+skip-if(Android) load audioworklet-port-without-addmodule.html # Needs secure context
 load buffer-source-duration-1.html
 skip-if(gtkWidget&&/^24\.04$/.test(os_version)) load buffer-source-ended-1.html
 load buffer-source-resampling-start-1.html

@@ -156,6 +156,22 @@ networking:
       - edgul@mozilla.com
     expires: 168
 
+  cookie_file_present:
+    type: boolean
+    description: >
+      Whether this profile holds at least one cookie set by a file:// URL
+      document.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069649
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069649
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - baku@mozilla.com
+    expires: 166
+
   cookie_count_part_by_key:
     type: custom_distribution
     description: >
@@ -3085,6 +3101,28 @@ network:
     labels:
       - hit
       - miss
+    expires: never
+
+  ssl_token_resumption_outcome:
+    type: labeled_counter
+    description: >
+      The session resumption outcome of a connection that had at least one
+      cached token to try. Recorded once per connection.
+      'rejected' means the TLS stack refused every token. 'not_resumed' means a
+      token was accepted by the stack and sent, but the server declined it.
+      'resumed' means the server accepted it.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066838
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066838
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    labels:
+      - resumed
+      - not_resumed
+      - rejected
     expires: never
 
   ssl_token_cache_expired:

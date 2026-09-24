@@ -2,6 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1728111 - Microsoft account icon and sign-in
+ *
+ * Signing in on microsoft.com, Bing and Office.com needs first-party storage
+ * access for storage.live.com, which also serves the account photo. Under dFPI
+ * that access is partitioned away, so sign-in fails and the icon does not
+ * load. This shim calls the Storage Access API on the site's behalf when the
+ * user clicks any of the sign-in entry points.
+ */
+
 // Third-party origin we need to request storage access for.
 const STORAGE_ACCESS_ORIGIN = "https://storage.live.com";
 

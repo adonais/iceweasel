@@ -884,7 +884,7 @@
     <fragment
         android:id="@+id/ipProtectionFragment"
         android:name="org.mozilla.fenix.settings.IPProtectionFragment"
-        android:label="@string/ip_protection_title" >
+        android:label="@string/ip_protection_settings_title" >
         <argument
             android:name="start_auth_flow"
             android:defaultValue="false"

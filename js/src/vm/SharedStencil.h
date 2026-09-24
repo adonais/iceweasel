@@ -83,7 +83,6 @@ struct TryNote {
         return true;
       case TryNoteKind::Catch:
       case TryNoteKind::Finally:
-      case TryNoteKind::ForOfIterClose:
       case TryNoteKind::Destructuring:
         return false;
     }

@@ -18,8 +18,6 @@ security.ui.protections:
       attribute which defaults to 'direct' or will be the value that a
       referring website addds to the url. This also indicates if the vpn
       banner has been seen.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.show#protection_report.
     bugs: &security_ui_protections_show_bugs
       - https://bugzil.la/1557050
       - https://bugzil.la/1610897
@@ -45,14 +43,13 @@ security.ui.protections:
     extra_keys: &security_ui_protections_show_extra
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
+          The entrypoint from which the protection report was reached,
+          defaulting to "direct". Empty for show_vpn_banner.
         type: string
       category:
         description: >
           The category of protections the user is in, standard, strict or custom.
         type: string
-    telemetry_mirror: SecurityUiProtections_Show_ProtectionReport
 
   show_vpn_banner:
     type: event
@@ -71,8 +68,6 @@ security.ui.protections:
     type: event
     description: >
       User closed on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.close#protection_report.
     bugs:
       - https://bugzil.la/1557050
       - https://bugzil.la/1610897
@@ -96,21 +91,18 @@ security.ui.protections:
     extra_keys:
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
+          Always empty; the protection report records no value when it is
+          closed.
         type: string
       category:
         description: >
           The category of protections the user is in, standard, strict or custom.
         type: string
-    telemetry_mirror: SecurityUiProtections_Close_ProtectionReport
 
   click_lw_open_button:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#lw_open_button.
     bugs: &security_ui_protections_click_bugs
       - https://bugzil.la/1557050
       - https://bugzil.la/1572825
@@ -142,14 +134,13 @@ security.ui.protections:
     extra_keys: &security_ui_protections_click_extra
       value:
         description: >
-          The `value` of the event. Mirrors to the Legacy Telemetry
-          event's `value` parameter.
+          Which control was clicked, for the events that cover more than one.
+          Empty when the event already identifies the control on its own.
         type: string
       category:
         description: >
           The category of protections the user is in, standard, strict or custom.
         type: string
-    telemetry_mirror: SecurityUiProtections_Click_LwOpenButton
 
   click_lw_sync_link:
     type: event
@@ -168,14 +159,11 @@ security.ui.protections:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#lw_about_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_LwAboutLink
 
   click_mtr_about_link:
     type: event
@@ -220,40 +208,31 @@ security.ui.protections:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#trackers_about_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_TrackersAboutLink
 
   click_mobile_app_link:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#mobile_app_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_MobileAppLink
 
   click_settings_link:
     type: event
     description: >
       User interaction by click events on the protection report.
-      This event was generated to correspond to the Legacy Telemetry event
-      security.ui.protections.click#settings_link.
     bugs: *security_ui_protections_click_bugs
     data_reviews: *security_ui_protections_click_data_reviews
     notification_emails: *security_ui_protections_click_emails
     expires: never
     extra_keys: *security_ui_protections_click_extra
-    telemetry_mirror: SecurityUiProtections_Click_SettingsLink
 
   click_vpn_banner_link:
     type: event

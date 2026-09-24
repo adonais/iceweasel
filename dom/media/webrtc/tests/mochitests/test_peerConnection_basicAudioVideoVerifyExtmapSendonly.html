@@ -48,6 +48,8 @@
           ["5", "urn:ietf:params:rtp-hdrext:toffset", ""],
           ["6", "http://www.webrtc.org/experiments/rtp-hdrext/playout-delay", "recvonly"],
           ["7", "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01", ""],
+          ["8", "urn:3gpp:video-orientation", ""],
+          ["9", "https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension", "recvonly"],
         ];
         // *Ugh* ...
         ok(JSON.stringify(video) ===
@@ -84,6 +86,7 @@
           ["4", "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time",""],
           ["5", "urn:ietf:params:rtp-hdrext:toffset",""],
           ["7", "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01", ""],
+          ["8", "urn:3gpp:video-orientation", ""],
         ];
         ok(JSON.stringify(video) ===
            JSON.stringify(expected_video),

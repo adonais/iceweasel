@@ -7,16 +7,27 @@ package org.mozilla.fenix.ui.efficiency.selectors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.BookmarksTestTag
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorId
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object BookmarksSelectors {
+object BookmarksSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        EMPTY_BOOKMARKS_MENU_VIEW,
+        BOOKMARKS_THREE_DOT_MENU,
+        EDIT_BOOKMARKS_VIEW,
+    }
+
     val TOOLBAR =
         Selector(
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BookmarksTestTag.BOOKMARK_TOOLBAR,
             description = "Bookmarks toolbar",
-            groups = listOf("emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val TOOLBAR_TITLE =
@@ -24,7 +35,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Bookmarks",
             description = "Bookmarks Toolbar Title",
-            groups = listOf("requiredForPage", "emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val SORT_MENU_BUTTON =
@@ -32,7 +43,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_sort_menu_content_desc),
             description = "Bookmarks sorting options button",
-            groups = listOf("emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val EMPTY_BOOKMARKS_LIST_TITLE =
@@ -40,7 +51,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_empty_list_root_title),
             description = "Empty bookmarks list title",
-            groups = listOf("emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val IMPORT_BOOKMARKS_BUTTON =
@@ -48,7 +59,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_import_bookmarks_button_content_description),
             description = "Import bookmarks from file button",
-            groups = listOf("emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val IMPORT_MENU_BUTTON =
@@ -56,7 +67,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_import_menu_button),
             description = "Import from file item in the bookmarks overflow menu",
-            groups = listOf(),
         )
 
     val OPEN_IN_NEW_TAB_BUTTON =
@@ -64,7 +74,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_menu_open_in_new_tab_button),
             description = "Open in new tab bookmarks three dot menu button",
-            groups = listOf("bookmarksThreeDotMenu"),
+            groups = setOf(Group.BOOKMARKS_THREE_DOT_MENU),
         )
 
     val NAVIGATE_UP_BUTTON =
@@ -72,7 +82,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_navigate_back_button_content_description),
             description = "Bookmark edit navigate up button",
-            groups = listOf("editBookmarksView", "emptyBookmarksMenuView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW, Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val EDIT_BOOKMARKS_TOOLBAR_TITLE =
@@ -80,7 +90,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.edit_bookmark_fragment_title),
             description = "Bookmark edit toolbar title",
-            groups = listOf("editBookmarksView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW),
         )
 
     val EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD =
@@ -88,7 +98,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BookmarksTestTag.EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD,
             description = "Bookmark edit title field",
-            groups = listOf("editBookmarksView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW),
         )
 
     val EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD =
@@ -96,7 +106,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BookmarksTestTag.EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD,
             description = "Bookmark edit URL field",
-            groups = listOf("editBookmarksView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW),
         )
 
     val DELETE_BOOKMARK_BUTTON =
@@ -104,7 +114,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_delete_bookmark_content_description),
             description = "Delete bookmark button",
-            groups = listOf("editBookmarksView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW),
         )
 
     val DEFAULT_BOOKMARKS_FOLDER_TITLE =
@@ -112,7 +122,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Bookmarks",
             description = "Default bookmarks folder title",
-            groups = listOf("editBookmarksView"),
+            groups = setOf(Group.EDIT_BOOKMARKS_VIEW),
         )
 
     val BOOKMARK_TITLE_TEXT =
@@ -120,7 +130,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Bookmark title",
             description = "Bookmark title text",
-            groups = listOf(),
         )
 
     val SIGN_IN_TO_SYNC_BUTTON =
@@ -128,8 +137,8 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Sign in to sync",
             description = "Sign in to sync button",
-            groups = listOf("emptyBookmarksMenuView"),
-            name = "SIGN_IN_TO_SYNC_BUTTON",
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
+            id = SelectorId("SIGN_IN_TO_SYNC_BUTTON"),
         )
 
     val SIGN_IN_WITH_CAMERA_TEXT =
@@ -137,7 +146,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = "Sign in with your camera",
             description = "Sign in with your camera text",
-            groups = listOf("resultOf:SIGN_IN_TO_SYNC_BUTTON"),
+            appearsAfter = setOf(SelectorId("SIGN_IN_TO_SYNC_BUTTON")),
         )
 
     val ADD_FOLDER_BUTTON =
@@ -145,7 +154,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_add_new_folder_button_content_description),
             description = "Add new bookmark folder button",
-            groups = listOf("emptyBookmarksMenuView"),
+            groups = setOf(Group.EMPTY_BOOKMARKS_MENU_VIEW),
         )
 
     val ADD_FOLDER_NAME_TEXT_FIELD =
@@ -153,7 +162,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = BookmarksTestTag.ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD,
             description = "Add bookmark folder name text field",
-            groups = listOf(),
         )
 
     val EDIT_BUTTON =
@@ -161,7 +169,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_menu_edit_button),
             description = "Edit bookmark button in three dot menu",
-            groups = listOf("bookmarksThreeDotMenu"),
+            groups = setOf(Group.BOOKMARKS_THREE_DOT_MENU),
         )
 
     val DELETE_BUTTON =
@@ -169,7 +177,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_menu_delete_button),
             description = "Delete bookmark button",
-            groups = listOf("bookmarksThreeDotMenu"),
+            groups = setOf(Group.BOOKMARKS_THREE_DOT_MENU),
         )
 
     val SHARE_BUTTON =
@@ -177,7 +185,7 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_menu_share_button),
             description = "Share bookmark button in three dot menu",
-            groups = listOf("bookmarksThreeDotMenu"),
+            groups = setOf(Group.BOOKMARKS_THREE_DOT_MENU),
         )
 
     val CANCEL_FOLDER_DELETION_BUTTON =
@@ -185,7 +193,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.bookmark_delete_negative),
             description = "Cancel folder deletion button",
-            groups = listOf(),
         )
 
     val SEARCH_BUTTON =
@@ -193,7 +200,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_search_button_content_description),
             description = "Search bookmarks button",
-            groups = listOf(),
         )
 
     val MULTI_SELECTION_THREE_DOT_BUTTON =
@@ -201,7 +207,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.content_description_menu),
             description = "Multi-selection three dot button",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -210,7 +215,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "$count selected",
             description = "Multi-selection counter: $count selected",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -219,7 +223,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = "Item Menu for $title",
             description = "Three dot menu button for bookmark item: $title",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -228,7 +231,6 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT_MERGED,
             value = title,
             description = "Bookmark item or folder with title: $title",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -237,38 +239,5 @@ object BookmarksSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.bookmark_select_folder_expand_folder_content_description, folderTitle),
             description = "Expand folder button for: $folderTitle",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            TOOLBAR,
-            TOOLBAR_TITLE,
-            SORT_MENU_BUTTON,
-            EMPTY_BOOKMARKS_LIST_TITLE,
-            IMPORT_BOOKMARKS_BUTTON,
-            IMPORT_MENU_BUTTON,
-            OPEN_IN_NEW_TAB_BUTTON,
-            NAVIGATE_UP_BUTTON,
-            EDIT_BOOKMARKS_TOOLBAR_TITLE,
-            EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD,
-            EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD,
-            DELETE_BOOKMARK_BUTTON,
-            DEFAULT_BOOKMARKS_FOLDER_TITLE,
-            BOOKMARK_TITLE_TEXT,
-            SIGN_IN_TO_SYNC_BUTTON,
-            SIGN_IN_WITH_CAMERA_TEXT,
-            ADD_FOLDER_BUTTON,
-            ADD_FOLDER_NAME_TEXT_FIELD,
-            EDIT_BUTTON,
-            DELETE_BUTTON,
-            SHARE_BUTTON,
-            CANCEL_FOLDER_DELETION_BUTTON,
-            SEARCH_BUTTON,
-            MULTI_SELECTION_THREE_DOT_BUTTON,
-            MULTI_SELECTION_COUNTER(),
-            ITEM_MENU(),
-            BOOKMARK_ITEM(),
-            EXPAND_FOLDER_BUTTON(),
         )
 }

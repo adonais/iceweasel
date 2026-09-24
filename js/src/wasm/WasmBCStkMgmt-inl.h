@@ -141,7 +141,7 @@ void BaseCompiler::loadRegisterF32(const Stk& src, RegF32 dest) {
   moveF32(src.f32reg(), dest);
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::loadConstV128(const Stk& src, RegV128 dest) {
   V128 f;
   src.v128val(&f);
@@ -277,7 +277,7 @@ void BaseCompiler::loadF32(const Stk& src, RegF32 dest) {
   }
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::loadV128(const Stk& src, RegV128 dest) {
   switch (src.kind()) {
     case Stk::ConstV128:
@@ -426,7 +426,7 @@ void BaseCompiler::sync() {
         v.setOffs(Stk::MemF32, offs);
         break;
       }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case Stk::LocalV128: {
         ScratchV128 scratch(*this);
         loadV128(v, scratch);
@@ -511,7 +511,7 @@ void BaseCompiler::pushAny(AnyReg r) {
       pushF64(r.f64());
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case AnyReg::V128: {
       pushV128(r.v128());
       break;
@@ -558,7 +558,7 @@ void BaseCompiler::pushF32(RegF32 r) {
   push(Stk(r));
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::pushV128(RegV128 r) {
   MOZ_ASSERT(!isAvailableV128(r));
   push(Stk(r));
@@ -588,7 +588,7 @@ void BaseCompiler::pushF64(double v) { push(Stk(v)); }
 
 void BaseCompiler::pushF32(float v) { push(Stk(v)); }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::pushV128(V128 v) { push(Stk(v)); }
 #endif
 
@@ -616,7 +616,7 @@ void BaseCompiler::pushLocalF32(uint32_t slot) {
   stk_.infallibleEmplaceBack(Stk(Stk::LocalF32, slot));
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::pushLocalV128(uint32_t slot) {
   stk_.infallibleEmplaceBack(Stk(Stk::LocalV128, slot));
 }
@@ -654,7 +654,7 @@ AnyReg BaseCompiler::popAny(AnyReg specific) {
     case Stk::ConstF64:
       return AnyReg(popF64(specific.f64()));
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case Stk::MemV128:
     case Stk::LocalV128:
     case Stk::RegisterV128:
@@ -702,7 +702,7 @@ AnyReg BaseCompiler::popAny() {
     case Stk::ConstF64:
       return AnyReg(popF64());
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case Stk::MemV128:
     case Stk::LocalV128:
     case Stk::RegisterV128:
@@ -780,7 +780,7 @@ RegI32 BaseCompiler::popI32(RegI32 specific) {
   return specific;
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 // Call only from other popV128() variants.
 // v must be the stack top.  May pop the CPU stack.
 
@@ -1082,7 +1082,7 @@ bool BaseCompiler::hasConst() const {
     case Stk::ConstI64:
     case Stk::ConstF32:
     case Stk::ConstF64:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case Stk::ConstV128:
 #endif
     case Stk::ConstRef:
@@ -1192,7 +1192,7 @@ void BaseCompiler::pop2xF64(RegF64* r0, RegF64* r1) {
   *r0 = popF64();
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 void BaseCompiler::pop2xV128(RegV128* r0, RegV128* r1) {
   *r1 = popV128();
   *r0 = popV128();
@@ -1304,7 +1304,7 @@ size_t BaseCompiler::stackConsumed(size_t numval) {
       case Stk::MemF32:
         size += BaseStackFrame::StackSizeOfFloat;
         break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case Stk::MemV128:
         size += BaseStackFrame::StackSizeOfV128;
         break;
@@ -1332,7 +1332,7 @@ void BaseCompiler::popValueStackTo(uint32_t stackSize) {
       case Stk::RegisterF32:
         freeF32(v.f32reg());
         break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case Stk::RegisterV128:
         freeV128(v.v128reg());
         break;

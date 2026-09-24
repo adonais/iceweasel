@@ -12,7 +12,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
-  PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
@@ -279,24 +278,6 @@ export class PlacesFeed {
     }
   }
 
-  /**
-   * Sends an attribution request for Top Sites interactions.
-   *
-   * @param {object} data
-   *   Attribution paramters from a Top Site.
-   */
-  makeAttributionRequest(data) {
-    let args = Object.assign(
-      {
-        campaignID: Services.prefs.getStringPref(
-          "browser.partnerlink.campaign.topsites"
-        ),
-      },
-      data
-    );
-    lazy.PartnerLinkAttribution.makeRequest(args);
-  }
-
   async fillSearchTopSiteTerm({ _target, data }) {
     const searchEngine = await lazy.SearchService.getEngineByAlias(data.label);
     _target.window.gURLBar.search(data.label, {
@@ -456,9 +437,6 @@ export class PlacesFeed {
         this.openLink(action, action.data.where);
         break;
       }
-      case at.PARTNER_LINK_ATTRIBUTION:
-        this.makeAttributionRequest(action.data);
-        break;
     }
   }
 }

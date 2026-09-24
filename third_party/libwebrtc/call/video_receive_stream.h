@@ -20,7 +20,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
 #include "api/call/transport.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "api/crypto/crypto_options.h"
@@ -97,7 +96,6 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     // Decoder stats.
     std::optional<std::string> decoder_implementation_name;
     std::optional<bool> power_efficient_decoder;
-    FrameCounts frame_counts;
     int decode_ms = 0;
     int max_decode_ms = 0;
     int current_delay_ms = 0;
@@ -117,13 +115,19 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     // Frames dropped due to decoding failures or if the system is too slow.
     // https://www.w3.org/TR/webrtc-stats/#dom-rtcvideoreceiverstats-framesdropped
     uint32_t frames_dropped = 0;
+    // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-framesdecoded
     uint32_t frames_decoded = 0;
+    // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-keyframesdecoded
+    uint32_t key_frames_decoded = 0;
     // https://w3c.github.io/webrtc-stats/#dom-rtcreceivedrtpstreamstats-packetsdiscarded
     uint64_t packets_discarded = 0;
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totaldecodetime
     TimeDelta total_decode_time = TimeDelta::Zero();
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totalprocessingdelay
     TimeDelta total_processing_delay = TimeDelta::Zero();
+
+    // Counted when inserted into the frame buffer, before decoding.
+    FrameCounts received_frame_counts;
 
     // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totalassemblytime
     TimeDelta total_assembly_time = TimeDelta::Zero();
@@ -202,22 +206,19 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
   };
 
   struct Config {
-   private:
-    // Access to the copy constructor is private to force use of the Copy()
-    // method for those exceptional cases where we do use it.
-    Config(const Config&);
-
    public:
     Config() = delete;
+    Config(const Config&) = delete;
+    Config& operator=(const Config&) = delete;
     Config(Config&&);
     Config(Transport* rtcp_send_transport,
            VideoDecoderFactory* decoder_factory = nullptr);
     Config& operator=(Config&&);
-    Config& operator=(const Config&) = delete;
     ~Config();
 
-    // Mostly used by tests.  Avoid creating copies if you can.
-    Config Copy() const { return Config(*this); }
+    // Mostly used by tests. Avoid creating copies if you can.
+    // Note that this method will not copy move-only fields.
+    Config Copy() const;
 
     std::string ToString() const;
 
@@ -366,6 +367,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
 
   virtual void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) = 0;
+
+  virtual void SetRawPayloadTypes(std::set<int> raw_payload_types) = 0;
 
   virtual void UpdateRtxSsrc(uint32_t ssrc) = 0;
 

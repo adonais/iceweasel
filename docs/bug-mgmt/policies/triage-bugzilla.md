@@ -77,7 +77,7 @@ be "∞".
 
 The new definition of Triaged will be Firefox-related bugs of type
 `defect` where the component is not
-`UNTRIAGED`, and a {ref}`Severity <defect-severity>` value not equal
+`UNTRIAGED`, and a [Severity](/bug-mgmt/guides/severity.md) value not equal
 to `--` or `N/A`.
 
 Bugs of type Task or Enhancement may have a Severity of `N/A`,
@@ -106,7 +106,7 @@ Staying on top of the bugs in your component means:
 ## Who Triages
 
 Engineering managers and directors are responsible for naming the
-individuals responsible for triaging {ref}`all types of bugs <bug-types>` in a component.
+individuals responsible for triaging [all types of bugs](/bug-mgmt/guides/bug-types.md) in a component.
 
 We use Bugzilla to manage this. See the [list of triage
 owners](https://bugzilla.mozilla.org/page.cgi?id=triage_owners.html).
@@ -167,7 +167,7 @@ code can be risky.
 Weekly or More Frequently (depending on the component) find un-triaged
 bugs in the components you triage.
 
-Decide the {ref}`Severity <defect-severity>` for each untriaged bug
+Decide the [Severity](/bug-mgmt/guides/severity.md) for each untriaged bug
 (you can override what’s already been set.)
 
 These bugs are reviewed in the weekly Regression Triage meeting
@@ -215,8 +215,8 @@ bug will be excluded from future triage queries.
 Set the bug’s type to `task`, and state to `NEW`. Set the bug's
 Severity to `N/A`. This bug will be excluded from future triage queries.
 
-If you are not sure of a bug’s type, check {ref}`our rules for bug
-types <bug-types>`.
+If you are not sure of a bug’s type, check [our rules for bug
+types](/bug-mgmt/guides/bug-types.md).
 
 ### This bug’s state is `UNCONFIRMED`
 
@@ -266,7 +266,7 @@ We cannot lose track of a high severity bug because it is in the wrong component
 
 ### My project is on GitHub
 
-We have {ref}`a guide for GitHub projects to follow <github-metadata-recommendations>` when
+We have [a guide for GitHub projects to follow](/bug-mgmt/processes/labels.md) when
 triaging. (Note: this guide needs updating.)
 
 ## Summary
@@ -283,7 +283,7 @@ For each untriaged bug:
 - **Do not** assign a `defect` a Severity of
   `N/A`
 
-You can, but are not required to set the bug's {ref}`Priority <priority-definitions>`.
+You can, but are not required to set the bug's [Priority](/bug-mgmt/guides/priority.md).
 
 ### Watch open needinfo flags
 

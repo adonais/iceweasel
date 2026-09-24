@@ -34,12 +34,16 @@ struct RTC_EXPORT SdpVideoFormat {
 
   explicit SdpVideoFormat(absl::string_view name);
   SdpVideoFormat(absl::string_view name, const CodecParameterMap& parameters);
+  SdpVideoFormat(absl::string_view name, CodecParameterMap&& parameters);
   SdpVideoFormat(
       absl::string_view name,
       std::initializer_list<std::pair<absl::string_view, absl::string_view>>
           parameters);
   SdpVideoFormat(absl::string_view name,
                  const CodecParameterMap& parameters,
+                 std::span<const ScalabilityMode> scalability_modes);
+  SdpVideoFormat(absl::string_view name,
+                 CodecParameterMap&& parameters,
                  std::span<const ScalabilityMode> scalability_modes);
   SdpVideoFormat(
       absl::string_view name,

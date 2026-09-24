@@ -37,7 +37,7 @@ const SNIPPET = `
     <td id="g2" role="gridcell" aria-selected="true">g2</td>
   </tr>
   <tr>
-    <td id="g3">g3</td>
+    <td id="g3" aria-selected="false">g3</td>
     <td id="g4" role="gridcell" aria-selected="true">g4</td>
   </tr>
 </table>
@@ -214,8 +214,11 @@ addAccessibleTask(SNIPPET, async function testSelectionItem(browser) {
   await testSelectionItemProps("t1", true, "tablist");
   await testSelectionItemProps("t2", false, "tablist");
 
-  await testSelectionItemProps("g1", false, "grid");
+  // g1 doesn't have explicit aria-selected, so it isn't selectable and doesn't
+  // get the SelectionItem pattern.
+  await testPatternAbsent("g1", "SelectionItem");
   await testSelectionItemProps("g2", true, "grid");
+  await testSelectionItemProps("g3", false, "grid");
 
   await testSelectionItemProps("r1", true, null);
   await testSelectionItemProps("r2", false, null);

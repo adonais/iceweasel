@@ -270,7 +270,6 @@ class AnyRef {
   static JSObject* boxValue(JSContext* cx, JS::HandleValue value);
 
   bool operator==(const AnyRef& rhs) const = default;
-  bool operator!=(const AnyRef& rhs) const = default;
 
   // Check if this AnyRef is the invalid value.
   bool isInvalid() const { return *this == AnyRef::invalid(); }

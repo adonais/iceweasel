@@ -6640,11 +6640,6 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             PORT_FreeArena(ecPriv->ecParams.arena, PR_TRUE);
             break;
 
-#ifndef NSS_DISABLE_KYBER
-        case CKM_NSS_KYBER_KEY_PAIR_GEN:
-            key_type = CKK_NSS_KYBER;
-            goto do_ml_kem;
-#endif
         case CKM_NSS_ML_KEM_KEY_PAIR_GEN:
             key_type = CKK_NSS_ML_KEM;
             goto do_ml_kem;
@@ -7138,6 +7133,10 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
             dummy = NULL;
 
             switch (lk->u.mlkem.mlkemParams) {
+                case params_ml_kem512:
+                case params_ml_kem512_test_mode:
+                    algorithm = SEC_OID_ML_KEM_512;
+                    break;
                 case params_ml_kem768:
                 case params_ml_kem768_test_mode:
                     algorithm = SEC_OID_ML_KEM_768;
@@ -7503,6 +7502,9 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             prepare_low_ec_priv_key_for_asn1(lpk);
             prepare_low_ecparams_for_asn1(&lpk->u.ec.ecParams);
             break;
+        case SEC_OID_ML_KEM_512:
+            paramSet = CKP_ML_KEM_512;
+            goto mlkem_next;
         case SEC_OID_ML_KEM_768:
             paramSet = CKP_ML_KEM_768;
             goto mlkem_next;

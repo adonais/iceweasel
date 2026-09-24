@@ -51,23 +51,34 @@
    * this, the visible tab would keep the split-view panel decoration until
    * split-view is fully dissolved. */
   #tabbrowser-tabpanels > :not(.split-view-panel) .browserContainer {
+    --content-area-start-radius: var(--border-radius-medium);
+
     outline: none;
     box-shadow: none;
     border-block-start: var(--border-width) solid var(--chrome-content-separator-color);
 
-    :root:not([inDOMFullscreen], [inFullscreen]) #tabbrowser-tabbox:is([sidebar-shown], [sidebar-panel-open]):not([sidebar-positionend]) & {
+    /* Fullscreen slides the toolbox off-screen (and DOM fullscreen hides the
+     * chrome outright), so the block-start edge then meets the screen and the
+     * corners on it have nothing left to round away from. */
+    :root:is([inDOMFullscreen], [fullscreenNavToolboxHidden]) & {
+      --content-area-start-radius: 0;
+
+      border-block-start: none;
+    }
+
+    /* A .browserContainer edge is only separated and rounded when it faces chrome.
+     * SidebarController.setPosition updates the order of all of #browser's
+     * (flex) children according to the sidebar.position_start pref.
+     * The AI sidebar always docks opposite the browser sidebar. */
+    :root:not([inDOMFullscreen]) #tabbrowser-tabbox:not([sidebar-positionend]):is([sidebar-shown], [sidebar-panel-open]) &,
+    :root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-positionend][ai-window-open] & {
       border-inline-start: var(--border-width) solid var(--chrome-content-separator-color);
-      border-start-start-radius: var(--border-radius-medium);
+      border-start-start-radius: var(--content-area-start-radius);
     }
 
-    :root:not([inDOMFullscreen], [inFullscreen]) #tabbrowser-tabbox:is([sidebar-positionend]:is([sidebar-shown], [sidebar-panel-open]), [ai-window-open]) & {
+    :root:not([inDOMFullscreen]) #tabbrowser-tabbox:is([sidebar-positionend]:is([sidebar-shown], [sidebar-panel-open]), [ai-window-open]) & {
       border-inline-end: var(--border-width) solid var(--chrome-content-separator-color);
-      border-start-end-radius: var(--border-radius-medium);
-    }
-
-    /* Nothing to separate from once the content covers the window. */
-    :root:is([inDOMFullscreen], [inFullscreen]) & {
-      border: none;
+      border-start-end-radius: var(--content-area-start-radius);
     }
   }
 
@@ -479,15 +490,17 @@
 }
 
 @media -moz-pref("browser.nova.enabled") {
-  /* Match the corner radius and separator border of unsplit panels.
-   * Skip the border on the active panel so its focus outline can sit flush
-   * against the content without a visible gap. */
+  /* Match the corner radius and separator border of unsplit panels. */
   #tabbrowser-tabpanels[splitview] .split-view-panel > .browserContainer {
-    border-radius: var(--chrome-block-radius);
+    border-radius: var(--border-radius-medium);
   }
 
+  /* Skip the outline on the active panel so its focus outline can sit flush
+   * against the content without a visible gap. We use outline not border to
+   * avoid changing the dimensions of the non-selected panel's content box. */
   #tabbrowser-tabpanels[splitview] .split-view-panel:not(.deck-selected) > .browserContainer {
-    border: var(--border-width) solid var(--chrome-content-separator-color);
+    outline: var(--border-width) solid var(--chrome-content-separator-color);
+    outline-offset: calc(-1 * var(--border-width));
   }
 
   /* In split view the notification box is inside the panel's browserContainer.
@@ -641,7 +654,7 @@ split-view-footer {
   padding-block-start: 2px;
   /* Avoid clipping by a large window corner radius by adding proportional
      bottom padding */
-  padding-block-end: max(2px, calc(var(--chrome-block-radius, 0px) / 5));
+  padding-block-end: max(2px, var(--window-border-radius) / 5);
 
   border-width: 1px;
   border-style: none;
@@ -651,7 +664,7 @@ split-view-footer {
     border-right-style: solid;
     /* When the label is on the left, avoid clipping from a large window corner radius
        by adding proportional left padding */
-    padding-left: max(4px, calc(var(--chrome-block-radius, 0px) / 2));
+    padding-left: max(4px, var(--window-border-radius) / 2);
     padding-right: 4px;
 
     /* disabled on Windows for triggering grayscale AA (bug 659213): */
@@ -667,7 +680,7 @@ split-view-footer {
     /* When the label is on the right, avoid clipping from a large window corner radius
        by adding proportional right padding */
     padding-left: 4px;
-    padding-right: max(4px, calc(var(--chrome-block-radius, 0px) / 2));
+    padding-right: max(4px, var(--window-border-radius) / 2);
 
     /* disabled on Windows for triggering grayscale AA (bug 659213): */
     @media not (-moz-platform: windows) {
@@ -681,8 +694,6 @@ split-view-footer {
 
 #clipboardReadPasteMenuPopup,
 #contentAreaContextMenu,
-#DateTimePickerPanel,
-#PopupAutoComplete,
 #remoteBrowserTooltip,
 #aHTMLTooltip[contenttooltip] {
   color-scheme: env(-moz-content-preferred-color-scheme);
@@ -753,6 +764,10 @@ split-view-footer {
   left: max(anchor(--browser-with-dialog left), anchor(--devtools-left-host right, 0));
   right: max(anchor(--browser-with-dialog right), anchor(--devtools-right-host left, 0));
   bottom: max(anchor(--browser-with-dialog bottom), anchor(--devtools-bottom-host top, 0));
+
+  &.content-prompt-dialog {
+    color-scheme: env(-moz-content-preferred-color-scheme);
+  }
 
   /* Hide tab-modal dialogs when a window-modal one is up. */
   :root[window-modal-open] .browserStack > &,
@@ -882,6 +897,8 @@ split-view-footer {
     width: auto;
     max-height: none;
     max-width: none;
+    border-radius: inherit;
+    overflow: clip;
 
     > .dialogOverlay {
       width: 100%;

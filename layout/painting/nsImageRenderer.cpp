@@ -572,10 +572,12 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
     case StyleImage::Tag::Image: {
       const auto fill = LayoutDeviceRect::FromAppUnits(
           aFill, aPresContext->AppUnitsPerDevPixel());
-      ctx->GetDrawTarget()->FillRect(
-          fill.ToUnknownRect(),
-          ColorPattern(ToDeviceColor(mImage->AsImage()->CalcColor(mForFrame))),
-          DrawOptions(/* aAlpha = */ aOpacity));
+      nscolor color = mImage->AsImage()->CalcColor(mForFrame);
+      if (NS_GET_A(color)) {
+        ctx->GetDrawTarget()->FillRect(fill.ToUnknownRect(),
+                                       ColorPattern(ToDeviceColor(color)),
+                                       DrawOptions(/* aAlpha = */ aOpacity));
+      }
       break;
     }
     case StyleImage::Tag::Gradient: {
@@ -754,13 +756,16 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
       break;
     }
     case StyleImage::Tag::Image: {
-      const int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
-      auto fillRect = wr::ToLayoutRect(
-          LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel));
-      aBuilder.PushRect(
-          fillRect, fillRect, !aItem->BackfaceIsHidden(),
-          /* aFoceAntiAliasing = */ false, /* aIsCheckerboard = */ false,
-          wr::ToColorF(ToDeviceColor(mImage->AsImage()->CalcColor(mForFrame))));
+      nscolor color = mImage->AsImage()->CalcColor(mForFrame);
+      if (NS_GET_A(color)) {
+        const int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
+        auto fillRect = wr::ToLayoutRect(
+            LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel));
+        aBuilder.PushRect(fillRect, fillRect, !aItem->BackfaceIsHidden(),
+                          /* aFoceAntiAliasing = */ false,
+                          /* aIsCheckerboard = */ false,
+                          wr::ToColorF(ToDeviceColor(color)));
+      }
       break;
     }
     default:

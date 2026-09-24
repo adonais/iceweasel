@@ -74,9 +74,6 @@ web_push:
     description: >
       Number of push messages that were successfully decrypted and delivered to
       a ServiceWorker when required.
-
-      This metric was generated to correspond to the Legacy Telemetry count
-      histogram PUSH_API_NOTIFY.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1429286
     data_reviews:
@@ -84,7 +81,6 @@ web_push:
     notification_emails:
       - push@mozilla.com
     expires: never
-    telemetry_mirror: h#PUSH_API_NOTIFY
 
   declarative:
     type: counter

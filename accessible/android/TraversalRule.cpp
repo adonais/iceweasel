@@ -274,6 +274,7 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
     case roles::OPTION:
     case roles::SWITCH:
     case roles::MATHML_MATH:
+    case roles::SUMMARY:
       // Ignore the subtree, if there is one. So that we don't land on
       // the same content that was already presented by its parent.
       return nsIAccessibleTraversalRule::FILTER_MATCH |

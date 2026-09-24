@@ -15,21 +15,31 @@ add_task(async function test() {
 
   // initialization of expected titles
   let test_title = "Test title";
-  let app_name = document.title;
 
-  // XXX: Bug 1597849 - Dehardcode titles by fetching them from Fluent
-  //                    to compare with the actual values.
+  // The three strings getWindowTitleForBrowser() composes, fetched from Fluent so
+  // a browser.ftl wording change need not be mirrored here (see bug 1758961).
+  const l10n = new Localization(
+    ["branding/brand.ftl", "browser/browser.ftl"],
+    true
+  );
+  const [app_name, pb_title, pb_suffix] = l10n.formatValuesSync([
+    "browser-main-window-default-title",
+    "browser-main-private-window-title",
+    "browser-main-private-suffix-for-content",
+  ]);
+
+  // The em dashes are the composition rule under test, so they stay hardcoded.
+  // With a content title, macOS drops the brand name for the short suffix.
   const isMacOS = AppConstants.platform == "macosx";
 
-  let pb_postfix = isMacOS ? ` — Private Browsing` : ` Private Browsing`;
   let page_with_title = isMacOS ? test_title : `${test_title} — ${app_name}`;
   let page_without_title = app_name;
   let about_pb_title = app_name;
   let pb_page_with_title = isMacOS
-    ? `${test_title}${pb_postfix}`
-    : `${test_title} — ${app_name}${pb_postfix}`;
-  let pb_page_without_title = `${app_name}${pb_postfix}`;
-  let pb_about_pb_title = `${app_name}${pb_postfix}`;
+    ? `${test_title} — ${pb_suffix}`
+    : `${test_title} — ${pb_title}`;
+  let pb_page_without_title = pb_title;
+  let pb_about_pb_title = pb_title;
 
   async function testTabTitle(aWindow, url, insidePB, expected_title) {
     let tab = await BrowserTestUtils.openNewForegroundTab(aWindow.gBrowser);

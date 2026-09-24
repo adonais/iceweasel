@@ -11,10 +11,10 @@
       }
     },
     "small": {
+      "comment": "13px in-content, unset in platform (we want to avoid going too small when the root font size is already quite small)",
       "value": {
         "brand": {
-          "default": "0.867rem",
-          "comment": "13px (in-content)"
+          "default": "0.867rem"
         },
         "platform": {
           "default": "unset"

@@ -81,9 +81,9 @@ void FeaturePolicy::InheritPolicy(
 
   const auto& declaredString = aContainerFeaturePolicyInfo.mDeclaredString;
   if (aContainerFeaturePolicyInfo.mSelfOrigin && !declaredString.IsEmpty()) {
-    featurePolicy->SetDeclaredPolicy(nullptr, declaredString,
-                                     aContainerFeaturePolicyInfo.mSelfOrigin,
-                                     aContainerFeaturePolicyInfo.mSrcOrigin);
+    featurePolicy->SetDeclaredAttributePolicy(
+        nullptr, declaredString, aContainerFeaturePolicyInfo.mSelfOrigin,
+        aContainerFeaturePolicyInfo.mSrcOrigin);
   }
 
   for (const auto& featureName :
@@ -157,18 +157,37 @@ bool FeaturePolicy::IsSameOriginAsSrc(nsIPrincipal* aPrincipal) const {
       ->Subsumes(aPrincipal, BasePrincipal::ConsiderDocumentDomain);
 }
 
-void FeaturePolicy::SetDeclaredPolicy(Document* aDocument,
-                                      const nsAString& aPolicyString,
-                                      nsIPrincipal* aSelfOrigin,
-                                      nsIPrincipal* aSrcOrigin) {
+void FeaturePolicy::SetDeclaredAttributePolicy(Document* aDocument,
+                                               const nsAString& aPolicyString,
+                                               nsIPrincipal* aSelfOrigin,
+                                               nsIPrincipal* aSrcOrigin) {
   ResetDeclaredPolicy();
 
   mDeclaredString = aPolicyString;
   mSelfOrigin = aSelfOrigin;
   mSrcOrigin = aSrcOrigin;
 
-  (void)NS_WARN_IF(!FeaturePolicyParser::ParseString(
+  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromAttribute(
       aPolicyString, aDocument, aSelfOrigin, aSrcOrigin, mFeatures));
+
+  // Only store explicitly declared allowlist
+  for (const Feature& feature : mFeatures) {
+    if (feature.HasAllowList()) {
+      AppendToDeclaredAllowInAncestorChain(feature);
+    }
+  }
+}
+
+void FeaturePolicy::SetDeclaredHeaderPolicy(Document* aDocument,
+                                            const nsAString& aPolicyString,
+                                            nsIPrincipal* aSelfOrigin) {
+  ResetDeclaredPolicy();
+
+  mDeclaredString = aPolicyString;
+  mSelfOrigin = aSelfOrigin;
+
+  (void)NS_WARN_IF(!FeaturePolicyParser::ParsePolicyFromHeader(
+      NS_ConvertUTF16toUTF8(aPolicyString), aDocument, aSelfOrigin, mFeatures));
 
   // Only store explicitly declared allowlist
   for (const Feature& feature : mFeatures) {

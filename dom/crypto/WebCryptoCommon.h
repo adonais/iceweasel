@@ -14,6 +14,7 @@
 #include "ScopedNSSTypes.h"
 #include "js/StructuredClone.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/fallible.h"
 #include "nsContentUtils.h"
@@ -49,12 +50,17 @@ struct JSStructuredCloneWriter;
 #define WEBCRYPTO_ALG_ECDSA "ECDSA"
 #define WEBCRYPTO_ALG_ED25519 "Ed25519"
 #define WEBCRYPTO_ALG_X25519 "X25519"
+#define WEBCRYPTO_ALG_ML_KEM_512 "ML-KEM-512"
+#define WEBCRYPTO_ALG_ML_KEM_768 "ML-KEM-768"
+#define WEBCRYPTO_ALG_ML_KEM_1024 "ML-KEM-1024"
 
 // WebCrypto key formats
 #define WEBCRYPTO_KEY_FORMAT_RAW "raw"
 #define WEBCRYPTO_KEY_FORMAT_PKCS8 "pkcs8"
 #define WEBCRYPTO_KEY_FORMAT_SPKI "spki"
 #define WEBCRYPTO_KEY_FORMAT_JWK "jwk"
+#define WEBCRYPTO_KEY_FORMAT_RAW_PUBLIC "raw-public"
+#define WEBCRYPTO_KEY_FORMAT_RAW_SEED "raw-seed"
 
 // WebCrypto key types
 #define WEBCRYPTO_KEY_TYPE_PUBLIC "public"
@@ -70,6 +76,10 @@ struct JSStructuredCloneWriter;
 #define WEBCRYPTO_KEY_USAGE_DERIVEBITS "deriveBits"
 #define WEBCRYPTO_KEY_USAGE_WRAPKEY "wrapKey"
 #define WEBCRYPTO_KEY_USAGE_UNWRAPKEY "unwrapKey"
+#define WEBCRYPTO_KEY_USAGE_ENCAPSULATEKEY "encapsulateKey"
+#define WEBCRYPTO_KEY_USAGE_ENCAPSULATEBITS "encapsulateBits"
+#define WEBCRYPTO_KEY_USAGE_DECAPSULATEKEY "decapsulateKey"
+#define WEBCRYPTO_KEY_USAGE_DECAPSULATEBITS "decapsulateBits"
 
 // WebCrypto named curves
 #define WEBCRYPTO_NAMED_CURVE_P256 "P-256"
@@ -249,6 +259,15 @@ inline bool NormalizeToken(const nsString& aName, nsString& aDest) {
     aDest.AssignLiteral(WEBCRYPTO_ALG_ED25519);
   } else if (NORMALIZED_EQUALS(aName, WEBCRYPTO_ALG_X25519)) {
     aDest.AssignLiteral(WEBCRYPTO_ALG_X25519);
+  } else if (StaticPrefs::dom_webcrypto_encapsulation_enabled() &&
+             NORMALIZED_EQUALS(aName, WEBCRYPTO_ALG_ML_KEM_512)) {
+    aDest.AssignLiteral(WEBCRYPTO_ALG_ML_KEM_512);
+  } else if (StaticPrefs::dom_webcrypto_encapsulation_enabled() &&
+             NORMALIZED_EQUALS(aName, WEBCRYPTO_ALG_ML_KEM_768)) {
+    aDest.AssignLiteral(WEBCRYPTO_ALG_ML_KEM_768);
+  } else if (StaticPrefs::dom_webcrypto_encapsulation_enabled() &&
+             NORMALIZED_EQUALS(aName, WEBCRYPTO_ALG_ML_KEM_1024)) {
+    aDest.AssignLiteral(WEBCRYPTO_ALG_ML_KEM_1024);
     // Named curve values
   } else if (NORMALIZED_EQUALS(aName, WEBCRYPTO_NAMED_CURVE_P256)) {
     aDest.AssignLiteral(WEBCRYPTO_NAMED_CURVE_P256);
@@ -350,6 +369,34 @@ inline SECItem* CreateECParamsForCurve(const nsAString& aNamedCurve,
   }
 
   return params;
+}
+
+struct MLKEMParams {
+  CK_ML_KEM_PARAMETER_SET_TYPE mParameterSet;
+  KyberParams mKyberParams;
+  uint32_t mPublicKeyLength;
+};
+
+inline bool GetMLKEMParams(const nsAString& aName, MLKEMParams& aParams) {
+  if (aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_512)) {
+    aParams = {CKP_ML_KEM_512, params_ml_kem512, MLKEM512_PUBLIC_KEY_BYTES};
+    return true;
+  }
+  if (aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_768)) {
+    aParams = {CKP_ML_KEM_768, params_ml_kem768, KYBER768_PUBLIC_KEY_BYTES};
+    return true;
+  }
+  if (aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_1024)) {
+    aParams = {CKP_ML_KEM_1024, params_ml_kem1024, MLKEM1024_PUBLIC_KEY_BYTES};
+    return true;
+  }
+  return false;
+}
+
+inline bool IsMLKEMAlgorithm(const nsAString& aName) {
+  return aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_512) ||
+         aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_768) ||
+         aName.EqualsLiteral(WEBCRYPTO_ALG_ML_KEM_1024);
 }
 
 // Implemented in CryptoKey.cpp

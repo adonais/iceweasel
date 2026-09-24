@@ -29,6 +29,15 @@ const CORNER_IMAGE_POSITIONS = new Set([
   "top-right",
 ]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
+const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set([
+  "none",
+  "fade",
+  "slide-block",
+  "slide-inline",
+  "slide-corner",
+  "zoom",
+]);
+const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
 
 export const MultiStageProtonScreen = props => {
   const {
@@ -588,6 +597,12 @@ export class ProtonScreen extends React.PureComponent {
     const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position)
       ? cornerImage.position
       : DEFAULT_CORNER_IMAGE_POSITION;
+    const entranceAnimation = cornerImage.entrance_animation ?? {};
+    const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(
+      entranceAnimation.type
+    )
+      ? entranceAnimation.type
+      : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
 
     return (
       <div className={"corner-image-container"}>
@@ -601,8 +616,15 @@ export class ProtonScreen extends React.PureComponent {
           width: cornerImage.width,
           marginBlock: cornerImage.marginBlock,
           marginInline: cornerImage.marginInline,
-          style: cornerImage.style,
-          className: `corner-image ${position}`,
+          style: {
+            // Read indirectly by _multistage.scss, so reduced motion can
+            // override them. Undefined values fall through to its defaults.
+            "--corner-image-entrance-distance": entranceAnimation.distance,
+            "--corner-image-entrance-duration": entranceAnimation.duration,
+            "--corner-image-entrance-delay": entranceAnimation.delay,
+            ...cornerImage.style,
+          },
+          className: `corner-image ${position} entrance-${entranceType}`,
         })}
       </div>
     );
@@ -1310,7 +1332,7 @@ const buttonPropTypes = PropTypes.exact({
 
 export const screenContentShape = {
   // The layout position of the screen.
-  position: PropTypes.oneOf(["center", "split", "callout"]),
+  position: PropTypes.oneOf(["center", "center-large", "split", "callout"]),
   // If true, the screens are displayed in fullscreen.
   fullscreen: PropTypes.bool,
   // If true, the progress bar will be shown. Defaults to true.
@@ -1424,6 +1446,60 @@ export const screenContentShape = {
     width: PropTypes.string,
     // The CSS style overriding the height property.
     height: PropTypes.string,
+  }),
+  // An optional object representing an illustration anchored to a corner of the
+  // screen. Only rendered for screens with 'position' set to 'center-large' and
+  // 'fullscreen' set to true, which are the only ones that style it.
+  corner_image: PropTypes.shape({
+    // The image URL.
+    imageURL: PropTypes.string,
+    // The dark mode image URL.
+    darkModeImageURL: PropTypes.string,
+    // The reduced motion image URL.
+    reducedMotionImageURL: PropTypes.string,
+    // The dark mode reduced motion image URL.
+    darkModeReducedMotionImageURL: PropTypes.string,
+    // The corner the illustration is anchored to. Defaults to 'bottom-right'.
+    position: PropTypes.oneOf([
+      "bottom-left",
+      "bottom-right",
+      "top-left",
+      "top-right",
+    ]),
+    // The CSS style overriding the width property.
+    width: PropTypes.string,
+    // The CSS style overriding the height property.
+    height: PropTypes.string,
+    // The CSS style overriding the marginBlock property.
+    marginBlock: PropTypes.string,
+    // The CSS style overriding the marginInline property.
+    marginInline: PropTypes.string,
+    // CSS overrides applied to the illustration container. Avoid 'translate'
+    // and 'scale' when using 'entrance_animation', which animates those two
+    // properties and would be overridden by them. 'transform' is unaffected.
+    style: PropTypes.object,
+    // How the illustration animates in each time the screen is entered. The
+    // direction is derived from 'position', so a 'bottom-left' illustration
+    // rises and a 'top-left' one descends. Every type degrades to an
+    // opacity-only fade for users who prefer reduced motion.
+    entrance_animation: PropTypes.shape({
+      // The animation to run. Defaults to 'none'.
+      type: PropTypes.oneOf([
+        "none",
+        "fade",
+        "slide-block",
+        "slide-inline",
+        "slide-corner",
+        "zoom",
+      ]),
+      // The CSS length the illustration travels, for the 'slide-*' types.
+      distance: PropTypes.string,
+      // The CSS time the animation takes.
+      duration: PropTypes.string,
+      // The CSS time to wait before starting, for staggering the illustration
+      // against the screen's other content.
+      delay: PropTypes.string,
+    }),
   }),
   // The text for the headline.
   title: localizableThingPropTypes,

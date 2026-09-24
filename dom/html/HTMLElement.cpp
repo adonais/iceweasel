@@ -7,6 +7,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/PresState.h"
 #include "mozilla/dom/CustomElementRegistry.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementInternalsBinding.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FromParser.h"
@@ -23,6 +24,7 @@ HTMLElement::HTMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     : nsGenericHTMLFormElement(std::move(aNodeInfo)) {
   if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
     AddStatesSilently(ElementState::HAS_DIR_ATTR_LIKE_AUTO);
+    OwnerDoc()->SetNeedsDirHandling();
   }
 
   InhibitRestoration(!(aFromParser & FROM_PARSER_NETWORK));

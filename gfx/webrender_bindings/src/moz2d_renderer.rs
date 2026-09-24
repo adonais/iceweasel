@@ -22,7 +22,6 @@ use std::collections::btree_map::BTreeMap;
 use std::collections::hash_map;
 use std::collections::hash_map::HashMap;
 use std::collections::Bound::Included;
-use std::i32;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
@@ -338,7 +337,7 @@ impl<'a> CachedReader<'a> {
             .cache
             .range((
                 Included(CacheKey::new(*bounds, 0u32)),
-                Included(CacheKey::new(*bounds, std::u32::MAX)),
+                Included(CacheKey::new(*bounds, u32::MAX)),
             ))
             .next()
         {

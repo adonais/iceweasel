@@ -19,6 +19,7 @@ group("modules") {
     "pacing",
     "remote_bitrate_estimator",
     "rtp_rtcp",
+    "sframe",
     "utility",
     "video_coding",
   ]
@@ -62,19 +63,17 @@ if (rtc_include_tests && !build_with_chromium) {
   }
   rtc_test("modules_unittests") {
     testonly = true
-    defines = []
-    sources = [ "module_common_types_public_unittest.cc" ]
 
     deps = [
       ":module_api",
       ":module_api_public",
+      ":module_common_types_public_unittest",
       "../test:run_loop",
       "../test:test_support",
       "audio_coding:audio_coding_unittests",
       "audio_device:audio_device_unittests",
       "audio_mixer:audio_mixer_unittests",
       "audio_processing:audio_processing_unittests",
-      "audio_processing/aec3:aec3_unittests",
       "audio_processing/ns:ns_unittests",
       "congestion_controller:congestion_controller_unittests",
       "pacing:pacing_unittests",
@@ -86,7 +85,10 @@ if (rtc_include_tests && !build_with_chromium) {
     ]
 
     if (rtc_enable_protobuf) {
-      deps += [ "audio_processing/aec3/neural_residual_echo_estimator:neural_residual_echo_estimator_unittest" ]
+      deps += [
+        "audio_processing/aec3:aec3_unittests",
+        "audio_processing/aec3/neural_residual_echo_estimator:neural_residual_echo_estimator_unittest",
+      ]
     }
 
     data_deps = [ "../resources:modules_unittests_data" ]
@@ -100,5 +102,16 @@ if (rtc_include_tests && !build_with_chromium) {
       configs += [ "..:common_objc" ]
       ldflags = [ "-ObjC" ]
     }
+  }
+}
+
+if (rtc_include_tests && !build_with_chromium) {
+  rtc_library("module_common_types_public_unittest") {
+    testonly = true
+    sources = [ "module_common_types_public_unittest.cc" ]
+    deps = [
+      ":module_api_public",
+      "../test:test_support",
+    ]
   }
 }

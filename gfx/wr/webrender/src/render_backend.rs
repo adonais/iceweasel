@@ -60,6 +60,7 @@ use crate::resource_cache::PlainResources;
 use crate::scene::Scene;
 use crate::scene::{BuiltScene, SceneProperties};
 use crate::scene_builder_thread::*;
+use crate::scene_debug::SceneDebugOverride;
 use crate::spatial_tree::SpatialTree;
 #[cfg(feature = "replay")]
 use crate::spatial_tree::SceneSpatialTree;
@@ -72,13 +73,13 @@ use serde::Deserialize;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::{mem, u32};
+use std::mem;
 #[cfg(feature = "capture")]
 use std::path::PathBuf;
 #[cfg(feature = "replay")]
 use crate::frame_builder::Frame;
 use core::time::Duration;
-use crate::util::{Recycler, VecHelper, drain_filter};
+use crate::util::{MaxRect, Recycler, VecHelper, drain_filter};
 #[cfg(feature = "debugger")]
 use crate::debugger::DebugQueryKind;
 
@@ -172,7 +173,7 @@ impl DataStores {
     ) -> LayoutRect {
         match prim_instance.kind {
             PrimitiveKind::Picture { pic_index, .. } => {
-                let pic = &pictures[pic_index.0];
+                let pic = &pictures[pic_index.0 as usize];
 
                 match pic.raster_config {
                     Some(RasterConfig { surface_index, ref composite_mode, .. }) => {
@@ -202,7 +203,7 @@ impl DataStores {
     ) -> LayoutRect {
         match prim_instance.kind {
             PrimitiveKind::Picture { pic_index, .. } => {
-                let pic = &pictures[pic_index.0];
+                let pic = &pictures[pic_index.0 as usize];
 
                 match pic.raster_config {
                     Some(RasterConfig { surface_index, ref composite_mode, .. }) => {
@@ -231,6 +232,34 @@ impl DataStores {
             _ => {
                 self.as_common_data(prim_instance).flags.contains(PrimitiveFlags::ANTIALISED)
             }
+        }
+    }
+
+    /// The primitive's authored local rect, before device-pixel snapping. Lives
+    /// in the interned template; picture prims have no common data (and their
+    /// snapped rect is discarded in favour of the surface coverage rect, see
+    /// `get_local_prim_coverage_rect`) so they report an empty rect.
+    pub fn prim_rect(
+        &self,
+        prim_inst: &PrimitiveInstance,
+    ) -> LayoutRect {
+        match prim_inst.kind {
+            PrimitiveKind::Picture { .. } => LayoutRect::zero(),
+            _ => self.as_common_data(prim_inst).prim_rect,
+        }
+    }
+
+    /// The primitive's own local clip rect, before device-pixel snapping. Lives
+    /// in the interned template alongside `prim_rect`; picture prims have no
+    /// common data and carry no local clip of their own, so they report
+    /// `max_rect`.
+    pub fn local_clip_rect(
+        &self,
+        prim_inst: &PrimitiveInstance,
+    ) -> LayoutRect {
+        match prim_inst.kind {
+            PrimitiveKind::Picture { .. } => LayoutRect::max_rect(),
+            _ => self.as_common_data(prim_inst).local_clip_rect,
         }
     }
 
@@ -398,6 +427,14 @@ struct Document {
 
     profile: TransactionProfile,
     frame_stats: Option<FullFrameStats>,
+
+    /// Incremented each time a new built scene is swapped in. Lets the remote
+    /// debugger detect that primitive indices it holds are stale.
+    scene_generation: u64,
+
+    /// Debug-only per-primitive modifications applied during frame building.
+    /// Reset whenever a new built scene is swapped in.
+    debug_override: SceneDebugOverride,
 }
 
 impl Document {
@@ -435,6 +472,8 @@ impl Document {
             profile: TransactionProfile::new(),
             rg_builder: RenderTaskGraphBuilder::new(),
             frame_stats: None,
+            scene_generation: 0,
+            debug_override: SceneDebugOverride::empty(),
         }
     }
 
@@ -541,6 +580,7 @@ impl Document {
                 &mut self.data_stores,
                 &mut self.scratch,
                 debug_flags,
+                &self.debug_override,
                 tile_caches,
                 &mut self.spatial_tree,
                 self.dirty_rects_are_valid,
@@ -623,6 +663,7 @@ impl Document {
             &self.data_stores,
             &mut self.scratch,
             debug_flags,
+            &SceneDebugOverride::empty(),
             &mut tile_caches,
             &mut spatial_tree,
             self.dirty_rects_are_valid,
@@ -743,6 +784,40 @@ impl Document {
         old_scene.recycle();
 
         self.scratch.recycle(recycler);
+
+        self.scene_generation += 1;
+        self.debug_override = SceneDebugOverride::empty();
+    }
+
+    /// Serialize the picture / primitive tree of the current built scene for
+    /// the remote debugger.
+    #[cfg(feature = "debugger")]
+    fn scene_debug_tree(&self) -> api::debugger::SceneDebugTree {
+        crate::scene_debug::build_debug_tree(
+            &self.scene,
+            &self.data_stores,
+            &self.spatial_tree,
+            &self.scratch.primitive.frame,
+            &self.dynamic_properties,
+            self.view.scene.device_rect.to_f32(),
+            self.scene_generation,
+        )
+    }
+
+    /// Install a debug override sent by the remote debugger, rejecting it if
+    /// it targets a scene generation other than the current one.
+    #[cfg(feature = "debugger")]
+    fn set_debug_override(
+        &mut self,
+        debug_override: &api::debugger::SceneDebugOverride,
+    ) -> Result<(), String> {
+        self.debug_override = SceneDebugOverride::from_debugger(
+            debug_override,
+            self.scene_generation,
+            self.scene.prim_instances.len(),
+        )?;
+        self.frame_is_valid = false;
+        Ok(())
     }
 }
 
@@ -1543,6 +1618,16 @@ impl RenderBackend {
                                 }
                                 return RenderBackendStatus::Continue;
                             }
+                            DebugQueryKind::Scene { .. } => {
+                                if let Some(doc_id) = self.documents_for_window(backend_id).first() {
+                                    if let Some(doc) = self.documents.get(doc_id) {
+                                        let tree = doc.scene_debug_tree();
+                                        let result = serde_json::to_string(&tree).expect("bug");
+                                        query.result.send(result).ok();
+                                    }
+                                }
+                                return RenderBackendStatus::Continue;
+                            }
                             DebugQueryKind::CompositorView { .. } |
                             DebugQueryKind::CompositorConfig { .. } |
                             DebugQueryKind::Textures { .. } => {
@@ -1598,6 +1683,17 @@ impl RenderBackend {
                     }
                     DebugCommand::SimulateLongSceneBuild(time_ms) => {
                         let _ = self.scene_tx.send(SceneBuilderRequest::SimulateLongSceneBuild(time_ms));
+                        return RenderBackendStatus::Continue;
+                    }
+                    #[cfg(feature = "debugger")]
+                    DebugCommand::SetSceneDebugOverride(ref debug_override, ref tx) => {
+                        let mut result = Err("No document".to_string());
+                        if let Some(doc_id) = self.documents_for_window(backend_id).first() {
+                            if let Some(doc) = self.documents.get_mut(doc_id) {
+                                result = doc.set_debug_override(debug_override);
+                            }
+                        }
+                        tx.send(result).ok();
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::SetFlags(flags) => {
@@ -2489,6 +2585,8 @@ impl RenderBackend {
                         profile: TransactionProfile::new(),
                         rg_builder: RenderTaskGraphBuilder::new(),
                         frame_stats: None,
+                        scene_generation: 0,
+                        debug_override: SceneDebugOverride::empty(),
                     };
                     entry.insert(doc);
                 }

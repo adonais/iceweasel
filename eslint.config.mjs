@@ -496,6 +496,25 @@ let config = [
       "mozilla/no-newtab-refs-outside-newtab": "error",
     },
   },
+  {
+    name: "preferences-heading-level-via-config",
+    // Remove once typechecking is enabled and violations fail patches
+    files: [
+      "browser/components/preferences/config/**/*.mjs",
+      "browser/extensions/newtab/lib/AboutPreferences.sys.mjs",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            ":matches(Property[key.name='controlAttrs'], Property[key.value='controlAttrs']) > ObjectExpression > :matches(Property[key.name=/^(?:headinglevel|headingLevel)$/], Property[key.value=/^\\.?(?:headinglevel|headingLevel)$/])",
+          message:
+            "Set heading levels via the top-level `headingLevel` property on the setting config, not through `controlAttrs`.",
+        },
+      ],
+    },
+  },
 
   ...wrapPathsInConfig(subdirConfigs),
   ...wrapPathsInConfig(repositoryGlobals),

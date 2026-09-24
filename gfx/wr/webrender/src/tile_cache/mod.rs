@@ -15,7 +15,7 @@ pub mod slice_builder;
 use api::{AlphaType, BorderRadius, ClipMode, ColorF, ColorU, ColorDepth, DebugFlags, ImageKey, ImageRendering};
 use api::{PropertyBinding, PropertyBindingId, PrimitiveFlags, YuvFormat, YuvRangedColorSpace};
 use api::units::*;
-use crate::clip::{clamped_radius, ClipNodeId, ClipLeafId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore, intersect_rounded_rects};
+use crate::clip::{clamped_radius, ClipNodeId, ClipItemKind, ClipSpaceConversion, ClipChainInstance, ClipStore, intersect_rounded_rects};
 use crate::composite::{CompositorKind, CompositeState, CompositorSurfaceKind, ExternalSurfaceDescriptor};
 use crate::composite::{ExternalSurfaceDependency, NativeSurfaceId, NativeTileId};
 use crate::composite::{CompositorClipIndex, CompositorTransformIndex};
@@ -90,10 +90,42 @@ pub const TILE_SIZE_SCROLLBAR_VERTICAL: DeviceIntSize = DeviceIntSize {
     _unit: marker::PhantomData,
 };
 
-/// The maximum size per axis of a surface, in DevicePixel coordinates.
-/// Render tasks larger than this size are scaled down to fit, which may cause
-/// some blurriness.
+/// The smallest value `max_surface_size_for_screen` will return, in DevicePixel
+/// coordinates. Render tasks larger than the limit are scaled down to fit,
+/// which may cause some blurriness.
 pub const MAX_SURFACE_SIZE: usize = 4096;
+
+/// The maximum size per axis of a surface, in DevicePixel coordinates, for a
+/// screen of the given device pixel size.
+///
+/// The limit tracks the screen because a surface that covers the screen is the
+/// largest one that screen-space content can legitimately need, and scaling it
+/// down to a fixed limit blurs the whole surface. Note that on a HiDPI screen
+/// the device pixel size already includes the backing scale, which is where
+/// the fixed limit used to be exceeded most often.
+///
+/// The value is rounded up to a power of two so that resizing a window does not
+/// change the limit - and so reallocate every surface sitting at it - on each
+/// pixel of a drag.
+///
+/// It is never below `MAX_SURFACE_SIZE`, since a surface can legitimately be
+/// larger than the screen when raster scale is above one, and lowering the
+/// limit on a small screen would newly scale down surfaces that render at full
+/// resolution today. It is never above what the device can allocate.
+pub fn max_surface_size_for_screen(
+    screen_size: DeviceIntSize,
+    max_target_size: i32,
+) -> usize {
+    let longest_edge = screen_size.width.max(screen_size.height).max(0) as u32;
+
+    let rounded = longest_edge
+        .checked_next_power_of_two()
+        .map_or(usize::MAX, |size| size as usize);
+
+    rounded
+        .max(MAX_SURFACE_SIZE)
+        .min(max_target_size.max(0) as usize)
+}
 
 /// Used to get unique tile IDs, even when the tile cache is
 /// destroyed between display lists / scenes.
@@ -179,15 +211,13 @@ pub struct TileCacheParams {
     pub slice_flags: SliceFlags,
     // The anchoring spatial node / scroll root
     pub spatial_node_index: SpatialNodeIndex,
-    // The space in which visibility/invalidation/clipping computations are done.
-    pub visibility_node_index: SpatialNodeIndex,
     // Optional background color of this tilecache. If present, can be used as an optimization
     // to enable opaque blending and/or subpixel AA in more places.
     pub background_color: Option<ColorF>,
     // Node in the clip-tree that defines where we exclude clips from child prims
     pub shared_clip_node_id: ClipNodeId,
     // Clip leaf that is used to build the clip-chain for this tile cache.
-    pub shared_clip_leaf_id: Option<ClipLeafId>,
+    pub tile_clip_node_id: Option<ClipNodeId>,
     // Virtual surface sizes are always square, so this represents both the width and height
     pub virtual_surface_size: i32,
     // The number of Image surfaces that are being requested for this tile cache.
@@ -731,7 +761,9 @@ pub struct TileCacheInstance {
     pub sub_slices: Vec<SubSlice>,
     /// The positioning node for this tile cache.
     pub spatial_node_index: SpatialNodeIndex,
-    /// The coordinate space to do visibility/clipping/invalidation in.
+    /// The coordinate space to do visibility/clipping/invalidation in, resolved
+    /// each frame in `pre_update` from the tile cache's surface. `INVALID`
+    /// before the first `pre_update` of a frame.
     pub visibility_node_index: SpatialNodeIndex,
     /// List of opacity bindings, with some extra information
     /// about whether they changed since last frame.
@@ -774,7 +806,7 @@ pub struct TileCacheInstance {
     // Node in the clip-tree that defines where we exclude clips from child prims
     pub shared_clip_node_id: ClipNodeId,
     // Clip leaf that is used to build the clip-chain for this tile cache.
-    pub shared_clip_leaf_id: Option<ClipLeafId>,
+    pub tile_clip_node_id: Option<ClipNodeId>,
     /// The number of frames until this cache next evaluates what tile size to use.
     /// If a picture rect size is regularly changing just around a size threshold,
     /// we don't want to constantly invalidate and reallocate different tile size
@@ -846,13 +878,14 @@ impl TileCacheInstance {
             slice: params.slice,
             slice_flags: params.slice_flags,
             spatial_node_index: params.spatial_node_index,
-            visibility_node_index: params.visibility_node_index,
+            visibility_node_index: SpatialNodeIndex::INVALID,
             sub_slices,
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
             color_bindings: FastHashMap::default(),
             old_color_bindings: FastHashMap::default(),
-            dirty_region: DirtyRegion::new(params.visibility_node_index, params.spatial_node_index),
+            // Re-targeted every frame by `post_update` before anything reads it.
+            dirty_region: DirtyRegion::new(SpatialNodeIndex::INVALID, params.spatial_node_index),
             tile_size: PictureSize::zero(),
             tile_rect: TileRect::zero(),
             tile_bounds_p0: TileOffset::zero(),
@@ -866,7 +899,7 @@ impl TileCacheInstance {
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             shared_clip_node_id: params.shared_clip_node_id,
-            shared_clip_leaf_id: params.shared_clip_leaf_id,
+            tile_clip_node_id: params.tile_clip_node_id,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
             // Default to centering the virtual offset in the middle of the DC virtual surface
@@ -968,7 +1001,7 @@ impl TileCacheInstance {
         self.slice_flags = params.slice_flags;
         self.spatial_node_index = params.spatial_node_index;
         self.background_color = params.background_color;
-        self.shared_clip_leaf_id = params.shared_clip_leaf_id;
+        self.tile_clip_node_id = params.tile_clip_node_id;
         self.shared_clip_node_id = params.shared_clip_node_id;
 
         // Since the slice flags may have changed, ensure we re-evaluate the
@@ -1032,11 +1065,12 @@ impl TileCacheInstance {
         surface_index: SurfaceIndex,
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
-    ) -> DeviceRect {
+    ) {
         let surface = &frame_state.surfaces[surface_index.0];
         let pic_rect = surface.unclipped_local_rect;
 
         self.surface_index = surface_index;
+        self.visibility_node_index = surface.visibility_spatial_node_index;
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
         self.deferred_dirty_tests.clear();
@@ -1066,8 +1100,7 @@ impl TileCacheInstance {
             .expect("unable to unmap screen rect");
 
         let pic_to_vis_mapper = SpaceMapper::new_with_target(
-            // TODO: use the raster node instead of the root node.
-            frame_context.root_spatial_node_index,
+            surface.visibility_spatial_node_index,
             self.spatial_node_index,
             surface.culling_rect,
             frame_context.spatial_tree,
@@ -1076,7 +1109,7 @@ impl TileCacheInstance {
         // If there is a valid set of shared clips, build a clip chain instance for this,
         // which will provide a local clip rect. This is useful for establishing things
         // like whether the backdrop rect supplied by Gecko can be considered opaque.
-        if let Some(shared_clip_leaf_id) = self.shared_clip_leaf_id {
+        if let Some(tile_clip_node_id) = self.tile_clip_node_id {
             let map_local_to_picture = SpaceMapper::new(
                 self.spatial_node_index,
                 pic_rect,
@@ -1084,15 +1117,11 @@ impl TileCacheInstance {
 
             let mut clip_snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
 
-            // The tile cache's shared clip is never a text run: it snaps its
-            // chain to nearest when it carries a real clip root, otherwise it
-            // leaves it exact (matching the device-space sentinel behavior).
-            let clip_snap = if frame_state.clip_tree.get_leaf(shared_clip_leaf_id).prim_clip_root
-                != ClipNodeId::INVALID {
-                ClipSnap::Nearest
-            } else {
-                ClipSnap::Exact
-            };
+            // A tile cache leaves its shared clip chain exact, like any other
+            // device-space content.
+            let clip_snap = ClipSnap::Exact;
+
+            let clip_root = frame_state.current_clip_root();
 
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
@@ -1100,7 +1129,10 @@ impl TileCacheInstance {
                 surface.visibility_spatial_node_index,
                 &mut clip_snapper,
                 clip_snap,
-                shared_clip_leaf_id,
+                tile_clip_node_id,
+                clip_root,
+                // A tile cache has no local clip rect of its own.
+                LayoutRect::max_rect(),
                 frame_context.spatial_tree,
                 &frame_state.data_stores.clip,
                 &frame_state.clip_tree,
@@ -1110,7 +1142,6 @@ impl TileCacheInstance {
                 pic_rect.cast_unit(),
                 &map_local_to_picture,
                 &pic_to_vis_mapper,
-                frame_context.spatial_tree,
                 &mut frame_state.frame_gpu_data.f32,
                 frame_state.resource_cache,
                 &surface.culling_rect,
@@ -1168,7 +1199,8 @@ impl TileCacheInstance {
                                         shape_bottom_right: radius.shape_bottom_right,
                                     },
                                 ),
-                                ClipSpaceConversion::Transform(..) => unreachable!(),
+                                ClipSpaceConversion::Transform(..) |
+                                ClipSpaceConversion::Indeterminate => unreachable!(),
                             };
 
                             combined = Some(match combined {
@@ -1450,8 +1482,6 @@ impl TileCacheInstance {
         self.tile_bounds_p1 = TileOffset::new(x1, y1);
         self.tile_rect = new_tile_rect;
 
-        let mut root_culling_rect = DeviceRect::zero();
-
         let mut ctx = TilePreUpdateContext {
             pic_to_device_mapper: pic_to_root_mapper,
             background_color: self.background_color,
@@ -1467,22 +1497,6 @@ impl TileCacheInstance {
         for sub_slice in &mut self.sub_slices {
             for tile in sub_slice.tiles.values_mut() {
                 tile.pre_update(&ctx);
-
-                // Only include the tiles that are currently in view into the device culling
-                // rect. This is a very important optimization for a couple of reasons:
-                // (1) Primitives that intersect with tiles in the grid that are not currently
-                //     visible can be skipped from primitive preparation, clip chain building
-                //     and tile dependency updates.
-                // (2) When we need to allocate an off-screen surface for a child picture (for
-                //     example a CSS filter) we clip the size of the GPU surface to the device
-                //     culling rect below (to ensure we draw enough of it to be sampled by any
-                //     tiles that reference it). Making the device culling rect only affected
-                //     by visible tiles (rather than the entire virtual tile display port) can
-                //     result in allocating _much_ smaller GPU surfaces for cases where the
-                //     true off-screen surface size is very large.
-                if tile.is_visible {
-                    root_culling_rect = root_culling_rect.union(&tile.device_tile_rect);
-                }
             }
 
             // The background color can only be applied to the first sub-slice.
@@ -1528,8 +1542,6 @@ impl TileCacheInstance {
                 }
             }
         }
-
-        root_culling_rect
     }
 
     fn can_promote_to_surface(
@@ -1955,7 +1967,8 @@ impl TileCacheInstance {
                             },
                         )
                     }
-                    ClipSpaceConversion::Transform(..) => {
+                    ClipSpaceConversion::Transform(..) |
+                    ClipSpaceConversion::Indeterminate => {
                         unreachable!();
                     }
                 };
@@ -2226,7 +2239,7 @@ impl TileCacheInstance {
 
             for (pic_index, surface_index) in surface_stack.iter().rev() {
                 let surface = &surfaces[surface_index.0];
-                let pic = &pictures[pic_index.0];
+                let pic = &pictures[pic_index.0 as usize];
 
                 let map_local_to_parent = SpaceMapper::new_with_target(
                     surface.surface_spatial_node_index,
@@ -2327,7 +2340,7 @@ impl TileCacheInstance {
         match prim_instance.kind {
             PrimitiveKind::Picture { pic_index,.. } => {
                 // Pictures can depend on animated opacity bindings.
-                let pic = &pictures[pic_index.0];
+                let pic = &pictures[pic_index.0 as usize];
                 if let Some(PictureCompositeMode::Filter(Filter::Opacity(binding, _))) = pic.composite_mode {
                     prim_info.opacity_bindings.push(binding.into());
                 }
@@ -2655,7 +2668,7 @@ impl TileCacheInstance {
 
                     let mut surface_info = Vec::new();
                     for (pic_index, surface_index) in surface_stack.iter().rev() {
-                        let pic = &pictures[pic_index.0];
+                        let pic = &pictures[pic_index.0 as usize];
                         surface_info.push((pic.composite_mode.as_ref().unwrap().clone(), *surface_index));
                     }
 
@@ -2990,10 +3003,7 @@ impl TileCacheInstance {
     ) {
         assert!(self.current_surface_traversal_depth == 0);
 
-        // TODO: Switch from the root node ot raster space.
-        let visibility_node = frame_context.spatial_tree.root_reference_frame_index();
-
-        self.dirty_region.reset(visibility_node, self.spatial_node_index);
+        self.dirty_region.reset(self.visibility_node_index, self.spatial_node_index);
         self.subpixel_mode = self.calculate_subpixel_mode();
 
         self.transform_index = composite_state.register_transform(
@@ -3414,4 +3424,40 @@ struct TilePostUpdateState<'a> {
 
     /// Current configuration and setup for compositing all the picture cache tiles in renderer.
     composite_state: &'a mut CompositeState,
+}
+
+#[test]
+fn test_max_surface_size_for_screen() {
+    const DEVICE_LIMIT: i32 = 16384;
+    let for_screen = |w, h| max_surface_size_for_screen(DeviceIntSize::new(w, h), DEVICE_LIMIT);
+
+    // Screens at or below the floor leave the limit exactly where it was, so
+    // the common case sees no change at all. 4k at 1x is included: 3840 rounds
+    // up to 4096, which is already the floor.
+    assert_eq!(for_screen(1065, 665), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(1920, 1080), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(3840, 2160), MAX_SURFACE_SIZE);
+
+    // Rounding up to a power of two keeps the limit stable across a resize, so
+    // surfaces sitting at it are not reallocated on every pixel of a drag.
+    assert_eq!(for_screen(1265, 665), for_screen(1268, 666));
+    assert_eq!(for_screen(4865, 765), for_screen(5865, 1665));
+
+    // Above the floor the limit grows to cover the screen, including a HiDPI
+    // screen whose device size already has the backing scale applied.
+    assert_eq!(for_screen(4865, 765), 8192);
+    assert_eq!(for_screen(5865, 1665), 8192);
+    assert_eq!(for_screen(6016, 3384), 8192);
+
+    // The longest edge decides, in either orientation.
+    assert_eq!(for_screen(1080, 5000), 8192);
+
+    // Never above what the device can allocate, even when that is below the
+    // floor.
+    assert_eq!(max_surface_size_for_screen(DeviceIntSize::new(6016, 3384), 4096), 4096);
+    assert_eq!(max_surface_size_for_screen(DeviceIntSize::new(1920, 1080), 2048), 2048);
+
+    // Degenerate sizes fall back to the floor rather than underflowing.
+    assert_eq!(for_screen(0, 0), MAX_SURFACE_SIZE);
+    assert_eq!(for_screen(-1, -1), MAX_SURFACE_SIZE);
 }

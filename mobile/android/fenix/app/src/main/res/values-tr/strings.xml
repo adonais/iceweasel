@@ -150,7 +150,7 @@
 
     Header text on the homescreen for continuing to browse the most recent browser tab
   -->
-  <string name="recent_tabs_header_2">İleri</string>
+  <string name="recent_tabs_header_2">Devam et</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Tümünü göster</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">Sayfayı özetle</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">YENİ</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Yeni</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Bozuk siteyi rapor et</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Gruba ekle</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Çevrildi</string>
   <!-- Browser menu label for the print feature -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Sekme çubuğunu göster</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Sekme çubuğu konumu</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">Üstte</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">Altta</string>
   <!--
     Gestures Preferences
 

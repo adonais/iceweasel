@@ -7,6 +7,7 @@ package org.mozilla.fenix.helpers.perf
 import android.content.Context
 import android.os.Build
 import android.os.Environment
+import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import leakcanary.AndroidDetectLeaksAssert
@@ -14,6 +15,7 @@ import leakcanary.DetectLeaksAssert
 import leakcanary.HeapAnalysisReporter
 import leakcanary.LeakAssertions
 import leakcanary.NoLeakAssertionFailedError
+import org.mozilla.fenix.helpers.Constants.TAG
 import shark.HeapAnalysis
 import shark.HeapAnalysisSuccess
 
@@ -97,18 +99,24 @@ private fun HeapAnalysis.writeToFile(
             InstrumentationRegistry.getArguments().getString("additionalTestOutputDir")?.let { File(it) }
                 ?: getFallbackUsableDirectory(context)
 
-        // delete any existing files in the directory
-        outputDirectory.listFiles()?.forEach { file ->
-            if (file.isFile) file.delete()
-        }
-
         val leakDirectory = File(outputDirectory, directory)
         leakDirectory.mkdirs()
 
+        // Nothing is deleted here. This used to clear every file sitting directly in
+        // outputDirectory, which is shared storage the suite does not own: under
+        // /sdcard/Download those are the files the download tests just downloaded.
+        //
+        // writeText rather than createNewFile, so a second report for the same test ---
+        // the Firebase flaky re-run --- overwrites instead of being silently dropped.
         val file = File(leakDirectory, "$filename.txt")
-        if (file.createNewFile()) {
-            file.writeText(toString())
-        }
+        runCatching { file.writeText(toString()) }
+            .onSuccess { Log.i(TAG, "FenixDetectLeaksAssert: leak report written to ${file.absolutePath}") }
+            .onFailure {
+                // A silent failure here reads as "no leaks" in CI: the test still fails on the
+                // assertion, but the trace never reaches the artifacts and nobody can tell the
+                // difference between an unwritable path and a clean run.
+                Log.e(TAG, "FenixDetectLeaksAssert: could not write ${file.absolutePath}", it)
+            }
     }
 }
 

@@ -41,9 +41,9 @@ def process_define_file(output, input):
         r = re.compile(
             r"^\s*#\s*(?P<cmd>[a-z]+)(?:\s+(?P<name>\S+)(?:\s+(?P<value>\S+))?)?", re.U
         )
-        for l in input_file:
-            m = r.match(l)
-            if m:
+        for raw_line in input_file:
+            line = raw_line
+            if m := r.match(line):
                 cmd = m.group("cmd")
                 name = m.group("name")
                 value = m.group("value")
@@ -71,28 +71,35 @@ def process_define_file(output, input):
                                 for name, val in config.defines["ALLDEFINES"].items()
                             )
                         )
-                        l = l[: m.start("cmd") - 1] + defines + l[m.end("name") :]
+                        line = (
+                            line[: m.start("cmd") - 1] + defines + line[m.end("name") :]
+                        )
                     elif cmd == "define":
                         if value and name in config.defines:
-                            l = (
-                                l[: m.start("value")]
+                            line = (
+                                line[: m.start("value")]
                                 + str(config.defines[name])
-                                + l[m.end("value") :]
+                                + line[m.end("value") :]
                             )
                     elif cmd == "undef":
                         if name in config.defines:
-                            l = (
-                                l[: m.start("cmd")]
+                            line = (
+                                line[: m.start("cmd")]
                                 + "define"
-                                + l[m.end("cmd") : m.end("name")]
+                                + line[m.end("cmd") : m.end("name")]
                                 + " "
                                 + str(config.defines[name])
-                                + l[m.end("name") :]
+                                + line[m.end("name") :]
                             )
                         else:
-                            l = "/* " + l[: m.end("name")] + " */" + l[m.end("name") :]
+                            line = (
+                                "/* "
+                                + line[: m.end("name")]
+                                + " */"
+                                + line[m.end("name") :]
+                            )
 
-            output.write(l)
+            output.write(line)
 
     deps = {path}
     deps.update(config.get_dependencies())

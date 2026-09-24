@@ -4,18 +4,33 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsEnhancedTrackingProtectionExceptionsSelectors {
+object SettingsEnhancedTrackingProtectionExceptionsSelectors : SelectorContainer {
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preference_exceptions),
+            description = "Tracking Protection exceptions toolbar title",
+        )
+
+    val EXCEPTIONS_ROOT =
+        Selector(
+            strategy = SelectorStrategy.ESPRESSO_BY_ID,
+            value = "exceptionsLayout",
+            description = "Tracking Protection exceptions content",
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
+        )
 
     val LEARN_MORE_LINK =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
             value = "Learn more",
             description = "Learn more link",
-            groups = listOf("requiredForPage"),
         )
-
-    val all = listOf(LEARN_MORE_LINK)
 }

@@ -332,6 +332,7 @@ export class TopSiteLink extends React.PureComponent {
             visible_topsites: visibleTopSites,
             frecency_boosted: link.type === "frecency-boost",
             attribution: link.attribution,
+            is_ad_eligible_position: link.is_ad_eligible_position,
           }}
           // For testing.
           IntersectionObserver={this.props.IntersectionObserver}
@@ -352,6 +353,7 @@ export class TopSiteLink extends React.PureComponent {
             visible_topsites: visibleTopSites,
             smartScores: this.props.link.scores,
             smartWeights: this.props.link.weights,
+            is_ad_eligible_position: this.props.link.is_ad_eligible_position,
           }}
           // For testing.
           IntersectionObserver={this.props.IntersectionObserver}
@@ -686,18 +688,6 @@ export class TopSite extends React.PureComponent {
               visible_topsites: this.props.visibleTopSites,
               smartScores: this.props.link.scores,
               smartWeights: this.props.link.weights,
-            },
-          })
-        );
-      }
-
-      if (this.props.link.sendAttributionRequest) {
-        this.props.dispatch(
-          ac.OnlyToMain({
-            type: at.PARTNER_LINK_ATTRIBUTION,
-            data: {
-              targetURL: this.props.link.url,
-              source: "newtab",
             },
           })
         );

@@ -74,7 +74,7 @@ body {
 }
 
 .CodeMirror-Tern-completion-number:before {
-  background-color: hsl(72, 100%, 27%);
+  background-color: hsl(72 100% 27%);
 }
 
 .cm-s-mozilla .cm-property,
@@ -112,7 +112,7 @@ body {
 }
 
 .CodeMirror-Tern-completion-object:before {
-  background-color: hsl(208, 56%, 40%);
+  background-color: hsl(208 56% 40%);
 }
 
 .theme-fg-color3,
@@ -147,7 +147,7 @@ body {
 
 .CodeMirror-Tern-completion-string:before,
 .CodeMirror-Tern-completion-fn:before {
-  background-color: hsl(24, 85%, 39%);
+  background-color: hsl(24 85% 39%);
 }
 
 .cm-s-mozilla .cm-atom,
@@ -215,18 +215,18 @@ body {
 
 .cm-s-mozilla .CodeMirror-activeline-background {
   /* selected color with alpha */
-  background: rgba(185, 215, 253, 0.35);
+  background: rgb(185 215 253 / 0.35);
 }
 
 /* Highlight for a line that contains an error. */
 div.CodeMirror div.error-line {
-  background: rgba(255, 0, 0, 0.2);
+  background: rgb(255 0 0 / 0.2);
 }
 
 /* Generic highlighted text */
 div.CodeMirror span.marked-text {
-  background: rgba(255, 255, 0, 0.2);
-  border: 1px dashed rgba(192, 192, 0, 0.6);
+  background: rgb(255 255 0 / 0.2);
+  border: 1px dashed rgb(192 192 0 / 0.6);
   margin-inline-start: -1px;
   margin-inline-end: -1px;
 }
@@ -256,6 +256,6 @@ div.CodeMirror span.eval-text {
 
 .CodeMirror-hints,
 .CodeMirror-Tern-tooltip {
-  box-shadow: 0 0 4px rgba(128, 128, 128, 0.5);
+  box-shadow: 0 0 4px rgb(128 128 128 / 0.5);
   background-color: var(--theme-sidebar-background);
 }

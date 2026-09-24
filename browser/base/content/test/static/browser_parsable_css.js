@@ -182,7 +182,7 @@ let propNameAllowlist = [
   },
 
   // These variables define accent colors for tab group chrome
-  // and are used in JS in tabgroup.js
+  // and are used in JS in tabgroup.mjs
   { propName: "--tab-group-blue", isFromDevTools: false },
   { propName: "--tab-group-blue-invert", isFromDevTools: false },
   { propName: "--tab-group-blue-pale", isFromDevTools: false },
@@ -257,10 +257,6 @@ let propNameAllowlist = [
   // Ignore token properties that follow the patterns --color-[name], --color-[name]-[number], or --color-[name]-alpha-[number]
   // This enables us to provide our full color palette for developers.
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
-
-  // Ignore token properties that follow the patterns --dimension-[number] or --dimension-relative-[number]
-  // This enables us to provide our full size/spacing system for developers.
-  { propName: /--dimension(-relative)?-\d+/, isFromDevTools: false },
 
   // This variable is read from JS to determine the column count when handling
   // keyboard navigation in the New Tab sections grid.

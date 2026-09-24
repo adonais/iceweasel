@@ -45,5 +45,5 @@ fuzzy(0-16,0-10) == fieldset-inset.html fieldset-inset-ref.html # minor anti-ali
 == 1178575.html 1178575-ref.html
 == 1178575-2.html 1178575-2-ref.html
 fuzzy(0-159,0-2) fails == 1212823-1.html 1212823-1-ref.html
-fuzzy(0-93,0-8) == 1212823-2.html 1212823-2-ref.html
+fuzzy(0-93,0-10) == 1212823-2.html 1212823-2-ref.html
 fuzzy(0-1,0-308200) == boxshadow-large-offset.html boxshadow-large-offset-ref.html

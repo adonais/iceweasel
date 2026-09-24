@@ -47,7 +47,8 @@
 #include <vector>
 
 #if defined(MOZ_CLANG_PLUGIN) && defined(__GLIBCXX__) && \
-    (__GLIBCXX__ <= 20230707)
+    (__cpp_lib_constexpr_string < 201907L ||             \
+     __cpp_lib_constexpr_vector < 201907L)
 #  define MOZ_GLIBCXX_CONSTINIT __attribute__((annotate("moz_global_var")))
 #else
 #  define MOZ_GLIBCXX_CONSTINIT

@@ -13,10 +13,6 @@
     color-mix(in srgb, var(--color-violet-desaturated-90) 70%, transparent),
     color-mix(in srgb, var(--color-violet-desaturated-0) 70%, transparent)
   );
-  --lists-checkbox-border-color: light-dark(
-    var(--text-color),
-    var(--newtab-text-primary-color)
-  );
   --lists-button-background: light-dark(var(--color-violet-50), var(--color-violet-30));
   --lists-button-background-hover: var(--color-accent-primary-hover);
   --lists-button-background-active: var(--color-accent-primary-active);
@@ -93,7 +89,6 @@
   @media (forced-colors: active) {
     --lists-surface-color: Canvas;
     --lists-text-color: CanvasText;
-    --lists-checkbox-border-color: ButtonText;
     --lists-button-background: ButtonFace;
     --lists-button-background-hover: SelectedItem;
     --lists-button-background-active: SelectedItem;
@@ -220,6 +215,7 @@
 
     .add-task-input {
       background: var(--button-background-color);
+      color: var(--button-text-color);
       border: none;
       border-radius: var(--border-radius-medium);
       outline: none;
@@ -393,7 +389,7 @@
     margin: 0;
     padding: 0;
     padding-block-start: var(--space-small);
-    padding-inline-end: var(--space-small);
+    padding-inline: var(--space-small);
     border: none;
     overflow-y: auto;
     scrollbar-width: none;
@@ -435,7 +431,6 @@
       flex-grow: 2;
       gap: var(--space-small);
       padding-block: var(--space-small);
-      padding-inline: var(--space-small);
 
       span {
         -webkit-line-clamp: 3;
@@ -451,36 +446,9 @@
       }
     }
 
-    input[type='checkbox'] {
-      -moz-appearance: none;
-      appearance: none;
-      background-color: transparent;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: var(--size-item-xsmall) var(--size-item-xsmall);
-      border: var(--border-width) solid var(--lists-checkbox-border-color);
-      border-radius: var(--border-radius-small);
-      box-sizing: border-box;
-      display: block;
+    moz-checkbox {
       flex: none;
-      height: 16px;
-      margin: 0;
-      opacity: 1;
-      padding: 0;
-      width: 16px;
-
-      &:checked {
-        -moz-context-properties: fill;
-        background-color: var(--lists-button-background);
-        background-image: url('chrome://global/skin/icons/check.svg');
-        border-color: var(--lists-button-background);
-        fill: var(--lists-button-text-color);
-      }
-
-      &:focus-visible {
-        outline: var(--focus-outline);
-        outline-offset: var(--focus-outline-inset);
-      }
+      font-size: var(--font-size-small);
     }
 
     .task-label {
@@ -499,7 +467,7 @@
       }
     }
 
-    input:checked ~ .task-label {
+    moz-checkbox[checked] ~ .task-label {
       color: var(--lists-text-color);
       text-decoration: line-through;
       text-decoration-thickness: 2px;
@@ -535,6 +503,7 @@
       max-width: 180px;
       border: none;
       border-radius: 0;
+      font-size: var(--font-size-small);
       user-select: text;
 
       &:focus {
@@ -688,7 +657,6 @@
 
     .task-item .checkbox-wrapper {
       padding-block: var(--space-small);
-      padding-inline: 0;
     }
 
     .task-item .checkbox-wrapper span,

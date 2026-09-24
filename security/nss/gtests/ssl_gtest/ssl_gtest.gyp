@@ -103,11 +103,6 @@
             '<(DEPTH)/lib/dbm/src/src.gyp:dbm',
           ],
         }],
-        [ 'disable_kyber==0', {
-          'sources': [
-             'tls_xyber_unittest.cc',
-          ],
-        }],
         [ 'enable_sslkeylogfile==1 and sanitizer_flags==0', {
           'sources': [
             'ssl_keylog_unittest.cc',

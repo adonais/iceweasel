@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.feature.ipprotection.store.ActivationOperation
+import mozilla.components.feature.ipprotection.store.CachedLocationStatus
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
@@ -58,10 +59,13 @@ class IPProtectionSnackbarMiddlewareTest {
     }
 
     @Test
-    fun `WHEN LocationReset is dispatched THEN ShowSnackbar action is dispatched`() {
-        ipProtectionStore.dispatch(IPProtectionAction.LocationReset)
+    fun `WHEN LocationReset is dispatched THEN ShowActionSettingsSnackbar action is dispatched`() {
+        ipProtectionStore.dispatch(
+            IPProtectionAction.LocationReset(countryCode = "JP", status = CachedLocationStatus.Missing)
+        )
 
-        captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowSnackbar::class) { action ->
+        captureMiddleware.assertLastAction(AppAction.IPProtectionSnackbarAction.ShowActionSettingsSnackbar::class) {
+            action ->
             assertEquals(locationSelectionReset, action.title)
         }
     }

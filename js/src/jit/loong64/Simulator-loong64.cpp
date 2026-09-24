@@ -28,6 +28,7 @@
 #include "jit/loong64/Simulator-loong64.h"
 
 #include <cinttypes>
+#include <cmath>
 #include <float.h>
 #include <limits>
 
@@ -504,6 +505,14 @@ SimInstruction::Type SimInstruction::instructionType() const {
       case op_fldx_d:
       case op_fstx_s:
       case op_fstx_d:
+      case op_amcas_b:
+      case op_amcas_h:
+      case op_amcas_w:
+      case op_amcas_d:
+      case op_amcas_db_b:
+      case op_amcas_db_h:
+      case op_amcas_db_w:
+      case op_amcas_db_d:
       case op_amswap_b:
       case op_amswap_h:
       case op_amadd_b:
@@ -1780,8 +1789,11 @@ bool Simulator::setFCSRRoundError(double original, double rounded) {
     ret = true;
   }
 
-  if ((long double)rounded > (long double)std::numeric_limits<T>::max() ||
-      (long double)rounded < (long double)std::numeric_limits<T>::min()) {
+  // When T is int64_t, the true value of max(T) is not representable as double,
+  // but max(T)+1 is. Construct it with ldexp to avoid overflow. min(T) is
+  // always representable as double, so simply cast it.
+  if (rounded >= std::ldexp(1.0, std::numeric_limits<T>::digits) ||
+      rounded < static_cast<double>(std::numeric_limits<T>::min())) {
     setFCSRBit(kFCSROverflowFlagBit, true);
     setFCSRBit(kFCSROverflowCauseBit, true);
     // The reference is not really clear but it seems this is required:
@@ -2044,6 +2056,35 @@ void Simulator::AtomicMemoryHelper(AmoOp<T> f, SimInstruction* instr) {
     SharedMem<T*> ptr = SharedMem<T*>::shared(reinterpret_cast<T*>(addr));
     LLBit_ = false;
     T old = f(ptr, value);
+
+    if constexpr (elementSize == 4) {
+      setRegister(rd_reg(instr), static_cast<int32_t>(old));
+    } else {
+      setRegister(rd_reg(instr), static_cast<int64_t>(old));
+    }
+    return;
+  }
+
+  printf("Unaligned atomic access at 0x%016" PRIx64 ", pc=0x%016" PRIxPTR "\n",
+         addr, reinterpret_cast<intptr_t>(instr));
+  MOZ_CRASH();
+}
+
+template <typename T>
+void Simulator::AtomicMemoryCasHelper(AmoCasOp<T> f, SimInstruction* instr) {
+  uint64_t addr = rj_u(instr);
+  T expected = static_cast<T>(rd(instr));
+  T newVal = static_cast<T>(rk(instr));
+  constexpr unsigned elementSize = sizeof(T);
+
+  if (addr % elementSize == 0) {
+    if (handleWasmSegFault(addr, elementSize)) {
+      return;
+    }
+
+    SharedMem<T*> ptr = SharedMem<T*>::shared(reinterpret_cast<T*>(addr));
+    LLBit_ = false;
+    T old = f(ptr, expected, newVal);
 
     if constexpr (elementSize == 4) {
       setRegister(rd_reg(instr), static_cast<int32_t>(old));
@@ -3727,6 +3768,26 @@ void Simulator::decodeTypeOp17(SimInstruction* instr) {
       writeD(rj(instr) + rk(instr), getFpuRegisterDouble(fd_reg(instr)), instr);
       break;
     }
+    case op_amcas_b:
+    case op_amcas_db_b:
+      AtomicMemoryCasHelper(AtomicOperations::compareExchangeSeqCst<int8_t>,
+                            instr);
+      break;
+    case op_amcas_h:
+    case op_amcas_db_h:
+      AtomicMemoryCasHelper(AtomicOperations::compareExchangeSeqCst<int16_t>,
+                            instr);
+      break;
+    case op_amcas_w:
+    case op_amcas_db_w:
+      AtomicMemoryCasHelper(AtomicOperations::compareExchangeSeqCst<int32_t>,
+                            instr);
+      break;
+    case op_amcas_d:
+    case op_amcas_db_d:
+      AtomicMemoryCasHelper(AtomicOperations::compareExchangeSeqCst<int64_t>,
+                            instr);
+      break;
     case op_amswap_b:
     case op_amswap_db_b:
       AtomicMemoryHelper(AtomicOperations::exchangeSeqCst<int8_t>, instr);

@@ -31,7 +31,8 @@ GfxDriverInfo::GfxDriverInfo(
     already_AddRefed<const GfxDeviceFamily> devices, int32_t feature,
     int32_t featureStatus, VersionComparisonOp op, uint64_t driverVersion,
     const char* ruleId, const char* suggestedVersion /* = nullptr */,
-    bool ownDevices /* = false */, bool gpu2 /* = false */)
+    bool ownDevices /* = false */,
+    AdapterMatch aAdapterMatch /* = AdapterMatch::Primary */)
     : mOperatingSystem(os),
       mScreen(screen),
       mBattery(battery),
@@ -45,7 +46,7 @@ GfxDriverInfo::GfxDriverInfo(
       mDriverVersion(driverVersion),
       mSuggestedVersion(suggestedVersion),
       mRuleId(ruleId),
-      mGpu2(gpu2) {}
+      mAdapterMatch(aAdapterMatch) {}
 
 GfxDriverInfo::GfxDriverInfo(
     OperatingSystem os, const nsAString& vendor,

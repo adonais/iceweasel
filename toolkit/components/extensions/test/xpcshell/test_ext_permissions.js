@@ -780,7 +780,6 @@ if (AppConstants.platform == "android") {
     "identity",
     "menus",
     "menus.overrideContext",
-    "normandyAddonStudy",
     "search",
     "tabGroups"
   );

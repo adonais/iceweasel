@@ -851,9 +851,7 @@ SettingGroupManager.registerGroups({
         l10nId: "account-disabled-group",
         iconSrc: "chrome://browser/skin/preferences/mozilla-logo.svg",
         supportPage: "managed-browser-firefox",
-        controlAttrs: {
-          headinglevel: 2,
-        },
+        headingLevel: 2,
       },
     ],
   },
@@ -1029,9 +1027,7 @@ SettingGroupManager.registerGroups({
         id: "fxaDeviceNameSection",
         l10nId: "sync-device-name-header-2",
         control: "moz-fieldset",
-        controlAttrs: {
-          ".headingLevel": 3,
-        },
+        headingLevel: 3,
         items: [
           {
             id: "fxaDeviceNameGroup",
@@ -1142,6 +1138,7 @@ SettingGroupManager.registerGroups({
   referrals: {
     l10nId: "referrals-section-header2",
     headingLevel: 2,
+    iconSrc: "chrome://browser/content/logos/share-firefox.svg",
     hidden: !Referrals.isEnabled,
     items: [
       {

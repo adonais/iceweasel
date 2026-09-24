@@ -101,11 +101,11 @@ bool FeedbackParams::HasDuplicateEntries() const {
   return false;
 }
 
-Codec::Codec(Type type, PayloadType id, const std::string& name, int clockrate)
+Codec::Codec(Type type, PayloadType id, absl::string_view name, int clockrate)
     : Codec(type, id, name, clockrate, 0) {}
 Codec::Codec(Type type,
              PayloadType id,
-             const std::string& name,
+             absl::string_view name,
              int clockrate,
              size_t channels)
     : type(type),
@@ -133,12 +133,32 @@ Codec::Codec(const SdpAudioFormat& c)
   params = c.parameters;
 }
 
+Codec::Codec(SdpAudioFormat&& c)
+    : Codec(Type::kAudio,
+            PayloadType::NotSet(),
+            std::move(c.name),
+            c.clockrate_hz,
+            c.num_channels) {
+  params = std::move(c.parameters);
+}
+
 Codec::Codec(const SdpVideoFormat& c)
     : Codec(Type::kVideo, PayloadType::NotSet(), c.name, kVideoCodecClockrate) {
   params = c.parameters;
   scalability_modes = c.scalability_modes;
   packetization = c.packetization;
   tx_mode = c.tx_mode;
+}
+
+Codec::Codec(SdpVideoFormat&& c)
+    : Codec(Type::kVideo,
+            PayloadType::NotSet(),
+            std::move(c.name),
+            kVideoCodecClockrate) {
+  params = std::move(c.parameters);
+  scalability_modes = std::move(c.scalability_modes);
+  packetization = std::move(c.packetization);
+  tx_mode = std::move(c.tx_mode);
 }
 
 Codec::Codec(const Codec& c) = default;

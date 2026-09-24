@@ -28,8 +28,6 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/task_queue/pending_task_safety_flag.h"
-#include "api/task_queue/task_queue_base.h"
 #include "api/transport/bandwidth_estimation_settings.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/ecn_marking.h"
@@ -460,18 +458,6 @@ void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
 }
 void RtpTransportControllerSend::OnSentPacket(
     const SentPacketInfo& sent_packet) {
-  // Normally called on the network thread!
-  // TODO(crbug.com/1373439): Clarify other thread contexts calling in,
-  // and simplify task posting logic now that the combined network/worker
-  // project has launched.
-  if (TaskQueueBase::Current() != worker_thread_) {
-    worker_thread_->PostTask(SafeTask(safety_.flag(), [this, sent_packet]() {
-      RTC_DCHECK_RUN_ON(worker_thread_);
-      ProcessSentPacket(sent_packet);
-    }));
-    return;
-  }
-
   RTC_DCHECK_RUN_ON(worker_thread_);
   ProcessSentPacket(sent_packet);
 }

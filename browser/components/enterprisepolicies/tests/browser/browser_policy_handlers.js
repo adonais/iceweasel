@@ -181,3 +181,101 @@ add_task(async function test_bad_web_handler2() {
 
   gHandlerService.remove(handlerInfo);
 });
+
+add_task(async function test_unresolvable_entries_are_contained() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Handlers: {
+        mimeTypes: {
+          "": {
+            action: "saveToDisk",
+          },
+          "application/marimba": {
+            action: "saveToDisk",
+          },
+        },
+        extensions: {
+          "": {
+            action: "saveToDisk",
+          },
+          txt: {
+            action: "saveToDisk",
+          },
+        },
+        schemes: {
+          "": {
+            action: "saveToDisk",
+          },
+          fake_scheme: {
+            action: "saveToDisk",
+          },
+        },
+      },
+    },
+  });
+
+  let handlerInfo = gMIMEService.getFromTypeAndExtension(
+    "application/marimba",
+    ""
+  );
+  is(
+    handlerInfo.preferredAction,
+    handlerInfo.saveToDisk,
+    "A later mimeTypes entry is still processed"
+  );
+  gHandlerService.remove(handlerInfo);
+
+  handlerInfo = gMIMEService.getFromTypeAndExtension("", "txt");
+  is(
+    handlerInfo.preferredAction,
+    handlerInfo.saveToDisk,
+    "The extensions block is still processed"
+  );
+  gHandlerService.remove(handlerInfo);
+
+  handlerInfo = gExternalProtocolService.getProtocolHandlerInfo("fake_scheme");
+  is(
+    handlerInfo.preferredAction,
+    handlerInfo.saveToDisk,
+    "The schemes block is still processed"
+  );
+  gHandlerService.remove(handlerInfo);
+});
+
+add_task(async function test_bad_web_handler3() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Handlers: {
+        schemes: {
+          bad_web_handler3: {
+            action: "useHelperApp",
+            handlers: [
+              {
+                name: "Name",
+                uriTemplate: "not a url",
+              },
+            ],
+          },
+          good_after_bad: {
+            action: "saveToDisk",
+          },
+        },
+      },
+    },
+  });
+
+  let handlerInfo =
+    gExternalProtocolService.getProtocolHandlerInfo("bad_web_handler3");
+  is(handlerInfo.preferredApplicationHandler, null);
+
+  gHandlerService.remove(handlerInfo);
+
+  handlerInfo =
+    gExternalProtocolService.getProtocolHandlerInfo("good_after_bad");
+  is(
+    handlerInfo.preferredAction,
+    handlerInfo.saveToDisk,
+    "A later schemes entry is still processed"
+  );
+  gHandlerService.remove(handlerInfo);
+});

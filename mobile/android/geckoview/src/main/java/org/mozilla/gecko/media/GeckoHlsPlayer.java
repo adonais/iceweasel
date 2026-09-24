@@ -195,7 +195,8 @@ public class GeckoHlsPlayer
   private BaseHlsPlayer.DemuxerCallbacks mDemuxerCallbacks;
   private BaseHlsPlayer.ResourceCallbacks mResourceCallbacks;
 
-  private boolean mReleasing = false; // Used only in Gecko Main thread.
+  // Accessed only while holding this object's monitor. Once set, never cleared.
+  private boolean mReleaseStarted = false;
 
   private static void assertTrue(final boolean condition) {
     if (DEBUG && !condition) {
@@ -203,11 +204,10 @@ public class GeckoHlsPlayer
     }
   }
 
-  protected void checkInitDone() {
-    if (mIsDemuxerInitDone) {
+  private synchronized void checkInitDone() {
+    if (mReleaseStarted || mDemuxerCallbacks == null || mIsDemuxerInitDone) {
       return;
     }
-    assertTrue(mDemuxerCallbacks != null);
 
     if (DEBUG) {
       Log.d(
@@ -222,9 +222,7 @@ public class GeckoHlsPlayer
               + mTracksInfo.hasAudio());
     }
     if (mTracksInfo.videoReady() && mTracksInfo.audioReady()) {
-      if (mDemuxerCallbacks != null) {
-        mDemuxerCallbacks.onInitialized(mTracksInfo.hasAudio(), mTracksInfo.hasVideo());
-      }
+      mDemuxerCallbacks.onInitialized(mTracksInfo.hasAudio(), mTracksInfo.hasVideo());
       mIsDemuxerInitDone = true;
     }
   }
@@ -275,7 +273,7 @@ public class GeckoHlsPlayer
         }
 
         mTracksInfo.onDataArrived(trackType);
-        if (!mReleasing) {
+        if (!mReleaseStarted) {
           mResourceCallbacks.onDataArrived();
         }
         checkInitDone();
@@ -395,7 +393,7 @@ public class GeckoHlsPlayer
           && mPlayer != null
           && mPlayer.getPlaybackState() == Player.STATE_BUFFERING) {
         mIsPlayerInitDone = false;
-        if (!mReleasing) {
+        if (!mReleaseStarted) {
           if (mResourceCallbacks != null) {
             mResourceCallbacks.onError(ResourceError.UNSUPPORTED.code());
           }
@@ -468,7 +466,7 @@ public class GeckoHlsPlayer
       Log.e(LOGTAG, "playerFailed", e);
     }
     mIsPlayerInitDone = false;
-    if (mReleasing) {
+    if (mReleaseStarted) {
       return;
     }
     if (mResourceCallbacks != null) {
@@ -802,8 +800,13 @@ public class GeckoHlsPlayer
 
     mMainHandler.post(
         () -> {
-          mResourceCallbacks = callback;
-          createExoPlayer(url);
+          synchronized (GeckoHlsPlayer.this) {
+            if (mReleaseStarted) {
+              return;
+            }
+            mResourceCallbacks = callback;
+            createExoPlayer(url);
+          }
         });
   }
 
@@ -978,10 +981,10 @@ public class GeckoHlsPlayer
             assertTrue(startTime != Long.MAX_VALUE && startTime != Long.MIN_VALUE);
             mPlayer.seekTo(positionUs / 1000 - startTime / 1000);
           } catch (final Exception e) {
-            if (mReleasing) {
-              return false;
-            }
-            if (mDemuxerCallbacks != null) {
+            synchronized (GeckoHlsPlayer.this) {
+              if (mReleaseStarted) {
+                return false;
+              }
               mDemuxerCallbacks.onError(DemuxerError.UNKNOWN.code());
             }
             return false;
@@ -1096,10 +1099,12 @@ public class GeckoHlsPlayer
     }
 
     synchronized (this) {
-      if (mReleasing) {
+      if (mReleaseStarted) {
         return;
       } else {
-        mReleasing = true;
+        mReleaseStarted = true;
+        mDemuxerCallbacks = null;
+        mResourceCallbacks = null;
       }
     }
 
@@ -1117,8 +1122,6 @@ public class GeckoHlsPlayer
             mThread.quit();
             mThread = null;
           }
-          mDemuxerCallbacks = null;
-          mResourceCallbacks = null;
           mIsPlayerInitDone = false;
           mIsDemuxerInitDone = false;
         });
@@ -1149,9 +1152,15 @@ public class GeckoHlsPlayer
     }
   }
 
-  // Called by ExoPlayer when opening HttpChannelDataSource.
+  // Called by ExoPlayer when opening HttpChannelDataSource, on a loader thread.
+  // The monitor is held only for the duration of this method; the caller resolves
+  // the returned GeckoResult after it is released. Polling that result under the
+  // monitor would deadlock against release().
   @Override
-  public GeckoResult<WebResponse> openChannel(final WebRequest request) {
+  public synchronized GeckoResult<WebResponse> openChannel(final WebRequest request) {
+    if (mReleaseStarted) {
+      return GeckoResult.fromException(new IllegalStateException("HLS player release has started"));
+    }
     return mResourceCallbacks.onOpenChannel(request);
   }
 }

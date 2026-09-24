@@ -22,6 +22,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/AndroidHardwareBuffer.h"
 #include "mozilla/layers/AndroidImageConsumer.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "nsProxyRelease.h"
@@ -134,32 +135,45 @@ nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
   return NS_OK;
 }
 
-AndroidImageWrapper::AndroidImageWrapper(AndroidImageReader* aImageReader,
-                                         AImage* aImage,
-                                         AHardwareBuffer* aHardwareBuffer,
-                                         const gfx::IntSize aSize,
-                                         const gfx::SurfaceFormat aFormat,
-                                         mozilla::UniqueFileHandle&& aFence)
+AndroidImageWrapper::AndroidImageWrapper(
+    AndroidImageReader* aImageReader, AImage* aImage,
+    AHardwareBuffer* aHardwareBuffer, const gfx::IntSize aSize,
+    const gfx::SurfaceFormat aFormat, mozilla::UniqueFileHandle&& aWriteFenceFd)
     : mHardwareBuffer(aHardwareBuffer),
       mSize(aSize),
       mFormat(aFormat),
+      mMutex("AndroidImageWrapper::mMutex"),
       mImageReader(aImageReader),
       mImage(aImage),
-      mFence(std::move(aFence)) {
+      mWriteFenceFd(std::move(aWriteFenceFd)) {
   MOZ_ASSERT(mImageReader);
   mImageReader->mAcquiredImageCount++;
 }
 
 AndroidImageWrapper::~AndroidImageWrapper() {
-  AImage_delete(mImage);
-  // XXX Add fence handling
-  // AImage_deleteAsync(mImage fence);
+  MutexAutoLock lock(mMutex);
+
+  if (mReadFenceFd) {
+    AImage_deleteAsync(mImage, mReadFenceFd.get());
+    mReadFenceFd.release();
+  } else {
+    AImage_delete(mImage);
+  }
   mImageReader->mAcquiredImageCount--;
 }
 
-mozilla::UniqueFileHandle AndroidImageWrapper::CloneFence() {
-  auto fence = ipc::FileDescriptor(GetHandle());
-  return fence.TakePlatformHandle();
+mozilla::UniqueFileHandle AndroidImageWrapper::CloneWriteFenceFd() {
+  MutexAutoLock lock(mMutex);
+
+  auto writeFenceFd = ipc::FileDescriptor(mWriteFenceFd.get());
+  return writeFenceFd.TakePlatformHandle();
+}
+
+void AndroidImageWrapper::SetReadFenceFd(UniqueFileHandle&& aFenceFd) {
+  MutexAutoLock lock(mMutex);
+
+  mReadFenceFd = AndroidHardwareBuffer::MergeFences(std::move(mReadFenceFd),
+                                                    std::move(aFenceFd));
 }
 
 /* static */
@@ -488,9 +502,11 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
   if (!nativeBuffer) {
     gfxCriticalNoteOnce << "AImage_getHardwareBuffer failed"
                         << static_cast<int32_t>(result);
-    AImage_delete(image);
-    // XXX Add fence handling
-    // AImage_deleteAsync(image, fence);
+    if (fence) {
+      AImage_deleteAsync(image, fence.get());
+    } else {
+      AImage_delete(image);
+    }
     return false;
   }
 

@@ -127,17 +127,14 @@ static_assert(sizeof(CacheIndexRecord::mHash) +
 
 class CacheIndexRecordWrapper final {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(
-      CacheIndexRecordWrapper, DispatchDeleteSelfToCurrentThread());
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheIndexRecordWrapper)
 
   CacheIndexRecordWrapper() : mRec(MakeUnique<CacheIndexRecord>()) {}
   CacheIndexRecord* Get() { return mRec.get(); }
 
  private:
-  ~CacheIndexRecordWrapper();
-  void DispatchDeleteSelfToCurrentThread();
+  ~CacheIndexRecordWrapper() = default;
   UniquePtr<CacheIndexRecord> mRec;
-  friend class DeleteCacheIndexRecordWrapper;
 };
 
 class CacheIndexEntry : public PLDHashEntryHdr {
@@ -878,7 +875,6 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   friend class FileOpenHelper;
   friend class CacheIndexIterator;
   friend class CacheIndexRecordWrapper;
-  friend class DeleteCacheIndexRecordWrapper;
 
   virtual ~CacheIndex();
 

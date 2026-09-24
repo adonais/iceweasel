@@ -120,7 +120,7 @@ class SVGElement : public SVGElementBase  // nsIContent
    */
   void NodeInfoChanged(Document* aOldDoc) override;
 
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
   void UpdateMappedDeclarationBlock();
 
   NS_IMPL_FROMNODE(SVGElement, kNameSpaceID_SVG)

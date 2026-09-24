@@ -110,8 +110,13 @@ sealed interface DownloadUIAction : Action {
     /** [DownloadUIAction] fired when the user clicks the delete icon for multiple items. */
     data class RequestDeleteMultiple(val items: Set<FileItem>) : DownloadUIAction
 
-    /** [DownloadUIAction] fired when the user clicks the delete icon for one item. */
-    data class RequestDelete(val item: FileItem) : DownloadUIAction
+    /**
+     * [DownloadUIAction] fired when the user clicks the delete icon for one item.
+     *
+     * @property item The [FileItem] to delete.
+     * @property isSwipe Indicates whether the delete request was triggered by a swipe.
+     */
+    data class RequestDelete(val item: FileItem, val isSwipe: Boolean = false) : DownloadUIAction
 
     /** [DownloadUIAction] to cancel an incomplete download file. */
     data class CancelDownload(val downloadId: String) : DownloadUIAction

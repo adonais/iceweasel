@@ -1249,7 +1249,8 @@ void URLParams::DecodeString(const nsACString& aInput, nsACString& aOutput) {
 /* static */
 bool URLParams::ParseNextInternal(const char*& aStart, const char* const aEnd,
                                   bool aShouldDecode, nsACString* aOutputName,
-                                  nsACString* aOutputValue) {
+                                  nsACString* aOutputValue,
+                                  bool& aOutputHasEquals) {
   nsDependentCSubstring string;
 
   const char* const iter = std::find(aStart, aEnd, '&');
@@ -1268,6 +1269,8 @@ bool URLParams::ParseNextInternal(const char*& aStart, const char* const aEnd,
   const auto* const eqStart = string.BeginReading();
   const auto* const eqEnd = string.EndReading();
   const auto* const eqIter = std::find(eqStart, eqEnd, '=');
+
+  aOutputHasEquals = (eqIter != eqEnd);
 
   nsDependentCSubstring name;
   nsDependentCSubstring value;

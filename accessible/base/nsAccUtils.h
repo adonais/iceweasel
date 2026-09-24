@@ -302,6 +302,13 @@ class nsAccUtils {
   static bool IsEditableARIACombobox(const LocalAccessible* aAccessible);
 
   /**
+   * Return true if aAccessible should fire EVENT_TEXT_VALUE_CHANGE when the
+   * text of one of its descendants changes.
+   */
+  static bool ShouldFireValueChangeForDescendantChanges(
+      const LocalAccessible* aAccessible);
+
+  /**
    * Return true if the CSS positioned target of an anchor is a valid details
    * related accessible.
    */

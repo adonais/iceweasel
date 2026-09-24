@@ -975,16 +975,6 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   }
 }
 
-void CodeGenerator::visitWasmUint32ToDouble(LWasmUint32ToDouble* lir) {
-  masm.convertUInt32ToDouble(ToRegister(lir->input()),
-                             ToFloatRegister(lir->output()));
-}
-
-void CodeGenerator::visitWasmUint32ToFloat32(LWasmUint32ToFloat32* lir) {
-  masm.convertUInt32ToFloat32(ToRegister(lir->input()),
-                              ToFloatRegister(lir->output()));
-}
-
 void CodeGeneratorX64::wasmStore(const wasm::MemoryAccessDesc& access,
                                  const LAllocation* value, Operand dstAddr) {
   if (value->isConstant()) {

@@ -16,6 +16,7 @@ const FAILED_URL =
 
 add_setup(async function () {
   stubSearchCTASupportedEngine();
+  pinSearchCTADecisionDeadline();
   await SearchTestUtils.installSearchExtension(
     {
       name: "MozSearchCTAFrame",

@@ -24,14 +24,7 @@
  * template instantiations wherever possible, mean that Parser exhibits much of
  * the same unholy template/inheritance complexity as token streams.
  *
- * == ParserSharedBase ==
- *
- * ParserSharedBase is the base class for both regular JS and BinAST parsing.
- * This class contains common fields and methods between both parsers. There is
- * currently no BinAST parser here so this can potentially be merged into the
- * ParserBase type below.
- *
- * == ParserBase → ParserSharedBase, ErrorReportMixin ==
+ * == ParserBase → ErrorReportMixin ==
  *
  * ParserBase is the base class for regular JS parser, shared by all regular JS
  * parsers of all character types and parse-handling behavior.  It stores
@@ -236,13 +229,8 @@ class AutoAwaitIsKeyword;
 template <class ParseHandler, typename Unit>
 class AutoInParametersOfAsyncFunction;
 
-class MOZ_STACK_CLASS ParserSharedBase {
- public:
-  enum class Kind { Parser };
-
-  ParserSharedBase(FrontendContext* fc, CompilationState& compilationState,
-                   Kind kind);
-  ~ParserSharedBase();
+class MOZ_STACK_CLASS ParserBase : public ErrorReportMixin {
+  using Base = ErrorReportMixin;
 
  public:
   FrontendContext* fc_;
@@ -257,7 +245,10 @@ class MOZ_STACK_CLASS ParserSharedBase {
   // For tracking used names in this parsing session.
   UsedNameTracker& usedNames_;
 
- public:
+  TokenStreamAnyChars anyChars;
+
+  ScriptSource* ss;
+
   CompilationState& getCompilationState() { return compilationState_; }
 
   ParserAtomsTable& parserAtoms() { return compilationState_.parserAtoms; }
@@ -277,16 +268,6 @@ class MOZ_STACK_CLASS ParserSharedBase {
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dumpAtom(TaggedParserAtomIndex index) const;
 #endif
-};
-
-class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
-                                   public ErrorReportMixin {
-  using Base = ErrorReportMixin;
-
- public:
-  TokenStreamAnyChars anyChars;
-
-  ScriptSource* ss;
 
  protected:
 #if DEBUG

@@ -35,8 +35,10 @@
 
 #include <linux/unistd.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdint>
 
 #ifdef __mips__
@@ -52,7 +54,10 @@
 
 // SYS_mmap and SYS_munmap are not defined in Android.
 #ifdef __BIONIC__
+// mozilla - externally provided; must not inherit -fvisibility=hidden.
+#pragma GCC visibility push(default)
 extern "C" void* __mmap2(void*, size_t, int, int, int, size_t);
+#pragma GCC visibility pop
 #if defined(__NR_mmap) && !defined(SYS_mmap)
 #define SYS_mmap __NR_mmap
 #endif
@@ -94,7 +99,7 @@ inline void* DirectMmap(void* start, size_t length, int prot, int flags, int fd,
     errno = EINVAL;
     return MAP_FAILED;
   }
-#if defined(__BIONIC__) && (!defined(__ANDROID_API__) || __ANDROID_API__ < 17)
+#ifdef __BIONIC__
   // SYS_mmap2 has problems on Android API level <= 16.
   // Workaround by invoking __mmap2() instead.
   return __mmap2(start, length, prot, flags, fd,

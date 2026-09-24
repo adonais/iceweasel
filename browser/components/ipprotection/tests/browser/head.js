@@ -366,9 +366,6 @@ add_setup(async function setupVPN() {
     );
     Services.prefs.clearUserPref("browser.ipProtection.userEnabled");
     Services.prefs.clearUserPref(
-      "browser.ipProtection.openedPanelWithLocation"
-    );
-    Services.prefs.clearUserPref(
       "browser.ipProtection.locationButtonBadgeDismissed"
     );
     Services.perms.removeByType("ipp-vpn");

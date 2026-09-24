@@ -53,7 +53,6 @@ class ParserAtomsTable;
 class ParserBase;
 class ParseContext;
 struct ExtensibleCompilationStencil;
-class ParserSharedBase;
 class FullParseHandler;
 
 class FunctionBox;
@@ -1448,8 +1447,6 @@ class ListNode : public ParseNode {
     using reference = ParseNode*&;
 
     bool operator==(const iterator& other) const = default;
-
-    bool operator!=(const iterator& other) const = default;
 
     iterator& operator++() {
       node_ = node_->pn_next;

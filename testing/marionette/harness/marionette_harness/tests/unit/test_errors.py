@@ -17,7 +17,7 @@ def fake_cause():
 
 
 message = "foo"
-unicode_message = "\u201Cfoo"
+unicode_message = "\u201cfoo"
 cause = fake_cause()
 stacktrace = "first\nsecond"
 

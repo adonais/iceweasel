@@ -13,10 +13,15 @@ ChromeUtils.defineLazyGetter(this, "DevToolsStartup", () => {
 add_task(async function testDevToolsPanelInToolbar() {
   // We need to force DevToolsStartup to rebuild the developer tool toggle so that
   // proton prefs are applied to the new browser window for this test.
-  DevToolsStartup.developerToggleCreated = false;
+  DevToolsStartup.developerToggle = null;
+  DevToolsStartup.developerToggleRegistered = false;
   CustomizableUI.destroyWidget("developer-button");
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
+
+  // Rebuild the global developer toggle widget explicitly here
+  // since it is created once at first-window-ready.
+  DevToolsStartup.hookDeveloperToggle();
 
   CustomizableUI.addWidgetToArea(
     "developer-button",

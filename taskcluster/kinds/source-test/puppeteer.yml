@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    run-on-repo-type: [hg]
     platform: linux2404-64/opt
     require-build:
         by-project:
@@ -42,7 +41,6 @@ puppeteer-{this_chunk}:
     treeherder:
         symbol: Pup({this_chunk})
     run:  # Bug 1651542: Use screenshot feature to warm-up the font cache before the actual test
-        clone-with: hg
         using: run-task
         command: >
             cd $GECKO_PATH/ &&

@@ -28,7 +28,7 @@
         "position": {
           "type": "string",
           "description": "The layout position of the screen.",
-          "enum": ["center", "split", "callout"]
+          "enum": ["center", "center-large", "split", "callout"]
         },
         "fullscreen": {
           "type": "boolean",
@@ -389,6 +389,83 @@
             "marginInline": {
               "type": "string",
               "description": "The CSS style overriding the marginInline property."
+            }
+          }
+        },
+        "corner_image": {
+          "type": "object",
+          "description": "An optional object representing an illustration anchored to a corner of the screen. Only rendered for screens with 'position' set to 'center-large' and 'fullscreen' set to true, which are the only ones that style it.",
+          "properties": {
+            "imageURL": {
+              "type": "string",
+              "description": "The image URL."
+            },
+            "darkModeImageURL": {
+              "type": "string",
+              "description": "The dark mode image URL."
+            },
+            "reducedMotionImageURL": {
+              "type": "string",
+              "description": "The reduced motion image URL."
+            },
+            "darkModeReducedMotionImageURL": {
+              "type": "string",
+              "description": "The dark mode reduced motion image URL."
+            },
+            "position": {
+              "type": "string",
+              "description": "The corner the illustration is anchored to. Defaults to 'bottom-right'.",
+              "enum": ["bottom-left", "bottom-right", "top-left", "top-right"]
+            },
+            "width": {
+              "type": "string",
+              "description": "The CSS style overriding the width property."
+            },
+            "height": {
+              "type": "string",
+              "description": "The CSS style overriding the height property."
+            },
+            "marginBlock": {
+              "type": "string",
+              "description": "The CSS style overriding the marginBlock property."
+            },
+            "marginInline": {
+              "type": "string",
+              "description": "The CSS style overriding the marginInline property."
+            },
+            "style": {
+              "type": "object",
+              "description": "CSS overrides applied to the illustration container. Avoid 'translate' and 'scale' when using 'entrance_animation', which animates those two properties and would be overridden by them. 'transform' is unaffected."
+            },
+            "entrance_animation": {
+              "type": "object",
+              "description": "How the illustration animates in each time the screen is entered. The direction is derived from 'position', so a 'bottom-left' illustration rises and a 'top-left' one descends. Every type degrades to an opacity-only fade for users who prefer reduced motion.",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "The animation to run. Defaults to 'none'.",
+                  "enum": [
+                    "none",
+                    "fade",
+                    "slide-block",
+                    "slide-inline",
+                    "slide-corner",
+                    "zoom"
+                  ]
+                },
+                "distance": {
+                  "type": "string",
+                  "description": "The CSS length the illustration travels, for the 'slide-*' types."
+                },
+                "duration": {
+                  "type": "string",
+                  "description": "The CSS time the animation takes."
+                },
+                "delay": {
+                  "type": "string",
+                  "description": "The CSS time to wait before starting, for staggering the illustration against the screen's other content."
+                }
+              }
             }
           }
         },

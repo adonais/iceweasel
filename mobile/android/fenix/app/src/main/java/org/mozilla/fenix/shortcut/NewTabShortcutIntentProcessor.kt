@@ -12,7 +12,7 @@ import mozilla.components.support.utils.SafeIntent
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.home.intent.StartSearchIntentProcessor
 
-class NewTabShortcutIntentProcessor : IntentProcessor {
+class NewTabShortcutIntentProcessor(private val isHomepageAsNewTabEnabled: Boolean) : IntentProcessor {
 
     /**
      * Processes the given [Intent].
@@ -29,7 +29,11 @@ class NewTabShortcutIntentProcessor : IntentProcessor {
                 else -> return false
             }
 
-        intent.putExtra(HomeActivity.OPEN_TO_SEARCH, searchExtra)
+        if (isHomepageAsNewTabEnabled) {
+            intent.putExtra(HomeActivity.OPEN_TO_HOME, true)
+        } else {
+            intent.putExtra(HomeActivity.OPEN_TO_SEARCH, searchExtra)
+        }
         intent.putExtra(HomeActivity.PRIVATE_BROWSING_MODE, startPrivateMode)
         intent.flags = intent.flags or FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_CLEAR_TASK
 

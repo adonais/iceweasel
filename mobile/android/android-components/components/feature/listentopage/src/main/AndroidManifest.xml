@@ -4,9 +4,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <!-- A foreground service keeps the process alive but not the CPU. Without this, playback stalls once the device
+     - dozes with the screen off. -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-  <application />
+  <application>
+
+    <service
+      android:name=".playback.ListenMediaSessionService"
+      android:exported="false"
+      android:foregroundServiceType="mediaPlayback">
+      <intent-filter>
+        <action android:name="androidx.media3.session.MediaSessionService" />
+      </intent-filter>
+    </service>
+
+  </application>
 
 </manifest>

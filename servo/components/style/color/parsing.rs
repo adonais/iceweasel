@@ -9,9 +9,9 @@
 use std::fmt::Write;
 
 use super::{
+    AbsoluteColor,
     color_function::ColorFunction,
     component::{ColorComponent, ColorComponentType},
-    AbsoluteColor,
 };
 use crate::derives::*;
 use crate::typed_om::{NumericBaseType, NumericType};
@@ -19,7 +19,7 @@ use crate::{
     parser::{Parse, ParserContext},
     values::{
         computed::Color as ComputedColor,
-        generics::{calc::CalcType, Optional},
+        generics::{Optional, calc::CalcType},
         specified::{
             angle::NoCalcAngle,
             calc::{Leaf, PercentageContext},
@@ -28,8 +28,9 @@ use crate::{
     },
 };
 use cssparser::{
-    color::{parse_hash_color, PredefinedColorSpace, OPAQUE},
-    match_ignore_ascii_case, CowRcStr, Parser, Token,
+    CowRcStr, Parser, Token,
+    color::{OPAQUE, PredefinedColorSpace, parse_hash_color},
+    match_ignore_ascii_case,
 };
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
@@ -199,12 +200,11 @@ pub fn parse_color_with(
             let name = name.clone();
             return input.parse_nested_block(|arguments| {
                 let color_function = parse_color_function(context, name, arguments)?;
-                if !color_function.has_origin_color() {
-                    if let Ok(ComputedColor::Absolute(resolved)) =
+                if !color_function.has_origin_color()
+                    && let Ok(ComputedColor::Absolute(resolved)) =
                         color_function.to_computed_color(None)
-                    {
-                        return Ok(SpecifiedColor::from_absolute_color(resolved));
-                    }
+                {
+                    return Ok(SpecifiedColor::from_absolute_color(resolved));
                 }
                 // Preserve the color as it was parsed.
                 Ok(SpecifiedColor::ColorFunction(Box::new(color_function)))
@@ -220,7 +220,7 @@ pub fn parse_color_with(
 fn parse_color_function<'i>(
     context: &ParserContext,
     name: CowRcStr<'i>,
-    arguments: &mut Parser<'i, '_>,
+    arguments: &mut Parser<'i>,
 ) -> Result<ColorFunction<SpecifiedColor>, ParseError> {
     let origin_color = parse_origin_color(context, arguments)?;
     let color = match_ignore_ascii_case! { &name,
@@ -232,7 +232,7 @@ fn parse_color_function<'i>(
         "oklab" => parse_lab_like(context, arguments, origin_color, ColorFunction::Oklab),
         "oklch" => parse_lch_like(context, arguments, origin_color, ColorFunction::Oklch),
         "color" => parse_color_with_color_space(context, arguments, origin_color),
-        "alpha" if static_prefs::pref!("layout.css.alpha-color-function.enabled") => {
+        "alpha" if crate::pref!("layout.css.alpha-color-function.enabled") => {
             parse_relative_alpha(
                 context,
                 arguments,
@@ -498,7 +498,7 @@ fn parse_relative_alpha(
         // An alpha is required as it is the only controllable component.
         return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
     }
-    Ok(ColorFunction::Alpha(origin_color.into(), alpha))
+    Ok(ColorFunction::Alpha(origin_color, alpha))
 }
 
 /// Either a percentage or a number.

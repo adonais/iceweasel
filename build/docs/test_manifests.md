@@ -209,7 +209,6 @@ See
 [the source](https://hg.mozilla.org/mozilla-central/file/default/testing/mozbase/manifestparser/manifestparser/manifestparser.py) for the full documentation of the
 expression syntax until it is documented here.
 
-% rstcheck: ignore-directives=todo
 
 ```{eval-rst}
 .. todo::

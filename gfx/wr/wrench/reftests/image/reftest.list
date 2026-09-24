@@ -28,10 +28,6 @@ scale(*) == snapshot-filters-02.yaml snapshot-filters-02-ref.yaml
 fuzzy(3,3000) == snapshot-shadow.yaml snapshot-shadow-ref.yaml
 scale(*) == snapshot-multiframe.yaml snapshot-multiframe-ref.yaml
 scale(*) == snapshot-empty.yaml empty.yaml
-# TODO: At the moment snapshot-perspective-01.yaml renders incorrectly, so the
-# reftest acts more as a crash test. When bug 1941577 is fixed the reftest
-# reference should be updated to reflect that something needs to be rendered
-# instead of leaving the snapshot empty.
-scale(*) == snapshot-perspective-01.yaml empty.yaml
+scale(*) fuzzy(130,1800) == snapshot-perspective-01.yaml snapshot-perspective-01-ref.yaml
 scale(*) == snapshot-complex-clip.yaml snapshot-complex-clip-ref.yaml
 scale(*) == stretch-size-01.yaml stretch-size-01-ref.yaml

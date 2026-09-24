@@ -71,8 +71,7 @@ void HTMLLIElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLLIElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLLIElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::type},
       {nsGkAtoms::value},

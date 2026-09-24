@@ -117,6 +117,39 @@ add_task(
   }
 );
 
+add_task(async function test_tabs_sub_fieldsets_have_heading_level() {
+  let tab = await openPrefsTab("tabsBrowsing");
+  let doc = tab.linkedBrowser.contentDocument;
+
+  await BrowserTestUtils.waitForMutationCondition(
+    doc.getElementById("mainPrefPane"),
+    { childList: true, subtree: true },
+    () => doc.getElementById("setting-control-tabsOpening")
+  );
+
+  for (let id of [
+    "tabsOpening",
+    "tabsInteraction",
+    "browserContainersbox",
+    "tabsClosing",
+  ]) {
+    let fieldset = doc.querySelector(`moz-fieldset#${id}`);
+    ok(fieldset, `${id} moz-fieldset is present`);
+    await fieldset.updateComplete;
+    is(
+      fieldset.headingLevel,
+      4,
+      `${id} moz-fieldset renders its legend as an h4`
+    );
+    ok(
+      fieldset.shadowRoot.querySelector("h4"),
+      `${id} legend is rendered as an <h4> in the shadow DOM`
+    );
+  }
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_tabs_browsing_pane_click_sidebar() {
   let tab = await openPrefsTab("");
   let doc = tab.linkedBrowser.contentDocument;

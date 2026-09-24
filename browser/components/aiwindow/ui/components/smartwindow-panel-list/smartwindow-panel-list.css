@@ -33,6 +33,7 @@ panel-list {
     --panel-list-border-color: light-dark(var(--color-purple-20), var(--color-gray-70));
     --panel-list-text-color: light-dark(var(--color-violet-110), var(--color-violet-0));
     --button-background-color-hover: light-dark(var(--color-violet-0), var(--color-violet-100));
+    --button-text-color-hover: var(--panel-list-text-color);
   }
 }
 
@@ -59,6 +60,7 @@ panel-list {
       );
       --button-background-color-hover: var(--smartwindow-panel-item-background-color-hover);
       --button-background-color-active: var(--smartwindow-panel-item-background-color-active);
+      --button-text-color-hover: var(--panel-list-text-color);
     }
   }
 }
@@ -101,6 +103,7 @@ panel-item:not(.panel-section-header)::part(button) {
 
 panel-item.selected:not(.panel-section-header)::part(button) {
   background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 
 panel-item[icon]::part(button) {

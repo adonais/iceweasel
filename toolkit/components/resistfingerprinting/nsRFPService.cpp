@@ -3236,8 +3236,8 @@ CSSIntRect nsRFPService::GetSpoofedScreenAvailSize(const nsRect& aRect,
 }
 
 /* static */
-uint64_t nsRFPService::GetSpoofedStorageLimit() {
-  uint64_t limit = 50ULL * 1024ULL * 1024ULL * 1024ULL;  // 50 GiB
+int64_t nsRFPService::GetSpoofedStorageLimit() {
+  int64_t limit = 50LL * 1024LL * 1024LL * 1024LL;  // 50 GiB
   MOZ_ASSERT(limit / 5 ==
              dom::quota::QuotaManager::GetGroupLimitForLimit(limit));
 

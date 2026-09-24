@@ -491,6 +491,25 @@ function internalPersist(persistArgs) {
   // Find the URI associated with the target file
   var targetFileURL = makeFileURI(persistArgs.targetFile);
 
+  // The local directory into which to save the files associated with a
+  // document, or null when only a single file is written.
+  var filesFolder = null;
+  if (
+    persistArgs.sourceDocument &&
+    persistArgs.targetContentType != "text/plain"
+  ) {
+    filesFolder = persistArgs.targetFile.clone();
+
+    var nameWithoutExtension = getFileBaseName(filesFolder.leafName);
+    // Given the minimal benefits, the "_files" suffix is intentionally not
+    // localized. Localizing it introduces complexity in handling OS filename
+    // length limits (e.g. bug 1959738) and risks breaking the folder-linking
+    // feature if an unsupported suffix is used.
+    var filesFolderLeafName = nameWithoutExtension + "_files";
+
+    filesFolder.leafName = filesFolderLeafName;
+  }
+
   // Create download and initiate it (below)
   var tr = Cc["@mozilla.org/transfer;1"].createInstance(Ci.nsITransfer);
   tr.init(
@@ -504,7 +523,9 @@ function internalPersist(persistArgs) {
     persist,
     persistArgs.isPrivate,
     Ci.nsITransfer.DOWNLOAD_ACCEPTABLE,
-    persistArgs.sourceReferrerInfo
+    persistArgs.sourceReferrerInfo,
+    false /* aOpenDownloadsListOnStart */,
+    filesFolder
   );
   // Iceweasel downloadUpchek patch
   Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
@@ -519,21 +540,6 @@ function internalPersist(persistArgs) {
 
   if (persistArgs.sourceDocument) {
     // Saving a Document, not a URI:
-    var filesFolder = null;
-    if (persistArgs.targetContentType != "text/plain") {
-      // Create the local directory into which to save associated files.
-      filesFolder = persistArgs.targetFile.clone();
-
-      var nameWithoutExtension = getFileBaseName(filesFolder.leafName);
-      // Given the minimal benefits, the "_files" suffix is intentionally not
-      // localized. Localizing it introduces complexity in handling OS filename
-      // length limits (e.g. bug 1959738) and risks breaking the folder-linking
-      // feature if an unsupported suffix is used.
-      var filesFolderLeafName = nameWithoutExtension + "_files";
-
-      filesFolder.leafName = filesFolderLeafName;
-    }
-
     var encodingFlags = 0;
     if (persistArgs.targetContentType == "text/plain") {
       encodingFlags |= nsIWBP.ENCODE_FLAGS_FORMATTED;

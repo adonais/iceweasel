@@ -24,6 +24,8 @@ export const PAGE_LAYOUT_VARIANTS = {
   SIDE_BY_SIDE_WIDGETS_LEAD_FIVE: "side-by-side-widgets-lead-five",
   SPACES_BUTTONS_TOP: "spaces-buttons-top",
   SPACES_BUTTONS_BOTTOM: "spaces-buttons-bottom",
+  // @experiment(remove) { bug 2066527 }
+  AUTO_MINIMIZE_WIDGETS: "auto-minimize-widgets",
 };
 
 export const DEFAULT_PAGE_LAYOUT_VARIANT = PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH;
@@ -61,6 +63,10 @@ export const SIDE_BY_SIDE_PAGE_LAYOUTS = Object.keys(SIDE_BY_SIDE_CLASSES);
 
 export const PREF_PAGE_LAYOUT_VARIANT = "pageLayouts.variant";
 
+// @experiment(remove) { bug 2066527 }
+export const PREF_AUTO_MINIMIZE_DELAY_MS = "pageLayouts.autoMinimizeDelayMs";
+const DEFAULT_AUTO_MINIMIZE_DELAY_MS = 3000;
+
 /**
  * Returns the assigned page layout variant, whether or not it can currently
  * render. This is the value telemetry reports.
@@ -74,6 +80,38 @@ export function resolvePageLayoutVariant(prefs) {
     return trainhop;
   }
   return prefs?.[PREF_PAGE_LAYOUT_VARIANT] || DEFAULT_PAGE_LAYOUT_VARIANT;
+}
+
+// @experiment(remove) { bug 2066527 }
+/**
+ * Returns true if the auto-minimize-widgets variant is assigned.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isAutoMinimizeWidgetsAssigned(prefs) {
+  return (
+    resolvePageLayoutVariant(prefs) ===
+    PAGE_LAYOUT_VARIANTS.AUTO_MINIMIZE_WIDGETS
+  );
+}
+
+// @experiment(remove) { bug 2066527 }
+/**
+ * How long the widgets section stays expanded before it auto-collapses.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {number} delay in milliseconds
+ */
+export function resolveAutoMinimizeDelayMs(prefs) {
+  const trainhop = prefs?.trainhopConfig?.pageLayouts?.autoMinimizeDelayMs;
+  if (typeof trainhop === "number" && trainhop >= 0) {
+    return trainhop;
+  }
+  const pref = prefs?.[PREF_AUTO_MINIMIZE_DELAY_MS];
+  return typeof pref === "number" && pref >= 0
+    ? pref
+    : DEFAULT_AUTO_MINIMIZE_DELAY_MS;
 }
 
 /**

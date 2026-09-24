@@ -66,6 +66,58 @@
         );
         ok(panelList.open, "Panel open attribute should still be true");
       });
+
+      async function reopen() {
+        if (panelList.open) {
+          let hidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
+          panelList.hide(undefined, { force: true });
+          await hidden;
+        }
+        let shown = BrowserTestUtils.waitForEvent(panelList, "shown");
+        panelList.show(
+          new PointerEvent("contextmenu", { bubbles: true }),
+          anchorButton
+        );
+        await shown;
+      }
+
+      function dispatchContextMenuInPanel() {
+        let event = new PointerEvent("contextmenu", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        });
+        panelList.querySelector("panel-item").dispatchEvent(event);
+        return event;
+      }
+
+      add_task(async function testContextMenuSuppressedWithTheAttribute() {
+        panelList.setAttribute("suppress-contextmenu", "");
+        // The listener is registered as the panel opens.
+        await reopen();
+
+        let event = dispatchContextMenuInPanel();
+
+        ok(
+          event.defaultPrevented,
+          "A contextmenu event in the panel should be prevented"
+        );
+        ok(panelList.open, "Panel should stay open");
+
+        panelList.removeAttribute("suppress-contextmenu");
+      });
+
+      add_task(async function testContextMenuPassesWithoutTheAttribute() {
+        await reopen();
+
+        let event = dispatchContextMenuInPanel();
+
+        ok(
+          !event.defaultPrevented,
+          "A contextmenu event in the panel should be left alone"
+        );
+        ok(panelList.open, "Panel should stay open");
+      });
     </script>
   </body>
 </html>

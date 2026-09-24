@@ -35,14 +35,14 @@ let dns = getModuleEnvironmentValue(d, "ns");
 for (let i = 0; i < count; i++)
     assertEq(dns["e" + i], i * i);
 
-// export * (AllButDefault importName value type) survives XDR.
+// export * (All importName value type) survives XDR.
 stencil = compileToStencilXDR("export * from 'a';", {module: true});
 let e = instantiateModuleStencilXDR(stencil);
 registerModule('e', e);
 
 assertEq(e.starExportEntries.length, 1);
 assertEq(e.starExportEntries[0].importName, null);
-assertEq(e.starExportEntries[0].importNameValueType, 'all-but-default');
+assertEq(e.starExportEntries[0].importNameValueType, 'all');
 
 stencil = compileToStencilXDR("import { e5 } from 'e';", {module: true});
 let f = instantiateModuleStencilXDR(stencil);

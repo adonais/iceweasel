@@ -147,8 +147,7 @@ async function waitForCopy(browser) {
   });
 
   let clipboardData = await invokeContentTask(browser, [], async () => {
-    let text = await content.navigator.clipboard.readText();
-    return text;
+    return SpecialPowers.getClipboardData("text/plain");
   });
 
   return clipboardData;

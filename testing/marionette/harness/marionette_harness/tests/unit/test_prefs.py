@@ -161,26 +161,22 @@ class TestPreferences(MarionetteTestCase):
         pref_not_existent = "marionette.test.not_existent1"
         pref_default = "marionette.test.pref_default3"
 
-        self.marionette.set_prefs(
-            {
-                self.prefs["string"]: "abc",
-                self.prefs["int"]: 42,
-                self.prefs["bool"]: False,
-            }
-        )
+        self.marionette.set_prefs({
+            self.prefs["string"]: "abc",
+            self.prefs["int"]: 42,
+            self.prefs["bool"]: False,
+        })
         self.assertFalse(self.marionette.get_pref(self.prefs["bool"]))
         self.assertEqual(self.marionette.get_pref(self.prefs["int"]), 42)
         self.assertEqual(self.marionette.get_pref(self.prefs["string"]), "abc")
         self.assertIsNone(self.marionette.get_pref(pref_not_existent))
 
-        with self.marionette.using_prefs(
-            {
-                self.prefs["bool"]: True,
-                self.prefs["int"]: 24,
-                self.prefs["string"]: "def",
-                pref_not_existent: "existent",
-            }
-        ):
+        with self.marionette.using_prefs({
+            self.prefs["bool"]: True,
+            self.prefs["int"]: 24,
+            self.prefs["string"]: "def",
+            pref_not_existent: "existent",
+        }):
             self.assertTrue(self.marionette.get_pref(self.prefs["bool"]), True)
             self.assertEqual(self.marionette.get_pref(self.prefs["int"]), 24)
             self.assertEqual(self.marionette.get_pref(self.prefs["string"]), "def")

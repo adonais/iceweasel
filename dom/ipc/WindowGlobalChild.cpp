@@ -712,7 +712,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
 
   // Trigger a process switch into the current process.
   RemotenessOptions options;
-  options.mRemoteType = NOT_REMOTE_TYPE;
+  options.mRemoteType = dom::RemoteType::NotRemote().Stringify();
   options.mPendingSwitchID.Construct(aPendingSwitchId);
   options.mSwitchingInProgressLoad = true;
   flo->ChangeRemoteness(options, IgnoreErrors());
@@ -1083,12 +1083,12 @@ void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
   SendUpdateDocumentURI(WrapNotNull(aDocumentURI));
 }
 
-const nsACString& WindowGlobalChild::GetRemoteType() const {
+const RemoteType& WindowGlobalChild::GetRemoteType() const {
   if (XRE_IsContentProcess()) {
     return ContentChild::GetSingleton()->GetRemoteType();
   }
 
-  return NOT_REMOTE_TYPE;
+  return RemoteType::NotRemote();
 }
 
 already_AddRefed<JSWindowActorChild> WindowGlobalChild::GetActor(

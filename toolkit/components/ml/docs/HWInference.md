@@ -308,7 +308,7 @@ sequenceDiagram
   end
 
   SR->>SRP: install(["fr"], innerWindowId)
-  Note over SRP: language -> id (dom::LanguagesToSpeechModelId)
+  Note over SRP: language -> id (dom::SpeechModelFor)
   SRP->>HWP: InstallModel(task, id, innerWindowId,<br/>contentId)
   Note over SRP,HWP: contentId is supplied by the utility, never sent by content.<br/>A parent-process caller passes 0 for both ids.
   HWP->>Res: resolve(id)
@@ -352,7 +352,7 @@ an arbitrary model file, nor to trigger a download without the user's consent.
   <dom/media/webspeech/recognition/PSpeechRecognition.ipdl>`) never mention
   `model`/`revision`/`filename`. They only carry task-specific, abstract
   identifiers — for `SpeechRecognition`, BCP-47 language tags.
-- Turning those into a model id (`dom::LanguagesToSpeechModelId` for speech
+- Turning those into a model id (`dom::SpeechModelFor` for speech
   recognition) reads only a table generated at build time and compiled into the
   binary; it is not loaded from anything runtime-writable or
   attacker-writable. That mapping happens wherever the task's actor runs, for

@@ -46,6 +46,8 @@ class RenderAndroidImageReaderImageTextureHost final
                 PlaneInfo& aPlaneInfo) override;
   void UnmapPlanes() override;
 
+  void SetReadFenceFd(UniqueFileHandle&& aFenceFd) override;
+
   gfx::IntSize GetSize() const;
 
   const layers::GpuProcessAndroidImageReaderId mImageReaderId;

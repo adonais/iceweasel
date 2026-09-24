@@ -6,6 +6,8 @@
 # Run:
 # `./generate_color_canvas_reftests.py [--write]`
 
+from __future__ import annotations
+
 import functools
 import math
 import pathlib

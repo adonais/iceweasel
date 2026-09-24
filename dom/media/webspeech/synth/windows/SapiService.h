@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_SapiService_h
-#define mozilla_dom_SapiService_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_WINDOWS_SAPISERVICE_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_WINDOWS_SAPISERVICE_H_
 
 // sapi.h's includes need windows.h on MinGW
 // clang-format off
@@ -55,4 +55,4 @@ class SapiService final : public nsISpeechService, public nsIObserver {
 
 }  // namespace mozilla::dom
 
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_SYNTH_WINDOWS_SAPISERVICE_H_

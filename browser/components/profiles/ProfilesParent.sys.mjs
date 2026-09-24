@@ -199,9 +199,11 @@ export class ProfilesParent extends JSWindowActorParent {
         let historyCount = visitCount + cookieCount;
 
         await lazy.formAutofillStorage.initialize();
-        let autofillCount =
-          lazy.formAutofillStorage.addresses._data.length +
-          lazy.formAutofillStorage.creditCards?._data.length;
+        const [addresses, creditCards] = await Promise.all([
+          lazy.formAutofillStorage.addresses.getAll(),
+          lazy.formAutofillStorage.creditCards.getAll(),
+        ]);
+        let autofillCount = addresses.length + creditCards.length;
 
         return {
           profile: profileObj,

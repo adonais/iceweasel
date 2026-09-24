@@ -147,16 +147,19 @@ class MLDSA_KEYGEN():
         return result
 
 mlkem_freebl_param={
+    "ML-KEM-512": "params_ml_kem512",
     "ML-KEM-768": "params_ml_kem768",
     "ML-KEM-1024": "params_ml_kem1024",
 }
 
 mlkem_freebl_test_param={
+    "ML-KEM-512": "params_ml_kem512_test_mode",
     "ML-KEM-768": "params_ml_kem768_test_mode",
     "ML-KEM-1024": "params_ml_kem1024_test_mode",
 }
 
 mlkem_prefix={
+    "ML-KEM-512": "MlKem512",
     "ML-KEM-768": "MlKem768",
     "ML-KEM-1024": "MlKem1024",
 }

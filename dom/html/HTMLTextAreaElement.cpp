@@ -11,6 +11,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresState.h"
 #include "mozilla/TextControlState.h"
+#include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLTextAreaElementBinding.h"
@@ -354,8 +355,8 @@ nsChangeHint HTMLTextAreaElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTextAreaElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTextAreaElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {{nsGkAtoms::wrap},
                                                     {nullptr}};
 

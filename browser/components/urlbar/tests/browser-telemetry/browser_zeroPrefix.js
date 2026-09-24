@@ -14,16 +14,14 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://testing-common/CustomizableUITestUtils.sys.mjs",
 });
 
-const SCALARS = {
-  ABANDONMENT: "urlbar.zeroprefix.abandonment",
-  ENGAGEMENT: "urlbar.zeroprefix.engagement",
-  EXPOSURE: "urlbar.zeroprefix.exposure",
-};
+const METRICS = ["abandonment", "engagement", "exposure"];
+const SAPS = ["urlbar", "searchbar", "newtab_searchbar", "smartbar"];
 
 add_setup(async function () {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
-  Services.telemetry.clearScalars();
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
   await updateTopSitesAndAwaitChanged();
@@ -33,9 +31,7 @@ add_setup(async function () {
 add_task(async function engagement() {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await showZeroPrefix();
-    checkScalars({
-      [SCALARS.EXPOSURE]: 1,
-    });
+    await checkCounters({ exposure: { urlbar: 1 } });
 
     info("Finding row with result type URL");
     let foundURLRow = false;
@@ -57,14 +53,11 @@ add_task(async function engagement() {
     await loadPromise;
   });
 
-  checkScalars({
-    [SCALARS.ENGAGEMENT]: 1,
-  });
+  await checkCounters({ engagement: { urlbar: 1 } });
 });
 
-// The search bar shares this view, but not the top sites in it: its zero-prefix
-// results are recent searches and trending, so it counts into nothing here.
-add_task(async function searchbarIsNotCounted() {
+// The search bar shares this view and counts under its own label.
+add_task(async function searchbarIsCounted() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.new", true]],
   });
@@ -90,10 +83,12 @@ add_task(async function searchbarIsNotCounted() {
         0,
         "The search bar's zero prefix view has a row"
       );
+      await checkCounters({ exposure: { searchbar: 1 } });
 
       await SearchbarTestUtils.promisePopupClose(window, () =>
         EventUtils.synthesizeKey("KEY_Escape")
       );
+      await checkCounters({ abandonment: { searchbar: 1 } });
     });
   } finally {
     searchbar.view.queryContextCache.clear();
@@ -101,8 +96,6 @@ add_task(async function searchbarIsNotCounted() {
     await cuiTestUtils.removeSearchBar();
     await SpecialPowers.popPrefEnv();
   }
-
-  checkScalars({});
 });
 
 // zero prefix abandonment
@@ -111,14 +104,10 @@ add_task(async function abandonment() {
   // query context and that shouldn't interfere with telemetry.
   for (let i = 0; i < 2; i++) {
     await showZeroPrefix();
-    checkScalars({
-      [SCALARS.EXPOSURE]: 1,
-    });
+    await checkCounters({ exposure: { urlbar: 1 } });
 
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-    checkScalars({
-      [SCALARS.ABANDONMENT]: 1,
-    });
+    await checkCounters({ abandonment: { urlbar: 1 } });
   }
 });
 
@@ -127,45 +116,39 @@ add_task(async function abandonment() {
 add_task(async function searches() {
   info("Show zero prefix");
   await showZeroPrefix();
-  checkScalars({
-    [SCALARS.EXPOSURE]: 1,
-  });
+  await checkCounters({ exposure: { urlbar: 1 } });
 
   info("Search for 't'");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "t",
   });
-  checkScalars({});
+  await checkCounters({});
 
   info("Search for 'te'");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "te",
   });
-  checkScalars({});
+  await checkCounters({});
 
   info("Search for 't'");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "t",
   });
-  checkScalars({});
+  await checkCounters({});
 
   info("Search for ''");
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "",
   });
-  checkScalars({
-    [SCALARS.EXPOSURE]: 1,
-  });
+  await checkCounters({ exposure: { urlbar: 1 } });
 
   info("Blur urlbar and close view");
   await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-  checkScalars({
-    [SCALARS.ABANDONMENT]: 1,
-  });
+  await checkCounters({ abandonment: { urlbar: 1 } });
 });
 
 // A zero prefix engagement should not be recorded when the view isn't showing
@@ -181,7 +164,7 @@ add_task(async function notZeroPrefix_engagement() {
     await loadPromise;
   });
 
-  checkScalars({});
+  await checkCounters({});
 });
 
 // A zero prefix abandonment should not be recorded when the view isn't showing
@@ -193,21 +176,29 @@ add_task(async function notZeroPrefix_abandonment() {
   });
   await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
 
-  checkScalars({});
+  await checkCounters({});
 });
 
-function checkScalars(expected) {
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, true);
-  for (let scalar of Object.values(SCALARS)) {
-    if (expected.hasOwnProperty(scalar)) {
-      TelemetryTestUtils.assertScalar(scalars, scalar, expected[scalar]);
-    } else {
-      Assert.ok(
-        !scalars.hasOwnProperty(scalar),
-        "Scalar should not be recorded: " + scalar
+/**
+ * Asserts the counters recorded since the previous call and resets them.
+ *
+ * @param {object} expected
+ *   Maps metric names to the values expected per label, e.g.
+ *   `{ exposure: { urlbar: 1 } }`. Metrics and labels left out are expected
+ *   not to have been recorded at all.
+ */
+async function checkCounters(expected) {
+  await Services.fog.testFlushAllChildren();
+  for (let metric of METRICS) {
+    for (let sap of SAPS) {
+      Assert.strictEqual(
+        Glean.urlbarZeroprefix2[metric][sap].testGetValue(),
+        expected[metric]?.[sap] ?? null,
+        `urlbar.zeroprefix2.${metric}["${sap}"]`
       );
     }
   }
+  Services.fog.testResetFOG();
 }
 
 async function showZeroPrefix() {

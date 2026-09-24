@@ -75,24 +75,25 @@ async function withPage(taskFn) {
 
 add_task(async function test_logs_are_listed() {
   await withPage(async doc => {
-    is(rows(doc).length, 3, "All three logs are listed");
     const typeFilter = doc.getElementById("filter-type");
     is(typeFilter.value, "all", "The type filter defaults to all logs");
-    ok(
-      doc.querySelector("moz-radio[value=all]").checked,
-      "The all logs radio is checked by default"
+
+    is(
+      doc.querySelectorAll("#log-list > li").length,
+      rows(doc).length,
+      "Each log is a single list item"
     );
   });
 });
 
 add_task(async function test_filters() {
   await withPage(async doc => {
-    doc.querySelector("moz-radio[value=success]").click();
+    doc.querySelector("moz-segmented-control-item[value=success]").click();
     await TestUtils.waitForCondition(
       () => rows(doc).length === 1,
       "Only the success log remains"
     );
-    doc.querySelector("moz-radio[value=all]").click();
+    doc.querySelector("moz-segmented-control-item[value=all]").click();
     await TestUtils.waitForCondition(
       () => rows(doc).length === 3,
       "All logs are shown again"
@@ -104,14 +105,6 @@ add_task(async function test_filters() {
     await TestUtils.waitForCondition(
       () => rows(doc).length === 2,
       "The 10-day-old log is filtered out"
-    );
-
-    select.value = "all";
-    dispatch(doc, select, "change");
-    search(doc, "all good here");
-    await TestUtils.waitForCondition(
-      () => rows(doc).length === 1,
-      "Search matches the success log by contents"
     );
   });
 });
@@ -129,8 +122,7 @@ add_task(async function test_search() {
     search(doc, "all good here");
     await TestUtils.waitForCondition(
       () =>
-        rows(doc).length === 1 &&
-        rows(doc)[0].querySelector(".log-badge").classList.contains("success"),
+        rows(doc).length === 1 && rows(doc)[0].classList.contains("success"),
       "Search matches the success log by contents"
     );
 
@@ -143,37 +135,26 @@ add_task(async function test_search() {
           "No logs match the current filters.",
       "An unmatched search shows the filtered empty state"
     );
-    is(
-      doc.getElementById("empty-state").textContent,
-      "No logs match the current filters.",
-      "The filtered empty state differs from an empty log directory"
-    );
   });
 });
 
 add_task(async function test_inline_viewer() {
   await withPage(async doc => {
     const errorRow = [...rows(doc)].find(row =>
-      row.querySelector(".log-badge").classList.contains("error")
+      row.classList.contains("error")
     );
-    const details = errorRow.querySelector(".log-row-details");
-    const summary = errorRow.querySelector(".log-row-header");
-    ok(!details.open, "The row starts collapsed");
+    const contents = errorRow.querySelector(".log-contents");
+    ok(!contents.dataset.loaded, "Collapsed log contents are not loaded");
 
-    summary.click();
+    errorRow.expanded = true;
+    dispatch(doc, errorRow, "toggle");
     await TestUtils.waitForCondition(
-      () => details.open && errorRow.querySelector(".log-line"),
+      () => contents.querySelector(".log-line"),
       "The log contents render when the row is expanded"
     );
     ok(
-      errorRow.querySelector(".log-line.error"),
+      contents.querySelector(".log-line.error"),
       "Error lines are highlighted in the inline viewer"
-    );
-
-    summary.click();
-    await TestUtils.waitForCondition(
-      () => !details.open,
-      "The row collapses again"
     );
   });
 });

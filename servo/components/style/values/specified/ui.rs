@@ -7,9 +7,9 @@
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::ui as generics;
+use crate::values::specified::Number;
 use crate::values::specified::color::Color;
 use crate::values::specified::image::Image;
-use crate::values::specified::Number;
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{

@@ -9,12 +9,6 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
-CXXFLAGS += [
-    "-Wno-comma",
-    "-Wno-unused-template",
-    "-Wno-tautological-type-limit-compare"
-]
-
 DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 
 FINAL_LIBRARY = "abseil"
@@ -26,10 +20,6 @@ LOCAL_INCLUDES += [
     "/ipc/chromium/src",
     "/third_party/abseil-cpp/",
     "/tools/profiler/public"
-]
-
-UNIFIED_SOURCES += [
-    "/third_party/abseil-cpp/absl/base/internal/hardening.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:
@@ -98,12 +88,6 @@ if CONFIG["TARGET_CPU"] == "aarch64":
 
     DEFINES["__ARM_NEON__"] = "1"
 
-if CONFIG["TARGET_CPU"] == "arm":
-
-    CXXFLAGS += [
-        "-mfpu=neon"
-    ]
-
 if CONFIG["TARGET_CPU"] == "loongarch64":
 
     DEFINES["_GNU_SOURCE"] = True
@@ -136,12 +120,6 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
 
     DEFINES["_HAS_ITERATOR_DEBUGGING"] = "0"
 
-if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] == "x86":
-
-    CXXFLAGS += [
-        "-msse2"
-    ]
-
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
     DEFINES["_GNU_SOURCE"] = True
@@ -151,10 +129,6 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
-
-    CXXFLAGS += [
-        "-msse2"
-    ]
 
     DEFINES["_GNU_SOURCE"] = True
 

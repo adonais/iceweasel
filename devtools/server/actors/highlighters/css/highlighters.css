@@ -10,19 +10,19 @@
   --highlighter-accessibility-bounds-color: #6a5acd;
   --highlighter-accessibility-bounds-opacity: 0.6;
   --highlighter-box-border-color: #444444;
-  --highlighter-box-content-color: hsl(197, 71%, 73%);
+  --highlighter-box-content-color: hsl(197 71% 73%);
   --highlighter-box-margin-color: #edff64;
   --highlighter-box-padding-color: #6a5acd;
-  --highlighter-bubble-text-color: hsl(216, 33%, 97%);
-  --highlighter-bubble-background-color: hsl(214, 13%, 24%);
-  --highlighter-bubble-border-color: rgba(255, 255, 255, 0.2);
+  --highlighter-bubble-text-color: hsl(216 33% 97%);
+  --highlighter-bubble-background-color: hsl(214 13% 24%);
+  --highlighter-bubble-border-color: rgb(255 255 255 / 0.2);
   --highlighter-bubble-arrow-size: 8px;
   --highlighter-font-family: message-box;
   --highlighter-font-size: 11px;
-  --highlighter-guide-color: hsl(200, 100%, 40%);
-  --highlighter-infobar-color: hsl(210, 30%, 85%);
+  --highlighter-guide-color: hsl(200 100% 40%);
+  --highlighter-infobar-color: hsl(210 30% 85%);
   --highlighter-rulers-opacity: 0.8;
-  --highlighter-viewport-size-background-color: rgba(255, 255, 255, var(--highlighter-rulers-opacity));
+  --highlighter-viewport-size-background-color: rgb(255 255 255 / var(--highlighter-rulers-opacity));
 
   --grey-40: #b1b1b3;
   --grey-80: #2a2a2e;
@@ -211,18 +211,18 @@
 }
 
 .box-model-infobar-tagname {
-  color: hsl(285, 100%, 75%);
+  color: hsl(285 100% 75%);
 }
 
 .box-model-infobar-id {
-  color: hsl(103, 46%, 54%);
+  color: hsl(103 46% 54%);
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .box-model-infobar-classes,
 .box-model-infobar-pseudo-classes {
-  color: hsl(200, 74%, 57%);
+  color: hsl(200 74% 57%);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -286,7 +286,7 @@
 .css-grid-area-infobar-name,
 .css-grid-cell-infobar-position,
 .css-grid-line-infobar-number {
-  color: hsl(285, 100%, 75%);
+  color: hsl(285 100% 75%);
 }
 
 .css-grid-line-infobar-names:not(:empty) {
@@ -472,7 +472,7 @@
 
 .measuring-tool-root .measuring-tool-box-path,
 .measuring-tool-root .measuring-tool-diagonal-path {
-  fill: rgba(135, 206, 235, 0.6);
+  fill: rgb(135 206 235 / 0.6);
   stroke: var(--highlighter-guide-color);
 }
 
@@ -544,7 +544,7 @@
 
 .measuring-tool-label-position {
   color: #fff;
-  background: hsla(214, 13%, 24%, 0.8);
+  background: hsl(214 13% 24% / 0.8);
 }
 
 .measuring-tool-label-size {
@@ -582,7 +582,7 @@
   /* Offset the UI so it is centered around the pointer */
   transform: translate(calc(var(--magnifier-width) / -2), calc(var(--magnifier-height) / -2));
 
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.4));
 
   /* We don't need the UI to be reversed in RTL locales, otherwise the # would appear
      to the right of the hex code. Force LTR */
@@ -677,7 +677,7 @@
   --text-color: #585959; /* --theme-body-color-alt */
   --toolbar-background: #fcfcfc; /* --theme-toolbar-background */
   --toolbar-border: #dde1e4; /* --theme-splitter-color */
-  --toolbar-box-shadow: 0 2px 2px 0 rgba(155, 155, 155, 0.26); /* --rdm-box-shadow */
+  --toolbar-box-shadow: 0 2px 2px 0 rgb(155 155 155 / 0.26); /* --rdm-box-shadow */
   --overlay-background: #dde1e4a8;
 }
 
@@ -782,8 +782,8 @@ button.paused-dbg-resume-button {
   --text-color: #585959; /* --theme-body-color-alt */
   --toolbar-background: #fcfcfc; /* --theme-toolbar-background */
   --toolbar-border: #dde1e4; /* --theme-splitter-color */
-  --toolbar-button-hover-background: rgba(12, 12, 13, 0.15); /* --theme-toolbarbutton-hover-background */
-  --toolbar-box-shadow: 0 2px 2px 0 rgba(155, 155, 155, 0.26); /* --rdm-box-shadow */
+  --toolbar-button-hover-background: rgb(12 12 13 / 0.15); /* --theme-toolbarbutton-hover-background */
+  --toolbar-box-shadow: 0 2px 2px 0 rgb(155 155 155 / 0.26); /* --rdm-box-shadow */
 }
 
 #node-picker-notice-root[overlay] {

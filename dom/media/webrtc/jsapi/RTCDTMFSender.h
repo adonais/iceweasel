@@ -55,14 +55,13 @@ class RTCDTMFSender : public DOMEventTargetHelper,
   void GetToneBuffer(nsAString& aOutToneBuffer);
   IMPL_EVENT_HANDLER(tonechange)
 
-  void StopPlayout();
-
   MediaEventSource<DtmfEvent>& OnDtmfEvent() { return mDtmfEvent; }
 
  private:
   virtual ~RTCDTMFSender() = default;
 
-  void StartPlayout(uint32_t aDelay);
+  void SchedulePlayout(uint32_t aDelay);
+  void DoPlayout();
 
   RefPtr<RTCRtpTransceiver> mTransceiver;
   MediaEventProducer<DtmfEvent> mDtmfEvent;
@@ -72,6 +71,7 @@ class RTCDTMFSender : public DOMEventTargetHelper,
   uint32_t mDuration = 0;
   uint32_t mInterToneGap = 0;
   nsCOMPtr<nsITimer> mSendTimer;
+  bool mPlayoutScheduled = false;
 };
 
 }  // namespace dom

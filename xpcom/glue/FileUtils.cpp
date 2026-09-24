@@ -169,7 +169,7 @@ mozilla::PathString mozilla::GetLibraryName(mozilla::pathstr_t aDirectory,
   if (!strstr(aLib, ".dll")) {
     fullName.AppendLiteral(".dll");
   }
-  return std::move(fullName);
+  return fullName;
 #  else
   char* temp = PR_GetLibraryName(aDirectory, aLib);
   if (!temp) {
@@ -177,7 +177,7 @@ mozilla::PathString mozilla::GetLibraryName(mozilla::pathstr_t aDirectory,
   }
   nsAutoCString libname(temp);
   PR_FreeLibraryName(temp);
-  return std::move(libname);
+  return libname;
 #  endif
 }
 
@@ -198,7 +198,7 @@ mozilla::PathString mozilla::GetLibraryFilePathname(mozilla::pathstr_t aName,
   }
 
   path.SetLength(len);
-  return std::move(path);
+  return path;
 #  else
   char* temp = PR_GetLibraryFilePathname(aName, aAddr);
   if (!temp) {
@@ -206,7 +206,7 @@ mozilla::PathString mozilla::GetLibraryFilePathname(mozilla::pathstr_t aName,
   }
   nsAutoCString path(temp);
   PR_Free(temp);  // PR_GetLibraryFilePathname() uses PR_Malloc().
-  return std::move(path);
+  return path;
 #  endif
 }
 
@@ -433,14 +433,17 @@ void mozilla::ReadAheadLib(mozilla::pathstr_t aFilePath) {
   // We check that the ELF magic is found, that the ELF class matches
   // our own, and that the program header table as defined in the ELF
   // headers fits in the buffer we read.
-  if ((read(fd, elf.buf, bufsize) <= 0) || (memcmp(elf.buf, ELFMAG, 4)) ||
+  ssize_t bytesRead = read(fd, elf.buf, bufsize);
+  if ((bytesRead < static_cast<ssize_t>(sizeof(Elf_Ehdr))) ||
+      (memcmp(elf.buf, ELFMAG, 4)) ||
       (elf.ehdr.e_ident[EI_CLASS] != ELFCLASS) ||
       // Upcast e_phentsize so the multiplication is done in the same precision
       // as the subsequent addition, to satisfy static analyzers and avoid
-      // issues with abnormally large program header tables.
+      // issues with abnormally large program header tables. The program header
+      // table must lie within the bytes we actually read, not just the buffer.
       (elf.ehdr.e_phoff +
            (static_cast<Elf_Off>(elf.ehdr.e_phentsize) * elf.ehdr.e_phnum) >=
-       bufsize)) {
+       static_cast<Elf_Off>(bytesRead))) {
     close(fd);
     return;
   }

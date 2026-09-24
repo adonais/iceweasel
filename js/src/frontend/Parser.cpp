@@ -140,23 +140,8 @@ bool GeneralParser<ParseHandler, Unit>::mustMatchTokenInternal(
   return true;
 }
 
-ParserSharedBase::ParserSharedBase(FrontendContext* fc,
-                                   CompilationState& compilationState,
-                                   Kind kind)
-    : fc_(fc),
-      alloc_(compilationState.parserAllocScope.alloc()),
-      compilationState_(compilationState),
-      pc_(nullptr),
-      usedNames_(compilationState.usedNames) {
-  fc_->nameCollectionPool().addActiveCompilation();
-}
-
-ParserSharedBase::~ParserSharedBase() {
-  fc_->nameCollectionPool().removeActiveCompilation();
-}
-
 #if defined(DEBUG) || defined(JS_JITSPEW)
-void ParserSharedBase::dumpAtom(TaggedParserAtomIndex index) const {
+void ParserBase::dumpAtom(TaggedParserAtomIndex index) const {
   parserAtoms().dump(index);
 }
 #endif
@@ -164,7 +149,11 @@ void ParserSharedBase::dumpAtom(TaggedParserAtomIndex index) const {
 ParserBase::ParserBase(FrontendContext* fc,
                        const ReadOnlyCompileOptions& options,
                        CompilationState& compilationState)
-    : ParserSharedBase(fc, compilationState, ParserSharedBase::Kind::Parser),
+    : fc_(fc),
+      alloc_(compilationState.parserAllocScope.alloc()),
+      compilationState_(compilationState),
+      pc_(nullptr),
+      usedNames_(compilationState.usedNames),
       anyChars(fc, options, this),
       ss(nullptr),
 #ifdef DEBUG
@@ -173,6 +162,7 @@ ParserBase::ParserBase(FrontendContext* fc,
       isUnexpectedEOF_(false),
       awaitHandling_(AwaitIsName),
       inParametersOfAsyncFunction_(false) {
+  fc_->nameCollectionPool().addActiveCompilation();
 }
 
 bool ParserBase::checkOptions() {
@@ -183,7 +173,10 @@ bool ParserBase::checkOptions() {
   return anyChars.checkOptions();
 }
 
-ParserBase::~ParserBase() { MOZ_ASSERT(checkOptionsCalled_); }
+ParserBase::~ParserBase() {
+  MOZ_ASSERT(checkOptionsCalled_);
+  fc_->nameCollectionPool().removeActiveCompilation();
+}
 
 JSAtom* ParserBase::liftParserAtomToJSAtom(TaggedParserAtomIndex index) {
   JSContext* cx = fc_->maybeCurrentJSContext();
@@ -373,6 +366,10 @@ template <class ParseHandler, typename Unit>
 typename ParseHandler::ListNodeResult
 GeneralParser<ParseHandler, Unit>::parse() {
   MOZ_ASSERT(checkOptionsCalled_);
+
+  if (!this->fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
 
   SourceExtent extent = SourceExtent::makeGlobalExtent(
       /* len = */ 0, options().lineno,
@@ -1875,6 +1872,10 @@ FullParseHandler::ModuleNodeResult Parser<FullParseHandler, Unit>::moduleBody(
     ModuleSharedContext* modulesc) {
   MOZ_ASSERT(checkOptionsCalled_);
 
+  if (!fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
+
   this->compilationState_.moduleMetadata =
       fc_->getAllocator()->template new_<StencilModuleMetadata>();
   if (!this->compilationState_.moduleMetadata) {
@@ -2991,6 +2992,10 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     FunctionAsyncKind asyncKind, bool tryAnnexB /* = false */) {
   MOZ_ASSERT_IF(kind == FunctionSyntaxKind::Statement, funName);
 
+  if (!this->fc_->checkCompilationCancellation()) {
+    return errorResult();
+  }
+
   // If we see any inner function, note it on our current context. The bytecode
   // emitter may eliminate the function later, but we use a conservative
   // definition for consistency between lazy and full parsing.
@@ -3135,6 +3140,10 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         yieldHandling, kind, newDirectives);
     if (syntaxNodeResult.isErr()) {
       if (syntaxParser->hadAbortedSyntaxParse()) {
+        if (!fc_->checkCompilationCancellation()) {
+          return false;
+        }
+
         // Try again with a full parse. UsedNameTracker needs to be
         // rewound to just before we tried the syntax parse for
         // correctness.

@@ -34,9 +34,11 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Vpn
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.ipprotection.helpers.IsoPromoDeadline
@@ -87,6 +89,7 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
 
         LaunchedEffect(Unit) {
             requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckAccount)
+            requireComponents.ipProtection.store.dispatch(IPProtectionAction.CheckLocations)
         }
 
         FirefoxTheme {
@@ -173,6 +176,8 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             feature =
                 IPProtectionSnackbarBinding(
                     appStore = requireComponents.appStore,
+                    context = requireContext(),
+                    navController = findNavController(),
                     snackbarDelegate =
                         FenixSnackbarDelegate(
                             snackbarHostState = snackbarHostState,
@@ -186,8 +191,12 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
     }
 
     private fun handleOnLocationClicked() {
+        Vpn.locationSelectorTapped.record()
         findNavController()
-            .navigate(IPProtectionFragmentDirections.actionIpProtectionFragmentToIpProtectionLocationFragment())
+            .nav(
+                R.id.ipProtectionFragment,
+                IPProtectionFragmentDirections.actionIpProtectionFragmentToIpProtectionLocationFragment(),
+            )
     }
 
     /**

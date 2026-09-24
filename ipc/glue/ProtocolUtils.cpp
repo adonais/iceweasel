@@ -872,9 +872,7 @@ IPDLResolverInner::~IPDLResolverInner() {
 }
 
 bool IPDLAsyncReturnsCallbacks::EntryKey::operator==(
-    const EntryKey& aOther) const {
-  return mSeqno == aOther.mSeqno && mType == aOther.mType;
-}
+    const EntryKey& aOther) const = default;
 
 bool IPDLAsyncReturnsCallbacks::EntryKey::operator<(
     const EntryKey& aOther) const {

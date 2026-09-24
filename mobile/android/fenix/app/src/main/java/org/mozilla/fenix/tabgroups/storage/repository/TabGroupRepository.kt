@@ -54,6 +54,12 @@ interface TabGroupRepository {
     /** Delete tab groups with the provided [ids] in the repository. */
     suspend fun deleteTabGroupsById(ids: List<String>)
 
+    /**
+     * Delete the tab group with the matching [tabGroupId] and its assignments, leaving the tabs that belonged to it in
+     * place.
+     */
+    suspend fun ungroupTabGroup(tabGroupId: String)
+
     // Tab Group Assignment operations
 
     /** Add a new tab group assignment to the repository. */
@@ -189,6 +195,11 @@ class DefaultTabGroupRepository : TabGroupRepository {
     override suspend fun deleteTabGroupById(tabGroupId: String) =
         withContext(Dispatchers.IO) {
             database.tabGroupOperationsDao.deleteTabGroupById(id = tabGroupId)
+        }
+
+    override suspend fun ungroupTabGroup(tabGroupId: String) =
+        withContext(Dispatchers.IO) {
+            database.tabGroupOperationsDao.ungroupTabGroup(tabGroupId = tabGroupId)
         }
 
     override suspend fun deleteTabGroupsById(ids: List<String>) =

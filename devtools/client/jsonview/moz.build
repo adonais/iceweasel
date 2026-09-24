@@ -9,7 +9,6 @@ DevToolsModules(
     "Converter.sys.mjs",
     "json-size-profiler.mjs",
     "json-viewer.mjs",
-    "jsonl-utils.mjs",
     "Sniffer.sys.mjs",
 )
 

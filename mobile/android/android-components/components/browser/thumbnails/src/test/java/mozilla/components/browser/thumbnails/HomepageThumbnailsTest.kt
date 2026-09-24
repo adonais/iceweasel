@@ -6,6 +6,7 @@ package mozilla.components.browser.thumbnails
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.BrowserAction
@@ -14,7 +15,9 @@ import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.lib.state.Middleware
+import mozilla.components.support.test.any
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -22,6 +25,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.`when`
 
 @RunWith(AndroidJUnit4::class)
 class HomepageThumbnailsTest {
@@ -38,7 +42,9 @@ class HomepageThumbnailsTest {
     @Before
     fun setup() {
         captureActionsMiddleware = CaptureActionsMiddleware()
-        middlewares = listOf(captureActionsMiddleware, ThumbnailsMiddleware(mock()))
+        val thumbnailStorage: ThumbnailStorage = mock()
+        `when`(thumbnailStorage.saveThumbnail(any(), any())).thenReturn(Job())
+        middlewares = listOf(captureActionsMiddleware, ThumbnailsMiddleware(thumbnailStorage))
         store =
             BrowserStore(
                 BrowserState(

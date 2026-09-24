@@ -145,3 +145,64 @@ add_task(async function test_check_visibility_enabled() {
     "aichat pref property is now marked as already shown."
   );
 });
+
+add_task(async function test_resource_monitor_visibility_migration() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.main.tools", "syncedtabs,history"],
+      ["browser.resourceMonitor.enabled", false],
+      [
+        "sidebar.newTool.migration.resourcemonitor",
+        JSON.stringify({
+          visibilityPref: "browser.resourceMonitor.enabled",
+        }),
+      ],
+    ],
+  });
+
+  const sidebar = document.querySelector("sidebar-main");
+  is(
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").length,
+    2,
+    "Resource Monitor is not yet added to sidebar.main.tools"
+  );
+  is(sidebar.toolButtons.length, 2, "Two tools are shown in the launcher");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.resourceMonitor.enabled", true]],
+  });
+
+  await SidebarTestUtils.showPanel(window, "viewCustomizeSidebar");
+  let customizeDocument = SidebarController.browser.contentDocument;
+  const customizeComponent =
+    customizeDocument.querySelector("sidebar-customize");
+  let resourceMonitorInput = Array.from(customizeComponent.toolInputs).find(
+    input => input.id === "viewResourceMonitorSidebar"
+  );
+  ok(resourceMonitorInput, "Resource Monitor input exists in customize panel");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    resourceMonitorInput,
+    { attributes: true, attributeFilter: ["checked"] },
+    () => resourceMonitorInput.checked
+  );
+
+  is(
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").length,
+    3,
+    "Resource Monitor was auto-added to sidebar.main.tools once its visibility pref flipped true"
+  );
+  is(
+    sidebar.toolButtons.length,
+    3,
+    "Three tools are now shown in the launcher"
+  );
+
+  let prefValue = JSON.parse(
+    Services.prefs.getStringPref("sidebar.newTool.migration.resourcemonitor")
+  );
+  ok(
+    prefValue.alreadyShown,
+    "resourcemonitor pref property is now marked as already shown."
+  );
+});

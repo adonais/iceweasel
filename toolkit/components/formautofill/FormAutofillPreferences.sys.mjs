@@ -529,7 +529,7 @@ export class FormAutofillPreferences {
         cancelBtn
       )
     ) {
-      lazy.formAutofillStorage.addresses.remove(guid);
+      await lazy.formAutofillStorage.addresses.remove(guid);
     }
   }
 

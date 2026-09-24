@@ -93,7 +93,6 @@ run-if = [
 ["browser_test_position_sticky.js"]
 support-files = ["helper_position_sticky_flicker.html"]
 skip-if = [
-  "nova", # Bug 2055043
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks", # bug 1924676
 ]
 

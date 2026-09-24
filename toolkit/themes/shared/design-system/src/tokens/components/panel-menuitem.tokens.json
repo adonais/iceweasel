@@ -6,10 +6,8 @@
   },
   "margin": {
     "@base": {
-      "value": "{panel-menuitem.margin.block} {panel-menuitem.margin.inline}"
-    },
-    "block": {
-      "value": "0"
+      "comment": "Block margin must be 0 so that there's always an item highlighted and no dead space when moving the pointer across items.",
+      "value": "0 {panel-menuitem.margin.inline}"
     },
     "inline": {
       "value": "8px"

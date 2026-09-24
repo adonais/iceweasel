@@ -43,6 +43,7 @@ const Template = ({
   value,
   iconSrc,
   disabled,
+  required,
   l10nId,
   description,
   supportPage,
@@ -57,6 +58,7 @@ const Template = ({
     value=${ifDefined(value || null)}
     iconsrc=${ifDefined(iconSrc || null)}
     ?disabled=${disabled}
+    ?required=${required}
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
     accesskey=${ifDefined(accessKey || null)}
@@ -78,6 +80,7 @@ Default.args = {
   value: "",
   iconSrc: "",
   disabled: false,
+  required: false,
   l10nId: "moz-input-tel-label",
   supportPage: "",
   accessKey: "",
@@ -116,6 +119,13 @@ Disabled.args = {
   ...Default.args,
   l10nId: "moz-input-tel-description",
   disabled: true,
+};
+
+export const Required = Template.bind({});
+Required.args = {
+  ...Default.args,
+  l10nId: "moz-input-tel-description",
+  required: true,
 };
 
 export const WithAccesskey = Template.bind({});

@@ -1595,6 +1595,11 @@ export class UrlbarProviderPlaces extends UrlbarProvider {
     search.notifyResult(false);
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
     if (details.selType == "dismiss") {

@@ -12,6 +12,8 @@
 #include "LoadedScript.h"
 #include "ModuleLoaderBase.h"
 
+#include "js/Modules.h"
+
 namespace JS::loader {
 
 #undef LOG
@@ -68,6 +70,12 @@ nsIGlobalObject* ModuleLoadRequest::GetGlobalObject() {
   return mLoader->GetGlobalObject();
 }
 
+bool ModuleLoadRequest::IsSourcePhaseRequest(JSContext* aCx) const {
+  Rooted<JSObject*> moduleRequest(aCx, mModuleRequestObj);
+  // moduleRequest can be null if ClearImport() has been called.
+  return moduleRequest && JS::ModuleRequestIsSourcePhase(aCx, moduleRequest);
+}
+
 bool ModuleLoadRequest::IsErrored() const {
   return !mModuleScript || mModuleScript->HasParseError();
 }
@@ -108,23 +116,6 @@ void ModuleLoadRequest::ModuleLoaded() {
   if (!mLoadContext->IsPreload() && mModuleScript->ForPreload()) {
     mModuleScript->SetForPreload(false);
   }
-}
-
-void ModuleLoadRequest::LoadFailed() {
-  // We failed to load the source text or an error occurred unrelated to the
-  // content of the module (e.g. OOM).
-
-  LOG(("ScriptLoadRequest (%p): Module load failed", this));
-
-  if (IsCanceled()) {
-    return;
-  }
-
-  MOZ_ASSERT(IsFetching());
-  MOZ_ASSERT(!mModuleScript);
-
-  Cancel();
-  LoadFinished();
 }
 
 void ModuleLoadRequest::ModuleErrored() {

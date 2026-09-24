@@ -5,7 +5,6 @@ const { E10SUtils } = ChromeUtils.importESModule(
 var TEST_PREFERRED_REMOTE_TYPES = [
   E10SUtils.WEB_REMOTE_TYPE,
   E10SUtils.NOT_REMOTE,
-  "fakeRemoteType",
 ];
 
 var TEST_USE_REMOTE_SUBFRAMES = [true, false];

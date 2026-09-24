@@ -20,7 +20,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/layers/LayersMessages.h"
-#include "nsCOMArray.h"
 #include "nsComputedDOMStyle.h"
 #include "nsIFrame.h"
 #include "nsString.h"
@@ -46,9 +45,12 @@ float AnimationValue::GetOpacity() const {
   return Servo_AnimationValue_GetOpacity(mServo);
 }
 
-nscolor AnimationValue::GetColor(nscolor aForegroundColor) const {
+nscolor AnimationValue::GetColor(
+    const StyleAbsoluteColor& aForegroundColor) const {
   MOZ_ASSERT(mServo);
-  return Servo_AnimationValue_GetColor(mServo, aForegroundColor);
+  StyleAbsoluteColor result;
+  Servo_AnimationValue_GetColor(mServo, &aForegroundColor, &result);
+  return result.ToColor();
 }
 
 bool AnimationValue::IsCurrentColor() const {

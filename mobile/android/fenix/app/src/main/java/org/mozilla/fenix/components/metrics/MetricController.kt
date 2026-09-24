@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.metrics
 import androidx.annotation.VisibleForTesting
 import java.util.UUID
 import mozilla.components.browser.menu.facts.BrowserMenuFacts
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.facts.ToolbarFacts
 import mozilla.components.compose.browser.awesomebar.AwesomeBarFacts as ComposeAwesomeBarFacts
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -49,6 +50,7 @@ import org.mozilla.fenix.GleanMetrics.Addresses
 import org.mozilla.fenix.GleanMetrics.AndroidAutofill
 import org.mozilla.fenix.GleanMetrics.Awesomebar
 import org.mozilla.fenix.GleanMetrics.BrowserSearch
+import org.mozilla.fenix.GleanMetrics.BrowserThumbnails
 import org.mozilla.fenix.GleanMetrics.ContextMenu
 import org.mozilla.fenix.GleanMetrics.ContextualMenu
 import org.mozilla.fenix.GleanMetrics.CreditCards
@@ -507,6 +509,26 @@ internal class ReleaseMetricController(
             }
             Component.SERVICE_FIREFOX_ACCOUNTS to SyncFacts.Items.SYNC_FAILED -> {
                 Sync.failed.record(NoExtras())
+            }
+
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_ATTEMPTED -> {
+                value?.let { BrowserThumbnails.captureAttempted[it].add() } ?: Unit
+            }
+
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_RESULT -> {
+                value?.let { BrowserThumbnails.captureResult[it].add() } ?: Unit
+            }
+
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.CAPTURE_DURATION -> {
+                (metadata?.get(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS) as? Long)?.let {
+                    BrowserThumbnails.captureDuration.accumulateSamples(listOf(it))
+                } ?: Unit
+            }
+
+            Component.BROWSER_THUMBNAILS to BrowserThumbnailsFacts.Items.DISK_WRITE_DURATION -> {
+                (metadata?.get(BrowserThumbnailsFacts.MetadataKeys.DURATION_MS) as? Long)?.let {
+                    BrowserThumbnails.diskWriteDuration.accumulateSamples(listOf(it))
+                } ?: Unit
             }
 
             else -> {

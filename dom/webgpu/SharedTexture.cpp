@@ -4,6 +4,8 @@
 
 #include "SharedTexture.h"
 
+#include "mozilla/gfx/CanvasRenderThread.h"
+#include "mozilla/layers/TextureHost.h"
 #include "mozilla/webgpu/WebGPUParent.h"
 
 #ifdef XP_WIN
@@ -47,7 +49,23 @@ SharedTexture::SharedTexture(const uint32_t aWidth, const uint32_t aHeight,
                              const ffi::WGPUTextureUsages aUsage)
     : mWidth(aWidth), mHeight(aHeight), mFormat(aFormat), mUsage(aUsage) {}
 
-SharedTexture::~SharedTexture() = default;
+SharedTexture::~SharedTexture() {
+  MOZ_ASSERT_IF(mTextureHost,
+                gfx::CanvasRenderThread::IsInCanvasRenderThread());
+}
+
+RefPtr<layers::TextureHost> SharedTexture::GetTextureHost() {
+  return mTextureHost;
+}
+
+void SharedTexture::SetTextureHost(layers::TextureHost* aTextureHost) {
+  MOZ_ASSERT(aTextureHost);
+  MOZ_ASSERT(!mTextureHost);
+
+  mTextureHost = aTextureHost;
+}
+
+void SharedTexture::ClearTextureHost() { mTextureHost = nullptr; }
 
 void SharedTexture::SetSubmissionIndex(uint64_t aSubmissionIndex) {
   MOZ_ASSERT(aSubmissionIndex != 0);

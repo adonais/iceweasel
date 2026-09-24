@@ -5,8 +5,21 @@
 .recent-searches {
   @include widget-base-style;
 
+  // Show the list right to the bottom border.
+  padding-block-end: 0;
+
+  --recent-searches-tab-underline-size: 2px;
+  --recent-searches-tab-underline-gap: var(--space-xxsmall);
+  --recent-searches-ring-space: var(--space-xsmall);
+
   &.medium-widget {
     grid-row: span 2;
+
+    .recent-searches-body {
+      margin-block-start: calc(
+        var(--space-xsmall) - var(--recent-searches-ring-space)
+      );
+    }
   }
 
   &.large-widget {
@@ -33,6 +46,60 @@
   margin: 0;
 }
 
+.recent-searches-tabs {
+  display: flex;
+  gap: var(--space-large);
+  min-inline-size: 0;
+}
+
+.recent-searches-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight);
+  line-height: var(--size-item-medium);
+  padding: 0;
+  padding-block-end: var(--recent-searches-tab-underline-gap);
+  min-inline-size: 0;
+  // The headers grow and shrink when highlighted, give them a space to grow
+  // without moving subsequent headers.
+  display: grid;
+  grid-template-areas: 'label';
+  justify-items: start;
+  border-block-end: var(--recent-searches-tab-underline-size) solid transparent;
+
+  &:not(.is-active) {
+    color: var(--text-color-deemphasized);
+  }
+
+  &.is-active {
+    border-block-end-color: var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+}
+
+.recent-searches-tab-label,
+.recent-searches-tab-reserve {
+  grid-area: label;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-searches-tab-reserve {
+  font-weight: var(--font-weight-semibold);
+  visibility: hidden;
+}
+
 // Keep this at the top level so the High Contrast Mode override below applies.
 .recent-searches-new-badge {
   flex: none;
@@ -57,6 +124,8 @@
 .recent-searches-context-menu-wrapper {
   opacity: 0;
   pointer-events: none;
+  padding-block-end: var(--recent-searches-tab-underline-gap);
+  border-block-end: var(--recent-searches-tab-underline-size) solid transparent;
 }
 
 .recent-searches:hover,
@@ -71,6 +140,142 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-small);
+  gap: var(--space-xxsmall);
   min-height: 0;
+  padding: var(--recent-searches-ring-space);
+  margin-block-start: calc(
+    var(--space-small) - var(--recent-searches-ring-space)
+  );
+  margin-inline: calc(var(--recent-searches-ring-space) * -1);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &:hover {
+    scrollbar-width: thin;
+  }
+
+  // Fade the overflowing searches to a gradient at the bottom of the container.
+  &:has(.recent-searches-row):not(:focus-within) {
+    mask-image: linear-gradient(
+      180deg,
+      #000 0%,
+      #000 calc(100% - var(--space-large)),
+      transparent calc(100% - 1px)
+    );
+  }
+
+  // Turn off the fade for high contrast users so text doesn't disappear.
+  @media (prefers-contrast) {
+    &:has(.recent-searches-row):not(:focus-within) {
+      mask-image: none;
+    }
+  }
+}
+
+.recent-searches-trending-attribution {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+  margin: 0;
+  padding: var(--space-xsmall) var(--space-medium);
+  background-color: var(--newtab-background-card);
+  border-block-start: var(--border-width) solid var(--border-color-deemphasized);
+  border-inline-start: var(--border-width) solid
+    var(--border-color-deemphasized);
+  border-start-start-radius: var(--border-radius-large);
+  border-end-end-radius: var(--border-radius-large);
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+
+  .recent-searches:hover & {
+    background-color: var(--newtab-background-color-secondary);
+  }
+}
+
+.recent-searches-empty {
+  // Centre in what the rows would have filled.
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xsmall);
+  text-align: center;
+  font-size: var(--font-size-small);
+}
+
+.recent-searches-empty-message {
+  margin: 0;
+  color: var(--text-color-deemphasized);
+}
+
+.recent-searches-row {
+  --icon-size: var(--icon-size-xsmall);
+
+  align-items: center;
+  display: grid;
+  grid-template-areas: 'row';
+  flex: none;
+  min-inline-size: 0;
+  border-radius: var(--button-border-radius);
+
+  &:hover,
+  &:focus-within {
+    background-color: var(--button-background-color-ghost-hover);
+
+    .recent-searches-row-time,
+    .recent-searches-row-remove {
+      opacity: 1;
+    }
+  }
+
+}
+
+.recent-searches-row-search {
+  --button-font-weight: var(--font-weight);
+  --button-background-color-ghost-hover: transparent;
+  --button-padding-block-small: var(--space-small);
+  --button-padding-inline-small: var(--button-padding-block-small);
+
+  grid-area: row;
+  inline-size: 100%;
+  min-inline-size: 0;
+
+  &::part(button) {
+    justify-content: start;
+    inline-size: 100%;
+  }
+
+  &::part(moz-button-label) {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+}
+
+.recent-searches-row:has(.recent-searches-row-remove)
+.recent-searches-row-search::part(moz-button-label) {
+  padding-inline-end: calc(var(--button-size-icon-small) + var(--space-xsmall));
+}
+
+.recent-searches-row-remove {
+  grid-area: row;
+  justify-self: end;
+  opacity: 0;
+  margin-inline-end: var(--space-xsmall);
+}
+
+.recent-searches-row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-searches-row-time {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--text-color-deemphasized);
+  opacity: 0;
 }

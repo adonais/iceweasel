@@ -247,7 +247,7 @@ add_task(async function test_private_window_no_separate_engine() {
 
 add_task(async function test_private_window_separate_engine() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault", true]],
+    set: [["browser.search.separatePrivateDefault.enabled", true]],
   });
   const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 

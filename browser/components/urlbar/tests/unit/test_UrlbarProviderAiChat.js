@@ -58,7 +58,7 @@ add_task(async function test_isActive() {
     .stub(lazy.AIWindow, "isAIWindowActiveAndEnabled")
     .returns(false);
   const provider = new lazy.UrlbarProviderAiChat();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   Assert.ok(
     !(await provider.isActive(createContext("hello"), controller)),

@@ -241,10 +241,13 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   if (StaticPrefs::network_http_http3_enable_0rtt() && !hasServCertHashes()) {
     uint32_t maxAttempts =
         StaticPrefs::network_ssl_tokens_cache_records_per_entry();
+    bool tokenFound = false;
+    bool tokenAccepted = false;
     for (uint32_t attempt = 0; attempt < maxAttempts; ++attempt) {
       if (NS_FAILED(SSLTokensCache::Get(peerId, token, info))) {
         break;
       }
+      tokenFound = true;
       LOG(("Found a resumption token in the cache [attempt=%u].", attempt));
       nsresult rv = mHttp3Connection->SetResumptionToken(token);
       if (NS_FAILED(rv)) {
@@ -252,6 +255,7 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
              attempt));
         continue;
       }
+      tokenAccepted = true;
       mSocketControl->SetSessionCacheInfo(std::move(info));
       if (mHttp3Connection->IsZeroRtt()) {
         LOG(("Can send ZeroRtt data"));
@@ -279,6 +283,9 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
       }
       break;
     }
+    if (tokenFound && !tokenAccepted) {
+      glean::network::ssl_token_resumption_outcome.Get("rejected"_ns).Add();
+    }
   }
 
   if (mState != ZERORTT) {
@@ -290,6 +297,18 @@ nsresult Http3Session::Init(const nsHttpConnectionInfo* aConnInfo,
   // released when Http3Session::Init early returned.
   mUdpConn = udpConn;
   return NS_OK;
+}
+
+void Http3Session::RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(aConnInfo);
+  MOZ_ASSERT(mConnInfo);
+  MOZ_ASSERT(!aConnInfo->GetHttp3Only(),
+             "hand-off must relax the policy to Allowed");
+
+  LOG(("Http3Session::RekeyAfterHttp3OnlyHandOff [this=%p] %s -> %s", this,
+       mConnInfo->HashKey().get(), aConnInfo->HashKey().get()));
+  mConnInfo = aConnInfo->Clone();
 }
 
 void Http3Session::DoSetEchConfig(const nsACString& aEchConfig) {
@@ -2790,6 +2809,15 @@ void Http3Session::SetSecInfo() {
     mSocketControl->SetInfo(secInfo.cipher, secInfo.version, secInfo.group,
                             secInfo.signature_scheme, secInfo.ech_accepted);
     mHandshakeSucceeded = true;
+
+    bool tokenPresent = false;
+    if (NS_SUCCEEDED(
+            mSocketControl->GetResumptionTokenPresent(&tokenPresent)) &&
+        tokenPresent) {
+      glean::network::ssl_token_resumption_outcome
+          .Get(secInfo.resumed ? "resumed"_ns : "not_resumed"_ns)
+          .Add();
+    }
   }
 
   if (!mSocketControl->HasServerCert()) {

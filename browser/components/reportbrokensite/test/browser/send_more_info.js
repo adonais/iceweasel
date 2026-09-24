@@ -15,6 +15,13 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+// blockedOrigins and btpPurgeHistory are both gated behind the blocked-trackers
+// toggle, so specifying either one means the test wants it turned on.
+function optedIntoBlockedTrackers(overrides) {
+  const { antitracking } = overrides ?? {};
+  return !!(antitracking?.blockedOrigins || antitracking?.btpPurgeHistory);
+}
+
 async function reformatExpectedWebCompatInfo(tab, overrides) {
   const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
   const snapshot = await Troubleshoot.snapshot();
@@ -52,7 +59,11 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     atOverrides?.isPrivateBrowsing ?? antitracking.isPrivateBrowsing;
   const btpHasPurgedSite =
     atOverrides?.btpHasPurgedSite ?? antitracking.btpHasPurgedSite;
+  const btpPurgeHistory =
+    atOverrides?.btpPurgeHistory ?? antitracking.btpPurgeHistory;
   const etpCategory = atOverrides?.etpCategory ?? antitracking.etpCategory;
+  // Mirrors when testSendMoreInfo turns the blocked-trackers toggle on.
+  const sendBlockedUrls = optedIntoBlockedTrackers(overrides);
 
   const extra_labels = [];
   const frameworks = overrides.frameworks ?? {
@@ -151,6 +162,17 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
       blockedOrigins;
   }
 
+  // btpPurgeHistory is behind the same blocked-trackers opt-in as
+  // blockedOrigins, but a report can have purge history without any blocked
+  // origins, so it gets its own check. It cannot key off btpPurgeHistory
+  // itself: an empty array is truthy, so it would be expected even when the
+  // user opted out.
+  if (sendBlockedUrls) {
+    reformatted.details.additionalData.tabInfo.antitracking.btpPurgeHistory =
+      btpPurgeHistory;
+    reformatted.details["btp purge history"] = btpPurgeHistory;
+  }
+
   // We only care about this pref on Linux right now on webcompat.com.
   if (AppConstants.platform != "linux") {
     delete prefs.forcedAcceleratedLayers;
@@ -174,6 +196,7 @@ async function reformatExpectedWebCompatInfo(tab, overrides) {
     delete reformatted.details["mixed passive content blocked"];
     delete reformatted.details["tracking content blocked"];
     delete reformatted.details["btp has purged site"];
+    delete reformatted.details["btp purge history"];
   } else {
     const { fastclick, mobify, marfeel } = frameworks;
     if (fastclick) {
@@ -215,7 +238,7 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     await isNotPressed(screenshotToggle);
   }
 
-  if (expectedOverrides?.antitracking?.blockedOrigins) {
+  if (optedIntoBlockedTrackers(expectedOverrides)) {
     const { blockedTrackersToggle } = rbs;
     await isVisible(blockedTrackersToggle);
     if (!blockedTrackersToggle.pressed) {

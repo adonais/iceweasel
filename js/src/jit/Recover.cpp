@@ -1960,6 +1960,21 @@ bool RToFloat16::recover(JSContext* cx, SnapshotIterator& iter) const {
   return true;
 }
 
+bool MUnsignedToDouble::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_UnsignedToDouble));
+  return true;
+}
+
+RUnsignedToDouble::RUnsignedToDouble(CompactBufferReader& reader) {}
+
+bool RUnsignedToDouble::recover(JSContext* cx, SnapshotIterator& iter) const {
+  double num = iter.readNumber();
+
+  iter.storeInstructionResult(NumberValue(JS::ToUint32(num)));
+  return true;
+}
+
 bool MTruncateToInt32::writeRecoverData(CompactBufferWriter& writer) const {
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_TruncateToInt32));

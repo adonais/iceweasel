@@ -715,7 +715,7 @@ void nsIOService::NotifySocketProcessPrefsChanged(const char* aName) {
                  /* isSanitized */ false, Nothing(), Nothing());
 
   Preferences::GetPreference(&pref, GeckoProcessType_Socket,
-                             /* remoteType */ ""_ns);
+                             /* remoteType */ {});
   auto sendPrefUpdate = [pref = std::move(pref)]() mutable {
     (void)gIOService->mSocketProcess->GetActor()->SendPreferenceUpdate(
         std::move(pref));

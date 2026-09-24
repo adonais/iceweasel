@@ -12,7 +12,7 @@ use std::{borrow::Cow, fmt::Write};
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::CustomIdent;
-use cssparser::{Parser as CSSParser, ParserInput as CSSParserInput, Token};
+use cssparser::{Parser as CSSParser, Token};
 use style_traits::{
     CssWriter, ParseError as StyleParseError, PropertySyntaxParseError as ParseError,
     StyleParseErrorKind, ToCss,
@@ -66,12 +66,8 @@ impl Descriptor {
 
         // Parse <syntax-string> if given.
         if let Ok(syntax_string) = input.try_parse(|i| i.expect_string_cloned()) {
-            return Self::from_str(syntax_string.as_ref(), /* save_specified = */ true).or_else(
-                |err| {
-                    Err(StyleParseError::custom(
-                        StyleParseErrorKind::PropertySyntaxField(err),
-                    ))
-                },
+            return Self::from_str(syntax_string.as_ref(), /* save_specified = */ true).map_err(
+                |err| StyleParseError::custom(StyleParseErrorKind::PropertySyntaxField(err)),
             );
         }
 
@@ -190,7 +186,7 @@ impl Descriptor {
         let mut types = DependentDataTypes::empty();
         for component in self.components.iter() {
             let t = match &component.name {
-                ComponentName::DataType(ref t) => t,
+                ComponentName::DataType(t) => t,
                 ComponentName::Ident(_) => continue,
             };
             types.insert(t.dependent_types());
@@ -407,14 +403,13 @@ impl<'a> Parser<'a> {
         }
 
         let input = &self.input[self.position..];
-        let mut input = CSSParserInput::new(input);
-        let mut input = CSSParser::new(&mut input);
+        let mut input = CSSParser::new(input);
         let name = match CustomIdent::parse(&mut input, &[]) {
             Ok(name) => name,
             Err(_) => return Err(ParseError::InvalidName),
         };
         self.position += input.position().byte_index();
-        return Ok(ComponentName::Ident(name));
+        Ok(ComponentName::Ident(name))
     }
 
     fn parse_multiplier(&mut self) -> Option<Multiplier> {

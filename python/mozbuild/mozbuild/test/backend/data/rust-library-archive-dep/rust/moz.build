@@ -3,6 +3,6 @@
 
 # Cargo does the linking, so the USE_LIBS is only for build ordering: the
 # archive has to exist before cargo runs.
-USE_LIBS += ["frob"]
+USE_LIBS += ["middle"]
 
 RustLibrary("test-library", output_category="uniffi-target")

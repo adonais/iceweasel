@@ -18,6 +18,7 @@
 #include <span>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 
 namespace webrtc {
@@ -43,7 +44,7 @@ class RtpPacketizer {
     kVP9,
     kAV1,
   };
-  static std::unique_ptr<RtpPacketizer> Create(
+  static absl_nonnull std::unique_ptr<RtpPacketizer> Create(
       PacketizationFormat format,
       std::span<const uint8_t> payload,
       PayloadSizeLimits limits,

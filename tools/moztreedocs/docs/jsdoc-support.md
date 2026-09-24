@@ -22,8 +22,8 @@ Here is a quick example, for the public AddonManager {ref}`API <AddonManager Ref
 To use it for your own code:
 
 1. Check that JSDoc generates the output you expect (you may need to use a @class annotation on "object initializer"-style class definitions for instance)
-2. Create an `.rst file`, which may contain explanatory text as well as the API docs. The minimum will look something like
-   [this](https://firefox-source-docs.mozilla.org/_sources/toolkit/mozapps/extensions/addon-manager/AddonManager.rst.txt).
+2. Create an `.md` file, which may contain explanatory text as well as the API docs. The minimum will look something like
+   {searchfox}`this <toolkit/mozapps/extensions/docs/AddonManager.md>`.
 3. Ensure your component is on the js_source_path here in the sphinx
    config: <https://hg.mozilla.org/mozilla-central/file/72ee4800d415/tools/docs/conf.py#l46>
 4. Run `mach doc` locally to generate the output and confirm that it looks correct.

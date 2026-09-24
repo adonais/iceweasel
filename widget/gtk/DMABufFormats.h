@@ -131,6 +131,7 @@ class GlobalDMABufFormats final {
   RefPtr<DRMFormat> mFormatP010;
   RefPtr<DRMFormat> mFormatNV12;
   RefPtr<DRMFormat> mFormatYUV420;
+  RefPtr<DRMFormat> mFormatABGR2101010;
 };
 
 GlobalDMABufFormats* GetGlobalDMABufFormats();

@@ -286,6 +286,12 @@ export class YelpSuggestions extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
     switch (details.selType) {
@@ -299,7 +305,7 @@ export class YelpSuggestions extends SuggestProvider {
         // engagement event. As with all commands, it will be recorded with an
         // `engagement_type` value that is the command's name, in this case
         // `inaccurate_location`.
-        controller.view.acknowledgeFeedback(result);
+        controller.view.acknowledgeFeedback(result.id);
         break;
       // selType == "dismiss" when the user presses the dismiss key shortcut.
       case RESULT_MENU_COMMAND.DISMISS:

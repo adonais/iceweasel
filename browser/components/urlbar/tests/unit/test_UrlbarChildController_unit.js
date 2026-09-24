@@ -13,7 +13,7 @@ let controller;
 
 add_setup(function () {
   sandbox = sinon.createSandbox();
-  controller = UrlbarTestUtils.newMockController();
+  controller = UrlbarTestUtils.mockChildController();
 });
 
 add_task(function test_add_and_remove_listeners() {

@@ -71,3 +71,50 @@ add_task(async () => {
 
   await cleanUtilityProcessShutdown();
 });
+
+add_task(async () => {
+  info("Start the profiler");
+  await ProfilerTestUtils.startProfiler();
+
+  let utilityPid;
+  let profile;
+  try {
+    utilityPid = await startUtilityProcess();
+
+    await TestUtils.waitForCondition(async () => {
+      const runningProfile = await Services.profiler.getProfileDataAsync();
+      return runningProfile.processes.some(p => p.threads[0].pid == utilityPid);
+    }, "Give time for the profiler to start and collect some samples");
+
+    info(
+      `Shut down utility process ${utilityPid} while the profiler is running`
+    );
+    await cleanUtilityProcessShutdown();
+
+    // The utility process is gone, so the only way it can still show up in the
+    // profile is through the shutdown profile it sent us on its way out.
+    profile = await Services.profiler.getProfileDataAsync();
+  } finally {
+    Services.profiler.StopProfiler();
+  }
+
+  const shutdownProfile = profile.processes.find(
+    p => p.threads[0].pid == utilityPid
+  );
+  Assert.ok(
+    !!shutdownProfile,
+    `Received the shutdown profile of utility process ${utilityPid}`
+  );
+
+  Assert.equal(
+    shutdownProfile.threads[0].processType,
+    "utility",
+    "Shutdown profile has processType utility"
+  );
+
+  Assert.greater(
+    shutdownProfile.threads[0].samples.data.length,
+    0,
+    "Shutdown profile contains samples"
+  );
+});

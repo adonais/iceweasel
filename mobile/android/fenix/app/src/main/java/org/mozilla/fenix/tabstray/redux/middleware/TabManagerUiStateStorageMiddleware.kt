@@ -90,6 +90,27 @@ class TabManagerUiStateStorageMiddleware(
                     recordOnboardingImpression()
                 }
             }
+
+            is TabGroupAction.UngroupRequested -> {
+                if (store.state.tabGroupState.skipUngroupConfirmation) {
+                    store.dispatch(TabGroupAction.UngroupConfirmed(group = action.group, dontAskAgain = true))
+                } else {
+                    store.dispatch(TabGroupAction.UngroupConfirmationRequested(group = action.group))
+                }
+            }
+
+            is TabGroupAction.UngroupConfirmed -> setSkipUngroupConfirmation(action.dontAskAgain)
+        }
+    }
+
+    private fun setSkipUngroupConfirmation(dontAskAgain: Boolean) {
+        if (dontAskAgain && uiStateRepository.uiState.value?.skipUngroupConfirmation != true) {
+            scope.launch {
+                val success = uiStateRepository.setSkipUngroupConfirmation()
+                if (!success) {
+                    logger.debug("Failed to update whether the ungroup confirmation was dismissed")
+                }
+            }
         }
     }
 

@@ -27,10 +27,11 @@ object Gestures {
      * flick, high a slow drag. Some gestures only register as a flick (swiping the navigation toolbar to switch tabs),
      * which is why callers can ask for one.
      */
-    fun onElement(element: Any, direction: SwipeDirection, steps: Int = 100) {
-        when (element) {
+    fun onElement(element: UiElement, direction: SwipeDirection, steps: Int = 100) {
+        val raw = element.backend()
+        when (raw) {
             is ViewInteraction ->
-                element.perform(
+                raw.perform(
                     when (direction) {
                         SwipeDirection.UP -> ViewActions.swipeUp()
                         SwipeDirection.DOWN -> ViewActions.swipeDown()
@@ -40,13 +41,13 @@ object Gestures {
                 )
             is UiObject ->
                 when (direction) {
-                    SwipeDirection.UP -> element.swipeUp(steps)
-                    SwipeDirection.DOWN -> element.swipeDown(steps)
-                    SwipeDirection.LEFT -> element.swipeLeft(steps)
-                    SwipeDirection.RIGHT -> element.swipeRight(steps)
+                    SwipeDirection.UP -> raw.swipeUp(steps)
+                    SwipeDirection.DOWN -> raw.swipeDown(steps)
+                    SwipeDirection.LEFT -> raw.swipeLeft(steps)
+                    SwipeDirection.RIGHT -> raw.swipeRight(steps)
                 }
             is UiObject2 ->
-                element.swipe(
+                raw.swipe(
                     when (direction) {
                         SwipeDirection.UP -> Direction.UP
                         SwipeDirection.DOWN -> Direction.DOWN
@@ -56,10 +57,10 @@ object Gestures {
                     1.0f,
                 )
             is SemanticsNodeInteraction ->
-                element.performTouchInput {
+                raw.performTouchInput {
                     swipe(start = center, end = center + direction.offset(COMPOSE_DISTANCE), durationMillis = 200L)
                 }
-            else -> throw IllegalArgumentException("Cannot swipe a ${element::class.simpleName}")
+            else -> throw IllegalArgumentException("Cannot swipe a ${raw::class.simpleName}")
         }
     }
 

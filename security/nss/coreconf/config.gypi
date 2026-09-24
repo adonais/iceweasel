@@ -112,7 +112,6 @@
     'disable_deprecated_rc2%': 0,
     'disable_dbm%': 1,
     'disable_libpkix%': 1,
-    'disable_kyber%' : 0,
     'disable_werror%': 0,
     'disable_altivec%': 0,
     'disable_crypto_vsx%': 0,
@@ -614,11 +613,6 @@
           [ 'disable_deprecated_rc2==1', {
             'defines': [
               'NSS_DISABLE_DEPRECATED_RC2',
-            ],
-          }],
-          [ 'disable_kyber==1', {
-            'defines': [
-              'NSS_DISABLE_KYBER',
             ],
           }],
 

@@ -12,7 +12,9 @@
 #include "SdpEnum.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 #include "sdp/RsdparsaSdpInc.h"
+#include "sdp/SdpMediaSectionImpl.h"
 
 namespace mozilla {
 
@@ -59,6 +61,16 @@ inline std::pair<sdp::AddrType, std::string> convertExplicitlyTypedAddress(
     const sdp::ffi::RustExplicitlyTypedAddress& address) {
   return std::make_pair(convertAddressType(address.address_type),
                         convertAddress(address.address));
+}
+
+inline void convertBandwidths(
+    const sdp::ffi::Vec<sdp::ffi::SdpBandwidth>* aBandwidths,
+    SdpBandwidths& aTarget) {
+  AutoTArray<sdp::ffi::RustSdpBandwidth, 4> bandwidths;
+  sdp_get_bandwidths(aBandwidths, &bandwidths);
+  for (const auto& bandwidth : bandwidths) {
+    aTarget[std::string(convertStringView(bandwidth.name))] = bandwidth.value;
+  }
 }
 
 }  // namespace mozilla

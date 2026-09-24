@@ -5,156 +5,205 @@
 #include "YUVBufferGenerator.h"
 
 #include "VideoUtils.h"
-#include "gtest/gtest.h"
 #include "mozilla/CheckedInt.h"
 
 using namespace mozilla::layers;
 using namespace mozilla;
 
-void YUVBufferGenerator::Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma,
-                              uint8_t aChroma) {
-  mImageSize = aSize;
-
-  // Size the chroma region the way the image creators below lay it out, using
-  // the same helper, so the two cannot disagree. Deriving it from yPlaneLen
-  // instead is short whenever a dimension is odd.
-  const gfx::IntSize chromaSize =
-      gfx::ChromaSize(aSize, gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
-  const CheckedInt<size_t> yPlaneLen =
-      CheckedInt<size_t>(aSize.width) * aSize.height;
-  const CheckedInt<size_t> cbcrPlaneLen =
-      CheckedInt<size_t>(chromaSize.width) * chromaSize.height * 2;
-  const CheckedInt<size_t> frameLen = yPlaneLen + cbcrPlaneLen;
-  // The sum carries the parts' validity, so one check covers all three.
-  EXPECT_TRUE(frameLen.isValid());
-
-  // Generate source buffer.
-  mSourceBuffer.SetLength(frameLen.value());
-
-  // Fill Y plane.
-  memset(mSourceBuffer.Elements(), aLuma, yPlaneLen.value());
-
-  // Fill Cb/Cr planes.
-  memset(mSourceBuffer.Elements() + yPlaneLen.value(), aChroma,
-         cbcrPlaneLen.value());
+bool YUVBufferGenerator::Init(const mozilla::gfx::IntSize& aSize,
+                              const ChannelColor& aColor) {
+  return Init(gfx::IntRect(gfx::IntPoint(), aSize), aColor);
 }
 
-mozilla::gfx::IntSize YUVBufferGenerator::GetSize() const { return mImageSize; }
+bool YUVBufferGenerator::Init(const mozilla::gfx::IntSize& aSize, uint8_t aLuma,
+                              uint8_t aChroma) {
+  return Init(aSize, ChannelColor{aLuma, aChroma, aChroma});
+}
+
+bool YUVBufferGenerator::Init(const mozilla::gfx::IntRect& aPictureRect,
+                              const ChannelColor& aColor) {
+  mPictureRect = {};
+  mYDataSize = {};
+  mChromaSize = {};
+  mYPlaneLength = 0;
+  mChromaPlaneLength = 0;
+  mSourceBuffer.Clear();
+
+  if (aPictureRect.IsEmpty() || aPictureRect.X() < 0 || aPictureRect.Y() < 0) {
+    return false;
+  }
+
+  CheckedInt32 width(aPictureRect.X());
+  width += aPictureRect.Width();
+  CheckedInt32 height(aPictureRect.Y());
+  height += aPictureRect.Height();
+  if (!width.isValid() || !height.isValid()) {
+    return false;
+  }
+
+  const gfx::IntSize yDataSize(width.value(), height.value());
+  if (yDataSize.width > PlanarYCbCrImage::MAX_DIMENSION ||
+      yDataSize.height > PlanarYCbCrImage::MAX_DIMENSION) {
+    return false;
+  }
+  const gfx::IntSize chromaSize =
+      gfx::ChromaSize(yDataSize, gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
+  CheckedInt32 nvChromaStride(chromaSize.width);
+  nvChromaStride *= 2;
+
+  CheckedInt<size_t> yPlaneLength(width.value());
+  yPlaneLength *= height.value();
+  CheckedInt<size_t> chromaPlaneLength(chromaSize.width);
+  chromaPlaneLength *= chromaSize.height;
+  CheckedInt<size_t> frameLength(chromaPlaneLength);
+  frameLength *= 2;
+  frameLength += yPlaneLength;
+  if (!nvChromaStride.isValid() || !yPlaneLength.isValid() ||
+      !chromaPlaneLength.isValid() || !frameLength.isValid() ||
+      !mSourceBuffer.SetLength(frameLength.value(), mozilla::fallible)) {
+    return false;
+  }
+
+  mPictureRect = aPictureRect;
+  mYDataSize = yDataSize;
+  mChromaSize = chromaSize;
+  mYPlaneLength = yPlaneLength.value();
+  mChromaPlaneLength = chromaPlaneLength.value();
+  mColor = aColor;
+  return true;
+}
+
+mozilla::gfx::IntSize YUVBufferGenerator::GetSize() const {
+  return mPictureRect.Size();
+}
+
+void YUVBufferGenerator::FillI420SourceBuffer() {
+  memset(mSourceBuffer.Elements(), mColor.mY, mYPlaneLength);
+  memset(mSourceBuffer.Elements() + mYPlaneLength, mColor.mCb,
+         mChromaPlaneLength);
+  memset(mSourceBuffer.Elements() + mYPlaneLength + mChromaPlaneLength,
+         mColor.mCr, mChromaPlaneLength);
+}
+
+void YUVBufferGenerator::FillNVSourceBuffer(uint8_t aFirstChromaValue,
+                                            uint8_t aSecondChromaValue) {
+  memset(mSourceBuffer.Elements(), mColor.mY, mYPlaneLength);
+  uint8_t* chroma = mSourceBuffer.Elements() + mYPlaneLength;
+  for (size_t i = 0; i < mChromaPlaneLength; ++i) {
+    *chroma++ = aFirstChromaValue;
+    *chroma++ = aSecondChromaValue;
+  }
+}
 
 already_AddRefed<Image> YUVBufferGenerator::GenerateI420Image() {
-  return do_AddRef(CreateI420Image());
-}
+  if (mSourceBuffer.IsEmpty()) {
+    return nullptr;
+  }
+  FillI420SourceBuffer();
 
-already_AddRefed<Image> YUVBufferGenerator::GenerateNV12Image() {
-  return do_AddRef(CreateNV12Image());
-}
-
-already_AddRefed<Image> YUVBufferGenerator::GenerateNV21Image() {
-  return do_AddRef(CreateNV21Image());
-}
-
-Image* YUVBufferGenerator::CreateI420Image() {
-  PlanarYCbCrImage* image =
+  RefPtr<PlanarYCbCrImage> image =
       new RecyclingPlanarYCbCrImage(new BufferRecycleBin());
   PlanarYCbCrData data;
-  data.mPictureRect = gfx::IntRect(0, 0, mImageSize.width, mImageSize.height);
-
-  const gfx::IntSize chromaSize = gfx::ChromaSize(
-      mImageSize, gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT);
-  const CheckedInt<uint32_t> checkedYPlaneSize =
-      CheckedInt<uint32_t>(mImageSize.width) * mImageSize.height;
-  const CheckedInt<uint32_t> checkedUVPlaneSize =
-      CheckedInt<uint32_t>(chromaSize.width) * chromaSize.height;
-  EXPECT_TRUE((checkedYPlaneSize + checkedUVPlaneSize * 2).isValid());
-  const uint32_t yPlaneSize = checkedYPlaneSize.value();
-  const uint32_t uvPlaneSize = checkedUVPlaneSize.value();
+  data.mPictureRect = mPictureRect;
 
   // Y plane.
   uint8_t* y = mSourceBuffer.Elements();
   data.mYChannel = y;
-  data.mYStride = mImageSize.width;
+  data.mYStride = mYDataSize.width;
   data.mYSkip = 0;
 
   // Cr plane (aka V).
-  uint8_t* cr = y + yPlaneSize + uvPlaneSize;
+  uint8_t* cr = y + mYPlaneLength + mChromaPlaneLength;
   data.mCrChannel = cr;
   data.mCrSkip = 0;
 
   // Cb plane (aka U).
-  uint8_t* cb = y + yPlaneSize;
+  uint8_t* cb = y + mYPlaneLength;
   data.mCbChannel = cb;
   data.mCbSkip = 0;
 
   // CrCb plane vectors.
-  data.mCbCrStride = chromaSize.width;
+  data.mCbCrStride = mChromaSize.width;
   data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
-  data.mYUVColorSpace = DefaultColorSpace(mImageSize);
+  data.mYUVColorSpace = DefaultColorSpace(mPictureRect.Size());
 
-  image->CopyData(data);
-  return image;
+  if (NS_FAILED(image->CopyData(data))) {
+    return nullptr;
+  }
+  return image.forget();
 }
 
-Image* YUVBufferGenerator::CreateNV12Image() {
-  NVImage* image = new NVImage();
-  PlanarYCbCrData data;
-  data.mPictureRect = gfx::IntRect(0, 0, mImageSize.width, mImageSize.height);
+already_AddRefed<Image> YUVBufferGenerator::GenerateNV12Image() {
+  if (mSourceBuffer.IsEmpty()) {
+    return nullptr;
+  }
+  FillNVSourceBuffer(mColor.mCb, mColor.mCr);
 
-  const uint32_t yPlaneSize = mImageSize.width * mImageSize.height;
+  RefPtr<NVImage> image = new NVImage();
+  PlanarYCbCrData data;
+  data.mPictureRect = mPictureRect;
 
   // Y plane.
   uint8_t* y = mSourceBuffer.Elements();
   data.mYChannel = y;
-  data.mYStride = mImageSize.width;
+  data.mYStride = mYDataSize.width;
   data.mYSkip = 0;
 
   // Cb plane (aka U).
-  uint8_t* cb = y + yPlaneSize;
+  uint8_t* cb = y + mYPlaneLength;
   data.mCbChannel = cb;
   data.mCbSkip = 1;
 
   // Cr plane (aka V).
-  uint8_t* cr = y + yPlaneSize + 1;
+  uint8_t* cr = y + mYPlaneLength + 1;
   data.mCrChannel = cr;
   data.mCrSkip = 1;
 
   // 4:2:0.
-  data.mCbCrStride = mImageSize.width;
+  data.mCbCrStride = 2 * mChromaSize.width;
   data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
-  image->SetData(data);
-  return image;
+  if (NS_FAILED(image->SetData(data))) {
+    return nullptr;
+  }
+  return image.forget();
 }
 
-Image* YUVBufferGenerator::CreateNV21Image() {
-  NVImage* image = new NVImage();
-  PlanarYCbCrData data;
-  data.mPictureRect = gfx::IntRect(0, 0, mImageSize.width, mImageSize.height);
+already_AddRefed<Image> YUVBufferGenerator::GenerateNV21Image() {
+  if (mSourceBuffer.IsEmpty()) {
+    return nullptr;
+  }
+  FillNVSourceBuffer(mColor.mCr, mColor.mCb);
 
-  const uint32_t yPlaneSize = mImageSize.width * mImageSize.height;
+  RefPtr<NVImage> image = new NVImage();
+  PlanarYCbCrData data;
+  data.mPictureRect = mPictureRect;
 
   // Y plane.
   uint8_t* y = mSourceBuffer.Elements();
   data.mYChannel = y;
-  data.mYStride = mImageSize.width;
+  data.mYStride = mYDataSize.width;
   data.mYSkip = 0;
 
   // Cb plane (aka U).
-  uint8_t* cb = y + yPlaneSize + 1;
+  uint8_t* cb = y + mYPlaneLength + 1;
   data.mCbChannel = cb;
   data.mCbSkip = 1;
 
   // Cr plane (aka V).
-  uint8_t* cr = y + yPlaneSize;
+  uint8_t* cr = y + mYPlaneLength;
   data.mCrChannel = cr;
   data.mCrSkip = 1;
 
   // 4:2:0.
-  data.mCbCrStride = mImageSize.width;
+  data.mCbCrStride = 2 * mChromaSize.width;
   data.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
-  data.mYUVColorSpace = DefaultColorSpace(mImageSize);
+  data.mYUVColorSpace = DefaultColorSpace(mPictureRect.Size());
 
-  image->SetData(data);
-  return image;
+  if (NS_FAILED(image->SetData(data))) {
+    return nullptr;
+  }
+  return image.forget();
 }

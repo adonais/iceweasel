@@ -121,7 +121,7 @@ function startClient(port) {
 }
 
 add_task(async function () {
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   ok(!!cert, "Got self-signed cert");
   let port = startServer(cert);
   storeCertOverride(port, cert);

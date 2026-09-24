@@ -22,8 +22,8 @@ class HWInferenceChild final : public PHWInferenceChild {
 
   void Shutdown();
 
-  mozilla::ipc::IPCResult RecvNewContentHWInferenceManager(
-      Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
+  mozilla::ipc::IPCResult RecvNewContentSpeechRecognition(
+      Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint,
       const dom::ContentParentId& aContentId);
 
   RefPtr<IsModelAvailablePromise> SendIsModelAvailable(const nsCString& aTask,

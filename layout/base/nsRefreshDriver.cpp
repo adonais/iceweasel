@@ -1839,6 +1839,14 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   }
 }
 
+void nsRefreshDriver::NotifyWidgetAttached() {
+  if (mOwnTimer || !mActiveTimer) {
+    return;
+  }
+  // We might get a widget timer now, if we have a timer ticking.
+  EnsureTimerStarted(eForceAdjustTimer);
+}
+
 void nsRefreshDriver::StopTimer() {
   if (!mActiveTimer) {
     return;

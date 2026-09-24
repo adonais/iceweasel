@@ -60,7 +60,8 @@ smart_window:
       submit_type: &submit_type
         type: string
         description: >
-          How the request was submitted: button, enter, follow-up, shortcuts, starter, or suggestion
+          How the request was submitted: button, enter, follow-up, resume, retry,
+          shortcuts, starter, or suggestion
       tabs:
         type: quantity
         unit: count
@@ -266,6 +267,21 @@ smart_window:
         type: string
         description: >
           The type of prompt that was clicked: default, resume, or followup
+
+  quick_prompt_dismissed:
+    type: event
+    description: |
+      Recorded when the user dismisses a resume-activity starter pill
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064739
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D321683
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      chat_id: *chat_id
 
   get_page_content:
     type: event
@@ -1157,6 +1173,7 @@ smart_window:
 
   model:
     type: string
+    lifetime: application
     description: |
       Records the model selected by the user, or “custom-model”
     bugs:
@@ -1331,6 +1348,7 @@ smart_window:
 
   memories_optin:
     type: labeled_boolean
+    lifetime: application
     labels:
       - generate_from_conversation
       - generate_from_history
@@ -1362,6 +1380,7 @@ smart_window:
 
   set_default_optin:
     type: boolean
+    lifetime: application
     description: |
       Records if the user currently has the Smart Window set as the default window.
     bugs:
@@ -1440,8 +1459,10 @@ smart_window:
       Displays a disambiguation picker, batch preview, or safety confirmation before acting.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1450,15 +1471,15 @@ smart_window:
       location: *location
       chat_id: *chat_id
       message_seq: *message_seq
-      action_type:
+      action: &browser_action
         type: string
-        description: Type of browser action requested
+        description: The requested browser action
       prompt_type:
         type: string
         description: Type of prompt shown - disambiguation, batch_preview, or safety_confirmation
       reason:
         type: string
-        description: Why the prompt was shown - multiple_matches, low_confidence, batch_action, pinned_tab, active_tab, last_tab
+        description: Why the prompt was shown - multiple_matches, low_confidence, batch_action, pinned_tab, active_tab, last_tab, user_action
       candidates:
         type: quantity
         unit: count
@@ -1474,8 +1495,10 @@ smart_window:
       User responds to a disambiguation picker, batch preview, or safety confirmation.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1484,10 +1507,7 @@ smart_window:
       location: *location
       chat_id: *chat_id
       message_seq: *message_seq
-      action_type:
-        type: string
-        description: >
-          Type of browser action requested
+      action: *browser_action
       prompt_type:
         type: string
         description: >
@@ -1512,8 +1532,10 @@ smart_window:
       User clicks Undo after a successful tab-close action.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1522,10 +1544,7 @@ smart_window:
       location: *location
       chat_id: *chat_id
       message_seq: *message_seq
-      action_type:
-        type: string
-        description: >
-          Type of browser action that was undone
+      action: *browser_action
       tabs_restored:
         type: quantity
         unit: count
@@ -1551,8 +1570,10 @@ smart_window:
       Recorded when the model invokes a browser action tool (e.g., manage_tabs).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1567,7 +1588,8 @@ smart_window:
         description: >
           Major version of the chat prompt used for this request.
       submit_type: *submit_type
-      action_type:
+      action: *browser_action
+      trigger: &trigger
         type: string
         description: >
           How the action was triggered: tab_mention, description, or unsupported.
@@ -1588,8 +1610,10 @@ smart_window:
       Recorded when a browser action initiated by the model has completed, errored, or been cancelled.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2037203
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2061465
     data_sensitivity:
       - interaction
     notification_emails: *emails
@@ -1600,20 +1624,18 @@ smart_window:
       message_seq: *message_seq
       model: *model
       prompt_version: *prompt_version
-      action_type:
-        type: string
-        description: >
-          How the action was triggered: tab_mention, description, or unsupported.
+      action: *browser_action
+      trigger: *trigger
       result:
         type: string
         description: >
-          Outcome of the action: success, partial_success, no_match,
-          unclear_target, blocked, cancelled, or error.
+          Outcome of the action: success, partial_success, no_match, cancelled,
+          or error.
       tabs_affected:
         type: quantity
         unit: count
         description: >
-          Number of tabs actually closed.
+          Number of tabs the action affected successfully.
       undo_available:
         type: boolean
         description: >
@@ -1621,7 +1643,8 @@ smart_window:
       error:
         type: string
         description: >
-          Error code if the action was unsuccessful.
+          Error code if the action was unsuccessful. auto_cancel when a pending
+          confirmation was followed by a new user prompt.
 
   topsites_enabled:
     lifetime: application
@@ -1973,9 +1996,8 @@ smart_window:
         type: string
         description: >
           Why the process failed, empty when success is true: the error's name,
-          such as "TypeError", or "TimeoutError" when the process ran out of
-          time. Error messages are never recorded, only the name, so no path,
-          URL or tab title can appear here.
+          such as "TypeError". Error messages are never recorded, only the
+          name, so no path, URL or tab title can appear here.
       total_length:
         type: quantity
         unit: characters
@@ -2019,7 +2041,8 @@ smart_window:
     type: event
     description: |
       Recorded when the panel has finished loading and is showing the user what
-      it found.
+      it found, or, when clustering is slow, what it had by the time it stopped
+      waiting.
     bugs: *atg_bugs
     data_reviews: *atg_data_reviews
     data_sensitivity:
@@ -2044,6 +2067,12 @@ smart_window:
         description: >
           How long the user waited between asking for the panel and seeing it
           populated.
+      waited_out:
+        type: boolean
+        description: >
+          True when the panel stopped waiting on clustering before it finished,
+          so suggested_groups counts only what was ready then and the run's
+          groups fill the panel in later.
 
   auto_tab_group_accepted:
     type: event

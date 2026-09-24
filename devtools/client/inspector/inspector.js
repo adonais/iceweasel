@@ -99,6 +99,13 @@ const SIDE_PORTAIT_MODE_WIDTH_THRESHOLD = 1000;
 const THREE_PANE_ENABLED_PREF = "devtools.inspector.three-pane-enabled";
 const THREE_PANE_CHROME_ENABLED_PREF =
   "devtools.inspector.chrome.three-pane-enabled";
+const SPLIT_ORIENTATION_PREF = "devtools.inspector.split-orientation";
+// Possible values for SPLIT_ORIENTATION_PREF; AUTO keeps the width-threshold behavior.
+const SPLIT_ORIENTATIONS = {
+  AUTO: "auto",
+  SIDE: "side",
+  STACKED: "stacked",
+};
 const DEFAULT_COLOR_UNIT_PREF = "devtools.defaultColorUnit";
 
 /**
@@ -122,6 +129,9 @@ const DEFAULT_COLOR_UNIT_PREF = "devtools.defaultColorUnit";
  *      Fired when the box model updates to a new node
  * - markupmutation
  *      Fired after markup mutations have been processed by the markup-view
+ * - style-changed
+ *      Fired when a change in the page may have changed the styles applied to
+ *      the currently selected node (see InspectorStyleChangeTracker)
  * - computed-view-refreshed
  *      Fired when the computed rules view updates to a new node
  * - computed-view-property-expanded
@@ -168,9 +178,18 @@ class Inspector extends EventEmitter {
       DEFAULT_COLOR_UNIT_PREF,
       this.#handleDefaultColorUnitPrefChange
     );
+    this.prefObserver.on(
+      SPLIT_ORIENTATION_PREF,
+      this.#onSplitOrientationPrefChange
+    );
+    this.#splitOrientationPrefValue = Services.prefs.getCharPref(
+      SPLIT_ORIENTATION_PREF,
+      SPLIT_ORIENTATIONS.AUTO
+    );
     this.defaultColorUnit = Services.prefs.getStringPref(
       DEFAULT_COLOR_UNIT_PREF
     );
+    this.#firstNodeSelectedPromiseResolvers = Promise.withResolvers();
   }
 
   #toolbox;
@@ -179,6 +198,7 @@ class Inspector extends EventEmitter {
   // Stores all the instances of sidebar panels like rule view, computed view, ...
   #panels = new Map();
   #fluentL10n;
+  #styleChangeTracker;
   #defaultStartupNode;
   #defaultStartupNodeDomReference;
   #defaultStartupNodeSelectionReason;
@@ -196,7 +216,13 @@ class Inspector extends EventEmitter {
   #InspectorTabPanel;
   #InspectorSplitBox;
   #TabBar;
+  #MenuButton;
+  #MenuItem;
+  #MenuList;
+  #splitOrientationL10nStrings;
+  #splitOrientationPrefValue;
   #updateProgress;
+  #firstNodeSelectedPromiseResolvers;
 
   /**
    * InspectorPanel.open() is effectively an asynchronous constructor.
@@ -235,6 +261,7 @@ class Inspector extends EventEmitter {
     // parent of the iframe in the DOM tree which would reset the state of the
     // iframe if it had already been initialized.
     this.#setupSplitter();
+    this.#setupSplitOrientationMenu();
 
     // Optional NodeFront/ElementIdentifier set on inspector startup, to be selected once the first root
     // node is available.
@@ -248,6 +275,10 @@ class Inspector extends EventEmitter {
     // navigation (i.e. each time a new Root Node is available)
     // This is used as a fallback if the currently selected node is removed.
     this.#defaultNode = null;
+
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
+    this.#setupSearchBox();
+    this.#createInspectorShortcuts();
 
     await this.commands.targetCommand.watchTargets({
       types: [this.commands.targetCommand.TYPES.FRAME],
@@ -268,9 +299,7 @@ class Inspector extends EventEmitter {
     //
     // We only listen to new root node in the browser toolbox, which is the last
     // configuration to use one target for multiple window global.
-    const isBrowserToolbox =
-      this.commands.descriptorFront.isBrowserProcessDescriptor;
-    if (isBrowserToolbox) {
+    if (this.#isBrowserToolbox) {
       this.#watchedResources.push(TYPES.ROOT_NODE);
     }
 
@@ -282,17 +311,30 @@ class Inspector extends EventEmitter {
     // telemetry counts in the Grid Inspector are not double counted on reload.
     this.previousURL = this.currentTarget.url;
 
-    // Note: setupSidebar() really has to be called after the first target has
-    // been processed, so that the cssProperties getter works.
-    // But the rest could be moved before the watch* calls.
-    this.styleChangeTracker = new InspectorStyleChangeTracker(this);
-    this.#setupSidebar();
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-    this.#setupExtensionSidebars();
-    this.#setupSearchBox();
-    this.#createInspectorShortcuts();
+    // Finalize the initialization of all UIs which depend on having a selected
+    // node. This only runs once, and only after a default node was selected and
+    // the target and resource watchers are ready.
+    this.#firstNodeSelectedPromiseResolvers.promise
+      .then(() => {
+        this.#setupSidebar();
+        this.#setupExtensionSidebars();
+        this.#onNewSelection();
+      })
+      .catch(e => {
+        console.error(
+          "Failed to finalize inspector init after the first node selection",
+          e
+        );
+      });
 
-    this.#onNewSelection();
+    // StyleChangeTracker will create the inspector front for all frame targets
+    // which triggers many RDP requests in parallel, which can slow down the
+    // earlier inspector initialization.
+    this.#styleChangeTracker = new InspectorStyleChangeTracker(this);
+    this.#styleChangeTracker.on(
+      "style-changed",
+      this.#onStyleChangeTrackerStyleChanged
+    );
 
     this.toolbox.on("host-changed", this.#onHostChanged);
     this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
@@ -310,6 +352,10 @@ class Inspector extends EventEmitter {
 
     return this;
   }
+
+  #onStyleChangeTrackerStyleChanged = () => {
+    this.emit("style-changed");
+  };
 
   // The onTargetAvailable argument is mandatory for TargetCommand.watchTargets.
   // The inspector ignore all targets but the currently selected one,
@@ -345,11 +391,18 @@ class Inspector extends EventEmitter {
       return;
     }
 
-    const { walker } = await targetFront.getFront("inspector");
-    const rootNodeFront = await walker.getRootNode();
+    const isFirstBrowserToolboxTarget =
+      this.#isBrowserToolbox && !this.#newRootStart;
 
-    // onRootNodeAvailable will take care of populating the markup view
-    await this.onRootNodeAvailable(rootNodeFront);
+    // Skip calling onRootNodeAvailable for the first Browser Toolbox startup,
+    // it will be handled via the ROOT_NODE resource watcher.
+    if (!isFirstBrowserToolboxTarget) {
+      const { walker } = await targetFront.getFront("inspector");
+      const rootNodeFront = await walker.getRootNode();
+
+      // onRootNodeAvailable will take care of populating the markup view
+      await this.onRootNodeAvailable(rootNodeFront);
+    }
   };
 
   #onTargetDestroyed = ({ targetFront }) => {
@@ -420,7 +473,11 @@ class Inspector extends EventEmitter {
 
     try {
       const defaultNode = await this.#getDefaultNodeForSelection(rootNodeFront);
-      if (!defaultNode) {
+      if (
+        !defaultNode ||
+        // Target was updated mid-flight, abort the initialization.
+        this.currentTarget !== rootNodeFront.targetFront
+      ) {
         return;
       }
 
@@ -433,14 +490,29 @@ class Inspector extends EventEmitter {
 
       await this.#initMarkupView();
 
+      if (this.currentTarget !== rootNodeFront.targetFront) {
+        // Target was updated mid-flight, abort the initialization.
+        return;
+      }
+
       // Setup the toolbar again, since its content may depend on the current document.
-      this.#setupToolbar();
+      await this.#setupToolbar();
+
+      // Resolve the firstNodeSelectedPromiseResolvers promise, to finalize the
+      // inspector init.
+      this.#firstNodeSelectedPromiseResolvers.resolve();
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
-      // Only if this isn't a toolbox closing exception,
-      // and if the markup view failed rendering,
-      // show the AppErrorBoundary for that exception.
-      if (!this.#destroyed && !this.#markupFrame) {
+      // Show the AppErrorBoundary if the markup view failed to render, unless:
+      // - the toolbox is already closing (-> inspector is destroyed)
+      // - the nodeFront was destroyed, most likely because of a navigation,
+      //   which will reject all pending target actor requests and reject
+      //   getDefaultNodeForSelection.
+      if (
+        !this.#destroyed &&
+        !rootNodeFront.isDestroyed() &&
+        !this.#markupFrame
+      ) {
         this.#showErrorBoundary(e);
       }
     }
@@ -568,6 +640,10 @@ class Inspector extends EventEmitter {
     }
 
     return this.#highlighters;
+  }
+
+  get #isBrowserToolbox() {
+    return this.commands.descriptorFront.isBrowserProcessDescriptor;
   }
 
   get #threePanePrefName() {
@@ -916,14 +992,48 @@ class Inspector extends EventEmitter {
     return this.#TabBar;
   }
 
+  get MenuButton() {
+    if (!this.#MenuButton) {
+      this.#MenuButton = this.React.createFactory(
+        this.browserRequire("devtools/client/shared/components/menu/MenuButton")
+      );
+    }
+    return this.#MenuButton;
+  }
+
+  get MenuItem() {
+    if (!this.#MenuItem) {
+      this.#MenuItem = this.React.createFactory(
+        this.browserRequire("devtools/client/shared/components/menu/MenuItem")
+      );
+    }
+    return this.#MenuItem;
+  }
+
+  get MenuList() {
+    if (!this.#MenuList) {
+      this.#MenuList = this.React.createFactory(
+        this.browserRequire("devtools/client/shared/components/menu/MenuList")
+      );
+    }
+    return this.#MenuList;
+  }
+
   /**
-   * Check if the inspector should use the landscape mode.
+   * Check if the Inspector panels should be laid out side by side.
    *
-   * @return {boolean} true if the inspector should be in landscape mode.
+   * @return {boolean} true if the inspector should use the side-by-side layout.
    */
-  #useLandscapeMode() {
+  #useSideBySideLayout() {
     if (!this.panelDoc) {
       return true;
+    }
+
+    if (this.#splitOrientationPrefValue === SPLIT_ORIENTATIONS.SIDE) {
+      return true;
+    }
+    if (this.#splitOrientationPrefValue === SPLIT_ORIENTATIONS.STACKED) {
+      return false;
     }
 
     const splitterBox = this.panelDoc.getElementById("inspector-splitter-box");
@@ -970,7 +1080,7 @@ class Inspector extends EventEmitter {
         }),
         ref: this.sidebarSplitBoxRef,
       }),
-      vert: this.#useLandscapeMode(),
+      vert: this.#useSideBySideLayout(),
       onControlledPanelResized: this.onSidebarResized,
     });
 
@@ -993,12 +1103,118 @@ class Inspector extends EventEmitter {
         return;
       }
 
-      this.splitBox.setState({ vert: this.#useLandscapeMode() });
+      this.splitBox.setState({ vert: this.#useSideBySideLayout() });
       this.emit("inspector-resize");
     },
     LAZY_RESIZE_INTERVAL_MS,
     this
   );
+
+  /**
+   * Build the toolbar button opening the menu that controls the orientation of
+   * the splitter between the Inspector panels.
+   */
+  async #setupSplitOrientationMenu() {
+    const [buttonTitle, auto, sideBySide, stacked] =
+      await this.panelDoc.l10n.formatValues([
+        { id: "inspector-split-orientation-button-title" },
+        { id: "inspector-split-orientation-auto" },
+        { id: "inspector-split-orientation-side-by-side" },
+        { id: "inspector-split-orientation-stacked" },
+      ]);
+
+    // The inspector could have been destroyed while waiting for the strings.
+    if (!this.panelDoc) {
+      return;
+    }
+
+    this.#splitOrientationL10nStrings = {
+      buttonTitle,
+      auto,
+      sideBySide,
+      stacked,
+    };
+    this.#renderSplitOrientationMenu();
+  }
+
+  #renderSplitOrientationMenu() {
+    const strings = this.#splitOrientationL10nStrings;
+    const container = this.panelDoc?.getElementById(
+      "inspector-split-orientation-menu"
+    );
+    if (!strings || !container) {
+      return;
+    }
+
+    const orientation = this.#splitOrientationPrefValue;
+    const items = [
+      this.MenuItem({
+        key: SPLIT_ORIENTATIONS.AUTO,
+        id: "inspector-split-orientation-auto",
+        role: "menuitemradio",
+        checked: orientation === SPLIT_ORIENTATIONS.AUTO,
+        label: strings.auto,
+        icon: "chrome://devtools/skin/images/dock-auto.svg",
+        onClick: () =>
+          Services.prefs.setCharPref(
+            SPLIT_ORIENTATION_PREF,
+            SPLIT_ORIENTATIONS.AUTO
+          ),
+      }),
+      this.MenuItem({
+        key: SPLIT_ORIENTATIONS.SIDE,
+        id: "inspector-split-orientation-side",
+        role: "menuitemradio",
+        checked: orientation === SPLIT_ORIENTATIONS.SIDE,
+        label: strings.sideBySide,
+        icon: "chrome://devtools/skin/images/dock-side-right.svg",
+        onClick: () =>
+          Services.prefs.setCharPref(
+            SPLIT_ORIENTATION_PREF,
+            SPLIT_ORIENTATIONS.SIDE
+          ),
+      }),
+      this.MenuItem({
+        key: SPLIT_ORIENTATIONS.STACKED,
+        id: "inspector-split-orientation-stacked",
+        role: "menuitemradio",
+        checked: orientation === SPLIT_ORIENTATIONS.STACKED,
+        label: strings.stacked,
+        icon: "chrome://devtools/skin/images/dock-bottom.svg",
+        onClick: () =>
+          Services.prefs.setCharPref(
+            SPLIT_ORIENTATION_PREF,
+            SPLIT_ORIENTATIONS.STACKED
+          ),
+      }),
+    ];
+
+    this.ReactDOM.render(
+      this.MenuButton(
+        {
+          id: "inspector-split-orientation-button",
+          menuId: "inspector-split-orientation-menu-panel",
+          toolboxDoc: this.#toolbox.doc,
+          className: "devtools-button",
+          title: strings.buttonTitle,
+        },
+        () => this.MenuList({}, items)
+      ),
+      container
+    );
+  }
+
+  #onSplitOrientationPrefChange = () => {
+    this.#splitOrientationPrefValue = Services.prefs.getCharPref(
+      SPLIT_ORIENTATION_PREF,
+      SPLIT_ORIENTATIONS.AUTO
+    );
+    if (this.#destroyed || !this.splitBox) {
+      return;
+    }
+    this.splitBox.setState({ vert: this.#useSideBySideLayout() });
+    this.#renderSplitOrientationMenu();
+  };
 
   getSidebarSize() {
     let width;
@@ -1113,7 +1329,7 @@ class Inspector extends EventEmitter {
     // bottom-right panel in vertical mode width in 3 pane mode.
     let sidebarSplitboxWidth;
 
-    if (this.#useLandscapeMode()) {
+    if (this.#useSideBySideLayout()) {
       // Whether or not doubling the inspector sidebar's (right panel in horizontal mode
       // or bottom panel in vertical mode) width will be bigger than half of the
       // toolbox's width.
@@ -1198,7 +1414,7 @@ class Inspector extends EventEmitter {
         "inspector-splitter-box"
       );
       this.splitBox.setState({
-        width: this.#useLandscapeMode()
+        width: this.#useSideBySideLayout()
           ? this.sidebarSplitBoxRef.current.state.width
           : splitterBox.clientWidth,
       });
@@ -1445,6 +1661,12 @@ class Inspector extends EventEmitter {
    *        The tab title
    */
   addExtensionSidebar(id, { title }) {
+    if (!this.sidebar) {
+      // The sidebar is not created yet, #setupExtensionSidebars will create
+      // this extension sidebar when finalizing the setup.
+      return;
+    }
+
     if (this.#panels.has(id)) {
       throw new Error(
         `Cannot create an extension sidebar for the existent id: ${id}`
@@ -1479,6 +1701,11 @@ class Inspector extends EventEmitter {
    *        The id of the sidebar tab to destroy.
    */
   removeExtensionSidebar(id) {
+    if (!this.sidebar) {
+      // The extension sidebars were not created yet, nothing to remove.
+      return;
+    }
+
     if (!this.#panels.has(id)) {
       throw new Error(`Unable to find a sidebar panel with id "${id}"`);
     }
@@ -1810,15 +2037,18 @@ class Inspector extends EventEmitter {
     this.toolbox.nodePicker.off("picker-node-hovered", this.onPickerHovered);
     this.toolbox.nodePicker.off("picker-node-picked", this.onPickerPicked);
 
-    // Destroy the sidebar first as it may unregister stuff
-    // and still use random attributes on inspector and layout panel
-    this.sidebar.destroy();
-    // Unregister sidebar listener *after* destroying it
-    // in order to process its destroy event and save sidebar sizes
-    this.sidebar.off("select", this.onSidebarSelect);
-    this.sidebar.off("show", this.onSidebarShown);
-    this.sidebar.off("hide", this.onSidebarHidden);
-    this.sidebar.off("destroy", this.onSidebarHidden);
+    // The sidebar is only created once the first root node is available.
+    if (this.sidebar) {
+      // Destroy the sidebar first as it may unregister stuff
+      // and still use random attributes on inspector and layout panel
+      this.sidebar.destroy();
+      // Unregister sidebar listener *after* destroying it
+      // in order to process its destroy event and save sidebar sizes
+      this.sidebar.off("select", this.onSidebarSelect);
+      this.sidebar.off("show", this.onSidebarShown);
+      this.sidebar.off("hide", this.onSidebarHidden);
+      this.sidebar.off("destroy", this.onSidebarHidden);
+    }
 
     for (const [, panel] of this.#panels) {
       panel.destroy({ fromInspectorDestroy: true });
@@ -1834,7 +2064,15 @@ class Inspector extends EventEmitter {
       this.#search = null;
     }
 
-    this.ruleViewSideBar.destroy();
+    if (this.#styleChangeTracker) {
+      this.#styleChangeTracker.off(
+        "style-changed",
+        this.#onStyleChangeTrackerStyleChanged
+      );
+      this.#styleChangeTracker.destroy();
+    }
+
+    this.ruleViewSideBar?.destroy();
     this.ruleViewSideBar = null;
 
     this.#destroyMarkup();
@@ -1844,7 +2082,6 @@ class Inspector extends EventEmitter {
     this.prefObserver.destroy();
 
     this.breadcrumbs.destroy();
-    this.styleChangeTracker.destroy();
     this.inspectorShortcuts.destroy();
     this.inspectorShortcuts = null;
 

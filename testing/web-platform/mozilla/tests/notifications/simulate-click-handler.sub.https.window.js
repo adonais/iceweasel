@@ -16,12 +16,16 @@ const storageEntry = {
   body: "baz",
   tag: "basil",
   icon: "https://example.com/",
+  navigate: "https://example.org/",
   requireInteraction: false,
   silent: true,
 
   // corresponding to `data` above
   dataSerialized: "AgAAAAAA8f8AAAAACAD//wcAAIAEAP//b3B0aW9ucwAAAAAACAD//wYAAIAEAP//YWN0aW9uAAAHAACABAD//2RlZmF1bHQABQAAgAQA//9jbG9zZQAAAAEAAAACAP//FgAAgAQA//9ub3RpZmljYXRpb25DbG9zZUV2ZW50AAAAAAAAAgD//wMAAIAEAP//dXJsAAAAAAAvAACABAD//2h0dHBzOi8vdGVzdHMucGV0ZXIuc2gvbm90aWZpY2F0aW9uLWdlbmVyYXRvci8jAAAAAAATAP//AAAAABMA//8=",
-  actions: [{ name: "basilisk", title: "obelisk" }],
+  actions: [
+    { name: "basilisk", title: "obelisk" },
+    { name: "test", title: "test with navigate", navigate: "https://mozilla.org/" },
+  ],
   serviceWorkerRegistrationScope: `${origin}/_mozilla/notifications/`
 };
 
@@ -77,7 +81,11 @@ promise_test(async (t) => {
   assert_equals(notification.body, storageEntry.body);
   assert_equals(notification.tag, storageEntry.tag);
   assert_equals(notification.icon, storageEntry.icon);
-  assert_object_equals(notification.actions, [{ action: "basilisk", title: "obelisk" }]);
+  assert_equals(notification.navigate, storageEntry.navigate);
+  assert_object_equals(notification.actions, [
+    { action: "basilisk", title: "obelisk" },
+    { action: "test", title: "test with navigate", navigate: "https://mozilla.org/" },
+  ]);
   assert_object_equals(notification.data, data);
   assert_equals(action, "basilisk");
 

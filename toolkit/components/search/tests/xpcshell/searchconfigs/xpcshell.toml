@@ -5,8 +5,8 @@ dupe-manifest = ""
 prefs = [
   # Enable separatePrivateDefault testing. We test with this on, as we have
   # separate tests for ensuring the normal = private when this is off.
-  "browser.search.separatePrivateDefault.ui.enabled=true",
-  "browser.search.separatePrivateDefault=true",
+  "browser.search.separatePrivateDefault.featureGate=true",
+  "browser.search.separatePrivateDefault.enabled=true",
 ]
 support-files = ["../../../../../../browser/locales/all-locales"]
 tags = "searchconfig remote-settings"

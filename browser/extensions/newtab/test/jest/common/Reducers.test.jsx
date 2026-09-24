@@ -5,7 +5,7 @@
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionTypes as at } from "common/Actions.mjs";
 
-const { PrivacyWidget, RecentSearches } = reducers;
+const { PrivacyWidget, RecentSearches, Wallpapers } = reducers;
 
 describe("PrivacyWidget reducer", () => {
   it("defaults to an uninitialized state", () => {
@@ -44,8 +44,72 @@ describe("RecentSearches reducer", () => {
     expect(next.searches).toEqual(["alpha", "beta"]);
   });
 
+  it("leaves initialized alone for a trending-only update", () => {
+    const next = RecentSearches(INITIAL_STATE.RecentSearches, {
+      type: at.WIDGETS_RECENT_SEARCHES_UPDATE,
+      data: { trending: [] },
+    });
+    expect(next.initialized).toBe(false);
+    expect(next.trending).toEqual([]);
+  });
+
   it("returns the prior state for unrelated actions", () => {
     const prev = INITIAL_STATE.RecentSearches;
     expect(RecentSearches(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
+  });
+});
+
+describe("Wallpapers reducer", () => {
+  it("starts with an empty library", () => {
+    expect(INITIAL_STATE.Wallpapers.customWallpapers).toEqual([]);
+    expect(INITIAL_STATE.Wallpapers.uploadResult).toBeNull();
+  });
+
+  it("stores the library on WALLPAPERS_CUSTOM_LIBRARY_SET", () => {
+    const data = [
+      { filename: "v1-custom-dark-center-1-abc", position: "center" },
+      { filename: "v1-builtin-light-top-1-def", position: "top" },
+    ];
+    const next = Wallpapers(INITIAL_STATE.Wallpapers, {
+      type: at.WALLPAPERS_CUSTOM_LIBRARY_SET,
+      data,
+    });
+    expect(next.customWallpapers).toEqual(data);
+  });
+
+  it("empties the library when the last image is removed", () => {
+    const prev = {
+      ...INITIAL_STATE.Wallpapers,
+      customWallpapers: [{ filename: "v1-custom-dark-center-1-abc" }],
+    };
+    const next = Wallpapers(prev, {
+      type: at.WALLPAPERS_CUSTOM_LIBRARY_SET,
+      data: [],
+    });
+    expect(next.customWallpapers).toEqual([]);
+  });
+
+  it("stores an upload result", () => {
+    const data = { requestId: "request-1", filename: "saved-image" };
+    const next = Wallpapers(INITIAL_STATE.Wallpapers, {
+      type: at.WALLPAPER_UPLOAD_RESULT,
+      data,
+    });
+    expect(next.uploadResult).toEqual(data);
+  });
+
+  it("leaves the library alone when only the applied wallpaper changes", () => {
+    const customWallpapers = [{ filename: "v1-custom-dark-center-1-abc" }];
+    const next = Wallpapers(
+      { ...INITIAL_STATE.Wallpapers, customWallpapers },
+      { type: at.WALLPAPERS_CUSTOM_SET, data: null }
+    );
+    expect(next.customWallpapers).toBe(customWallpapers);
+    expect(next.uploadedWallpaper).toBe(null);
+  });
+
+  it("returns the prior wallpaper state for unrelated actions", () => {
+    const prev = INITIAL_STATE.Wallpapers;
+    expect(Wallpapers(prev, { type: "SOME_OTHER_ACTION" })).toBe(prev);
   });
 });

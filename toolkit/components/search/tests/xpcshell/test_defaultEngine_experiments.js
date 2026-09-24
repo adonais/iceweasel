@@ -69,13 +69,14 @@ let defaultGetVariable = name => {
 
 add_setup(async () => {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   sinon.spy(NimbusFeatures.searchConfiguration, "onUpdate");
   sinon.stub(NimbusFeatures.searchConfiguration, "ready").resolves();
@@ -415,7 +416,7 @@ add_task(async function test_experiment_setting_user_changed_to_other_during() {
 
 add_task(async function test_experiment_setting_user_hid_app_default_during() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     false
   );
   await SearchService.setDefault(

@@ -236,7 +236,7 @@ JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
 // Push AllRegs in a way that is compatible with RegisterDump, regardless of
 // what PushRegsInMask might do to reduce the set size.
 static void DumpAllRegs(MacroAssembler& masm) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   masm.PushRegsInMask(AllRegs);
 #else
   // When SIMD isn't supported, PushRegsInMask reduces the set of float

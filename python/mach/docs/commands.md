@@ -35,7 +35,6 @@ The important decorators are as follows:
 
 Here is a complete example:
 
-% rstcheck: ignore-languages=python
 
 ```python
 from mach.decorators import Command, CommandArgument
@@ -95,7 +94,6 @@ why the command cannot currently be run.
 
 Here is an example:
 
-% rstcheck: ignore-languages=python
 
 ```python
 from mach.decorators import (

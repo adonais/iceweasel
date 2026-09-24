@@ -16,7 +16,7 @@
 
 The blame information is available from the blame strip, which is shown at the left side of the line numbers, as a gray line. Hovering a pointer over the blame strip shows a "blame popup", which shows the blame information for the given chunk of the code.
 
-The first two lines show the commit mssage, usually starts from the bug number, and then the author, and the author date (not the committer/push date).
+The first two lines show the commit message, usually starts from the bug number, and then the author, and the author date (not the committer/push date).
 
 annotated diff
 

@@ -199,6 +199,7 @@ fn transform(from: &ColorComponents, mat: &Transform) -> ColorComponents {
 
 fn xyz_d65_to_xyz_d50(from: &ColorComponents) -> ColorComponents {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const MAT: Transform = Transform::new(
          1.0479298208405488,    0.029627815688159344, -0.009243058152591178, 0.0,
          0.022946793341019088,  0.990434484573249,     0.015055144896577895, 0.0,
@@ -211,6 +212,7 @@ fn xyz_d65_to_xyz_d50(from: &ColorComponents) -> ColorComponents {
 
 fn xyz_d50_to_xyz_d65(from: &ColorComponents) -> ColorComponents {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const MAT: Transform = Transform::new(
          0.9554734527042182,   -0.028369706963208136,  0.012314001688319899, 0.0,
         -0.023098536874261423,  1.0099954580058226,   -0.020507696433477912, 0.0,
@@ -230,6 +232,7 @@ pub enum WhitePoint {
 }
 
 impl WhitePoint {
+    #[allow(clippy::excessive_precision)]
     const fn values(&self) -> ColorComponents {
         // <https://drafts.csswg.org/css-color-4/#color-conversion-code>
         match self {
@@ -298,7 +301,7 @@ pub fn from_xyz<To: ColorSpaceConversion>(
     from: &ColorComponents,
     white_point: WhitePoint,
 ) -> ColorComponents {
-    let mut xyz = from.clone();
+    let mut xyz = *from;
 
     // Convert the white point if needed.
     convert_white_point(white_point, To::WHITE_POINT, &mut xyz);
@@ -317,6 +320,7 @@ pub struct Srgb;
 
 impl Srgb {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const TO_XYZ: Transform = Transform::new(
         0.4123907992659595,  0.21263900587151036, 0.01933081871559185, 0.0,
         0.35758433938387796, 0.7151686787677559,  0.11919477979462599, 0.0,
@@ -325,6 +329,7 @@ impl Srgb {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const FROM_XYZ: Transform = Transform::new(
          3.2409699419045213, -0.9692436362808798,  0.05563007969699361, 0.0,
         -1.5373831775700935,  1.8759675015077206, -0.20397695888897657, 0.0,
@@ -337,7 +342,7 @@ impl ColorSpaceConversion for Srgb {
     const WHITE_POINT: WhitePoint = WhitePoint::D65;
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|value| {
+        (*from).map(|value| {
             let abs = value.abs();
 
             if abs < 0.04045 {
@@ -357,7 +362,7 @@ impl ColorSpaceConversion for Srgb {
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|value| {
+        (*from).map(|value| {
             let abs = value.abs();
 
             if abs > 0.0031308 {
@@ -428,7 +433,7 @@ impl ColorSpaceConversion for SrgbLinear {
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
         // Already in linear light form.
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
@@ -441,7 +446,7 @@ impl ColorSpaceConversion for SrgbLinear {
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         // Stay in linear light form.
-        from.clone()
+        *from
     }
 }
 
@@ -451,6 +456,7 @@ pub struct DisplayP3;
 
 impl DisplayP3 {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const TO_XYZ: Transform = Transform::new(
         0.48657094864821626, 0.22897456406974884, 0.0,                  0.0,
         0.26566769316909294, 0.6917385218365062,  0.045113381858902575, 0.0,
@@ -459,6 +465,7 @@ impl DisplayP3 {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const FROM_XYZ: Transform = Transform::new(
          2.4934969119414245,  -0.829488969561575,    0.035845830243784335, 0.0,
         -0.9313836179191236,   1.7626640603183468,  -0.07617238926804171,  0.0,
@@ -515,6 +522,7 @@ pub struct A98Rgb;
 
 impl A98Rgb {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const TO_XYZ: Transform = Transform::new(
         0.5766690429101308,  0.29734497525053616, 0.027031361386412378, 0.0,
         0.18555823790654627, 0.627363566255466,   0.07068885253582714,  0.0,
@@ -523,6 +531,7 @@ impl A98Rgb {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const FROM_XYZ: Transform = Transform::new(
          2.041587903810746,  -0.9692436362808798,   0.013444280632031024, 0.0,
         -0.5650069742788596,  1.8759675015077206,  -0.11836239223101824,  0.0,
@@ -534,8 +543,9 @@ impl A98Rgb {
 impl ColorSpaceConversion for A98Rgb {
     const WHITE_POINT: WhitePoint = WhitePoint::D65;
 
+    #[allow(clippy::excessive_precision)]
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|v| v.signum() * v.abs().powf(2.19921875))
+        (*from).map(|v| v.signum() * v.abs().powf(2.19921875))
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
@@ -546,9 +556,9 @@ impl ColorSpaceConversion for A98Rgb {
         transform(from, &Self::FROM_XYZ)
     }
 
+    #[allow(clippy::excessive_precision)]
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
-        from.clone()
-            .map(|v| v.signum() * v.abs().powf(0.4547069271758437))
+        (*from).map(|v| v.signum() * v.abs().powf(0.4547069271758437))
     }
 }
 
@@ -558,6 +568,7 @@ pub struct ProphotoRgb;
 
 impl ProphotoRgb {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const TO_XYZ: Transform = Transform::new(
         0.7977604896723027,  0.2880711282292934,     0.0,                0.0,
         0.13518583717574031, 0.7118432178101014,     0.0,                0.0,
@@ -566,6 +577,7 @@ impl ProphotoRgb {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const FROM_XYZ: Transform = Transform::new(
          1.3457989731028281,  -0.5446224939028347,  0.0,                0.0,
         -0.25558010007997534,  1.5082327413132781,  0.0,                0.0,
@@ -578,7 +590,7 @@ impl ColorSpaceConversion for ProphotoRgb {
     const WHITE_POINT: WhitePoint = WhitePoint::D50;
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|value| {
+        (*from).map(|value| {
             const ET2: f32 = 16.0 / 512.0;
 
             let abs = value.abs();
@@ -602,7 +614,7 @@ impl ColorSpaceConversion for ProphotoRgb {
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         const ET: f32 = 1.0 / 512.0;
 
-        from.clone().map(|v| {
+        (*from).map(|v| {
             let abs = v.abs();
             if abs >= ET {
                 v.signum() * abs.powf(1.0 / 1.8)
@@ -618,10 +630,13 @@ impl ColorSpaceConversion for ProphotoRgb {
 pub struct Rec2020;
 
 impl Rec2020 {
+    #[allow(clippy::excessive_precision)]
     const ALPHA: f32 = 1.09929682680944;
+    #[allow(clippy::excessive_precision)]
     const BETA: f32 = 0.018053968510807;
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const TO_XYZ: Transform = Transform::new(
         0.6369580483012913,  0.26270021201126703,  0.0,                  0.0,
         0.14461690358620838, 0.677998071518871,    0.028072693049087508, 0.0,
@@ -630,6 +645,7 @@ impl Rec2020 {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const FROM_XYZ: Transform = Transform::new(
          1.7166511879712676, -0.666684351832489,    0.017639857445310915, 0.0,
         -0.3556707837763924,  1.616481236634939,   -0.042770613257808655, 0.0,
@@ -642,7 +658,7 @@ impl ColorSpaceConversion for Rec2020 {
     const WHITE_POINT: WhitePoint = WhitePoint::D65;
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|value| {
+        (*from).map(|value| {
             let abs = value.abs();
 
             if abs < Self::BETA * 4.5 {
@@ -662,7 +678,7 @@ impl ColorSpaceConversion for Rec2020 {
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
-        from.clone().map(|v| {
+        (*from).map(|v| {
             let abs = v.abs();
 
             if abs > Self::BETA {
@@ -682,19 +698,19 @@ impl ColorSpaceConversion for XyzD50 {
     const WHITE_POINT: WhitePoint = WhitePoint::D50;
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn from_xyz(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 }
 
@@ -706,19 +722,19 @@ impl ColorSpaceConversion for XyzD65 {
     const WHITE_POINT: WhitePoint = WhitePoint::D65;
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn from_xyz(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
-        from.clone()
+        *from
     }
 }
 
@@ -736,7 +752,7 @@ impl ColorSpaceConversion for Lab {
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 
     /// Convert a CIELAB color to XYZ as specified in [1] and [2].
@@ -799,7 +815,7 @@ impl ColorSpaceConversion for Lab {
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 }
 
@@ -812,7 +828,7 @@ impl ColorSpaceConversion for Lch {
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
@@ -825,7 +841,7 @@ impl ColorSpaceConversion for Lch {
 
     fn from_xyz(from: &ColorComponents) -> ColorComponents {
         // First convert the XYZ to LAB.
-        let lab = Lab::from_xyz(&from);
+        let lab = Lab::from_xyz(from);
 
         // Then convert the Lab to LCH.
         orthogonal_to_polar(&lab, epsilon_for_range(0.0, 100.0))
@@ -833,7 +849,7 @@ impl ColorSpaceConversion for Lch {
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 }
 
@@ -843,6 +859,7 @@ pub struct Oklab;
 
 impl Oklab {
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const XYZ_TO_LMS: Transform = Transform::new(
          0.8190224432164319,  0.0329836671980271,  0.048177199566046255, 0.0,
          0.3619062562801221,  0.9292868468965546,  0.26423952494422764,  0.0,
@@ -851,6 +868,7 @@ impl Oklab {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const LMS_TO_OKLAB: Transform = Transform::new(
          0.2104542553,  1.9779984951,  0.0259040371, 0.0,
          0.7936177850, -2.4285922050,  0.7827717662, 0.0,
@@ -859,6 +877,7 @@ impl Oklab {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const LMS_TO_XYZ: Transform = Transform::new(
          1.2268798733741557,  -0.04057576262431372, -0.07637294974672142, 0.0,
         -0.5578149965554813,   1.1122868293970594,  -0.4214933239627914,  0.0,
@@ -867,6 +886,7 @@ impl Oklab {
     );
 
     #[rustfmt::skip]
+    #[allow(clippy::excessive_precision)]
     const OKLAB_TO_LMS: Transform = Transform::new(
         0.99999999845051981432,  1.0000000088817607767,    1.0000000546724109177,   0.0,
         0.39633779217376785678, -0.1055613423236563494,   -0.089484182094965759684, 0.0,
@@ -880,24 +900,24 @@ impl ColorSpaceConversion for Oklab {
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
-        let lms = transform(&from, &Self::OKLAB_TO_LMS);
+        let lms = transform(from, &Self::OKLAB_TO_LMS);
         let lms = lms.map(|v| v * v * v);
         transform(&lms, &Self::LMS_TO_XYZ)
     }
 
     fn from_xyz(from: &ColorComponents) -> ColorComponents {
-        let lms = transform(&from, &Self::XYZ_TO_LMS);
+        let lms = transform(from, &Self::XYZ_TO_LMS);
         let lms = lms.map(|v| v.cbrt());
         transform(&lms, &Self::LMS_TO_OKLAB)
     }
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 }
 
@@ -910,7 +930,7 @@ impl ColorSpaceConversion for Oklch {
 
     fn to_linear_light(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 
     fn to_xyz(from: &ColorComponents) -> ColorComponents {
@@ -923,7 +943,7 @@ impl ColorSpaceConversion for Oklch {
 
     fn from_xyz(from: &ColorComponents) -> ColorComponents {
         // First convert XYZ to Oklab.
-        let lab = Oklab::from_xyz(&from);
+        let lab = Oklab::from_xyz(from);
 
         // Then convert Oklab to OkLCH.
         orthogonal_to_polar(&lab, epsilon_for_range(0.0, 1.0))
@@ -931,6 +951,6 @@ impl ColorSpaceConversion for Oklch {
 
     fn to_gamma_encoded(from: &ColorComponents) -> ColorComponents {
         // No need for conversion.
-        from.clone()
+        *from
     }
 }

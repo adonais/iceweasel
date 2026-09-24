@@ -56,13 +56,13 @@ add_task(async function test_providers() {
 
   let provider = registerBasicTestProvider([match]);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let resultsPromise = promiseControllerNotification(
     controller,
     "onQueryResults"
   );
 
-  await providersManager.startQuery(context, controller);
+  await providersManager.startQuery(context, controller.parentController);
   // Sanity check that this doesn't throw. It should be a no-op since we await
   // for startQuery.
   providersManager.cancelQuery(context);

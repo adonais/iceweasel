@@ -30,8 +30,25 @@ user-context-manage-containers =
     .label = Manage containers
     .accesskey = o
 
-## Container colors, shown as selectable swatches in the container
-## creation/edit dialog.
+# The below strings need separate messages for use in panel-list implementations,
+# which take their label from the message value rather than a .label attribute.
+
+user-context-personal-panel-item = Personal
+    .accesskey = P
+user-context-work-panel-item = Work
+    .accesskey = W
+user-context-banking-panel-item = Banking
+    .accesskey = B
+user-context-shopping-panel-item = Shopping
+    .accesskey = S
+user-context-new-tab-panel-item = New Tab
+    .accesskey = N
+user-context-add-container-panel-item = Add new container
+    .accesskey = A
+user-context-manage-containers-panel-item = Manage containers
+    .accesskey = o
+
+## Container colors, shown as selectable swatches in the container creation/edit dialog.
 
 user-context-color-blue =
     .label = Blue

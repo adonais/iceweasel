@@ -561,13 +561,12 @@ async function doSuggestedIndexTest({
   UrlbarPrefs.set("maxRichResults", maxRichResults);
   let provider = registerBasicTestProvider(results);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
 
   // Finally, search and check the results.
   let expectedResults = expected.map(i => results[i]);
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(context.results, expectedResults);
 }

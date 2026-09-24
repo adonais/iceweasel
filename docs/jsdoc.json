@@ -1,5 +1,8 @@
 {
-  "plugins": ["jsdoc-plugins/skip-anonymous-locals.mjs"],
+  "plugins": [
+    "jsdoc-plugins/skip-anonymous-locals.mjs",
+    "jsdoc-plugins/skip-unnamed-members.mjs"
+  ],
   "source": {
     "includePattern": ".+\\.m?jsm?$"
   }

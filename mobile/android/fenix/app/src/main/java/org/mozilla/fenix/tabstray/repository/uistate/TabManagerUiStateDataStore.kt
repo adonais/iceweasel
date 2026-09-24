@@ -25,3 +25,6 @@ internal val hasUserEverHadOneTabGroupKey = booleanPreferencesKey("hasUserEverHa
 
 /** Datastore key for reading/writing whether the user has viewed the Tab Groups page. */
 internal val hasViewedTabGroupsPageKey = booleanPreferencesKey("hasViewedTabGroupsPageKey")
+
+/** Datastore key for reading/writing whether the ungroup confirmation dialog should be skipped. */
+internal val skipUngroupConfirmationKey = booleanPreferencesKey("skipUngroupConfirmationKey")

@@ -121,8 +121,7 @@ bool WorkerNavigator::GlobalPrivacyControl() const {
       }
     }
   }
-  return StaticPrefs::privacy_globalprivacycontrol_functionality_enabled() &&
-         gpcStatus;
+  return gpcStatus;
 }
 
 void WorkerNavigator::SetLanguages(const nsTArray<nsString>& aLanguages) {

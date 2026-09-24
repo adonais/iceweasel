@@ -18,23 +18,23 @@ static LazyLogModule sTaskQueueLog("TaskQueue");
 #define LOG_TQ(level, msg, ...) \
   MOZ_LOG(sTaskQueueLog, level, (msg, ##__VA_ARGS__))
 
-RefPtr<TaskQueue> TaskQueue::Create(already_AddRefed<nsIEventTarget> aTarget,
-                                    StaticString aName,
-                                    bool aSupportsTailDispatch) {
+RefPtr<TaskQueue> TaskQueue::Create(
+    already_AddRefed<nsIEventTarget> aTarget, StaticString aName,
+    enum TailDispatchPolicy aTailDispatchPolicy) {
   nsCOMPtr<nsIEventTarget> target(std::move(aTarget));
   LOG_TQ(LogLevel::Debug,
-         "Creating TaskQueue '%s' on target %p (supportsTailDispatch=%d)",
-         aName.get(), target.get(), aSupportsTailDispatch);
+         "Creating TaskQueue '%s' on target %p (tail-dispatch policy %s)",
+         aName.get(), target.get(), EnumValueToString(aTailDispatchPolicy));
 
   RefPtr<TaskQueue> queue =
-      new TaskQueue(do_AddRef(target), aName, aSupportsTailDispatch);
+      new TaskQueue(do_AddRef(target), aName, aTailDispatchPolicy);
 
   return queue;
 }
 
 TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     const char* aName, bool aSupportsTailDispatch)
-    : AbstractThread(aSupportsTailDispatch),
+                     const char* aName, enum TailDispatchPolicy aPolicy)
+    : AbstractThread(aPolicy),
       mTarget(aTarget),
       mQueueMonitor("TaskQueue::Queue"),
       mTailDispatcher(nullptr),

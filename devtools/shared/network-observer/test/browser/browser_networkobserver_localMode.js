@@ -153,6 +153,29 @@ add_task(async function testLocalMode() {
     }
   );
 
+  info("Assert that other origins can't fetch local mode origin");
+  await loadURL(
+    gBrowser.selectedBrowser,
+    "data:text/html,page from another origin, not a local mode page"
+  );
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [TEST_URL],
+    async localModeUrl => {
+      await Assert.rejects(
+        content.fetch(localModeUrl),
+        /NetworkError when attempting to fetch resource./,
+        "Fetching local mode URL should be blocked by cors"
+      );
+      const response = await content.fetch(localModeUrl, { mode: "no-cors" });
+      is(
+        response.type,
+        "opaque",
+        "But we can do no-cors request with opaque response"
+      );
+    }
+  );
+
   info(
     "Open a new tab without network interception and assert that the mappings aren't working"
   );

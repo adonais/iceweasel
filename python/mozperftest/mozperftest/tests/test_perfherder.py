@@ -9,6 +9,7 @@ import pytest
 from mozperftest.environment import METRICS
 from mozperftest.metrics.exceptions import PerfherderValidDataError
 from mozperftest.metrics.notebook.transforms.single_json import SingleJsonRetriever
+from mozperftest.metrics.perfherder import Perfherder
 from mozperftest.metrics.utils import metric_fields
 from mozperftest.tests.support import (
     BT_DATA,
@@ -196,6 +197,63 @@ def test_perfherder_test_settings():
             checked += 1
 
     assert checked == 5
+
+
+def test_perfherder_alert_severity():
+    options = {
+        "perfherder": True,
+        "perfherder-prefix": "",
+        "perfherder-metrics": [
+            metric_fields("name:mochitest-metric1,alertSeverity:critical"),
+            metric_fields("mochitest-metric2"),
+        ],
+        "perfherder-timestamp": 1.0,
+    }
+
+    metrics, metadata, env = setup_env(options)
+
+    metadata.clear_results()
+    with MOCHITEST_DATA.open() as f:
+        metadata.add_result(json.loads(f.read()))
+
+    with temp_file() as output:
+        env.set_arg("output", output)
+        with metrics as m, silence():
+            m(metadata)
+        with open(metadata.get_output()) as f:
+            blob = json.loads(f.read())
+
+    suite = blob["suites"][0]
+
+    # The key is left out entirely when no severity was asked for, so that
+    # Perfherder falls back to `normal` instead of seeing an explicit null
+    assert "alertSeverity" not in suite
+
+    severities = {
+        subtest["name"]: subtest.get("alertSeverity") for subtest in suite["subtests"]
+    }
+    assert severities["mochitest-metric1"] == "critical"
+    assert severities["mochitest-metric2"] is None
+
+
+def test_perfherder_suite_alert_severity():
+    mach_cmd, metadata, env = get_running_env(perfherder=True)
+    layer = Perfherder(env, mach_cmd)
+    subtests = [{"name": "sub1", "replicates": [1.0, 2.0], "result": {}}]
+
+    with silence():
+        suite = layer._build_blob(subtests, name="suite", alert_severity="critical")[
+            "suites"
+        ][0]
+    assert suite["alertSeverity"] == "critical"
+    # Subtests take the suite value as their default, the same way they do for
+    # alertThreshold and lowerIsBetter
+    assert suite["subtests"][0]["alertSeverity"] == "critical"
+
+    with silence():
+        suite = layer._build_blob(subtests, name="suite")["suites"][0]
+    assert "alertSeverity" not in suite
+    assert "alertSeverity" not in suite["subtests"][0]
 
 
 def test_perfherder_simple_names():

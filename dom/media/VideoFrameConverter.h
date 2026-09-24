@@ -86,7 +86,8 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
         mTarget,
         [self = RefPtr(this)](FrameToProcess&& aFrame, TimeStamp aTime) {
           self->QueueForProcessing(std::move(aFrame.mImage), aTime,
-                                   aFrame.mSize, aFrame.mForceBlack);
+                                   aFrame.mSize, aFrame.mForceBlack,
+                                   aFrame.mRotation);
         });
   }
 
@@ -103,8 +104,9 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
     TimeStamp t = aChunk.mTimeStamp;
     MOZ_ASSERT(!t.IsNull());
 
-    mPacer->Enqueue(
-        FrameToProcess(aChunk.mFrame.GetImage(), t, size, aForceBlack), t);
+    mPacer->Enqueue(FrameToProcess(aChunk.mFrame.GetImage(), t, size,
+                                   aForceBlack, aChunk.mRotation),
+                    t);
   }
 
   /**
@@ -131,7 +133,8 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
                                             TimeDuration::FromMicroseconds(1),
                                         time),
                                mLastFrameQueuedForProcessing.mSize,
-                               mLastFrameQueuedForProcessing.mForceBlack);
+                               mLastFrameQueuedForProcessing.mForceBlack,
+                               mLastFrameQueuedForProcessing.mRotation);
           }
         })));
   }
@@ -156,7 +159,8 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
                                             TimeDuration::FromMicroseconds(1),
                                         time),
                                mLastFrameQueuedForProcessing.mSize,
-                               /* aForceBlack= */ true);
+                               /* aForceBlack= */ true,
+                               mLastFrameQueuedForProcessing.mRotation);
           }
         })));
   }
@@ -194,16 +198,19 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
     FrameToProcess() = default;
 
     FrameToProcess(RefPtr<layers::Image> aImage, TimeStamp aTime,
-                   gfx::IntSize aSize, bool aForceBlack)
+                   gfx::IntSize aSize, bool aForceBlack,
+                   VideoRotation aRotation)
         : mImage(std::move(aImage)),
           mTime(aTime),
           mSize(aSize),
-          mForceBlack(aForceBlack) {}
+          mForceBlack(aForceBlack),
+          mRotation(aRotation) {}
 
     RefPtr<layers::Image> mImage;
     TimeStamp mTime = TimeStamp::Now();
     gfx::IntSize mSize = gfx::IntSize(640, 480);
     bool mForceBlack = false;
+    VideoRotation mRotation = VideoRotation::kDegree_0;
 
     int32_t Serial() const {
       if (mForceBlack) {
@@ -260,11 +267,12 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
   }
 
   void QueueForProcessing(RefPtr<layers::Image> aImage, TimeStamp aTime,
-                          gfx::IntSize aSize, bool aForceBlack) {
+                          gfx::IntSize aSize, bool aForceBlack,
+                          VideoRotation aRotation) {
     MOZ_ASSERT(mTarget->IsOnCurrentThread());
 
     FrameToProcess frame{std::move(aImage), aTime, aSize,
-                         aForceBlack || !mTrackEnabled};
+                         aForceBlack || !mTrackEnabled, aRotation};
 
     if (frame.mTime <= mLastFrameQueuedForProcessing.mTime) {
       LOG(LogLevel::Debug,
@@ -323,6 +331,19 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
         "VideoFrameConverterImpl::ProcessVideoFrame", this,
         &VideoFrameConverterImpl::ProcessVideoFrame,
         mLastFrameQueuedForProcessing)));
+  }
+
+  static webrtc::VideoRotation ToWebrtcVideoRotation(VideoRotation aRotation) {
+    switch (aRotation) {
+      case VideoRotation::kDegree_90:
+        return webrtc::kVideoRotation_90;
+      case VideoRotation::kDegree_180:
+        return webrtc::kVideoRotation_180;
+      case VideoRotation::kDegree_270:
+        return webrtc::kVideoRotation_270;
+      default:
+        return webrtc::kVideoRotation_0;
+    }
   }
 
   void ProcessVideoFrame(const FrameToProcess& aFrame) {
@@ -490,11 +511,13 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
           out_width, out_height);
       webrtc::I420Buffer::SetBlack(buffer.get());
 
-      VideoFrameConverted(webrtc::VideoFrame::Builder()
-                              .set_video_frame_buffer(buffer)
-                              .set_timestamp_us(time.us())
-                              .build(),
-                          inSize, aFrame.Serial());
+      VideoFrameConverted(
+          webrtc::VideoFrame::Builder()
+              .set_video_frame_buffer(buffer)
+              .set_timestamp_us(time.us())
+              .set_rotation(ToWebrtcVideoRotation(aFrame.mRotation))
+              .build(),
+          inSize, aFrame.Serial());
       return;
     }
 
@@ -541,22 +564,26 @@ class VideoFrameConverterImpl : public webrtc::AdaptedVideoTrackSource {
           "VideoFrameConverterImpl {}: Avoiding scaling for image {}, "
           "Dimensions: {}x{}",
           fmt::ptr(this), aFrame.Serial(), out_width, out_height);
-      VideoFrameConverted(webrtc::VideoFrame::Builder()
-                              .set_video_frame_buffer(srcFrame)
-                              .set_timestamp_us(time.us())
-                              .build(),
-                          inSize, aFrame.Serial());
+      VideoFrameConverted(
+          webrtc::VideoFrame::Builder()
+              .set_video_frame_buffer(srcFrame)
+              .set_timestamp_us(time.us())
+              .set_rotation(ToWebrtcVideoRotation(aFrame.mRotation))
+              .build(),
+          inSize, aFrame.Serial());
       return;
     }
 
     if (webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer =
             cropAndScale(webrtc::scoped_refptr(srcFrame), crop_x, crop_y,
                          crop_width, crop_height, out_width, out_height)) {
-      VideoFrameConverted(webrtc::VideoFrame::Builder()
-                              .set_video_frame_buffer(buffer)
-                              .set_timestamp_us(time.us())
-                              .build(),
-                          inSize, aFrame.Serial());
+      VideoFrameConverted(
+          webrtc::VideoFrame::Builder()
+              .set_video_frame_buffer(buffer)
+              .set_timestamp_us(time.us())
+              .set_rotation(ToWebrtcVideoRotation(aFrame.mRotation))
+              .build(),
+          inSize, aFrame.Serial());
     }
   }
 

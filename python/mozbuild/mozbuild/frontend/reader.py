@@ -27,7 +27,7 @@ import textwrap
 import time
 import traceback
 import types
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from concurrent.futures.process import ProcessPoolExecutor
 from io import StringIO
 from itertools import chain
@@ -1254,7 +1254,7 @@ class BuildReader:
         # It's very tempting to use a set here. Unfortunately, the recursive
         # make backend needs order preserved. Once we autogenerate all backend
         # files, we should be able to convert this to a set.
-        recurse_info = OrderedDict()
+        recurse_info = {}
         for d in dirs:
             if d in recurse_info:
                 raise SandboxValidationError(

@@ -29,7 +29,7 @@ add_setup(async function () {
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
 });

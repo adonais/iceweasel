@@ -74,7 +74,9 @@ Pick the language of the file the contributor will actually edit. If a bug spans
 
 Always set a mentor (`bug_mentors`) on the bug, defaulting to the bug filer. Without a mentor the bug won't show up in some good-first-bug dashboards, and a newcomer's comments or questions may be lost because nobody is clearly responsible for answering them.
 
-The filer is the person running this skill - use their Bugzilla email (the email of the user submitting the bug). If you don't know it, ask the user. Pass it to the URL builder with `--mentor`.
+The mentor is a **Bugzilla account** email, which the URL builder resolves from the filer's Bugzilla API key when you omit `--mentor`. Do not infer it from an address you already have: a Bugzilla account frequently uses one of its own (a `+bmo` alias is common), and a corporate address is not evidence about it. A guessed address puts a stranger on the hook for a newcomer's questions, and one that is no Bugzilla account at all makes `enter_bug.cgi` reject the submission.
+
+Pass `--mentor` when the mentor is someone other than the filer, and when the builder reports that it cannot resolve the address - most contributors have no python-bugzilla config for it to read. In that case ask the filer for it. Substituting an address you happen to have is never the answer.
 
 ## Comment body template
 
@@ -88,7 +90,7 @@ Filing as a good first bug to learn workflows.
 <optional: warning list / code snippet / current vs. desired>
 
 Link to the code:
-https://searchfox.org/firefox-main/rev/<sha>/<path>[#<line>]
+<a permalink from `searchfox-cli -q <term> -p <path> --permalink`; when it prints nothing, https://searchfox.org/firefox-main/source/<path> with no line number>
 
 To verify the fix:
 
@@ -113,10 +115,10 @@ The last paragraph (about auto-assignment) is canonical - keep it verbatim.
 Use the helper script `scripts/build_url.py` (path relative to this skill file) to generate each prefilled `enter_bug.cgi` URL:
 
 ```bash
-./scripts/build_url.py "<title>" "<comment>" --tracker 1361342 --lang rust --mentor you@mozilla.com
+./scripts/build_url.py "<title>" "<comment>" --tracker 1361342 --lang rust
 ```
 
-Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`, `--mentor`). It can also be imported and its `build_url()` function called directly. Always pass `--mentor` with the filer's email (see [Mentor](#mentor)).
+Run it with `--help` for the full list of options (`--product`, `--component`, `--tracker`, `--keywords`, `--lang`, `--mentor`). It can also be imported and its `build_url()` function called directly, which stays offline and omits the mentor unless you pass one; the command line resolves it (see [Mentor](#mentor)).
 
 ## Example: lint warnings (canonical case)
 
@@ -156,7 +158,7 @@ awk '/^\// { f=$0; next } /warning/ { c[f]++; lines[f]=lines[f] "\n" $0 }
 ## Reminders
 
 - **One bug per atomic task** unless the user opts into a combined bug.
-- **Always set a mentor** (`--mentor`), defaulting to the bug filer - otherwise the bug is invisible in some dashboards and questions go unanswered.
+- **Always set a mentor, and never hand-write the address** - let the builder resolve it, or ask the filer. Without a mentor the bug is invisible in some dashboards and a newcomer's questions go unanswered.
 - **Don't auto-assign** - the template explicitly tells contributors not to ask.
 - **Push back on scope** that's too big, too vague, or requires design decisions - those are not good-first-bugs.
 - **Match the component to the work** - don't dump everything under Lint and Formatting if the bug isn't a lint bug.

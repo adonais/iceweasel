@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -250,7 +251,7 @@ RTCError MergeRedCodec(const CodecConfiguration& config,
       // Opus RED uses Opus as both the primary payload and
       // the redundancy payload, with different timestamp offsets.
       param << primary_codec.id.value() << "/" << primary_codec.id.value();
-      red.SetParam(kCodecParamNotInNameValueFormat, param.str());
+      red.SetParam(kCodecParamNotInNameValueFormat, param.Release());
     }
   }
 
@@ -824,11 +825,45 @@ void LinkRed(std::vector<Codec>& codecs) {
           // Opus RED uses Opus as both the primary payload and
           // the redundancy payload, with different timestamp offsets.
           param << first_opus_pt << "/" << first_opus_pt;
-          codec.SetParam(kCodecParamNotInNameValueFormat, param.str());
+          codec.SetParam(kCodecParamNotInNameValueFormat, param.Release());
         }
       }
     }
   }
+}
+
+// Removes audio RED codecs whose redundancy (primary) payload types are all
+// absent from the codec list. This mirrors how an RTX codec is dropped when its
+// associated (apt) codec is not offered: keeping such a RED codec would emit an
+// a=fmtp:<red> <pt>/<pt> that references a payload type not present in the m=
+// section (a dangling primary). Happens e.g. when opus is removed from an audio
+// transceiver's codec preferences while RED is kept.
+void RemoveRedCodecsWithoutPrimary(std::vector<Codec>& codecs) {
+  std::set<int> present_pts;
+  for (const Codec& codec : codecs) {
+    if (codec.id.IsSet()) {
+      present_pts.insert(codec.id.value());
+    }
+  }
+  std::erase_if(codecs, [&present_pts](const Codec& codec) {
+    if (codec.type != Codec::Type::kAudio ||
+        codec.GetResiliencyType() != Codec::ResiliencyType::kRed) {
+      return false;
+    }
+    std::string fmtp;
+    if (!codec.GetParam(kCodecParamNotInNameValueFormat, &fmtp)) {
+      // No redundancy parameter to point at a primary which is what
+      // video+red uses.
+      return false;
+    }
+    for (absl::string_view pt_str : split(fmtp, '/')) {
+      int pt;
+      if (FromString(pt_str, &pt) && present_pts.contains(pt)) {
+        return false;  // A wrapped primary is still offered; keep RED.
+      }
+    }
+    return true;  // None of the wrapped primaries remain; drop RED.
+  });
 }
 
 // Update the ID fields of the codec vector in the legacy path
@@ -1143,6 +1178,9 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
     RecordCodecIdsAndLinkRed(pt_suggester, mid,
                              filtered_codecs.writable_codecs());
   }
+  // Drop RED codecs left dangling after the primary they wrap (e.g. opus) was
+  // filtered out, so the offer never references a non-existent payload type.
+  RemoveRedCodecsWithoutPrimary(filtered_codecs.writable_codecs());
   return filtered_codecs.codecs();
 }
 

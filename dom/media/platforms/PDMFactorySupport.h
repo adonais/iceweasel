@@ -46,6 +46,14 @@ class PDMFactorySupport final {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics);
 
+  // Asynchronous variant of `IsSupported`. Resolves once the module that would
+  // handle `aParams` can report accurate (hardware-inclusive) support; for
+  // remote modules this waits for the relevant process to report in. Resolves
+  // with an empty `DecodeSupportSet` past `AppShutdownConfirmed`. Must be
+  // called off the main thread.
+  static RefPtr<PDMSupportsDecoderPromise> IsSupportedAsync(
+      const SupportDecoderParams& aParams);
+
   // Singleton accessor. Thread-safe; lazily builds the cached factory on
   // first call. Returns null after `AppShutdownConfirmed`. Prefer the static
   // query methods above for query-only call sites; `Instance()` is exposed
@@ -68,6 +76,11 @@ class PDMFactorySupport final {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const {
     return mFactory->Supports(aParams, aDiagnostics);
+  }
+
+  RefPtr<PDMSupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const {
+    return mFactory->SupportsAsync(aParams);
   }
 
   // Returns false if registration fails on the main thread

@@ -6,6 +6,7 @@
 #ifndef TOOLKIT_COMPONENTS_ML_IPC_HWINFERENCEPARENT_H_
 #define TOOLKIT_COMPONENTS_ML_IPC_HWINFERENCEPARENT_H_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/ProcInfo.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -44,12 +45,31 @@ class HWInferenceParent final : public PHWInferenceParent {
   nsresult BindToUtilityProcess(
       const RefPtr<ipc::UtilityProcessParent>& aUtilityParent);
 
+  // Resolved once this actor is bound to its utility process, rejected if that
+  // process goes away before it can be.
+  RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
+
+  // Forwards aEndpoint to the HWInference process once its actor is ready. The
+  // caller must hold a keep-alive, see
+  // UtilityProcessManager::AcquireContentHWInferenceProcess().
+  static void StartContentSpeechRecognition(
+      Endpoint<PSpeechRecognitionParent>&& aEndpoint,
+      dom::ContentParentId aChildId);
+
   static RefPtr<HWInferenceParent> GetSingleton();
 
  private:
   friend PHWInferenceParent;
   static StaticRefPtr<HWInferenceParent> sInstance;
   ~HWInferenceParent() = default;
+
+  // The utility process this actor is bound to, null until BindToUtilityProcess
+  // and once destroyed. An instance is only ever bound to one process.
+  RefPtr<ipc::UtilityProcessParent> mUtilityParent;
+
+  const RefPtr<GenericNonExclusivePromise::Private> mReadyPromise =
+      new GenericNonExclusivePromise::Private(
+          "HWInferenceParent::mReadyPromise");
 };
 
 }  // namespace mozilla::hwinference

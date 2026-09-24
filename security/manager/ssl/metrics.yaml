@@ -85,12 +85,17 @@ tls:
       - rsa_pss
       - psk
       - tls13_any
+      - mldsa44
+      - mldsa65
+      - mldsa87
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066588
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1862062
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2050189
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066588
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never

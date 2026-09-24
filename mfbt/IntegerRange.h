@@ -69,7 +69,6 @@ class IntegerIterator {
   /* Comparison operators */
 
   bool operator==(const IntegerIterator& aOther) const = default;
-  bool operator!=(const IntegerIterator& aOther) const = default;
   bool operator<(const IntegerIterator& aOther) const = default;
   bool operator<=(const IntegerIterator& aOther) const = default;
   bool operator>(const IntegerIterator& aOther) const = default;

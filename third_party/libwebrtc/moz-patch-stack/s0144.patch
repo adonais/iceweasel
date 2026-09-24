@@ -1,38 +1,51 @@
-From: Jan Grulich <jgrulich@redhat.com>
-Date: Wed, 5 Aug 2026 13:39:00 +0000
-Subject: Bug 2054625 - WebRTC backport: Video capture: validate PipeWire
- camera frame size to prevent OOB read r=pehrsons
+From: Michael Froman <mfroman@mozilla.com>
+Date: Fri, 21 Aug 2026 11:59:00 -0500
+Subject: Bug 2064200 - (fix-ce3d64be6a) support
+ AudioReceiveStreamInterface::Config.Copy()
 
-Check spa_chunk::size is not larger than mmap'ed buffer, which would
-lead to an out-of-bounds read when the frame is copied. Validate that
-chunk offset + size does not exceed maxsize before processing.
-
-This is a simple backport of an WebRTC upstream change.
-
-Upstream commit: 612430e8266881eaff478b0000cacc90fb71c918
-
-Differential Revision: https://phabricator.services.mozilla.com/D316000
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/104591ff24beecaf118826e216e5a0dee17f98a2
+Mirrors VideoReceiveStreamInterface::Config.Copy().
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/af2661e1040fbe7653b8133a8a9c7ce887791c0b
 ---
- modules/video_capture/linux/video_capture_pipewire.cc | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ call/audio_receive_stream.cc |  1 +
+ call/audio_receive_stream.h  | 10 +++++++++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/modules/video_capture/linux/video_capture_pipewire.cc b/modules/video_capture/linux/video_capture_pipewire.cc
-index c83867e2a2..e8ef843b8e 100644
---- a/modules/video_capture/linux/video_capture_pipewire.cc
-+++ b/modules/video_capture/linux/video_capture_pipewire.cc
-@@ -477,6 +477,14 @@ void VideoCaptureModulePipeWire::ProcessBuffers() {
-       continue;
-     }
+diff --git a/call/audio_receive_stream.cc b/call/audio_receive_stream.cc
+index f2e80eef92..c8e818a1d0 100644
+--- a/call/audio_receive_stream.cc
++++ b/call/audio_receive_stream.cc
+@@ -16,6 +16,7 @@ AudioReceiveStreamInterface::Stats::Stats() = default;
+ AudioReceiveStreamInterface::Stats::~Stats() = default;
  
-+    if (static_cast<uint64_t>(spaBuffer->datas[0].chunk->offset) +
-+            spaBuffer->datas[0].chunk->size >
-+        spaBuffer->datas[0].maxsize) {
-+      RTC_LOG(LS_ERROR) << "Dropping frame with invalid size";
-+      pw_stream_queue_buffer(stream_, buffer);
-+      continue;
-+    }
+ AudioReceiveStreamInterface::Config::Config() = default;
++AudioReceiveStreamInterface::Config::Config(const Config&) = default;
+ AudioReceiveStreamInterface::Config::Config(Config&&) = default;
+ AudioReceiveStreamInterface::Config&
+ AudioReceiveStreamInterface::Config::operator=(Config&&) = default;
+diff --git a/call/audio_receive_stream.h b/call/audio_receive_stream.h
+index df6b99bdf2..72d7ad119b 100644
+--- a/call/audio_receive_stream.h
++++ b/call/audio_receive_stream.h
+@@ -120,13 +120,21 @@ class AudioReceiveStreamInterface : public MediaReceiveStreamInterface {
+   };
+ 
+   struct Config {
++   private:
++    // Access to the copy constructor is private to force use of the Copy()
++    // method for those exceptional cases where we do use it.
++    Config(const Config&);
 +
-     if (spaBuffer->datas[0].type == SPA_DATA_DmaBuf ||
-         spaBuffer->datas[0].type == SPA_DATA_MemFd) {
-       ScopedBuf frame;
++   public:
+     Config();
+-    Config(const Config&) = delete;
+     Config& operator=(const Config&) = delete;
+     Config(Config&&);
+     Config& operator=(Config&&);
+     ~Config();
+ 
++    // Mostly used by tests.  Avoid creating copies if you can.
++    Config Copy() const { return Config(*this); }
++
+     std::string ToString() const;
+ 
+     // Receive-stream specific RTP settings.

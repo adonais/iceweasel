@@ -17,6 +17,15 @@ function searchComponentOf(registry) {
   );
 }
 
+add_setup(function () {
+  // Nova is off by default outside Nightly, and the New Tab search bar stands
+  // down with it.
+  Services.prefs.setBoolPref("browser.nova.enabled", true);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("browser.nova.enabled");
+  });
+});
+
 async function setFeatureGate(registry, enabled) {
   let updated = registry.once(AboutNewTabComponentRegistry.UPDATED_EVENT);
   UrlbarPrefs.set("newtab.featureGate", enabled);
@@ -60,6 +69,42 @@ add_task(async function test_featureGate() {
     searchComponentOf(registry).tagName,
     "content-search-handoff-ui",
     "The handoff search bar comes back once the gate is disabled again"
+  );
+});
+
+add_task(async function test_nova() {
+  UrlbarPrefs.set("newtab.featureGate", false);
+  let registry = new AboutNewTabComponentRegistry();
+  registerCleanupFunction(() => {
+    registry.destroy();
+    Services.prefs.clearUserPref("browser.urlbar.newtab.featureGate");
+  });
+
+  await setFeatureGate(registry, true);
+  Assert.equal(
+    searchComponentOf(registry).tagName,
+    "moz-urlbar",
+    "<moz-urlbar> is registered while Nova is enabled"
+  );
+
+  let updated = registry.once(AboutNewTabComponentRegistry.UPDATED_EVENT);
+  Services.prefs.setBoolPref("browser.nova.enabled", false);
+  await updated;
+
+  Assert.equal(
+    searchComponentOf(registry).tagName,
+    "content-search-handoff-ui",
+    "The handoff search bar takes over once Nova is disabled"
+  );
+
+  updated = registry.once(AboutNewTabComponentRegistry.UPDATED_EVENT);
+  Services.prefs.setBoolPref("browser.nova.enabled", true);
+  await updated;
+
+  Assert.equal(
+    searchComponentOf(registry).tagName,
+    "moz-urlbar",
+    "<moz-urlbar> comes back once Nova is enabled again"
   );
 });
 

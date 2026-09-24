@@ -6,7 +6,10 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 /**
@@ -24,7 +27,13 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
  * composed at once), so they can't be matched by a single text or a merged-tree testTag. Instead the tests advance via
  * BasePage.mozClickDisplayed(...), which clicks the one currently-*displayed* match.
  */
-object OnboardingSelectors {
+object OnboardingSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        TERMS_OF_USE_CARD,
+        DEFAULT_BROWSER_CARD,
+        CONTINUE_BUTTON,
+        NOT_NOW_BUTTON,
+    }
 
     // --- Card titles (unique text; verified visible only when on that page) ---
     val TERMS_OF_USE_TITLE =
@@ -32,7 +41,8 @@ object OnboardingSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.onboarding_welcome_to_firefox), // "Welcome to Firefox"
             description = "Terms of Use onboarding card title",
-            groups = listOf("requiredForPage", "termsOfUseCard"),
+            groups = setOf(Group.TERMS_OF_USE_CARD),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val DEFAULT_BROWSER_TITLE =
@@ -43,7 +53,7 @@ object OnboardingSelectors {
                     R.string.nova_onboarding_set_to_default_title_2
                 ), // "Open all your links with built-in privacy"
             description = "Default browser onboarding card title",
-            groups = listOf("defaultBrowserCard"),
+            groups = setOf(Group.DEFAULT_BROWSER_CARD),
         )
 
     // --- Advance controls (shared text across cards; click via mozClickDisplayed) ---
@@ -52,7 +62,7 @@ object OnboardingSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.nova_onboarding_continue_button), // "Continue"
             description = "Onboarding Continue button (current card)",
-            groups = listOf("continueButton"),
+            groups = setOf(Group.CONTINUE_BUTTON),
         )
 
     val NOT_NOW_BUTTON =
@@ -60,14 +70,6 @@ object OnboardingSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.nova_onboarding_negative_button), // "Not now"
             description = "Onboarding 'Not now' skip button (current card)",
-            groups = listOf("notNowButton"),
-        )
-
-    val all =
-        listOf(
-            TERMS_OF_USE_TITLE,
-            DEFAULT_BROWSER_TITLE,
-            CONTINUE_BUTTON,
-            NOT_NOW_BUTTON,
+            groups = setOf(Group.NOT_NOW_BUTTON),
         )
 }

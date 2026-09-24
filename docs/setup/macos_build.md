@@ -10,7 +10,7 @@ minutes of work, spread out over an hour or two.
 - **Memory:** 4GB RAM minimum, 8GB+ recommended.
 - **Disk Space:** At least 30GB of free disk space.
 - **Operating System:** macOS - most recent or prior release. It is advisable
-  to upgrade to the latest “point” release. See {ref}`build_hosts` for more
+  to upgrade to the latest “point” release. See {ref}`build-hosts` for more
   information.
 
 ## 1. System preparation
@@ -46,7 +46,7 @@ python3 bootstrap.py
 ### Choosing a build type
 
 If you aren't modifying the Firefox backend, then select one of the
-{ref}`Artifact Mode <understanding-artifact-builds>` options. If you are
+[Artifact Mode](/contributing/build/artifact_builds.md) options. If you are
 building Firefox for Android, you should also see the {ref}`GeckoView Contributor Guide <geckoview-contributor-guide>`.
 
 ## 3. Build and Run
@@ -71,6 +71,8 @@ For more information on what to do now, see https://firefox-source-docs.mozilla.
 You can now use the `./mach run` command to run your locally built Firefox!
 
 If your build fails, please reference the steps in the [Troubleshooting section](#troubleshooting).
+
+(signing-local-macos-builds)=
 
 ### Signing
 

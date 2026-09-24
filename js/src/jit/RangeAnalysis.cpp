@@ -2020,7 +2020,10 @@ bool RangeAnalysis::analyzeLoop(const MBasicBlock* header) {
     analyzeLoopPhi(iterationBound, *iter);
   }
 
-  if (!mir->compilingWasm() && !mir->outerInfo().hadBoundsCheckBailout()) {
+  // Disallow hoisting for loops that have a generator resume dispatch. This
+  // matches jit::LICM.
+  if (!mir->compilingWasm() && !mir->outerInfo().hadBoundsCheckBailout() &&
+      !header->hasGeneratorResumeEntry()) {
     // Try to hoist any bounds checks from the loop using symbolic bounds.
 
     Vector<MBoundsCheck*, 0, JitAllocPolicy> hoistedChecks(alloc());

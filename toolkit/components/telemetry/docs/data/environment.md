@@ -304,8 +304,8 @@ private browsing mode. This may be the same engine as set for normal browsing
 mode.
 
 This object contains the same information as `defaultSearchEngineData`. It
-is only reported if the `browser.search.separatePrivateDefault` preference is
-set to `true`.
+is only reported if the `browser.search.separatePrivateDefault.enabled`
+preference is set to `true`.
 
 ### userPrefs
 

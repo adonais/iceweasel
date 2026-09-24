@@ -72,6 +72,7 @@ class HomeActivityTestRule(
         nativeShareSheetEnabled: Boolean = false,
         showVoiceSearchInDisplayToolbar: Boolean = false,
         isHomepageTrendingRecentSearchEnabled: Boolean = false,
+        showAddressBarInFocusMode: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
@@ -96,6 +97,7 @@ class HomeActivityTestRule(
         this.nativeShareSheetEnabled = nativeShareSheetEnabled
         this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
         this.isHomepageTrendingRecentSearchEnabled = isHomepageTrendingRecentSearchEnabled
+        this.showAddressBarInFocusMode = showAddressBarInFocusMode
     }
 
     /** Update settings after the activity was created. */
@@ -213,6 +215,7 @@ internal constructor(
         nativeShareSheetEnabled: Boolean = false,
         showVoiceSearchInDisplayToolbar: Boolean = false,
         isHomepageTrendingRecentSearchEnabled: Boolean = false,
+        showAddressBarInFocusMode: Boolean = false,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
@@ -239,6 +242,7 @@ internal constructor(
         this.nativeShareSheetEnabled = nativeShareSheetEnabled
         this.showVoiceSearchInDisplayToolbar = showVoiceSearchInDisplayToolbar
         this.isHomepageTrendingRecentSearchEnabled = isHomepageTrendingRecentSearchEnabled
+        this.showAddressBarInFocusMode = showAddressBarInFocusMode
     }
 
     private val longTapUserPreference = getLongPressTimeout()
@@ -312,6 +316,7 @@ internal constructor(
         nativeShareSheetEnabled = settings.nativeShareSheetEnabled
         isHomepageTrendingRecentSearchEnabled = settings.enableHomepageTrendingRecentSearch
         isTabStripEnabled = settings.isTabStripEnabled
+        showAddressBarInFocusMode = settings.showAddressBarInFocusMode
     }
 
     companion object {

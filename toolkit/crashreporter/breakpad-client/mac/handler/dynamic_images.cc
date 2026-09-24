@@ -47,8 +47,6 @@ extern "C" { // needed to compile on Leopard
 #include <string>
 #include <vector>
 
-#include "breakpad_nlist_64.h"
-
 #if !TARGET_OS_IPHONE
 #include <CoreServices/CoreServices.h>
 #endif  // !TARGET_OS_IPHONE
@@ -389,28 +387,6 @@ DynamicImages::DynamicImages(mach_port_t task)
       cpu_type_(DetermineTaskCPUType(task)),
       image_list_() {
   ReadImageInfoForTask();
-}
-
-template<typename MachBits>
-static uint64_t LookupSymbol(const char* symbol_name,
-                             const char* filename,
-                             cpu_type_t cpu_type) {
-  typedef typename MachBits::nlist_type nlist_type;
-
-  nlist_type symbol_info[8] = {};
-  const char *symbolNames[2] = { symbol_name, "\0" };
-  nlist_type &list = symbol_info[0];
-  int invalidEntriesCount = breakpad_nlist(filename,
-                                           &list,
-                                           symbolNames,
-                                           cpu_type);
-
-  if(invalidEntriesCount != 0) {
-    return 0;
-  }
-
-  assert(list.n_value);
-  return list.n_value;
 }
 
 uint64_t DynamicImages::GetDyldAllImageInfosPointer() {

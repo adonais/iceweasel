@@ -17,10 +17,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/506d4efaf2dc29472
  3 files changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index d8c10399ef..b38a144fc2 100644
+index 6fdac0cabf..4abfd48931 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -872,6 +872,10 @@ rtc_library("desktop_capture") {
+@@ -873,6 +873,10 @@ rtc_library("desktop_capture") {
        "../../rtc_base:sanitizer",
        "../portal",
      ]
@@ -32,10 +32,10 @@ index d8c10399ef..b38a144fc2 100644
  
    if (rtc_enable_win_wgc) {
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 0a463c7619..7f91839dfd 100644
+index dc0d234db3..7c020a9004 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
-@@ -143,11 +143,9 @@ if (!build_with_mozilla) {
+@@ -146,11 +146,9 @@ if (!build_with_mozilla) {
        deps -= [ ":pipewire_stubs" ]
        defines -= [ "WEBRTC_DLOPEN_PIPEWIRE" ]
        public_deps = [

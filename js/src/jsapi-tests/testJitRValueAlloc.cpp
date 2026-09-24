@@ -55,8 +55,6 @@ class Fibonacci {
 
     bool operator==(const Iterator& other) const = default;
 
-    bool operator!=(const Iterator& other) const = default;
-
     auto operator*() const { return static_cast<int32_t>(value_); }
   };
 

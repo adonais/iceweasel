@@ -66,15 +66,14 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         update_settings = None
     extra_files = []
     if update_settings:
-        extra_files.append(
-            (update_settings, "Frameworks/UpdateSettings.framework/UpdateSettings")
-        )
-    extra_files.append(
-        (
-            "macos-frameworks/UpdateSettings/Info.plist",
-            "Frameworks/UpdateSettings.framework/Resources/Info.plist",
-        )
-    )
+        extra_files.append((
+            update_settings,
+            "Frameworks/UpdateSettings.framework/UpdateSettings",
+        ))
+    extra_files.append((
+        "macos-frameworks/UpdateSettings/Info.plist",
+        "Frameworks/UpdateSettings.framework/Resources/Info.plist",
+    ))
     MacOSBundle(
         f"!/{FINAL_TARGET}/updater.app",
         skeleton="macbuild/Contents",

@@ -147,6 +147,7 @@ class ModuleMapKey : public PLDHashEntryHdr {
  *
  * 5.  When the fetch operation is complete, the derived loader calls
  *     OnFetchComplete() passing an error code to indicate success or failure.
+ *     OnFetchComplete() completes the request in either case.
  *
  * 6.  On success, the loader attempts to create a module script by calling the
  *     virtual CompileFetchedModule() method.
@@ -330,7 +331,10 @@ class ModuleLoaderBase : public nsISupports {
   nsresult RestartModuleLoad(ModuleLoadRequest* aRequest);
 
   // Notify the module loader when a fetch started by StartFetch() completes.
-  nsresult OnFetchComplete(ModuleLoadRequest* aRequest, nsresult aRv);
+  // This always completes the request: on failure, including a failure to
+  // create the module script, the request is errored and the caller must not
+  // run any further error handling for it.
+  void OnFetchComplete(ModuleLoadRequest* aRequest, nsresult aRv);
 
   // Link the module and all its imports. This must occur prior to evaluation.
   bool InstantiateModuleGraph(ModuleLoadRequest* aRequest);

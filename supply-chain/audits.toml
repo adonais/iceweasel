@@ -85,7 +85,7 @@ notes = "Maintained by the CryptoEng team at Mozilla."
 [[wildcard-audits.cocoa]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-07-23"
 end = "2023-05-04"
 renew = false
@@ -103,7 +103,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.cocoa-foundation]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2020-07-20"
 end = "2023-05-04"
 renew = false
@@ -121,7 +121,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.core-foundation]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-11-12"
 end = "2023-05-04"
 renew = false
@@ -139,7 +139,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.core-foundation-sys]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-11-12"
 end = "2023-05-04"
 renew = false
@@ -157,7 +157,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.core-graphics]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-10-28"
 end = "2023-05-04"
 renew = false
@@ -175,7 +175,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.core-graphics-types]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2020-07-20"
 end = "2023-05-04"
 renew = false
@@ -184,7 +184,7 @@ notes = "I've reviewed every source contribution that was neither authored nor r
 [[wildcard-audits.core-text]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-03-29"
 end = "2023-05-04"
 renew = false
@@ -220,8 +220,8 @@ who = "Henri Sivonen <hsivonen@hsivonen.fi>"
 criteria = "safe-to-deploy"
 user-id = 4484 # Henri Sivonen (hsivonen)
 start = "2019-02-26"
-end = "2025-10-23"
-notes = "I, Henri Sivonen, wrote encoding_rs for Gecko and have reviewed contributions by others. There are two caveats to the certification: 1) The crate does things that are documented to be UB but that do not appear to actually be UB due to integer types differing from the general rule; https://github.com/hsivonen/encoding_rs/issues/79 . 2) It would be prudent to re-review the code that reinterprets buffers of integers as SIMD vectors; see https://github.com/hsivonen/encoding_rs/issues/87 ."
+end = "2027-09-07"
+notes = "I, Henri Sivonen, wrote encoding_rs for Gecko and have reviewed contributions by others."
 
 [[wildcard-audits.etagere]]
 who = "Nicolas Silva <nical@fastmail.com>"
@@ -250,7 +250,7 @@ notes = "This crate is written and solely maintained by a mozilla employee."
 [[wildcard-audits.freetype]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2020-02-28"
 end = "2023-05-04"
 renew = false
@@ -268,7 +268,7 @@ notes = "All code written or reviewed by Mozilla."
 [[wildcard-audits.gleam]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-03-18"
 end = "2023-05-04"
 renew = false
@@ -339,7 +339,7 @@ notes = "Hawk is written and maintained by mozilla employees."
 [[wildcard-audits.io-surface]]
 who = "Bobby Holley <bobbyholley@gmail.com>"
 criteria = "safe-to-deploy"
-user-id = 2396 # Josh Matthews (jdm)
+user-id = 2396 # Josh Bowman-Matthews (jdm)
 start = "2019-07-23"
 end = "2023-05-04"
 renew = false
@@ -423,6 +423,14 @@ criteria = "safe-to-deploy"
 user-id = 83100 # Max Inden (mxinden)
 start = "2025-01-29"
 end = "2026-09-24"
+
+[[wildcard-audits.multiversion_no_op]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+user-id = 4484 # Henri Sivonen (hsivonen)
+start = "2026-07-30"
+end = "2027-08-06"
+notes = "I, Henri Sivonen, am the sole author of multiversion_no_op (which is a trivial crate)."
 
 [[wildcard-audits.ohttp]]
 who = "Martin Thomson <mt@lowentropy.net>"
@@ -1214,14 +1222,10 @@ delta = "0.69.4 -> 0.72.0"
 notes = "I'm the primary maintainer of this crate."
 
 [[audits.bindgen]]
-who = [
-    "Emilio Cobos Álvarez <emilio@crisal.io>",
-    "Mike Hommey <mh+mozilla@glandium.org>",
-]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
-delta = "0.72.0 -> 0.72.0@git:5274da5a06411accb266c10819b989ac25a81b7d"
-importable = false
-notes = "Authored or reviewed all relevant changes upstream."
+delta = "0.72.0 -> 0.73.1"
+notes = "I'm the primary maintainer of this crate."
 
 [[audits.bit-set]]
 who = "Aria Beingessner <a.beingessner@gmail.com>"
@@ -1473,6 +1477,12 @@ who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "1.2.16 -> 1.2.30"
 
+[[audits.cc]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "1.2.53 -> 1.4.5"
+notes = "Nothing out of the ordinary. Fair amount of changes mostly related to msvc and wasi, no new unsafe code or suspicious env access or what not."
+
 [[audits.cfg_aliases]]
 who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -1675,6 +1685,11 @@ introduce any new forms of risk.
 who = "Erich Gubler <erichdongubler@gmail.com>"
 criteria = "safe-to-deploy"
 delta = "20.1.0 -> 21.0.0"
+
+[[audits.core_detect]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "1.0.0"
 
 [[audits.core_maths]]
 who = "Makoto Kato <m_kato@ga2.so-net.ne.jp>"
@@ -1914,7 +1929,7 @@ notes = "First-party code"
 [[audits.cssparser]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
-delta = "0.37.0 -> 0.38.0@git:84af7967fc0093c81f44c2d03029fe6db546485e"
+delta = "0.37.0 -> 0.38.0@git:ddccc070a0261cb94195ed0f74095c67b86a8550"
 importable = false
 notes = "All changes authored or reviewed by me."
 
@@ -1953,7 +1968,7 @@ notes = "First party code"
 [[audits.cssparser-macros]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
-delta = "0.7.0 -> 0.7.0@git:84af7967fc0093c81f44c2d03029fe6db546485e"
+delta = "0.7.0 -> 0.7.0@git:ddccc070a0261cb94195ed0f74095c67b86a8550"
 importable = false
 notes = "Change authored by me to allow syn 3 and 2."
 
@@ -2627,7 +2642,7 @@ delta = "0.8.31 -> 0.8.32"
 [[audits.encoding_rs]]
 who = "Henri Sivonen <hsivonen@hsivonen.fi>"
 criteria = "safe-to-deploy"
-delta = "0.8.35 -> 0.8.35@git:1236d1bc423e6ba35a06485f74a6304db2d703b5"
+delta = "0.8.35 -> 0.8.35@git:a4f2911cece3997c46da56785782b60dc0e5ab17"
 importable = false
 
 [[audits.enum-map]]
@@ -2775,6 +2790,12 @@ filetime_win was written by Adam Gashlin for Mozilla's use.  The `unsafe` code
 blocks in filetime_win 0.2.0 are straight-forward invocations of `mem::zeroed`
 and expected invocations of Win32 APIs (with error handling as appropriate).
 """
+
+[[audits.find-msvc-tools]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.1.8 -> 0.1.12"
+notes = "Pretty minor changes, no new unsafe code."
 
 [[audits.flagset]]
 who = "Ryan Hunt <rhunt@eqrion.net>"
@@ -4883,9 +4904,10 @@ delta = "0.15.0 -> 0.22.0"
 who = [
     "Benjamin Beurdouche <beurdouche@mozilla.com>",
     "Lars Eggert <leggert@mozilla.com>",
+    "Max Inden <mail@max-inden.de>",
 ]
 criteria = "safe-to-deploy"
-delta = "0.22.0 -> 0.22.0@git:2a2e344019bfc76b7e566ee6e0549cf668d90127"
+delta = "0.22.0 -> 0.22.0@git:eb1c880304127bcb7d0ee6d701fd4ca9ebc73403"
 importable = false
 
 [[audits.mockito]]
@@ -4931,8 +4953,18 @@ delta = "0.3.0 -> 0.4.1"
 [[audits.mtu]]
 who = "Max Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
-delta = "0.4.1 -> 0.4.1@git:e2a2a7459b8b51778b50209251a61fc5ca020893"
+delta = "0.4.1 -> 0.4.1@git:965bea08e57a7b79679f5ea4a51889fb6c669a15"
 importable = false
+
+[[audits.multiversion]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "0.8.0"
+
+[[audits.multiversion-macros]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "0.8.0"
 
 [[audits.naga]]
 who = "Dzmitry Malyshau <kvark@fastmail.com>"
@@ -5062,12 +5094,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.naga]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.naga-types]]
@@ -5080,12 +5112,12 @@ version = "30.0.0"
 
 [[audits.naga-types]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.net2]]
@@ -6691,11 +6723,25 @@ who = "Max Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
 delta = "1.1.0 -> 1.3.0"
 
+[[audits.shlex]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "1.3.0 -> 2.0.1"
+notes = """
+Mostly removes some deprecated and unsound APIs.
+"""
+
 [[audits.signal-hook-registry]]
 who = "Henrik Skupin <mail@hskupin.info>"
 criteria = "safe-to-run"
 version = "1.4.8"
 notes = "Well-maintained crate for low-level OS signal handling, used via tokio's signal feature."
+
+[[audits.simdutf8]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "0.1.5"
+notes = "Confidence in correctness of the algorithm is based on fuzzing the SSE 4.2 and AVX2 implementations rather than working through the logic of the code. Audit of aarch64 and Wasm is by comparing the code with the SSE 4.2 case."
 
 [[audits.siphasher]]
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
@@ -6868,6 +6914,11 @@ who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
 version = "0.3.1"
 notes = "Succinct and easily-verified unsafe code."
+
+[[audits.target-features]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "0.1.6"
 
 [[audits.tempfile]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -8042,12 +8093,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.wgpu-core]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -8101,12 +8152,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.wgpu-core-deps-apple]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -8293,12 +8344,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.wgpu-hal]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.wgpu-naga-bridge]]
@@ -8322,12 +8373,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.wgpu-naga-bridge]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.wgpu-types]]
@@ -8454,12 +8505,12 @@ delta = "29.0.0 -> 30.0.0"
 
 [[audits.wgpu-types]]
 who = [
-    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
+    "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "30.0.0 -> 30.0.0@git:f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+delta = "30.0.0 -> 30.0.0@git:9b095f553c0701329b92a347f5ab02ec02e133fc"
 importable = false
 
 [[audits.whatsys]]
@@ -8897,6 +8948,12 @@ criteria = "safe-to-deploy"
 user-id = 6825 # Dan Gohman (sunfishcode)
 start = "2023-08-29"
 end = "2027-01-11"
+
+[[trusted.find-msvc-tools]]
+criteria = "safe-to-deploy"
+user-id = 539 # Josh Stone (cuviper)
+start = "2025-08-29"
+end = "2027-09-05"
 
 [[trusted.flate2]]
 criteria = "safe-to-deploy"

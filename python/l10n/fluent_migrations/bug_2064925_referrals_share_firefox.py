@@ -10,7 +10,9 @@ class SWAP_BRAND_TERM(TransformPattern):
     { -brand-product-name } so the string reads "Firefox" on every channel."""
 
     def visit_Placeable(self, node):
-        if isinstance(node.expression, FTL.TermReference) and node.expression.id.name in (
+        if isinstance(
+            node.expression, FTL.TermReference
+        ) and node.expression.id.name in (
             "brand-shorter-name",
             "brand-short-name",
         ):
@@ -86,7 +88,9 @@ def migrate(ctx):
                     ),
                     FTL.Attribute(
                         FTL.Identifier("description"),
-                        COPY_PATTERN(preferences, "referrals-section-header.description"),
+                        COPY_PATTERN(
+                            preferences, "referrals-section-header.description"
+                        ),
                     ),
                 ],
             ),

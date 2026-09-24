@@ -3,8 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
-BROWSER_CHROME_MANIFESTS += ["test/browser.toml", "test/browser_oldformat.toml"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser.toml",
+    "test/browser_oldformat.toml",
+    "test/browser_startup_telemetry.toml",
+]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
+
+SPHINX_TREES["docs"] = "docs"
 
 JAR_MANIFESTS += ["jar.mn"]
 

@@ -178,7 +178,9 @@ class GraphConfigSchema(Schema, kw_only=True):
     try_: TryConfig
     release_promotion: ReleasePromotionConfig
     scriptworker: ScriptworkerConfig
-    task_priority: optionally_keyed_by("project", TaskPriority, use_msgspec=True)
+    task_priority: optionally_keyed_by(
+        "project", "shipping", TaskPriority, use_msgspec=True
+    )
     partner_urls: PartnerUrlsConfig
     workers: WorkersConfig
     mac_signing: MacSigningConfig

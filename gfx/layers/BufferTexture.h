@@ -51,6 +51,10 @@ class BufferTextureData : public TextureData {
 
   BufferTextureData* AsBufferTextureData() override { return this; }
 
+  RemoteDecoderVideoType GetRemoteDecoderVideoType() override {
+    return RemoteDecoderVideoType::Buffer;
+  }
+
   Maybe<gfx::IntSize> GetYSize() const;
 
   Maybe<gfx::IntSize> GetCbCrSize() const;

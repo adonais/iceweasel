@@ -15,9 +15,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.UnifiedTrustPanelSelectors.CLEA
 
 class UnifiedTrustPanelTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186723
     @SmokeTest
     @Test

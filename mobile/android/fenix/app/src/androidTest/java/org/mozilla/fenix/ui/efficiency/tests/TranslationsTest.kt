@@ -23,9 +23,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.TranslationsSelectors
 
 class TranslationsTest : BaseTest(LaunchConfig(isPageLoadTranslationsPromptEnabled = true)) {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     @SmokeTest
     @Test
     fun verifyTheFirstTranslationNotNowButtonFunctionalityTest() {
@@ -41,13 +38,13 @@ class TranslationsTest : BaseTest(LaunchConfig(isPageLoadTranslationsPromptEnabl
             .openMainMenu()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.TRANSLATE_BUTTON)
-            .mozVerifyElementsByGroup("notTranslatedPageTranslationSheet")
+            .mozVerifyElementsByGroup(BrowserPageSelectors.Group.NOT_TRANSLATED_PAGE_TRANSLATION_SHEET)
             .mozSwipeElementUntilAbsent(BrowserPageSelectors.TRANSLATION_SHEET, SwipeDirection.DOWN, maxSwipes = 3)
         on.browserPage
             .openMainMenu()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.TRANSLATE_BUTTON)
-            .mozVerifyElementsByGroup("notTranslatedPageTranslationSheet")
+            .mozVerifyElementsByGroup(BrowserPageSelectors.Group.NOT_TRANSLATED_PAGE_TRANSLATION_SHEET)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2439667
@@ -146,7 +143,7 @@ class TranslationsTest : BaseTest(LaunchConfig(isPageLoadTranslationsPromptEnabl
             .openMainMenu()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.TRANSLATE_BUTTON)
-            .mozVerifyElementsByGroup("notTranslatedPageTranslationSheet")
+            .mozVerifyElementsByGroup(BrowserPageSelectors.Group.NOT_TRANSLATED_PAGE_TRANSLATION_SHEET)
             .mozClickIfPresent(BrowserPageSelectors.TRANSLATION_SHEET_TRANSLATE_BUTTON)
             .mozWaitUntilAbsent(
                 BrowserPageSelectors.TRANSLATION_SHEET_TRANSLATE_BUTTON,

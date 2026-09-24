@@ -12,18 +12,8 @@
 #include "js/SourceText.h"                  // JS::Source{Ownership,Text}
 #include "jsapi-tests/tests.h"
 #include "vm/ErrorReporting.h"
-#include "vm/JSONPrinter.h"  // js::JSONPrinter
 
 using namespace JS;
-
-template <typename T>
-static void dump(const T& data) {
-  js::Fprinter printer(stderr);
-  js::JSONPrinter json(printer, true);
-
-  data->dump(json);
-  printer.put("\n");
-}
 
 BEGIN_TEST(testCompileScript) {
   CHECK(testCompile());

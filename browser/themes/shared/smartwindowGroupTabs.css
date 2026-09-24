@@ -59,21 +59,16 @@
 }
 
 .swgt-row,
-.swgt-flyout-tab,
-.swgt-recent-row {
+.swgt-flyout-tab {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: var(--space-small);
   margin: var(--panel-menuitem-margin);
   padding: var(--panel-menuitem-padding);
-  border-radius: var(--panel-menuitem-border-radius);
-}
-
-.swgt-row,
-.swgt-flyout-tab {
   appearance: none;
   border: none;
+  border-radius: var(--panel-menuitem-border-radius);
   background-color: transparent;
   color: inherit;
   font: inherit;

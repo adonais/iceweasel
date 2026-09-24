@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <fcntl.h>
+#include <gbm.h>
 #include <unistd.h>
 
 #include "gtest/gtest.h"
@@ -39,11 +40,11 @@ static SurfaceDescriptor MakeRGBADescriptor(RefPtr<FileHandleWrapper> fd) {
   AutoTArray<NotNull<RefPtr<FileHandleWrapper>>, 1> fence;
   AutoTArray<ipc::FileDescriptor, 1> refCount;
   return SurfaceDescriptor(SurfaceDescriptorDMABuf(
-      DMABufSurface::SURFACE_RGBA, 0, modifiers, 0, fds, width, height, width,
-      height, format, strides, offsets, gfx::YUVColorSpace::BT601,
-      gfx::ColorRange::LIMITED, gfx::ColorSpace2::UNKNOWN,
-      gfx::TransferFunction::Default, 0, fence, 1, 0, refCount, nullptr, false,
-      gfx::HDRMetadata()));
+      DMABufSurface::SURFACE_RGBA, GBM_FORMAT_ARGB8888, modifiers, 0, fds,
+      width, height, width, height, format, strides, offsets,
+      gfx::YUVColorSpace::BT601, gfx::ColorRange::LIMITED,
+      gfx::ColorSpace2::UNKNOWN, gfx::TransferFunction::Default, 0, fence, 1, 0,
+      refCount, nullptr, false, gfx::HDRMetadata()));
 }
 
 // Matches what DMABufSurfaceYUV::Serialize() produces for a two-plane 128×128

@@ -50,8 +50,8 @@ add_setup(async function () {
     set: [
       ["browser.urlbar.suggest.searches", true],
       ["browser.urlbar.scotchBonnet.enableOverride", false],
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", true],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", true],
     ],
   });
 

@@ -484,6 +484,12 @@ class PeerConnectionImpl final
   RefPtr<dom::RTCRtpTransceiver> GetTransceiver(
       const std::string& aTransceiverId);
 
+  // See JsepSession::LocalOfferedRecvParamsChanged.
+  bool LocalOfferedRecvParamsChanged(const std::string& aMid) {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mJsepSession && mJsepSession->LocalOfferedRecvParamsChanged(aMid);
+  }
+
   // Gets the RTC Signaling State of the JSEP session
   dom::RTCSignalingState GetSignalingState() const;
 

@@ -10,6 +10,7 @@
 #include "NotificationController.h"
 #include "States.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 
 #ifdef A11Y_LOG
@@ -111,10 +112,17 @@ inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
 
 inline void DocAccessible::MaybeNotifyOfValueChange(
     LocalAccessible* aAccessible) {
-  if (aAccessible->IsCombobox() || aAccessible->IsPassword() ||
-      aAccessible->Role() == roles::ENTRY ||
-      aAccessible->Role() == roles::SPINBUTTON) {
-    FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, aAccessible);
+  // aAccessible might not itself fire value change events; e.g. it could be an
+  // intervening generic between a text leaf and an ancestor combobox. Walk up
+  // while an ancestor's value might depend on aAccessible.
+  for (LocalAccessible* acc = aAccessible; acc; acc = acc->LocalParent()) {
+    if (nsAccUtils::ShouldFireValueChangeForDescendantChanges(acc)) {
+      FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, acc);
+      return;
+    }
+    if (!acc->HasValueDependent()) {
+      return;
+    }
   }
 }
 

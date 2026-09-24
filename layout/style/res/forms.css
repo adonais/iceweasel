@@ -361,7 +361,7 @@ option:read-write {
   user-select: text;
 }
 
-select option:not(optgroup option) {
+select option:where(:not(optgroup option)) {
   padding-inline: 4px;
 }
 
@@ -393,7 +393,7 @@ optgroup option {
   font-weight: normal;
 }
 
-optgroup:before {
+optgroup[label]::before {
   display: block;
   content: "\200b" attr(label);
 }
@@ -1023,6 +1023,60 @@ textarea:autofill {
     input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):disabled,
     input[type="file"]:disabled::file-selector-button {
       color: color-mix(currentColor 50%, transparent);
+    }
+
+    /* https://html.spec.whatwg.org/#the-select-element-2 */
+    select {
+      letter-spacing: unset;
+      word-spacing: unset;
+      text-shadow: unset;
+    }
+
+    select:disabled {
+      background-color: transparent;
+    }
+
+    select option {
+      /* These min-size rules ensure accessibility by following WCAG rules:
+       * https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html */
+      min-inline-size: 24px;
+      min-block-size: max(24px, 1lh);
+      padding-inline: 0.5em;
+      /* The spec only resets padding-block-end, but the legacy option rule
+       * above sets padding-block: 2px on both sides. */
+      padding-block: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+
+    select option:enabled:hover {
+      background-color: color-mix(currentColor 10%, transparent);
+    }
+
+    select option:enabled:active {
+      background-color: color-mix(currentColor 20%, transparent);
+    }
+
+    select option:disabled {
+      color: color-mix(currentColor 50%, transparent);
+    }
+
+    select optgroup {
+      font-weight: bolder;
+      font-style: unset;
+    }
+
+    select optgroup option {
+      font-style: unset;
+    }
+
+    /* The spec renders the label attribute in an anonymous label element,
+     * which is what optgroup::before is for us. */
+    select optgroup legend,
+    select optgroup::before {
+      padding-inline: 0.5em;
+      min-block-size: 1lh;
     }
 
     /* stylelint-disable-next-line selector-pseudo-element-no-unknown */

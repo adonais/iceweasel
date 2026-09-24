@@ -54,7 +54,8 @@ class ISVGFilterObserverList : public nsISupports {
   NS_DECL_CYCLE_COLLECTION_CLASS(ISVGFilterObserverList)
 
   virtual const nsTArray<RefPtr<SVGFilterObserver>>& GetObservers() const = 0;
-  virtual void Detach() {}
+  virtual void SetIsActive(bool aActive) {}
+  virtual ISVGFilterObserverList* Clone() const = 0;
 
  protected:
   virtual ~ISVGFilterObserverList() = default;

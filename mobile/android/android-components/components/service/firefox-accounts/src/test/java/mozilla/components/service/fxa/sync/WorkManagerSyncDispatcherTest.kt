@@ -21,7 +21,6 @@ import kotlinx.coroutines.test.runTest
 import mozilla.appservices.sync15.DeviceType
 import mozilla.appservices.syncmanager.DeviceSettings
 import mozilla.appservices.syncmanager.ServiceStatus
-import mozilla.appservices.syncmanager.SyncParams
 import mozilla.appservices.syncmanager.SyncResult
 import mozilla.components.concept.sync.AccessTokenInfo
 import mozilla.components.concept.sync.OAuthScopedKey
@@ -301,16 +300,6 @@ class WorkManagerSyncDispatcherTest {
         IDLE,
         STARTED,
         ERROR,
-    }
-
-    private class TestRustSyncManager : RustSyncManager {
-        var expectedResult: SyncResult? = null
-
-        override fun sync(params: SyncParams): SyncResult {
-            return requireNotNull(expectedResult) {
-                "Please set TestRustSyncManager.expectedResult before use"
-            }
-        }
     }
 
     /** Test variant of [SyncStatusObserver] that tracks the callbacks invoked */

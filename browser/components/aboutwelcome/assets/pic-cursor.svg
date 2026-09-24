@@ -1,0 +1,34 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M6.1946 15.7065L0.109584 0.647616C-0.0463001 0.261552 0.341098 -0.121224 0.725176 0.039624L15.6371 6.27888C16.0225 6.44004 16.0202 6.98661 15.6338 7.14516L11.2198 8.95298C11.1617 8.97678 11.1089 9.01211 11.0643 9.05703L8.88027 11.2628C8.83604 11.3074 8.80135 11.3603 8.77824 11.4187L7.06451 15.7052C6.90764 16.0975 6.35281 16.0985 6.1946 15.7068V15.7065Z" fill="url(#paint0_linear_4948_43374)"/>
+<path d="M0.211914 0.143658L7.75439 7.89386C7.76628 7.90608 7.78312 7.9117 7.79997 7.90971L15.9148 6.80928C15.9148 6.80928 16.0059 6.48827 15.6773 6.29934C15.6601 6.28945 15.6423 6.28151 15.6242 6.27394L0.70069 0.0293721C0.673951 0.0181422 0.646219 0.00989092 0.617493 0.00561122C0.357253 -0.0333854 0.211914 0.143658 0.211914 0.143658Z" fill="url(#paint1_linear_4948_43374)"/>
+<path d="M0.211635 0.143555L7.73727 7.8766C7.7597 7.89971 7.77028 7.93176 7.7663 7.96346L6.72401 15.9901C6.72401 15.9901 6.38913 16.0628 6.21804 15.7569C6.20914 15.7407 6.20154 15.7236 6.19463 15.7064L0.105601 0.638289C0.0976917 0.618808 0.0907415 0.598984 0.0861194 0.57851C0.0246971 0.304403 0.211635 0.143555 0.211635 0.143555Z" fill="url(#paint2_linear_4948_43374)"/>
+<path d="M7.9314 7.81362C7.79763 7.83046 7.69263 7.93616 7.67643 8.06992L6.72363 15.9902C6.72363 15.9902 6.92577 15.9978 7.07833 15.6761L8.83794 11.3002L11.88 14.3422C12.063 14.5252 12.3598 14.5252 12.5428 14.3422L14.2176 12.6675C14.4005 12.4845 14.4005 12.1876 14.2176 12.0046L11.1815 8.96856L15.6595 7.13462C15.8626 7.03851 15.9148 6.80933 15.9148 6.80933L7.93174 7.81396L7.9314 7.81362Z" fill="url(#paint3_linear_4948_43374)"/>
+<defs>
+<linearGradient id="paint0_linear_4948_43374" x1="2.30548" y1="-1.27582" x2="15.4023" y2="17.3056" gradientUnits="userSpaceOnUse">
+<stop stop-color="#D574E5"/>
+<stop offset="0.3" stop-color="#E652F7"/>
+<stop offset="0.37" stop-color="#C849F6"/>
+<stop offset="0.48" stop-color="#973BF6"/>
+<stop offset="0.59" stop-color="#6F2FF5"/>
+<stop offset="0.7" stop-color="#4F25F5"/>
+<stop offset="0.81" stop-color="#391FF5"/>
+<stop offset="0.91" stop-color="#2B1BF5"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint1_linear_4948_43374" x1="2.15422" y1="-3.95681e-06" x2="12.3056" y2="17.5827" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E652F7"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint2_linear_4948_43374" x1="3.92043" y1="4.18955" x2="-1.12367" y2="13.8153" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E552F6"/>
+<stop offset="1" stop-color="#271AF5"/>
+</linearGradient>
+<linearGradient id="paint3_linear_4948_43374" x1="7.70656" y1="7.86275" x2="17.6378" y2="17.794" gradientUnits="userSpaceOnUse">
+<stop stop-color="#271AF5"/>
+<stop offset="1" stop-color="#E652F7"/>
+</linearGradient>
+</defs>
+</svg>

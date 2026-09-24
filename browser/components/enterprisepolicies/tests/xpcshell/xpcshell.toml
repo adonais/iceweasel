@@ -62,6 +62,8 @@ support-files = [
 
 ["test_policy_descriptions.js"]
 
+["test_policy_failures.js"]
+
 ["test_policy_search_engine.js"]
 
 ["test_popups_cookies_addons.js"]

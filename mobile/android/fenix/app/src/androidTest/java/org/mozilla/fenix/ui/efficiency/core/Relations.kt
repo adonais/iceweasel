@@ -30,16 +30,17 @@ import org.hamcrest.Matchers.containsString
  */
 object Relations {
 
-    fun hasSiblingWithText(element: Any, text: String): Boolean = runCatching {
-        when (element) {
+    fun hasSiblingWithText(element: UiElement, text: String): Boolean = runCatching {
+        val raw = element.backend()
+        when (raw) {
             is ViewInteraction -> {
-                element.check(matches(hasSibling(withText(text))))
+                raw.check(matches(hasSibling(withText(text))))
                 true
             }
-            is UiObject -> element.getFromParent(UiSelector().text(text)).exists()
-            is UiObject2 -> element.parent?.findObject(By.text(text)) != null
+            is UiObject -> raw.getFromParent(UiSelector().text(text)).exists()
+            is UiObject2 -> raw.parent?.findObject(By.text(text)) != null
             is SemanticsNodeInteraction -> {
-                element.assert(hasAnySibling(hasText(text)))
+                raw.assert(hasAnySibling(hasText(text)))
                 true
             }
             else -> false
@@ -51,13 +52,15 @@ object Relations {
      * Espresso only. A resource-name substring plus checked state is a View-hierarchy question - Compose has no
      * resource names, and UiAutomator cannot ask "checked" of a sibling in one step.
      */
-    fun hasCheckedSiblingNamed(element: Any, resourceName: String): Boolean =
-        element is ViewInteraction &&
-            runCatching {
-                    element.check(
-                        matches(hasSibling(allOf(withResourceName(containsString(resourceName)), isChecked())))
-                    )
-                    true
-                }
-                .getOrDefault(false)
+    fun hasCheckedSiblingNamed(element: UiElement, resourceName: String): Boolean =
+        element.backend().let { raw ->
+            raw is ViewInteraction &&
+                runCatching {
+                        raw.check(
+                            matches(hasSibling(allOf(withResourceName(containsString(resourceName)), isChecked())))
+                        )
+                        true
+                    }
+                    .getOrDefault(false)
+        }
 }

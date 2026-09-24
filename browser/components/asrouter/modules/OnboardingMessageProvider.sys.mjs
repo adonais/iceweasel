@@ -2204,6 +2204,7 @@ const BASE_MESSAGES = () => [
     // an OS-level prompt, in lieu of the AW_EASY_SETUP pin checkbox.
     id: "PIN_FIREFOX_TASKBAR_WIN_OS_PROMPT",
     template: "action_only",
+    profileScope: "single",
     skip_in_tests: "it silently triggers a real OS-level pin request",
     content: {
       action: {
@@ -2217,6 +2218,7 @@ const BASE_MESSAGES = () => [
     frequency: {
       lifetime: 1,
     },
+    priority: 5,
   },
   {
     // Silently triggers set default for users on Mac, and on Windows when
@@ -2227,6 +2229,7 @@ const BASE_MESSAGES = () => [
     // consent surface at all.
     id: "SET_DEFAULT_MAC_AND_WINDOWS_OS_PROMPT",
     template: "action_only",
+    profileScope: "single",
     skip_in_tests: "it silently triggers a real OS-level set default request",
     content: {
       action: {
@@ -2240,6 +2243,7 @@ const BASE_MESSAGES = () => [
     frequency: {
       lifetime: 1,
     },
+    priority: 5,
   },
   {
     id: "SET_DEFAULT_BROWSER_GUIDANCE_NOTIFICATION_WIN10",

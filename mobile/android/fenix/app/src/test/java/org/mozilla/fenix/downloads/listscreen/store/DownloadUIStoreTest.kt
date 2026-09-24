@@ -1994,6 +1994,146 @@ class DownloadUIStoreTest {
         }
 
     @Test
+    fun `WHEN RequestDelete is called with isSwipe = true THEN item is added to unconfirmedDeletionIds`() =
+        runTest(testDispatcher) {
+            val initialState = oneItemDefaultState()
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1, isSwipe = true))
+
+            assertEquals(setOf(fileItem1.id), store.state.unconfirmedDeletionIds)
+        }
+
+    @Test
+    fun `WHEN RequestDelete is called with isSwipe = false THEN item is not added to unconfirmedDeletionIds`() =
+        runTest(testDispatcher) {
+            val initialState = oneItemDefaultState()
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1, isSwipe = false))
+
+            assertTrue(store.state.unconfirmedDeletionIds.isEmpty())
+        }
+
+    @Test
+    fun `WHEN ShowDeleteDialog is called THEN unconfirmedDeletionIds remains the same`() =
+        runTest(testDispatcher) {
+            val initialState =
+                DownloadUIState(
+                    items = listOf(fileItem1),
+                    mode = DownloadUIState.Mode.Normal,
+                    pendingDeletionIds = emptySet(),
+                    unconfirmedDeletionIds = setOf(fileItem1.id),
+                )
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.ShowDeleteDialog(setOf(fileItem1)))
+
+            assertEquals(setOf(fileItem1.id), store.state.unconfirmedDeletionIds)
+        }
+
+    @Test
+    fun `WHEN AddPendingDeletionSet is called THEN its items are removed from unconfirmedDeletionIds`() =
+        runTest(testDispatcher) {
+            val fileItem2 = fileItem1.copy(id = "2")
+            val initialState =
+                DownloadUIState(
+                    items = listOf(fileItem1, fileItem2),
+                    mode = DownloadUIState.Mode.Normal,
+                    pendingDeletionIds = emptySet(),
+                    unconfirmedDeletionIds = setOf(fileItem1.id, fileItem2.id),
+                )
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.AddPendingDeletionSet(setOf(fileItem1), removeFromDisk = true))
+
+            assertEquals(setOf(fileItem2.id), store.state.unconfirmedDeletionIds)
+            assertEquals(setOf(fileItem1.id), store.state.pendingDeletionIds)
+        }
+
+    @Test
+    fun `WHEN DismissDeleteDialog is called THEN its items are removed from unconfirmedDeletionIds`() =
+        runTest(testDispatcher) {
+            val fileItem2 = fileItem1.copy(id = "2")
+            val initialState =
+                DownloadUIState(
+                    items = listOf(fileItem1, fileItem2),
+                    mode = DownloadUIState.Mode.Normal,
+                    pendingDeletionIds = emptySet(),
+                    unconfirmedDeletionIds = setOf(fileItem1.id, fileItem2.id),
+                    dialogState = DownloadUIState.DialogState.DeleteConfirmation(setOf(fileItem1)),
+                )
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.DismissDeleteDialog)
+
+            assertEquals(setOf(fileItem2.id), store.state.unconfirmedDeletionIds)
+        }
+
+    @Test
+    fun `WHEN ConfirmMultiSelectDelete is called THEN its items are removed from unconfirmedDeletionIds`() =
+        runTest(testDispatcher) {
+            val fileItem2 = fileItem1.copy(id = "2")
+            val initialState =
+                DownloadUIState(
+                    items = listOf(fileItem1, fileItem2),
+                    mode = DownloadUIState.Mode.Normal,
+                    pendingDeletionIds = emptySet(),
+                    unconfirmedDeletionIds = setOf(fileItem1.id, fileItem2.id),
+                    dialogState = DownloadUIState.DialogState.MultiSelectDeleteConfirmation(setOf(fileItem1)),
+                )
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.ConfirmMultiSelectDelete(setOf(fileItem1)))
+
+            assertEquals(setOf(fileItem2.id), store.state.unconfirmedDeletionIds)
+        }
+
+    @Test
+    fun `WHEN CancelDownload is dispatched THEN it is removed from unconfirmedDeletionIds and pendingDeletionIds`() =
+        runTest(testDispatcher) {
+            val fileItem2 = fileItem1.copy(id = "2")
+            val initialState =
+                DownloadUIState(
+                    items = listOf(fileItem1, fileItem2),
+                    mode = DownloadUIState.Mode.Normal,
+                    pendingDeletionIds = setOf(fileItem1.id, fileItem2.id),
+                    unconfirmedDeletionIds = setOf(fileItem1.id, fileItem2.id),
+                )
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.CancelDownload(fileItem1.id))
+
+            assertEquals(setOf(fileItem2.id), store.state.unconfirmedDeletionIds)
+            assertEquals(setOf(fileItem2.id), store.state.pendingDeletionIds)
+        }
+
+    @Test
+    fun `WHEN an item is unconfirmed for deletion THEN it is not shown in itemsState`() =
+        runTest(testDispatcher) {
+            val initialState = oneItemDefaultState()
+            val store = DownloadUIStore(initialState)
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1, isSwipe = true))
+
+            val expectedList = DownloadUIState.ItemsState.NoItems
+            assertEquals(expectedList, store.state.itemsState)
+        }
+
+    @Test
+    fun `GIVEN one item WHEN the item is unconfirmed for deletion THEN isSearchIconVisible is false`() =
+        runTest(testDispatcher) {
+            val initialState = oneItemDefaultState()
+            val store = DownloadUIStore(initialState)
+
+            assertTrue(store.state.isSearchIconVisible)
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1, isSwipe = true))
+
+            assertFalse(store.state.isSearchIconVisible)
+        }
+
+    @Test
     fun `WHEN RequestDelete is called for a non-completed item THEN CancelDownload is dispatched`() = runTest {
         val removeDownloadUseCase: DownloadsUseCases.RemoveDownloadUseCase = mockk(relaxed = true)
         val itemId = "test_id"

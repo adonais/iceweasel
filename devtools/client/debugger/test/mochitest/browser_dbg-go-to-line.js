@@ -48,6 +48,30 @@ add_task(async function () {
   pressKey(dbg, "Enter");
   await assertLine(dbg, 66);
 
+  info("Test going to a non-existent line");
+  pressKey(dbg, "goToLine");
+  await waitForGoToLineBoxFocus(dbg);
+  type(dbg, "666");
+  pressKey(dbg, "Enter");
+  await assertLine(dbg, 66);
+  pressKey(dbg, "Escape");
+
+  info("Test going to line zero");
+  pressKey(dbg, "goToLine");
+  await waitForGoToLineBoxFocus(dbg);
+  type(dbg, "0");
+  pressKey(dbg, "Enter");
+  await assertLine(dbg, 66);
+  pressKey(dbg, "Escape");
+
+  info("Test going to a negative line number");
+  pressKey(dbg, "goToLine");
+  await waitForGoToLineBoxFocus(dbg);
+  type(dbg, "-1");
+  pressKey(dbg, "Enter");
+  await assertLine(dbg, 66);
+  pressKey(dbg, "Escape");
+
   info("Add breakpoint on line 66 using keyboard shortcut");
   pressKey(dbg, "toggleBreakpoint");
   await waitForDispatch(dbg.store, "SET_BREAKPOINT");

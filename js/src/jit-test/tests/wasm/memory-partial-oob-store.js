@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 // Cloned from memory.js but kept separate because it may have to be disabled on
 // some devices until bugs are fixed.
 

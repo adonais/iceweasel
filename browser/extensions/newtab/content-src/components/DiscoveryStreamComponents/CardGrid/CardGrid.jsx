@@ -192,6 +192,7 @@ export class _CardGrid extends React.PureComponent {
             recommended_at={rec.recommended_at}
             received_rank={rec.received_rank}
             format={rec.format}
+            is_ad_eligible_position={rec.is_ad_eligible_position}
             alt_text={rec.alt_text}
             isTimeSensitive={rec.isTimeSensitive}
             tabIndex={currentCardIndex === this.state.focusedIndex ? 0 : -1}

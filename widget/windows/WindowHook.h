@@ -41,7 +41,6 @@ class WindowHook {
     bool Invoke(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam,
                 LRESULT* aResult);
     bool operator==(const CallbackData& rhs) const = default;
-    bool operator!=(const CallbackData& rhs) const = default;
     explicit operator bool() const { return !!cb; }
   };
 

@@ -8,10 +8,35 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestHelper.appName
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorLifecycle
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
+import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 
-object MainMenuSelectors {
+object MainMenuSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        HOME_PAGE_MAIN_MENU_ITEMS,
+        BROWSER_VIEW_MAIN_MENU_ITEMS,
+        BOOKMARK_ACTIONS,
+        EDIT_BOOKMARK_ACTIONS,
+        BROWSER_VIEW_MAIN_MENU_MORE_ITEMS,
+        MORE_MAIN_MENU_SUB_LIST,
+        EXPANDED_EXTENSIONS_MENU_ITEMS,
+        HOME_BANNER,
+        MORE_MAIN_MENU_ITEMS,
+        MORE_MENU_ITEMS,
+    }
+
+    val MAIN_MENU_ANCHOR =
+        Selector(
+            strategy = SelectorStrategy.UIAUTOMATOR_WITH_COMPOSE_TAG,
+            value = MenuDialogTestTag.EXTENSIONS,
+            description = "Main menu Extensions item anchor",
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
+        )
 
     val NEW_PRIVATE_TAB_BUTTON =
         Selector(
@@ -19,7 +44,7 @@ object MainMenuSelectors {
             value = getStringResource(R.string.browser_menu_new_private_tab),
             description = "Main menu New private tab button",
             // Removed in https://bugzilla.mozilla.org/show_bug.cgi?id=1966222 as part of the menu redesign effort
-            groups = listOf("removedIn=141"),
+            lifecycle = SelectorLifecycle.RemovedIn(141),
         )
 
     val EXTENSIONS_BUTTON =
@@ -27,7 +52,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_extensions),
             description = "Main menu Extensions button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val BOOKMARKS_BUTTON =
@@ -35,9 +60,10 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.library_bookmarks),
             description = "Main menu Bookmarks button",
-            // requiresScroll: below the fold in the landscape browser main menu; a no-op in portrait
+            // Below the fold in the landscape browser main menu; a no-op in portrait.
             // where the item is already displayed (mozSwipeTo returns before swiping).
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val HISTORY_BUTTON =
@@ -45,7 +71,8 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.library_history),
             description = "Main menu History button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val DOWNLOADS_BUTTON =
@@ -53,7 +80,8 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.library_downloads),
             description = "Main menu Downloads button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val PASSWORDS_BUTTON =
@@ -61,7 +89,8 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_passwords),
             description = "Main menu Passwords button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val SIGN_IN_BUTTON =
@@ -69,7 +98,8 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_sign_in),
             description = "Main menu Sign in button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val SETTINGS_BUTTON =
@@ -77,7 +107,8 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_settings),
             description = "Main menu Settings button",
-            groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems", "requiresScroll"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
+            scrollDirection = SwipeDirection.UP,
         )
 
     // UIAutomator, not Compose: with shouldUseExpandedToolbar the menu renders differently and the Compose
@@ -88,7 +119,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = getStringResource(R.string.browser_menu_bookmark_this_page_2),
             description = "Bookmark this page button",
-            groups = listOf("bookmarkActions", "browserViewMainMenuItems"),
+            groups = setOf(Group.BOOKMARK_ACTIONS, Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val EDIT_BOOKMARK_BUTTON =
@@ -96,7 +127,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_edit_bookmark),
             description = "Edit bookmark button",
-            groups = listOf("editBookmarkActions"),
+            groups = setOf(Group.EDIT_BOOKMARK_ACTIONS),
         )
 
     val FIND_IN_PAGE_BUTTON =
@@ -104,7 +135,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_find_in_page),
             description = "Main menu Find in page button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val BACK_BUTTON =
@@ -112,7 +143,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Back",
             description = "Main menu Back button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val FORWARD_BUTTON =
@@ -120,7 +151,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Forward",
             description = "Main menu Forward button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val REFRESH_BUTTON =
@@ -128,7 +159,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Refresh",
             description = "Main menu Refresh button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val SHARE_BUTTON =
@@ -136,7 +167,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = "Share",
             description = "Main menu Share button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val DESKTOP_SITE_BUTTON =
@@ -144,7 +175,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = getStringResource(R.string.browser_menu_desktop_site),
             description = "Main menu Desktop site button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val DESKTOP_SITE_ON =
@@ -152,7 +183,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = MenuDialogTestTag.DESKTOP_SITE_ON,
             description = "Main menu Desktop site ON state",
-            groups = listOf(),
         )
 
     val DESKTOP_SITE_OFF =
@@ -160,7 +190,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = MenuDialogTestTag.DESKTOP_SITE_OFF,
             description = "Main menu Desktop site OFF state",
-            groups = listOf(),
         )
 
     val MORE_BUTTON =
@@ -168,7 +197,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = "More Collapsed",
             description = "Main menu More button",
-            groups = listOf("browserViewMainMenuItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_ITEMS),
         )
 
     val REPORT_BROKEN_SITE_BUTTON =
@@ -176,7 +205,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_webcompat_reporter_2),
             description = "Main menu Report broken site button",
-            groups = listOf("browserViewMainMenuMoreItems", "moreMainMenuSubList"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     // The Extensions row opens its submenu in a new window, so match it by res-id at the device level
@@ -188,7 +217,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_COMPOSE_TAG,
             value = MenuDialogTestTag.EXTENSIONS,
             description = "Main menu Extensions button (UIAutomator)",
-            groups = listOf(),
         )
 
     val EXTENSIONS_CHEVRON =
@@ -196,7 +224,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = MenuDialogTestTag.EXTENSIONS_OPTION_CHEVRON,
             description = "Main menu Extensions expand/collapse chevron",
-            groups = listOf(),
         )
 
     val TRY_RECOMMENDED_EXTENSION_BUTTON =
@@ -204,7 +231,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = "Extensions Try a recommended extension",
             description = "Main menu Extensions - Try a recommended extension button",
-            groups = listOf(),
         )
 
     // Shown on the collapsed Extensions row when extensions are installed but all disabled. Mirrors the
@@ -214,7 +240,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
             value = "Extensions No extensions enabled",
             description = "Main menu Extensions - No extensions enabled button",
-            groups = listOf(),
         )
 
     val DISCOVER_MORE_EXTENSIONS_BUTTON =
@@ -222,7 +247,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_discover_more_extensions),
             description = "Main menu Discover more extensions button",
-            groups = listOf("expandedExtensionsMenuItems"),
+            groups = setOf(Group.EXPANDED_EXTENSIONS_MENU_ITEMS),
         )
 
     // Shown in the expanded Extensions submenu once at least one extension is installed; opens the
@@ -232,7 +257,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_manage_extensions),
             description = "Main menu Manage extensions button",
-            groups = listOf(),
         )
 
     // The "Add <addon>" install icon on a recommended addon row in the expanded Extensions submenu.
@@ -244,7 +268,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = getStringResource(R.string.browser_menu_extension_plus_icon_content_description_2, addonTitle),
             description = "Install recommended addon '$addonTitle' button",
-            groups = listOf(),
         )
 
     // Keyed on the addon row rather than the addon name: which addons AMO recommends is server-driven,
@@ -256,20 +279,16 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_FIRST,
             value = MenuDialogTestTag.RECOMMENDED_ADDON_ITEM,
             description = "Recommended addon row in the expanded Extensions submenu",
-            groups = listOf("expandedExtensionsMenuItems"),
+            groups = setOf(Group.EXPANDED_EXTENSIONS_MENU_ITEMS),
         )
 
-    // The collapsed Extensions main-menu row once an extension is installed: it advertises the addon
-    // name in its content description. Mirrors the legacy verifyExtensionsButtonWithInstalledExtension
-    // (itemWithResIdAndDescription("mainMenu.extensions", <addon>)).
     @Suppress("FunctionName")
     fun EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonTitle: String = "") =
         Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID_AND_DESCRIPTION_CONTAINS,
+            strategy = SelectorStrategy.COMPOSE_BY_TAG_AND_CONTENT_DESCRIPTION_SUBSTRING,
             value = MenuDialogTestTag.EXTENSIONS,
             secondaryValue = addonTitle,
             description = "Extensions menu row advertising installed extension '$addonTitle'",
-            groups = listOf(),
         )
 
     // The installed extension row in the expanded Extensions submenu. Mirrors the legacy
@@ -281,7 +300,6 @@ object MainMenuSelectors {
             value = MenuDialogTestTag.WEB_EXTENSION_ITEM,
             secondaryValue = addonTitle,
             description = "Installed extension '$addonTitle' row in the expanded Extensions submenu",
-            groups = listOf(),
         )
 
     // TODO (M. Barone 3/20/2026): add getting 'appName' to our base helpers
@@ -290,7 +308,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_default_banner_title, appName),
             description = "Make Firefox your default banner title",
-            groups = listOf("homeBanner", "homePageMainMenuItems"),
+            groups = setOf(Group.HOME_BANNER, Group.HOME_PAGE_MAIN_MENU_ITEMS),
         )
 
     val DEFAULT_BROWSER_BANNER_SUBTITLE =
@@ -298,7 +316,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.browser_menu_default_banner_subtitle_2),
             description = "Make Firefox your default banner subtitle",
-            groups = listOf("homeBanner", "homePageMainMenuItems"),
+            groups = setOf(Group.HOME_BANNER, Group.HOME_PAGE_MAIN_MENU_ITEMS),
         )
 
     val DEFAULT_BROWSER_BANNER_DISMISS =
@@ -306,10 +324,10 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_default_banner_dismiss_promotion),
             description = "Make Firefox your default banner dismiss button",
-            groups = listOf("homeBanner", "homePageMainMenuItems"),
+            groups = setOf(Group.HOME_BANNER, Group.HOME_PAGE_MAIN_MENU_ITEMS),
         )
 
-    // Quit is the last item in the scrollable main menu, so mark it requiresScroll: the framework
+    // Quit is the last item in the scrollable main menu, so give it an explicit scroll direction: the framework
     // then polls/swipes it into view (ensureReachable -> mozSwipeTo) before clicking, instead of
     // asserting on it one-shot while the menu is still settling or the item is below the fold.
     val QUIT_FIREFOX_BUTTON =
@@ -317,7 +335,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = "Quit $appName",
             description = "Quit Firefox button",
-            groups = listOf("requiresScroll"),
+            scrollDirection = SwipeDirection.UP,
         )
 
     val CUSTOMIZE_HOMEPAGE_BUTTON =
@@ -325,7 +343,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_customize_homepage),
             description = "Customize homepage Settings button",
-            groups = listOf("homePageMainMenuItems"),
+            groups = setOf(Group.HOME_PAGE_MAIN_MENU_ITEMS),
         )
 
     val SAVE_TO_COLLECTIONS_BUTTON =
@@ -333,7 +351,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_save_to_collection_2),
             description = "Save to collections button",
-            groups = listOf("moreMainMenuItems", "moreMainMenuSubList"),
+            groups = setOf(Group.MORE_MAIN_MENU_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val ADD_TO_SHORTCUTS_BUTTON =
@@ -341,7 +359,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_add_to_shortcuts),
             description = "Main menu Add to shortcuts button",
-            groups = listOf("browserViewMainMenuMoreItems", "moreMainMenuSubList"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val TRANSLATE_BUTTON =
@@ -349,7 +367,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_translations),
             description = "Translate page button",
-            groups = listOf("moreMenuItems", "moreMainMenuSubList"),
+            groups = setOf(Group.MORE_MENU_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val TRANSLATED_BUTTON =
@@ -357,7 +375,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_translated),
             description = "Translate page button",
-            groups = listOf("moreMenuItems"),
+            groups = setOf(Group.MORE_MENU_ITEMS),
         )
 
     val SAVE_AS_PDF_BUTTON =
@@ -365,7 +383,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_save_as_pdf_2),
             description = "Main menu save as PDF button",
-            groups = listOf("moreMenuItems", "moreMainMenuSubList"),
+            groups = setOf(Group.MORE_MENU_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val SUMMARIZE_PAGE_BUTTON =
@@ -373,7 +391,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_summarize_page),
             description = "Main menu Summarize page button",
-            groups = listOf("moreMainMenuSubList"),
+            groups = setOf(Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val PRINT_BUTTON =
@@ -381,7 +399,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_print_2),
             description = "Print page button",
-            groups = listOf("moreMenuItems", "moreMainMenuSubList"),
+            groups = setOf(Group.MORE_MENU_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val REMOVE_FROM_SHORTCUTS_BUTTON =
@@ -389,7 +407,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_remove_from_shortcuts),
             description = "Main menu remove from shortcuts button",
-            groups = listOf("browserViewMainMenuMoreItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS),
         )
 
     val ADD_TO_HOMESCREEN_BUTTON =
@@ -397,7 +415,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_add_to_homescreen),
             description = "Main menu add to homescreen button",
-            groups = listOf("browserViewMainMenuMoreItems", "moreMainMenuSubList"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     val ADD_APP_TO_HOMESCREEN_BUTTON =
@@ -405,7 +423,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_add_app_to_homescreen),
             description = "Main menu add app (PWA) to homescreen button",
-            groups = listOf("browserViewMainMenuMoreItems"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS),
         )
 
     val OPEN_IN_APP_BUTTON =
@@ -413,7 +431,7 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_open_app_link),
             description = "Main menu Open in app button",
-            groups = listOf("browserViewMainMenuMoreItems", "moreMainMenuSubList"),
+            groups = setOf(Group.BROWSER_VIEW_MAIN_MENU_MORE_ITEMS, Group.MORE_MAIN_MENU_SUB_LIST),
         )
 
     @Suppress("FunctionName")
@@ -422,7 +440,6 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_open_in_fenix, appName),
             description = "Main menu Open in $appName button",
-            groups = listOf(),
         )
 
     // Only present when the browser is showing reader view.
@@ -431,62 +448,27 @@ object MainMenuSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.browser_menu_customize_reader_view_2),
             description = "Main menu Customize Reader View button",
-            groups = listOf(),
         )
 
-    // Order matters: mozVerifyElementsByGroup verifies in this declaration order. In the landscape
-    // browser main menu the list scrolls, so the always-visible items must be verified first and the
-    // requiresScroll items last, in on-screen top-to-bottom order (History -> ... -> Settings) — once
-    // we swipe down to reach them the top row leaves the viewport and can no longer be asserted.
-    val all =
-        listOf(
-            NEW_PRIVATE_TAB_BUTTON,
-            EXTENSIONS_BUTTON,
-            BOOKMARK_THIS_PAGE_BUTTON,
-            EDIT_BOOKMARK_BUTTON,
-            FIND_IN_PAGE_BUTTON,
-            DEFAULT_BROWSER_BANNER_TITLE,
-            DEFAULT_BROWSER_BANNER_SUBTITLE,
-            DEFAULT_BROWSER_BANNER_DISMISS,
-            QUIT_FIREFOX_BUTTON,
-            BACK_BUTTON,
-            FORWARD_BUTTON,
-            REFRESH_BUTTON,
-            SHARE_BUTTON,
-            DESKTOP_SITE_BUTTON,
-            DESKTOP_SITE_ON,
-            DESKTOP_SITE_OFF,
-            MORE_BUTTON,
-            CUSTOMIZE_HOMEPAGE_BUTTON,
-            REPORT_BROKEN_SITE_BUTTON,
-            EXTENSIONS_BUTTON_UIAUTOMATOR,
-            EXTENSIONS_CHEVRON,
-            TRY_RECOMMENDED_EXTENSION_BUTTON,
-            NO_EXTENSIONS_ENABLED_BUTTON,
-            DISCOVER_MORE_EXTENSIONS_BUTTON,
-            MANAGE_EXTENSIONS_BUTTON,
-            RECOMMENDED_ADDON_INSTALL_BUTTON(),
-            RECOMMENDED_ADDON_ITEM,
-            EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(),
-            INSTALLED_EXTENSION_ITEM(),
-            HISTORY_BUTTON,
-            BOOKMARKS_BUTTON,
-            DOWNLOADS_BUTTON,
-            PASSWORDS_BUTTON,
-            SIGN_IN_BUTTON,
-            SETTINGS_BUTTON,
-            SAVE_TO_COLLECTIONS_BUTTON,
-            ADD_TO_SHORTCUTS_BUTTON,
-            TRANSLATE_BUTTON,
-            TRANSLATED_BUTTON,
-            SAVE_AS_PDF_BUTTON,
-            SUMMARIZE_PAGE_BUTTON,
-            PRINT_BUTTON,
-            REMOVE_FROM_SHORTCUTS_BUTTON,
-            ADD_TO_HOMESCREEN_BUTTON,
-            CUSTOMIZE_READER_VIEW_BUTTON,
-            ADD_APP_TO_HOMESCREEN_BUTTON,
-            OPEN_IN_APP_BUTTON,
-            OPEN_IN_APP_NAME_BUTTON(),
+    override val scrollTraversalOrder: Map<SelectorGroup, List<Selector>> =
+        mapOf(
+            Group.HOME_PAGE_MAIN_MENU_ITEMS to
+                listOf(
+                    HISTORY_BUTTON,
+                    BOOKMARKS_BUTTON,
+                    DOWNLOADS_BUTTON,
+                    PASSWORDS_BUTTON,
+                    SIGN_IN_BUTTON,
+                    SETTINGS_BUTTON,
+                ),
+            Group.BROWSER_VIEW_MAIN_MENU_ITEMS to
+                listOf(
+                    HISTORY_BUTTON,
+                    BOOKMARKS_BUTTON,
+                    DOWNLOADS_BUTTON,
+                    PASSWORDS_BUTTON,
+                    SIGN_IN_BUTTON,
+                    SETTINGS_BUTTON,
+                ),
         )
 }

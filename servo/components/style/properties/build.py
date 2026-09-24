@@ -22,10 +22,7 @@ OUT_DIR = os.environ.get("OUT_DIR", "")
 
 
 def main():
-    usage = (
-        "Usage: %s [ servo | gecko ]"
-        % sys.argv[0]
-    )
+    usage = "Usage: %s [ servo | gecko ]" % sys.argv[0]
     if len(sys.argv) < 2:
         abort(usage)
     engine = sys.argv[1]

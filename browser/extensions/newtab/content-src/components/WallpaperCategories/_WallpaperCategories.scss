@@ -58,10 +58,6 @@ button.arrow-button {
   margin-block-start: var(--space-xsmall);
 }
 
-.wallpapers-arrow-button {
-  margin-block-end: var(--space-xlarge);
-}
-
 .wallpaper-input {
   appearance: none;
   background-clip: content-box;
@@ -120,13 +116,16 @@ button.arrow-button {
     }
   }
 
-  &:focus-visible {
-    outline-offset: var(--focus-outline-offset);
-  }
-
   &:hover {
     filter: brightness(55%);
     outline-color: transparent;
+  }
+
+  // After the hover rule on purpose: hovering a tile that also has keyboard
+  // focus must not take the focus ring away.
+  &:focus-visible {
+    outline-color: var(--focus-outline-color);
+    outline-offset: var(--focus-outline-offset);
   }
 
   // @nova-cleanup (remove .nova-enabled class and move this rule to the style above)
@@ -243,7 +242,13 @@ button.arrow-button {
     inset-inline-start: 100%;
     width: 100%;
     z-index: 2;
-    overflow-y: auto;
+    // Both axes on purpose: setting only overflow-y makes overflow-x compute
+    // from visible to auto, so a focus ring was enough for a sideways bar once
+    // "Your images" made the panel tall enough to scroll at all.
+    overflow: hidden auto;
+    // Hold the scrollbar's width whether it shows or not, so the columns do
+    // not reflow as images are added.
+    scrollbar-gutter: stable;
 
     fieldset {
       border: none;
@@ -252,6 +257,63 @@ button.arrow-button {
       grid-auto-rows: 86px;
       grid-template-columns: 1fr 1fr 1fr;
       padding: 0;
+    }
+
+    // "Your images" rows are taller than the shipped ones: the last tile adds
+    // an image and carries a label under it.
+    fieldset.your-images {
+      grid-auto-rows: auto;
+      // Set inline by WallpaperCategories.jsx, which also uses it for the
+      // arrow keys, so the two cannot drift apart.
+      grid-template-columns: repeat(var(--your-images-columns, 3), 1fr);
+
+      // Thumbnails arrive after the picker opens, so a saved image has nothing
+      // to show for a moment. Without this the tile is an empty hole.
+      .wallpaper-input {
+        background-color: var(--newtab-background-color-secondary);
+      }
+
+      .your-images-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-small);
+        position: relative;
+      }
+
+      .your-images-remove {
+        inset-block-start: var(--space-xsmall);
+        inset-inline-end: var(--space-xsmall);
+        opacity: 0;
+        position: absolute;
+      }
+
+      // A filled circle, so the icon stays legible on top of any image. The
+      // ghost family is transparent, which is nothing behind an X on a photo.
+      .your-images-remove::part(button) {
+        background-color: var(--newtab-button-static-background);
+        border-radius: var(--border-radius-circle);
+      }
+
+      .your-images-remove:hover::part(button) {
+        background-color: var(--newtab-button-static-hover-background);
+      }
+
+      .your-images-remove:active::part(button) {
+        background-color: var(--newtab-button-static-active-background);
+      }
+
+      // :has(:focus-visible) cannot see into the moz-button shadow root, so the
+      // third selector is what shows the button while it holds focus.
+      .your-images-item:hover .your-images-remove,
+      .your-images-item:has(:focus-visible) .your-images-remove,
+      .your-images-remove:focus-within {
+        opacity: 1;
+      }
+
+      label:not(.sr-only) {
+        font-size: var(--font-size-small);
+        text-align: center;
+      }
     }
 
     @media (prefers-reduced-motion: no-preference) {
@@ -328,5 +390,68 @@ button.arrow-button {
     width: var(--button-size-icon-small);
     height: var(--button-size-icon-small);
     fill: var(--icon-color-critical);
+  }
+}
+
+// A saved image can be any color, so a band of the panel color sits between
+// the picture and the accent ring. The folder tile shows one of those images.
+.wallpaper-list.category fieldset.your-images .wallpaper-input:checked,
+.category-list .wallpaper-input.your-images-folder.selected {
+  box-shadow:
+    inset 0 0 0 2px var(--newtab-background-color-secondary),
+    inset 0 0 0 5px var(--color-accent-primary);
+}
+
+// Touch and other pointers with no hover cannot reveal the remove button, so
+// it stays visible for them.
+@media (hover: none) {
+  .wallpaper-list.category fieldset.your-images .your-images-remove {
+    opacity: 1;
+  }
+}
+
+@media (prefers-contrast) {
+  .wallpaper-list.category fieldset.your-images .wallpaper-input,
+  .category-list .wallpaper-input.your-images-folder {
+    border: var(--border-width) solid currentColor;
+  }
+}
+
+@media (forced-colors: active) {
+  .wallpaper-list.category fieldset.your-images .wallpaper-input,
+  .category-list .wallpaper-input.your-images-folder {
+    // The whole border, not just its color: prefers-contrast is spoofed to no
+    // preference under resistFingerprinting, and forced-colors is not.
+    border: var(--border-width) solid var(--button-border-color);
+    box-shadow: none;
+  }
+
+  .wallpaper-list.category fieldset.your-images .wallpaper-input:hover,
+  .category-list .wallpaper-input.your-images-folder:hover {
+    filter: none;
+  }
+
+  // Forced colors drops box-shadow, so the selected tile is marked by a thicker
+  // border in the selected color rather than by the ring.
+  .wallpaper-list.category fieldset.your-images .wallpaper-input:checked,
+  .category-list .wallpaper-input.your-images-folder.selected {
+    border-color: var(--border-color-selected);
+    border-width: calc(var(--border-width) * 3);
+    box-shadow: none;
+  }
+
+  // Keep the ghost family rather than the static background, which is a raw
+  // light-dark() pair with no forced-colors value.
+  .wallpaper-list.category fieldset.your-images .your-images-remove::part(button) {
+    background-color: var(--button-background-color-ghost);
+    color: var(--button-text-color-ghost);
+  }
+
+  .wallpaper-list.category fieldset.your-images .your-images-remove:hover::part(button) {
+    background-color: var(--button-background-color-ghost-hover);
+  }
+
+  .wallpaper-list.category fieldset.your-images .your-images-remove:active::part(button) {
+    background-color: var(--button-background-color-ghost-active);
   }
 }

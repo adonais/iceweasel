@@ -7,9 +7,10 @@ package org.mozilla.fenix.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import mozilla.components.compose.base.theme.Theme
+import mozilla.components.compose.base.theme.Theme.Dark
+import mozilla.components.compose.base.theme.Theme.Light
 import mozilla.components.compose.base.utils.inComposePreview
-import org.mozilla.fenix.theme.Theme.Dark
-import org.mozilla.fenix.theme.Theme.Light
 
 /** Abstraction for providing the current [Theme] that is to be displayed. */
 interface ThemeProvider {

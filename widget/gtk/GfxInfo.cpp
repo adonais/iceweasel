@@ -1145,13 +1145,14 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     ////////////////////////////////////
     // FEATURE_MESA_THREADING
 
-    // Bug 1852794 - Disable old nouveau drivers.
+    // Bug 1852794 - Disable old nouveau drivers (<= 23.2.1.0).
+    // Bug 2055560 - Disable on all nouveau drivers (== 25.2.8.0).
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
         WindowProtocol::All, DriverVendor::MesaNouveau, DeviceFamily::All,
         nsIGfxInfo::FEATURE_MESA_THREADING, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_LESS_THAN_OR_EQUAL, V(23, 2, 1, 0),
-        "FEATURE_FAILURE_MESA_THREADING_OLD_NOUVEAU", "Mesa 23.2.1.0");
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
+        "FEATURE_FAILURE_MESA_THREADING_BUG_2055560", "");
 
     ////////////////////////////////////
     // FEATURE_WEBGL_USE_HARDWARE

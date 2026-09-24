@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-<toolbox id="navigator-toolbox" class="chrome-block">
+<toolbox id="navigator-toolbox">
   <script src="chrome://browser/content/navigator-toolbox.js" />
 
   <!-- Menu -->
@@ -161,26 +161,10 @@
                    class="urlbar-container"
                    removable="false"
                    overflows="false">
-        <menupopup id="urlbarView-context-menu">
-          <menuitem id="urlbar-view-context-menu-open-in-tab"
-                    data-l10n-id="urlbar-view-context-menu-open-in-tab"/>
-          <menu id="urlbarView-context-menu-open-in-container-tab"
-                data-l10n-id="urlbar-view-context-menu-open-in-container-tab"
-                selection-type="single"
-                node-type="link"
-                hide-if-private-browsing="true"
-                hide-if-usercontext-disabled="true">
-            <menupopup id="urlbarView-context-menu-open-in-container-tab-popup"/>
-          </menu>
-          <menuitem id="urlbarView-context-menu-open-in-window"
-                    data-l10n-id="urlbar-view-context-menu-open-in-window"/>
-          <menuitem id="urlbarView-context-menu-open-in-private-window"
-                    data-l10n-id="urlbar-view-context-menu-open-in-private-window"/>
-        </menupopup>
         <toolbartabstop/>
         <html:moz-urlbar id="urlbar"
               class="urlbar"
-              popover="manual"
+              role="group"
               pageproxystate="invalid"
               unifiedsearchbutton-available=""
               sap-name="urlbar">
@@ -724,7 +708,7 @@
       <searchbar id="searchbar" flex="1"/>
       <html:moz-searchbar id="searchbar-new"
               class="urlbar"
-              popover="manual"
+              role="group"
               pageproxystate="invalid"
               unifiedsearchbutton-available=""
               sap-name="searchbar">

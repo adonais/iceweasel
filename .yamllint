@@ -9,3 +9,4 @@ rules:
 ignore: |
   *node_modules*
   *bad.yml
+  *pnpm-lock.yaml

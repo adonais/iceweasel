@@ -17,6 +17,7 @@ async function run_test() {
   await setupUpdaterTest(FILE_PARTIAL_ZUCCHINI_MAR, false);
   await stageUpdate(STATE_AFTER_STAGE, true, true);
   checkPostUpdateRunningFile(false);
+  checkNoUpdateTelemetry();
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContains(ERR_LOADSOURCEFILE_FAILED);
   await waitForUpdateXMLFiles();

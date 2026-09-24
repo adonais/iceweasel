@@ -13,6 +13,12 @@ a {
   color: var(--breadcrumb-link-color);
   white-space: nowrap;
 
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+    border-radius: var(--border-radius-xsmall);
+  }
+
   &:visited {
     color: var(--breadcrumb-link-color-visited);
   }

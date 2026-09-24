@@ -118,6 +118,14 @@ class JUnitTestRunner(MochitestDesktop):
         """
         return False
 
+    def needsParakeetModelServer(self, options):
+        """
+        Overrides MochitestDesktop.needsParakeetModelServer and always returns
+        False as the junit tests do not use the parakeet model server. This is
+        needed to satisfy MochitestDesktop.startServers.
+        """
+        return False
+
     def server_init(self):
         """
         Additional initialization required to satisfy MochitestDesktop.startServers
@@ -126,6 +134,7 @@ class JUnitTestRunner(MochitestDesktop):
         self.server = None
         self.wsserver = None
         self.websocketProcessBridge = None
+        self.parakeetModelServer = None
         self.SERVER_STARTUP_TIMEOUT = 180 if mozinfo.info.get("debug") else 90
         if self.options.remoteWebServer is None:
             self.options.remoteWebServer = moznetwork.get_ip()

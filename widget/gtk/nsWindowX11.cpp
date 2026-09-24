@@ -19,6 +19,7 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "nsWindow.h"
+#include "xpcpublic.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -147,6 +148,22 @@ bool nsWindowX11::ConfigureX11GLVisual() {
   }
 
   return false;
+}
+
+void nsWindowX11::ConfigureToplevelWindowNative() {
+  if (xpc::IsInAutomation()) {
+    // Opt out of the _NET_WM_FRAME_DRAWN protocol, so the GDK frame clock
+    // doesn't get stuck waiting for the compositor. We composite the window
+    // contents ourselves anyway, so it would only help with non-CSD titlebars
+    // and window shadows.
+    //
+    // We've observed the frame clock getting stuck at least on ubuntu 24.04 on
+    // automation, see bug 1982990.
+    //
+    // TODO(emilio): Should we do this async? We get very little value from it
+    // it seems, and the compositor could get stuck on real hardware too?
+    gdk_x11_window_set_frame_sync_enabled(GetToplevelGdkWindow(), FALSE);
+  }
 }
 
 void nsWindowX11::CreateNative() {

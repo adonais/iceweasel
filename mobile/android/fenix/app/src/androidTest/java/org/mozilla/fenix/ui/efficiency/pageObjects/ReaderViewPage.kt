@@ -11,7 +11,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.selectors.ReaderViewSelectors
 
 class ReaderViewPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
@@ -24,9 +23,7 @@ class ReaderViewPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     // URL) via the reader-view toggle + Customize Reader View menu item, which the generic graph
     // cannot express. Tests drive that sequence explicitly and then act on this page's selectors.
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return ReaderViewSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = ReaderViewSelectors
 
     /**
      * Clear the reader-view appearance SharedPreferences so the test starts from the feature defaults (font size 3, no

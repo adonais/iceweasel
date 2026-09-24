@@ -18,21 +18,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
 });
 
+const EMBEDDER_ELEMENTS = new Set(["embed", "frame", "iframe", "object"]);
+
 /**
- * Returns the window global that embeds aFallback, or null unless aFallback is
- * in an object/embed element with an unprivileged embedder principal.
+ * Returns aFallback's embedding page if it uses a supported element and has a
+ * content or null principal.
  *
- * A compromised content process can send the message for any frame it hosts.
- * Only the process containing the embedder may set embedderElementType, and
- * privileged embedder principals are rejected.
+ * Only the embedding process can set the element type and embedder window ID.
  *
- * @param {WindowGlobalParent} aFallback the window displaying the fallback page.
+ * @param {WindowGlobalParent} aFallback the actor's sending window.
  * @returns {WindowGlobalParent|null}
  */
 function getEmbeddingPage(aFallback) {
   const { browsingContext } = aFallback;
-  const { embedderElementType } = browsingContext;
-  if (embedderElementType !== "embed" && embedderElementType !== "object") {
+  if (!EMBEDDER_ELEMENTS.has(browsingContext.embedderElementType)) {
     return null;
   }
   const embedder = browsingContext.embedderWindowGlobal;
@@ -43,12 +42,7 @@ function getEmbeddingPage(aFallback) {
 }
 
 /**
- * Reopens the PDF represented by the fallback page when its button is activated.
- *
- * With site isolation, a cross-site fallback runs in the PDF site's process,
- * which cannot initiate a load with the embedder's principal. The parent derives
- * the URI and principal from its window globals; the serialized referrer is the
- * only load value supplied by the child.
+ * Reloads the sender's URI with its embedder's principal.
  */
 export class PdfEmbedFallbackParent extends JSWindowActorParent {
   receiveMessage({ name, data }) {

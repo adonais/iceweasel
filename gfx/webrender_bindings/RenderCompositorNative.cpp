@@ -373,7 +373,11 @@ void RenderCompositorNativeOGL::AttachExternalImage(
   // image->Lock only uses the channel index to populate the returned
   // `WrExternalImage`. Since we don't use that, it doesn't matter
   // what channel index we pass.
-  image->Lock(0, mGL);
+  // A DMABUF buffer is attached to the wl_surface as-is and is never sampled
+  // here, so locking it without a GL context skips a per-frame EGLImage import
+  // and BO mapping. Every other backend still requires a context (e.g.
+  // RenderMacIOSurfaceTextureHost).
+  image->Lock(0, image->AsRenderDMABUFTextureHost() ? nullptr : mGL.get());
 
   RenderCompositorNative::AttachExternalImage(aId, aExternalImage);
 }
@@ -610,7 +614,7 @@ bool RenderCompositorNativeOGL::WaitForGPU() {
 
 void RenderCompositorNativeOGL::Bind(wr::NativeTileId aId,
                                      wr::DeviceIntPoint* aOffset,
-                                     uint32_t* aFboId,
+                                     uint64_t* aSurfaceHandle,
                                      wr::DeviceIntRect aDirtyRect,
                                      wr::DeviceIntRect aValidRect) {
   gfx::IntRect validRect(aValidRect.min.x, aValidRect.min.y, aValidRect.width(),
@@ -623,7 +627,7 @@ void RenderCompositorNativeOGL::Bind(wr::NativeTileId aId,
   Maybe<GLuint> fbo = mCurrentlyBoundNativeLayer->NextSurfaceAsFramebuffer(
       validRect, dirtyRect, true);
 
-  *aFboId = *fbo;
+  *aSurfaceHandle = *fbo;
   *aOffset = wr::DeviceIntPoint{0, 0};
 }
 

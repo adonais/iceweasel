@@ -11,9 +11,8 @@ import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.annotation.WorkerThread
 import androidx.core.content.getSystemService
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.GleanMetrics.StorageStats as Metrics
@@ -27,9 +26,17 @@ object StorageStatsMetrics {
 
     private val logger = Logger("StorageStatsMetrics")
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    fun report(context: Context) {
-        GlobalScope.launch(Dispatchers.IO) {
+    /**
+     * Asynchronously reports storage statistics (app, data, and cache sizes) to Glean.
+     *
+     * This function launches a coroutine on [Dispatchers.IO] to perform the potentially slow storage queries without
+     * blocking the calling thread.
+     *
+     * @param context The application context.
+     * @param scope The [CoroutineScope] in which to launch the reporting task.
+     */
+    fun report(context: Context, scope: CoroutineScope) {
+        scope.launch(Dispatchers.IO) {
             reportSync(context)
         }
     }

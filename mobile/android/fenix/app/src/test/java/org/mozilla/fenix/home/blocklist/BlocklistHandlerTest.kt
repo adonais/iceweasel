@@ -12,6 +12,7 @@ import io.mockk.slot
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.sync.DeviceType
+import mozilla.components.feature.top.sites.TopSite
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -200,4 +201,90 @@ class BlocklistHandlerTest {
 
         assertEquals(listOf<String>(), filtered)
     }
+
+    @Test
+    fun `GIVEN top site is not in blocklist WHEN the top sites are filtered THEN it will not be filtered`() {
+        val topSites = listOf(defaultTopSite(url = "https://www.firefox.com/"))
+        every { mockSettings.homescreenBlocklist } returns setOf()
+
+        val filtered =
+            with(blocklistHandler) {
+                topSites.filteredByBlocklist()
+            }
+
+        assertEquals(topSites, filtered)
+    }
+
+    @Test
+    fun `GIVEN top site is in blocklist WHEN the top sites are filtered THEN it will be filtered`() {
+        val blockedUrl = "https://www.firefox.com/"
+        var topSites = listOf(defaultTopSite(url = blockedUrl))
+        every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
+
+        var filtered =
+            with(blocklistHandler) {
+                topSites.filteredByBlocklist()
+            }
+
+        assertEquals(listOf<TopSite>(), filtered)
+
+        val topSite = defaultTopSite(url = "https://www.mozilla.com/")
+        topSites = listOf(defaultTopSite(url = blockedUrl), topSite)
+
+        filtered =
+            with(blocklistHandler) {
+                topSites.filteredByBlocklist()
+            }
+
+        assertEquals(listOf(topSite), filtered)
+    }
+
+    @Test
+    fun `GIVEN a blocked top site url WHEN top site shares its host but not its path THEN the blocked top site is filtered and top site is not filtered`() {
+        val blockedUrl = "https://mozilla.org/blocked"
+        val topSite = defaultTopSite(url = "https://mozilla.org/firefox")
+        val topSites = listOf(topSite, defaultTopSite(url = blockedUrl))
+        every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
+
+        val filtered =
+            with(blocklistHandler) {
+                topSites.filteredByBlocklist()
+            }
+
+        assertEquals(listOf(topSite), filtered)
+    }
+
+    @Test
+    fun `GIVEN a list of top sites WHEN filtered by the blocklist THEN only the blocked url is filtered`() {
+        val blockedUrl = "https://www.firefox.com/"
+        val allowedTopSites =
+            listOf(
+                frecentTopSite(url = "https://www.wikipedia.org/"),
+                providedTopSite(url = "https://www.mozilla.com/"),
+            )
+        val topSites = listOf(defaultTopSite(url = blockedUrl)) + allowedTopSites
+        every { mockSettings.homescreenBlocklist } returns setOf(blockedUrl.stripAndHash())
+
+        val filtered =
+            with(blocklistHandler) {
+                topSites.filteredByBlocklist()
+            }
+
+        assertEquals(allowedTopSites, filtered)
+    }
+
+    private fun defaultTopSite(url: String) = TopSite.Default(id = null, title = url, url = url, createdAt = null)
+
+    private fun frecentTopSite(url: String) = TopSite.Frecent(id = null, title = url, url = url, createdAt = null)
+
+    private fun providedTopSite(url: String) =
+        TopSite.Provided(
+            id = null,
+            title = url,
+            url = url,
+            clickUrl = url,
+            imageUrl = url,
+            impressionUrl = url,
+            createdAt = null,
+        )
 }

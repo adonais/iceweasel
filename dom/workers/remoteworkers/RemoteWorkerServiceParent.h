@@ -33,7 +33,7 @@ class RemoteWorkerServiceParent final : public PRemoteWorkerServiceParent {
     return mProcess;
   }
 
-  nsCString GetRemoteType() const;
+  RemoteType GetRemoteType() const;
 
  private:
   explicit RemoteWorkerServiceParent(ThreadsafeContentParentHandle* aProcess);

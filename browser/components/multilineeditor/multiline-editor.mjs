@@ -154,6 +154,8 @@ export class MultilineEditor extends MozLitElement {
   #view;
   #markdownSerializer;
   #innerRole = null;
+  #valueCacheDoc = null;
+  #valueCacheStr = "";
 
   constructor() {
     super();
@@ -213,15 +215,15 @@ export class MultilineEditor extends MozLitElement {
     if (!this.#view) {
       return this.#pendingValue;
     }
-    if (this.#markdownSerializer) {
-      return this.#markdownSerializer.serialize(this.#view.state.doc);
+    const doc = this.#view.state.doc;
+    if (this.#valueCacheDoc == doc) {
+      return this.#valueCacheStr;
     }
-    return this.#view.state.doc.textBetween(
-      0,
-      this.#view.state.doc.content.size,
-      "\n",
-      "\n"
-    );
+    this.#valueCacheDoc = doc;
+    this.#valueCacheStr = this.#markdownSerializer
+      ? this.#markdownSerializer.serialize(doc)
+      : doc.textBetween(0, doc.content.size, "\n", "\n");
+    return this.#valueCacheStr;
   }
 
   /**
@@ -415,17 +417,13 @@ export class MultilineEditor extends MozLitElement {
 
     const doc = this.#view.state.doc;
     const docSize = doc.content.size;
-    const maxOffset = this.#textLength(doc);
-    const fromOffset = Math.max(0, Math.min(start ?? 0, maxOffset));
-    const toOffset = Math.max(0, Math.min(end ?? fromOffset, maxOffset));
-    const from = Math.max(
-      0,
-      Math.min(this.#posFromTextOffset(fromOffset, doc), docSize)
+    const fromOffset = start ?? 0;
+    const [resolvedFrom, resolvedTo] = this.#posFromTextOffsets(
+      [fromOffset, end ?? fromOffset],
+      doc
     );
-    const to = Math.max(
-      0,
-      Math.min(this.#posFromTextOffset(toOffset, doc), docSize)
-    );
+    const from = Math.max(0, Math.min(resolvedFrom, docSize));
+    const to = Math.max(0, Math.min(resolvedTo, docSize));
 
     if (
       this.#view.state.selection.from === from &&
@@ -727,7 +725,11 @@ export class MultilineEditor extends MozLitElement {
       }
     }
 
-    const prevText = this.value;
+    // Reading `this.value` serializes the whole document, so only do it when an
+    // input event will actually be dispatched (i.e. the doc changed). Capture
+    // the previous text before updating the state.
+    const willDispatchInput = tr.docChanged && !this.#suppressInputEvent;
+    const prevText = willDispatchInput ? this.value : null;
     const prevSelection = this.#view.state.selection;
     const nextState = this.#view.state.apply(tr);
     this.#view.updateState(nextState);
@@ -741,7 +743,7 @@ export class MultilineEditor extends MozLitElement {
       this.#dispatchSelectionChange();
     }
 
-    if (tr.docChanged && !this.#suppressInputEvent) {
+    if (willDispatchInput) {
       const nextText = this.value;
       let insertedText = "";
       for (const step of tr.steps) {
@@ -995,6 +997,85 @@ export class MultilineEditor extends MozLitElement {
     return doc.textBetween(0, pos, blockSeparator, leafText).length;
   }
 
+  /**
+   * Resolve several text-character offsets to ProseMirror document positions in
+   * a single traversal. Counts every leaf node (mentions, hard breaks) as one
+   * character to match `selectionStart`/`selectionEnd` (which use `textBetween`
+   * with a one-char leaf separator); `setSelectionRange` pairs with this.
+   *
+   * This intentionally differs from the singular `#posFromTextOffset`, which
+   * counts mentions as zero to match `posToTextOffset` and the save/restore
+   * flow -- don't collapse the two without preserving that difference.
+   *
+   * Offsets are clamped to `[0, textLength]`; an offset past the end resolves to
+   * the position of the final character. Used on hot paths (e.g. selection
+   * updates) to avoid walking the document once per offset plus a separate
+   * `#textLength` walk.
+   *
+   * @param {number[]} offsets
+   * @param {object} [doc]
+   * @returns {number[]} Positions parallel to `offsets`.
+   */
+  #posFromTextOffsets(offsets, doc = this.#view?.state.doc) {
+    if (!doc) {
+      return offsets.map(() => 0);
+    }
+    const targets = offsets.map(offset => Math.max(0, offset ?? 0));
+    const results = new Array(targets.length).fill(-1);
+    let remaining = targets.length;
+    let seen = 0;
+    let paragraphCount = 0;
+    let lastPos = doc.content.size;
+
+    const resolveReached = (charCount, posAt) => {
+      const limit = seen + charCount;
+      for (let i = 0; i < targets.length; i++) {
+        if (results[i] == -1 && targets[i] <= limit) {
+          results[i] = posAt(targets[i]);
+          remaining--;
+        }
+      }
+      seen = limit;
+    };
+
+    doc.descendants((node, nodePos) => {
+      if (!remaining) {
+        return false;
+      }
+      if (node.type.name === "paragraph") {
+        if (paragraphCount > 0) {
+          resolveReached(1, () => nodePos);
+          lastPos = nodePos;
+        }
+        paragraphCount++;
+      } else if (node.isText) {
+        const start = nodePos;
+        resolveReached(node.text.length, target => start + (target - seen));
+        lastPos = nodePos + node.text.length;
+      } else if (node.isLeaf) {
+        // Atoms/leaves (mentions, hard breaks) count as one character, matching
+        // how `textBetween` serializes them with a one-char leaf separator.
+        const start = nodePos;
+        resolveReached(1, target => start + (target - seen));
+        lastPos = nodePos + node.nodeSize;
+      }
+      return true;
+    });
+
+    return results.map(pos => (pos == -1 ? lastPos : pos));
+  }
+
+  /**
+   * Resolve a single text-character offset to a ProseMirror document position.
+   * Counts mentions as zero characters (only text, paragraph breaks, and hard
+   * breaks advance the offset) to match `posToTextOffset`; `textOffsetToPos`
+   * and the save/restore-input flow pair with this. See `#posFromTextOffsets`
+   * for the selection variant, which counts every leaf as one character.
+   *
+   * @param {number} offset
+   * @param {object} [doc]
+   * @returns {number}
+   */
   #posFromTextOffset(offset, doc = this.#view?.state.doc) {
     if (!doc) {
       return 0;

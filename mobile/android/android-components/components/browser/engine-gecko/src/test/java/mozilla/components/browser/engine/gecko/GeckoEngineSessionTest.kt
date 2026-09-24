@@ -96,6 +96,7 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_STORAGE_
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_TRACKING
 import org.mozilla.geckoview.GeckoSession.ProgressDelegate.SecurityInformation
 import org.mozilla.geckoview.GeckoSessionSettings
+import org.mozilla.geckoview.PdfViewerController
 import org.mozilla.geckoview.SessionFinder
 import org.mozilla.geckoview.TranslationsController
 import org.mozilla.geckoview.TranslationsController.TranslationsException
@@ -3182,6 +3183,58 @@ class GeckoEngineSessionTest {
         var onExceptionCalled = false
 
         engineSession.getNeverTranslateSiteSetting(
+            onResult = { onResultCalled = true },
+            onException = { onExceptionCalled = true },
+        )
+
+        geckoResult.completeExceptionally(Exception())
+        shadowOf(getMainLooper()).idle()
+
+        assertFalse(onResultCalled)
+        assertTrue(onExceptionCalled)
+    }
+
+    @Test
+    fun `WHEN addSignatureToPdf is successful THEN onResult should be called`() {
+        val engineSession = GeckoEngineSession(mock(), geckoSessionProvider = geckoSessionProvider)
+        val mockedGeckoEditor: PdfViewerController.SessionEditor = mock()
+
+        val geckoResult = GeckoResult<Void>()
+
+        whenever(geckoSession.pdfViewerEditor).thenReturn(mockedGeckoEditor)
+        whenever(mockedGeckoEditor.addSignature(any())).thenReturn(geckoResult)
+
+        var onResultCalled = false
+        var onExceptionCalled = false
+
+        engineSession.addSignatureToPdf(
+            "Test User",
+            onResult = { onResultCalled = true },
+            onException = { onExceptionCalled = true },
+        )
+
+        geckoResult.complete(null)
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(onResultCalled)
+        assertFalse(onExceptionCalled)
+    }
+
+    @Test
+    fun `WHEN addSignatureToPdf has an error THEN onException should be called`() {
+        val engineSession = GeckoEngineSession(mock(), geckoSessionProvider = geckoSessionProvider)
+        val mockedGeckoEditor: PdfViewerController.SessionEditor = mock()
+
+        val geckoResult = GeckoResult<Void>()
+
+        whenever(geckoSession.pdfViewerEditor).thenReturn(mockedGeckoEditor)
+        whenever(mockedGeckoEditor.addSignature(any())).thenReturn(geckoResult)
+
+        var onResultCalled = false
+        var onExceptionCalled = false
+
+        engineSession.addSignatureToPdf(
+            "Test User",
             onResult = { onResultCalled = true },
             onException = { onExceptionCalled = true },
         )

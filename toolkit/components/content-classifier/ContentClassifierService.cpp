@@ -30,6 +30,7 @@
 #include "nsILoadInfo.h"
 #include "nsIStreamLoader.h"
 #include "nsIURI.h"
+#include "nsIWritablePropertyBag2.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
@@ -598,20 +599,24 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
   MOZ_LOG(gContentClassifierLog, LogLevel::Info,
           ("ContentClassifierService::BlockShutdown - shutting down"));
 
+  // Flip the phase before anything else. Every build closure re-checks
+  // mInitPhase under mLock before it touches state, so from here on a
+  // queued closure cannot repopulate what ShutdownRSClient is about to
+  // clear. Clearing mBuildThread also closes the dispatch window for any
+  // subsequent UpdateFeatures call.
+  {
+    MutexAutoLock lock(mLock);
+    mInitPhase = InitPhase::ShutdownStarted;
+    mBuildThread = nullptr;
+  }
+
   // ShutdownRSClient clears the filter list data and engines. It also
   // tears down the RS client if one was created (the HTTP-only test
   // path leaves mRSClient null).
   ShutdownRSClient();
 
-  nsCOMPtr<nsISerialEventTarget> buildThread;
   {
     MutexAutoLock lock(mLock);
-
-    mInitPhase = InitPhase::ShutdownStarted;
-    // Clearing mBuildThread closes the dispatch window for any
-    // subsequent UpdateFeatures call. In-flight closures on the queue
-    // are gated by the mInitPhase check above before they touch state.
-    buildThread = std::move(mBuildThread);
 
     Preferences::UnregisterCallback(
         &ContentClassifierService::OnPrefChange,
@@ -640,25 +645,10 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
 
     content_classifier_teardown_domain_resolver();
 
-    if (!buildThread) {
-      RemoveBlocker();
-      return NS_OK;
-    }
+    // Removal is synchronous on purpose. Nothing queued there needs to finish
+    // before shutdown proceeds: closures bail at the mInitPhase check above.
+    RemoveBlocker();
   }
-
-  // Drain mBuildThread, then post back to the main thread to remove
-  // the shutdown blocker. Because mBuildThread is serial, the fence
-  // runs strictly after every already-dispatched build closure, so by
-  // the time FinishShutdown lands no off-thread work is in flight.
-  RefPtr<ContentClassifierService> self = this;
-  buildThread->Dispatch(NS_NewRunnableFunction(
-      "ContentClassifierService::ShutdownFence", [self]() {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "ContentClassifierService::FinishShutdown", [self]() {
-              MutexAutoLock lock(self->mLock);
-              self->RemoveBlocker();
-            }));
-      }));
 
   return NS_OK;
 }
@@ -738,8 +728,46 @@ NS_IMETHODIMP ContentClassifierService::GetName(nsAString& aName) {
   return NS_OK;
 }
 
+static nsLiteralCString InitPhaseToString(InitPhase aPhase) {
+  switch (aPhase) {
+    case InitPhase::NotInited:
+      return "not-inited"_ns;
+    case InitPhase::InitSucceeded:
+      return "init-succeeded"_ns;
+    case InitPhase::InitFailed:
+      return "init-failed"_ns;
+    case InitPhase::ShutdownStarted:
+      return "shutdown-started"_ns;
+    case InitPhase::ShutdownEnded:
+      return "shutdown-ended"_ns;
+  }
+  MOZ_ASSERT_UNREACHABLE("unhandled InitPhase");
+  return "unknown"_ns;
+}
+
 NS_IMETHODIMP ContentClassifierService::GetState(nsIPropertyBag** aState) {
+  NS_ENSURE_ARG_POINTER(aState);
   *aState = nullptr;
+
+  nsCOMPtr<nsIWritablePropertyBag2> bag =
+      do_CreateInstance("@mozilla.org/hash-property-bag;1");
+  NS_ENSURE_TRUE(bag, NS_ERROR_FAILURE);
+
+  InitPhase phase;
+  uint32_t engineCount;
+  {
+    MutexAutoLock lock(mLock);
+    phase = mInitPhase;
+    engineCount = mEngines.Count();
+  }
+
+  nsresult rv =
+      bag->SetPropertyAsACString(u"phase"_ns, InitPhaseToString(phase));
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = bag->SetPropertyAsUint32(u"engines"_ns, engineCount);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  bag.forget(aState);
   return NS_OK;
 }
 

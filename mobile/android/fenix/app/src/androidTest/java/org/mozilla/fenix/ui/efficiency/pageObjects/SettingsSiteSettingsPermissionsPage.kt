@@ -7,8 +7,8 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -20,8 +20,8 @@ class SettingsSiteSettingsPermissionsPage(composeRule: AndroidComposeTestRule<Ho
     BasePage(composeRule) {
     override val pageName = "SettingsSiteSettingsPermissionsPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "HomePage",
             to = pageName,
             steps =
@@ -34,20 +34,22 @@ class SettingsSiteSettingsPermissionsPage(composeRule: AndroidComposeTestRule<Ho
                 ),
         )
 
-        NavigationRegistry.register(
+        builder.register(
             from = pageName,
             to = "HomePage",
             steps = listOf(NavigationStep.PressBackUntilGone(SettingsSelectors.NAVIGATION_TOOLBAR)),
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SettingsSiteSettingsPermissionsSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SettingsSiteSettingsPermissionsSelectors
 
     // Typed override so a test can chain the verbs below straight off navigateToPage(), as the other page objects do.
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsSiteSettingsPermissionsPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsSiteSettingsPermissionsPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 
@@ -56,7 +58,7 @@ class SettingsSiteSettingsPermissionsPage(composeRule: AndroidComposeTestRule<Ho
      * it:" intro, both numbered steps, and the Go to settings button.
      */
     fun verifyBlockedByAndroidSection(): SettingsSiteSettingsPermissionsPage {
-        mozVerifyElementsByGroup("blockedByAndroid")
+        mozVerifyElementsByGroup(SettingsSiteSettingsPermissionsSelectors.Group.BLOCKED_BY_ANDROID)
         return this
     }
 

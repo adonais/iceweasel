@@ -34,6 +34,10 @@
 #include "nsIWebProgress.h"
 #include "xpcAccessibleDocument.h"
 
+#if defined(ANDROID)
+#  include "mozilla/Monitor.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::a11y;
 using namespace mozilla::dom;
@@ -275,6 +279,18 @@ void DocManager::Shutdown() {
   }
 
   ClearDocCache();
+  // Even though remote documents aren't strictly managed by this DocManager
+  // instance, destroy them now because they might depend on platform specific
+  // state which is about to be torn down by PlatformShutdown. Iterate the array
+  // backwards because destroying the document removes it from this array.
+  if (sRemoteDocuments) {
+#if defined(ANDROID)
+    MonitorAutoLock mal(nsAccessibilityService::GetAndroidMonitor());
+#endif
+    for (size_t i = sRemoteDocuments->Length(); i-- > 0;) {
+      (*sRemoteDocuments)[i]->Destroy();
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

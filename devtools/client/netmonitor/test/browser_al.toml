@@ -36,6 +36,8 @@ support-files = [
   "html_json-malformed-test-page.html",
   "html_json-text-mime-test-page.html",
   "html_json-xssi-protection.html",
+  "html_jsonl-post-test-page.html",
+  "html_jsonl-test-page.html",
   "html_jsonp-test-page.html",
   "html_maps-test-page.html",
   "html_module-script-cache.html",
@@ -71,6 +73,8 @@ support-files = [
   "html_stylesheet-cache.html",
   "js_worker-test.js",
   "js_worker-test2.js",
+  "jsonl_text_plain.jsonl",
+  "jsonl_text_plain.jsonl^headers^",
   "network-overrides-test-helpers.js",
   "sjs_content-type-test-server.sjs",
   "sjs_cors-test-server.sjs",
@@ -335,6 +339,10 @@ fail-if = [
 ["browser_net_json_custom_mime.js"]
 
 ["browser_net_json_text_mime.js"]
+
+["browser_net_jsonl-request.js"]
+
+["browser_net_jsonl.js"]
 
 ["browser_net_jsonp.js"]
 

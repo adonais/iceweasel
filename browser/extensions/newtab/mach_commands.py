@@ -20,9 +20,6 @@ from zipfile import ZipFile
 import requests
 import yaml
 from colorama import Fore, Style
-from fluent.syntax import parse as fluent_parse
-from fluent.syntax import serialize as fluent_serialize
-from fluent.syntax.ast import Message, Resource
 from mach.decorators import (
     Command,
     CommandArgument,
@@ -60,46 +57,15 @@ REPORT_WRAP_CHARS = 80
 FLUENT_FILE_ANCESTRY = Path("browser", "newtab")
 SUPPORTED_LOCALES_PATH = Path(WEBEXT_LOCALES_PATH, "supported-locales.json")
 
-# @backward-compat { version 155 }
-# The 13 homepage-settings strings live in preferences.ftl (canonical).
-# The newtab XPI still needs them in its bundled webext-glue/**/newtab.ftl
-# for the pre-155 fallback path in AboutPreferences.sys.mjs. Once 155
-# reaches Release, that fallback and this extract step can both be removed.
-PREFERENCES_EXTRACT_IDS = (
-    "home-homepage-title",
-    "home-homepage-new-windows",
-    "home-homepage-new-tabs",
-    "home-homepage-custom-homepage-button",
-    "home-custom-homepage-card-header",
-    "home-custom-homepage-address",
-    "home-custom-homepage-address-button",
-    "home-custom-homepage-no-results",
-    "home-custom-homepage-delete-address-button",
-    "home-custom-homepage-replace-with-prompt",
-    "home-custom-homepage-current-pages-button",
-    "home-custom-homepage-bookmarks-button",
-    "home-prefs-homepage-extension-option",
-)
-
-# @backward-compat { version 155 }
-# The l10n repo mirrors browser/locales/en-US/** under <locale>/browser/**,
-# so the "browser" component name is duplicated for files that themselves
-# live under a "browser/" subdirectory locally (see browser/locales/l10n.toml).
-PREFERENCES_FTL_ANCESTRY = Path("browser", "browser", "preferences")
-PREFERENCES_FTL_NAME = "preferences.ftl"
-LOCAL_PREFERENCES_EN_US_PATH = Path(
-    "browser", "locales", "en-US", "browser", "preferences", "preferences.ftl"
-)
-
 # We query whattrainisitnow.com to get some key dates for both beta and
 # release in order to compute whether or not strings have been available on
 # the beta channel long enough to consider falling back (currently, that's
-# 3 weeks of time on the beta channel).
+# 2 weeks of time on the beta channel).
 BETA_SCHEDULE_QUERY = "https://whattrainisitnow.com/api/release/schedule/?version=beta"
 RELEASE_SCHEDULE_QUERY = (
     "https://whattrainisitnow.com/api/release/schedule/?version=release"
 )
-BETA_FALLBACK_THRESHOLD = timedelta(weeks=3)
+BETA_FALLBACK_THRESHOLD = timedelta(weeks=2)
 TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
 BEETMOVER_TASK_NAME = "beetmover-newtab"
 SIGNING_TASK_NAME = "release-signing-newtab"
@@ -177,41 +143,6 @@ def watch(command_context):
     )
 
 
-# @backward-compat { version 155 }
-def _extract_preferences_messages(preferences_path):
-    """Return a serialized Fluent block containing the IDs in
-    PREFERENCES_EXTRACT_IDS from preferences_path, or an empty string if the
-    file is missing or has none of the target IDs."""
-    try:
-        source = Path(preferences_path).read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return ""
-    resource = fluent_parse(source)
-    wanted = set(PREFERENCES_EXTRACT_IDS)
-    picked = [
-        entry
-        for entry in resource.body
-        if isinstance(entry, Message) and entry.id.name in wanted
-    ]
-    if not picked:
-        return ""
-    return fluent_serialize(Resource(body=picked))
-
-
-# @backward-compat { version 155 }
-def _append_extract_to_webext_glue(webext_glue_ftl_path, extract_block):
-    """Append the extract block, with a header comment, to a webext-glue newtab.ftl file."""
-    if not extract_block:
-        return
-    header = (
-        "\n## Below strings are extracted from preferences.ftl by\n"
-        "## ./mach newtab update-locales - edit them in preferences.ftl.\n\n"
-    )
-    with open(webext_glue_ftl_path, "a", encoding="utf-8") as handle:
-        handle.write(header)
-        handle.write(extract_block)
-
-
 @SubCommand(
     "newtab",
     "update-locales",
@@ -257,15 +188,6 @@ def update_locales(command_context):
             destination_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(fluent_file_abs_path, destination_file)
 
-            # @backward-compat { version 155 }
-            # Inject the homepage-settings strings sourced from preferences.ftl
-            # so the newtab XPI still has them for the pre-155 fallback path.
-            locale_preferences_path = (
-                root_dir / locale / PREFERENCES_FTL_ANCESTRY / PREFERENCES_FTL_NAME
-            )
-            extract_block = _extract_preferences_messages(locale_preferences_path)
-            _append_extract_to_webext_glue(destination_file, extract_block)
-
         # Now clean up the temporary directory.
         shutil.rmtree(clone_dir)
 
@@ -278,25 +200,10 @@ def update_locales(command_context):
     dest_en_ftl_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(LOCAL_EN_US_PATH, dest_en_ftl_path)
 
-    # @backward-compat { version 155 }
-    # Same as above, for the local en-US preferences.ftl.
-    en_us_extract = _extract_preferences_messages(LOCAL_PREFERENCES_EN_US_PATH)
-    _append_extract_to_webext_glue(dest_en_ftl_path, en_us_extract)
-
     # Step 4.5: Now compute the commit dates of each of the strings inside of
     # LOCAL_EN_US_PATH.
     print("Computing local message commit dates…")
     message_dates = get_message_dates(LOCAL_EN_US_PATH)
-
-    # @backward-compat { version 155 }
-    # The en-US source now also carries the preferences.ftl extract (see
-    # above), so its commit dates need to come from preferences.ftl's own
-    # history, or display_report() will KeyError on those message ids.
-    message_dates.update({
-        message_id: date
-        for message_id, date in get_message_dates(LOCAL_PREFERENCES_EN_US_PATH).items()
-        if message_id in PREFERENCES_EXTRACT_IDS
-    })
 
     # Step 5: Now compare that en-US Fluent file with all of the ones we just
     # cloned and create a report with how many strings are still missing.
@@ -496,8 +403,8 @@ def display_report(report, details=None):
 
     # These two dates will be used later on when we start calculating which
     # untranslated strings should be considered "pending" (we're still waiting
-    # for them to be on beta for at least 3 weeks), and which should be
-    # considered "missing" (they've been on beta for more than 3 weeks and
+    # for them to be on beta for at least 2 weeks), and which should be
+    # considered "missing" (they've been on beta for more than 2 weeks and
     # still aren't translated).
 
     meta = report["meta"]

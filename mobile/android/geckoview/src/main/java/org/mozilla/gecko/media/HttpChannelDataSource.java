@@ -197,6 +197,9 @@ public final class HttpChannelDataSource extends BaseDataSource implements HttpD
 
     final WebResponse response;
     try {
+      // This poll() must never be evaluated while the GeckoHlsPlayer monitor is
+      // held: openChannel() is synchronized and drops the monitor on return, and
+      // release() would deadlock waiting for it.
       response = mChannelProvider.openChannel(builder.build()).poll();
     } catch (final InterruptedException e) {
       Thread.currentThread().interrupt();

@@ -11,7 +11,7 @@ set_env()
   fi
 
   cp -a "${VCS_PATH}/nss" .
-  [ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
+  "$(dirname "$0")/clone_nspr.sh"
   pushd nspr
   if [[ -f ../nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
     cat ../nss/nspr.patch | patch -p1

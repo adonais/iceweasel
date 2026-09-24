@@ -8,6 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Policies: "resource:///modules/policies/Policies.sys.mjs",
+  PolicyFailures: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   PolicySchemaValidator:
     "resource://gre/modules/policies/PolicySchemaValidator.sys.mjs",
   WindowsGPOParser: "resource://gre/modules/policies/WindowsGPOParser.sys.mjs",
@@ -102,6 +103,7 @@ EnterprisePoliciesManager.prototype = {
           if (policyCallback) {
             this._schedulePolicyCallback(
               timing,
+              null,
               policyCallback.bind(
                 policyImpl,
                 this /* the EnterprisePoliciesManager */
@@ -197,8 +199,16 @@ EnterprisePoliciesManager.prototype = {
       let policyParameters = unparsedPolicies[policyName];
 
       if (!policySchema) {
-        lazy.log.error(`Unknown policy: ${policyName}`);
+        this._reportPolicyError(policyName, `Unknown policy: ${policyName}`);
         continue;
+      }
+
+      let policyImpl = lazy.Policies[policyName];
+
+      // A few policies still accept an old syntax that the schema can't
+      // describe. Convert it before we validate.
+      if (policyImpl?.migrateLegacySyntax) {
+        policyParameters = policyImpl.migrateLegacySyntax(policyParameters);
       }
 
       let {
@@ -211,13 +221,12 @@ EnterprisePoliciesManager.prototype = {
       });
 
       if (!parametersAreValid) {
-        lazy.log.error(
+        this._reportPolicyError(
+          policyName,
           `Invalid parameters specified for ${policyName}: ${validationError.message}`
         );
         continue;
       }
-
-      let policyImpl = lazy.Policies[policyName];
 
       if (!policyImpl) {
         // This means there is an entry in the schema, but no implementaton.
@@ -227,19 +236,22 @@ EnterprisePoliciesManager.prototype = {
       }
 
       if (policyImpl.validate && !policyImpl.validate(parsedParameters)) {
-        lazy.log.error(
+        this._reportPolicyError(
+          policyName,
           `Parameters for ${policyName} did not validate successfully.`
         );
         continue;
       }
 
       this._parsedPolicies[policyName] = parsedParameters;
+      lazy.PolicyFailures.clear(policyName);
 
       for (let timing of Object.keys(this._callbacks)) {
         let policyCallback = policyImpl[timing];
         if (policyCallback) {
           this._schedulePolicyCallback(
             timing,
+            policyName,
             policyCallback.bind(
               policyImpl,
               this /* the EnterprisePoliciesManager */,
@@ -272,19 +284,41 @@ EnterprisePoliciesManager.prototype = {
     onAllWindowsRestored: [],
   },
 
-  _schedulePolicyCallback(timing, callback) {
-    this._callbacks[timing].push(callback);
+  _schedulePolicyCallback(timing, policyName, callback) {
+    this._callbacks[timing].push({ policyName, callback });
   },
 
   _runPoliciesCallbacks(timing) {
     let callbacks = this._callbacks[timing];
     while (callbacks.length) {
-      let callback = callbacks.shift();
+      let { policyName, callback } = callbacks.shift();
       try {
-        callback();
+        const result = callback();
+        // An async callback rejects long after it returned, so its failure
+        // can only be recorded when it happens.
+        if (typeof result?.then == "function") {
+          result.then(null, ex =>
+            this._reportCallbackFailure(policyName, timing, ex)
+          );
+        }
       } catch (ex) {
-        lazy.log.error("Error running ", callback, `for ${timing}:`, ex);
+        this._reportCallbackFailure(policyName, timing, ex);
       }
+    }
+  },
+
+  _reportPolicyError(policyName, message) {
+    lazy.log.error(message);
+    lazy.PolicyFailures.report(policyName, message);
+  },
+
+  _reportCallbackFailure(policyName, timing, ex) {
+    const message = policyName
+      ? `Error running ${timing} callback for policy ${policyName}: ${ex}`
+      : `Error running ${timing} callback: ${ex}`;
+    lazy.log.error(message, ex);
+    if (policyName) {
+      lazy.PolicyFailures.report(policyName, message);
     }
   },
 
@@ -298,6 +332,7 @@ EnterprisePoliciesManager.prototype = {
 
     this._status = Ci.nsIEnterprisePolicies.UNINITIALIZED;
     this._parsedPolicies = undefined;
+    lazy.PolicyFailures.clearAll();
     for (let timing of Object.keys(this._callbacks)) {
       this._callbacks[timing] = [];
     }

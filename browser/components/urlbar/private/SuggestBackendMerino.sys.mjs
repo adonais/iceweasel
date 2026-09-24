@@ -67,6 +67,11 @@ export class SuggestBackendMerino extends SuggestBackend {
     // fetches to finish so we can record their latency.
   }
 
+  /**
+   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarParentController} _controller
+   * @param {object} _details
+   */
   onSearchSessionEnd(_queryContext, _controller, _details) {
     // Reset the Merino session ID when a session ends. By design for the user's
     // privacy, we don't keep it around between engagements.

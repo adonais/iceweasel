@@ -10,8 +10,8 @@
 
 class MozsearchAction : public clang::PluginASTAction {
 public:
-  std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI,
-                                                 clang::StringRef F) override;
+  std::unique_ptr<clang::ASTConsumer>
+  CreateASTConsumer(clang::CompilerInstance &CI, clang::StringRef F) override;
 
   bool ParseArgs(const clang::CompilerInstance &CI,
                  const std::vector<std::string> &Args) override;

@@ -47,6 +47,22 @@ add_task(async function test_megalist_menu() {
 });
 
 /**
+ * Check that pref controlled Resource Monitor sidebar menu item is hidden/shown
+ */
+add_task(async function test_resource_monitor_menu() {
+  const { document } = win;
+  const item = document.getElementById("menu_resourceMonitorSidebar");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.resourceMonitor.enabled", false]],
+  });
+  ok(item.hidden, "Resource Monitor sidebar menu item hidden");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.resourceMonitor.enabled", true]],
+  });
+  ok(!item.hidden, "Resource Monitor sidebar menu item shown");
+});
+
+/**
  * Check that a sidebar extension appears in the View > Sidebar menu
  * and that its checked state is accurate
  */

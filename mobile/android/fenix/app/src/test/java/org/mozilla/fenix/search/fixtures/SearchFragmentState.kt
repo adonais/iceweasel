@@ -12,7 +12,7 @@ import org.mozilla.fenix.search.SearchFragmentState
 val EMPTY_SEARCH_FRAGMENT_STATE =
     SearchFragmentState(
         query = "",
-        url = "",
+        currentTabData = null,
         searchTerms = "",
         searchEngineSource = SearchEngineSource.None,
         defaultEngine = null,

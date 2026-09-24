@@ -8,6 +8,7 @@ extern crate nsstring;
 extern crate skrifa;
 extern crate thin_vec;
 use nsstring::nsCString;
+use skrifa::metrics::GlyphMetrics;
 use skrifa::prelude::*;
 use skrifa::raw::collections::int_set::Domain; // for Tag::to_u32()
 use skrifa::string::StringId;
@@ -281,5 +282,74 @@ pub extern "C" fn skrifa_font_get_metrics(
         result.y_min = f32::NAN;
         result.x_max = f32::NAN;
         result.y_max = f32::NAN;
+    }
+}
+
+// GLYPH METRICS
+pub struct SkrifaGlyphMetrics<'a>(skrifa::metrics::GlyphMetrics<'a>);
+
+#[no_mangle]
+pub extern "C" fn skrifa_font_create_glyph_metrics<'a>(
+    font: &'a SkrifaFontRef<'a>,
+    size: f32,
+    location: &'a SkrifaLocation,
+) -> *mut SkrifaGlyphMetrics<'a> {
+    Box::into_raw(Box::new(SkrifaGlyphMetrics(GlyphMetrics::new(
+        &font.0,
+        Size::new(size),
+        &location.0,
+    ))))
+}
+
+#[no_mangle]
+pub extern "C" fn skrifa_glyph_metrics_delete(metrics: *mut SkrifaGlyphMetrics) {
+    if !metrics.is_null() {
+        unsafe { drop(Box::from_raw(metrics)) };
+    }
+}
+
+// Get glyph advance width; returns zero for out-of-range glyph ids.
+#[no_mangle]
+pub extern "C" fn skrifa_metrics_get_glyph_advance(
+    glyph_metrics: &SkrifaGlyphMetrics,
+    gid: u32,
+) -> f32 {
+    glyph_metrics
+        .0
+        .advance_width(GlyphId::new(gid))
+        .unwrap_or(0.0)
+}
+
+// Expose glyph bounding box in gfx::Rect form for Gecko C++ code to use.
+use style::gecko_bindings::structs::gfx;
+
+// Wrapper for gfx::Rect so that we can implement the From trait here.
+#[repr(transparent)]
+pub struct BoundingBox(gfx::Rect);
+
+impl From<skrifa::metrics::BoundingBox> for BoundingBox {
+    fn from(bounds: skrifa::metrics::BoundingBox) -> Self {
+        // Convert from Skrifa's BoundingBox to gfx::Rect's x/y/width/height fields.
+        Self(gfx::Rect {
+            x: bounds.x_min,
+            y: bounds.y_min,
+            width: bounds.x_max - bounds.x_min,
+            height: bounds.y_max - bounds.y_min,
+        })
+    }
+}
+
+// Get glyph bounding box. Returns true if successful, false if bbox not available.
+#[no_mangle]
+pub extern "C" fn skrifa_metrics_get_glyph_bounds(
+    glyph_metrics: &SkrifaGlyphMetrics,
+    gid: u32,
+    bbox: &mut BoundingBox,
+) -> bool {
+    if let Some(bounds) = glyph_metrics.0.bounds(GlyphId::new(gid)) {
+        *bbox = bounds.into();
+        true
+    } else {
+        false
     }
 }

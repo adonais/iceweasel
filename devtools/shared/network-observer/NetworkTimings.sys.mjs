@@ -30,19 +30,12 @@ export const NetworkTimings = new (class {
 
     const timings = httpActivity.timings;
     const harTimings = {};
-    // If the TCP Fast Open option or tls1.3 0RTT is used tls and data can
-    // be dispatched in SYN packet and not after tcp socket is connected.
-    // To demostrate this properly we will calculated TLS and send start time
-    // relative to CONNECTING_TO.
-    // Similary if 0RTT is used, data can be sent as soon as a TLS handshake
-    // starts.
 
     harTimings.blocked = this.#getBlockedTiming(timings);
     // DNS timing information is available only in when the DNS record is not
     // cached.
     harTimings.dns = this.#getDnsTiming(timings);
     harTimings.connect = this.#getConnectTiming(timings);
-    harTimings.ssl = this.#getSslTiming(timings);
 
     let { secureConnectionStartTime, secureConnectionStartTimeRelative } =
       this.#getSecureConnectionStartTimeInfo(timings);
@@ -55,6 +48,9 @@ export const NetworkTimings = new (class {
     );
 
     const {
+      requestStartTimeTc,
+      responseStartTimeTc,
+      responseEndTimeTc,
       tcpConnectEndTimeTc,
       connectStartTimeTc,
       connectEndTimeTc,
@@ -63,58 +59,83 @@ export const NetworkTimings = new (class {
       domainLookupStartTimeTc,
     } = this.#getDataFromTimedChannel(timedChannel);
 
-    if (
-      harTimings.connect <= 0 &&
-      timedChannel &&
-      tcpConnectEndTimeTc != 0 &&
-      connectStartTimeTc != 0
-    ) {
-      harTimings.connect = tcpConnectEndTimeTc - connectStartTimeTc;
-      if (secureConnectionStartTimeTc != 0) {
-        harTimings.ssl = connectEndTimeTc - secureConnectionStartTimeTc;
-        secureConnectionStartTime =
-          secureConnectionStartTimeTc - connectStartTimeTc;
-        secureConnectionStartTimeRelative = true;
-      } else {
-        harTimings.ssl = -1;
-      }
-    } else if (
-      timedChannel &&
-      timings.STATUS_TLS_STARTING &&
-      secureConnectionStartTimeTc != 0
-    ) {
-      // It can happen that TCP Fast Open actually have not sent any data and
-      // timings.STATUS_TLS_STARTING.first value will be corrected in
-      // timedChannel.secureConnectionStartTime
-      if (secureConnectionStartTimeTc > timings.STATUS_TLS_STARTING.first) {
-        // TCP Fast Open actually did not sent any data.
-        harTimings.ssl = connectEndTimeTc - secureConnectionStartTimeTc;
-        secureConnectionStartTimeRelative = false;
-      }
+    harTimings.ssl = this.#getSslTiming(timings, secureConnectionStartTimeTc);
+
+    const fromChannel = this.#getChannelConnectTimings(harTimings.ssl, {
+      connectStartTimeTc,
+      tcpConnectEndTimeTc,
+      connectEndTimeTc,
+      secureConnectionStartTimeTc,
+    });
+
+    if (fromChannel) {
+      harTimings.connect = fromChannel.connect;
+      harTimings.ssl = fromChannel.ssl;
+      secureConnectionStartTime = fromChannel.secureConnectionStart;
+      secureConnectionStartTimeRelative = fromChannel.relative;
     }
 
-    if (
-      harTimings.dns <= 0 &&
-      timedChannel &&
-      domainLookupEndTimeTc != 0 &&
-      domainLookupStartTimeTc != 0
-    ) {
+    if (domainLookupEndTimeTc != 0 && domainLookupStartTimeTc != 0) {
       harTimings.dns = domainLookupEndTimeTc - domainLookupStartTimeTc;
     }
 
-    harTimings.send = this.#getSendTiming(timings);
-    harTimings.wait = this.#getWaitTiming(timings);
-    harTimings.receive = this.#getReceiveTiming(timings);
+    // Established connection: any such status is a failed attempt's.
+    const reusedConnection =
+      requestStartTimeTc != 0 &&
+      connectStartTimeTc == 0 &&
+      domainLookupStartTimeTc == 0;
+    if (reusedConnection) {
+      harTimings.dns = -1;
+      harTimings.connect = -1;
+      harTimings.ssl = -1;
+      secureConnectionStartTime = 0;
+      secureConnectionStartTimeRelative = false;
+    }
+
+    // Absorbs a failed attempt's time. Clamped: OnStopRequest can replace
+    // domainLookupStart with an earlier DNS prefetch.
+    const servingAttemptStart =
+      domainLookupStartTimeTc || connectStartTimeTc || requestStartTimeTc;
+    if (servingAttemptStart != 0 && timings.REQUEST_HEADER) {
+      harTimings.blocked = Math.max(
+        servingAttemptStart - timings.REQUEST_HEADER.first,
+        0
+      );
+    }
+
+    // Simulated throttling delays these activities; the channel's marks are
+    // real, so they describe an unthrottled transfer. Clamping rather than
+    // dropping them keeps a restart's stale RESPONSE_START out of the response.
+    const throttled = httpActivity.downloadThrottle;
+    const responseStart = throttled
+      ? this.#clampToServingAttempt(
+          timings.RESPONSE_START?.first ?? 0,
+          responseStartTimeTc
+        )
+      : responseStartTimeTc;
+    const responseEnd = throttled ? 0 : responseEndTimeTc;
+
+    harTimings.send = this.#getSendTiming(timings, requestStartTimeTc);
+    harTimings.wait = this.#getWaitTiming(timings, responseStart);
+    harTimings.receive = this.#getReceiveTiming(
+      timings,
+      responseStart,
+      responseEnd
+    );
     let { startSendingTime, startSendingTimeRelative } =
-      this.#getStartSendingTimeInfo(timings, connectStartTimeTc);
+      this.#getStartSendingTimeInfo(
+        timings,
+        connectStartTimeTc,
+        requestStartTimeTc
+      );
 
     if (secureConnectionStartTimeRelative) {
-      const time = Math.max(Math.round(secureConnectionStartTime / 1000), -1);
-      secureConnectionStartTime = time;
+      secureConnectionStartTime = this.#convertTimeToMs(
+        secureConnectionStartTime
+      );
     }
     if (startSendingTimeRelative) {
-      const time = Math.max(Math.round(startSendingTime / 1000), -1);
-      startSendingTime = time;
+      startSendingTime = this.#convertTimeToMs(startSendingTime);
     }
 
     const ot = this.#calculateOffsetAndTotalTime(
@@ -200,6 +221,56 @@ export const NetworkTimings = new (class {
     };
   }
 
+  /**
+   * The connect and handshake per attempt, which the statuses do not separate.
+   *
+   * @param {number} statusSsl
+   *     The handshake duration the activity statuses reported, or -1.
+   * @param {object} channelTimings
+   *     The connect and handshake marks this attempt took from the channel, in
+   *     microseconds, 0 when unset.
+   * @return {object|null}
+   *     null when the channel has no connect of its own, otherwise:
+   *     - {number} connect: the connect duration
+   *     - {number} ssl: the handshake duration, -1 when there was none
+   *     - {number} secureConnectionStart: where the handshake began
+   *     - {boolean} relative: whether that is an offset from the connect
+   */
+  #getChannelConnectTimings(
+    statusSsl,
+    {
+      connectStartTimeTc,
+      tcpConnectEndTimeTc,
+      connectEndTimeTc,
+      secureConnectionStartTimeTc,
+    }
+  ) {
+    if (connectStartTimeTc == 0 || tcpConnectEndTimeTc == 0) {
+      return null;
+    }
+
+    const connect = tcpConnectEndTimeTc - connectStartTimeTc;
+
+    // HTTP/3 stamps it at connect start; a bootstrapped connection at connectEnd.
+    if (
+      secureConnectionStartTimeTc < tcpConnectEndTimeTc ||
+      connectEndTimeTc <= secureConnectionStartTimeTc
+    ) {
+      return { connect, ssl: -1, secureConnectionStart: 0, relative: false };
+    }
+
+    return {
+      connect,
+      // Accepted 0-RTT rewrites connectEnd to the early data send.
+      ssl:
+        statusSsl > 0
+          ? statusSsl
+          : connectEndTimeTc - secureConnectionStartTimeTc,
+      secureConnectionStart: secureConnectionStartTimeTc - connectStartTimeTc,
+      relative: true,
+    };
+  }
+
   #getBlockedTiming(timings) {
     if (timings.STATUS_RESOLVING && timings.STATUS_CONNECTING_TO) {
       return timings.STATUS_RESOLVING.first - timings.REQUEST_HEADER.first;
@@ -228,7 +299,17 @@ export const NetworkTimings = new (class {
     return -1;
   }
 
-  #getReceiveTiming(timings) {
+  // RESPONSE_START is reported once, so a restart past the head leaves it stale.
+  #getReceiveTiming(timings, responseStartTimeTc, responseEndTimeTc) {
+    if (responseStartTimeTc != 0 && responseEndTimeTc != 0) {
+      return responseEndTimeTc - responseStartTimeTc;
+    }
+
+    // A response delimited by a close is stamped after it reports complete.
+    if (responseStartTimeTc != 0 && timings.RESPONSE_COMPLETE) {
+      return timings.RESPONSE_COMPLETE.last - responseStartTimeTc;
+    }
+
     if (timings.RESPONSE_START && timings.RESPONSE_COMPLETE) {
       return timings.RESPONSE_COMPLETE.last - timings.RESPONSE_START.first;
     }
@@ -236,30 +317,72 @@ export const NetworkTimings = new (class {
     return -1;
   }
 
-  #getWaitTiming(timings) {
+  // From the end of sending; the channel's requestStart is where it began.
+  #getWaitTiming(timings, responseStartTimeTc) {
+    const sent = timings.REQUEST_BODY_SENT || timings.STATUS_SENDING_TO;
+    if (!sent) {
+      return -1;
+    }
+
+    // Floored: a server can answer before the upload finishes, and a negative
+    // phase is dropped from the total rather than counted.
+    if (responseStartTimeTc != 0) {
+      return Math.max(responseStartTimeTc - sent.last, 0);
+    }
+
     if (timings.RESPONSE_START) {
-      return (
-        timings.RESPONSE_START.first -
-        (timings.REQUEST_BODY_SENT || timings.STATUS_SENDING_TO).last
+      return Math.max(timings.RESPONSE_START.first - sent.last, 0);
+    }
+
+    return -1;
+  }
+
+  // When both attempts ran a handshake, `first` is the failed one's.
+  #getSslTiming(timings, secureConnectionStartTimeTc) {
+    if (timings.STATUS_TLS_STARTING && timings.STATUS_TLS_ENDING) {
+      return Math.max(
+        timings.STATUS_TLS_ENDING.last -
+          this.#clampToServingAttempt(
+            timings.STATUS_TLS_STARTING.first,
+            secureConnectionStartTimeTc
+          ),
+        0
       );
     }
 
     return -1;
   }
 
-  #getSslTiming(timings) {
-    if (timings.STATUS_TLS_STARTING && timings.STATUS_TLS_ENDING) {
-      return timings.STATUS_TLS_ENDING.last - timings.STATUS_TLS_STARTING.first;
-    }
-
-    return -1;
+  // Reported once per transaction, so a restart leaves `first` at the failure.
+  #clampToServingAttempt(first, attemptStart) {
+    return attemptStart == 0 ? first : Math.max(first, attemptStart);
   }
 
-  #getSendTiming(timings) {
+  // Shared with the offset, so the bar and the duration cover one interval.
+  #getSendStart(timings, requestStartTimeTc) {
+    return this.#clampToServingAttempt(
+      timings.STATUS_SENDING_TO.first,
+      requestStartTimeTc
+    );
+  }
+
+  // Both ends from one status, so a multi-write body reports a long send.
+  #getSendTiming(timings, requestStartTimeTc) {
     if (timings.STATUS_SENDING_TO) {
-      return timings.STATUS_SENDING_TO.last - timings.STATUS_SENDING_TO.first;
+      return Math.max(
+        timings.STATUS_SENDING_TO.last -
+          this.#getSendStart(timings, requestStartTimeTc),
+        0
+      );
     } else if (timings.REQUEST_HEADER && timings.REQUEST_BODY_SENT) {
-      return timings.REQUEST_BODY_SENT.last - timings.REQUEST_HEADER.first;
+      return Math.max(
+        timings.REQUEST_BODY_SENT.last -
+          this.#clampToServingAttempt(
+            timings.REQUEST_HEADER.first,
+            requestStartTimeTc
+          ),
+        0
+      );
     }
 
     return -1;
@@ -267,6 +390,9 @@ export const NetworkTimings = new (class {
 
   #getDataFromTimedChannel(timedChannel) {
     const lookUpArr = [
+      "requestStartTime",
+      "responseStartTime",
+      "responseEndTime",
       "tcpConnectEndTime",
       "connectStartTime",
       "connectEndTime",
@@ -275,29 +401,23 @@ export const NetworkTimings = new (class {
       "domainLookupStartTime",
     ];
 
-    return lookUpArr.reduce((prev, prop) => {
-      const propName = prop + "Tc";
-      return {
-        ...prev,
-        [propName]: (() => {
-          if (!timedChannel) {
-            return 0;
-          }
+    return Object.fromEntries(
+      lookUpArr.map(prop => [
+        `${prop}Tc`,
+        this.#channelMark(timedChannel, prop),
+      ])
+    );
+  }
 
-          const value = timedChannel[prop];
+  // Discards a mark predating the request, which is not this one's.
+  #channelMark(timedChannel, prop) {
+    if (!timedChannel) {
+      return 0;
+    }
 
-          if (
-            value != 0 &&
-            timedChannel.asyncOpenTime &&
-            value < timedChannel.asyncOpenTime
-          ) {
-            return 0;
-          }
-
-          return value;
-        })(),
-      };
-    }, {});
+    const value = timedChannel[prop];
+    const { asyncOpenTime } = timedChannel;
+    return value != 0 && asyncOpenTime && value < asyncOpenTime ? 0 : value;
   }
 
   #getSecureConnectionStartTimeInfo(timings) {
@@ -323,17 +443,22 @@ export const NetworkTimings = new (class {
     };
   }
 
-  #getStartSendingTimeInfo(timings, connectStartTimeTc) {
+  #getStartSendingTimeInfo(timings, connectStartTimeTc, requestStartTimeTc) {
     let startSendingTime = 0;
     let startSendingTimeRelative = false;
 
     if (timings.STATUS_SENDING_TO) {
-      if (timings.STATUS_CONNECTING_TO) {
+      if (connectStartTimeTc != 0) {
+        startSendingTime = Math.max(
+          this.#getSendStart(timings, requestStartTimeTc) - connectStartTimeTc,
+          0
+        );
+        startSendingTimeRelative = true;
+      } else if (requestStartTimeTc != 0) {
+        // Established connection: no connect to offset from, any status stale.
+      } else if (timings.STATUS_CONNECTING_TO) {
         startSendingTime =
           timings.STATUS_SENDING_TO.first - timings.STATUS_CONNECTING_TO.first;
-        startSendingTimeRelative = true;
-      } else if (connectStartTimeTc != 0) {
-        startSendingTime = timings.STATUS_SENDING_TO.first - connectStartTimeTc;
         startSendingTimeRelative = true;
       }
 
@@ -372,25 +497,29 @@ export const NetworkTimings = new (class {
       totalTime += harTimings.ssl;
     }
 
+    // Already milliseconds here, and a phase can still be negative: the loop
+    // above floors at -1. Adding that would move the following bars back.
+    const span = timing => Math.max(harTimings[timing], 0);
+
     const offsets = {};
     offsets.blocked = 0;
-    offsets.dns = harTimings.blocked;
-    offsets.connect = offsets.dns + harTimings.dns;
+    offsets.dns = span("blocked");
+    offsets.connect = offsets.dns + span("dns");
     if (secureConnectionStartTimeRelative) {
       offsets.ssl = offsets.connect + secureConnectionStartTime;
     } else {
-      offsets.ssl = offsets.connect + harTimings.connect;
+      offsets.ssl = offsets.connect + span("connect");
     }
     if (startSendingTimeRelative) {
       offsets.send = offsets.connect + startSendingTime;
       if (!secureConnectionStartTimeRelative) {
-        offsets.ssl = offsets.send - harTimings.ssl;
+        offsets.ssl = offsets.send - span("ssl");
       }
     } else {
-      offsets.send = offsets.ssl + harTimings.ssl;
+      offsets.send = offsets.ssl + span("ssl");
     }
-    offsets.wait = offsets.send + harTimings.send;
-    offsets.receive = offsets.wait + harTimings.wait;
+    offsets.wait = offsets.send + span("send");
+    offsets.receive = offsets.wait + span("wait");
 
     return {
       total: totalTime,

@@ -191,31 +191,6 @@ tasks:
         treeherder:
             symbol: fenix-debug(ui-test-arm)
 
-    fenix-detect-leaks-arm-debug:
-        attributes:
-            build-type: fenix-debug-firebase
-        task-context:
-            from-object:
-                app-name: fenix
-        description: Run Fenix tests with memory leak detection enabled
-        dependencies:
-            signed-apk-debug-apk: signing-apk-fenix-debug
-            signed-apk-android-test: signing-apk-fenix-android-test-debug
-        fetches:
-            signed-apk-debug-apk:
-                - artifact: target.arm64-v8a.apk
-                  extract: false
-            signed-apk-android-test:
-                - artifact: target.noarch.apk
-                  extract: false
-        optimization:
-            skip-unless-backstop: null
-        run-on-projects: [trunk]
-        flank-config: fenix/arm64-v8a-detect-leaks.yml
-        artifact-type: memory_leaks
-        treeherder:
-            symbol: fenix-debug(detect-leaks-arm)
-
     fenix-arm-beta:
         attributes:
             build-type: fenix-beta-firebase
@@ -329,6 +304,7 @@ tasks:
             skip-unless-backstop: null
         run-on-projects: [trunk]
         flank-config: fenix/arm-tae-tests.yml
+        artifact-type: memory_leaks
         treeherder:
             symbol: fenix-debug(tae-arm)
 

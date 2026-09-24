@@ -87,6 +87,16 @@ class nsHtml5HtmlAttributes {
 
   nsHtml5String getValue(nsHtml5AttributeName* aName);
   int32_t getLength();
+  nsHtml5AttributeEntry& entryAt(int32_t aIndex) {
+    MOZ_ASSERT(!mMovedFrom);
+    MOZ_ASSERT(aIndex >= 0 && aIndex < getLength());
+    return mStorage[aIndex];
+  }
+  void removeAttributeAt(int32_t aIndex) {
+    MOZ_ASSERT(!mMovedFrom);
+    MOZ_ASSERT(aIndex >= 0 && aIndex < getLength());
+    mStorage.RemoveElementAt(aIndex);
+  }
   bool isEmpty() { return getLength() == 0; }
   void addAttribute(nsHtml5AttributeName* aName, nsHtml5String aValue,
                     int32_t aLine);

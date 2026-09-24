@@ -4,8 +4,8 @@
 
 use std::hash::Hash;
 
-use crate::{parser::Selector, tree::OpaqueElement, SelectorImpl};
-use rustc_hash::FxHashMap;
+use crate::FxHashMap;
+use crate::{SelectorImpl, parser::Selector, tree::OpaqueElement};
 
 /// A cache to speed up matching of nth-index-like selectors.
 ///

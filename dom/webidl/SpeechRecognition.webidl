@@ -3,13 +3,32 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * The origin of this IDL file is
- * http://dvcs.w3.org/hg/speech-api/raw-file/tip/speechapi.html
- *
- * Copyright © 2012 W3C® (MIT, ERCIM, Keio), All Rights Reserved. W3C
- * liability, trademark and document use rules apply.
+ * https://webaudio.github.io/web-speech-api/
  */
 
-[Pref="media.webspeech.recognition.enable",
+// https://webaudio.github.io/web-speech-api/#enumdef-speechrecognitionquality
+enum SpeechRecognitionQuality {
+  "command",
+  "dictation",
+  "conversation"
+};
+
+dictionary SpeechRecognitionOptions {
+  required sequence<UTF8String> langs;
+  boolean processLocally = false;
+  // Not yet plumbed to the backend; accepted for spec conformance.
+  SpeechRecognitionQuality quality = "command";
+};
+
+enum AvailabilityStatus {
+  "unavailable",
+  "downloadable",
+  "downloading",
+  "available"
+};
+
+[SecureContext,
+ Pref="media.webspeech.recognition.enable",
  LegacyFactoryFunction=webkitSpeechRecognition,
  Exposed=Window]
 interface SpeechRecognition : EventTarget {
@@ -22,15 +41,24 @@ interface SpeechRecognition : EventTarget {
     [Throws]
     attribute boolean continuous;
     attribute boolean interimResults;
+    attribute boolean unspokenPunctuation;
     attribute unsigned long maxAlternatives;
-    [Throws]
-    attribute DOMString serviceURI;
+
+    attribute boolean processLocally;
+    attribute ObservableArray<SpeechRecognitionPhrase> phrases;
 
     // methods to drive the speech interaction
     [Throws, NeedsCallerType]
-    undefined start(optional MediaStream stream);
+    undefined start();
+    [Throws, NeedsCallerType]
+    undefined start(MediaStreamTrack audioTrack);
     undefined stop();
     undefined abort();
+
+    [NewObject, Throws]
+    static Promise<AvailabilityStatus> available(SpeechRecognitionOptions options);
+    [NewObject, Throws]
+    static Promise<boolean> install(SpeechRecognitionOptions options);
 
     // event methods
     attribute EventHandler onaudiostart;

@@ -12,7 +12,8 @@ LOG = RaptorLogger(component="perftest-nav-bench")
 # Phase suffix appended to each site key in the alias.
 #   alias = "<site>-load"     -> initial navigation (every site)
 #   alias = "<site>-subnav"   -> warm hard-nav (bbc, ddg)
-PHASES = ("load", "subnav")
+#   alias = "<site>-warm"     -> cached revisit (google-docs)
+PHASES = ("load", "subnav", "warm")
 
 # LoadLine2-style score scaling. score = SCORE_TARGET_MS / SpeedIndex_ms.
 SCORE_TARGET_MS = 60000.0

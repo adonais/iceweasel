@@ -22,8 +22,6 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control runtime settings should be disabled by default in normal tabs",
@@ -46,12 +44,6 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         assertThat(
             "Global Privacy Control should be disabled by default in private tabs",
             globalPrivacyControlPrivateMode,
-            equalTo(true),
-        )
-
-        assertThat(
-            "Global Privacy Control Functionality enabled by default",
-            globalPrivacyControlFunctionality,
             equalTo(true),
         )
 
@@ -74,8 +66,6 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         val globalPrivacyControl = (sessionRule.getPrefs("privacy.globalprivacycontrol.enabled").get(0)) as Boolean
         val globalPrivacyControlPrivateMode =
             (sessionRule.getPrefs("privacy.globalprivacycontrol.pbmode.enabled").get(0)) as Boolean
-        val globalPrivacyControlFunctionality =
-            (sessionRule.getPrefs("privacy.globalprivacycontrol.functionality.enabled").get(0)) as Boolean
 
         assertThat(
             "Global Privacy Control runtime settings should be disabled by default in normal tabs",
@@ -98,12 +88,6 @@ class RuntimeSettingsDefaultsTest : BaseSessionTest() {
         assertThat(
             "Global Privacy Control should be disabled by default in private tabs",
             globalPrivacyControlPrivateMode,
-            equalTo(true),
-        )
-
-        assertThat(
-            "Global Privacy Control Functionality enabled by default",
-            globalPrivacyControlFunctionality,
             equalTo(true),
         )
 

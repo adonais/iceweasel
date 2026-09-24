@@ -227,9 +227,7 @@ SettingGroupManager.registerGroups({
         control: "moz-fieldset",
         l10nId: "more-from-moz-firefox-mobile",
         iconSrc: "chrome://branding/content/about-logo.svg",
-        controlAttrs: {
-          ".headingLevel": 2,
-        },
+        headingLevel: 2,
         items: [
           {
             id: "promoGroupLink",
@@ -272,9 +270,7 @@ SettingGroupManager.registerGroups({
             {
               control: "moz-fieldset",
               l10nId: product.l10nId,
-              controlAttrs: {
-                headinglevel: 2,
-              },
+              headingLevel: 2,
             },
             {
               l10nId: product.link.l10nId,

@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">გვერდის შეჯამება</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">სიახლე</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">სიახლე</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">არეული საიტის მოხსენება</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">ჯგუფში დამატება</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">ნათარგმნი</string>
   <!-- Browser menu label for the print feature -->
@@ -354,7 +358,7 @@
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">ვრცლად</string>
   <!-- Title for the block AI enhancements toggle -->
-  <string name="ai_controls_block_ai_title">შეიზღუდოს AI-შესაძლებლობები?</string>
+  <string name="ai_controls_block_ai_title">შეიზღუდოს ხელგონის შესაძლებლობები</string>
   <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_block_ai_description">შეზღუდვა გულისხმობს, რომ %s აღარ გიჩვენებთ ახალ ან არსებულ AI-შესაძლებლობებს, არც მათ შესახებ ამომხტომ ცნობებს.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
@@ -376,7 +380,7 @@
   <!-- Description for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_description">ხმის ნაწერად ქცევისთვის გამოიყენება Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
-  <string name="ai_controls_block_dialog_title">შეიზღუდოს AI-შესაძლებლობები?</string>
+  <string name="ai_controls_block_dialog_title">შეიზღუდოს ხელგონის შესაძლებლობები?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_block_dialog_body">თქვენთვის აღარ გამოაჩენს %1$s ახალ ან არსებულ AI-შესაძლებლობებს და მათ შესახებ ამომხტომ ცნობებს. მომავალში შეგეძლებათ მოხსნათ შეზღუდვა და სურვილისამებრ განაგრძოთ გამოყენება.\n\nშეზღუდვა ასევე შეეხება ხელგონით მოსარგებლე გაფართოებებს, რომელთა მუშაობასაც უზრუნველყოფს %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
@@ -1309,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">ჩანართის ზოლის გამოჩენა</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">ჩანართის ზოლის მდებარეობა</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">ზემოთ</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">ქვემოთ</string>
   <!--
     Gestures Preferences
 
@@ -1411,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">გახსნილი ჩანართების თვითდახურვა</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">დახურვა</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">გაშვებულია ფაილი</string>
   <!--
     Opening screen
 

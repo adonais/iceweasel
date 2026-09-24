@@ -5,7 +5,6 @@
 import inspect
 import os
 import sys
-from collections import OrderedDict
 
 HELP_OPTIONS_CATEGORY = "Help options"
 # List of whitelisted option categories. If you want to add a new category,
@@ -524,8 +523,8 @@ class CommandLineHelper:
 
     def __init__(self, environ=os.environ, argv=sys.argv):
         self._environ = dict(environ)
-        self._args = OrderedDict()
-        self._extra_args = OrderedDict()
+        self._args = {}
+        self._extra_args = {}
         self._origins = {}
         self._last = 0
 

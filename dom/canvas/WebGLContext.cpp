@@ -242,14 +242,7 @@ void ClientWebGLContext::MarkCanvasDirty() {
 }
 
 void WebGLContext::OnMemoryPressure() {
-  bool shouldLoseContext = mLoseContextOnMemoryPressure;
-
-  if (!mCanLoseContextInForeground &&
-      ProcessPriorityManager::CurrentProcessIsForeground()) {
-    shouldLoseContext = false;
-  }
-
-  if (shouldLoseContext) LoseContext();
+  if (mLoseContextOnMemoryPressure) LoseContext();
 }
 
 // --

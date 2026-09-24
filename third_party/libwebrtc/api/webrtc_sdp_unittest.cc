@@ -64,8 +64,10 @@ using ::testing::ElementsAre;
 using ::testing::Field;
 using ::testing::HasSubstr;
 using ::testing::IsNull;
+using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Property;
+using ::testing::SizeIs;
 
 constexpr uint32_t kDefaultSctpPort = 5000;
 constexpr uint16_t kUnusualSctpPort = 9556;
@@ -3387,15 +3389,16 @@ TEST_F(WebRtcSdpTest, DeserializeSerializeRtcpXrRcvrRtt) {
   ASSERT_THAT(acd, NotNull());
   EXPECT_TRUE(acd->receive_non_sender_rtt());
 
-  // Serialize: the flag emits BOTH the standard rtcp-xr and the legacy
-  // rtcp-fb rrtr wire forms (interim backward-compat).
+  // Serialize: the flag emits the standard rtcp-xr form only. The legacy
+  // rtcp-fb rrtr is never generated from it.
   std::string reserialized = SdpSerialize(*jdesc);
   EXPECT_THAT(reserialized, HasSubstr("a=rtcp-xr:rcvr-rtt=all"));
-  EXPECT_THAT(reserialized, HasSubstr("a=rtcp-fb:111 rrtr"));
+  EXPECT_THAT(reserialized, Not(HasSubstr("rrtr")));
 }
 
-// The legacy non-standard a=rtcp-fb:<pt> rrtr also sets the flag on parse.
-TEST_F(WebRtcSdpTest, DeserializeLegacyRtcpFbRrtr) {
+// The legacy non-standard a=rtcp-fb:<pt> rrtr stays a codec feedback param,
+// separate from the rcvr-rtt flag, and round-trips unchanged.
+TEST_F(WebRtcSdpTest, DeserializeSerializeLegacyRtcpFbRrtr) {
   const char kSdpWithFbRrtr[] =
       "v=0\r\n"
       "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
@@ -3410,7 +3413,14 @@ TEST_F(WebRtcSdpTest, DeserializeLegacyRtcpFbRrtr) {
   const AudioContentDescription* acd =
       GetFirstAudioContentDescription(jdesc->description());
   ASSERT_THAT(acd, NotNull());
-  EXPECT_TRUE(acd->receive_non_sender_rtt());
+  EXPECT_FALSE(acd->receive_non_sender_rtt());
+  ASSERT_THAT(acd->codecs(), SizeIs(1));
+  EXPECT_TRUE(acd->codecs()[0].HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamRrtr, kParamValueEmpty)));
+
+  std::string reserialized = SdpSerialize(*jdesc);
+  EXPECT_THAT(reserialized, HasSubstr("a=rtcp-fb:111 rrtr"));
+  EXPECT_THAT(reserialized, Not(HasSubstr("a=rtcp-xr")));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeVideoFmtp) {

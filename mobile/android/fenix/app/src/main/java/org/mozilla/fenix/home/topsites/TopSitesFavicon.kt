@@ -6,7 +6,6 @@ package org.mozilla.fenix.home.topsites
 
 import androidx.annotation.DrawableRes
 import mozilla.components.feature.top.sites.TopSite
-import org.mozilla.fenix.R
 
 /** Represents the favicon of a top site. */
 sealed class TopSitesFavicon {
@@ -37,9 +36,6 @@ internal fun getTopSitesFavicon(topSite: TopSite): TopSitesFavicon {
             TopSitesFavicon.ImageUrl(imageUrl = "https://s.yimg.jp/c/icon/s/bsc/2.0/favicon.ico")
         "https://ameblo.jp/" ->
             TopSitesFavicon.ImageUrl(imageUrl = "https://stat100.ameba.jp/common_style/img/favicon.ico")
-        "https://blog.mozilla.org/ja/firefox-ja/android-guide/" ->
-            TopSitesFavicon.Drawable(R.drawable.ic_japan_onboarding_favicon)
-
         else -> TopSitesFavicon.ImageUrl(imageUrl = null)
     }
 }

@@ -704,6 +704,42 @@ BounceTrackingProtection::HasRecentlyPurgedSite(const nsACString& aSiteHost,
 }
 
 NS_IMETHODIMP
+BounceTrackingProtection::GetRecentPurgedChainEntriesForSite(
+    const nsACString& aSiteHost,
+    nsTArray<RefPtr<nsIBounceTrackingPurgeEntry>>& aEntries) {
+  NS_ENSURE_TRUE(!aSiteHost.IsEmpty(), NS_ERROR_INVALID_ARG);
+
+  nsTArray<RefPtr<BounceTrackingPurgeEntry>> matchingEntries;
+
+  for (const auto& globalEntry : mStorage->StateGlobalMapRef()) {
+    RefPtr<BounceTrackingStateGlobal> stateGlobal = globalEntry.GetData();
+    MOZ_ASSERT(stateGlobal);
+
+    for (auto iter = stateGlobal->RecentPurgesMapRef().ConstIter();
+         !iter.Done(); iter.Next()) {
+      for (const auto& entry : iter.Data()) {
+        bool matches = iter.Key().Equals(aSiteHost);
+        if (!matches) {
+          BounceTrackingRecord* record = entry->GetBounceChainRecord();
+          if (record) {
+            matches = record->GetInitialHost().Equals(aSiteHost) ||
+                      record->GetFinalHost().Equals(aSiteHost) ||
+                      record->GetBounceHosts().Contains(aSiteHost);
+          }
+        }
+        if (matches) {
+          matchingEntries.InsertElementSorted(entry,
+                                              PurgeEntryTimeComparator{});
+        }
+      }
+    }
+  }
+
+  aEntries.AppendElements(matchingEntries);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 BounceTrackingProtection::TestGetSiteHostExceptions(
     nsTArray<nsCString>& aSiteHostExceptions) {
   aSiteHostExceptions.Clear();

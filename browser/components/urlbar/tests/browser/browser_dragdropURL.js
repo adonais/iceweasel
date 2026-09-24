@@ -110,3 +110,31 @@ add_task(async function checkDragText() {
     await promiseLoad;
   });
 });
+
+add_task(async function checkDragFromURLBarHTMLEscaping() {
+  info(
+    "Check that title and href are HTML-escaped in the text/html drag flavor"
+  );
+  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+    const TITLE = `A & B < C > D "E" 'F'`;
+    await SpecialPowers.spawn(browser, [TITLE], title => {
+      content.document.title = title;
+    });
+
+    gURLBar.focus();
+    gURLBar.select();
+
+    let dataTransfer = new DataTransfer();
+    gURLBar.inputField.dispatchEvent(
+      new DragEvent("dragstart", { dataTransfer, bubbles: true })
+    );
+
+    const ESCAPED_TITLE = "A &amp; B &lt; C &gt; D &quot;E&quot; &#39;F&#39;";
+    let html = dataTransfer.getData("text/html");
+    Assert.ok(html.length, "text/html drag data was set");
+    Assert.ok(
+      html.includes(ESCAPED_TITLE),
+      "title is HTML-escaped in drag data"
+    );
+  });
+});

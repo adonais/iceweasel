@@ -5,6 +5,12 @@
  */
 
 /**
+ * Tab action result status.
+ *
+ * @typedef {"success" | "partial_success" | "error"} TabActionCompletion
+ */
+
+/**
  * @typedef {object} TabSelectionData
  * @property {string} linkedPanel - ID of the linked panel (e.g., "panel-3-1")
  * @property {string} url - URL of the tab
@@ -30,6 +36,7 @@
  * @property {object} conversation - Conversation object
  * @property {ChromeWindow} window - Browser window object
  * @property {object} originalData - Original update data passed to handleUpdate
+ * @property {string} [mode] - Smart Window mode for telemetry
  */
 
 const lazy = {};
@@ -85,6 +92,14 @@ export const CONFIRMATION_UI_TYPES = [
   UI_TYPES.WEBSITE_CONFIRMATION,
   UI_TYPES.TAB_GROUP_CONFIRMATION,
 ];
+
+/**
+ * Confirmation UI types that record a `browser_action_prompt`.
+ */
+const PROMPT_ACTION_BY_UI_TYPE = {
+  [UI_TYPES.WEBSITE_CONFIRMATION]: "close_tabs",
+  [UI_TYPES.TAB_GROUP_CONFIRMATION]: "group_tabs",
+};
 
 /**
  * Description for the message sent back to the model after a tab-selection
@@ -260,6 +275,115 @@ export class ToolUI {
    * ======================================================================== */
 
   /**
+   * Records the user response to a tab confirmation.
+   *
+   * @param {object} options
+   * @param {HandlerContext} options.context - Handler context
+   * @param {string} options.actionType - Action the confirmation was for
+   * @param {"confirm" | "cancel"} options.response - The user's response
+   * @param {number} options.selected - Number of tabs the user acted on
+   * @param {string} [options.reason] - Why the prompt was shown
+   */
+  static #recordTabConfirmationResponse({
+    context,
+    actionType,
+    response,
+    selected,
+    reason = "user_action",
+  }) {
+    const { conversation, mode } = context;
+
+    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
+      location: mode,
+      chat_id: conversation.id,
+      message_seq: conversation.messageCount,
+      action: actionType,
+      prompt_type: "safety_confirmation",
+      response,
+      selected,
+      reason,
+    });
+  }
+
+  /**
+   * Records browser_action_complete using the context stashed at submit time.
+   *
+   * @param {object} options
+   * @param {HandlerContext} options.context - Handler context
+   * @param {TabActionCompletion | "cancelled"} options.result - Action outcome
+   * @param {number} [options.tabsAffected] - Tabs the action affected
+   * @param {boolean} [options.undoAvailable] - Whether undo was offered
+   * @param {string} [options.error] - Error code when unsuccessful
+   */
+  static #recordConfirmedBrowserActionComplete({
+    context,
+    result,
+    tabsAffected = 0,
+    undoAvailable = false,
+    error = "",
+  }) {
+    const { conversation, toolCallId } = context;
+    const baseTelemetryInfo =
+      conversation.takePendingBrowserActionTelemetry(toolCallId);
+    if (!baseTelemetryInfo) {
+      return;
+    }
+
+    lazy.ToolUITelemetry.recordBrowserActionComplete({
+      ...baseTelemetryInfo,
+      result,
+      tabs_affected: tabsAffected,
+      undo_available: undoAvailable,
+      error,
+    });
+  }
+
+  /**
+   * Returns the shared `browserActionResult` outcome.
+   *
+   * @param {number} affected - Tabs successfully acted on
+   * @param {number} requested - Tabs the user selected
+   * @param {string} failureMessage - Error code to use when any tab failed
+   * @returns {{result: TabActionCompletion, tabsAffected: number,
+   *   error: string}}
+   */
+  static #summarizeTabActionOutcome(affected, requested, failureMessage) {
+    return {
+      result: lazy.ToolUITelemetry.browserActionResult(affected, requested),
+      tabsAffected: affected,
+      error: affected < requested ? failureMessage : "",
+    };
+  }
+
+  /**
+   * Records accepted confirmations for tabs that are not available anymore.
+   *
+   * @param {object} options
+   * @param {HandlerContext} options.context - Handler context
+   * @param {string} options.actionType - Action the confirmation was for
+   * @param {Array<TabSelectionData>} options.selectedTabs - Tabs the user selected
+   * @param {string} options.error - Error code explaining the failure
+   */
+  static #recordAbandonedTabConfirmation({
+    context,
+    actionType,
+    selectedTabs,
+    error,
+  }) {
+    this.#recordTabConfirmationResponse({
+      context,
+      actionType,
+      response: "confirm",
+      selected: selectedTabs.length,
+    });
+    this.#recordConfirmedBrowserActionComplete({
+      context,
+      result: "error",
+      error,
+    });
+  }
+
+  /**
    * Finalizes a tab-selection confirmation, shared by close_tabs,
    * group_tabs, and open_tabs: records prompt-response telemetry, updates
    * the tool UI with the action result, and resolves the pending tool
@@ -273,32 +397,28 @@ export class ToolUI {
    *   selected/acted on
    * @param {object} [options.extraUpdateData] - Action-specific fields to
    *   merge into updateData (e.g. operationId, group, mergedCount)
+   * @param {object} [options.resultInfo] - Result info for browser_action_complete
    */
   static #finalizeTabActionConfirmation({
     context,
     actionType,
     selectedTabs,
     extraUpdateData = {},
+    resultInfo = null,
   }) {
-    const {
-      updateData,
-      message,
-      conversation,
-      originalData,
-      mode,
-      toolCallId,
-    } = context;
+    const { updateData, message, conversation, originalData, toolCallId } =
+      context;
 
-    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
-      location: mode,
-      chat_id: conversation?.id || "",
-      message_seq: conversation?.messages?.length || 0,
-      action_type: actionType,
-      prompt_type: "safety_confirmation",
+    this.#recordTabConfirmationResponse({
+      context,
+      actionType,
       response: "confirm",
       selected: selectedTabs.length,
-      reason: "user_action",
     });
+
+    if (resultInfo) {
+      this.#recordConfirmedBrowserActionComplete({ context, ...resultInfo });
+    }
 
     const enhancedData = {
       ...originalData,
@@ -346,14 +466,33 @@ export class ToolUI {
     );
     this.clearTabKeys(toolCallId);
     if (!result) {
+      this.#recordAbandonedTabConfirmation({
+        context,
+        actionType: "close_tabs",
+        selectedTabs,
+        error: "tabs_unavailable",
+      });
       return false;
     }
 
+    // Compare with the user selection rather than `requestedCount`.
+    const affected = Math.max(
+      0,
+      result.requestedCount - result.failedTabs.length
+    );
     this.#finalizeTabActionConfirmation({
       context,
       actionType: "close_tabs",
       selectedTabs,
       extraUpdateData: { operationIds: result.operationIds },
+      resultInfo: {
+        ...this.#summarizeTabActionOutcome(
+          affected,
+          selectedTabs.length,
+          "some_tabs_failed_to_close"
+        ),
+        undoAvailable: !!result.operationIds.length,
+      },
     });
     return true;
   }
@@ -366,29 +505,24 @@ export class ToolUI {
    * @private
    */
   static #handleCancelTabSelection(context) {
-    const {
-      message,
-      conversation,
-      originalData,
-      mode,
-      updateData,
-      toolCallId,
-    } = context;
+    const { message, conversation, originalData, updateData, toolCallId } =
+      context;
 
     // Use the provided reason or default to user_action for manual cancellations
     const reason = updateData?.reason || "user_action";
     const actionType = updateData?.actionType;
 
-    // Record telemetry for browser action prompt response (cancellation)
-    lazy.ToolUITelemetry.recordBrowserActionPromptResponse({
-      location: mode,
-      chat_id: conversation?.id || "",
-      message_seq: conversation?.messages?.length || 0,
-      action_type: actionType,
-      prompt_type: "safety_confirmation",
+    this.#recordTabConfirmationResponse({
+      context,
+      actionType,
       response: "cancel",
       selected: 0,
       reason,
+    });
+    this.#recordConfirmedBrowserActionComplete({
+      context,
+      result: "cancelled",
+      error: reason === "auto_cancel" ? "auto_cancel" : "",
     });
 
     this.clearTabKeys(toolCallId);
@@ -425,6 +559,14 @@ export class ToolUI {
     });
     this.clearTabKeys(toolCallId);
     if (!result?.success) {
+      // `null` when none of the tabs were verified and grouping was never
+      // attempted, otherwise the grouping failed.
+      this.#recordAbandonedTabConfirmation({
+        context,
+        actionType: "group_tabs",
+        selectedTabs,
+        error: result ? result.error || "group_failed" : "tabs_unavailable",
+      });
       return false;
     }
 
@@ -433,8 +575,16 @@ export class ToolUI {
       actionType: "group_tabs",
       selectedTabs,
       extraUpdateData: {
-        operationIds: result.group?.id ? [result.group.id] : [],
+        operationIds: [result.group.id],
         group: result.group,
+      },
+      resultInfo: {
+        ...this.#summarizeTabActionOutcome(
+          result.group.tabCount,
+          selectedTabs.length,
+          "some_tabs_could_not_be_grouped"
+        ),
+        undoAvailable: true,
       },
     });
     return true;
@@ -516,9 +666,9 @@ export class ToolUI {
 
         lazy.ToolUITelemetry.recordBrowserActionUndo({
           location: mode,
-          chat_id: conversation?.id || "",
-          message_seq: conversation?.messages?.length || 0,
-          action_type: "group_tabs",
+          chat_id: conversation.id,
+          message_seq: conversation.messageCount,
+          action: "group_tabs",
           tabs_restored: result?.ungroupedTabs?.length ?? 0,
           time_delta: Math.max(0, timeDelta),
           result: "error",
@@ -537,9 +687,9 @@ export class ToolUI {
     // Record telemetry for browser action undo
     lazy.ToolUITelemetry.recordBrowserActionUndo({
       location: mode,
-      chat_id: conversation?.id || "",
-      message_seq: conversation?.messages?.length || 0,
-      action_type: "group_tabs",
+      chat_id: conversation.id,
+      message_seq: conversation.messageCount,
+      action: "group_tabs",
       tabs_restored: ungroupedTabs.length,
       time_delta: Math.max(0, timeDelta),
       result: "success",
@@ -614,9 +764,9 @@ export class ToolUI {
       // Record telemetry for browser action undo
       lazy.ToolUITelemetry.recordBrowserActionUndo({
         location: mode,
-        chat_id: conversation?.id || "",
-        message_seq: conversation?.messages?.length || 0,
-        action_type: "close_tabs",
+        chat_id: conversation.id,
+        message_seq: conversation.messageCount,
+        action: "close_tabs",
         tabs_restored: restoredCount,
         time_delta: Math.max(0, timeDelta),
         result: undoResult,
@@ -652,9 +802,9 @@ export class ToolUI {
       // Record telemetry for catastrophic failure
       lazy.ToolUITelemetry.recordBrowserActionUndo({
         location: mode,
-        chat_id: conversation?.id || "",
-        message_seq: conversation?.messages?.length || 0,
-        action_type: "close_tabs",
+        chat_id: conversation.id,
+        message_seq: conversation.messageCount,
+        action: "close_tabs",
         tabs_restored: 0,
         time_delta: Math.max(0, timeDelta),
         result: "error",
@@ -878,17 +1028,31 @@ export class ToolUI {
     return null;
   }
 
+  /**
+   * Resolves the browser action a confirmation card is for.
+   *
+   * @param {object} toolUIData - Tool UI data for the confirmation card
+   * @returns {string | null} The action when the card is not a confirmation
+   */
+  static #promptActionForUIData(toolUIData) {
+    const fallbackActionType = PROMPT_ACTION_BY_UI_TYPE[toolUIData.uiType];
+    if (!fallbackActionType) {
+      return null;
+    }
+    return toolUIData.properties?.actionType ?? fallbackActionType;
+  }
+
   static handleUIDisplayTelemetry(toolUIData, telemetryData) {
-    if (toolUIData.uiType !== UI_TYPES.WEBSITE_CONFIRMATION) {
+    const actionType = this.#promptActionForUIData(toolUIData);
+    if (!actionType) {
       return;
     }
-
     const tabs = toolUIData.properties?.tabs ?? [];
     const reason = this.#getConfirmationReason(tabs);
 
     lazy.ToolUITelemetry.recordBrowserActionPrompt({
       ...telemetryData,
-      action_type: "close_tabs",
+      action: actionType,
       prompt_type: "safety_confirmation",
       reason,
       candidates: tabs.length,
@@ -956,6 +1120,9 @@ export class ToolUI {
       updateType: UI_UPDATE_TYPES.CANCEL_TAB_SELECTION,
       updateData: {
         reason: "auto_cancel",
+        actionType: this.#promptActionForUIData(
+          lastAssistantTextMessage.toolUIData
+        ),
       },
     };
 

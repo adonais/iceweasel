@@ -69,11 +69,11 @@ function combineAndParseLists(mainList, arrOfLists) {
       if (Object.hasOwn(mainList, key)) {
         mainList[key].queryParams.push(...additionalList[key].queryParams);
 
-        // Ensure empty origins in global rules function as intended
-        mainList[key].origins ??= [];
-        additionalList[key].origins ??= [];
+        // Ensure empty hosts in global rules function as intended
+        mainList[key].hosts ??= [];
+        additionalList[key].hosts ??= [];
 
-        mainList[key].origins.push(...additionalList[key].origins);
+        mainList[key].hosts.push(...additionalList[key].hosts);
 
         mainList[key].schemelessSites ??= [];
         additionalList[key].schemelessSites ??= [];
@@ -91,16 +91,16 @@ function combineAndParseLists(mainList, arrOfLists) {
       param.toLowerCase()
     );
 
-    // Origins can be missing for global rules (isGlobal: true) and for any bad input.
-    mainList[key].origins = (mainList[key].origins ?? []).map(origin =>
-      origin.toLowerCase()
+    // Hosts can be missing for global rules (isGlobal: true) and for any bad input.
+    mainList[key].hosts = (mainList[key].hosts ?? []).map(host =>
+      host.toLowerCase()
     );
     mainList[key].schemelessSites = (mainList[key].schemelessSites ?? []).map(
       schemelessSites => schemelessSites.toLowerCase()
     );
 
-    // Removes duplicate origins
-    mainList[key].origins = [...new Set(mainList[key].origins)];
+    // Removes duplicate hosts
+    mainList[key].hosts = [...new Set(mainList[key].hosts)];
     mainList[key].schemelessSites = [...new Set(mainList[key].schemelessSites)];
 
     // Removes duplicate queryParams

@@ -194,8 +194,13 @@ public final class GeckoRuntime implements Parcelable {
       GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
 
       // Set settings that may have changed between last app opening
-      GeckoAppShell.setIs24HourFormat(
-          DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
+      ThreadUtils.postToBackgroundThread(
+          () -> {
+            // DateFormat.is24HourFormat is expensive.
+            // If this is first call that ICU is used, it is 7-40ms on Pixel 6a. 3ms on next calls.
+            GeckoAppShell.setIs24HourFormat(
+                DateFormat.is24HourFormat(GeckoAppShell.getApplicationContext()));
+          });
 
       // OnPrimaryClipChangedListener() won’t be triggered for a background
       // application, so update the clipboard sequence number once the

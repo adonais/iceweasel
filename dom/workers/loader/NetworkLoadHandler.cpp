@@ -8,6 +8,7 @@
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
@@ -148,9 +149,16 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     // if we are not in a ServiceWorker, and the principal is not null, then
     // the loading principal must subsume the worker principal if it is not a
     // nullPrincipal (sandbox).
-    MOZ_ASSERT(!loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
-               principal->GetIsNullPrincipal() ||
-               loadingPrincipal->Subsumes(principal));
+    //
+    // This does not hold for an addon worker principal when
+    // extensions.web_accessible_workers.deprecated_behavior is enabled; see
+    // bug 1767455.
+    MOZ_ASSERT(
+        !loadingPrincipal || loadingPrincipal->GetIsNullPrincipal() ||
+        principal->GetIsNullPrincipal() ||
+        loadingPrincipal->Subsumes(principal) ||
+        (StaticPrefs::extensions_web_accessible_workers_deprecated_behavior() &&
+         principal->GetIsAddonPrincipal()));
   }
 #endif
 

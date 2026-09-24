@@ -1,0 +1,70 @@
+# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+with Files('**'):
+    BUG_COMPONENT = ('Core', 'Machine Learning')
+
+# Built into the mozinference shared library alongside the vendored ggml (from
+# llama.cpp). Only the parakeet_capi_* symbols are exported, via
+# config/external/mozinference/mozinference.symbols.
+SOURCES = [
+    "src/audio_io.cpp",
+    "src/backend.cpp",
+    "src/common.cpp",
+    "src/conformer.cpp",
+    "src/ctc_decoder.cpp",
+    "src/encoder.cpp",
+    "src/fft.cpp",
+    "src/ggml_graph.cpp",
+    "src/joint.cpp",
+    "src/mel.cpp",
+    "src/mel_gpu.cpp",
+    "src/model.cpp",
+    "src/model_loader.cpp",
+    "src/parakeet_capi.cpp",
+    # src/parakeet.cpp is intentionally omitted: it is a thin convenience
+    # wrapper (parakeet_version / parakeet_transcribe_file) whose C symbols
+    # collide with the other vendored backend. We use the parakeet_capi_* API.
+    "src/pos_enc.cpp",
+    "src/prediction.cpp",
+    "src/prompt_kernel.cpp",
+    "src/relpos_attention.cpp",
+    "src/rnnt.cpp",
+    "src/search.cpp",
+    "src/streaming.cpp",
+    "src/streaming_encoder.cpp",
+    "src/subsampling.cpp",
+    "src/tdt.cpp",
+    "src/tokenizer.cpp",
+    "src/transcription.cpp",
+    "src/transducer_batch.cpp",
+]
+
+EXPORTS += [
+    "include/parakeet_capi.h",
+]
+
+LOCAL_INCLUDES += [
+    '/third_party/llama.cpp/',
+    '/third_party/llama.cpp/ggml/',
+    '/third_party/llama.cpp/ggml/include/',
+    '/third_party/llama.cpp/ggml/src/',
+    '/third_party/llama.cpp/ggml/src/ggml-cpu/',
+    '/third_party/parakeet.cpp/',
+    '/third_party/parakeet.cpp/include/',
+    '/third_party/parakeet.cpp/src/',
+]
+
+# Vendored third-party code; quiet the warnings it triggers under our flags.
+AllowCompilerWarnings()
+
+# The parakeet_capi_* entry points are plain extern "C" without an export
+# attribute, so drop Gecko's -fvisibility=hidden for this directory; otherwise
+# they end up GLOBAL HIDDEN and the symbols file can't export them. The set
+# actually exported is still restricted by mozinference.symbols.
+NoVisibilityFlags()
+
+FINAL_LIBRARY = 'mozinference'

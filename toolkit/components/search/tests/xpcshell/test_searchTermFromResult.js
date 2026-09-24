@@ -230,9 +230,7 @@ add_task(async function test_searchTermFromResult_blank() {
 });
 
 add_task(async function test_searchTermFromResult_prefParam() {
-  const defaultBranch = Services.prefs.getDefaultBranch(
-    SearchUtils.BROWSER_SEARCH_PREF
-  );
+  const defaultBranch = Services.prefs.getDefaultBranch("browser.search.");
 
   defaultBranch.setCharPref("param.testChannelEnabled", "yes");
 

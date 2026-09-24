@@ -4,17 +4,17 @@
 
 /* CSS Variables specific to this panel that aren't defined by the themes */
 .theme-dark {
-  --cell-border-color: rgba(255, 255, 255, 0.15);
-  --row-alt-background-color: rgba(86, 117, 185, 0.15);
-  --row-hover-background-color: rgba(86, 117, 185, 0.25);
+  --cell-border-color: rgb(255 255 255 / 0.15);
+  --row-alt-background-color: rgb(86 117 185 / 0.15);
+  --row-hover-background-color: rgb(86 117 185 / 0.25);
   --link-color: var(--blue-40);
   --link-color-active: var(--blue-30);
 }
 
 .theme-light {
-  --cell-border-color: rgba(0, 0, 0, 0.15);
-  --row-alt-background-color: rgba(76, 158, 217, 0.1);
-  --row-hover-background-color: rgba(76, 158, 217, 0.2);
+  --cell-border-color: rgb(0 0 0 / 0.15);
+  --row-alt-background-color: rgb(76 158 217 / 0.1);
+  --row-hover-background-color: rgb(76 158 217 / 0.2);
   --link-color: var(--theme-link-color);
   --link-color-active: var(--blue-70);
 }

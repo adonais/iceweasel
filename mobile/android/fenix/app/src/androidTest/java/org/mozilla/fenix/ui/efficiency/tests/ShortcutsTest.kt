@@ -14,16 +14,13 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 
 class ShortcutsTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/532598
     @SmokeTest
     @Test
     fun addAWebsiteAsATopSiteTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-        on.home.navigateToPage().mozVerifyElementsByGroup("topSitesCompose")
+        on.home.navigateToPage().mozVerifyElementsByGroup(HomeSelectors.Group.TOP_SITES_COMPOSE)
         on.browserPage.navigateToPage(defaultWebPage.url.toString()).verifyPageContent(defaultWebPage.content)
         on.mainMenu
             .navigateToPage()
@@ -33,7 +30,7 @@ class ShortcutsTest : BaseTest() {
         on.browserPage.navigateToPage().mozVerify(BrowserPageSelectors.ADDED_TO_SHORTCUTS_SNACKBAR_TEXT)
         on.home
             .navigateToPage()
-            .mozVerifyElementsByGroup("topSitesCompose")
+            .mozVerifyElementsByGroup(HomeSelectors.Group.TOP_SITES_COMPOSE)
             .mozVerify(HomeSelectors.TOP_SITE_ITEM(defaultWebPage.title))
     }
 }

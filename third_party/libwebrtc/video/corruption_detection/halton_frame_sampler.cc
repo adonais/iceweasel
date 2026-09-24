@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "api/scoped_refptr.h"
@@ -161,7 +162,7 @@ double GetFilteredElement(const VideoFrameSampler& frame_sampler,
 
 std::vector<FilteredSample> GetSampleValuesForFrame(
     const VideoFrame& frame,
-    std::vector<HaltonFrameSampler::Coordinates> sample_coordinates,
+    std::span<const HaltonFrameSampler::Coordinates> sample_coordinates,
     int scaled_width,
     int scaled_height,
     double std_dev_gaussian_blur) {
@@ -302,7 +303,7 @@ std::vector<FilteredSample> GetSampleValuesForFrame(
 
 [[deprecated]] std::vector<FilteredSample> GetSampleValuesForFrame(
     scoped_refptr<I420BufferInterface> i420_frame_buffer,
-    std::vector<HaltonFrameSampler::Coordinates> sample_coordinates,
+    std::span<const HaltonFrameSampler::Coordinates> sample_coordinates,
     int scaled_width,
     int scaled_height,
     double std_dev_gaussian_blur) {

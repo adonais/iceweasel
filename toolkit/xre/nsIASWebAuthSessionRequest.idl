@@ -1,0 +1,52 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Represents a single web authentication request from macOS.
+ * The native handler passes this request to the JS service, which uses it
+ * to start the authentication flow and complete or cancel the request.
+ */
+[scriptable, uuid(e54beddf-a7b2-4d37-9348-a1e29549e4dd)]
+interface nsIASWebAuthSessionRequest : nsISupports {
+  /** macOS-assigned identifier for the request. */
+  readonly attribute AString uuid;
+
+  /** The authorization URL to load. */
+  readonly attribute AString url;
+
+  /**
+   * The custom callback scheme the flow completes with, or the empty string
+   * when the request instead uses an opaque HTTPS callback.
+   */
+  readonly attribute AString callbackScheme;
+
+  /**
+   * True when the request uses an HTTPS callback. Use matchesCallbackURL()
+   * to check whether a URL matches the callback.
+   */
+  readonly attribute boolean hasCallback;
+
+  /** True when the session must use a private browsing session. */
+  readonly attribute boolean useEphemeralSession;
+
+  /** Names of the app-supplied headers to send with the initial request. */
+  readonly attribute Array<AString> additionalHeaderNames;
+
+  /** Value of an app-supplied header, or the empty string if not present. */
+  AString getAdditionalHeader(in AString name);
+
+  /**
+   * Tests a candidate navigation URL against the request's opaque HTTPS
+   * callback. Always false when hasCallback is false.
+   */
+  boolean matchesCallbackURL(in AString url);
+
+  /** Completes the request with the resolved callback URL. */
+  void complete(in AString callbackURL);
+
+  /** Cancels the request. */
+  void cancel();
+};

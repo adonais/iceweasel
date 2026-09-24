@@ -20,9 +20,9 @@ def main():
     ):
         return
 
-    assert (
-        "GRCOV_PATH" in os.environ
-    ), "The environment variable GRCOV_PATH should contain a path to grcov"
+    assert "GRCOV_PATH" in os.environ, (
+        "The environment variable GRCOV_PATH should contain a path to grcov"
+    )
     grcov_path = os.environ["GRCOV_PATH"]
     assert os.path.exists(grcov_path), "grcov should exist"
 

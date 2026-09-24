@@ -200,6 +200,7 @@ data class TabsTrayState(
      * @property tabGroupOnboardingImpressionCount How many times the user has been presented the onboarding.
      * @property hasUserEverHadOneTabGroup Whether the user has ever had a tab group.
      * @property hasViewedTabGroupsPage Whether the user has viewed the Tab Groups page.
+     * @property skipUngroupConfirmation Whether the ungroup confirmation dialog should be skipped.
      * @property hasRecordedOnboardingImpression Whether an onboarding impression has been recorded this session.
      * @property enteringGroupId Recently created group id, to be referenced for animations. Cleared after entrance
      *   animations are played.
@@ -213,6 +214,7 @@ data class TabsTrayState(
         internal val tabGroupOnboardingImpressionCount: Int = 0,
         internal val hasUserEverHadOneTabGroup: Boolean = false,
         internal val hasViewedTabGroupsPage: Boolean = false,
+        internal val skipUngroupConfirmation: Boolean = false,
         internal val hasRecordedOnboardingImpression: Boolean = false,
         val enteringGroupId: String? = null,
         val dragProcessingState: DragProcessingState = DragProcessingState.UNINITIALIZED,

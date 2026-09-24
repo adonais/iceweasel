@@ -4,7 +4,8 @@
 
 :root {
   --addon-icon-size: 32px;
-  --main-margin-start: 28px;
+  --main-margin-start: var(--space-xlarge);
+  --main-margin-end: var(--space-xlarge);
   --sidebar-width: var(--size-sidebar);
   --z-index-sticky-container: 5;
   --z-index-popup: 10;
@@ -12,9 +13,26 @@
 
 @media (max-width: 950px) {
   :root {
-    --main-margin-start: 16px;
+    --main-margin-start: var(--space-large);
+    --main-margin-end: var(--space-large);
     /* Maintain a main margin so card shadows don't overlap the sidebar. */
     --sidebar-width: calc(var(--size-sidebar-narrow) - var(--main-margin-start));
+  }
+
+  /* Hide the label and expand the moz-input-search field when the sidebar is also collapsing. */
+  .main-search {
+    .search-label {
+      display: none;
+    }
+
+    moz-input-search {
+      flex-grow: 1;
+      width: unset;
+    }
+
+    search-addons {
+      flex-grow: 1;
+    }
   }
 }
 
@@ -24,8 +42,6 @@
 
 body {
   cursor: default;
-  /* The page starts to look really bad lower than this. */
-  min-width: var(--size-layout-xlarge);
 }
 
 h1 {
@@ -38,7 +54,9 @@ h2 {
 
 #full {
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  /* NOTE: minmax(0, 1fr) allows the main content of the about:addons page to shrink
+   * and not show the horizontal sidebar when on high page zool levels. */
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
 #sidebar {
@@ -52,7 +70,7 @@ h2 {
 }
 
 .category-badge {
-  min-width: var(--dimension-20);
+  min-width: 20px;
   background-color: var(--color-accent-primary);
   color: var(--button-text-color-primary);
   font-weight: var(--font-weight-bold);
@@ -64,11 +82,22 @@ h2 {
 }
 
 .sticky-container {
+  max-width: var(--page-main-content-width);
+  margin-inline-start: var(--main-margin-start);
+  margin-inline-end: var(--main-margin-end);
+  display: flex;
+  flex-direction: column;
   background: var(--background-color-canvas);
-  width: 100%;
-  position: sticky;
   top: 0;
-  z-index: var(--z-index-sticky-container);
+
+  /* NOTE: Make the sticky header to stay sticky only if it is leaving at least 2/3 of the
+   * viewport height for the page content (in theme list view it is ~140px height with the
+   * themes appearance mode UI), otherwise leave it to scroll along with the page content.
+   */
+  @media (min-height: 420px) {
+    position: sticky;
+    z-index: var(--z-index-sticky-container);
+  }
 }
 
 .main-search {
@@ -76,7 +105,6 @@ h2 {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding-inline-start: 28px;
   padding-top: 20px;
   padding-bottom: var(--space-small);
   max-width: var(--page-main-content-width);
@@ -101,7 +129,6 @@ search-addons {
 .main-heading {
   background: var(--background-color-canvas);
   display: flex;
-  margin-inline-start: var(--main-margin-start);
   padding-bottom: 16px;
   max-width: var(--page-main-content-width);
 }
@@ -133,8 +160,6 @@ aboutaddons-themes-mode {
    * and align it to the main content */
   addon-page-header[current-view="list"][type="theme"] & {
     display: block;
-    margin-inline-start: var(--main-margin-start);
-    width: var(--page-main-content-width);
 
     @media not -moz-pref("browser.nova.enabled") {
       display: none;
@@ -150,26 +175,49 @@ aboutaddons-themes-picker {
   }
 }
 
+/* Hide addon-card description in themes list view */
+addon-list[type="theme"] addon-card .addon-description {
+  display: none;
+}
+
 #main {
   margin-inline-start: var(--main-margin-start);
-  margin-bottom: 28px;
+  margin-inline-end: var(--main-margin-end);
+  margin-bottom: var(--space-xxlarge);
   max-width: var(--page-main-content-width);
+  display: flex;
+  flex-direction: column;
+}
+
+#main > addon-list > section,
+#main > recommended-extensions-section {
+  display: flex;
+  flex-direction: column;
 }
 
 global-warnings {
+  margin-block: var(--space-small);
   margin-inline-start: var(--main-margin-start);
+  margin-inline-end: var(--main-margin-end);
   max-width: var(--page-main-content-width);
 }
 
-/* The margin between message bars. */
-message-bar-stack > * {
-  margin-bottom: 8px;
+/* Margin between the message-bar-stack moz-message-bar elements
+ * (e.g. for pending uninstall) and the aboutaddons-themes-mode
+ * element located in the page header */
+message-bar-stack {
+  margin-block-start: var(--space-small);
+
+  /* The margin between message bars. */
+  > * {
+    margin-bottom: var(--space-small);
+  }
 }
 
 /* List sections */
 
 .list-section-heading {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-medium);
 }
 
 .list-section-subheading {
@@ -269,12 +317,19 @@ theme-preview {
 }
 
 .card-heading-image {
-  /* If the width, height or aspect ratio changes, don't forget to update the
-   * getScreenshotUrlForAddon function in aboutaddons.js */
-  width: var(--page-main-content-width);
-  /* Adjust height so that the image preserves the aspect ratio from AMO.
-   * For details, see https://bugzilla.mozilla.org/show_bug.cgi?id=1546123 */
-  height: calc(var(--page-main-content-width) * 92 / 680);
+  /* Make sure the theme preview image takes the full width of the card, while
+   * allowing the card to shrink below the actual image width (so that with
+   * hight page zoom levels the theme preview image doesn't force horizontal
+   * scrollbars). */
+  width: -moz-available;
+  max-width: var(--page-main-content-width);
+  /* Preserve the aspect ratio from AMO's screenshot regardless of the
+   * actual rendered width. For details, see
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=1546123
+   *
+   * NOTE: If the width, height or aspect ratio changes, don't forget to update
+   * the getScreenshotUrlForAddon function in aboutaddons.js */
+  aspect-ratio: 680 / 92;
   object-fit: cover;
 
   /* Border bottom box to show more clearly where the preview image ends
@@ -304,6 +359,7 @@ theme-preview {
   /* Subtract the top line-height so the text and icon align at the top. */
   margin-top: -3px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
 }
 
@@ -407,8 +463,8 @@ addon-card:not([expanded]) .addon-description {
 
 /* Recommended add-ons on list views */
 .recommended-heading {
-  margin-bottom: 24px;
-  margin-top: 48px;
+  margin-bottom: var(--space-medium);
+  margin-top: var(--space-medium);
 }
 
 /* Discopane extensions to the add-on card */
@@ -419,6 +475,8 @@ recommended-addon-card .addon-description:not(:empty) {
 
 .disco-card-head {
   flex-grow: 1;
+  /* Allow the recommended addon name text to wrap and shrink instead of pushing the install button to a new line. */
+  flex-basis: 0;
   display: flex;
   flex-direction: column;
 }
@@ -436,10 +494,11 @@ recommended-addon-card .addon-description:not(:empty) {
 }
 
 .disco-description-statistics {
-  margin-top: 1em;
-  display: grid;
-  grid-template-columns: repeat(2, max-content);
-  grid-column-gap: 2em;
+  margin-top: var(--space-large);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-xxlarge);
+  row-gap: var(--space-xsmall);
   align-items: center;
 }
 
@@ -452,7 +511,7 @@ recommended-addon-card .addon-description:not(:empty) {
 }
 
 .discopane-notice {
-  margin: 24px 0;
+  margin: var(--space-small) 0;
 }
 
 .view-footer {
@@ -542,6 +601,7 @@ button.addon-detail-description-toggle {
 .addon-detail-sitepermissions,
 .addon-detail-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   border-top: 1px solid var(--border-color);

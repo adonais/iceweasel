@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<html><head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <link rel="icon" href="file_bug970276_favicon1.ico" type="image/ico" id="i">
+</head>
+<body>
+  <script>
+  // A detached <img> whose load *and* error handlers both re-assign an empty
+  // src. Assigning an empty src while the src attribute is present fires
+  // "error" per the HTML "update the image data" algorithm, so the handler
+  // re-arms itself: a self-sustaining task<->microtask storm that leaves the
+  // content process' main thread without any idle slot.
+  const ONE_PIXEL_PNG =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+  // Hard upper bound so the above self-sustaining storm can't outlive the
+  // test harness even if the test fails or times out.
+  const MAX_STARVATION_MS = 40000;
+
+  var loopImg = null;
+
+  function stopStarvation() {
+    if (loopImg) {
+      loopImg.onload = loopImg.onerror = null;
+      loopImg = null;
+    }
+  }
+
+  window.addEventListener("TestStarveIdleCallbacks", function() {
+    if (loopImg) {
+      return;
+    }
+    loopImg = new Image();
+    loopImg.onload = loopImg.onerror = function() {
+      loopImg.src = "";
+    };
+    loopImg.src = ONE_PIXEL_PNG;
+    setTimeout(stopStarvation, MAX_STARVATION_MS);
+  });
+
+  window.addEventListener("TestStopIdleStarvation", stopStarvation);
+
+  window.addEventListener("TestChangeFavicon", function() {
+    document.getElementById("i").setAttribute("href", "moz.png");
+  });
+  </script>
+</body></html>

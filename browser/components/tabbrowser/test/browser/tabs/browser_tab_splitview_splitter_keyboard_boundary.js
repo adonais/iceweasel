@@ -6,10 +6,7 @@
 
 add_setup(() =>
   SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["ui.prefersReducedMotion", 1],
-    ],
+    set: [["ui.prefersReducedMotion", 1]],
   })
 );
 

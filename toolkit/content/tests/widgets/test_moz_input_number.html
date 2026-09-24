@@ -57,6 +57,10 @@
         await testHelpers.verifyType("moz-input-number", "number");
       });
 
+      add_task(async function testMozInputNumberRequiredProperty() {
+        await testHelpers.verifyRequired("moz-input-number");
+      });
+
       add_task(async function testMozInputNumberEvents() {
         let { trackEvent, verifyEvents } = testHelpers.getInputEventHelpers();
         let target = await testHelpers.renderTemplate();

@@ -2,6 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = {};
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "removeRecordsEnabled",
+  "browser.autocomplete.removeRecords.enabled",
+  false
+);
+ChromeUtils.defineLazyGetter(
+  lazy,
+  "l10n",
+  () => new Localization(["toolkit/main-window/autocomplete.ftl"], true)
+);
+
 /**
  * This autocomplete result combines 3 arrays of entries, fixedEntries and
  * externalEntries.
@@ -109,7 +125,22 @@ export class FormHistoryAutoCompleteResult {
   }
 
   getCommentAt(index) {
-    return this.getAt(index).comment ?? "";
+    const comment = this.getAt(index).comment ?? "";
+    if (!lazy.removeRecordsEnabled || !this.#isFormHistoryEntry(index)) {
+      return comment;
+    }
+    // The trash button is a non-functional placeholder for now
+    const parsed = comment ? JSON.parse(comment) : {};
+    return JSON.stringify({
+      ...parsed,
+      secondaryAction: {
+        type: "delete",
+        label: lazy.l10n.formatValueSync(
+          "autocomplete-delete-form-history-entry2",
+          { entry: this.getLabelAt(index) }
+        ),
+      },
+    });
   }
 
   getStyleAt(index) {

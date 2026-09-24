@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0">
+<title>
+  Tests that overscroll-behavior: chain suppresses the overscroll effect on the
+  scroll container itself
+</title>
+<script src="apz_test_utils.js"></script>
+<script src="apz_test_native_event_utils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
+<style>
+  .content {
+    height: 50vh;
+    width: 300px;
+    overflow-y: scroll;
+    background-color: red;
+  }
+</style>
+<!-- a sub scroll container -->
+<div class="content">
+  <div style="height:100vh; background-color: white;"></div>
+</div>
+<script>
+  const subScroller = document.querySelector(`div[class="content"]`);
+
+  // A utility function to collect overscrolled scroll container information.
+  function collectOverscrolledData() {
+    const apzData =
+      SpecialPowers.DOMWindowUtils.getCompositorAPZTestData().additionalData;
+    return apzData.filter(data => {
+      return SpecialPowers.wrap(data).value.split(",").includes("overscrolled");
+    });
+  }
+
+  async function panUpwardAndCollectOverscrolled(aOverscrollBehavior) {
+    subScroller.style.overscrollBehavior = aOverscrollBehavior;
+
+    subScroller.scrollTop = 1;
+    await promiseApzFlushedRepaints();
+
+    const oneScrollPromise = new Promise(resolve => {
+      subScroller.addEventListener("scroll", () => resolve(), { once: true });
+    });
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, -NativePanHandler.delta,
+      NativePanHandler.beginPhase);
+    await promiseApzFlushedRepaints();
+    await oneScrollPromise;
+
+    is(subScroller.scrollTop, 0,
+       `The sub scroll container should be panned to its top edge ` +
+       `(${aOverscrollBehavior})`);
+
+    const overscrolledData = collectOverscrolledData();
+
+    // End the gesture.
+    await NativePanHandler.promiseNativePanEvent(
+      subScroller, 100, 100, 0, 0, NativePanHandler.endPhase);
+    await promiseApzFlushedRepaints();
+
+    return overscrolledData;
+  }
+
+  async function test() {
+    const subScrollId = SpecialPowers.DOMWindowUtils.getViewId(subScroller);
+
+    let overscrolledData = await panUpwardAndCollectOverscrolled("chain");
+    ok(!overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+       "The sub scroll container should not be overscrolled with overscroll-behavior: chain");
+
+    // Check if `contain` allows an overscroll as a positive control.
+    overscrolledData = await panUpwardAndCollectOverscrolled("contain");
+    ok(overscrolledData.some(data => SpecialPowers.wrap(data).key == subScrollId),
+       "The sub scroll container should be overscrolled with overscroll-behavior: contain");
+  }
+
+  if (getPlatform() == "linux") {
+    ok(true, "Skipping test on Linux because of bug 1889039");
+    subtestDone();
+  } else {
+    waitUntilApzStable()
+    .then(test)
+    .then(subtestDone, subtestFailed);
+  }
+</script>

@@ -26,21 +26,8 @@ class APZChild final : public PAPZChild {
 
   explicit APZChild(RefPtr<GeckoContentController> aController);
 
-  mozilla::ipc::IPCResult RecvLayerTransforms(
-      nsTArray<MatrixMessage>&& aTransforms);
-
   mozilla::ipc::IPCResult RecvRequestContentRepaint(
       const RepaintRequest& aRequest);
-
-  mozilla::ipc::IPCResult RecvUpdateOverscrollVelocity(
-      const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
-      const bool& aIsRootContent);
-
-  mozilla::ipc::IPCResult RecvUpdateOverscrollOffset(
-      const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
-      const bool& aIsRootContent);
-
-  mozilla::ipc::IPCResult RecvHideDynamicToolbar();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult
   RecvNotifyMozMouseScrollEvent(const ViewID& aScrollId,

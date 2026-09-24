@@ -68,7 +68,9 @@ export class PartialSearchEngine {
    */
   async getIconURL() {
     if (this.#icon === undefined) {
-      this.#icon = (await this.#controller.getEngineIconURL(this.id)) ?? null;
+      this.#icon =
+        (await this.#controller.parentController.getEngineIconURL(this.id)) ??
+        null;
     }
     return this.#icon;
   }
@@ -97,7 +99,7 @@ export class PartialSearchEngine {
    * Marks an engine as used if it's not marked already.
    */
   markAsUsed() {
-    this.#controller.markEngineAsUsed(this.id);
+    this.#controller.parentController.markEngineAsUsed(this.id);
   }
 }
 
@@ -139,7 +141,7 @@ export class SearchEngineStore {
   init() {
     if (!this.initialized && !this.failed) {
       // Requesting init multiple times is fine.
-      this.#controller.initEngineStore();
+      this.#controller.parentController.initEngineStore();
     }
     return this.#initPromiseWithResolvers.promise;
   }

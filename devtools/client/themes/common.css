@@ -13,7 +13,7 @@
   font: message-box;
   font-size: var(--theme-body-font-size);
 
-  --tab-line-hover-color: light-dark(rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2));
+  --tab-line-hover-color: light-dark(rgb(0 0 0 / 0.2), rgb(255 255 255 / 0.2));
 
   --tab-line-selected-color: var(--blue-50);
   --toggle-thumb-color: light-dark(white, var(--grey-40));
@@ -416,7 +416,7 @@ iframe {
 .devtools-button.devtools-button-standalone {
   min-height: 28px;
   padding: 4px 6px;
-  border: 1px solid light-dark(rgba(138, 161, 180, 0.2), var(--grey-50));
+  border: 1px solid light-dark(rgb(138 161 180 / 0.2), var(--grey-50));
   background: var(--toolbarbutton-background);
   /* prettier-ignore */
   color: light-dark(

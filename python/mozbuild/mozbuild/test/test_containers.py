@@ -3,7 +3,6 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import unittest
-from collections import OrderedDict, defaultdict
 
 from mozunit import main
 
@@ -139,28 +138,6 @@ class TestList(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             test = test + False
-
-
-class TestOrderedDefaultDict(unittest.TestCase):
-    def test_simple(self):
-        original = OrderedDict(foo=1, bar=2)
-
-        test = defaultdict(bool, original)
-
-        self.assertEqual(original, test)
-
-        self.assertEqual(test["foo"], 1)
-
-        self.assertEqual(list(test), ["foo", "bar"])
-
-    def test_defaults(self):
-        test = defaultdict(bool, {"foo": 1})
-
-        self.assertEqual(test["foo"], 1)
-
-        self.assertEqual(test["qux"], False)
-
-        self.assertEqual(list(test), ["foo", "qux"])
 
 
 class TestKeyedDefaultDict(unittest.TestCase):

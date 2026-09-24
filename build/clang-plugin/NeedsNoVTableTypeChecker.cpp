@@ -6,12 +6,11 @@
 #include "CustomMatchers.h"
 
 void NeedsNoVTableTypeChecker::registerMatchers(MatchFinder *AstMatcher) {
-  AstMatcher->addMatcher(
-      classTemplateSpecializationDecl(
-          hasAnyTemplateArgument(refersToType(hasVTable())),
-                hasNeedsNoVTableTypeAttr())
-          .bind("node"),
-      this);
+  AstMatcher->addMatcher(classTemplateSpecializationDecl(
+                             hasAnyTemplateArgument(refersToType(hasVTable())),
+                             hasNeedsNoVTableTypeAttr())
+                             .bind("node"),
+                         this);
 }
 
 void NeedsNoVTableTypeChecker::check(const MatchFinder::MatchResult &Result) {

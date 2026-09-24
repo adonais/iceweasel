@@ -4,9 +4,11 @@
 
 //! Computed values for font properties
 
+use crate::Atom;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::typed_om::{ToTyped, TypedValue};
+use crate::values::CSSInteger;
 use crate::values::animated::ToAnimatedValue;
 use crate::values::computed::{
     Angle, Context, Integer, Length, NonNegativeLength, NonNegativeNumber, Number, Percentage,
@@ -15,15 +17,13 @@ use crate::values::computed::{
 use crate::values::generics::font::{
     FeatureTagValue, FontSettings, TaggedFontValue, VariationValue,
 };
-use crate::values::generics::{font as generics, NonNegative};
+use crate::values::generics::{NonNegative, font as generics};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::font::{
     self as specified, KeywordInfo, MAX_FONT_WEIGHT, MIN_FONT_WEIGHT,
 };
 use crate::values::specified::length::{FontBaseSize, LineHeightBase};
-use crate::values::CSSInteger;
-use crate::Atom;
-use cssparser::{match_ignore_ascii_case, serialize_identifier, CssStringWriter, Parser};
+use cssparser::{CssStringWriter, Parser, match_ignore_ascii_case, serialize_identifier};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use num_traits::abs;
 use num_traits::cast::AsPrimitive;
@@ -32,14 +32,14 @@ use style_traits::{CssWriter, ParseError, ToCss};
 use thin_vec::ThinVec;
 
 pub use crate::values::computed::Length as MozScriptMinSize;
+pub use crate::values::specified::Integer as SpecifiedInteger;
+pub use crate::values::specified::Number as SpecifiedNumber;
 pub use crate::values::specified::font::MozScriptSizeMultiplier;
 pub use crate::values::specified::font::{FontPalette, FontSynthesis, FontSynthesisStyle};
 pub use crate::values::specified::font::{
     FontVariantAlternates, FontVariantEastAsian, FontVariantLigatures, FontVariantNumeric,
     QueryFontMetricsFlags, XLang, XTextScale,
 };
-pub use crate::values::specified::Integer as SpecifiedInteger;
-pub use crate::values::specified::Number as SpecifiedNumber;
 
 /// Generic template for font property type classes that use a fixed-point
 /// internal representation with `FRACTION_BITS` for the fractional part.
@@ -411,7 +411,7 @@ impl FontFamily {
             })
         );
 
-        &*MOZ_BULLET
+        &MOZ_BULLET
     }
 
     /// Returns a font family for a single system font.
@@ -632,12 +632,12 @@ pub enum SingleFontFamily {
 }
 
 fn system_ui_enabled(_: &ParserContext) -> bool {
-    static_prefs::pref!("layout.css.system-ui.enabled")
+    crate::pref!("layout.css.system-ui.enabled")
 }
 
 #[cfg(feature = "gecko")]
 fn math_enabled(context: &ParserContext) -> bool {
-    context.chrome_rules_enabled() || static_prefs::pref!("mathml.font_family_math.enabled")
+    context.chrome_rules_enabled() || crate::pref!("mathml.font_family_math.enabled")
 }
 
 /// A generic font-family name.
@@ -740,7 +740,7 @@ impl Parse for SingleFontFamily {
             let ident = input.expect_ident()?;
             serialize_quoted = serialize_quoted || ident.contains(' ');
             value.push(' ');
-            value.push_str(&ident);
+            value.push_str(ident);
         }
         while let Ok(ident) = input.try_parse(|i| i.expect_ident_cloned()) {
             serialize_quoted = serialize_quoted || ident.contains(' ');
@@ -800,7 +800,7 @@ impl FontFamilyList {
         let mut target_index = None;
 
         for (i, f) in self.iter().enumerate() {
-            match &*f {
+            match f {
                 SingleFontFamily::Generic(f) => {
                     if index_of_first_generic.is_none() && f.valid_for_user_font_prioritization() {
                         // If we haven't found a target position, there's nothing to do;
@@ -845,7 +845,7 @@ impl FontFamilyList {
     /// Returns whether we need to prioritize user fonts.
     #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn needs_user_font_prioritization(&self) -> bool {
-        self.iter().next().map_or(true, |f| match f {
+        self.iter().next().is_none_or(|f| match f {
             SingleFontFamily::Generic(f) => !f.valid_for_user_font_prioritization(),
             _ => true,
         })
@@ -854,10 +854,10 @@ impl FontFamilyList {
     /// Return the generic ID if it is a single generic font
     pub fn single_generic(&self) -> Option<GenericFontFamily> {
         let mut iter = self.iter();
-        if let Some(SingleFontFamily::Generic(f)) = iter.next() {
-            if iter.next().is_none() {
-                return Some(*f);
-            }
+        if let Some(SingleFontFamily::Generic(f)) = iter.next()
+            && iter.next().is_none()
+        {
+            return Some(*f);
         }
         None
     }
@@ -1131,7 +1131,6 @@ impl ToComputedValue for specified::MathDepth {
 
     fn to_computed_value(&self, cx: &Context) -> i8 {
         use crate::properties::longhands::math_style::SpecifiedValue as MathStyleValue;
-        use std::{cmp, i8};
 
         let int = match self {
             specified::MathDepth::AutoAdd => {
@@ -1149,7 +1148,7 @@ impl ToComputedValue for specified::MathDepth {
             },
             specified::MathDepth::Absolute(abs) => abs.to_computed_value(cx),
         };
-        cmp::min(int, i8::MAX as i32) as i8
+        std::cmp::min(int, i8::MAX as i32) as i8
     }
 
     fn from_computed_value(other: &i8) -> Self {
@@ -1168,8 +1167,7 @@ impl ToAnimatedValue for MathDepth {
 
     #[inline]
     fn from_animated_value(animated: Self::AnimatedValue) -> Self {
-        use std::{cmp, i8};
-        cmp::min(animated, i8::MAX as i32) as i8
+        std::cmp::min(animated, i8::MAX as i32) as i8
     }
 }
 

@@ -138,12 +138,9 @@ this.alarms = class extends ExtensionAPIPersistent {
         },
 
         clearAll: function () {
-          let cleared = false;
           for (let alarm of self.alarms.values()) {
             alarm.clear();
-            cleared = true;
           }
-          return Promise.resolve(cleared);
         },
 
         onAlarm: new EventManager({

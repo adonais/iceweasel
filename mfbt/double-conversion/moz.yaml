@@ -10,8 +10,8 @@ origin:
 
   url: https://github.com/google/double-conversion
 
-  release: 4f7a25d8ced8c7cf6eee6fd09d6788eaa23c9afe (2023-05-18T12:20:37Z).
-  revision: 4f7a25d8ced8c7cf6eee6fd09d6788eaa23c9afe
+  release: f501091d5fbfbc1b11bcafb2a86d54733f1bee16 (2026-09-04T22:32:10Z).
+  revision: f501091d5fbfbc1b11bcafb2a86d54733f1bee16
 
   license: BSD-3-Clause
   license-file: LICENSE

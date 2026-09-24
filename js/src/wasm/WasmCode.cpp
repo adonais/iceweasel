@@ -510,7 +510,10 @@ bool Code::createManyLazyEntryStubs(const WriteGuard& guard,
     if (BinarySearchIf(
             guard->lazyExports, 0, guard->lazyExports.length(),
             [targetFunctionIndex](const LazyFuncExport& funcExport) {
-              return targetFunctionIndex - funcExport.funcIndex;
+              if (targetFunctionIndex == funcExport.funcIndex) {
+                return 0;
+              }
+              return targetFunctionIndex < funcExport.funcIndex ? -1 : 1;
             },
             &exportIndex)) {
       DebugOnly<CodeBlockKind> oldKind =
@@ -881,7 +884,10 @@ const LazyFuncExport* Code::lookupLazyFuncExport(const WriteGuard& guard,
   if (!BinarySearchIf(
           guard->lazyExports, 0, guard->lazyExports.length(),
           [funcIndex](const LazyFuncExport& funcExport) {
-            return funcIndex - funcExport.funcIndex;
+            if (funcIndex == funcExport.funcIndex) {
+              return 0;
+            }
+            return funcIndex < funcExport.funcIndex ? -1 : 1;
           },
           &match)) {
     return nullptr;

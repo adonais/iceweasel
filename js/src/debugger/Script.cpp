@@ -2334,22 +2334,30 @@ class DebuggerScript::IsInCatchScopeMatcher {
     }
 
     MOZ_ASSERT(!isInCatch_);
-    for (const TryNote& tn : script->trynotes()) {
-      bool inRange = tn.start <= offset_ && offset_ < tn.start + tn.length;
-      if (inRange && tn.kind() == TryNoteKind::Catch) {
-        isInCatch_ = true;
-      } else if (isInCatch_) {
-        // For-of loops generate a synthetic catch block to handle
-        // closing the iterator when throwing an exception. The
-        // debugger should ignore these synthetic catch blocks, so
-        // we skip any Catch trynote that is immediately followed
-        // by a ForOf trynote.
-        if (inRange && tn.kind() == TryNoteKind::ForOf) {
-          isInCatch_ = false;
-          continue;
-        }
-        return true;
+
+    auto inRange = [this](const TryNote& tn) {
+      return tn.start <= offset_ && offset_ < tn.start + tn.length;
+    };
+    auto notes = script->trynotes();
+
+    for (size_t i = 0; i < notes.size(); i++) {
+      const TryNote& tn = notes[i];
+      if (tn.kind() != TryNoteKind::Catch || !inRange(tn)) {
+        continue;
       }
+
+      // For-of loops generate a synthetic catch block to handle
+      // closing the iterator when throwing an exception. The
+      // debugger should ignore these synthetic catch blocks, so
+      // we skip any Catch trynote that is immediately followed
+      // by a ForOf trynote.
+      if (i + 1 < notes.size() && notes[i + 1].kind() == TryNoteKind::ForOf &&
+          inRange(notes[i + 1])) {
+        continue;
+      }
+
+      isInCatch_ = true;
+      return true;
     }
 
     return true;

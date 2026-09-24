@@ -22,6 +22,11 @@ run-if = [
   "nightly_build", # Bug 1890946
 ]
 
+["browser_pdfjs_brotli_large_window.js"]
+support-files = [
+  "file_pdfjs_brotli_large_window.pdf",
+]
+
 ["browser_pdfjs_caret_browsing_mode.js"]
 
 ["browser_pdfjs_chrome_events.js"]
@@ -65,6 +70,12 @@ support-files = [
   "file_pdfjs_embed_short.html",
   "file_pdfjs_embed_referrer.html",
   "file_pdfjs_embed_slow.html",
+  "file_pdfjs_frames.html",
+  "file_pdfjs_frames_cross_site.html",
+  "file_pdfjs_frameset.html",
+  "file_pdfjs_frameset_cross_site.html",
+  "file_pdfjs_iframe.html",
+  "file_pdfjs_iframe_cross_site.html",
   "file_pdfjs_referrer.sjs",
   "file_pdfjs_slow.sjs",
 ]
@@ -85,6 +96,24 @@ support-files = [
 
 ["browser_pdfjs_form.js"]
 support-files = ["file_pdfjs_form.pdf"]
+
+["browser_pdfjs_frame_pdfs.js"]
+support-files = [
+  "file_pdfjs_attachment.sjs",
+  "file_pdfjs_embed.html",
+  "file_pdfjs_frame_attachment.html",
+  "file_pdfjs_frame_attachment_cross_site.html",
+  "file_pdfjs_frame_sandboxed.html",
+  "file_pdfjs_frame_sandboxed_cross_site.html",
+  "file_pdfjs_frame_target.html",
+  "file_pdfjs_frame_target_cross_site.html",
+  "file_pdfjs_frames.html",
+  "file_pdfjs_frames_cross_site.html",
+  "file_pdfjs_frameset.html",
+  "file_pdfjs_frameset_cross_site.html",
+  "file_pdfjs_iframe.html",
+  "file_pdfjs_iframe_cross_site.html",
+]
 
 ["browser_pdfjs_fullscreen.js"]
 
@@ -143,6 +172,8 @@ support-files = [
 ]
 
 ["browser_pdfjs_print_enabled.js"]
+
+["browser_pdfjs_printtopdf.js"]
 
 ["browser_pdfjs_properties.js"]
 

@@ -121,6 +121,24 @@ class WebCryptoTask : public CancelableRunnable {
       JSContext* aCx, const ObjectOrString& aAlgorithm, CryptoKey& aKey,
       const Nullable<uint32_t>& aLength);
 
+  static already_AddRefed<WebCryptoTask> CreateEncapsulateBitsTask(
+      JSContext* aCx, const ObjectOrString& aAlgorithm,
+      CryptoKey& aEncapsulationKey);
+  static already_AddRefed<WebCryptoTask> CreateEncapsulateKeyTask(
+      nsIGlobalObject* aGlobal, JSContext* aCx,
+      const ObjectOrString& aAlgorithm, CryptoKey& aEncapsulationKey,
+      const ObjectOrString& aSharedKeyAlgorithm, bool aExtractable,
+      const Sequence<nsString>& aKeyUsages);
+  static already_AddRefed<WebCryptoTask> CreateDecapsulateBitsTask(
+      JSContext* aCx, const ObjectOrString& aAlgorithm,
+      CryptoKey& aDecapsulationKey, const CryptoOperationData& aCiphertext);
+  static already_AddRefed<WebCryptoTask> CreateDecapsulateKeyTask(
+      nsIGlobalObject* aGlobal, JSContext* aCx,
+      const ObjectOrString& aAlgorithm, CryptoKey& aDecapsulationKey,
+      const CryptoOperationData& aCiphertext,
+      const ObjectOrString& aSharedKeyAlgorithm, bool aExtractable,
+      const Sequence<nsString>& aKeyUsages);
+
   static already_AddRefed<WebCryptoTask> CreateWrapKeyTask(
       JSContext* aCx, const nsAString& aFormat, CryptoKey& aKey,
       CryptoKey& aWrappingKey, const ObjectOrString& aWrapAlgorithm);
@@ -180,6 +198,7 @@ class GenerateAsymmetricKeyTask : public WebCryptoTask {
   CK_MECHANISM_TYPE mMechanism;
   PK11RSAGenParams mRsaParams;
   SECKEYDHParams mDhParams;
+  CK_ML_KEM_PARAMETER_SET_TYPE mMLKEMParameterSet;
   nsString mNamedCurve;
 
   virtual nsresult DoCrypto() override;

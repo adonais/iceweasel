@@ -78,10 +78,7 @@ add_task(async function test_config_updated_engine_changes() {
   }
   Services.obs.addObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
 
-  Services.prefs.setCharPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "experiment",
-    "xpcshell"
-  );
+  Services.prefs.setCharPref("browser.search.experiment", "xpcshell");
 
   await reloadObserved;
   Services.obs.removeObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);

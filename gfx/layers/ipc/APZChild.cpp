@@ -29,12 +29,6 @@ APZChild::~APZChild() {
   }
 }
 
-mozilla::ipc::IPCResult APZChild::RecvLayerTransforms(
-    nsTArray<MatrixMessage>&& aTransforms) {
-  mController->NotifyLayerTransforms(std::move(aTransforms));
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult APZChild::RecvRequestContentRepaint(
     const RepaintRequest& aRequest) {
   MOZ_ASSERT(mController->IsRepaintThread());
@@ -42,28 +36,6 @@ mozilla::ipc::IPCResult APZChild::RecvRequestContentRepaint(
   EnsureAPZTaskRunnable();
 
   mAPZTaskRunnable->QueueRequest(aRequest);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZChild::RecvUpdateOverscrollVelocity(
-    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
-    const bool& aIsRootContent) {
-  mController->UpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZChild::RecvUpdateOverscrollOffset(
-    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
-    const bool& aIsRootContent) {
-  mController->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZChild::RecvHideDynamicToolbar() {
-  // Only the RemoteContentController implementation uses the
-  // ScrollableLayerGuid parameter. APZChild::mController is never a
-  // RemoteContentController, so it's fine to invent a value here.
-  mController->HideDynamicToolbar(ScrollableLayerGuid{});
   return IPC_OK();
 }
 

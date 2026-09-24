@@ -59,7 +59,6 @@ struct FrameTimeout {
   }
 
   bool operator==(const FrameTimeout& aOther) const = default;
-  bool operator!=(const FrameTimeout& aOther) const = default;
 
   FrameTimeout operator+(const FrameTimeout& aOther) {
     if (*this == Forever() || aOther == Forever()) {

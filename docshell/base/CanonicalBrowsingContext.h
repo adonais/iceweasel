@@ -269,8 +269,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   // The returned CanonicalBrowsingContext may be different than |this| if a BCG
   // switch was performed.
   //
-  // A NOT_REMOTE_TYPE aRemoteType argument will perform a process switch into
-  // the parent process, and the method will resolve with a null BrowserParent.
+  // A RemoteType::NotRemote() aRemoteType argument will perform a process
+  // switch into the parent process, and the method will resolve with a null
+  // BrowserParent.
   using RemotenessPromise = MozPromise<
       std::pair<RefPtr<BrowserParent>, RefPtr<CanonicalBrowsingContext>>,
       nsresult, false>;
@@ -445,7 +446,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   MOZ_CAN_RUN_SCRIPT
   void CloneDocumentTreeInto(CanonicalBrowsingContext* aSource,
-                             const nsACString& aRemoteType,
+                             const RemoteType& aRemoteType,
                              embedding::PrintData&& aPrintData);
 
   // Returns a Promise which resolves when cloning documents for printing

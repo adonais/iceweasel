@@ -505,7 +505,7 @@ add_task(async function test() {
     },
   ];
 
-  let controller = UrlbarTestUtils.newMockController();
+  let { parentController } = UrlbarTestUtils.mockChildController();
 
   for (let {
     desc,
@@ -528,7 +528,7 @@ add_task(async function test() {
     let provider = registerBasicTestProvider(results);
     let context = createContext(undefined, { providers: [provider.name] });
     let providersManager = ProvidersManager.getInstanceForSap("urlbar");
-    await providersManager.startQuery(context, controller);
+    await providersManager.startQuery(context, parentController);
 
     // Make the list of expected results.
     let expectedResults = [];

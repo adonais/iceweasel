@@ -4,15 +4,15 @@
 
 //! Generic types for CSS values related to length.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::logical_geometry::PhysicalSide;
 use crate::parser::{Parse, ParserContext};
+use crate::values::DashedIdent;
 use crate::values::computed::position::TryTacticAdjustment;
+use crate::values::generics::Optional;
 use crate::values::generics::box_::PositionProperty;
 use crate::values::generics::position::TreeScoped;
-use crate::values::generics::Optional;
-use crate::values::DashedIdent;
-use crate::Zero;
 use cssparser::Parser;
 use std::fmt::Write;
 use style_derive::Animate;
@@ -192,10 +192,10 @@ where
         if cfg!(feature = "gecko") {
             f(&["-moz-available"]);
         }
-        if static_prefs::pref!("layout.css.stretch-size-keyword.enabled") {
+        if crate::pref!("layout.css.stretch-size-keyword.enabled") {
             f(&["stretch"]);
         }
-        if static_prefs::pref!("layout.css.webkit-fill-available.enabled") {
+        if crate::pref!("layout.css.webkit-fill-available.enabled") {
             f(&["-webkit-fill-available"]);
         }
     }
@@ -274,10 +274,10 @@ where
         if cfg!(feature = "gecko") {
             f(&["-moz-available"]);
         }
-        if static_prefs::pref!("layout.css.stretch-size-keyword.enabled") {
+        if crate::pref!("layout.css.stretch-size-keyword.enabled") {
             f(&["stretch"]);
         }
-        if static_prefs::pref!("layout.css.webkit-fill-available.enabled") {
+        if crate::pref!("layout.css.webkit-fill-available.enabled") {
             f(&["-webkit-fill-available"]);
         }
     }
@@ -518,7 +518,7 @@ impl<LengthPercentage> GenericAnchorSizeFunction<LengthPercentage> {
                 .ok();
             Ok(GenericAnchorSizeFunction {
                 target_element: TreeScoped::with_default_level(target_element),
-                size: size.into(),
+                size,
                 fallback: fallback.into(),
             })
         })

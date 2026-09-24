@@ -1600,6 +1600,21 @@ XPCOMUtils.defineLazyPreferenceGetter(
   2 * 60 * 1000
 );
 
+// Field types the ML model is not trusted with, parsed from the comma
+// separated pref. They are classified by the regexp-based heuristics instead.
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofillUtils,
+  "mlIgnoreFieldTypes",
+  "extensions.formautofill.useml.ignoreFieldTypes",
+  "",
+  null,
+  pref =>
+    pref
+      .split(",")
+      .map(fieldType => fieldType.trim())
+      .filter(fieldType => !!fieldType)
+);
+
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
   "isMLUsedAlready",
@@ -1612,4 +1627,31 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "isNativeOnnxRuntimeAvailable",
   AUTOFILL_ML_NATIVE_ONNX_PREF,
   false
+);
+
+// Optional mlData tokenizer features, as a JSON array of feature keys (e.g.
+// ["select_option", "input_attributes"]).
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "mlFeatures",
+  "extensions.formautofill.useml.features",
+  "[]",
+  null,
+  value => {
+    try {
+      const list = JSON.parse(value);
+      return new Set(Array.isArray(list) ? list : []);
+    } catch {
+      return new Set();
+    }
+  }
+);
+
+// Pin the ML model revision to load (the encoder and head engines share one
+// version).
+XPCOMUtils.defineLazyPreferenceGetter(
+  FormAutofill,
+  "mlModelVersion",
+  "extensions.formautofill.useml.modelVersion",
+  ""
 );

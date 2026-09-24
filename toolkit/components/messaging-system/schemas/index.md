@@ -144,7 +144,7 @@ library, which is reused in the {searchfox}`Firefox MS Schemas CI job <taskclust
 {searchfox}`CFRMessageProvider <browser/components/asrouter/modules/CFRMessageProvider.sys.mjs>`, {searchfox}`OnboardingMessageProvider <browser/components/asrouter/modules/OnboardingMessageProvider.sys.mjs>`, and {searchfox}`PanelTestProvider <browser/components/asrouter/modules/PanelTestProvider.sys.mjs>`
 with the same JSON schema validation library and configuration as Experimenter.
 
-See how to run these tests {ref}`above <run_make_schemas>`.
+See how to run these tests {ref}`above <run-make-schemas>`.
 
 ## Triggers and actions
 

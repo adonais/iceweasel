@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_nsSynthVoiceRegistry_h
-#define mozilla_dom_nsSynthVoiceRegistry_h
+#ifndef DOM_MEDIA_WEBSPEECH_SYNTH_NSSYNTHVOICEREGISTRY_H_
+#define DOM_MEDIA_WEBSPEECH_SYNTH_NSSYNTHVOICEREGISTRY_H_
 
 #include "nsISynthVoiceRegistry.h"
 #include "nsRefPtrHashtable.h"
@@ -96,4 +96,4 @@ class nsSynthVoiceRegistry final : public nsISynthVoiceRegistry {
 
 }  // namespace mozilla::dom
 
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_SYNTH_NSSYNTHVOICEREGISTRY_H_

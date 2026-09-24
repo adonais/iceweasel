@@ -9,7 +9,7 @@ use crate::error_reporting::ParseErrorReporter;
 use crate::media_queries::MediaList;
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylesheets::{AllowImportRules, Origin, Stylesheet, StylesheetLoader, UrlExtraData};
-use cssparser::{stylesheet_encoding, EncodingSupport};
+use cssparser::{EncodingSupport, stylesheet_encoding};
 use servo_arc::Arc;
 use std::borrow::Cow;
 use std::str;

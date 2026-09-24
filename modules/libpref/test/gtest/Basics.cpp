@@ -400,6 +400,30 @@ TEST(PrefsCallbackTrie, TrailingDotEquivalence)
   EXPECT_EQ(count, 1);
 }
 
+// A domain ending in more than one dot is rejected rather than partially
+// normalized.
+TEST(PrefsCallbackTrie, MultipleTrailingDotsRejected)
+{
+  int count = 0;
+  EXPECT_EQ(Preferences::RegisterCallback(IncrementCount,
+                                          "test.trie.dots.a.."_ns, &count),
+            NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(Preferences::RegisterPrefixCallback(
+                IncrementCount, "test.trie.dots.a.."_ns, &count),
+            NS_ERROR_INVALID_ARG);
+  EXPECT_EQ(Preferences::UnregisterCallback(IncrementCount,
+                                            "test.trie.dots.a.."_ns, &count),
+            NS_ERROR_INVALID_ARG);
+
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  ASSERT_TRUE(prefs);
+  RefPtr<TestWeakPrefObserver> observer = new TestWeakPrefObserver();
+  EXPECT_EQ(prefs->AddObserver("test.trie.dots.d.."_ns, observer, false),
+            NS_ERROR_INVALID_ARG);
+  Preferences::SetBool("test.trie.dots.d.e", true);
+  EXPECT_EQ(observer->mNotifyCount, 0);
+}
+
 // ---------------------------------------------------------------------------
 // Compact / MarkDead tests — verify lazy-unregister behavior.
 // ---------------------------------------------------------------------------

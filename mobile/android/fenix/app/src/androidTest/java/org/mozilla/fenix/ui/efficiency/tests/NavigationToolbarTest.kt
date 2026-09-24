@@ -20,9 +20,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
 class NavigationToolbarTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/987326
     @SmokeTest
     @Test

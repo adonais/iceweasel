@@ -11,10 +11,6 @@ const outerWrapperClass = Services.prefs.getBoolPref(
   : ".outer-wrapper";
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
     if (msg.isWarning || !msg.errorMessage) {
       // Ignore warnings and non-errors.

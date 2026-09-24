@@ -27,9 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import java.net.URLEncoder
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.selector.privateTabs
@@ -667,6 +665,9 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
     override fun onDestroyView() {
         super.onDestroyView()
 
+        tabsPopup?.dismiss()
+        tabsPopup = null
+
         requireContext().accessibilityManager.removeAccessibilityStateChangeListener(this)
         binding.engineView.setActivityContext(null)
 
@@ -686,7 +687,6 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
         promptFeature.withFeature { it.onActivityResult(requestCode, data, resultCode) }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun showCrashReporter(crash: Crash) {
         val fragmentManager = requireActivity().supportFragmentManager
 
@@ -702,7 +702,7 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
             if (sendCrashReport) {
                 val crashReporter = requireComponents.crashReporter
 
-                GlobalScope.launch(Dispatchers.IO) { crashReporter.submitReport(crash) }
+                requireComponents.applicationScope.launch(Dispatchers.IO) { crashReporter.submitReport(crash) }
             }
 
             requireComponents.sessionUseCases.crashRecovery.invoke()
@@ -967,23 +967,26 @@ class BrowserFragment : BaseFragment(), UserInteractionHandler, AccessibilityMan
     }
 
     private fun tabCounterListener() {
+        if (tabsPopup?.isShowing == true) {
+            return
+        }
+
         val openedTabs = requireComponents.store.state.tabs.size
-
-        tabsPopup =
-            TabsPopup(
-                    binding.browserToolbar,
-                    requireComponents,
-                )
-                .also { currentTabsPopup ->
-                    currentTabsPopup.showAsDropDown(
-                        binding.browserToolbar,
-                        0,
-                        0,
-                        Gravity.END,
-                    )
-                }
-
         TabCount.sessionButtonTapped.record(TabCount.SessionButtonTappedExtra(openedTabs))
+
+        // We use post to avoid an ANR in HardwareRenderer.nSetName which can happen
+        // if we show the popup while the window is in transition (e.g. keyboard hiding).
+        binding.browserToolbar.post {
+            val toolbar = _binding?.browserToolbar ?: return@post
+            if (!isAdded || isRemoving || tabsPopup?.isShowing == true) {
+                return@post
+            }
+
+            tabsPopup =
+                TabsPopup(toolbar, requireComponents).also {
+                    it.showAsDropDown(toolbar, 0, 0, Gravity.END)
+                }
+        }
     }
 
     private fun showFindInPageBar() {

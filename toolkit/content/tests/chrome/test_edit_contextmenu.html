@@ -109,6 +109,12 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
       synthesizeMouseAtCenter(element, {type: "contextmenu"}, win);
       ok(!win.document.getElementById("textbox-contextmenu"), "contextmenu with preventDefault() doesn't run");
 
+      let contextmenuEvent;
+      win.testContextmenuEvent = null;
+      win.document.addEventListener("contextmenu", e => {
+        contextmenuEvent = e;
+      }, { once: true });
+
       let popupshown = new Promise(r => win.addEventListener("popupshown", r, { once: true }));
       synthesizeMouseAtCenter(element, {type: "contextmenu"}, win);
       let contextmenu = win.document.getElementById("textbox-contextmenu");
@@ -134,11 +140,21 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1513343
       let addedItem = contextmenu.querySelector("#test-item");
       ok(addedItem, "added item is in the menu");
       is(addedItem.previousElementSibling.id, "edit-contextmenu-paste",
-         "added item sits after the item it asked for");
+         "added item sits after the item it asked for, ignoring its before");
       let matches = element.localName == "textarea";
       is(addedItem.hidden, !matches, "added item is only shown for a matching field");
       is(addedItem.getAttribute("data-shown-for"), matches ? "textarea" : null,
          "onShowing only ran for a matching field");
+
+      let beforeItem = contextmenu.querySelector("#test-item-before");
+      is(beforeItem, contextmenu.firstElementChild,
+         "item added with before sits above the standard items");
+      is(beforeItem.hidden, !matches,
+         "item added with before is only shown for a matching field");
+      if (matches) {
+        is(win.testContextmenuEvent, contextmenuEvent,
+           "onShowing got the contextmenu event");
+      }
 
       let popuphidden = new Promise(r => win.addEventListener("popuphidden", r, { once: true }));
       if (isPassword) {

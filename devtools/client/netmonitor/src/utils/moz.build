@@ -7,6 +7,7 @@ DIRS += [
 ]
 
 DevToolsModules(
+    "build-query.js",
     "context-menu-utils.js",
     "doc-utils.js",
     "filter-autocomplete-provider.js",

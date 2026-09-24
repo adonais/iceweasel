@@ -438,22 +438,37 @@ add_task(async function test_getMemoriesForResumeActivityConversationStarter() {
       expected: ["Public"],
     },
     {
-      name: "Frecency wins, then updated_at",
+      name: "Most recently created is returned first",
       memories: [
-        makeMemory("Older tie", {
-          frecency: 5,
-          updated_at: RESUME_ACTIVITY_TEST_TIME - 60 * 60_000,
+        makeMemory("In between", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 60 * 60_000,
         }),
-        makeMemory("Newer tie", {
-          frecency: 5,
-          updated_at: RESUME_ACTIVITY_TEST_TIME - 30 * 60_000,
+        makeMemory("Most recently created", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 30 * 60_000,
         }),
-        makeMemory("Higher frecency", {
-          frecency: 10,
-          updated_at: RESUME_ACTIVITY_TEST_TIME - 2 * 60 * 60_000,
+        makeMemory("Least recently created", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 2 * 60 * 60_000,
         }),
       ],
-      expected: ["Higher frecency", "Newer tie", "Older tie"],
+      expected: [
+        "Most recently created",
+        "In between",
+        "Least recently created",
+      ],
+    },
+    {
+      name: "Most recently merged is returned first in tiebreaker case",
+      memories: [
+        makeMemory("Most recently merged", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 60 * 60_000,
+          last_merged: RESUME_ACTIVITY_TEST_TIME,
+        }),
+        makeMemory("Least recently merged", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 60 * 60_000,
+          last_merged: RESUME_ACTIVITY_TEST_TIME - 30 * 60_000,
+        }),
+      ],
+      expected: ["Most recently merged", "Least recently merged"],
     },
     {
       name: "Conversation-only memories are excluded",
@@ -468,24 +483,23 @@ add_task(async function test_getMemoriesForResumeActivityConversationStarter() {
       expected: ["History"],
     },
     {
-      name: "SESSION and HISTORY memories with history lineage are included",
+      name: "A memory without history IDs is excluded",
       memories: [
-        makeMemory("History", { sources: [HISTORY], frecency: 1 }),
-        makeMemory("Session", { sources: [SESSION], frecency: 2 }),
+        makeMemory("Current"),
+        makeMemory("No history IDs", { pages: [] }),
       ],
-      expected: ["Session", "History"],
-    },
-    {
-      name: "A legacy HISTORY memory without history IDs is excluded",
-      memories: [makeMemory("Current"), makeMemory("Legacy", { pages: [] })],
       expected: ["Current"],
     },
     {
       name: "count truncates the sorted result",
       memories: [
-        makeMemory("First", { frecency: 3 }),
-        makeMemory("Second", { frecency: 2 }),
-        makeMemory("Third", { frecency: 1 }),
+        makeMemory("First", { created_at: RESUME_ACTIVITY_TEST_TIME }),
+        makeMemory("Second", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 1000 * 60 * 30,
+        }),
+        makeMemory("Third", {
+          created_at: RESUME_ACTIVITY_TEST_TIME - 1000 * 60 * 60,
+        }),
       ],
       count: 2,
       expected: ["First", "Second"],
@@ -515,7 +529,7 @@ add_task(async function test_generateResumeActivityConversationStarters() {
   const testMemories = [
     makeMemory("Memory A", {
       reasoning: "Reason A",
-      frecency: 10,
+      created_at: RESUME_ACTIVITY_TEST_TIME,
       pages: [
         makePage("Page A4 hash twin", {
           url: `${collidingUrl}-hash-twin`,
@@ -543,7 +557,7 @@ add_task(async function test_generateResumeActivityConversationStarters() {
     makeMemory("Memory B", {
       reasoning: "Reason B",
       sources: [HISTORY, CONVERSATION],
-      frecency: 8,
+      created_at: RESUME_ACTIVITY_TEST_TIME - 1000 * 60 * 10,
       pages: [
         makePage("Page B2", { url: "https://example.com/b2" }),
         makePage("Page B1", { url: "https://example.com/b1" }),
@@ -800,10 +814,12 @@ add_task(
       await PlacesUtils.history.remove(unresolvableUrl);
 
       Assert.deepEqual(
-        (await getMemoriesForResumeActivityConversationStarter(2)).map(
-          memory => memory.memory_summary
+        new Set(
+          (await getMemoriesForResumeActivityConversationStarter(2)).map(
+            memory => memory.memory_summary
+          )
         ),
-        ["Resolvable memory", "Unresolvable memory"],
+        new Set(["Resolvable memory", "Unresolvable memory"]),
         "The selector should return both memories, before URL resolution"
       );
 
@@ -1133,8 +1149,12 @@ add_task(
 
 add_task(async function test_resumeActivity_cacheExcludesDeletedMemories() {
   const testMemories = [
-    makeMemory("Deleted cache memory", { frecency: 11 }),
-    makeMemory("Current cache memory", { frecency: 10 }),
+    makeMemory("Deleted cache memory", {
+      created_at: RESUME_ACTIVITY_TEST_TIME,
+    }),
+    makeMemory("Current cache memory", {
+      created_at: RESUME_ACTIVITY_TEST_TIME - 1000,
+    }),
   ];
   let addedMemories = [];
 
@@ -1376,6 +1396,22 @@ add_task(async function test_constructConversationToResumeActivity() {
         conversation.securityProperties.untrustedInput,
         true,
         "untrustedInput should be set"
+      );
+
+      const originatingId = "originating-conversation-id";
+      const conversationWithId = await constructConversationToResumeActivity(
+        resumeActivitySuggestion,
+        originatingId
+      );
+      Assert.equal(
+        conversationWithId.id,
+        originatingId,
+        "Should reuse the id of the conversation the resume pill was clicked in"
+      );
+      Assert.notEqual(
+        conversation.id,
+        originatingId,
+        "Should generate a new id when no originating id is passed"
       );
     } finally {
       mockEngineManager.cleanupMocks();

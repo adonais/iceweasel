@@ -30,7 +30,8 @@ interface nsIProfileLock : nsISupports
     readonly attribute nsIFile localDirectory;
 
     /**
-     * The timestamp of an existing profile lock at lock time.
+     * The timestamp of an existing profile lock at lock time in milliseconds
+     * from midnight (00:00:00), January 1, 1970 Greenwich Mean Time (GMT).
      */
     readonly attribute PRTime replacedLockTime;
 

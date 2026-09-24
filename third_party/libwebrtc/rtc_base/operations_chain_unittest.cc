@@ -133,7 +133,8 @@ class OperationTrackerProxy {
     Event event;
     operations_chain_thread_->PostTask(
         [this, &event,
-         on_chain_empty_callback = std::move(on_chain_empty_callback)]() {
+         on_chain_empty_callback =
+             std::move(on_chain_empty_callback)]() mutable {
           operations_chain_->SetOnChainEmptyCallback(
               std::move(on_chain_empty_callback));
           event.Set();

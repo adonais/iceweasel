@@ -3,13 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import atexit
-import collections
 import itertools
 import json
 import math
 import os
 import re
-from collections import OrderedDict
 from ctypes import c_int
 
 from . import shared_telemetry_utils as utils
@@ -699,10 +697,10 @@ class Histogram:
         self._dataset = "nsITelemetry::" + datasets[value]
 
 
-# This hook function loads the histograms into an OrderedDict.
+# This hook function loads the histograms into a dict.
 # It will raise a ParserError if duplicate keys are found.
 def load_histograms_into_dict(ordered_pairs, strict_type_checks):
-    d = collections.OrderedDict()
+    d = {}
     for key, value in ordered_pairs:
         if strict_type_checks and key in d:
             ParserError(
@@ -751,7 +749,7 @@ def from_files(filenames, strict_type_checks=True):
     if strict_type_checks:
         load_allowlist()
 
-    all_histograms = OrderedDict()
+    all_histograms = {}
     for filename in filenames:
         parser = None
         for checkFn in FILENAME_PARSERS:
@@ -764,12 +762,12 @@ def from_files(filenames, strict_type_checks=True):
 
         histograms = parser(filename, strict_type_checks)
 
-        # OrderedDicts are important, because then the iteration order over
-        # the parsed histograms is stable, which makes the insertion into
-        # all_histograms stable, which makes ordering in generated files
-        # stable, which makes builds more deterministic.
-        if not isinstance(histograms, OrderedDict):
-            ParserError("Histogram parser did not provide an OrderedDict.").handle_now()
+        # We rely on dict being ordered (since Python 3.6) to ensure iterating
+        # over the parsed histograms is stable, which makes the insertion into
+        # all_histograms stable, which makes ordering in generated files stable,
+        # which makes builds more deterministic.
+        if not isinstance(histograms, dict):
+            ParserError("Histogram parser did not provide a dict.").handle_now()
 
         for name, definition in histograms.items():
             if name in all_histograms:

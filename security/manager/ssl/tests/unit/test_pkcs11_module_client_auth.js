@@ -7,10 +7,6 @@
 // Ensure that the appropriate initialization has happened.
 do_get_profile();
 
-const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
-  Ci.nsIX509CertDB
-);
-
 var gPrompt = {
   QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
@@ -57,22 +53,6 @@ add_task(async function run_test() {
     "network.dns.localDomains",
     "requireclientauth.example.com"
   );
-
-  // The test module currently has a slot that uses a protected authentication
-  // path (i.e., when Firefox wants to authenticate to it, it opens a dialog
-  // that says "okay, authenticate to your token by using an external keypad or
-  // something" and waits for that to happen). For some reason, if this
-  // authentication happens as a result of the socket thread looking for client
-  // auth certificates, it results in an assertion failure ("Assertion
-  // failure: mSleep == AWAKE") in profiler_thread_sleep(). This probably has
-  // something to do with the fact that the socket thread is synchronously
-  // waiting on the main thread, which is spinning a nested event loop (which
-  // tends to cause problems like this).
-  // Since this is an uncommon configuration and since this issue hasn't been
-  // reproduced outside of this test infrastructure, this works around it for
-  // the time being by authenticating to all tokens on the main thread so that
-  // the socket thread doesn't have to.
-  gCertDB.getCerts();
 
   await asyncStartTLSTestServer("BadCertAndPinningServer", "bad_certs");
   gClientAuthDialogService.certificateNameToUse = "CN=client cert rsa";

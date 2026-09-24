@@ -9,6 +9,7 @@
 #include "AudioSegment.h"
 #include "CrossGraphPort.h"
 #include "CubebDeviceEnumerator.h"
+#include "ErrorList.h"
 #include "ForwardedInputTrack.h"
 #include "ImageContainer.h"
 #include "MediaTrackGraphImpl.h"
@@ -17,6 +18,7 @@
 #include "mozilla/Logging.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsISerialEventTarget.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "prerror.h"
@@ -33,13 +35,16 @@
 #include "VideoFrameContainer.h"
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/TaskDispatcher.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkletThread.h"
+#include "mozilla/ipc/IOThread.h"
 #include "mozilla/media/MediaUtils.h"
 #include "transport/runnable_utils.h"
 #include "webaudio/blink/DenormalDisabler.h"
@@ -183,6 +188,9 @@ MediaTrackGraphImpl::~MediaTrackGraphImpl() {
   MOZ_ASSERT(mTracks.IsEmpty() && mSuspendedTracks.IsEmpty(),
              "All tracks should have been destroyed by messages from the main "
              "thread");
+  MOZ_ASSERT(
+      mDirectMessages.IsEmpty(),
+      "All direct tasks should have been drained in the final iteration");
   LOG(LogLevel::Debug, ("MediaTrackGraph {} destroyed", fmt::ptr(this)));
   LOG(LogLevel::Debug, ("MediaTrackGraphImpl::~MediaTrackGraphImpl"));
 }
@@ -1012,7 +1020,7 @@ void MediaTrackGraphImpl::DeviceChanged() {
   NS_DispatchBackgroundTask(NS_NewRunnableFunction(
       "MaxChannelCountUpdateOnBgThread", [self{std::move(self)}]() {
         uint32_t maxChannelCount = CubebUtils::MaxNumberOfChannels();
-        self->Dispatch(NS_NewRunnableFunction(
+        self->DispatchToMainThread(NS_NewRunnableFunction(
             "MaxChannelCountUpdateToMainThread",
             [self{self}, maxChannelCount]() {
               class MessageToGraph : public ControlMessage {
@@ -1249,16 +1257,9 @@ void MediaTrackGraphImpl::ProduceDataForTracksBlockByBlock(
 }
 
 void MediaTrackGraphImpl::RunMessageAfterProcessing(
-    UniquePtr<ControlMessageInterface> aMessage) {
+    already_AddRefed<nsIRunnable> aMessage) {
   MOZ_ASSERT(OnGraphThread());
-
-  if (mFrontMessageQueue.IsEmpty()) {
-    mFrontMessageQueue.AppendElement();
-  }
-
-  // Only one block is used for messages from the graph thread.
-  MOZ_ASSERT(mFrontMessageQueue.Length() == 1);
-  mFrontMessageQueue[0].mMessages.AppendElement(std::move(aMessage));
+  DispatchDirectTask(std::move(aMessage));
 }
 
 void MediaTrackGraphImpl::RunMessagesInQueue() {
@@ -1267,16 +1268,12 @@ void MediaTrackGraphImpl::RunMessagesInQueue() {
   // Calculate independent action times for each batch of messages (each
   // batch corresponding to an event loop task). This isolates the performance
   // of different scripts to some extent.
-  for (uint32_t i = 0; i < mFrontMessageQueue.Length(); ++i) {
-    nsTArray<UniquePtr<ControlMessageInterface>>& messages =
-        mFrontMessageQueue[i].mMessages;
-
-    for (uint32_t j = 0; j < messages.Length(); ++j) {
-      TRACE("ControlMessage::Run");
-      messages[j]->Run();
-    }
+  for (const auto& message : mFrontMessageQueue) {
+    LogRunnable::Run log(message);
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(message);
+    message->Run();
   }
-  mFrontMessageQueue.Clear();
+  mFrontMessageQueue.ClearAndRetainStorage();
 }
 
 void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
@@ -1586,6 +1583,40 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   TRACE_AUDIO_CALLBACK_FRAME_COUNT(
       "MTG graph advance", aStateTime - mStateComputedTime, mSampleRate);
 
+  class MOZ_RAII DispatchGuard {
+    NS_DECL_OWNINGTHREAD
+    MediaTrackGraphImpl* mGraph;
+    const SerialEventTargetGuard mGuard;
+    AbstractThread* mLastCurrentThread;
+    Maybe<AutoTaskDispatcher> mTaskDispatcher;
+
+   public:
+    explicit DispatchGuard(MediaTrackGraphImpl* aGraph)
+        : mGraph(aGraph),
+          mGuard(aGraph),
+          mLastCurrentThread(sCurrentThreadTLS.get()) {
+      MOZ_ASSERT(mGraph->OnGraphThread());
+      MOZ_ASSERT(mGraph->mTaskDispatcher.isNothing());
+
+      sCurrentThreadTLS.set(mGraph);
+      mTaskDispatcher.emplace(aGraph, aGraph->mTailDispatcherPolicy);
+      mGraph->mTaskDispatcher.emplace(*mTaskDispatcher);
+    }
+    ~DispatchGuard() {
+      NS_ASSERT_OWNINGTHREAD(DispatchGuard);
+      MOZ_ASSERT(mTaskDispatcher);
+      MOZ_ASSERT(mGraph->mTaskDispatcher.isSome());
+
+      // Destroy mTaskDispatcher, i.e. fire tail dispatcher, prior to clearing
+      // current-thread/target state.
+      mGraph->mTaskDispatcher = Nothing();
+      mTaskDispatcher.reset();
+      sCurrentThreadTLS.set(mLastCurrentThread);
+    }
+  };
+
+  Maybe<DispatchGuard> guard(std::in_place, this);
+
   if (SoftRealTimeLimitReached()) {
     TRACE("MTG::Demoting real-time thread!");
     DemoteThreadFromRealTime();
@@ -1632,11 +1663,24 @@ auto MediaTrackGraphImpl::OneIterationImpl(
 
   ProcessChunkMetadata(oldProcessedTime);
 
-  // Process graph messages queued from RunMessageAfterProcessing() on this
-  // thread during the iteration.
-  RunMessagesInQueue();
+  // Note that after draining, no more direct tasks may be added, as asserted by
+  // AutoTaskDispatcher.
+  DrainDirectTasks();
 
-  if (!UpdateMainThreadState()) {
+  bool stillProcessing = UpdateMainThreadState();
+  // The main thread state update runnable has been dispatched. Fire the tail
+  // dispatcher now.
+  // NOTE that ideally we'd fire the tail dispatcher at the end of the
+  // IterationResult callbacks below, but because of the OneIteration proxying
+  // through GraphRunner the callbacks will be called on a different physical
+  // thread. We could std::move() the DispatchGuard there, but this won't work
+  // since it interacts with TLS.
+  // This is normally not a problem -- SignalMainThreadCleanup just causes an
+  // extra main thread non-tail-dispatch after all audio has been processed. But
+  // it's something to be aware of in gtests that drive the graph manually from
+  // main thread.
+  guard.reset();
+  if (!stillProcessing) {
     if (Switching()) {
       // We'll never get to do this switch. Clear mNextDriver to break the
       // ref-cycle graph->nextDriver->currentDriver->graph.
@@ -1873,13 +1917,18 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       track->RemoveAllResourcesAndListenersImpl();
     }
 
-#ifdef DEBUG
+    TargetShutdownTaskSet::TasksArray shutdownTasks;
     {
       MonitorAutoLock lock(mGraph->mMonitor);
       MOZ_ASSERT(mGraph->mUpdateRunnables.IsEmpty());
+      shutdownTasks = mGraph->mShutdownTasks.Extract();
     }
-#endif
+
     mGraph->mPendingUpdateRunnables.Clear();
+
+    for (auto& shutdownTask : shutdownTasks) {
+      shutdownTask->TargetShutdown();
+    }
 
     mGraph->RemoveShutdownBlocker();
 
@@ -1895,7 +1944,8 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       // Some later AppendMessage will detect that the graph has
       // been emptied, and delete it.
       NS_ASSERTION(mGraph->mForceShutDownReceived, "Not in forced shutdown?");
-      mGraph->LifecycleStateRef() =
+      MonitorAutoLock lock(mGraph->mMonitor);
+      mGraph->mLifecycleState =
           MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION;
     }
     return NS_OK;
@@ -1949,11 +1999,10 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
   MOZ_ASSERT(NS_IsMainThread(), "Must be called on main thread");
 
   nsTArray<nsCOMPtr<nsIRunnable>> runnables;
-  // When we're doing a forced shutdown, pending control messages may be
-  // run on the main thread via RunDuringShutdown. Those messages must
+  // When we're doing a forced shutdown, pending runnables may be
+  // run on the main thread opt-in through OnDiscard. Those runnables must
   // run without the graph monitor being held. So, we collect them here.
-  nsTArray<UniquePtr<ControlMessageInterface>>
-      controlMessagesToRunDuringShutdown;
+  nsTArray<nsCOMPtr<nsIRunnable>> runnablesToRunDuringShutdown;
 
   {
     MonitorAutoLock lock(mMonitor);
@@ -1970,10 +2019,10 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
         "LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN",
         "LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION"};
 
-    if (LifecycleStateRef() != LIFECYCLE_RUNNING) {
+    if (LifecycleState() != LIFECYCLE_RUNNING) {
       LOG(LogLevel::Debug,
           ("{}: Running stable state callback. Current state: {}",
-           fmt::ptr(this), LifecycleState_str[LifecycleStateRef()]));
+           fmt::ptr(this), LifecycleState_str[LifecycleState()]));
     }
 
     runnables = std::move(mUpdateRunnables);
@@ -1987,36 +2036,30 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
 
     mMainThreadGraphTime = mNextMainThreadGraphTime;
 
-    if (mCurrentTaskMessageQueue.IsEmpty()) {
-      if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
-          IsEmpty()) {
-        // Complete shutdown. First, ensure that this graph is no longer used.
-        // A new graph graph will be created if one is needed.
-        // Asynchronously clean up old graph. We don't want to do this
-        // synchronously because it spins the event loop waiting for threads
-        // to shut down, and we don't want to do that in a stable state handler.
-        LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
-        LOG(LogLevel::Debug,
-            ("{}: Sending MediaTrackGraphShutDownRunnable", fmt::ptr(this)));
-        nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
-        mMainThread->Dispatch(event.forget());
-      }
-    } else {
-      if (LifecycleStateRef() <= LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
-        MessageBlock* block = mBackMessageQueue.AppendElement();
-        block->mMessages = std::move(mCurrentTaskMessageQueue);
-        EnsureNextIteration();
-      }
-
-      // If this MediaTrackGraph has entered regular (non-forced) shutdown it
-      // is not able to process any more messages. Those messages being added to
-      // the graph in the first place is an error.
-      MOZ_DIAGNOSTIC_ASSERT(LifecycleStateRef() <
-                                LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP ||
-                            mForceShutDownReceived);
+    if (LifecycleState() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
+        IsEmpty()) {
+      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
+      MOZ_ASSERT(mBackMessageQueue.IsEmpty());
+      // Complete shutdown. First, ensure that this graph is no longer used.
+      // A new graph graph will be created if one is needed.
+      // Asynchronously clean up old graph. We don't want to do this
+      // synchronously because it spins the event loop waiting for threads
+      // to shut down, and we don't want to do that in a stable state handler.
+      mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      LOG(LogLevel::Debug,
+          ("{}: Sending MediaTrackGraphShutDownRunnable", fmt::ptr(this)));
+      nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
+      mMainThread->Dispatch(event.forget());
     }
 
-    if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
+    // If this MediaTrackGraph has entered regular (non-forced) shutdown it
+    // is not able to process any more messages. Those messages being added to
+    // the graph in the first place is an error.
+    MOZ_DIAGNOSTIC_ASSERT(LifecycleState() <
+                              LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP ||
+                          mForceShutDownReceived || IsEmpty());
+
+    if (LifecycleState() == LIFECYCLE_THREAD_NOT_STARTED) {
       // Start the driver now. We couldn't start it earlier because the graph
       // might exit immediately on finding it has no tracks. The first message
       // for a new graph must create a track.
@@ -2026,7 +2069,7 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
           ("{}: Starting a graph with a {}", fmt::ptr(this),
            CurrentDriver()->AsAudioCallbackDriver() ? "AudioCallbackDriver"
                                                     : "SystemClockDriver"));
-      LifecycleStateRef() = LIFECYCLE_RUNNING;
+      mLifecycleState = LIFECYCLE_RUNNING;
       mGraphDriverRunning = true;
       RefPtr<GraphDriver> driver = CurrentDriver();
       driver->Start();
@@ -2038,24 +2081,38 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
                              true);  // always proxy
     }
 
-    if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
+    if (LifecycleState() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&
         mForceShutDownReceived) {
+      // The main thread is taking over the graph thread's messages. Messages
+      // queued after the tail dispatcher last fired, e.g. from a microtask,
+      // are still held by it, so hand them over too rather than leave them to
+      // a dispatcher that may not fire again before the graph is gone.
+      if (AbstractThread* current = AbstractThread::GetCurrent()) {
+        // Unlock here because TailDispatchMessage grabs the monitor. State
+        // mutated under the monitor above is mainly mUpdateRunnables and
+        // mTrackUpdates. But we've entered forced shutdown. The graph won't
+        // iterate again, and cannot mutate those members while we're unlocked.
+        MonitorAutoUnlock unlock(mMonitor);
+        MOZ_ALWAYS_SUCCEEDS(current->TailDispatchTasksFor(this));
+      }
+      // Lifecycle state does not change while the monitor is dropped, because
+      // the graph thread is not running and TailDispatchTasksFor() does not
+      // spin nested event loops.
+      MOZ_ASSERT(LifecycleState() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP);
+      MOZ_ASSERT(mForceShutDownReceived);
       // Defer calls to RunDuringShutdown() to happen while mMonitor is not
       // held.
-      for (uint32_t i = 0; i < mBackMessageQueue.Length(); ++i) {
-        MessageBlock& mb = mBackMessageQueue[i];
-        controlMessagesToRunDuringShutdown.AppendElements(
-            std::move(mb.mMessages));
+      for (auto& message : mBackMessageQueue) {
+        runnablesToRunDuringShutdown.AppendElement(std::move(message));
       }
       mBackMessageQueue.Clear();
-      MOZ_ASSERT(mCurrentTaskMessageQueue.IsEmpty());
       // Stop MediaTrackGraph threads.
-      LifecycleStateRef() = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      mLifecycleState = LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
       nsCOMPtr<nsIRunnable> event = new MediaTrackGraphShutDownRunnable(this);
       mMainThread->Dispatch(event.forget());
     }
 
-    mGraphDriverRunning = LifecycleStateRef() == LIFECYCLE_RUNNING;
+    mGraphDriverRunning = LifecycleState() == LIFECYCLE_RUNNING;
   }
 
   // Make sure we get a new current time in the next event loop task
@@ -2064,18 +2121,22 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
     mPostedRunInStableState = false;
   }
 
-  for (uint32_t i = 0; i < controlMessagesToRunDuringShutdown.Length(); ++i) {
-    controlMessagesToRunDuringShutdown[i]->RunDuringShutdown();
+  for (const auto& runnable : runnablesToRunDuringShutdown) {
+    nsCOMPtr<nsIDiscardableRunnable> discardable = do_QueryInterface(runnable);
+    if (discardable) {
+      discardable->OnDiscard();
+    }
   }
 
 #ifdef DEBUG
   mCanRunMessagesSynchronously =
       !mGraphDriverRunning &&
-      LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
+      LifecycleState() >= LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN;
 #endif
 
-  for (uint32_t i = 0; i < runnables.Length(); ++i) {
-    runnables[i]->Run();
+  for (const auto& runnable : runnables) {
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable);
+    runnable->Run();
   }
 }
 
@@ -2109,7 +2170,7 @@ void MediaTrackGraphImpl::SignalMainThreadCleanup() {
   MOZ_DIAGNOSTIC_ASSERT(mLifecycleState <= LIFECYCLE_RUNNING);
   LOG(LogLevel::Debug,
       ("{}: MediaTrackGraph waiting for main thread cleanup", fmt::ptr(this)));
-  LifecycleStateRef() =
+  mLifecycleState =
       MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP;
   EnsureStableStateEventPosted();
 }
@@ -2117,35 +2178,15 @@ void MediaTrackGraphImpl::SignalMainThreadCleanup() {
 void MediaTrackGraphImpl::AppendMessage(
     UniquePtr<ControlMessageInterface> aMessage) {
   MOZ_ASSERT(NS_IsMainThread(), "main thread only");
-  MOZ_DIAGNOSTIC_ASSERT(mMainThreadTrackCount > 0 || mMainThreadPortCount > 0);
+  MOZ_ASSERT(mMainThreadTrackCount > 0 || mMainThreadPortCount > 0);
 
-  if (!mGraphDriverRunning &&
-      LifecycleStateRef() > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
-    // The graph control loop is not running and main thread cleanup has
-    // happened. From now on we can't append messages to
-    // mCurrentTaskMessageQueue, because that will never be processed again, so
-    // just RunDuringShutdown this message. This should only happen during
-    // forced shutdown, or after a non-realtime graph has finished processing.
-#ifdef DEBUG
-    MOZ_ASSERT(mCanRunMessagesSynchronously);
-    mCanRunMessagesSynchronously = false;
-#endif
-    aMessage->RunDuringShutdown();
-#ifdef DEBUG
-    mCanRunMessagesSynchronously = true;
-#endif
-    if (IsEmpty() &&
-        LifecycleStateRef() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
-      Destroy();
-    }
-    return;
-  }
-
-  mCurrentTaskMessageQueue.AppendElement(std::move(aMessage));
-  EnsureRunInStableState();
+  MOZ_ALWAYS_SUCCEEDS(QueueMessageForTailDispatch(
+      MakeAndAddRef<ControlMessageWrapper>(std::move(aMessage))));
 }
 
-void MediaTrackGraphImpl::Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
+void MediaTrackGraphImpl::DispatchToMainThread(
+    already_AddRefed<nsIRunnable> aRunnable) {
+  MOZ_ASSERT(RequiresTailDispatch(mMainThread));
   mMainThread->Dispatch(std::move(aRunnable));
 }
 
@@ -2480,7 +2521,7 @@ void MediaTrackGraphImpl::IncrementOutputDeviceRefCnt(
                 /*aShouldResistFingerprinting*/ false));
   MediaTrackGraph* newGraph = MediaTrackGraphImpl::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER, mWindowID, sampleRate, aDeviceID,
-      GetMainThreadSerialEventTarget());
+      AbstractThread::MainThread());
   // CreateCrossGraphReceiver wants the sample rate of this graph.
   RefPtr receiver = newGraph->CreateCrossGraphReceiver(mSampleRate);
   receiver->AddAudioOutput(nullptr, aDeviceID, sampleRate);
@@ -2647,7 +2688,7 @@ void MediaTrack::RunAfterPendingUpdates(
           // assume that there are no remaining
           // controlMessagesToRunDuringShutdown.
           MOZ_ASSERT(NS_IsMainThread());
-          GraphImpl()->Dispatch(runnable.forget());
+          GraphImpl()->DispatchToMainThread(runnable.forget());
         }
       });
 }
@@ -2711,7 +2752,7 @@ void MediaTrack::AddMainThreadListener(
   };
 
   nsCOMPtr<nsIRunnable> runnable = new NotifyRunnable(this);
-  GraphImpl()->Dispatch(runnable.forget());
+  GraphImpl()->DispatchToMainThread(runnable.forget());
 }
 
 void MediaTrack::AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
@@ -2760,7 +2801,7 @@ void MediaTrack::QueueMessage(UniquePtr<ControlMessageInterface> aMessage) {
 }
 
 void MediaTrack::RunMessageAfterProcessing(
-    UniquePtr<ControlMessageInterface> aMessage) {
+    already_AddRefed<nsIRunnable> aMessage) {
   AssertOnGraphThread();
   GraphImpl()->RunMessageAfterProcessing(std::move(aMessage));
 }
@@ -3380,8 +3421,9 @@ void ProcessedMediaTrack::DestroyImpl() {
 MediaTrackGraphImpl::MediaTrackGraphImpl(uint64_t aWindowID,
                                          TrackRate aSampleRate,
                                          AudioDeviceID aPrimaryOutputDeviceID,
-                                         nsISerialEventTarget* aMainThread)
+                                         AbstractThread* aMainThread)
     : MediaTrackGraph(aSampleRate, aPrimaryOutputDeviceID),
+      AbstractThread(TailDispatchPolicy::TargetAtomicity),
       mWindowID(aWindowID),
       mFirstCycleBreaker(0)
       // An offline graph is not initially processing.
@@ -3517,7 +3559,7 @@ MediaTrackGraph* MediaTrackGraph::GetInstanceIfExists(
 MediaTrackGraphImpl* MediaTrackGraphImpl::GetInstance(
     GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
     TrackRate aSampleRate, AudioDeviceID aPrimaryOutputDeviceID,
-    nsISerialEventTarget* aMainThread) {
+    AbstractThread* aMainThread) {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
   MOZ_ASSERT(aSampleRate > 0);
   MOZ_ASSERT(aGraphDriverRequested != OFFLINE_THREAD_DRIVER,
@@ -3560,18 +3602,17 @@ MediaTrackGraph* MediaTrackGraph::GetInstance(
                             RFPTarget::AudioSampleRate));
   return MediaTrackGraphImpl::GetInstance(
       aGraphDriverRequested, aWindow->WindowID(), sampleRate,
-      aPrimaryOutputDeviceID, GetMainThreadSerialEventTarget());
+      aPrimaryOutputDeviceID, AbstractThread::MainThread());
 }
 
 MediaTrackGraph* MediaTrackGraphImpl::CreateNonRealtimeInstance(
     TrackRate aSampleRate) {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
 
-  nsISerialEventTarget* mainThread = GetMainThreadSerialEventTarget();
   // Offline graphs have 0 output channel count: they write the output to a
   // buffer, not an audio output track.
   MediaTrackGraphImpl* graph = new MediaTrackGraphImpl(
-      0, aSampleRate, DEFAULT_OUTPUT_DEVICE, mainThread);
+      0, aSampleRate, DEFAULT_OUTPUT_DEVICE, AbstractThread::MainThread());
   graph->Init(OFFLINE_THREAD_DRIVER, DIRECT_DRIVER, 0);
 
   LOG(LogLevel::Debug,
@@ -3593,7 +3634,8 @@ void MediaTrackGraph::ForceShutDown() {
   graph->ForceShutDown();
 }
 
-NS_IMPL_ISUPPORTS(MediaTrackGraphImpl, nsIMemoryReporter, nsIObserver,
+NS_IMPL_ISUPPORTS(MediaTrackGraphImpl, nsISerialEventTarget, nsIEventTarget,
+                  nsIDirectTaskDispatcher, nsIMemoryReporter, nsIObserver,
                   nsIThreadObserver, nsITimerCallback, nsINamed)
 
 NS_IMETHODIMP
@@ -3868,7 +3910,7 @@ void MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted(
             CurrentDriver()->ThreadRunning() &&
             !CurrentDriver()->AsAudioCallbackDriver()->OnFallback()) {
           // Avoid Resolve's locking on the graph thread by doing it on main.
-          Dispatch(NS_NewRunnableFunction(
+          DispatchToMainThread(NS_NewRunnableFunction(
               "MediaTrackGraphImpl::NotifyWhenPrimaryDeviceStarted::Resolver",
               [holder = std::move(holder)]() mutable {
                 holder.Resolve(true, __func__);
@@ -3995,7 +4037,7 @@ void MediaTrackGraphImpl::PendingResumeOperation::Apply(
 void MediaTrackGraphImpl::PendingResumeOperation::Abort() {
   // The graph is shutting down before the operation completed.
   MOZ_ASSERT(!mDestinationTrack->GraphImpl() ||
-             mDestinationTrack->GraphImpl()->LifecycleStateRef() ==
+             mDestinationTrack->GraphImpl()->LifecycleState() ==
                  MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN);
   mHolder.Reject(false, __func__);
 }
@@ -4350,9 +4392,11 @@ MediaTrackGraphImpl::OnDispatchedEvent() {
   MonitorAutoLock lock(mMonitor);
   GraphDriver* driver = CurrentDriver();
   if (!driver) {
-    // The ipc::BackgroundChild started by `UniqueMessagePortId()` destruction
-    // can queue messages on the thread used for the graph after graph
-    // shutdown.  See bug 1955768.
+    // After the graph thread enters shutdown mode, the main thread triggers
+    // shutdown of the ThreadedDriver and then sets the current driver to null.
+    // GraphRunner shutdown is currently synchronous, but OfflineAudioContext is
+    // asynchronous so there is a possibility of events queued on its thread
+    // while driver is null.
     //
     // Other threads may have already taken a reference to this graph as the
     // observer, so clearing the thread's observer (on the graph thread) would
@@ -4372,6 +4416,247 @@ MediaTrackGraphImpl::OnProcessNextEvent(nsIThreadInternal*, bool) {
 NS_IMETHODIMP
 MediaTrackGraphImpl::AfterProcessNextEvent(nsIThreadInternal*, bool) {
   return NS_OK;
+}
+
+// nsIDirectTaskDispatcher methods
+
+NS_IMETHODIMP
+MediaTrackGraphImpl::DispatchDirectTask(already_AddRefed<nsIRunnable> aTask) {
+  MOZ_ASSERT(OnGraphThread());
+  nsCOMPtr task = aTask;
+  PROFILER_MARKER("MediaTrackGraphImpl::DispatchDirectTask", OTHER,
+                  {MarkerStack::Capture()}, FlowMarker,
+                  Flow::FromPointer(task.get()));
+  mDirectMessages.AppendElement(task.forget());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+MediaTrackGraphImpl::DrainDirectTasks() {
+  MOZ_ASSERT(OnGraphThread());
+  // Run all tasks in mDirectMessages. This continues even if one direct task
+  // adds another.
+  for (size_t i = 0; i < mDirectMessages.Length(); ++i) {
+    nsCOMPtr<nsIRunnable> message = std::move(mDirectMessages[i]);
+    AUTO_PROFILE_FOLLOWING_RUNNABLE(message);
+    message->Run();
+  }
+  mDirectMessages.ClearAndRetainStorage();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+MediaTrackGraphImpl::HaveDirectTasks(bool* aResult) {
+  if (!OnGraphThread()) {
+    return NS_ERROR_FAILURE;
+  }
+  *aResult = !mDirectMessages.IsEmpty();
+  return NS_OK;
+}
+
+// AbstractThread methods
+
+/* Whether the caller is running on the IPC I/O thread, which dispatches to the
+ * graph on behalf of ipc::MessageChannels opened on the graph thread. */
+[[maybe_unused]] static bool OnIPCIOThread() {
+  ipc::IOThread* ioThread = ipc::IOThread::Get();
+  return ioThread &&
+         ioThread->GetEventTarget() == GetCurrentSerialEventTarget();
+}
+
+nsresult MediaTrackGraphImpl::Dispatch(
+    already_AddRefed<nsIRunnable> aEvent,
+    DispatchReason aReason /*= NormalDispatch*/) {
+  nsCOMPtr<nsIRunnable> event(aEvent);
+  if (!nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event))) {
+    class DefaultShutdownRunnableWrapper : public DiscardableRunnable {
+      nsCOMPtr<nsIRunnable> mEvent;
+
+     public:
+      explicit DefaultShutdownRunnableWrapper(
+          already_AddRefed<nsIRunnable> aEvent)
+          : DiscardableRunnable(
+                "MediaTrackGraphImpl::DefaultShutdownRunnableWrapper"),
+            mEvent(aEvent) {}
+
+      NS_IMETHODIMP Run() override {
+        AUTO_PROFILE_FOLLOWING_RUNNABLE(mEvent);
+        return mEvent->Run();
+      }
+
+      void OnDiscard() override { Run(); }
+    };
+    event = MakeAndAddRef<DefaultShutdownRunnableWrapper>(event.forget());
+  }
+
+  // Enforce tail-dispatch. The IOThread is exempt as it dispatches messages to
+  // AudioWorklet from JS.
+  MOZ_ASSERT_IF(!OnIPCIOThread(), RequiresTailDispatchFromCurrentThread());
+
+  if (aReason == TailDispatch || !RequiresTailDispatchFromCurrentThread()) {
+    return TailDispatchMessage(event.forget());
+  }
+  return QueueMessageForTailDispatch(event.forget());
+}
+
+bool MediaTrackGraphImpl::IsCurrentThreadIn() const {
+  // While the graph is not running, its state is owned by the main thread.
+  // Note that this must not use mDriver unconditionally, as OnGraphThread()
+  // does: mDriver is cleared on the main thread while consumers of the graph
+  // as an event target, e.g. an ipc::MessageChannel opened on the graph
+  // thread, may still be tearing down.
+  return OnGraphThreadOrNotRunning();
+}
+
+TaskDispatcher& MediaTrackGraphImpl::TailDispatcher() {
+  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(mTaskDispatcher);
+  return *mTaskDispatcher;
+}
+
+NS_IMETHODIMP MediaTrackGraphImpl::RegisterShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  MonitorAutoLock lock(mMonitor);
+  return mShutdownTasks.AddTask(aTask);
+}
+
+NS_IMETHODIMP MediaTrackGraphImpl::UnregisterShutdownTask(
+    nsITargetShutdownTask* aTask) {
+  MonitorAutoLock lock(mMonitor);
+  return mShutdownTasks.RemoveTask(aTask);
+}
+
+nsIEventTarget::FeatureFlags MediaTrackGraphImpl::GetFeatures() {
+  return SUPPORTS_SHUTDOWN_TASKS;
+}
+
+nsresult MediaTrackGraphImpl::TailDispatchMessage(
+    already_AddRefed<nsIRunnable> aEvent) {
+  nsCOMPtr event = aEvent;
+  MOZ_ASSERT(
+      nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event)),
+      "Events dispatched to the graph must be discardable as discard "
+      "controls whether the runnable can run during shutdown. Whether or not "
+      "to run during shutdown should be a conscious decision by most "
+      "callers.");
+
+  LOG(LogLevel::Verbose, ("MediaTrackGraph {} moving tail-dispatched group "
+                          "to back message queue",
+                          fmt::ptr(this)));
+
+  if (NS_IsMainThread()) {
+    // The stable state runnable starts the graph thread when adding the first
+    // ControlMessage, which is supposed to add a track, which must happen on
+    // main thread.
+    EnsureRunInStableState();
+  }
+
+  MonitorAutoLock lock(mMonitor);
+  if (!NS_IsMainThread()) {
+    // The IPC I/O thread is exempt. An ipc::MessageChannel opened on the graph
+    // thread holds a strong reference to the graph as its worker thread, so
+    // the graph outlives these dispatches. The channel is closed when the
+    // graph shuts down, which is necessarily after the main-thread track and
+    // port counts have reached zero. Its runnables are cancelable, so they are
+    // discarded below once the graph no longer processes messages.
+    MOZ_DIAGNOSTIC_ASSERT(
+        mMainThreadTrackCount > 0 || mMainThreadPortCount > 0 ||
+            OnIPCIOThread(),
+        "Clients must guarantee that any non-main thread tail dispatches to "
+        "the graph are outlived by a main-thread controlled track or port");
+  }
+
+  if (!mGraphDriverRunning &&
+      mLifecycleState > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+    MOZ_ASSERT(!NS_IsMainThread(),
+               "Main thread may not dispatch after removing the last track");
+    // Once main-thread has control of the graph, run events from non-main
+    // threads on the main thread. This guarantees consistent event ordering
+    // with events dispatched before shutdown that didn't run until in shutdown,
+    // in the stable state runnable.
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "MediaTrackGraphImpl::NonMainThreadDispatch",
+        [this, self = RefPtr(this), event = std::move(event)] {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+          const size_t trackCount = mMainThreadTrackCount;
+          const size_t portCount = mMainThreadPortCount;
+#endif
+#ifdef DEBUG
+          MOZ_ASSERT(mCanRunMessagesSynchronously);
+          mCanRunMessagesSynchronously = false;
+#endif
+          if (nsCOMPtr<nsIDiscardableRunnable> discardable =
+                  do_QueryInterface(event)) {
+            discardable->OnDiscard();
+          }
+#ifdef DEBUG
+          mCanRunMessagesSynchronously = true;
+#endif
+          MOZ_DIAGNOSTIC_ASSERT(trackCount == mMainThreadTrackCount);
+          MOZ_DIAGNOSTIC_ASSERT(portCount == mMainThreadPortCount);
+          if (IsEmpty() &&
+              LifecycleState() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
+            Destroy();
+          }
+        }));
+    return NS_OK;
+  }
+
+  mBackMessageQueue.EmplaceBack(std::move(event));
+  EnsureNextIteration();
+  return NS_OK;
+}
+
+nsresult MediaTrackGraphImpl::QueueMessageForTailDispatch(
+    already_AddRefed<nsIRunnable> aEvent) {
+  nsCOMPtr event = aEvent;
+  MOZ_ASSERT(
+      nsCOMPtr<nsIDiscardableRunnable>(do_QueryInterface(event)),
+      "Events dispatched to the graph must be discardable as discard "
+      "controls whether the runnable can run during shutdown. Whether or not "
+      "to run during shutdown should be a conscious decision by most callers.");
+  MOZ_DIAGNOSTIC_ASSERT(
+      mMainThreadTrackCount > 0 || mMainThreadPortCount > 0,
+      "Clients must guarantee that any dispatches to the graph are "
+      "outlived by a main-thread controlled track or port");
+
+  if (NS_IsMainThread()) {
+    // Run messages synchronously here as opposed to async on main thread in
+    // TailDispatchMessage, because the main thread event queue will not be
+    // available late in shutdown when objects may still be releasing tracks.
+    if (!mGraphDriverRunning &&
+        LifecycleState() > LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
+      // The graph control loop is not running and main thread cleanup has
+      // happened. From now on we can't tail dispatch to the graph, because
+      // messages will never be processed again, so just RunDuringShutdown this
+      // message. This should only happen during forced shutdown, or after a
+      // non-realtime graph has finished processing.
+#ifdef DEBUG
+      MOZ_ASSERT(mCanRunMessagesSynchronously);
+      mCanRunMessagesSynchronously = false;
+#endif
+      if (nsCOMPtr<nsIDiscardableRunnable> discardable =
+              do_QueryInterface(event)) {
+        discardable->OnDiscard();
+      }
+#ifdef DEBUG
+      mCanRunMessagesSynchronously = true;
+#endif
+      if (IsEmpty() &&
+          LifecycleState() >= LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION) {
+        Destroy();
+      }
+      return NS_OK;
+    }
+    if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownNetTeardown)) {
+      // Tail dispatcher may not be available on main thread once shutdown has
+      // started, since shutdown is handled off the event loop.
+      MOZ_ASSERT(!AbstractThread::GetCurrent()->HasTailTasksFor(this));
+      return TailDispatchMessage(event.forget());
+    }
+  }
+  return AbstractThread::GetCurrent()->TailDispatcher().AddTask(this,
+                                                                event.forget());
 }
 }  // namespace mozilla
 

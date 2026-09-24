@@ -46,9 +46,7 @@
     "background": {
       "color": {
         "@base": {
-          "value": {
-            "default": "{background.color.canvas}"
-          }
+          "value": "{background.color.canvas}"
         },
         "alternate": {
           "comment": "TODO Bug 1821203 - Gray use needs to be consolidated",
@@ -61,6 +59,15 @@
             "platform": {
               "light": "rgba(0, 0, 0, 0.05)",
               "dark": "rgba(255, 255, 255, 0.05)"
+            },
+            "nova": {
+              "comment": "Maintain the brand/platform split",
+              "value": {
+                "brand": {
+                  "light": "{color.gray.20}",
+                  "dark": "{color.gray.65}"
+                }
+              }
             }
           }
         }

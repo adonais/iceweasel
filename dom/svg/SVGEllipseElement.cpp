@@ -40,9 +40,10 @@ SVGEllipseElement::SVGEllipseElement(
     already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGEllipseElementBase(std::move(aNodeInfo)) {}
 
-bool SVGEllipseElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool SVGEllipseElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   return IsInLengthInfo(aAttribute, sLengthInfo) ||
-         SVGEllipseElementBase::IsAttributeMapped(aAttribute);
+         SVGEllipseElementBase::IsNoNamespaceAttrMapped(aAttribute);
 }
 
 namespace SVGT = SVGGeometryProperty::Tags;

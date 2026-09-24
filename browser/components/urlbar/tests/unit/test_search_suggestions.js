@@ -15,7 +15,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const SUGGEST_PREF = "browser.urlbar.suggest.searches";
 const SUGGEST_ENABLED_PREF = "browser.search.suggest.enabled";
 const PRIVATE_ENABLED_PREF = "browser.search.suggest.enabled.private";
-const PRIVATE_SEARCH_PREF = "browser.search.separatePrivateDefault.ui.enabled";
+const PRIVATE_SEARCH_PREF = "browser.search.separatePrivateDefault.featureGate";
 const TAB_TO_SEARCH_PREF = "browser.urlbar.suggest.engines";
 const TRENDING_PREF = "browser.urlbar.trending.featureGate";
 const QUICKACTIONS_PREF = "browser.urlbar.suggest.quickactions";

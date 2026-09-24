@@ -63,6 +63,13 @@ const WIDGET_EXTRA_FEATURES = {
 // Devtools-only copy, so not localized. A variant with no entry falls back to its
 // raw pref value and renders no description.
 const PAGE_LAYOUTS_INFO = {
+  // @experiment(remove) { bug 2066527 }
+  [PAGE_LAYOUT_VARIANTS.AUTO_MINIMIZE_WIDGETS]: {
+    label: "Auto-minimize Widgets",
+    description:
+      "Nova, but the widgets section collapses to just its title a few " +
+      "seconds after load.",
+  },
   [PAGE_LAYOUT_VARIANTS.NOVA_FULL_WIDTH]: {
     label: "Nova",
     description:
@@ -104,6 +111,11 @@ const PAGE_LAYOUTS_INFO = {
     description: "Same as above, with the segmented control above the content.",
   },
 };
+
+// Falls back to the raw pref value for a variant with no PAGE_LAYOUTS_INFO entry.
+function variantLabel(variant) {
+  return PAGE_LAYOUTS_INFO[variant]?.label ?? variant;
+}
 
 const Row = props => (
   <tr className="message-item" {...props}>
@@ -586,30 +598,36 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     return (
       <>
         <div className="layout-variants">
-          {Object.values(PAGE_LAYOUT_VARIANTS).map(variant => (
-            <label key={variant} className="layout-variant">
-              <input
-                type="radio"
-                name="page-layout-variant"
-                value={variant}
-                checked={prefVariant === variant}
-                onChange={this.handlePageLayoutChange}
-              />
-              <span className="layout-variant-text">
-                <span className="layout-variant-name">
-                  {PAGE_LAYOUTS_INFO[variant]?.label ?? variant}
-                  {variant === DEFAULT_PAGE_LAYOUT_VARIANT ? " (default)" : ""}
-                  {/* The pref value, for a Nimbus recipe or about:config. */}
-                  <code className="layout-variant-value">{variant}</code>
-                </span>
-                {PAGE_LAYOUTS_INFO[variant]?.description && (
-                  <span className="layout-variant-description">
-                    {PAGE_LAYOUTS_INFO[variant].description}
+          {Object.values(PAGE_LAYOUT_VARIANTS)
+            // By pref value, not label: locale collation orders the
+            // parenthesised labels' punctuation unintuitively.
+            .sort((a, b) => a.localeCompare(b))
+            .map(variant => (
+              <label key={variant} className="layout-variant">
+                <input
+                  type="radio"
+                  name="page-layout-variant"
+                  value={variant}
+                  checked={prefVariant === variant}
+                  onChange={this.handlePageLayoutChange}
+                />
+                <span className="layout-variant-text">
+                  <span className="layout-variant-name">
+                    {variantLabel(variant)}
+                    {variant === DEFAULT_PAGE_LAYOUT_VARIANT
+                      ? " (default)"
+                      : ""}
+                    {/* The pref value, for a Nimbus recipe or about:config. */}
+                    <code className="layout-variant-value">{variant}</code>
                   </span>
-                )}
-              </span>
-            </label>
-          ))}
+                  {PAGE_LAYOUTS_INFO[variant]?.description && (
+                    <span className="layout-variant-description">
+                      {PAGE_LAYOUTS_INFO[variant].description}
+                    </span>
+                  )}
+                </span>
+              </label>
+            ))}
         </div>
         <moz-button
           disabled={prefVariant === DEFAULT_PAGE_LAYOUT_VARIANT ? true : null}

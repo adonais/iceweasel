@@ -1361,6 +1361,11 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
 
   JSStringBuilder sb(cx);
 
+  // The parser only accepts two byte strings.
+  if (!sb.ensureTwoByteChars()) {
+    return false;
+  }
+
   if (isAsync) {
     if (!sb.append("async ")) {
       return false;
@@ -1492,11 +1497,6 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
 
   if (!sb.append(FunctionConstructorFinalBrace.data(),
                  FunctionConstructorFinalBrace.length())) {
-    return false;
-  }
-
-  // The parser only accepts two byte strings.
-  if (!sb.ensureTwoByteChars()) {
     return false;
   }
 

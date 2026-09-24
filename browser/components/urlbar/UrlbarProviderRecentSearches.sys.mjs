@@ -69,6 +69,11 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     return 1;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
 

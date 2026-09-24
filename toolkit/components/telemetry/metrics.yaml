@@ -1325,6 +1325,8 @@ third.party.modules:
         xulLoadDurationMS: number of milliseconds it took to load xul.dll,
         sanitizationFailures: number of dropped events due to failures in path sanitization,
         trustTestFailures: number of dropped events due to failures computing trust levels,
+        unverifiableLoads: number of module loads in child processes where the DLL blocklist hook reached the load but failed to duplicate the section handle,
+        rejectedSections: number of module section handles a child process sent that the parent refused as invalid module section handles,
         events: [{ // Array of module load events for this process. The entries of this array are ordered to be in sync with the combinedStacks.stacks array (see below).
           processUptimeMS: number of milliseconds between process creation and when this event was generated,
           loadDurationMS: number of milliseconds of time spent loading this module,
@@ -1354,6 +1356,7 @@ third.party.modules:
       ```
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1963853
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2057112
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1963853
     data_sensitivity:
@@ -1379,6 +1382,10 @@ third.party.modules:
           sanitizationFailures:
             type: number
           trustTestFailures:
+            type: number
+          unverifiableLoads:
+            type: number
+          rejectedSections:
             type: number
           events:
             type: array

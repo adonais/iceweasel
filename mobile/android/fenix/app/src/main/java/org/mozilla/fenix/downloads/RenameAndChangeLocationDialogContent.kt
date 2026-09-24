@@ -40,6 +40,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import java.io.File
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.downloads.R as downloadsR
 import mozilla.components.support.utils.ext.withExtension
 import mozilla.components.ui.icons.R as iconsR
@@ -47,8 +49,6 @@ import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.downloads.listscreen.DownloadRenameDialogTextField
 import org.mozilla.fenix.downloads.listscreen.store.RenameFileError
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 /**
  * Composable content for the rename and change location dialog.

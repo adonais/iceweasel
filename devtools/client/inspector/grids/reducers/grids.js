@@ -25,7 +25,7 @@ const reducers = {
     return newGrids;
   },
 
-  [UPDATE_GRID_HIGHLIGHTED](grids, { nodeFront, highlighted }) {
+  [UPDATE_GRID_HIGHLIGHTED](grids, { nodeFront, highlighted, gridFragments }) {
     const maxHighlighters = Services.prefs.getIntPref(
       "devtools.gridinspector.maxHighlighters"
     );
@@ -47,8 +47,10 @@ const reducers = {
         // When there is only one grid highlighter available, only the given grid
         // container nodeFront can be highlighted, and all the other grid containers
         // are unhighlighted.
+        const isUpdatedGrid = g.nodeFront === nodeFront;
         return Object.assign({}, g, {
-          highlighted: g.nodeFront === nodeFront && highlighted,
+          highlighted: isUpdatedGrid && highlighted,
+          gridFragments: isUpdatedGrid ? gridFragments : [],
         });
       } else if (
         numHighlighted === maxHighlighters &&
@@ -63,6 +65,7 @@ const reducers = {
         // This is the provided grid nodeFront to highlight/unhighlight.
         return Object.assign({}, g, {
           disabled: false,
+          gridFragments,
           highlighted,
         });
       }

@@ -10,9 +10,7 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-const defaultBranch = Services.prefs.getDefaultBranch(
-  SearchUtils.BROWSER_SEARCH_PREF
-);
+const defaultBranch = Services.prefs.getDefaultBranch("browser.search.");
 const baseURL = "https://example.com/search?";
 
 const CONFIG = [
@@ -54,10 +52,7 @@ add_task(async function test_pref_initial_value() {
   // on nightly builds. For non-nightly builds, check that modifying on the
   // normal branch doesn't work.
   if (!AppConstants.NIGHTLY_BUILD) {
-    Services.prefs.setCharPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "param.code",
-      "bad"
-    );
+    Services.prefs.setCharPref("browser.search.param.code", "bad");
   }
 
   await SearchService.init();
@@ -78,7 +73,7 @@ add_task(async function test_pref_initial_value() {
   // branch. Normally, this won't be an issue, since we don't expect users
   // to be playing with these prefs, and worst-case, they'll just get the
   // actual change on restart.
-  Services.prefs.clearUserPref(SearchUtils.BROWSER_SEARCH_PREF + "param.code");
+  Services.prefs.clearUserPref("browser.search.param.code");
 });
 
 add_task(async function test_pref_updated() {

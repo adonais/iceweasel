@@ -34,6 +34,7 @@ class MediaPipelineFilter;
 class MediaTransportHandler;
 class RTCStatsIdGenerator;
 class WebrtcCallWrapper;
+class JsepTrack;
 class JsepTrackNegotiatedDetails;
 class PeerConnectionImpl;
 enum class PrincipalPrivacy : uint8_t;
@@ -171,6 +172,17 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
   static void NegotiatedDetailsToVideoCodecConfigs(
       const JsepTrackNegotiatedDetails& aDetails,
       std::vector<VideoCodecConfig>* aConfigs);
+
+  // Like NegotiatedDetailsTo{Audio,Video}CodecConfigs, but works from a
+  // recv JsepTrack's frozen snapshot of what it last offered (not yet
+  // negotiated), taken in JsepTrack::AddToOffer(). Used for early media,
+  // where we want to start receiving based on what we offered, before an
+  // answer exists.
+  static void EarlyRecvCodecsToAudioCodecConfigs(
+      JsepTrack& aTrack, std::vector<AudioCodecConfig>* aConfigs);
+
+  static void EarlyRecvCodecsToVideoCodecConfigs(
+      JsepTrack& aTrack, std::vector<VideoCodecConfig>* aConfigs);
 
   static void ToDomRtpCodec(const JsepCodecDescription& aCodec,
                             RTCRtpCodec* aDomCodec);

@@ -122,6 +122,8 @@ class SharedResourceWrapper {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return nullptr;
   }
+
+  void ClearTextureHost();
 };
 
 class RemoteTextureRecycleBin final {

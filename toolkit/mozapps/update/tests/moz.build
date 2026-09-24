@@ -27,12 +27,10 @@ if CONFIG["MOZ_MAINTENANCE_SERVICE"]:
 if CONFIG["MOZ_BUILD_APP"] == "browser" and CONFIG["MOZ_UPDATE_AGENT"]:
     XPCSHELL_TESTS_MANIFESTS += ["unit_background_update/xpcshell.toml"]
 
-SimplePrograms(
-    [
-        "TestAUSHelper",
-        "TestAUSReadStrings",
-    ]
-)
+SimplePrograms([
+    "TestAUSHelper",
+    "TestAUSReadStrings",
+])
 
 if CONFIG["OS_ARCH"] == "WINNT":
     SimplePrograms(["test_file_change_mtime", "test_file_hold_open"])

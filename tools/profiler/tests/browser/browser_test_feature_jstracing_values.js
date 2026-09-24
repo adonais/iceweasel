@@ -210,6 +210,31 @@ add_task(async function test_profile_feature_jstracing() {
         Assert.equal(shape.length, 1);
         Assert.equal(shape[0], "HTMLDivElement");
       });
+
+      // The object has 20 properties, but at most MAX_COLLECTION_VALUES
+      // property keys are recorded in the shape.
+      testSingleArgument(2, reader => {
+        Assert.equal(reader.readUint8(), JSVAL_TYPE_OBJECT);
+        Assert.equal(reader.readUint8(), OBJECT_KIND_GENERIC_OBJECT);
+
+        let shape = shapes[reader.readUint32()];
+        Assert.equal(
+          shape.length,
+          MAX_COLLECTION_VALUES + 1,
+          "The shape holds the class name plus the truncated property keys"
+        );
+        Assert.equal(shape[0], "Object");
+        Assert.ok(
+          shape.slice(1).every(key => /^prop\d+$/.test(key)),
+          `All recorded property keys are real keys: ${shape.slice(1)}`
+        );
+
+        Assert.equal(
+          reader.readUint32(),
+          20,
+          "The full property count is still reported"
+        );
+      });
     }
   });
 });

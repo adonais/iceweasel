@@ -5,10 +5,11 @@ import fluent.syntax.ast as FTL
 from fluent.migrate.helpers import VARIABLE_REFERENCE
 from fluent.migrate.transforms import COPY, REPLACE
 
-def migrate(ctx):
-  """Bug 2031711 - Convert some toolbox.properties to Fluent, part {index}"""
 
-  ctx.add_transforms(
+def migrate(ctx):
+    """Bug 2031711 - Convert some toolbox.properties to Fluent, part {index}"""
+
+    ctx.add_transforms(
         "devtools/client/toolbox-options.ftl",
         "devtools/client/toolbox-options.ftl",
         [
@@ -37,4 +38,4 @@ def migrate(ctx):
                 ),
             ),
         ],
-  )
+    )

@@ -10,9 +10,6 @@
 #include "mozilla/gmp/PGMPChild.h"
 
 namespace mozilla {
-#ifdef XP_WIN
-struct ModulePaths;
-#endif
 
 namespace ipc {
 class ByteBuf;
@@ -46,7 +43,7 @@ void SendFOGData(ipc::ByteBuf&& buf);
 
 #ifdef XP_WIN
 RefPtr<PGMPChild::GetModulesTrustPromise> SendGetModulesTrust(
-    ModulePaths&& aModules, bool aRunNormal);
+    ModuleIdentifiers&& aModules, bool aRunNormal);
 #endif
 
 }  // namespace gmp

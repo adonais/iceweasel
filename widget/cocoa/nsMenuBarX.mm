@@ -10,6 +10,7 @@
 #include "nsCocoaWindow.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
+#include "nsMenuItemIconX.h"
 #include "nsMenuItemX.h"
 #include "nsMenuUtilsX.h"
 #include "nsMenuX.h"
@@ -20,6 +21,7 @@
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Document.h"
 #include "nsIAppStartup.h"
 #include "nsIContent.h"
@@ -34,6 +36,23 @@
 
 using namespace mozilla;
 using mozilla::dom::Element;
+
+class nsAppMenuItemIcon final : public nsMenuItemIconX::Listener {
+ public:
+  nsAppMenuItemIcon(NSMenuItem* aMenuItem, Element* aElement)
+      : mMenuItem([aMenuItem retain]), mIcon(this) {
+    mIcon.SetupIcon(aElement);
+    IconUpdated();
+  }
+
+  ~nsAppMenuItemIcon() { [mMenuItem release]; }
+
+  void IconUpdated() override { mMenuItem.image = mIcon.GetIconImage(); }
+
+ private:
+  NSMenuItem* mMenuItem;  // [strong]
+  nsMenuItemIconX mIcon;
+};
 
 NativeMenuItemTarget* nsMenuBarX::sNativeEventTarget = nil;
 nsMenuBarX* nsMenuBarX::sLastGeckoMenuBarPainted = nullptr;
@@ -813,6 +832,14 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
   newMenuItem.keyEquivalentModifierMask = macKeyModifiers;
   newMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
 
+  // While "regular" menuitems can load images via CSS, we don't want to load
+  // all the relevant CSS in the hidden window, so we only support the image
+  // attribute for now.
+  if (menuItem->HasAttr(nsGkAtoms::image)) {
+    mAppMenuIcons.AppendElement(
+        MakeUnique<nsAppMenuItemIcon>(newMenuItem, menuItem));
+  }
+
   return newMenuItem;
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -821,6 +848,8 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
 // build the Application menu shared by all menu bars
 void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  mAppMenuIcons.Clear();
 
   // At this point, the application menu is the application menu from
   // the nib in cocoa widgets. We do not have a way to create an application

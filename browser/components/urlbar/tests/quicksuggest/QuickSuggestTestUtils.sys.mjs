@@ -426,6 +426,7 @@ class _QuickSuggestTestUtils {
     click_url = "https://example.com/amp-click",
     title = "Amp Suggestion",
     score = 0.3,
+    suggestion_id = "amp-suggestion-id",
   } = {}) {
     return {
       keywords,
@@ -439,6 +440,7 @@ class _QuickSuggestTestUtils {
       advertiser: "Amp",
       iab_category: "22 - Shopping",
       icon: "1234",
+      suggestion_id,
     };
   }
 
@@ -472,7 +474,7 @@ class _QuickSuggestTestUtils {
     requestId = undefined,
     dismissalKey = undefined,
     categories = [],
-    suggestionId = undefined,
+    suggestionId = "amp-suggestion-id",
   } = {}) {
     let result = {
       suggestedIndex,
@@ -519,6 +521,7 @@ class _QuickSuggestTestUtils {
         rawClickUrl: clickUrl,
         score: 0.3,
         ftsMatchInfo: null,
+        suggestionId,
       });
     } else {
       result.payload.icon = icon;

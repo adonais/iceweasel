@@ -85,12 +85,17 @@ void TRRLoadInfo::ResetSandboxedNullPrincipalID() {}
 nsIPrincipal* TRRLoadInfo::GetTopLevelPrincipal() { return nullptr; }
 
 NS_IMETHODIMP
-TRRLoadInfo::GetTriggeringRemoteType(nsACString& aTriggeringRemoteType) {
+TRRLoadInfo::GetXPCOMTriggeringRemoteType(nsACString& aTriggeringRemoteType) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-TRRLoadInfo::SetTriggeringRemoteType(const nsACString& aTriggeringRemoteType) {
+TRRLoadInfo::GetTriggeringRemoteType(RemoteType& aTriggeringRemoteType) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+TRRLoadInfo::SetTriggeringRemoteType(const RemoteType& aTriggeringRemoteType) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

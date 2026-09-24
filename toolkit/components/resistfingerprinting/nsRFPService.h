@@ -358,10 +358,7 @@ struct CanvasFingerprintingEvent {
         knownTextBitmask(aKnownTextBitmask),
         sourcesBitmask(aSourcesBitmask) {}
 
-  bool operator==(const CanvasFingerprintingEvent& other) const {
-    return alias == other.alias && knownTextBitmask == other.knownTextBitmask &&
-           sourcesBitmask == other.sourcesBitmask;
-  }
+  bool operator==(const CanvasFingerprintingEvent& other) const = default;
 };
 
 // ============================================================================
@@ -606,7 +603,7 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   static CSSIntRect GetSpoofedScreenAvailSize(const nsRect& aRect, float aScale,
                                               bool aIsFullscreen);
 
-  static uint64_t GetSpoofedStorageLimit();
+  static int64_t GetSpoofedStorageLimit();
 
   static bool ExposeWebCodecsAPI(JSContext* aCx, JSObject* aObj);
   static bool ExposeWebCodecsAPIImageDecoder(JSContext* aCx, JSObject* aObj);

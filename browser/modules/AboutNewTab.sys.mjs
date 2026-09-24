@@ -8,6 +8,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AboutNewTabParent: "resource:///actors/AboutNewTabParent.sys.mjs",
   AboutNewTabResourceMapping:
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs",
@@ -300,6 +301,25 @@ export const AboutNewTab = {
     return this.activityStream
       ? this.activityStream.store.getState().TopSites.rows
       : [];
+  },
+
+  /**
+   * The id of the newtab visit a browser is showing, which the `newtab` ping
+   * reports as `newtab_visit_id`.
+   *
+   * @param {MozBrowser} browser
+   *   The browser to look up.
+   * @returns {?string}
+   *   The visit id, or null if the browser isn't showing a newtab page or the
+   *   visit isn't being measured.
+   */
+  getVisitId(browser) {
+    let portID = lazy.AboutNewTabParent.loadedTabs.get(browser)?.portID;
+    if (!portID) {
+      return null;
+    }
+    let telemetryFeed = this.activityStream?.store.feeds.get("feeds.telemetry");
+    return telemetryFeed?.sessions.get(portID)?.session_id ?? null;
   },
 
   _alreadyRecordedTopsitesPainted: false,

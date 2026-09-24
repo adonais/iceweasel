@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Cookie.h"
+#include "CookieDBWriteQueue.h"
 #include "CookieParser.h"
 #include "CookieStorage.h"
 #include "TestCommon.h"
@@ -680,7 +681,7 @@ TEST(TestCookie, TestCookieMain)
   SetACookie(cookieService, "https://prefixed.test/",
              "__Secure-test=test; secure");
   SetACookie(cookieService, "https://prefixed.test/",
-             "__Host-test=test; secure");
+             "__Host-test=test; secure; path=/");
   GetACookie(cookieService, "https://prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "__Secure-test=test"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "__Host-test=test"));
@@ -710,6 +711,21 @@ TEST(TestCookie, TestCookieMain)
              "__Host-g=test; secure; path=/some");
   GetACookie(cookieService, "https://host.prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "__Host-f=test"));
+
+  // Host-prefixed cookies require an explicit Path attribute of "/": a default
+  // path that happens to be "/" is not enough.
+  SetACookie(cookieService, "https://explicit.prefixed.test/",
+             "__Host-h=test; secure");
+  SetACookie(cookieService, "https://explicit.prefixed.test/",
+             "__Host-i=test; secure; path=");
+  SetACookie(cookieService, "https://explicit.prefixed.test/",
+             "__Host-j=test; secure; path");
+  SetACookie(cookieService, "https://explicit.prefixed.test/",
+             "__Host-k=test; secure; path=relative");
+  SetACookie(cookieService, "https://explicit.prefixed.test/",
+             "__Host-l=test; secure; path=/");
+  GetACookie(cookieService, "https://explicit.prefixed.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "__Host-l=test"));
 
   // *** leave-secure-alone tests
 
@@ -1272,7 +1288,7 @@ class TestableCookieStorage final : public CookieStorage {
   const char* NotificationTopic() const override { return "test-cookie"; }
   void NotifyChangedInternal(nsICookieNotification*, bool) override {}
   void RemoveAllInternal() override {}
-  void RemoveCookieFromDB(const Cookie&) override {}
+  void RemoveCookieFromDB(Cookie*) override {}
   void StoreCookie(const nsACString&, const OriginAttributes&,
                    Cookie*) override {}
 
@@ -1412,3 +1428,39 @@ TEST(TestCookie, HasCookiesForSite)
   addCookie(partAttrs);
   EXPECT_TRUE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
 }
+
+namespace mozilla::net {
+
+TEST(TestCookieDBWriteQueue, Coalesce)
+{
+  using OpType = CookieDBWriteQueue::OpType;
+
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Remove, OpType::Insert),
+            Some(OpType::RemoveAndInsert));
+  EXPECT_EQ(
+      CookieDBWriteQueue::Coalesce(OpType::RemoveAndInsert, OpType::Insert),
+      Some(OpType::RemoveAndInsert));
+
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Insert, OpType::Update),
+            Some(OpType::Insert));
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Update, OpType::Update),
+            Some(OpType::Update));
+  EXPECT_EQ(
+      CookieDBWriteQueue::Coalesce(OpType::RemoveAndInsert, OpType::Update),
+      Some(OpType::RemoveAndInsert));
+
+  // The insertion is still in this batch, so it never reached the disk and
+  // the row cancels out entirely.
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Insert, OpType::Remove),
+            Nothing());
+
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Update, OpType::Remove),
+            Some(OpType::Remove));
+  EXPECT_EQ(CookieDBWriteQueue::Coalesce(OpType::Remove, OpType::Remove),
+            Some(OpType::Remove));
+  EXPECT_EQ(
+      CookieDBWriteQueue::Coalesce(OpType::RemoveAndInsert, OpType::Remove),
+      Some(OpType::Remove));
+}
+
+}  // namespace mozilla::net

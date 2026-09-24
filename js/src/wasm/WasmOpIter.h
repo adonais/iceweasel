@@ -107,7 +107,7 @@ class StackType {
       case ValType::F32:
       case ValType::I64:
       case ValType::F64:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case ValType::V128:
 #endif
         return true;
@@ -213,7 +213,7 @@ enum class OpKind {
   RefCast,
   BrOnCast,
   RefConversion,
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
   ExtractLane,
   ReplaceLane,
   LoadLane,
@@ -830,7 +830,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool readRefConversion(RefType operandType, RefType resultType,
                                        Value* operandValue);
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   [[nodiscard]] bool readLaneIndex(uint32_t inputLanes, uint32_t* laneIndex);
   [[nodiscard]] bool readExtractLane(ValType resultType, uint32_t inputLanes,
                                      uint32_t* laneIndex, Value* input);
@@ -4153,7 +4153,7 @@ inline bool OpIter<Policy>::readRefConversion(RefType operandType,
   return true;
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 template <typename Policy>
 inline bool OpIter<Policy>::readLaneIndex(uint32_t inputLanes,
@@ -4342,7 +4342,7 @@ inline bool OpIter<Policy>::readStoreLane(uint32_t byteSize,
   return true;
 }
 
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
 #ifdef ENABLE_WASM_JSPI
 

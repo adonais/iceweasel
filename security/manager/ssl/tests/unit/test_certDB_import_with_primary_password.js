@@ -87,15 +87,6 @@ function getCertAsByteArray(certPath) {
   return byteArray;
 }
 
-function findCertByCommonName(commonName) {
-  for (let cert of gCertDB.getCerts()) {
-    if (cert.commonName == commonName) {
-      return cert;
-    }
-  }
-  return null;
-}
-
 add_task(async function run_test() {
   let certificateDialogsCID = MockRegistrar.register(
     "@mozilla.org/nsCertificateDialogs;1",
@@ -114,7 +105,7 @@ add_task(async function run_test() {
 
   // Sanity check the CA cert is missing.
   equal(
-    findCertByCommonName(CA_CERT_COMMON_NAME),
+    await findCertByCommonName(CA_CERT_COMMON_NAME),
     null,
     "CA cert should not be in the database before import"
   );
@@ -133,7 +124,7 @@ add_task(async function run_test() {
     "Confirmation dialog for the CA cert should only be shown once"
   );
 
-  let caCert = findCertByCommonName(CA_CERT_COMMON_NAME);
+  let caCert = await findCertByCommonName(CA_CERT_COMMON_NAME);
   notEqual(caCert, null, "CA cert should now be found in the database");
   ok(
     gCertDB.isCertTrusted(

@@ -73,6 +73,7 @@
  *       cc-exp-year,          // 2-digit year will be converted to 4 digits
  *                             // upon saving
  *       cc-type,              // Optional card network id (instrument type)
+ *       cc-csc,               // Optional card security code
  *
  *       // computed fields (These fields are computed based on the above fields
  *       // and are not allowed to be modified directly.)
@@ -140,9 +141,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CreditCardRecord: "resource://gre/modules/shared/CreditCardRecord.sys.mjs",
   FormAutofillNameUtils:
     "resource://gre/modules/shared/FormAutofillNameUtils.sys.mjs",
-  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
-  PhoneNumber: "resource://gre/modules/shared/PhoneNumber.sys.mjs",
 });
 
 const CryptoHash = Components.Constructor(
@@ -196,6 +195,8 @@ export const VALID_CREDIT_CARD_FIELDS = [
   "cc-exp-month",
   "cc-exp-year",
   "cc-type",
+  // TODO: Uncomment this when storage is ready.
+  // "cc-csc",
 ];
 
 const VALID_CREDIT_CARD_COMPUTED_FIELDS = [
@@ -410,6 +411,12 @@ class AutofillRecords {
     } else {
       this._ensureMatchingVersion(record);
       recordToSave = record;
+      // Stripped before computing, as update() and reconcile() do. A caller
+      // that hands back a record it read still has the derived fields on it,
+      // and computeFields only fills in the ones that are missing -- so
+      // without this they are stored as they arrived and never derived again.
+      // Callers should not have to know which fields those are.
+      await this._stripComputedFields(recordToSave);
       await this.computeFields(recordToSave);
     }
 
@@ -1558,120 +1565,7 @@ export class AddressesBase extends AutofillRecords {
   }
 
   _normalizeFields(address) {
-    this._normalizeCountryFields(address);
-    this._normalizeNameFields(address);
-    this._normalizeAddressFields(address);
-    this._normalizeTelFields(address);
-  }
-
-  _normalizeNameFields(address) {
-    if (
-      !address.name &&
-      (address["given-name"] ||
-        address["additional-name"] ||
-        address["family-name"])
-    ) {
-      address.name = lazy.FormAutofillNameUtils.joinNameParts({
-        given: address["given-name"] ?? "",
-        middle: address["additional-name"] ?? "",
-        family: address["family-name"] ?? "",
-      });
-    }
-
-    delete address["given-name"];
-    delete address["additional-name"];
-    delete address["family-name"];
-  }
-
-  _normalizeAddressFields(address) {
-    if (address["address-housenumber"]) {
-      let streetField = "";
-      if (address["address-line1"]) {
-        streetField = "address-line1";
-      } else if (address["street-address"]) {
-        streetField = "street-address";
-      }
-      if (streetField) {
-        let region = address.country || FormAutofill.DEFAULT_REGION;
-        let reversed = lazy.FormAutofillUtils.getAddressReversed(region);
-
-        if (reversed) {
-          address[streetField] =
-            address[streetField] + " " + address["address-housenumber"];
-        } else {
-          address[streetField] =
-            address["address-housenumber"] + " " + address[streetField];
-        }
-      }
-
-      delete address["address-housenumber"];
-    }
-
-    if (AddressRecord.STREET_ADDRESS_COMPONENTS.some(c => !!address[c])) {
-      // Treat "street-address" as "address-line1" if it contains only one line
-      // and "address-line1" is omitted.
-      if (
-        !address["address-line1"] &&
-        address["street-address"] &&
-        !address["street-address"].includes("\n")
-      ) {
-        address["address-line1"] = address["street-address"];
-        delete address["street-address"];
-      }
-
-      // Concatenate "address-line*" if "street-address" is omitted.
-      if (!address["street-address"]) {
-        address["street-address"] = AddressRecord.STREET_ADDRESS_COMPONENTS.map(
-          c => address[c]
-        )
-          .join("\n")
-          .replace(/\n+$/, "");
-      }
-    }
-    AddressRecord.STREET_ADDRESS_COMPONENTS.forEach(c => delete address[c]);
-  }
-
-  _normalizeCountryFields(address) {
-    // When we can't identify the country code, it is possible because that the region exists
-    // in regionNames.properties but not in libaddressinput.
-    const country =
-      lazy.FormAutofillUtils.identifyCountryCode(
-        address.country || address["country-name"]
-      ) || address.country;
-
-    // Only values included in the region list will be saved.
-    let hasLocalizedName = false;
-    try {
-      if (country) {
-        let localizedName = Services.intl.getRegionDisplayNames(undefined, [
-          country,
-        ]);
-        hasLocalizedName = localizedName != country;
-      }
-    } catch (e) {}
-
-    if (country && hasLocalizedName) {
-      address.country = country;
-    } else {
-      address.country = FormAutofill.DEFAULT_REGION;
-    }
-
-    delete address["country-name"];
-  }
-
-  _normalizeTelFields(address) {
-    if (address.tel || AddressRecord.TEL_COMPONENTS.some(c => !!address[c])) {
-      lazy.FormAutofillUtils.compressTel(address);
-
-      let possibleRegion = address.country || FormAutofill.DEFAULT_REGION;
-      let tel = lazy.PhoneNumber.Parse(address.tel, possibleRegion);
-
-      if (tel && tel.internationalNumber) {
-        // Force to save numbers in E.164 format if parse success.
-        address.tel = tel.internationalNumber;
-      }
-    }
-    AddressRecord.TEL_COMPONENTS.forEach(c => delete address[c]);
+    AddressRecord.normalizeFields(address);
   }
 
   /**

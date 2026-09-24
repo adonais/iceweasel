@@ -95,7 +95,7 @@ MediaStreamPlayback.prototype = {
 
     // Hooks up the media stream to the media element and starts playing it
     this.mediaElement.srcObject = this.mediaStream;
-    this.mediaElement.play();
+    this.mediaElement.play().catch(() => {});
   },
 
   /**

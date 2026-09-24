@@ -38,7 +38,7 @@ moz-visual-picker-item {
 
   &:hover:not([checked]) {
     --visual-picker-item-border-width: var(--visual-picker-item-border-width-checked);
-    --visual-picker-item-border-color: color-mix(in srgb, var(--border-color-selected) 40%, transparent);
+    --visual-picker-item-border-color: color-mix(in srgb, var(--border-color-selected) 40%, var(--button-background-color-ghost-hover));
 
     @media (forced-colors) {
       --visual-picker-item-border-color: var(--button-text-color);

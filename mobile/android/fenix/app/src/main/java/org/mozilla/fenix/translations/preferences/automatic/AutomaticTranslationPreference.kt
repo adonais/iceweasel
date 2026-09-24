@@ -23,12 +23,12 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import mozilla.components.compose.base.InfoCard
 import mozilla.components.compose.base.InfoType
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.concept.engine.translate.Language
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 /**
  * Automatic Translate preference screen.

@@ -73,7 +73,7 @@ bool SocketProcessHost::Launch() {
 
   SharedPreferenceSerializer prefSerializer;
   if (!prefSerializer.SerializeToSharedMemory(GeckoProcessType_VR,
-                                              /* remoteType */ ""_ns)) {
+                                              /* remoteType */ {})) {
     return false;
   }
   prefSerializer.AddSharedPrefCmdLineArgs(*this, extraArgs);

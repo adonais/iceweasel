@@ -169,6 +169,17 @@ window {
   background-size: 14px;
 }
 
+/* Split orientation menu button */
+
+#inspector-split-orientation-menu {
+  display: flex;
+}
+
+#inspector-split-orientation-button::before {
+  background-image: url(images/more.svg);
+  background-size: 14px;
+}
+
 #inspector-breadcrumbs-toolbar {
   padding: 0;
   border-bottom-width: 0;

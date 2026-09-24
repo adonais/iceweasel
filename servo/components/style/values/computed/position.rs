@@ -7,6 +7,7 @@
 //!
 //! [position]: https://drafts.csswg.org/css-backgrounds-3/#position
 
+use crate::Zero;
 use crate::logical_geometry::PhysicalSide;
 use crate::values::computed::{
     Context, Integer, LengthPercentage, NonNegativeNumber, Percentage, ToComputedValue,
@@ -25,7 +26,6 @@ pub use crate::values::specified::position::{
     PositionAreaType, PositionTryFallbacks, PositionTryFallbacksTryTactic,
     PositionTryFallbacksTryTacticKeyword, PositionTryOrder, PositionVisibility, ScopedName,
 };
-use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -66,7 +66,7 @@ pub type AnchorFunction = GenericAnchorFunction<Percentage, Inset>;
 #[cfg(feature = "gecko")]
 use crate::{
     gecko_bindings::structs::AnchorPosOffsetResolutionParams,
-    values::{computed::Length, DashedIdent},
+    values::{DashedIdent, computed::Length},
 };
 
 impl AnchorFunction {
@@ -233,7 +233,7 @@ impl ToComputedValue for PositionArea {
     type ComputedValue = Self;
 
     fn to_computed_value(&self, _context: &Context) -> Self {
-        let mut computed = self.clone();
+        let mut computed = *self;
         let pair_type = self.get_type();
         if pair_type == PositionAreaType::Logical || pair_type == PositionAreaType::SelfLogical {
             if computed.second != PositionAreaKeyword::None {
@@ -262,7 +262,7 @@ impl ToComputedValue for PositionArea {
     }
 
     fn from_computed_value(computed: &Self) -> Self {
-        computed.clone()
+        *computed
     }
 }
 

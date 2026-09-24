@@ -12,7 +12,7 @@
 }
 
 .theme-dark {
-  --frame-link-line-color: hsl(210, 40%, 60%);
+  --frame-link-line-color: hsl(210 40% 60%);
 }
 
 .stack-trace {

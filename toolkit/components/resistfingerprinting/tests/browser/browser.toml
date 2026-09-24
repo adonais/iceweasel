@@ -83,9 +83,13 @@ support-files = ["file_pdf.pdf"]
 
 ["browser_service_worker_granular_overrides.js"]
 
+["browser_service_worker_navigator_spoofing.js"]
+
 ["browser_service_worker_overrides.js"]
 
 ["browser_service_worker_randomization_key_originattrs.js"]
+
+["browser_service_worker_timer_precision.js"]
 
 ["browser_srcset.js"]
 

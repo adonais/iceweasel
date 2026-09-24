@@ -10,7 +10,6 @@ import { CSSTransition } from "react-transition-group";
 
 function SectionsMgmtPanel({
   pocketEnabled,
-  onSubpanelToggle,
   togglePanel,
   showPanel,
   novaEnabled,
@@ -184,13 +183,6 @@ function SectionsMgmtPanel({
     [dispatch, sectionPersonalization]
   );
 
-  // Notify parent menu when subpanel opens/closes
-  useEffect(() => {
-    if (onSubpanelToggle) {
-      onSubpanelToggle(showPanel);
-    }
-  }, [showPanel, onSubpanelToggle]);
-
   useEffect(() => {
     if (showPanel) {
       updateCachedData();
@@ -354,6 +346,7 @@ function SectionsMgmtPanel({
                     type="ghost"
                     className="arrow-button"
                     iconSrc={arrowIconSrc}
+                    data-l10n-id="newtab-customize-panel-back-button"
                     onClick={togglePanel}
                   ></moz-button>
                   <h2 data-l10n-id="newtab-section-mangage-topics-title"></h2>

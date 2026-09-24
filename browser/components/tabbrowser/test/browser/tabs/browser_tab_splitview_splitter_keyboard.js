@@ -1,11 +1,5 @@
 "use strict";
 
-add_setup(() =>
-  SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  })
-);
-
 registerCleanupFunction(() =>
   Services.prefs.clearUserPref("browser.tabs.splitview.hasUsed")
 );

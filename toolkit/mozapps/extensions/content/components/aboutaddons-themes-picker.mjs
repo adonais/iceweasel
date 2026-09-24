@@ -100,6 +100,16 @@ export class AboutaddonsThemesPicker extends MozLitElement {
     Services.prefs.addObserver(PREF_NOVA_THEMES_PICKER, this.#prefObserver);
     AddonManagerListenerHandler.addListener(this.#addonListener);
     this.#loadThemes();
+    this.#recordShownTelemetry();
+  }
+
+  #recordShownTelemetry() {
+    // Do not record the theme-picker.shown Glean event if this component
+    // is not going to be rendering its content.
+    if (!isNovaThemesPickerEnabled()) {
+      return;
+    }
+    Glean.themePicker.shown.record({ source: "about:addons", layout: "full" });
   }
 
   disconnectedCallback() {
@@ -172,7 +182,8 @@ export class AboutaddonsThemesPicker extends MozLitElement {
     this._hasError = false;
     const success = await this.#manager.updateThemeState(
       themeId,
-      !this.#isActive(themeId)
+      !this.#isActive(themeId),
+      { layout: "full" }
     );
     this._hasError = !success;
     await this.#loadThemes();

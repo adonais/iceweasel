@@ -11,4 +11,5 @@ import org.mozilla.samples.browser.ext.components
 /** Service responsible for implementing Android's Autofill framework. */
 class AutofillService : AbstractAutofillService() {
     override val configuration: AutofillConfiguration by lazy { components.autofillConfiguration }
+    override val applicationScope by lazy { components.applicationScope }
 }

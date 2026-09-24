@@ -30,7 +30,25 @@ created under their own account with a chance to review and adjust.
      engineering changes with no user-facing behavior change (tooling, tests, docs, build).
 
 3. **Draft the summary and description and show them to the user.**
-   - Keep the summary short and specific.
+   - **Shape the summary to the bug type chosen above.** In all three cases the
+     mechanism, the file list, and any counts belong in the description, not the
+     summary.
+     - `defect` - the observable symptom, in the terms someone hitting it would
+       use ("Restored tabs come back with blank titles"). Not the suspected
+       cause and not the fix: either can turn out wrong, and the symptom is what
+       people search for.
+     - `enhancement` - the capability wanted ("Allow pinned tabs to be restored
+       per window").
+     - `task` - the action to take ("Use `declareLazy` in the remaining
+       sessionstore modules").
+   - Cut what goes stale or reads as code in prose: a count ("Six modules..."),
+     a helper's namespace prefix (`declareLazy`, not `XPCOMUtils.declareLazy`),
+     glob shorthand (`lazy.*`).
+   - Use ordinary words, and never a term coined for the occasion. Where the
+     project has no established name for the thing, describe it instead.
+   - Match a sibling bug's shape when one exists, so the two are findable
+     together, and let any trailing clause carry only what distinguishes this
+     one.
    - In the description, wrap code identifiers (function, variable, class, file,
      pref, and flag names) in backticks so they render as code in the filed bug.
    - For a test-failure bug, include a link to the test's dashboard:

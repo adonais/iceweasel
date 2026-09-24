@@ -193,6 +193,44 @@ function assertDeckHeadingButtons(group, visibleButtons) {
   }
 }
 
+// The preview is expected to be responsive, and so its actual width depends on
+// the available space rather, and the image height should still keep the
+// expected 680:92 aspect ratio.
+function checkThemePreviewSize(preview, label) {
+  let maxContentWidth = parseFloat(
+    preview.documentGlobal
+      .getComputedStyle(preview)
+      .getPropertyValue("--page-main-content-width")
+  );
+  Assert.lessOrEqual(
+    preview.width,
+    maxContentWidth,
+    `${label} theme preview width should not exceed the max content width`
+  );
+
+  let cardEl = preview.closest(".card.addon");
+  let cardWidth = cardEl.getBoundingClientRect().width;
+  Assert.equal(
+    preview.width,
+    cardWidth,
+    `${label} theme preview width (${preview.width}) should fill the ` +
+      `addon card width (expected ~${cardWidth})`
+  );
+
+  const AMO_IMAGE_WIDTH = 680;
+  const AMO_IMAGE_HEIGHT = 92;
+  const MAX_HEIGHT_DIFF = 2;
+  let expectedHeight = Math.round(
+    (preview.width * AMO_IMAGE_HEIGHT) / AMO_IMAGE_WIDTH
+  );
+  Assert.less(
+    Math.abs(preview.height - expectedHeight),
+    MAX_HEIGHT_DIFF,
+    `${label} theme preview height (${preview.height}) should keep the ` +
+      `expected aspect ratio (expected ~${expectedHeight})`
+  );
+}
+
 async function hasPrivateAllowed(id) {
   let perms = await ExtensionPermissions.get(id);
   return perms.permissions.includes("internal:privateBrowsingAllowed");
@@ -879,8 +917,7 @@ add_task(async function testStaticTheme() {
   let preview = card.querySelector(".card-heading-image");
   ok(preview, "There is a preview");
   is(preview.src, "http://example.com/preview.png", "The preview URL is set");
-  is(preview.width, 664, "The width is set");
-  is(preview.height, 90, "The height is set");
+  checkThemePreviewSize(preview, "list card");
   is(preview.hidden, false, "The preview is visible");
 
   // Load the detail view.
@@ -894,8 +931,7 @@ add_task(async function testStaticTheme() {
   preview = card.querySelector(".card-heading-image");
   ok(preview, "There is a preview");
   is(preview.src, "http://example.com/preview.png", "The preview URL is set");
-  is(preview.width, 664, "The width is set");
-  is(preview.height, 90, "The height is set");
+  checkThemePreviewSize(preview, "detail card");
   is(preview.hidden, false, "The preview is visible");
 
   // Check all the deck buttons are hidden.

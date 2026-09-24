@@ -294,6 +294,9 @@ void SVGForeignObjectFrame::NotifySVGChanged(ChangeFlags aFlags) {
     if (StyleSVGReset()->mX.HasPercent() || StyleSVGReset()->mY.HasPercent()) {
       needNewBounds = true;
       needNewCanvasTM = true;
+    } else if (SVGIntegrationUtils::UsingEffectsForFrame(this)) {
+      // Effects may have percentage dependent units.
+      needNewBounds = true;
     }
 
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);

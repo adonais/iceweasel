@@ -512,6 +512,7 @@ typedef enum {
     SEC_OID_HMAC_SHA3_384 = 370,
     SEC_OID_HMAC_SHA3_512 = 371,
 
+    /* deprecated: round-3 Kyber (xyber768d00) removed; value retained for ABI */
     SEC_OID_XYBER768D00 = 372,
 
     SEC_OID_ED25519_SIGNATURE = 373,

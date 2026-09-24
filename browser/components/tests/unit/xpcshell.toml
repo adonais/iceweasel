@@ -47,6 +47,8 @@ skip-if = [
 
 ["test_profileDataUpgrade_duplicateCookiePerms.js"]
 
+["test_profileDataUpgrade_separatePrivateDefault.js"]
+
 ["test_profileDataUpgrade_smartwindow.js"]
 
 ["test_profileDataUpgrade_smartwindow_semanticHistory.js"]

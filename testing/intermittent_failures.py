@@ -6,6 +6,8 @@
 Shared module for fetching intermittent test failure data from Treeherder and Bugzilla.
 """
 
+from __future__ import annotations
+
 import datetime
 import re
 from typing import Literal, Optional, TypedDict

@@ -282,6 +282,51 @@ function handleRequest(request, response) {
           break;
         }
 
+        case "jsonl": {
+          response.setStatusLine(request.httpVersion, status, "OK");
+          response.setHeader(
+            "Content-Type",
+            "application/jsonl; charset=utf-8",
+            false
+          );
+          setCacheHeaders();
+          response.write(
+            '{ "greeting": "Hello JSON Lines!" }\n' +
+              '{ "greeting": "Hello again!" }\n' +
+              '{ "greeting": "And once more!" }\n'
+          );
+          response.finish();
+          break;
+        }
+        case "jsonl-ndjson": {
+          response.setStatusLine(request.httpVersion, status, "OK");
+          response.setHeader(
+            "Content-Type",
+            "application/x-ndjson; charset=utf-8",
+            false
+          );
+          setCacheHeaders();
+          response.write(
+            '{ "greeting": "Hello NDJSON!" }\n{ "greeting": "Hello again!" }\n'
+          );
+          response.finish();
+          break;
+        }
+        case "jsonl-malformed-line": {
+          // A blank line, which is skipped, and a line which isn't valid JSON,
+          // which is displayed inline without hiding the other entries.
+          response.setStatusLine(request.httpVersion, status, "OK");
+          response.setHeader("Content-Type", "application/jsonl", false);
+          setCacheHeaders();
+          response.write(
+            '{ "greeting": "Hello JSON Lines!" }\n' +
+              "\n" +
+              "not json\n" +
+              '{ "greeting": "Hello again!" }\n'
+          );
+          response.finish();
+          break;
+        }
         case "font": {
           response.setStatusLine(request.httpVersion, status, "OK");
           response.setHeader("Content-Type", "font/woff", false);

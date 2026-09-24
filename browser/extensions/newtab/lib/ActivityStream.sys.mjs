@@ -79,6 +79,7 @@ import {
   actionCreators as ac,
   actionTypes as at,
 } from "resource://newtab/common/Actions.mjs";
+import { RegionLocaleMap } from "moz-src:///toolkit/modules/RegionLocaleMap.sys.mjs";
 
 const REGION_INFERRED_PERSONALIZATION_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.region-config";
@@ -105,6 +106,56 @@ const LOCALE_TOPIC_LABEL_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.topicLabels.locale-topic-label-config";
 const REGION_BASIC_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.region-basic-config";
+const STORIES_REGION_LOCALE_CONFIG =
+  "browser.newtabpage.activity-stream.discoverystream.stories-region-locale-config";
+
+// Region / locale pairs that get stories, as [region, localePatterns] entries;
+// see RegionLocaleMap for the format. Shipped default, overridden by the
+// stories-region-locale-config pref or a newtabTrainhop storiesRegionLocale
+// payload.
+const STORIES_REGION_LOCALE_DEFAULT = [
+  // Nightly also gets a global English feed, standing in for the reach
+  // locale-list-config used to provide until one is configured remotely.
+  ...(AppConstants.NIGHTLY_BUILD ? [["*", ["en-*"]]] : []),
+  ["US", ["en-*"]],
+  ["CA", ["en-*"]],
+  ["GB", ["en-*"]],
+  ["IE", ["en-*"]],
+  ["IN", ["en-*"]],
+  ["DE", ["de"]],
+  ["AT", ["de"]],
+  ["CH", ["de"]],
+  ["BE", ["de", "fr"]],
+  ["FR", ["fr"]],
+  ["IT", ["it"]],
+  ["ES", ["es-ES"]],
+];
+
+// Locale pairings for the legacy region-stories-config path, still used by
+// launched experiments and by profiles that set the pref by hand. Remove once
+// the shipped config covers the languages this unlocks.
+const LEGACY_REGION_STORIES_LOCALES = {
+  US: ["en-CA", "en-GB", "en-US"],
+  CA: ["en-CA", "en-GB", "en-US"],
+  GB: ["en-CA", "en-GB", "en-US"],
+  AU: ["en-CA", "en-GB", "en-US"],
+  NZ: ["en-CA", "en-GB", "en-US"],
+  IN: ["en-CA", "en-GB", "en-US"],
+  IE: ["en-CA", "en-GB", "en-US"],
+  ZA: ["en-CA", "en-GB", "en-US"],
+  CH: ["de"],
+  BE: ["de", "fr"],
+  DE: ["de"],
+  AT: ["de"],
+  IT: ["it"],
+  FR: ["fr"],
+  ES: ["es-ES"],
+  PL: ["pl"],
+  JP: ["ja", "ja-JP-mac"],
+  NL: ["nl"],
+  PT: ["pt-PT"],
+  BR: ["pt-BR"],
+};
 
 const REGION_CONTEXTUAL_AD_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.contextualAds.region-config";
@@ -214,6 +265,84 @@ export function useContextualAds({ geo, locale }) {
     csvPrefHasValue(REGION_CONTEXTUAL_AD_CONFIG, geo) &&
     csvPrefHasValue(LOCALE_CONTEXTUAL_AD_CONFIG, locale)
   );
+}
+
+/**
+ * Whether the legacy region-stories-config path covers a region and locale.
+ * OR-ed with the new pairs, so it can only add. The pref has no default, so
+ * this only fires for a launched experiment setting regionStoriesConfig, or a
+ * profile that set the pref by hand.
+ *
+ * @param {string} geo - region code
+ * @param {string} locale - BCP 47 language tag
+ * @returns {boolean}
+ */
+function matchesLegacyRegionStoriesConfig(geo, locale) {
+  const regions =
+    lazy.NimbusFeatures.pocketNewtab.getVariable("regionStoriesConfig") || "";
+  return (
+    csvHasValue(regions, geo) &&
+    !!LEGACY_REGION_STORIES_LOCALES[geo]?.includes(locale)
+  );
+}
+
+/**
+ * The storiesRegionLocale payload from the newtabTrainhop feature.
+ *
+ * trainhopConfig isn't ready yet: PrefsFeed computes it, and feeds are built
+ * after this pref resolves. So this reads the payload directly.
+ *
+ * @returns {?object} The payload, or null when nothing sets it.
+ */
+function getStoriesTrainhopPayload() {
+  const enrollments =
+    lazy.NimbusFeatures.newtabTrainhop.getAllEnrollments() || [];
+  let payload = null;
+  let fromRollout = true;
+  for (const enrollment of enrollments) {
+    const value = enrollment?.value;
+    const items =
+      value?.type === "multi-payload" && Array.isArray(value.payload)
+        ? value.payload
+        : [value];
+    for (const item of items) {
+      // newtabTrainhop allows co-enrollment, so several enrollments may carry a
+      // storiesRegionLocale payload; an experiment wins over a rollout, matching
+      // PrefsFeed.
+      if (
+        item?.type === "storiesRegionLocale" &&
+        item.payload &&
+        (payload === null || (fromRollout && !enrollment.meta?.isRollout))
+      ) {
+        payload = item.payload;
+        fromRollout = !!enrollment.meta?.isRollout;
+      }
+    }
+  }
+  return payload;
+}
+
+/**
+ * Whether a region and locale get stories: a newtabTrainhop payload if one is
+ * set, else the stories-region-locale-config pref, else
+ * STORIES_REGION_LOCALE_DEFAULT.
+ *
+ * @param {string} geo - region code
+ * @param {string} locale - BCP 47 language tag
+ * @returns {boolean}
+ */
+function storiesRegionLocaleMatches(geo, locale) {
+  // A trainhop payload holds the entries themselves, since Nimbus parses it.
+  const entries = getStoriesTrainhopPayload()?.config;
+  if (Array.isArray(entries)) {
+    return new RegionLocaleMap(entries).matches(geo, locale);
+  }
+  // Read the pref directly, not through a pocketNewtab variable: a Nimbus
+  // variable is absent on hosts whose FeatureManifest predates it.
+  const json = Services.prefs.getStringPref(STORIES_REGION_LOCALE_CONFIG, null);
+  return RegionLocaleMap.fromJSON(json, {
+    fallback: STORIES_REGION_LOCALE_DEFAULT,
+  }).matches(geo, locale);
 }
 
 // Determine if spocs should be shown for a geo/locale
@@ -842,9 +971,17 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "newtabWallpapers.customWallpaper.library.enabled",
+    {
+      title:
+        'Keeps more than one custom wallpaper, shown as "Your images" in the wallpaper picker. Off by default; can also be turned on via trainhopConfig.customWallpaperLibrary.enabled.',
+      value: false,
+    },
+  ],
+  [
     "newtabWallpapers.customWallpaper.uuid",
     {
-      title: "uuid for uploaded custom wallpaper",
+      title: "Filename of the saved wallpaper currently applied",
       value: "",
     },
   ],
@@ -871,9 +1008,23 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "newtabWallpapers.customWallpaper.nextNumber",
+    {
+      title: "Number the next saved wallpaper gets; counts up, never reused",
+      value: 1,
+    },
+  ],
+  [
+    "newtabWallpapers.customWallpaper.position",
+    {
+      title: "background-position of the applied saved wallpaper",
+      value: "",
+    },
+  ],
+  [
     "newtabWallpapers.customWallpaper.theme",
     {
-      title: "theme ('light' | 'dark') of user uploaded wallpaper",
+      title: "theme ('light' | 'dark') of the applied saved wallpaper",
       value: "",
     },
   ],
@@ -993,6 +1144,13 @@ export const PREFS_CONFIG = new Map([
     "discoverystream.carousel.enabled",
     {
       title: "Boolean flag to enable the story carousel",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.sections.topicNavigation.enabled",
+    {
+      title: "Boolean flag to enable the topic navigation strip above sections",
       value: false,
     },
   ],
@@ -1348,6 +1506,15 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Whether the Nova widgets row is expanded beyond its first visual row. Persists the user's Show more / Show less choice across sessions.",
+      value: false,
+    },
+  ],
+  // @experiment(remove) { bug 2066527 }
+  [
+    "widgets.autoMinimize.userOverride",
+    {
+      title:
+        "Set once the user manually expands the auto-minimized widgets section. Suppresses the auto-collapse on every future new tab and returns the section header button to its widget-size toggle behaviour.",
       value: false,
     },
   ],
@@ -1754,6 +1921,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.recentSearches.tab",
+    {
+      title:
+        "Tab the recent searches widget last showed, so a new tab opens the widget on the same tab as the user last selected",
+      value: "recent",
+    },
+  ],
+  [
     "widgets.stocks.watchlist",
     {
       title: "Saved stocks widget watchlist ticker symbols (comma-separated)",
@@ -2146,8 +2321,17 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.variant",
     {
       title:
-        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. Overridden by trainhopConfig.pageLayouts.variant.",
+        "Name of the active newtab page layout variant, for layout experimentation. One of nova-full-width, side-by-side-content-lead, side-by-side-widgets-lead, side-by-side-content-lead-five, side-by-side-widgets-lead-five, spaces-buttons-top, spaces-buttons-bottom, auto-minimize-widgets. The -five variants reach five card columns counting the widgets column, the others four. The spaces variants split the band into separately-navigable panels and differ only in where the segmented control sits. The auto-minimize-widgets variant collapses the widgets section to its title row shortly after load. Overridden by trainhopConfig.pageLayouts.variant.",
       value: "nova-full-width",
+    },
+  ],
+  // @experiment(remove) { bug 2066527 }
+  [
+    "pageLayouts.autoMinimizeDelayMs",
+    {
+      title:
+        "How long (in ms) the widgets section stays expanded before the auto-minimize-widgets layout variant collapses it. Overridden by trainhopConfig.pageLayouts.autoMinimizeDelayMs.",
+      value: 3000,
     },
   ],
   [
@@ -2218,56 +2402,26 @@ const FEEDS_DATA = [
       new lazy.TopStoriesFeed(PREFS_CONFIG.get("discoverystream.config")),
     title:
       "System pref that fetches content recommendations from a configurable content provider",
-    // Dynamically determine if Pocket should be shown for a geo / locale
+    // Dynamically determine if stories should be shown for a geo / locale
     getValue: ({ geo, locale }) => {
       // If we don't have geo, we don't want to flash the screen with stories while geo loads.
       // Best to display nothing until geo is ready.
       if (!geo) {
         return false;
       }
-      const preffedRegionsBlockString =
+      const blockedRegions =
         lazy.NimbusFeatures.pocketNewtab.getVariable("regionStoriesBlock") ||
         "";
-      const preffedRegionsString =
-        lazy.NimbusFeatures.pocketNewtab.getVariable("regionStoriesConfig") ||
-        "";
-      const preffedLocaleListString =
-        lazy.NimbusFeatures.pocketNewtab.getVariable("localeListConfig") || "";
-      const preffedBlockRegions = preffedRegionsBlockString
-        .split(",")
-        .map(s => s.trim());
-      const preffedRegions = preffedRegionsString.split(",").map(s => s.trim());
-      const preffedLocales = preffedLocaleListString
-        .split(",")
-        .map(s => s.trim());
-      const locales = {
-        US: ["en-CA", "en-GB", "en-US"],
-        CA: ["en-CA", "en-GB", "en-US"],
-        GB: ["en-CA", "en-GB", "en-US"],
-        AU: ["en-CA", "en-GB", "en-US"],
-        NZ: ["en-CA", "en-GB", "en-US"],
-        IN: ["en-CA", "en-GB", "en-US"],
-        IE: ["en-CA", "en-GB", "en-US"],
-        ZA: ["en-CA", "en-GB", "en-US"],
-        CH: ["de"],
-        BE: ["de", "fr"],
-        DE: ["de"],
-        AT: ["de"],
-        IT: ["it"],
-        FR: ["fr"],
-        ES: ["es-ES"],
-        PL: ["pl"],
-        JP: ["ja", "ja-JP-mac"],
-        NL: ["nl"],
-        PT: ["pt-PT"],
-        BR: ["pt-BR"],
-      }[geo];
-
-      const regionBlocked = preffedBlockRegions.includes(geo);
-      const localeEnabled = locale && preffedLocales.includes(locale);
-      const regionEnabled =
-        preffedRegions.includes(geo) && !!locales && locales.includes(locale);
-      return !regionBlocked && (localeEnabled || regionEnabled);
+      if (csvHasValue(blockedRegions, geo)) {
+        return false;
+      }
+      if (!locale) {
+        return false;
+      }
+      return (
+        storiesRegionLocaleMatches(geo, locale) ||
+        matchesLegacyRegionStoriesConfig(geo, locale)
+      );
     },
   },
   {

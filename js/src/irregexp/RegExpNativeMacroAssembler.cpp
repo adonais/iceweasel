@@ -27,10 +27,13 @@ namespace regexp {
 using js::MatchPairs;
 using js::jit::AbsoluteAddress;
 using js::jit::Address;
+using js::jit::AllocatableFloatRegisterSet;
 using js::jit::AllocatableGeneralRegisterSet;
 using js::jit::Assembler;
 using js::jit::BaseIndex;
 using js::jit::CodeLocationLabel;
+using js::jit::FloatRegister;
+using js::jit::FloatRegisterSet;
 using js::jit::GeneralRegisterBackwardIterator;
 using js::jit::GeneralRegisterForwardIterator;
 using js::jit::GeneralRegisterSet;
@@ -42,6 +45,7 @@ using js::jit::Linker;
 using js::jit::LiveGeneralRegisterSet;
 using js::jit::Register;
 using js::jit::Registers;
+using js::jit::SimdConstant;
 using js::jit::StackMacroAssembler;
 
 SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
@@ -377,8 +381,17 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
   // owned by the RegExpShared.
   PseudoHandle<ByteArrayData> rawTable = table->takeOwnership(isolate());
 
-  // TODO: SIMD support (bug 1929128).
-  MOZ_ASSERT(!SkipUntilBitInTableUseSimd(advance_by));
+  bool useSimd = SkipUntilBitInTableUseSimd(advance_by);
+  if (useSimd) {
+    PseudoHandle<ByteArrayData> rawNibbleTable =
+        nibble_table->takeOwnership(isolate());
+
+    MOZ_ASSERT(advance_by == 1);
+    EmitSkipUntilBitInTableSimd(cp_offset, rawNibbleTable.get(), on_match);
+    AddTable(std::move(rawNibbleTable));
+    // Fall through and handle the remaining characters using
+    // the scalar version.
+  }
 
   // Scalar version.
   Register tableReg = temp0_;
@@ -404,11 +417,124 @@ void SMRegExpMacroAssembler::SkipUntilBitInTable(
   AddTable(std::move(rawTable));
 }
 
+void SMRegExpMacroAssembler::EmitSkipUntilBitInTableSimd(
+    int cp_offset, ByteArrayData* nibble_table, Label* on_match) {
+#ifdef ENABLE_JIT_SIMD
+  // The nibble table is only large enough to cover latin-1.
+  MOZ_ASSERT(mode_ == LATIN1);
+
+  static constexpr int32_t VectorSize = 16;
+  const int32_t CharsPerVector = VectorSize / char_size();
+
+  // Hoist the bounds check.
+  // We fall back to the scalar version once there are less than CharsPerVector
+  // chars left in the input. We subtract 1 because CheckPosition already
+  // assumes we're reading 1 char.
+  Label scalarFallback;
+  static const int32_t ExtraCharsPerVector = CharsPerVector - 1;
+  CheckPosition(cp_offset + ExtraCharsPerVector, &scalarFallback);
+
+  // Allocate SIMD scratch registers from the volatile set.
+  AllocatableFloatRegisterSet floatRegs(FloatRegisterSet::Volatile());
+  FloatRegister nibbleTable = floatRegs.takeAny().asSimd128();
+  FloatRegister nibbleMask = floatRegs.takeAny().asSimd128();
+  FloatRegister hiLookup = floatRegs.takeAny().asSimd128();
+  FloatRegister inputVec = floatRegs.takeAny().asSimd128();
+  FloatRegister loNibbles = floatRegs.takeAny().asSimd128();
+  FloatRegister bitmask = floatRegs.takeAny().asSimd128();
+
+  // Hoist constants outside the loop.
+  // nibbleTable: 16-byte Boyer-Moore nibble table from regexp data.
+  masm_.movePtr(ImmPtr(nibble_table->data()), temp0_);
+  masm_.loadUnalignedSimd128(Address(temp0_, 0), nibbleTable);
+  // nibbleMask: 0x0f repeated 16 times.
+  masm_.loadConstantSimd128(SimdConstant::SplatX16(int8_t(0x0f)), nibbleMask);
+  // hiLookup: bit-position table {0x01,0x02,0x04,...,0x80} repeated twice.
+  masm_.loadConstantSimd128(
+      SimdConstant::SplatX2(int64_t(0x8040201008040201LL)), hiLookup);
+
+  // We loop over the input, 16 bytes at a time. For each byte, we use the low
+  // nibble to index into the nibble table, then use the high nibble to index
+  // into the resulting byte. For example, 'b' (0x62) loads byte 2 from the
+  // table, then checks bit 6. See BoyerMooreLookahead::GetSkipTable. We
+  // continue until we find a matching character. Note that there are 256
+  // latin-1 characters, but only 128 bits of table. We ignore the high bit of
+  // each character (hence the repetition in `hiLookup`), meaning that (for
+  // example) 'b' (0x62) and 'â' (0xe2) share a bit. This isn't a correctness
+  // issue because the code following this SkipUntilBitInTable will check for a
+  // match separately.
+
+  js::jit::Label simdLoop, advanceVector;
+  masm_.bind(&simdLoop);
+
+  // Load the next 16 input bytes.
+  BaseIndex inputAddr(input_end_pointer_, current_position_, js::jit::TimesOne,
+                      cp_offset);
+  masm_.loadUnalignedSimd128(inputAddr, inputVec);
+
+  // loNibbles = inputVec & 0x0f
+  masm_.bitwiseAndSimd128(nibbleMask, inputVec, loNibbles);
+
+  // hiNibbles = inputVec >> 4
+  FloatRegister hiNibbles = inputVec;
+  masm_.unsignedRightShiftInt8x16(Imm32(4), inputVec, hiNibbles);
+
+  // For each byte, load the correct row of the table.
+  // row = nibbleTable[loNibbles]
+  // bitmask = hiLookup[hiNibbles]
+  FloatRegister row = loNibbles;
+  masm_.swizzleInt8x16Relaxed(nibbleTable, loNibbles, row);
+  masm_.swizzleInt8x16Relaxed(hiLookup, hiNibbles, bitmask);
+
+  // Check whether the corresponding bit is set.
+  // result = (row & bitmask)) == bitmask
+  FloatRegister result = loNibbles;
+  masm_.bitwiseAndSimd128(bitmask, row, result);
+  masm_.compareInt8x16(Assembler::Equal, result, bitmask, result);
+
+  // Extract high bit of each byte into temp1
+#  if defined(JS_CODEGEN_ARM64)
+  masm_.bitmaskInt8x16(result, temp1_, /*temp=*/bitmask);
+#  elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  masm_.bitmaskInt8x16(result, temp1_);
+#  else
+#    error Unsupported SIMD architecture
+#  endif
+
+  masm_.branchTest32(Assembler::Zero, temp1_, temp1_, &advanceVector);
+
+  // Found a match in this 16-byte chunk. Locate the lowest set bit and
+  // advance current_position_ by that index, then jump to on_match.
+  masm_.ctz32(temp1_, temp0_, /*knownNotZero=*/true);
+  masm_.addPtr(temp0_, current_position_);
+  masm_.jump(LabelOrBacktrack(on_match));
+
+  masm_.bind(&advanceVector);
+  masm_.addPtr(Imm32(VectorSize), current_position_);
+
+  CheckPosition(cp_offset + ExtraCharsPerVector, &scalarFallback);
+  masm_.jump(&simdLoop);
+
+  masm_.bind(scalarFallback.inner());
+#else
+  MOZ_CRASH("SIMD not supported");
+#endif  // ENABLE_JIT_SIMD
+}
+
 bool SMRegExpMacroAssembler::SkipUntilBitInTableUseSimd(int advance_by) {
+#if defined(ENABLE_JIT_SIMD)
+#  if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  // SSSE3 is required for pshufb (used to implement swizzleInt8x16).
+  if (!js::jit::Assembler::HasSSSE3()) {
+    return false;
+  }
+#  endif
   // V8 found that using SIMD instead of the scalar version was only
   // faster when we are advancing by 1 byte per iteration.
-  bool simdEnabled = false;
-  return simdEnabled && advance_by * char_size() == 1;
+  return advance_by * char_size() == 1;
+#else
+  return false;
+#endif
 }
 
 void SMRegExpMacroAssembler::CheckNotBackReferenceImpl(int start_reg,

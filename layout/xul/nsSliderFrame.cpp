@@ -155,7 +155,7 @@ class nsDisplaySliderMarks final : public nsPaintedDisplayItem {
     return mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
   }
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
       layers::RenderRootStateManager* aManager,
@@ -249,12 +249,12 @@ void nsDisplaySliderMarks::PaintMarks(nsDisplayListBuilder* aDisplayListBuilder,
   }
 }
 
-bool nsDisplaySliderMarks::CreateWebRenderCommands(
+WebRenderCommandsResult nsDisplaySliderMarks::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   PaintMarks(aDisplayListBuilder, &aBuilder, nullptr);
-  return true;
+  return Ok();
 }
 
 void nsDisplaySliderMarks::Paint(nsDisplayListBuilder* aBuilder,

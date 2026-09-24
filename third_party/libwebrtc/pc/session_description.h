@@ -308,7 +308,7 @@ class MediaContentDescription {
   void set_codecs(const std::vector<Codec>& codecs) { codecs_ = codecs; }
   virtual bool has_codecs() const { return !codecs_.empty(); }
   bool HasCodec(int id) {
-    return absl::c_find_if(codecs_, [id](const Codec codec) {
+    return absl::c_find_if(codecs_, [id](const Codec& codec) {
              return codec.id == id;
            }) != codecs_.end();
   }
@@ -437,11 +437,11 @@ class SctpDataContentDescription final : public MediaContentDescription {
   void set_max_message_size(int max_message_size) {
     max_message_size_ = max_message_size;
   }
-  std::optional<const std::vector<uint8_t>> sctp_init() const {
+  const std::optional<std::vector<uint8_t>>& sctp_init() const {
     return sctp_init_;
   }
-  void set_sctp_init(std::optional<const std::vector<uint8_t>> sctp_init) {
-    sctp_init_ = sctp_init;
+  void set_sctp_init(std::optional<std::vector<uint8_t>> sctp_init) {
+    sctp_init_ = std::move(sctp_init);
   }
 
  private:

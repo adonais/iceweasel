@@ -14,11 +14,6 @@ const FILENAME_RE = /^(success|error)-sync-(\d+)\.txt$/;
 const ERROR_LINE_RE = /\b(ERROR|FATAL|Exception|Traceback)\b/;
 const WARN_LINE_RE = /\bWARN(ING)?\b/;
 
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "medium",
-});
-
 // All discovered logs, and the subset currently shown.
 let allLogs = [];
 let visibleLogs = [];
@@ -78,7 +73,6 @@ async function loadLogs() {
       path,
       type: match[1],
       timestamp,
-      date: new Date(timestamp),
       size: info.size,
     });
   }
@@ -162,8 +156,8 @@ function renderContents(pre, text) {
   pre.appendChild(fragment);
 }
 
-async function loadRowContents(details, log) {
-  const pre = details.querySelector(".log-contents");
+async function loadRowContents(card, log) {
+  const pre = card.querySelector(".log-contents");
   if (pre.dataset.loaded) {
     return;
   }
@@ -191,34 +185,25 @@ function render() {
 
   for (const log of visibleLogs) {
     const row = els.rowTemplate.content.firstElementChild.cloneNode(true);
-    const details = row.querySelector(".log-row-details");
-    const badge = row.querySelector(".log-badge");
-    const date = row.querySelector(".log-date");
+    const card = row.querySelector(".log-row");
     const size = row.querySelector(".log-size");
 
-    badge.classList.add(log.type);
-    document.l10n.setAttributes(
-      badge,
-      log.type === "error"
-        ? "about-sync-log-badge-error"
-        : "about-sync-log-badge-success"
-    );
-    date.textContent = dateFormatter.format(log.date);
+    card.classList.add(log.type);
+    document.l10n.setAttributes(card, `about-sync-log-row-${log.type}`, {
+      date: log.timestamp,
+    });
     const [sizeValue, sizeUnit] = DownloadUtils.convertByteUnits(log.size);
     document.l10n.setAttributes(size, "about-sync-log-row-size", {
       value: sizeValue,
       unit: sizeUnit,
     });
 
-    details.addEventListener("toggle", () => {
-      if (details.open) {
-        loadRowContents(details, log);
+    card.addEventListener("toggle", () => {
+      if (card.expanded) {
+        loadRowContents(card, log);
       }
     });
-    row.querySelector(".log-open-raw").addEventListener("click", event => {
-      // The button lives inside <summary>; stop it from toggling the row.
-      event.preventDefault();
-      event.stopPropagation();
+    row.querySelector(".log-open-raw").addEventListener("click", () => {
       openRaw(log);
     });
     fragment.appendChild(row);
@@ -343,7 +328,7 @@ async function clearLogs() {
 
 async function init() {
   await Promise.all(
-    ["moz-radio-group", "moz-select", "moz-input-search"].map(tagName =>
+    ["moz-segmented-control", "moz-select", "moz-input-search"].map(tagName =>
       customElements.whenDefined(tagName)
     )
   );

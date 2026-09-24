@@ -58,12 +58,6 @@
     'verified/Hacl_Curve25519_51.c',
     'verified/Hacl_Ed25519.c',
   ],
-  'defines': [
-    # For kyber-pqcrystals-ref.c. If we ever decide to support Kyber512 or
-    # Kyber1024, we'll need to build separate static libraries with different
-    # values of KYBER_K.
-    'KYBER_K=3',
-  ],
   'conditions': [
     [ 'OS=="linux" or OS=="android"', {
       'conditions': [
@@ -150,11 +144,6 @@
     [ 'disable_deprecated_rc2==0', {
       'sources': [
         'deprecated/alg2268.c',
-      ],
-    }],
-    [ 'disable_kyber==0', {
-      'sources': [
-        'kyber-pqcrystals-ref.c',
       ],
     }],
     [ 'fuzz==1', {

@@ -124,7 +124,6 @@ support-files = [
 ["test_nsITextInputProcessorCallback_at_changing_default_value_of_textarea.html"]
 
 ["test_permission_hasValidTransientUserActivation.xhtml"]
-support-files = ["../dummy.html"]
 
 ["test_range_getClientRectsAndTexts.html"]
 

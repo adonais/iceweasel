@@ -17,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
@@ -104,7 +105,7 @@ class SnackbarBindingTest {
                         selectedTabId = sessionId,
                     )
                 )
-            val binding = buildSnackbarBinding(browserStore = browserStore)
+            val binding = buildSnackbarBinding(browserStore = browserStore, scope = this)
             binding.start()
 
             appStore.dispatch(TranslationsAction.TranslationStarted(sessionId = sessionId))
@@ -133,7 +134,7 @@ class SnackbarBindingTest {
                         selectedTabId = tab1.id,
                     )
                 )
-            val binding = buildSnackbarBinding(browserStore = browserStore)
+            val binding = buildSnackbarBinding(browserStore = browserStore, scope = this)
             binding.start()
 
             appStore.dispatch(TranslationsAction.TranslationStarted(sessionId = tab2.id))
@@ -151,7 +152,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN the snackbar state is updated to dismiss THEN dismiss the snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(SnackbarAction.SnackbarDismissed)
@@ -165,7 +166,7 @@ class SnackbarBindingTest {
     fun `WHEN show snackbar action is dispatched with a title THEN display the snackbar with that title`() =
         runTest(testDispatcher) {
             val customTitle = "Custom Title"
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(SnackbarAction.ShowSnackbar(customTitle))
@@ -186,7 +187,7 @@ class SnackbarBindingTest {
     fun `GIVEN bookmark's parent is a root node WHEN the bookmark added state is observed THEN display friendly title`() =
         runTest(testDispatcher) {
             val parent = buildParentBookmarkNode(guid = BookmarkRoot.Mobile.id, title = "mobile")
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(
@@ -219,7 +220,7 @@ class SnackbarBindingTest {
     fun `GIVEN bookmark's parent is not a root node but has a root node title WHEN the bookmark added state is observed THEN display custom title`() =
         runTest(testDispatcher) {
             val parent = buildParentBookmarkNode(title = "mobile", guid = "not a root")
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(
@@ -253,7 +254,7 @@ class SnackbarBindingTest {
     fun `GIVEN no bookmark is added WHEN the bookmark added state is observed THEN display the error snackbar`() =
         runTest(testDispatcher) {
             val parent = buildParentBookmarkNode()
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(
@@ -274,7 +275,7 @@ class SnackbarBindingTest {
     @Test
     fun `GIVEN there is no parent folder for an added bookmark WHEN the bookmark added state is observed THEN display the error snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(
@@ -295,7 +296,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN the shortcut added state action is dispatched THEN display the appropriate snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(
@@ -319,7 +320,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN the delete and quit selected state action is dispatched THEN display the appropriate snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(AppAction.DeleteAndQuitStarted)
@@ -338,7 +339,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN the user has successfully signed in THEN display the appropriate snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(AppAction.UserAccountAuthenticated)
@@ -359,7 +360,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN share to app failed THEN display a snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.ShareToAppFailed)
@@ -381,7 +382,7 @@ class SnackbarBindingTest {
         runTest(testDispatcher) {
             val destinations = listOf("a")
             val sharedTabs = listOf(mockk<TabData>())
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.SharedTabsSuccessfully(destinations, sharedTabs))
@@ -403,7 +404,7 @@ class SnackbarBindingTest {
         runTest(testDispatcher) {
             val destinations = listOf("a")
             val sharedTabs = listOf(mockk<TabData>(), mockk<TabData>())
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.SharedTabsSuccessfully(destinations, sharedTabs))
@@ -425,7 +426,7 @@ class SnackbarBindingTest {
         runTest(testDispatcher) {
             val destinations = listOf("a")
             val sharedTabs = listOf(mockk<TabData>())
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
@@ -456,7 +457,7 @@ class SnackbarBindingTest {
             every { sendTabUseCases.sendToDeviceAsync } returns sendToDeviceUseCase
             val retryResult = CompletableDeferred(true)
             every { sendToDeviceUseCase.invoke(any(), any<List<TabData>>()) } returns retryResult
-            val binding = buildSnackbarBinding(sendTabUseCases = sendTabUseCases)
+            val binding = buildSnackbarBinding(sendTabUseCases = sendTabUseCases, scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
@@ -498,7 +499,7 @@ class SnackbarBindingTest {
             every { sendTabUseCases.sendToAllAsync } returns sendToAllDevicesUseCase
             val retryResult = CompletableDeferred(false)
             every { sendToAllDevicesUseCase.invoke(any<List<TabData>>()) } returns retryResult
-            val binding = buildSnackbarBinding(sendTabUseCases = sendTabUseCases)
+            val binding = buildSnackbarBinding(sendTabUseCases = sendTabUseCases, scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.ShareTabsFailed(destinations, sharedTabs))
@@ -535,7 +536,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN a link is copied to clipboard THEN display a snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(ShareAction.CopyLinkToClipboard)
@@ -557,7 +558,7 @@ class SnackbarBindingTest {
             val snackbarAction = slot<((v: View) -> Unit)>()
             val undoUsecase: UndoTabRemovalUseCase = mockk(relaxUnitFun = true)
             every { tabsUseCases.undo } returns undoUsecase
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(AppAction.CurrentTabClosed(isPrivate = false))
@@ -585,7 +586,7 @@ class SnackbarBindingTest {
     fun `WHEN download is failed THEN display a snackbar`() =
         runTest(testDispatcher) {
             val snackbarAction = slot<((v: View) -> Unit)>()
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(AppAction.DownloadAction.DownloadFailed(fileName = "fileName"))
@@ -616,7 +617,7 @@ class SnackbarBindingTest {
     fun `WHEN download is completed THEN display a snackbar`() =
         runTest(testDispatcher) {
             val snackbarAction = slot<((v: View) -> Unit)>()
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             val downloadState =
@@ -656,7 +657,7 @@ class SnackbarBindingTest {
             val snackbarAction = slot<((v: View) -> Unit)>()
             appStore.dispatch(AppAction.MenuNotification.AddMenuNotification(SupportedMenuNotifications.Downloads))
 
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             val downloadState =
@@ -697,7 +698,7 @@ class SnackbarBindingTest {
     @Test
     fun `WHEN download file can't be open THEN display a snackbar`() =
         runTest(testDispatcher) {
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             val downloadState =
@@ -738,7 +739,8 @@ class SnackbarBindingTest {
                                 tabs = listOf(createTab("https://www.firefox.com", id = "id")),
                                 selectedTabId = "id",
                             )
-                        )
+                        ),
+                    scope = this,
                 )
             binding.start()
 
@@ -768,7 +770,7 @@ class SnackbarBindingTest {
     fun `WHEN a webcompat report is successfully sent THEN show a snackbar`() =
         runTest(testDispatcher) {
             val snackbarAction = slot<((v: View) -> Unit)>()
-            val binding = buildSnackbarBinding()
+            val binding = buildSnackbarBinding(scope = this)
             binding.start()
 
             appStore.dispatch(WebCompatAction.WebCompatReportSent)
@@ -804,6 +806,7 @@ class SnackbarBindingTest {
         sendTabUseCases: SendTabUseCases? = null,
         customTabSessionId: String? = null,
         downloadFileUtils: DownloadFileUtils = FakeDownloadFileUtils(),
+        scope: CoroutineScope,
     ) =
         SnackbarBinding(
             context = context,
@@ -817,6 +820,7 @@ class SnackbarBindingTest {
             downloadFileUtils = downloadFileUtils,
             ioDispatcher = testDispatcher,
             mainDispatcher = testDispatcher,
+            applicationScope = scope,
         )
 
     private fun waitForStoreToSettle() =

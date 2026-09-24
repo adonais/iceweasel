@@ -38,6 +38,9 @@ interface TabManagerUiStateRepository {
 
     /** Records the user as having viewed the Tab Groups page. */
     suspend fun recordTabGroupsPageViewed(): Boolean
+
+    /** Records that the ungroup confirmation dialog should be skipped from now on. */
+    suspend fun setSkipUngroupConfirmation(): Boolean
 }
 
 /**
@@ -78,6 +81,7 @@ internal constructor(
                     tabGroupOnboardingImpressionCount = preferences[tabGroupOnboardingImpressionCountKey] ?: 0,
                     hasUserEverHadOneTabGroup = preferences[hasUserEverHadOneTabGroupKey] ?: false,
                     hasViewedTabGroupsPage = preferences[hasViewedTabGroupsPageKey] ?: false,
+                    skipUngroupConfirmation = preferences[skipUngroupConfirmationKey] ?: false,
                 )
             }
             .stateIn(
@@ -103,6 +107,10 @@ internal constructor(
         preferences[hasViewedTabGroupsPageKey] = true
     }
 
+    override suspend fun setSkipUngroupConfirmation(): Boolean = updateDataStore { preferences ->
+        preferences[skipUngroupConfirmationKey] = true
+    }
+
     @VisibleForTesting
     internal suspend fun initializeDataStore(initialUiState: PersistedUIState) {
         dataStore.editOrCatch(onError = {}) { preferences ->
@@ -110,6 +118,7 @@ internal constructor(
             preferences[tabGroupOnboardingImpressionCountKey] = initialUiState.tabGroupOnboardingImpressionCount
             preferences[hasUserEverHadOneTabGroupKey] = initialUiState.hasUserEverHadOneTabGroup
             preferences[hasViewedTabGroupsPageKey] = initialUiState.hasViewedTabGroupsPage
+            preferences[skipUngroupConfirmationKey] = initialUiState.skipUngroupConfirmation
         }
     }
 

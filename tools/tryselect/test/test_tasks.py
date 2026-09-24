@@ -219,11 +219,13 @@ def _run_suggest(
     watchman="/usr/bin/watchman",
     run_result=None,
     run_exc=None,
+    platform="linux",
 ):
     """Drive suggest_watchman_setup() with the environment stubbed out and
     return whatever it printed."""
     stdout = _FakeStdout(tty)
     monkeypatch.setattr(tasks_mod.sys, "stdout", stdout)
+    monkeypatch.setattr(tasks_mod.sys, "platform", platform)
     monkeypatch.setattr(tasks_mod.shutil, "which", lambda _: watchman)
 
     def fake_run(*args, **kwargs):
@@ -244,6 +246,18 @@ def test_suggest_watchman_setup_shows_hint(monkeypatch):
     )
     assert "watchman -j" in out
     assert "watchman.json" in out
+    assert "cmd /d /c" not in out
+
+
+def test_suggest_watchman_setup_hint_adds_cmd_form_on_windows(monkeypatch):
+    out = _run_suggest(
+        monkeypatch,
+        platform="win32",
+        run_result=SimpleNamespace(returncode=0, stdout="some-other-trigger\n"),
+    )
+    assert "watchman -j < " in out
+    assert 'cmd /d /c "watchman -j < ' in out
+    assert "\\" not in out
 
 
 def test_suggest_watchman_setup_silent_when_not_tty(monkeypatch):

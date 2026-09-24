@@ -39,6 +39,10 @@
                   "type": "number",
                   "description": "Number of times the matched URL has been visited this session"
                 },
+                "totalVisitsCount": {
+                  "type": "number",
+                  "description": "Number of matched visits this session, counted across every host and pattern registered by any active openURL message. Pair with a broad pattern such as \"*://*/*\" to count all page loads."
+                },
                 "url": {
                   "type": "string",
                   "description": "The full spec of the URL that was navigated to"
@@ -46,6 +50,10 @@
                 "host": {
                   "type": "string",
                   "description": "The host (nsIURI.host) of the URL that was navigated to"
+                },
+                "isAddressBarUrlNavigation": {
+                  "type": "boolean",
+                  "description": "Whether the navigation was a direct navigation to a URL via the address bar (typed, pasted, autofilled, or picked from the dropdown as a bookmark/history/top-site match), as opposed to a search query submitted through the address bar, a synced-device (remote tab) pick, a link click, a redirect, or other programmatic navigation."
                 }
               },
               "additionalProperties": false

@@ -61,13 +61,13 @@ OTHER_PRIVACY_PREFS = {
             "Reset Private Browsing",
             "browser.privatebrowsing.resetPBM.enabled",
             None,
-            "Clears all private browsing mode data when last private window is closed.",
+            "Shows a toolbar button in private windows that restarts the private session, clearing all site data and closing all private tabs and windows.",
         ),
         (
             "Show Reset Confirmation",
             "browser.privatebrowsing.resetPBM.showConfirmationDialog",
             None,
-            "Shows confirmation dialog before clearing private browsing data on window close.",
+            "Shows a confirmation dialog before the private browsing session is restarted.",
         ),
     ],
     "Cookie Behavior": [
@@ -102,12 +102,6 @@ OTHER_PRIVACY_PREFS = {
             "privacy.globalprivacycontrol.enabled",
             "privacy.globalprivacycontrol.pbmode.enabled",
             "Sends Sec-GPC: 1 HTTP header and exposes navigator.globalPrivacyControl=true.",
-        ),
-        (
-            "GPC Functionality",
-            "privacy.globalprivacycontrol.functionality.enabled",
-            None,
-            "Master switch that controls whether GPC signals are sent (requires .enabled to also be true).",
         ),
     ],
     "Fingerprinting Resistance": [
@@ -264,6 +258,17 @@ for f in FEATURES:
         KNOWN_CODES.add(f["normal_code"])
     if f["pb_code"]:
         KNOWN_CODES.add(f["pb_code"])
+
+# Prefs where `true` means the protection is skipped/disabled not enabled,
+# so a reader scanning for "more true = safer" would draw the
+# opposite conclusion from the truth.
+# Rows for these prefs get an inline note.
+INVERTED_POLARITY_PREFS = {
+    "privacy.trackingprotection.consentmanager.skip.enabled",
+    "privacy.trackingprotection.consentmanager.skip.pbmode.enabled",
+    "privacy.trackingprotection.antifraud.skip.enabled",
+    "privacy.trackingprotection.antifraud.skip.pbmode.enabled",
+}
 
 
 def parse_static_pref_list(yaml_path):
@@ -674,6 +679,13 @@ def _get_footnote_ref(pref, ifdef_block, footnotes):
     return f"[{len(footnotes)}]"
 
 
+def _polarity_marker(pref_normal, pref_pb):
+    """Return an inline note if either pref has inverted polarity."""
+    if pref_normal in INVERTED_POLARITY_PREFS or pref_pb in INVERTED_POLARITY_PREFS:
+        return "<br/>**Note:** the value `true` unblocks domains in this category.."
+    return ""
+
+
 def _render_footnotes(footnotes, start_idx):
     """Render footnotes from start_idx to end of list as markdown lines."""
     if start_idx >= len(footnotes):
@@ -860,10 +872,13 @@ def generate_markdown(
         pref_text = "<br/>".join(pref_links)
 
         desc = feature.get("desc", "")
+        marker = _polarity_marker(pref_normal, pref_pb)
         if desc:
-            cell_name = f"{display_name}<br/><small>{desc}<br/>{pref_text}</small>"
+            cell_name = (
+                f"{display_name}<br/><small>{desc}{marker}<br/>{pref_text}</small>"
+            )
         else:
-            cell_name = f"{display_name}<br/><small>{pref_text}</small>"
+            cell_name = f"{display_name}<br/><small>{pref_text}{marker}</small>"
 
         lines.append(
             f"| {cell_name} | {std_normal_status} | {std_pb_status} "
@@ -961,14 +976,15 @@ def generate_other_privacy_table(
                         )
                     )
             pref_text = "<br/>".join(pref_links)
+            marker = _polarity_marker(normal_pref, pb_pref)
 
             if description:
                 lines.append(
-                    f"| {display_name}<br/><small>{description}<br/>{pref_text}</small> | {normal_status} | {pb_status} |"
+                    f"| {display_name}<br/><small>{description}{marker}<br/>{pref_text}</small> | {normal_status} | {pb_status} |"
                 )
             else:
                 lines.append(
-                    f"| {display_name}<br/><small>{pref_text}</small> | {normal_status} | {pb_status} |"
+                    f"| {display_name}<br/><small>{pref_text}{marker}</small> | {normal_status} | {pb_status} |"
                 )
 
         # Footnotes directly under this category's table

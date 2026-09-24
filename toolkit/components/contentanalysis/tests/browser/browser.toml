@@ -150,3 +150,9 @@ support-files = [
   "browser_print_pdf_content_analysis_impl.js",
   "file_pdf.pdf",
 ]
+
+["browser_save_page_complete_content_analysis.js"]
+support-files = [
+  "save_page_complete.css",
+  "save_page_complete.html",
+]

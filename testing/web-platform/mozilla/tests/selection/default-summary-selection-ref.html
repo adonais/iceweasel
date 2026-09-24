@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+<!-- If you'll change the default summary painted as selected,
+     you should make the serializer contain the default summary at copy. -->
+</head>
+<body>
+<p>Preceding Text</p>
+<details open><summary style="user-select:none">Details</summary>Details Text</details>
+<p>Following Text</p>
+<script>
+getSelection().selectAllChildren(document.body);
+</script>
+</body>
+</html>

@@ -624,16 +624,14 @@ impl AbsoluteColor {
         use ColorSpace::*;
 
         if self.color_space == color_space {
-            return self.clone();
+            return *self;
         }
 
         // Missing components are treated as 0 for the conversion math.
         // Carry-forward of `none` to analogous channels is handled at call
         // sites where needed.
         macro_rules! missing_to_zero {
-            ($c:expr) => {{
-                crate::values::normalize($c.unwrap_or(0.0))
-            }};
+            ($c:expr) => {{ crate::values::normalize($c.unwrap_or(0.0)) }};
         }
 
         let components = ColorComponents(
@@ -701,13 +699,7 @@ impl AbsoluteColor {
         // A NAN value coming from a conversion function means the the component
         // is missing, so we convert it to None.
         macro_rules! nan_to_missing {
-            ($v:expr) => {{
-                if $v.is_nan() {
-                    None
-                } else {
-                    Some($v)
-                }
-            }};
+            ($v:expr) => {{ if $v.is_nan() { None } else { Some($v) } }};
         }
 
         Self::new(
@@ -717,17 +709,6 @@ impl AbsoluteColor {
             nan_to_missing!(result.2),
             self.alpha(),
         )
-    }
-
-    /// Convert a color value to `nscolor`.
-    pub fn to_nscolor(&self) -> u32 {
-        let srgb = self.to_color_space(ColorSpace::Srgb);
-        u32::from_le_bytes([
-            (srgb.components.0 * 255.0).round() as u8,
-            (srgb.components.1 * 255.0).round() as u8,
-            (srgb.components.2 * 255.0).round() as u8,
-            (srgb.alpha * 255.0).round() as u8,
-        ])
     }
 
     /// Convert a given `nscolor` to a Servo AbsoluteColor value.

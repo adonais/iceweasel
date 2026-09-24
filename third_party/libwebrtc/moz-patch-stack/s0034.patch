@@ -19,7 +19,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 39d4066e21..b997730202 100644
+index 2fd44a6e56..0cf538bb28 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -457,12 +457,12 @@ config("common_config") {
@@ -171,7 +171,7 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index cb6f6e4a4e..540af562a2 100644
+index f6849a8504..709dcbdd24 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -125,7 +125,7 @@ rtc_library("aec3") {
@@ -241,7 +241,7 @@ index 3b8c3960d5..d0b66cd592 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 703fbe17c0..aae100e4a2 100644
+index 6f9569430e..f38ba5a5c7 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")

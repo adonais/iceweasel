@@ -16,7 +16,7 @@ const match = new UrlbarResult({
 let controller;
 
 add_setup(async function () {
-  controller = UrlbarTestUtils.newMockController();
+  controller = UrlbarTestUtils.mockChildController();
 });
 
 add_task(async function test_basic_search() {

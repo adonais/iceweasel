@@ -735,6 +735,7 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
   OverscrollBehavior, uint8_t, (
     Auto,
     Contain,
+    Chain,
     None
 ));
 // clang-format on

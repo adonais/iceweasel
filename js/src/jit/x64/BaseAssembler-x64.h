@@ -613,6 +613,11 @@ class BaseAssemblerX64 : public BaseAssembler {
   }
 
   void testq_ir(int32_t rhs, RegisterID lhs) {
+    // Note: rhs == -1 sign-extends to the all-ones 64-bit mask.
+    if (rhs == -1) {
+      testq_rr(lhs, lhs);
+      return;
+    }
     // If the mask fits in a 32-bit immediate, we can use testl with a
     // 32-bit subreg.
     if (CAN_ZERO_EXTEND_32_64(rhs)) {

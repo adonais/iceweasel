@@ -6,6 +6,8 @@
 Utilities for working with Web Platform Test (WPT) paths.
 """
 
+from __future__ import annotations
+
 from typing import Dict, Optional  # noqa EP035
 
 OptJs = Optional[Dict[str, bool]]  # noqa UP006

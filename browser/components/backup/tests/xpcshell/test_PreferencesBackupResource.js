@@ -10,12 +10,11 @@ const { SearchUtils } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
 );
 
-const WALLPAPER_TYPE_PREF =
-  "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
-const CUSTOM_WALLPAPER_UUID_PREF =
-  "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid";
 const CUSTOM_WALLPAPER_FOLDER = "wallpaper";
+const CUSTOM_WALLPAPER_LIBRARY_FOLDER = "library";
 const FAKE_CUSTOM_WALLPAPER_UUID = "decafbad-0cd1-0cd2-0cd3-decafbad1000";
+const FAKE_SAVED_WALLPAPER =
+  "v1-custom-light-center-1-decafbad-0cd1-0cd2-0cd3-decafbad1001";
 
 /**
  * Test that the measure method correctly collects the disk-sizes of things that
@@ -24,7 +23,7 @@ const FAKE_CUSTOM_WALLPAPER_UUID = "decafbad-0cd1-0cd2-0cd3-decafbad1000";
 add_task(async function test_measure() {
   Services.fog.testResetFOG();
 
-  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 56;
+  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 86;
   const tempDir = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "PreferencesBackupResource-measure-test"
@@ -42,6 +41,22 @@ add_task(async function test_measure() {
     { path: ["chrome", "css", "mockStyles.css"], sizeInKB: 5 },
     {
       path: [CUSTOM_WALLPAPER_FOLDER, FAKE_CUSTOM_WALLPAPER_UUID],
+      sizeInKB: 5,
+    },
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        FAKE_SAVED_WALLPAPER,
+      ],
+      sizeInKB: 5,
+    },
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        `${FAKE_SAVED_WALLPAPER}.txt`,
+      ],
       sizeInKB: 5,
     },
   ];
@@ -93,23 +108,33 @@ add_task(async function test_backup() {
     {
       path: [CUSTOM_WALLPAPER_FOLDER, FAKE_CUSTOM_WALLPAPER_UUID],
     },
-  ];
-  await createTestFiles(sourcePath, simpleCopyFiles);
-
-  const skippedCopyFiles = [
-    // We should not back this one up, since the customWallpaper.uuid pref will
-    // not be set to it.
+    // A saved image that is not selected. It is someone's picture, so it is
+    // backed up like the rest of the folder.
     {
-      path: [CUSTOM_WALLPAPER_FOLDER, "some-other-file"],
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        FAKE_SAVED_WALLPAPER,
+      ],
+    },
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        `${FAKE_SAVED_WALLPAPER}.thumb`,
+      ],
+    },
+    // Carries the image's accessible name, a Picture of the Day's date and any
+    // photographer credit, so losing it loses more than the picture's looks.
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        `${FAKE_SAVED_WALLPAPER}.txt`,
+      ],
     },
   ];
-  await createTestFiles(sourcePath, skippedCopyFiles);
-
-  Services.prefs.setStringPref(WALLPAPER_TYPE_PREF, "custom");
-  Services.prefs.setStringPref(
-    CUSTOM_WALLPAPER_UUID_PREF,
-    FAKE_CUSTOM_WALLPAPER_UUID
-  );
+  await createTestFiles(sourcePath, simpleCopyFiles);
 
   // We have no need to test that Sqlite.sys.mjs's backup method is working -
   // this is something that is tested in Sqlite's own tests. We can just make
@@ -133,7 +158,6 @@ add_task(async function test_backup() {
   );
 
   await assertFilesExist(stagingPath, simpleCopyFiles);
-  await assertFilesDoNotExist(stagingPath, skippedCopyFiles);
 
   Assert.ok(
     fakeConnection.backup.notCalled,
@@ -212,6 +236,20 @@ add_task(async function test_recover() {
     { path: ["chrome", "userContent.css"] },
     { path: ["chrome", "childFolder", "someOtherStylesheet.css"] },
     { path: [CUSTOM_WALLPAPER_FOLDER, FAKE_CUSTOM_WALLPAPER_UUID] },
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        FAKE_SAVED_WALLPAPER,
+      ],
+    },
+    {
+      path: [
+        CUSTOM_WALLPAPER_FOLDER,
+        CUSTOM_WALLPAPER_LIBRARY_FOLDER,
+        `${FAKE_SAVED_WALLPAPER}.txt`,
+      ],
+    },
   ];
   await createTestFiles(recoveryPath, simpleCopyFiles);
 

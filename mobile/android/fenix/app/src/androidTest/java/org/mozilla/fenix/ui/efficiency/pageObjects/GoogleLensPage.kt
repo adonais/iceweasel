@@ -13,7 +13,6 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.selectors.GoogleLensSelectors
 
 class GoogleLensPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
@@ -26,9 +25,7 @@ class GoogleLensPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
     // always fails. Tests drive the entry sequence explicitly and act on this page's selectors, mirroring
     // ReaderViewPage.
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return GoogleLensSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = GoogleLensSelectors
 
     /** Accept the opt-out sheet ("Try it now"): requests CAMERA and opens the Lens camera screen. */
     fun acceptOptOutSheet(): GoogleLensPage {

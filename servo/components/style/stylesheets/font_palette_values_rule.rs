@@ -19,13 +19,13 @@ use crate::gecko_bindings::{
 use crate::parser::{Parse, ParserContext};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::font_feature_values_rule::parse_family_name_list;
+use crate::values::DashedIdent;
 use crate::values::computed::font::FamilyName;
 use crate::values::specified::Color as SpecifiedColor;
 use crate::values::specified::NonNegativeInteger;
-use crate::values::DashedIdent;
 use cssparser::{
-    match_ignore_ascii_case, AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState,
-    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
+    AtRuleParser, CowRcStr, DeclarationParser, Parser, ParserState, QualifiedRuleParser,
+    RuleBodyItemParser, RuleBodyParser, SourceLocation, match_ignore_ascii_case,
 };
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
@@ -153,8 +153,8 @@ impl FontPaletteValuesRule {
             context,
             rule: &mut rule,
         };
-        let mut iter = RuleBodyParser::new(input, &mut parser);
-        while let Some(declaration) = iter.next() {
+        let iter = RuleBodyParser::new(input, &mut parser);
+        for declaration in iter {
             if let Err((error, slice, location)) = declaration {
                 let error =
                     ContextualParseError::UnsupportedFontPaletteValuesDescriptor(slice, error);
@@ -190,7 +190,7 @@ impl FontPaletteValuesRule {
     /// Convert to Gecko FontPaletteValueSet.
     #[cfg(feature = "gecko")]
     pub fn to_gecko_palette_value_set(&self, dest: *mut FontPaletteValueSet) {
-        for ref family in self.family_names.iter() {
+        for family in self.family_names.iter() {
             let family = family.name.to_ascii_lowercase();
             let palette_values = unsafe {
                 Gecko_AppendPaletteValueHashEntry(dest, family.as_ptr(), self.name.0.as_ptr())
@@ -273,7 +273,7 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for FontPaletteValuesDeclarationParser<'a
     fn parse_value(
         &mut self,
         name: CowRcStr<'i>,
-        input: &mut Parser<'i, '_>,
+        input: &mut Parser<'i>,
         _declaration_start: &ParserState,
     ) -> Result<(), ParseError> {
         match_ignore_ascii_case! { &*name,

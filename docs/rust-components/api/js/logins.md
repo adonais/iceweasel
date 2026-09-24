@@ -35,6 +35,10 @@
     :members:
     :exclude-members: Login
 ```
+```{js:autoclass} RustLogins.sys.LoginCandidate
+    :members:
+    :exclude-members: LoginCandidate
+```
 ```{js:autoclass} RustLogins.sys.LoginEntry
     :members:
     :exclude-members: LoginEntry

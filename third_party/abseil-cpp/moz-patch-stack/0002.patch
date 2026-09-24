@@ -1,83 +1,69 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Oct 2024 13:42:00 +0000
-Subject: Bug 1921707 - absl.gni - filter dep paths from
- '//third_party/abseil-cpp/' to '//' r=ng
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sun, 23 Aug 2026 13:55:21 -0400
+Subject: Bug 1938156, Bug 1935474 - adjust which abseil-cpp gn targets we
+ build.
 
-Differential Revision: https://phabricator.services.mozilla.com/D224080
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/afc78fbdb5666ffa9c87da7427cc7249220f4908
+Drops a group we do not need and allows building all of absl_component_deps.
 ---
- abseil-cpp/absl.gni | 54 ++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 53 insertions(+), 1 deletion(-)
+ abseil-cpp/BUILD.gn | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
 
-diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
-index 3e5c21f9544..96c7338af71 100644
---- a/abseil-cpp/absl.gni
-+++ b/abseil-cpp/absl.gni
-@@ -80,8 +80,45 @@ template("absl_source_set") {
-           visibility = [ "*" ]
-         }
-       }
-+      visibility += [ "//abseil-cpp/*" ]
-+
-+      # Now that abseil-cpp lives under Mozilla's third_party instead
-+      # of under libwebrtc's third_party and is built as a stand-alone
-+      # library, we need to "re-root" the dependency paths.  We can
-+      # modify the dependencies here to avoid modifying most, if not
-+      # all, of the BUILD.gn files.
-+      if (defined(deps)) {
-+        modified_deps = []
-+        foreach (dep, deps) {
-+          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+          modified_deps += [ newdep ]
-+        }
-+        deps = []
-+        deps = modified_deps
-+      }
-+
-+      # Same for public_deps
-+      if (defined(public_deps)) {
-+        modified_deps = []
-+        foreach (dep, public_deps) {
-+          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+          modified_deps += [ newdep ]
-+        }
-+        public_deps = []
-+        public_deps = modified_deps
-+      }
-+
-+      # Same for visibility
-+      if (defined(visibility)) {
-+        modified_deps = []
-+        foreach (dep, visibility) {
-+          newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+          modified_deps += [ newdep ]
-+        }
-+        visibility = []
-+        visibility = modified_deps
-+      }
+diff --git a/abseil-cpp/BUILD.gn b/abseil-cpp/BUILD.gn
+index 3b1cb12de3e..80f4c3943be 100644
+--- a/abseil-cpp/BUILD.gn
++++ b/abseil-cpp/BUILD.gn
+@@ -39,7 +39,7 @@ component("absl") {
+       sources = [ file ]
      }
--    visibility += [ "//abseil-cpp/*" ]
    }
- }
+-  if (is_win) {
++  if (is_win && !moz_webrtc_build) {
+     all_dependent_configs = [ "//tools/win/DebugVisualizers:absl" ]
+     inputs = [
+       # absl.natvis listed as an input here instead of in
+@@ -149,14 +149,29 @@ group("absl_component_deps") {
+   }
  
-@@ -111,5 +148,20 @@ template("absl_test") {
-         "//third_party/googletest:gtest",
-       ]
-     }
+   visibility = [ ":absl" ]
 +
-+    # Now that abseil-cpp lives under Mozilla's third_party instead
-+    # of under libwebrtc's third_party and is built as a stand-alone
-+    # library, we need to "re-root" the dependency paths.  We can
-+    # modify the dependencies here to avoid modifying most, if not
-+    # all, of the BUILD.gn files.
-+    if (defined(deps)) {
++  if (moz_webrtc_build) {
++    # rewrite deps for our new abseil-cpp location
++    if (defined(public_deps)) {
 +      modified_deps = []
-+      foreach (dep, deps) {
++      foreach (dep, public_deps) {
 +        newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
 +        modified_deps += [ newdep ]
 +      }
-+      deps = []
-+      deps = modified_deps
++      public_deps = []
++      public_deps = modified_deps
 +    }
-   }
++  }
  }
+ 
+ # Abseil testing utilities should only be included in test binaries.
++if (!moz_webrtc_build) {
+ source_set("test_support") {
+   testonly = true
+   public_deps = [ "//third_party/abseil-cpp/absl/hash:hash_testing" ]
+   deps = [ ":absl" ]
+ }
++}
+ 
+ # Some third-party libraries use additional parts of absl that are banned in
+ # Chrome (e.g. flags generates static initializers that are undesirable in
+@@ -191,6 +206,7 @@ source_set("absl_full") {
+ }
+ 
+ group("absl_full_deps") {
++  if (!moz_webrtc_build) {
+   public_deps = [
+     # Banned because each flag registration generates a static initializer, and
+     # the flag registration mechanism is problematic in component builds.
+@@ -213,6 +229,7 @@ group("absl_full_deps") {
+   ]
+ 
+   public_configs = [ "//third_party/abseil-cpp/absl/flags:absl_flags_config" ]
++  }
+ }
+ 
+ config("absl_include_config") {

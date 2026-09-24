@@ -7,7 +7,6 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySearchGroupSelectors
 
@@ -15,17 +14,15 @@ import org.mozilla.fenix.ui.efficiency.selectors.HistorySearchGroupSelectors
  * The history search-group screen, reached by tapping a group in the homepage's "Recently visited" section.
  *
  * No navigation edge is registered and this page is deliberately absent from PageContext: it is entered by clicking a
- * *dynamic* label — the search term — which NavigationRegistry cannot express, and its toolbar title is that same term
- * rather than "History", so HistoryPage's arrival check cannot stand in for it. Tests instantiate this page directly,
- * as they do for [ReaderViewPage].
+ * *dynamic* label — the search term — which the navigation graph cannot express, and its toolbar title is that same
+ * term rather than "History", so HistoryPage's arrival check cannot stand in for it. Tests instantiate this page
+ * directly, as they do for [ReaderViewPage].
  */
 class HistorySearchGroupPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) :
     BasePage(composeRule) {
     override val pageName = "HistorySearchGroupPage"
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return HistorySearchGroupSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = HistorySearchGroupSelectors
 
     /** Assert the group screen for [searchTerm] is open, and that its items have rendered. */
     fun verifyGroupIsOpen(searchTerm: String): HistorySearchGroupPage {

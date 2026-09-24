@@ -734,7 +734,11 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
   mHeader->readerState = State::Waiting;
 
   if (mReaderSemaphore->Wait(Some(mNextEventTimeout))) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
+    MOZ_ASSERT(HasPendingEvent());
+    if (!HasPendingEvent()) {
+      mHeader->readerState = State::Failed;
+      return false;
+    }
     MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
     return ReadPendingEvent(aEventType);
   }
@@ -742,7 +746,11 @@ bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
   // We have to use compareExchange here because the writer can change our
   // state if we are waiting.
   if (!mHeader->readerState.compareExchange(State::Waiting, State::Stopped)) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
+    MOZ_ASSERT(HasPendingEvent());
+    if (!HasPendingEvent()) {
+      mHeader->readerState = State::Failed;
+      return false;
+    }
     MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
     // The writer has just signaled us, so consume it before returning
     MOZ_ALWAYS_TRUE(mReaderSemaphore->Wait());
@@ -1545,13 +1553,10 @@ static bool SDIsSupportedRemoteDecoder(const SurfaceDescriptor& sd) {
   }
 
   const auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
-  const auto& subdesc = sdrd.subdesc();
-  const auto& subdescType = subdesc.type();
 
-  if (subdescType == RemoteDecoderVideoSubDescriptor::Tnull_t ||
-      subdescType ==
-          RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorMacIOSurface ||
-      subdescType == RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10) {
+  if (sdrd.videoType() == RemoteDecoderVideoType::Buffer ||
+      sdrd.videoType() == RemoteDecoderVideoType::MacIOSurface ||
+      sdrd.videoType() == RemoteDecoderVideoType::D3D10) {
     return true;
   }
 
@@ -1643,8 +1648,6 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
 
   const auto& sdrd = aDesc.get_SurfaceDescriptorGPUVideo()
                          .get_SurfaceDescriptorRemoteDecoder();
-  const auto& subdesc = sdrd.subdesc();
-  const auto& subdescType = subdesc.type();
 
   RefPtr<VideoBridgeParent> parent =
       VideoBridgeParent::GetSingleton(sdrd.source());
@@ -1661,7 +1664,7 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
   }
 
 #if defined(XP_WIN)
-  if (subdescType == RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10) {
+  if (sdrd.videoType() == RemoteDecoderVideoType::D3D10) {
     auto* textureHostD3D11 = texture->AsDXGITextureHostD3D11();
     if (!textureHostD3D11) {
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
@@ -1689,8 +1692,7 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
   }
 #endif
 
-  if (subdescType ==
-      RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorMacIOSurface) {
+  if (sdrd.videoType() == RemoteDecoderVideoType::MacIOSurface) {
     MOZ_ASSERT(texture->AsMacIOSurfaceTextureHost());
 
     RefPtr<gfx::DataSourceSurface> surf =
@@ -1698,7 +1700,7 @@ CanvasTranslator::LookupSourceSurfaceFromSurfaceDescriptor(
     return surf.forget();
   }
 
-  if (subdescType == RemoteDecoderVideoSubDescriptor::Tnull_t) {
+  if (sdrd.videoType() == RemoteDecoderVideoType::Buffer) {
     RefPtr<gfx::DataSourceSurface> surf =
         MaybeRecycleDataSurfaceForSurfaceDescriptor(texture, sdrd);
     return surf.forget();

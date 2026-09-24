@@ -5,24 +5,24 @@
 //! `<length>` computed values, and related ones.
 
 use super::{Number, ToComputedValue};
+use crate::Zero;
 use crate::derives::*;
 use crate::logical_geometry::PhysicalSide;
 use crate::typed_om::{NumericType, NumericValue, ToTyped, TypedValue, UnitValue};
+use crate::values::CSSFloat;
+#[cfg(feature = "gecko")]
+use crate::values::DashedIdent;
 use crate::values::animated::{Context as AnimatedContext, ToAnimatedValue};
 use crate::values::computed::position::TryTacticAdjustment;
 use crate::values::computed::{NonNegativeNumber, Percentage, Zoom};
+use crate::values::generics::NonNegative;
 use crate::values::generics::length::{
     GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
 };
 #[cfg(feature = "gecko")]
 use crate::values::generics::position::TreeScoped;
-use crate::values::generics::NonNegative;
-use crate::values::generics::{length as generics, ClampToNonNegative};
+use crate::values::generics::{ClampToNonNegative, length as generics};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
-use crate::values::CSSFloat;
-#[cfg(feature = "gecko")]
-use crate::values::DashedIdent;
-use crate::Zero;
 use app_units::Au;
 use std::fmt::{self, Write};
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -277,7 +277,7 @@ impl ToTyped for CSSPixelLength {
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
             numeric_type: NumericType::length(),
-            value: self.0 as f32,
+            value: self.0,
             unit: CssString::from("px"),
         })));
         Ok(())
@@ -423,11 +423,7 @@ impl NonNegativeLength {
     #[inline]
     /// Ensures it is non negative
     pub fn clamp(self) -> Self {
-        if (self.0).0 < 0. {
-            Self::zero()
-        } else {
-            self
-        }
+        if (self.0).0 < 0. { Self::zero() } else { self }
     }
 }
 

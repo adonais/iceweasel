@@ -362,7 +362,6 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         context?.components?.let {
             val policy = it.core.trackingProtectionPolicyFactory.createTrackingProtectionPolicy()
             it.useCases.settingsUseCases.updateTrackingProtection.invoke(policy)
-            updateFingerprintingProtection()
             it.useCases.sessionUseCases.reload.invoke()
         }
     }
@@ -388,31 +387,6 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         customAllowListBaselineTrackingProtection.isVisible = isCustomSelected
         customAllowListConvenienceTrackingProtection.isVisible = isCustomSelected
         customAllowListTrackingProtectionSubheader.isVisible = isCustomSelected
-    }
-
-    private fun updateFingerprintingProtection() {
-        val isStandardSelected = requireComponents.settings.useStandardTrackingProtection
-        val isStrictSelected = requireComponents.settings.useStrictTrackingProtection
-        val isCustomSelected = requireComponents.settings.useCustomTrackingProtection
-
-        context?.components?.let {
-            if (isCustomSelected) {
-                if (it.settings.blockSuspectedFingerprintersInCustomTrackingProtection) {
-                    it.core.engine.settings.fingerprintingProtection = it.settings.blockSuspectedFingerprinters
-                    it.core.engine.settings.fingerprintingProtectionPrivateBrowsing =
-                        it.settings.blockSuspectedFingerprintersPrivateBrowsing
-                } else {
-                    it.core.engine.settings.fingerprintingProtection = false
-                    it.core.engine.settings.fingerprintingProtectionPrivateBrowsing = false
-                }
-            } else if (isStrictSelected) {
-                it.core.engine.settings.fingerprintingProtection = true
-                it.core.engine.settings.fingerprintingProtectionPrivateBrowsing = true
-            } else if (isStandardSelected) {
-                it.core.engine.settings.fingerprintingProtection = false
-                it.core.engine.settings.fingerprintingProtectionPrivateBrowsing = true
-            }
-        }
     }
 
     private fun getLink(text: String): SpannableStringBuilder {

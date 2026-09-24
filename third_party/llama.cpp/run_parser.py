@@ -39,6 +39,10 @@ if __name__ == '__main__':
         'ENABLE_TOOLS': 0,
         'ENABLE_DOCS': 0,
         'ENABLE_NEON': 1,
+        # Backends whose CMakeLists.txt the parser descends into, to pick up
+        # their sources. This does not disable a backend: the Metal one is
+        # absent because we vendor its sources without their CMakeLists.txt and
+        # list them by hand in moz.build, so there is nothing here to parse.
         'MOZ_GGML_BACKENDS': "cpu"
     }
 
@@ -88,6 +92,14 @@ if __name__ == '__main__':
 
             all_exports.extend(headers)
             all_sources["{}".format(arch.upper())] = sources
+
+    # The Metal backend is not parsed (see MOZ_GGML_BACKENDS) but has the same
+    # problem as the rename rules below: ggml-metal-device.m and
+    # ggml-metal-device.cpp would compile to the same object name.
+    metal_dir = os.path.join(LLAMA_DIR, 'ggml/src/ggml-metal')
+    if os.path.exists(os.path.join(metal_dir, 'ggml-metal-device.m')):
+        os.rename(os.path.join(metal_dir, 'ggml-metal-device.m'),
+                  os.path.join(metal_dir, 'ggml-metal-device-m.m'))
 
     all_sources = deduplicate_into(all_sources, "COMMON")
     rename_rules = [

@@ -54,7 +54,8 @@ val TOP_SITES = Selector(
     strategy = SelectorStrategy.COMPOSE_BY_TAG,
     value = "top_sites.component",
     description = "Top sites section",
-    groups = listOf("homepage")
+    groups = setOf(HomeSelectors.Group.HOME_SCREEN),
+    readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
 )
 ```
 

@@ -223,7 +223,7 @@
 }
 
 .requests-list-header-button:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgb(0 0 0 / 0.1);
 }
 
 #requests-list-override-button:hover {
@@ -401,7 +401,7 @@
 .theme-dark .request-list-item.selected .status-code-blocked,
 .theme-dark .request-list-item.selected .requests-security-state-icon,
 .theme-dark .request-list-item.selected .tracking-resource {
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(255 255 255 / 0.75);
 }
 
 .request-list-item .requests-list-column,
@@ -636,7 +636,7 @@
 }
 
 .theme-dark {
-  --network-initiator-line-color: hsl(210, 40%, 60%);
+  --network-initiator-line-color: hsl(210 40% 60%);
   --network-initiator-color: var(--blue-40);
 }
 

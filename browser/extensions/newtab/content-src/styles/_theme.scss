@@ -91,11 +91,7 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
     // If we add color-scheme here, we can still use light-dark
     color-scheme: dark;
     // General styles
-    --newtab-background-color: #{$in-content-page-background-dark};
-    --newtab-background-color-secondary: #{$newtab-background-secondary-dark};
     --newtab-text-primary-color: #{$in-content-page-color-dark};
-    // Card Background includes 20% transparency
-    --newtab-background-card: #{$newtab-background-card-dark};
     --newtab-text-topic-label-color: var(--color-violet-30);
     --newtab-text-secondary-text: #FBFBFEB0;
 
@@ -117,6 +113,26 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
   }
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([lwt-newtab]) {
+    color-scheme: dark;
+    --newtab-text-primary-color: #{$in-content-page-color-dark};
+    --newtab-text-topic-label-color: var(--color-violet-30);
+    --newtab-text-secondary-text: #FBFBFEB0;
+    --newtab-primary-action-background-pocket: #{$primary-blue-dark};
+    --newtab-primary-action-background-pocket-dimmed: color-mix(in srgb, var(--newtab-primary-action-background) 25%, transparent);
+    --newtab-primary-element-hover-pocket-color: color-mix(in srgb, var(--newtab-primary-action-background-pocket) 55%, #{$white});
+    --newtab-element-hover-color: color-mix(in srgb, var(--newtab-background-color) 80%, #{$white});
+    --newtab-element-active-color: color-mix(in srgb, var(--newtab-background-color) 60%, #{$white});
+    --newtab-section-card-box-shadow-color: rgba(0, 0, 0, 80%);
+    --newtab-element-secondary-color: color-mix(in srgb, currentColor 10%, transparent);
+    --newtab-element-secondary-hover-color: color-mix(in srgb, currentColor 17%, transparent);
+    --newtab-element-secondary-active-color: color-mix(in srgb, currentColor 30%, transparent);
+    --newtab-primary-element-text-color: #{$primary-text-color-dark};
+    --newtab-status-success: #{$status-dark-green};
+  }
+}
+
 @media (prefers-contrast) {
   :root {
     --newtab-text-secondary-color: var(--newtab-text-primary-color);
@@ -131,6 +147,36 @@ $shadow-image-inset: inset 0 0 0 0.5px $black-15;
     :root {
       color-scheme: dark;
       --newtab-text-secondary-text: #FFF;
+    }
+  }
+}
+
+// Bug 2070290: the wallpaper-contrast-fix mixin sets color-scheme on elements that
+// contain a menu, and panel-list inherits it, so menus use the wallpaper's light/dark
+// scheme rather than the browser theme. Re-declare the scheme :root is given above so
+// menus always follow the browser theme.
+panel-list {
+  color-scheme: light;
+}
+
+:root[lwt-newtab-brighttext] panel-list {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([lwt-newtab]) panel-list {
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-contrast) {
+  panel-list {
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    panel-list {
+      color-scheme: dark;
     }
   }
 }

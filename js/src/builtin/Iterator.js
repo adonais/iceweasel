@@ -503,7 +503,6 @@ function* IteratorFilterGenerator(iterator, nextMethod, predicate) {
  * Iterator.prototype.take ( limit )
  *
  * https://tc39.es/ecma262/#sec-iterator.prototype.take
- * ES2026 draft rev d14670224281909f5bb552e8ebe4a8e958646c16
  */
 function IteratorTake(limit) {
   // Step 1.
@@ -525,8 +524,21 @@ function IteratorTake(limit) {
     throw e;
   }
 
-  // Steps 6-8.
+  // Steps 6-7.
+  if (
+    Number_isNaN(numLimit) ||
+    (Number_isFinite(numLimit) && numLimit > (2 ** 53) - 1)
+  ) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
+  }
+
+  // Step 8.
   var integerLimit = std_Math_trunc(numLimit);
+
+  // Step 9.
   if (!(integerLimit >= 0)) {
     try {
       IteratorClose(iterator);
@@ -534,10 +546,10 @@ function IteratorTake(limit) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  // Step 9. (Inlined call to GetIteratorDirect.)
+  // Step 10. (Inlined call to GetIteratorDirect.)
   var nextMethod = iterator.next;
 
-  // Steps 10-12.
+  // Steps 11-13.
   var result = NewIteratorHelper();
   var generator = IteratorTakeGenerator(iterator, nextMethod, integerLimit);
   UnsafeSetReservedSlot(
@@ -551,7 +563,7 @@ function IteratorTake(limit) {
     iterator
   );
 
-  // Step 13.
+  // Step 14.
   return result;
 }
 
@@ -561,27 +573,26 @@ function IteratorTake(limit) {
  * Abstract closure definition.
  *
  * https://tc39.es/ecma262/#sec-iterator.prototype.take
- * ES2026 draft rev d14670224281909f5bb552e8ebe4a8e958646c16
  */
 function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
-  // Step 8.a. (Implicit)
+  // Step 11.a. (Implicit)
 
-  // Step 8.b.i. (Reordered before for-of loop entry)
+  // Steps 11.b.i and 11.b.i.1. (Reordered before for-of loop entry)
   if (remaining === 0) {
     IteratorClose(iterator);
     return;
   }
 
-  // Step 8.b.
+  // Step 11.b.
   for (var value of allowContentIterWithNext(iterator, nextMethod)) {
-    // Steps 8.b.iii-iv. (Implicit through for-of loop)
+    // Steps 11.b.iii-iv. (Implicit through for-of loop)
 
-    // Step 8.b.v.
+    // Step 11.b.v.
     yield value;
 
-    // Step 8.b.vi. (Implicit through for-of loop)
+    // Step 11.b.vi. (Implicit through for-of loop)
 
-    // Steps 8.b.i-ii. (Reordered)
+    // Steps 11.b.ii, 11.b.i, and 11.b.i.1. (Reordered)
     if (--remaining === 0) {
       // |break| implicitly calls IteratorClose.
       break;
@@ -593,7 +604,6 @@ function* IteratorTakeGenerator(iterator, nextMethod, remaining) {
  * Iterator.prototype.drop ( limit )
  *
  * https://tc39.es/ecma262/#sec-iterator.prototype.drop
- * ES2026 draft rev d14670224281909f5bb552e8ebe4a8e958646c16
  */
 function IteratorDrop(limit) {
   // Step 1.
@@ -615,8 +625,21 @@ function IteratorDrop(limit) {
     throw e;
   }
 
-  // Steps 6-8.
+  // Steps 6-7.
+  if (
+    Number_isNaN(numLimit) ||
+    (Number_isFinite(numLimit) && numLimit > (2 ** 53) - 1)
+  ) {
+    try {
+      IteratorClose(iterator);
+    } catch {}
+    ThrowRangeError(JSMSG_LIMIT_TOO_LARGE);
+  }
+
+  // Step 8.
   var integerLimit = std_Math_trunc(numLimit);
+
+  // Step 9.
   if (!(integerLimit >= 0)) {
     try {
       IteratorClose(iterator);
@@ -624,10 +647,10 @@ function IteratorDrop(limit) {
     ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
   }
 
-  // Step 9. (Inlined call to GetIteratorDirect.)
+  // Step 10. (Inlined call to GetIteratorDirect.)
   var nextMethod = iterator.next;
 
-  // Steps 10-12.
+  // Steps 11-13.
   var result = NewIteratorHelper();
   var generator = IteratorDropGenerator(iterator, nextMethod, integerLimit);
   UnsafeSetReservedSlot(
@@ -641,7 +664,7 @@ function IteratorDrop(limit) {
     iterator
   );
 
-  // Step 13.
+  // Step 14.
   return result;
 }
 
@@ -651,22 +674,21 @@ function IteratorDrop(limit) {
  * Abstract closure definition.
  *
  * https://tc39.es/ecma262/#sec-iterator.prototype.drop
- * ES2026 draft rev d14670224281909f5bb552e8ebe4a8e958646c16
  */
 function* IteratorDropGenerator(iterator, nextMethod, remaining) {
-  // Step 10.a. (Implicit)
+  // Step 11.a. (Implicit)
 
-  // Steps 10.b-c.
+  // Steps 11.b-c.
   for (var value of allowContentIterWithNext(iterator, nextMethod)) {
-    // Step 10.b.i.
+    // Step 11.b.i.
     if (remaining-- <= 0) {
-      // Steps 10.b.ii-iii. (Implicit through for-of loop)
-      // Steps 10.c.i-ii. (Implicit through for-of loop)
+      // Steps 11.b.ii-iii. (Implicit through for-of loop)
+      // Steps 11.c.i-ii. (Implicit through for-of loop)
 
-      // Step 10.c.iii.
+      // Step 11.c.iii.
       yield value;
 
-      // Step 10.c.iv. (Implicit through for-of loop)
+      // Step 11.c.iv. (Implicit through for-of loop)
     }
   }
 }

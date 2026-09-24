@@ -23,7 +23,7 @@
 #include "nss.h"
 #include "pk11pub.h"
 #include "sdp/HybridSdpParser.h"
-#include "sdp/SipccSdp.h"
+#include "sdp/SdpImpl.h"
 #include "transport/logging.h"
 
 namespace mozilla {
@@ -215,10 +215,14 @@ nsresult JsepSessionImpl::AddRtpExtension(
   mLastError.clear();
 
   for (auto& ext : mRtpExtensions) {
-    if (ext.mExtmap.direction == direction &&
-        ext.mExtmap.extensionname == extensionName) {
+    if (ext.mExtmap.extensionname == extensionName) {
       if (ext.mMediaType != mediaType) {
         ext.mMediaType = JsepMediaType::kAudioVideo;
+      }
+      if (ext.mExtmap.direction != direction) {
+        ext.mExtmap.direction |= direction;
+        ext.mExtmap.direction_specified =
+            ext.mExtmap.direction != SdpDirectionAttribute::kSendrecv;
       }
       return NS_OK;
     }
@@ -488,13 +492,17 @@ std::vector<SdpExtmapAttributeList::Extmap> JsepSessionImpl::GetRtpExtensions(
       break;
     case SdpMediaSection::kVideo:
       mediaType = JsepMediaType::kVideo;
-      // We need to add the dependency descriptor extension for simulcast
-      if (includes_send && StaticPrefs::media_peerconnection_video_use_dd() &&
-          msection.GetAttributeList().HasAttribute(
-              SdpAttribute::kSimulcastAttribute)) {
+      if (StaticPrefs::media_peerconnection_video_use_dd()) {
+        // We always want to receive the dependency descriptor, as libwebrtc
+        // relies on it for layered streams (Bug 2071030). We only send it for
+        // simulcast.
+        const bool sendSimulcast =
+            includes_send && msection.GetAttributeList().HasAttribute(
+                                 SdpAttribute::kSimulcastAttribute);
         AddVideoRtpExtension(
             nsLiteralCString(webrtc::RtpExtension::kDependencyDescriptorUri),
-            SdpDirectionAttribute::kSendonly);
+            sendSimulcast ? SdpDirectionAttribute::kSendrecv
+                          : SdpDirectionAttribute::kRecvonly);
       }
       if (msection.GetAttributeList().HasAttribute(
               SdpAttribute::kRidAttribute)) {
@@ -869,6 +877,40 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
     NS_ENSURE_SUCCESS(ns_rv, dom::PCError::OperationError);
   }
 
+  // This loop is inspecting the previous state on transceivers by calling
+  // HasOwnTransport; do this before we begin updating them in the loop
+  // below.
+  std::set<size_t> levelsWithNegotiatedTransport;
+  for (size_t i = 0; i < parsed->GetMediaSectionCount(); ++i) {
+    Maybe<JsepTransceiver> currentTransportOwner;
+
+    const auto& msection = parsed->GetMediaSection(i);
+    if (msection.GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
+      auto bundleTagIt = bundledMids.find(msection.GetAttributeList().GetMid());
+      if (bundleTagIt != bundledMids.end()) {
+        // Bundled!
+        currentTransportOwner =
+            GetTransceiverForLevel(bundleTagIt->second->GetLevel());
+      }
+    }
+
+    if (!currentTransportOwner) {
+      // Not bundled! This transceiver owns its transport.
+      currentTransportOwner = GetTransceiverForLevel(i);
+    }
+
+    // HasOwnTransport has not been updated yet; this tells us if the
+    // *current* transport owner owned a transport *last* time. In other
+    // words, the transport owner has an already negotiated transport, and
+    // the transceiver at level i can use it.
+    // Note: It is possible that this m-section is disabled, making the
+    // setting of this flag moot.
+    if (currentTransportOwner && currentTransportOwner->IsNegotiated() &&
+        currentTransportOwner->HasOwnTransport()) {
+      levelsWithNegotiatedTransport.insert(i);
+    }
+  }
+
   for (size_t i = 0; i < parsed->GetMediaSectionCount(); ++i) {
     Maybe<JsepTransceiver> transceiver(GetTransceiverForLevel(i));
     if (!transceiver) {
@@ -883,6 +925,7 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
 
     if (mSdpHelper.MsectionIsDisabled(msection)) {
       transceiver->mTransport.Close();
+      transceiver->SetCanUseExistingTransport(false);
       SetTransceiver(*transceiver);
       continue;
     }
@@ -893,6 +936,9 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
       JSEP_SET_ERROR("Transceiver for level " << i << " has been stopped.");
       return dom::PCError::OperationError;
     }
+
+    transceiver->SetCanUseExistingTransport(
+        levelsWithNegotiatedTransport.contains(i));
 
     bool hasOwnTransport = mSdpHelper.OwnsTransport(
         msection, bundledMids,
@@ -905,6 +951,10 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
           remoteMsection, remoteBundledMids, sdp::kOffer);
     }
 
+    // For an offer, OwnsTransport() can't be sure a m-section that isn't
+    // marked bundle-only will actually end up bundled (that depends on the
+    // answer), so it conservatively says such a m-section owns its
+    // transport.
     if (hasOwnTransport) {
       EnsureHasOwnTransport(parsed->GetMediaSection(i), *transceiver);
     }
@@ -922,6 +972,7 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
         transceiver->SetBundleLevel(it->second->GetLevel());
       }
     }
+
     SetTransceiver(*transceiver);
   }
 
@@ -1249,6 +1300,11 @@ nsresult JsepSessionImpl::MakeNegotiatedTransceiver(
                           << " receiving=" << receiving);
 
   transceiver.SetNegotiated();
+
+  // Deliberately not touching CanUseExistingTransport() here: it's only
+  // ever consulted while in have-local-offer, and gets recomputed from
+  // scratch by SetLocalDescription() the next time around, so there's
+  // nothing to update on this path.
 
   // Ensure that this is finalized in case we need to copy it below
   nsresult rv =
@@ -2261,7 +2317,7 @@ nsresult JsepSessionImpl::CreateGenericSDP(UniquePtr<Sdp>* sdpp) {
   auto origin = SdpOrigin("mozilla...THIS_IS_SDPARTA-99.0", mSessionId,
                           mSessionVersion, sdp::kIPv4, "0.0.0.0");
 
-  UniquePtr<Sdp> sdp = MakeUnique<SipccSdp>(origin);
+  UniquePtr<Sdp> sdp = MakeUnique<SdpImpl>(origin);
 
   if (mDtlsFingerprints.empty()) {
     JSEP_SET_ERROR("Missing DTLS fingerprint");
@@ -2500,6 +2556,34 @@ nsresult JsepSessionImpl::GetNegotiatedBundledMids(
   }
 
   return mSdpHelper.GetBundledMids(*answerSdp, bundledMids);
+}
+
+bool JsepSessionImpl::LocalOfferedRecvParamsChanged(const std::string& aMid) {
+  const mozilla::Sdp* currentSdp =
+      GetParsedLocalDescription(kJsepDescriptionCurrent);
+  if (!currentSdp) {
+    return true;
+  }
+  const SdpMediaSection* current =
+      mSdpHelper.FindMsectionByMid(*currentSdp, aMid);
+  if (!current) {
+    return true;
+  }
+
+  const mozilla::Sdp* pendingSdp =
+      GetParsedLocalDescription(kJsepDescriptionPending);
+  if (!pendingSdp) {
+    return false;
+  }
+  const SdpMediaSection* pending =
+      mSdpHelper.FindMsectionByMid(*pendingSdp, aMid);
+  if (!pending) {
+    return false;
+  }
+
+  return pending->GetFormats() != current->GetFormats() ||
+         pending->GetDirectionAttribute().mValue !=
+             current->GetDirectionAttribute().mValue;
 }
 
 mozilla::Sdp* JsepSessionImpl::GetParsedLocalDescription(

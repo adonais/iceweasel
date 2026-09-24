@@ -60,7 +60,7 @@ rtc_library("encoder_config") {
 }
 
 if (rtc_include_tests) {
-  rtc_library("video_config_tests") {
+  rtc_cc_test("video_config_tests") {
     testonly = true
 
     defines = []

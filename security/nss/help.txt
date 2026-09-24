@@ -4,6 +4,7 @@ Usage: build.sh [-h] [-c|-cc] [-v] [-j <n>] [--gyp|-g] [--opt|-o]
                 [--pprof] [--asan] [--msan] [--ubsan[=bool,shift,...]
                 [--fuzz[=tls|oss]] [--sancov[=edge|bb|func|...]]
                 [--emit-llvm] [--no-zdefs] [--static] [--ct-verif]
+                [--dist=<dir>]
                 [--nspr|--with-nspr=<include>:<lib>|--system-nspr]
                 [--system-sqlite] [--enable-fips] [--enable-libpkix]
                 [--mozpkix-only] [-D<gyp-option>]
@@ -43,6 +44,8 @@ NSS build tool options:
     --no-zdefs       don't set -Wl,-z,defs
     --static         create static libraries and use static linking
     --ct-verif       build with valgrind for ct-verif
+    --dist           write build output to the given directory
+                     --dist=<dir>, defaults to <checkout>/../dist
     --nspr           force a rebuild of NSPR
     --nspr-test-build when building NSPR also build its tests
     --nspr-test-run  when building NSPR tests also run its tests

@@ -3,5 +3,6 @@
 
   &.context-menu-open > moz-button::part(button) {
     background-color: var(--button-background-color-ghost-hover);
+    color: var(--button-text-color-ghost-hover);
   }
 }

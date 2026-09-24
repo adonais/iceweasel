@@ -114,18 +114,18 @@ void JSProcessActorProtocol::RemoveObservers() {
   }
 }
 
-bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType,
+bool JSProcessActorProtocol::Matches(const RemoteType& aRemoteType,
                                      ErrorResult& aRv) {
-  if (!mIncludeParent && aRemoteType.IsEmpty()) {
+  if (!mIncludeParent && aRemoteType.IsNotRemote()) {
     aRv.ThrowNotSupportedError(nsPrintfCString(
         "Process protocol '%s' doesn't match the parent process", mName.get()));
     return false;
   }
 
-  if (!RemoteTypePrefixMatches(aRemoteType)) {
+  if (!RemoteTypeMatches(aRemoteType)) {
     aRv.ThrowNotSupportedError(nsPrintfCString(
         "Process protocol '%s' doesn't support remote type '%s'", mName.get(),
-        PromiseFlatCString(aRemoteType).get()));
+        aRemoteType.Stringify().get()));
     return false;
   }
 

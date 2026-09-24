@@ -184,6 +184,21 @@ async function runTests(aHost) {
     checkCharacterAtPoint(i);
   }
 
+  editContext.updateCharacterBounds(3, bounds.slice(3));
+  for (let i = 3; i < editContext.text.length; i++) {
+    checkCharacterAtPoint(i);
+  }
+
+  // Test that we handle the case of
+  // character bounds offset > text length.
+  {
+    editContext.updateCharacterBounds(10000, bounds);
+    const rect = convertToRootRelativeRect(bounds[0]);
+    const result = synthesizeCharAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    ok(result.notFound,
+       'Should not find character when character bounds offset is greater than length of text');
+  }
+
   let rects = getTextRectArray(0, 0);
   is(rects.length, 1, formatMessage('QueryTextRectArray should still give a caret rect if count is 0.'));
   checkRect(rects[0],

@@ -320,13 +320,14 @@ Provider::Provider()
       mBackbuffer() {}
 
 Provider::~Provider() {
-  mBackbuffer.reset();
-
+  // Stop and join the service thread before releasing any state.
   if (mServiceThread) {
     mStopServiceThread = true;
     MOZ_ALWAYS_TRUE(::SetEvent(mRequestReadyEvent));
     MOZ_ALWAYS_TRUE(PR_JoinThread(mServiceThread) == PR_SUCCESS);
   }
+
+  mBackbuffer.reset();
 
   if (mSharedDataPtr) {
     MOZ_ALWAYS_TRUE(::UnmapViewOfFile(mSharedDataPtr));

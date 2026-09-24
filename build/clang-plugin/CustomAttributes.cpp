@@ -39,7 +39,8 @@ static CustomAttributesSet CacheAttributes(const Decl *D) {
 #include "CustomAttributes.inc"
 #include "external/CustomAttributes.inc"
 #undef ATTR
-    {}
+    {
+    }
   }
   const_cast<Decl *>(D)->dropAttr<AnnotateAttr>();
   AttributesCache.insert(std::make_pair(D, attrs));
@@ -69,7 +70,7 @@ public:
 };
 
 ASTConsumerPtr CustomAttributesAction::CreateASTConsumer(CompilerInstance &CI,
-                                  StringRef FileName) {
+                                                         StringRef FileName) {
   auto &Context = CI.getASTContext();
   auto AstMatcher = new (Context.Allocate<MatchFinder>()) MatchFinder();
   auto Matcher = new (Context.Allocate<CustomAttributesMatcher>())
@@ -80,11 +81,13 @@ ASTConsumerPtr CustomAttributesAction::CreateASTConsumer(CompilerInstance &CI,
 }
 
 bool CustomAttributesAction::ParseArgs(const CompilerInstance &CI,
-                const std::vector<std::string> &Args) {
+                                       const std::vector<std::string> &Args) {
   return true;
 }
 
-PluginASTAction::ActionType CustomAttributesAction::getActionType() { return AddBeforeMainAction; }
+PluginASTAction::ActionType CustomAttributesAction::getActionType() {
+  return AddBeforeMainAction;
+}
 #endif
 
 CustomAttributesSet GetAttributes(const Decl *D) {

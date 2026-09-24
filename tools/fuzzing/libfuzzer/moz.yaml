@@ -2,7 +2,7 @@ schema: 1
 
 bugzilla:
   product: Core
-  component: General
+  component: Fuzzing
 
 origin:
 

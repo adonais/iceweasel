@@ -2,248 +2,199 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { act, renderHook } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import { useWidgetDnD } from "content-src/components/Widgets/useWidgetDnD.jsx";
-import { cursorToSlot } from "content-src/components/Widgets/useMouseDnD.jsx";
 
-const DEFAULT_ORDER = [
-  "lists",
-  "focusTimer",
-  "weather",
-  "sportsWidget",
-  "clocks",
-];
+const DEFAULT_ORDER = ["lists", "focusTimer", "weather"];
 
-function makeProps(overrides = {}) {
-  return {
-    widgetOrder: DEFAULT_ORDER,
-    prefs: {},
-    dispatch: jest.fn(),
-    ...overrides,
-  };
+let latest;
+
+function Row({
+  widgetOrder = DEFAULT_ORDER,
+  prefs = {},
+  dispatch = jest.fn(),
+}) {
+  const api = useWidgetDnD({ widgetOrder, prefs, dispatch });
+  latest = api;
+  return (
+    <div ref={api.containerRef}>
+      {api.effectiveOrder.map(id => (
+        <div key={id} data-widget-id={id} {...api.getItemProps(id)}>
+          <moz-button>menu</moz-button>
+          <a href="https://example.com">link</a>
+          <div className="task" draggable="true">
+            task
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
-function setup(overrides = {}) {
-  const props = makeProps(overrides);
-  const { result } = renderHook(() => useWidgetDnD(props));
-  return { result, dispatch: props.dispatch, props };
+function setRect(el, index) {
+  el.getBoundingClientRect = () => ({
+    left: index * 100,
+    right: index * 100 + 100,
+    top: 0,
+    bottom: 100,
+    width: 100,
+    height: 100,
+    x: index * 100,
+    y: 0,
+    toJSON() {},
+  });
 }
 
-function dataTransferStub(types = ["text/widget-id"], data = {}) {
-  return {
-    types,
-    setData: jest.fn((k, v) => {
-      data[k] = v;
-    }),
-    getData: jest.fn(k => data[k] || ""),
-    setDragImage: jest.fn(),
-    effectAllowed: "",
-    dropEffect: "",
-  };
+function mount(props) {
+  const utils = render(<Row {...props} />);
+  const slots = [...utils.container.querySelectorAll("[data-widget-id]")];
+  slots.forEach(setRect);
+  return { ...utils, slots };
 }
 
-function makeArticle(widgetId) {
-  const el = document.createElement("article");
-  el.setAttribute("data-widget-id", widgetId);
-  return el;
+function pointer(type, opts = {}) {
+  return new PointerEvent(type, {
+    bubbles: true,
+    pointerId: 1,
+    pointerType: "mouse",
+    button: 0,
+    clientX: 0,
+    clientY: 0,
+    ...opts,
+  });
 }
 
-function dragEvent(opts = {}) {
-  const types = opts.types ?? ["text/widget-id"];
-  const data = opts.data ?? { "text/widget-id": opts.sourceId || "" };
-  const target = opts.target || opts.currentTarget;
-  const currentTarget = opts.currentTarget || opts.target;
-  return {
-    dataTransfer: dataTransferStub(types, data),
-    clientX: opts.clientX ?? 0,
-    clientY: opts.clientY ?? 0,
-    target,
-    currentTarget,
-    preventDefault: jest.fn(),
-    stopPropagation: jest.fn(),
-  };
+function move(x, y) {
+  act(() => {
+    window.dispatchEvent(pointer("pointermove", { clientX: x, clientY: y }));
+  });
 }
 
-describe("cursorToSlot", () => {
-  const slotRects = [
-    { left: 0, right: 200, top: 0, bottom: 100, width: 200, height: 100 },
-    { left: 200, right: 400, top: 0, bottom: 100, width: 200, height: 100 },
-    { left: 400, right: 600, top: 0, bottom: 100, width: 200, height: 100 },
-  ];
-
-  it("returns the slot whose rect contains the cursor", () => {
-    expect(cursorToSlot(slotRects, 100, 50)).toBe(0);
-    expect(cursorToSlot(slotRects, 300, 50)).toBe(1);
-    expect(cursorToSlot(slotRects, 500, 50)).toBe(2);
-  });
-
-  it("returns null when the cursor is outside every rect (gaps/empty regions)", () => {
-    // Above all rects
-    expect(cursorToSlot(slotRects, 100, -10)).toBe(null);
-    // Below all rects
-    expect(cursorToSlot(slotRects, 100, 200)).toBe(null);
-    // Past the rightmost rect
-    expect(cursorToSlot(slotRects, 700, 50)).toBe(null);
-  });
-
-  it("treats rect edges as inclusive (right and bottom edges hit the slot)", () => {
-    expect(cursorToSlot(slotRects, 200, 50)).toBe(0); // first match wins on shared edge
-    expect(cursorToSlot(slotRects, 100, 100)).toBe(0);
-  });
-
-  it("returns null when slotRects is null (no in-flight drag)", () => {
-    expect(cursorToSlot(null, 100, 50)).toBe(null);
-  });
-
-  it("skips holes in slotRects", () => {
-    const rectsWithHole = [
-      { left: 0, right: 200, top: 0, bottom: 100, width: 200, height: 100 },
-      null,
-      { left: 400, right: 600, top: 0, bottom: 100, width: 200, height: 100 },
-    ];
-    expect(cursorToSlot(rectsWithHole, 100, 50)).toBe(0);
-    expect(cursorToSlot(rectsWithHole, 300, 50)).toBe(null); // hole, no match
-    expect(cursorToSlot(rectsWithHole, 500, 50)).toBe(2);
-  });
+beforeEach(() => {
+  window.matchMedia = jest.fn(() => ({ matches: false }));
 });
 
-describe("useWidgetDnD - mouse drag", () => {
-  it("foreign drop (no text/widget-id) does not dispatch", () => {
-    const { result, dispatch } = setup();
-    const e = dragEvent({ types: ["text/plain"] });
+describe("useWidgetDnD", () => {
+  it("requests a widgets.order preference update after a completed drag", () => {
+    const dispatch = jest.fn();
+    const { slots } = mount({ dispatch });
     act(() => {
-      result.current.handleDrop(e);
+      slots[0].dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
     });
-    expect(dispatch).not.toHaveBeenCalled();
-    expect(e.preventDefault).not.toHaveBeenCalled();
+    move(60, 50);
+    move(150, 50);
+    act(() => {
+      window.dispatchEvent(pointer("pointerup", { clientX: 150, clientY: 50 }));
+    });
+
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    const [[action]] = dispatch.mock.calls;
+    expect(action.data.name).toBe("widgets.order");
+    expect(action.data.value).toBe("focusTimer,lists,weather");
   });
 
-  it("drop without an active drag does not dispatch", () => {
-    const { result, dispatch } = setup();
-    const e = dragEvent({
-      types: ["text/widget-id"],
-      data: { "text/widget-id": "lists" },
-    });
-    // No prior dragstart — sourceIdx is fine but targetSlot is null.
+  it("renders the committed order optimistically before the pref lands", () => {
+    const { slots } = mount();
     act(() => {
-      result.current.handleDrop(e);
+      slots[0].dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
     });
+    move(60, 50);
+    move(150, 50);
+    act(() => {
+      window.dispatchEvent(pointer("pointerup", { clientX: 150, clientY: 50 }));
+    });
+    expect(latest.effectiveOrder).toEqual(["focusTimer", "lists", "weather"]);
+  });
+
+  it("does not start a drag from a moz-button inside a widget", () => {
+    const dispatch = jest.fn();
+    const { slots } = mount({ dispatch });
+    const button = slots[0].querySelector("moz-button");
+    act(() => {
+      button.dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
+    });
+    move(150, 50);
+    expect(latest.draggedId).toBe(null);
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("foreign dragover (no text/widget-id) is left alone", () => {
-    const { result } = setup();
-    const e = dragEvent({ types: ["text/plain"] });
+  it("starts a widget drag from a press on an anchor", () => {
+    const { slots } = mount();
+    const anchor = slots[0].querySelector("a");
     act(() => {
-      result.current.handleDragOver(e);
+      anchor.dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
     });
-    expect(e.preventDefault).not.toHaveBeenCalled();
-    expect(e.stopPropagation).not.toHaveBeenCalled();
-  });
-});
-
-describe("useWidgetDnD - interactive descendant guard", () => {
-  it("aborts the drag when mousedown was on a button inside the widget", () => {
-    const { result } = setup();
-    const article = makeArticle("lists");
-    const button = document.createElement("button");
-    article.appendChild(button);
-    document.body.appendChild(article);
-
-    act(() => {
-      result.current.handleMouseDown({ target: button });
-    });
-    const e = dragEvent({ currentTarget: article, target: article });
-    act(() => {
-      result.current.handleDragStart(e, "lists");
-    });
-    expect(e.preventDefault).toHaveBeenCalled();
-    expect(result.current.draggedId).toBe(null);
-
-    document.body.removeChild(article);
+    move(150, 50);
+    expect(latest.draggedId).toBe("lists");
   });
 
-  it("allows the drag when mousedown was on a non-interactive area", () => {
-    const { result } = setup();
-    const article = makeArticle("lists");
-    const inner = document.createElement("div");
-    article.appendChild(inner);
-    document.body.appendChild(article);
-
+  it("does not request a preference update when Escape cancels the drag", () => {
+    const dispatch = jest.fn();
+    const { slots } = mount({ dispatch });
     act(() => {
-      result.current.handleMouseDown({ target: inner });
+      slots[0].dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
     });
-    const e = dragEvent({ currentTarget: article, target: article });
+    move(60, 50);
+    move(150, 50);
     act(() => {
-      result.current.handleDragStart(e, "lists");
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });
-    expect(e.preventDefault).not.toHaveBeenCalled();
-    expect(result.current.draggedId).toBe("lists");
-
-    document.body.removeChild(article);
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(latest.effectiveOrder).toEqual(DEFAULT_ORDER);
   });
 
-  it("aborts the drag when mousedown was inside an open dialog (modal should not drag the widget)", () => {
-    const { result } = setup();
-    const article = makeArticle("sportsWidget");
-    const dialog = document.createElement("dialog");
-    dialog.setAttribute("open", "");
-    const dialogContent = document.createElement("div");
-    dialog.appendChild(dialogContent);
-    article.appendChild(dialog);
-    document.body.appendChild(article);
-
+  // The Lists widget embeds moz-reorderable-list, which puts draggable="true"
+  // on each task's drag handle. Those handles own their own drag.
+  it("leaves a nested draggable to handle its own drag", () => {
+    const dispatch = jest.fn();
+    const { slots } = mount({ dispatch });
+    const task = slots[0].querySelector(".task");
     act(() => {
-      result.current.handleMouseDown({ target: dialogContent });
+      task.dispatchEvent(pointer("pointerdown", { clientX: 50, clientY: 50 }));
     });
-    const e = dragEvent({ currentTarget: article, target: article });
-    act(() => {
-      result.current.handleDragStart(e, "sportsWidget");
-    });
-    expect(e.preventDefault).toHaveBeenCalled();
-    expect(result.current.draggedId).toBe(null);
-
-    document.body.removeChild(article);
+    move(150, 50);
+    expect(latest.draggedId).toBe(null);
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("aborts the drag when mousedown was directly on the dialog backdrop", () => {
-    const { result } = setup();
-    const article = makeArticle("sportsWidget");
-    const dialog = document.createElement("dialog");
-    dialog.setAttribute("open", "");
-    article.appendChild(dialog);
-    document.body.appendChild(article);
-
+  it("suppresses the native drag once the widget owns the gesture", () => {
+    const { slots } = mount();
+    const anchor = slots[0].querySelector("a");
     act(() => {
-      result.current.handleMouseDown({ target: dialog });
+      anchor.dispatchEvent(
+        pointer("pointerdown", { clientX: 50, clientY: 50 })
+      );
     });
-    const e = dragEvent({ currentTarget: article, target: article });
+    const dragStart = new Event("dragstart", {
+      bubbles: true,
+      cancelable: true,
+    });
     act(() => {
-      result.current.handleDragStart(e, "sportsWidget");
+      anchor.dispatchEvent(dragStart);
     });
-    expect(e.preventDefault).toHaveBeenCalled();
-    expect(result.current.draggedId).toBe(null);
-
-    document.body.removeChild(article);
+    expect(dragStart.defaultPrevented).toBe(true);
   });
 
-  it("does not abort the drag when mousedown was on an anchor (anchors should drag the widget)", () => {
-    const { result } = setup();
-    const article = makeArticle("weather");
-    const anchor = document.createElement("a");
-    article.appendChild(anchor);
-    document.body.appendChild(article);
-
-    act(() => {
-      result.current.handleMouseDown({ target: anchor });
+  it("leaves the native drag alone when no widget gesture is active", () => {
+    const { slots } = mount();
+    const anchor = slots[0].querySelector("a");
+    const dragStart = new Event("dragstart", {
+      bubbles: true,
+      cancelable: true,
     });
-    const e = dragEvent({ currentTarget: article, target: article });
     act(() => {
-      result.current.handleDragStart(e, "weather");
+      anchor.dispatchEvent(dragStart);
     });
-    expect(e.preventDefault).not.toHaveBeenCalled();
-    expect(result.current.draggedId).toBe("weather");
-
-    document.body.removeChild(article);
+    expect(dragStart.defaultPrevented).toBe(false);
   });
 });

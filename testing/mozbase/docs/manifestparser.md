@@ -301,7 +301,6 @@ tests = manifest.active_tests(filters=filters, **mozinfo.info)
     :exclude-members: filterlist,InstanceFilter,DEFAULT_FILTERS
 ```
 
-% rstcheck: ignore-directives=autodata
 
 ```{eval-rst}
 .. autodata::  manifestparser.filters.DEFAULT_FILTERS

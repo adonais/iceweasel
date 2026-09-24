@@ -18,8 +18,11 @@ const {
 } = require("resource://devtools/client/netmonitor/src/utils/l10n.js");
 const {
   fetchNetworkUpdatePacket,
+  getRequestHeader,
+  isJsonlContentType,
   parseFormData,
   parseJSON,
+  parseJSONL,
 } = require("resource://devtools/client/netmonitor/src/utils/request-utils.js");
 const {
   sortObjectKeys,
@@ -49,6 +52,7 @@ loader.lazyGetter(this, "SourcePreview", function () {
 const { div, input, label, span, h2 } = dom;
 
 const JSON_SCOPE_NAME = L10N.getStr("jsonScopeName");
+const JSONL_SCOPE_NAME = L10N.getStr("jsonlScopeName");
 const REQUEST_EMPTY_TEXT = L10N.getStr("paramsNoPayloadText");
 const REQUEST_FILTER_TEXT = L10N.getStr("paramsFilterText");
 const REQUEST_FORM_DATA = L10N.getStr("paramsFormData");
@@ -86,6 +90,7 @@ class RequestPanel extends Component {
   componentDidMount() {
     const { request, connector } = this.props;
     fetchNetworkUpdatePacket(connector.requestData, request, [
+      "requestHeaders",
       "requestPostData",
     ]);
     updateFormDataSections(this.props);
@@ -95,6 +100,7 @@ class RequestPanel extends Component {
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
     fetchNetworkUpdatePacket(connector.requestData, request, [
+      "requestHeaders",
       "requestPostData",
     ]);
     updateFormDataSections(nextProps);
@@ -186,6 +192,36 @@ class RequestPanel extends Component {
     ];
   }
 
+  /**
+   * Parses a request payload which can be displayed as a tree, either JSON or
+   * JSON Lines.
+   *
+   * @param {string} postData: the request payload
+   * @returns {object|null} null when the payload has no formatted display,
+   *  otherwise an object with the shape:
+   *  {object} object: the parsed payload, passed to PropertiesView
+   *  {boolean} isJsonl: true when the payload was parsed as JSON Lines
+   */
+  parseStructuredPayload(postData) {
+    const { request } = this.props;
+
+    // The payload's own content type, not request.mimeType, which describes
+    // the response.
+    if (isJsonlContentType(getRequestHeader(request, "content-type"))) {
+      const { json } = parseJSONL(postData);
+      // Not sorted: JSON Lines entries are in document order.
+      return json ? { object: json, isJsonl: true } : null;
+    }
+
+    const { json, strippedChars } = parseJSON(postData);
+    // If XSSI characters were present in the request just display the raw
+    // data because a request should never have XSSI escape characters
+    if (strippedChars || !json) {
+      return null;
+    }
+    return { object: sortObjectKeys(json), isJsonl: false };
+  }
+
   renderRequestPayload(component, componentProps) {
     return component(componentProps);
   }
@@ -229,26 +265,26 @@ class RequestPanel extends Component {
     if (postData && limit > 0 && limit <= postData.length) {
       error = REQUEST_TRUNCATED;
     }
-    if (formDataSections && formDataSections.length === 0 && postData) {
-      if (!error) {
-        const jsonParsedPostData = parseJSON(postData);
-        const { json, strippedChars } = jsonParsedPostData;
-        // If XSSI characters were present in the request just display the raw
-        // data because a request should never have XSSI escape characters
-        if (strippedChars) {
-          hasFormattedDisplay = false;
-        } else if (json) {
-          component = PropertiesView;
-          componentProps = {
-            object: sortObjectKeys(json),
-            filterText,
-            targetSearchResult,
-            defaultSelectFirstNode: false,
-            url,
-          };
-          requestPayloadLabel = JSON_SCOPE_NAME;
-          hasFormattedDisplay = true;
-        }
+    if (
+      formDataSections &&
+      formDataSections.length === 0 &&
+      postData &&
+      !error
+    ) {
+      const parsedPayload = this.parseStructuredPayload(postData);
+      if (parsedPayload) {
+        component = PropertiesView;
+        componentProps = {
+          object: parsedPayload.object,
+          filterText,
+          targetSearchResult,
+          defaultSelectFirstNode: false,
+          url,
+        };
+        requestPayloadLabel = parsedPayload.isJsonl
+          ? JSONL_SCOPE_NAME
+          : JSON_SCOPE_NAME;
+        hasFormattedDisplay = true;
       }
     }
 

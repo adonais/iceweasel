@@ -336,6 +336,9 @@ class NativeLayerWayland : public NativeLayer {
   // by WaylandSurface itself.
   Atomic<MainThreadUpdate, mozilla::Relaxed> mNeedsMainThreadUpdate{
       MainThreadUpdate::None};
+
+  void SetColorProperties(const widget::WaylandSurfaceLock& aSurfaceLock,
+                          widget::WaylandSurface* aParentSurface);
 };
 
 class NativeLayerWaylandRender final : public NativeLayerWayland {

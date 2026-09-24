@@ -4,8 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HWInferenceChild.h"
-#include "HWInferenceManagerParent.h"
 #include "mozilla/Logging.h"
+#include "mozilla/hwinference/SpeechRecognitionParent.h"
 
 namespace mozilla::hwinference {
 
@@ -17,22 +17,21 @@ LazyLogModule gHWInferenceLog("HWInference");
 
 void HWInferenceChild::Shutdown() { PHWInferenceChild::Close(); }
 
-ipc::IPCResult HWInferenceChild::RecvNewContentHWInferenceManager(
-    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
+ipc::IPCResult HWInferenceChild::RecvNewContentSpeechRecognition(
+    Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint,
     const dom::ContentParentId& aContentId) {
   LOGD("[{} - {}] Received connection request from content {}", fmt::ptr(this),
        __func__, static_cast<uint64_t>(aContentId));
 
-  if (!HWInferenceManagerParent::CreateForContent(std::move(aEndpoint),
-                                                  aContentId)) {
-    LOGE(
-        "[{} - {}]"
-        "Error: Failed to create HWInferenceManagerParent, content id: {}",
-        fmt::ptr(this), __func__, static_cast<uint64_t>(aContentId));
-    return IPC_FAIL(this, "Failed to create HWInferenceManagerParent");
+  RefPtr<SpeechRecognitionParent> actor =
+      new SpeechRecognitionParent(aContentId);
+  if (!aEndpoint.Bind(actor)) {
+    LOGE("[{} - {}] Failed to bind SpeechRecognitionParent for content {}",
+         fmt::ptr(this), __func__, static_cast<uint64_t>(aContentId));
+    return IPC_FAIL(this, "Failed to bind SpeechRecognitionParent");
   }
 
-  LOGD("[{} - {}] Successfully created HWInferenceManagerParent for content {}",
+  LOGD("[{} - {}] Created SpeechRecognitionParent for content {}",
        fmt::ptr(this), __func__, static_cast<uint64_t>(aContentId));
   return IPC_OK();
 }
@@ -84,4 +83,5 @@ HWInferenceChild::SendGetModelFile(const nsCString& aTask,
 }
 }  // namespace mozilla::hwinference
 
-#undef LOG
+#undef LOGE
+#undef LOGD

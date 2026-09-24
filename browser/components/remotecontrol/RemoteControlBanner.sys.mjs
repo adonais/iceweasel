@@ -8,8 +8,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
-  hasActiveWebDriverSession:
-    "chrome://remote/content/shared/webdriver/Session.sys.mjs",
   RemoteControlServers:
     "moz-src:///browser/components/remotecontrol/RemoteControlServers.sys.mjs",
 });
@@ -89,12 +87,7 @@ class RemoteControlBannerClass {
     }
     this.#initialized = true;
 
-    Services.obs.addObserver(this, "remote-listening");
-    Services.obs.addObserver(this, "webdriver-session-changed");
-  }
-
-  observe() {
-    this.#update();
+    lazy.RemoteControlServers.addListener(this.#onServersChanged);
   }
 
   /**
@@ -115,12 +108,13 @@ class RemoteControlBannerClass {
     }
     this.#initialized = false;
 
-    Services.obs.removeObserver(this, "remote-listening");
-    Services.obs.removeObserver(this, "webdriver-session-changed");
+    lazy.RemoteControlServers.removeListener(this.#onServersChanged);
 
     this.#hide(DYNAMIC_START_ID);
     this.#hide(CONNECTED_ID);
+    this.#hide(STOPPED_ID);
     this.#state = BANNER_STATES.NONE;
+    this.#stoppedState = null;
   }
 
   #addNotification(win, id) {
@@ -215,7 +209,10 @@ class RemoteControlBannerClass {
     }
 
     // When a connection is established, show the connection banner if enabled.
-    if (lazy.connectionBannerEnabled && lazy.hasActiveWebDriverSession()) {
+    if (
+      lazy.connectionBannerEnabled &&
+      lazy.RemoteControlServers.hasActiveSession
+    ) {
       return BANNER_STATES.CONNECTED;
     }
 
@@ -236,6 +233,10 @@ class RemoteControlBannerClass {
       this.#removeNotification(win, id);
     }
   }
+
+  #onServersChanged = () => {
+    this.#update();
+  };
 
   #removeNotification(win, id) {
     const notification = this.#getNotification(win, id);
@@ -345,8 +346,6 @@ class RemoteControlBannerClass {
         this.#hide(STOPPED_ID);
     }
   }
-
-  QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
 }
 
 export const RemoteControlBanner = new RemoteControlBannerClass();

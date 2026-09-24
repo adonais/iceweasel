@@ -14,6 +14,7 @@ type = "benchmark"
 unit = "score"
 
 ["unity-webgl"]
+sparse_checkout = true
 repository = "https://github.com/mozilla/perf-automation"
 repository_revision = "61332db584026b73e37066d717a162825408c36b"
 repository_path = "benchmarks/unity-webgl"

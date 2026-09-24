@@ -1,4 +1,4 @@
-// |jit-test| test-also=--gc-zeal=2
+// |jit-test| test-also=--gc-zeal=2; test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // This tests 8- and 16-bit field accesses for structs.
 

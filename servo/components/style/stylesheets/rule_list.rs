@@ -75,13 +75,13 @@ impl CssRules {
 
         {
             // Step 3
-            let ref rule = self.0[index];
+            let rule = &self.0[index];
 
             // Step 4
-            if let CssRule::Namespace(..) = *rule {
-                if !self.only_ns_or_import() {
-                    return Err(RulesMutateError::InvalidState);
-                }
+            if let CssRule::Namespace(..) = *rule
+                && !self.only_ns_or_import()
+            {
+                return Err(RulesMutateError::InvalidState);
             }
         }
 
@@ -156,7 +156,7 @@ impl CssRules {
 
         // Steps 3, 4, 5, 6
         CssRule::parse(
-            &rule,
+            rule,
             insert_rule_context,
             parent_stylesheet_contents,
             lock,

@@ -789,10 +789,14 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   nsPoint offset;
   const bool trackHorizontal = aAxes.contains(PhysicalAxis::Horizontal);
   const bool trackVertical = aAxes.contains(PhysicalAxis::Vertical);
-  // TODO(dshin, bug 1991489): Traverse properly, in case anchor and positioned
-  // elements are in different continuation frames of the absolute containing
-  // block.
-  const auto* absoluteContainingBlock = aPositioned->GetParent();
+
+  // The anchor and aPositioned may be under different continuations or IB-split
+  // siblings of the absolute containing block. Compare the first continuation
+  // on each side so that the walk below stops correctly instead of running past
+  // the containing block and accumulating scroll containers above it.
+  const auto* absoluteContainingBlock =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          aPositioned->GetParent());
   if (GetNearestScrollFrame(aPositioned).mScrollContainer ==
       aDefaultAnchorCache.mScrollContainer) {
     // Would scroll together anyway, skip.
@@ -801,7 +805,9 @@ nsPoint AnchorPositioningUtils::GetScrollOffsetFor(
   // Grab the accumulated offset up to, but not including, the abspos
   // container.
   for (const auto* f = aDefaultAnchorCache.mScrollContainer;
-       f && f != absoluteContainingBlock; f = f->GetParent()) {
+       f && nsLayoutUtils::FirstContinuationOrIBSplitSibling(f) !=
+                absoluteContainingBlock;
+       f = f->GetParent()) {
     if (const ScrollContainerFrame* scrollFrame = do_QueryFrame(f)) {
       const auto o = scrollFrame->GetScrollPosition();
       if (trackHorizontal) {
@@ -1207,29 +1213,36 @@ static bool ComputePositionVisibility(
       if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
         return false;
       }
-      auto* containingBlock = aPositioned->GetParent()->FirstInFlow();
+      auto* containingBlock = nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+          aPositioned->GetParent());
       // If both are in the same cb the expectation is that this doesn't apply
       // because there are no intervening clips. I think that's broken, see
       // https://github.com/w3c/csswg-drafts/issues/13176
-      if (defaultAnchor &&
-          defaultAnchor->GetParent()->FirstInFlow() != containingBlock) {
+      if (defaultAnchor && nsLayoutUtils::FirstContinuationOrIBSplitSibling(
+                               defaultAnchor->GetParent()) != containingBlock) {
+        // Initially, get containingBlock's rect in intersectionRoot's
+        // coordinate space.
         auto* intersectionRoot = containingBlock;
-        nsRect rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-            intersectionRoot, containingBlock,
-            nsLayoutUtils::GetAllInFlowRectsFlag::UseInkOverflowAsBox);
-        if (IsScrolled(intersectionRoot)) {
-          intersectionRoot = intersectionRoot->GetParent();
+        nsRect rootRect;
+        if (IsScrolled(containingBlock)) {
+          intersectionRoot = containingBlock->GetParent();
           ScrollContainerFrame* sc = do_QueryFrame(intersectionRoot);
           rootRect = sc->GetScrollPortRectAccountingForDynamicToolbar();
+        } else {
+          rootRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+              containingBlock, intersectionRoot,
+              nsLayoutUtils::GetAllInFlowRectsFlag::UseInkOverflowAsBox);
         }
+        // Then, transform it to the root frame's coordinate space.
+        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
+            intersectionRoot, rootRect,
+            nsLayoutUtils::GetContainingBlockForClientRect(intersectionRoot));
+
         const auto* doc = aPositioned->PresContext()->Document();
         const nsINode* root =
             intersectionRoot->GetContent()
                 ? static_cast<nsINode*>(intersectionRoot->GetContent())
                 : doc;
-        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
-            intersectionRoot, rootRect,
-            nsLayoutUtils::GetContainingBlockForClientRect(intersectionRoot));
         const auto input = dom::IntersectionInput{
             .mIsImplicitRoot = false,
             .mRootNode = root,
@@ -1387,17 +1400,17 @@ auto AnchorPositioningUtils::GetCombinedFragmentRects(
            aContinuation->GetOffsetToIgnoringScrolling(aContainingBlock);
   };
 
-  // Collect rects from our continuations (limited to those that are on the
-  // same page if the context is paginated).
+  // Collect rects from our continuations and IB-split siblings (limited to
+  // those that are on the same page if the context is paginated).
   nsRect rect = GetRectInContainingBlockSpace(aFrame);
-  const auto* next = aFrame->GetNextContinuation();
+  const auto* next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
   for (; next && onSamePage(next) && inSameCBFragment(next);
-       next = next->GetNextContinuation()) {
+       next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(next)) {
     rect = rect.Union(GetRectInContainingBlockSpace(next));
   }
-  const auto* prev = aFrame->GetPrevContinuation();
+  const auto* prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(aFrame);
   for (; prev && onSamePage(prev) && inSameCBFragment(prev);
-       prev = prev->GetPrevContinuation()) {
+       prev = nsLayoutUtils::GetPrevContinuationOrIBSplitSibling(prev)) {
     rect = rect.Union(GetRectInContainingBlockSpace(prev));
   }
 

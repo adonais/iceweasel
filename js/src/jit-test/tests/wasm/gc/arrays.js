@@ -1,4 +1,4 @@
-// |jit-test| test-also=--gc-zeal=2; test-also=--no-avx
+// |jit-test| test-also=--gc-zeal=2; test-also=--no-avx; test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // Test array instructions on different valtypes
 

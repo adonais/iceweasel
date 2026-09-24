@@ -69,7 +69,7 @@ def generate_symbols_file(output, *args):
         # is, in fact, part of the symbol name as far as the symbols variable
         # is concerned.
         assert ext == ".def"
-        output.write("LIBRARY %s\nEXPORTS\n  %s\n" % (libname, "\n  ".join(symbols)))
+        output.write(f"LIBRARY {libname}\nEXPORTS\n  " + "\n  ".join(symbols) + "\n")
     elif (
         buildconfig.substs.get("GCC_USE_GNU_LD")
         or buildconfig.substs["OS_TARGET"] == "SunOS"
@@ -85,11 +85,11 @@ def generate_symbols_file(output, *args):
         #   *;
         # };
         output.write(
-            "%s {\nglobal:\n  %s;\nlocal:\n  *;\n};" % (libname, ";\n  ".join(symbols))
+            f"{libname} {{\nglobal:\n  " + ";\n  ".join(symbols) + ";\nlocal:\n  *;\n};"
         )
     elif buildconfig.substs["OS_TARGET"] == "Darwin":
         # A list of symbols is generated for Apple ld that simply lists all
         # symbols, with an underscore prefix.
-        output.write("".join("_%s\n" % s for s in symbols))
+        output.write("".join(f"_{s}\n" for s in symbols))
 
     return set(pp.includes)

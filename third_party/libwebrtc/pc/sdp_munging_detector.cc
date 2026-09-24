@@ -312,6 +312,14 @@ SdpMungingType DetermineRtcpModification(
                ? SdpMungingType::kAudioCodecsRtcpReducedSize
                : SdpMungingType::kVideoCodecsRtcpReducedSize;
   }
+
+  // rtcp-xr:rcvr-rtt. The legacy a=rtcp-fb:<pt> rrtr signals the same thing
+  // but is a codec feedback param and is measured as kAudioCodecsRtcpFbRrtr.
+  if (last_created_media_description->receive_non_sender_rtt() !=
+      media_description_to_set->receive_non_sender_rtt()) {
+    RTC_LOG(LS_ERROR) << "SDP munging: rtcp-xr rcvr-rtt modified.";
+    return SdpMungingType::kRtcpXrRcvrRtt;
+  }
   return SdpMungingType::kNoModification;
 }
 
@@ -793,6 +801,8 @@ bool IsSdpMungingAllowed(SdpMungingType sdp_munging_type,
     case SdpMungingType::kDataChannelSctpInit:
       return false;
     case SdpMungingType::kCryptex:
+      return false;
+    case SdpMungingType::kRtcpXrRcvrRtt:
       return false;
     default:
       // Handled below.

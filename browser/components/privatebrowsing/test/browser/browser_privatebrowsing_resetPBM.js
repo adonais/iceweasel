@@ -411,7 +411,6 @@ add_task(async function test_panel() {
   );
 
   info("Close the panel via confirm.");
-  let promiseDataCleared = waitForPBMDataClear();
   promisePanelHidden = waitForConfirmPanelHidden(privateWin);
   let promiseCompletionToastShown = waitForCompletionToastShown(privateWin);
 
@@ -421,7 +420,12 @@ add_task(async function test_panel() {
     privateWin.browsingContext
   );
   await promisePanelHidden;
+  await promiseCompletionToastShown;
 
+  // resetAction is only recorded once data clearing has finished, which is not
+  // ordered against the panel hiding. Showing the completion toast is the last
+  // statement of _restartPBM, so the record() call runs in the microtask that
+  // resolves it, always ahead of the toast's popupshown. Assert after the toast.
   assertTelemetry(
     [
       { action: "show", reason: "toolbar-btn" },
@@ -432,11 +436,9 @@ add_task(async function test_panel() {
     [{ did_confirm: "true" }],
     "Should have added a hide and a reset event."
   );
-  await promiseCompletionToastShown;
+
   assertPanelVisibility(privateWin, SELECTOR_PANELVIEW, false);
   assertPanelVisibility(privateWin, SELECTOR_PANEL_COMPLETION_TOAST, true);
-
-  await promiseDataCleared;
 
   Assert.ok(
     !Services.prefs.getBoolPref(PREF_ID_ALWAYS_ASK),
@@ -451,14 +453,14 @@ add_task(async function test_panel() {
   info(
     "Simulate a click on the toolbar button. This time the panel should not open - we have unchecked 'always ask'."
   );
-  promiseDataCleared = waitForPBMDataClear();
+  let promiseDataCleared = waitForPBMDataClear();
   promiseCompletionToastShown = waitForCompletionToastShown(privateWin);
 
   await triggerResetBtn(privateWin, false);
 
-  info("Waiting for PBM session to end.");
+  info("Waiting for PBM data clearing to be triggered.");
   await promiseDataCleared;
-  info("Data has been cleared.");
+  info("Data clearing has been triggered.");
 
   assertPanelVisibility(privateWin, SELECTOR_PANELVIEW, false);
 

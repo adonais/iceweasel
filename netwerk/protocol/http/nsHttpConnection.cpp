@@ -740,9 +740,11 @@ nsresult nsHttpConnection::AddTransaction(nsAHttpTransaction* httpTransaction,
   needTunnel = needTunnel && httpTransaction->QueryHttpTransaction();
 
   // Let the transaction know that the tunnel is already established and we
-  // don't need to setup the tunnel again.
-  if (transCI->UsingConnect()) {
-    MOZ_ASSERT(mProxyConnectResponseHead);
+  // don't need to setup the tunnel again. Note that we only have a response
+  // head if the CONNECT request was sent on this connection - for example a
+  // HTTP/2 proxy connection tunnels each transaction in its own stream, so
+  // there is nothing to report here.
+  if (transCI->UsingConnect() && mProxyConnectResponseHead) {
     httpTransaction->OnProxyConnectComplete(mProxyConnectResponseHead);
   }
 

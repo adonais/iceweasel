@@ -5,6 +5,7 @@
 #include "mozilla/dom/Text.h"
 
 #include "mozAutoDocUpdate.h"
+#include "mozilla/dom/DirectionalityUtils.h"
 #include "nsTextNode.h"
 
 namespace mozilla::dom {

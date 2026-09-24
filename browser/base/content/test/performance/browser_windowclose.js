@@ -3,7 +3,6 @@
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["test.wait300msAfterTabSwitch", true],
       // Disable the window active/inactive transitions so the closing
       // window's activation change doesn't register as flicker.
       ["ui.prefersReducedMotion", 1],

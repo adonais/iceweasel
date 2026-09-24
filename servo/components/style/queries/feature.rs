@@ -4,10 +4,10 @@
 
 //! Query features.
 
+use crate::Atom;
 use crate::derives::*;
 use crate::parser::ParserContext;
 use crate::values::computed::{self, CSSPixelLength, Ratio, Resolution};
-use crate::Atom;
 use cssparser::Parser;
 use selectors::kleene_value::KleeneValue;
 use std::fmt;
@@ -27,7 +27,7 @@ pub type KeywordSerializer = fn(KeywordDiscriminant) -> String;
 /// Parses a given identifier.
 pub type KeywordParser = for<'a, 'i, 't> fn(
     context: &'a ParserContext,
-    input: &'a mut Parser<'i, 't>,
+    input: &'a mut Parser<'i>,
 ) -> Result<KeywordDiscriminant, ParseError>;
 
 /// An evaluator for a given feature.
@@ -104,7 +104,7 @@ macro_rules! keyword_evaluator {
 
 /// Different flags or toggles that change how a expression is parsed or
 /// evaluated.
-#[derive(Clone, Copy, Debug, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
 pub struct FeatureFlags(u8);
 bitflags! {
     impl FeatureFlags : u8 {

@@ -2,6 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1606428 - Shim Rambler Authenticator
+ *
+ * Sites using Rambler's ID helper expect it to define window.ramblerIdHelper,
+ * and their login UI does not appear when the script is blocked. This shim
+ * stubs out that interface and, if the user opts in to loading the real
+ * script, replays the queued calls against it.
+ */
+
 "use strict";
 
 if (!window.ramblerIdHelper) {
@@ -12,7 +21,7 @@ if (!window.ramblerIdHelper) {
       if (
         (protocol === "http:" || protocol === "https:") &&
         hostname === "id.rambler.ru" &&
-        pathname === "rambler-id-helper/auth_events.js"
+        pathname === "/rambler-id-helper/auth_events.js"
       ) {
         return href;
       }
@@ -62,9 +71,8 @@ if (!window.ramblerIdHelper) {
     getProfileInfo: (successCallback, _errorCallback) => {
       successCallback({});
     },
-    openAuth: () => {
-      sendMessageToAddon("optIn").then(function () {
-        const openAuthArgs = arguments;
+    openAuth: (...openAuthArgs) => {
+      sendMessageToAddon("optIn").then(() => {
         window.ramblerIdHelper = undefined;
         const s = document.createElement("script");
         s.src = originalScript;
@@ -82,8 +90,8 @@ if (!window.ramblerIdHelper) {
 
   const callLog = [];
   function addLoggedCall(fn) {
-    ramblerIdHelper[fn] = () => {
-      callLog.push({ fn, args: arguments });
+    ramblerIdHelper[fn] = (...args) => {
+      callLog.push({ fn, args });
     };
   }
 

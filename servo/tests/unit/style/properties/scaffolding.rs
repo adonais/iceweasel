@@ -4,7 +4,7 @@
 
 use serde_json::{self, Value};
 use std::env;
-use std::fs::{remove_file, File};
+use std::fs::{File, remove_file};
 use std::path::Path;
 use std::process::Command;
 
@@ -65,7 +65,9 @@ fn find_python() -> String {
         return "python.exe".to_owned();
     }
 
-    panic!("Can't find python (tried python27.exe and python.exe)! Try fixing PATH or setting the PYTHON env var");
+    panic!(
+        "Can't find python (tried python27.exe and python.exe)! Try fixing PATH or setting the PYTHON env var"
+    );
 }
 
 #[cfg(not(windows))]

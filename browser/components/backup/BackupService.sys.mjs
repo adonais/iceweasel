@@ -4424,13 +4424,14 @@ export class BackupService extends EventTarget {
     await this.loadEncryptionState();
     Glean.browserBackup.pswdEncrypted.set(this.#_state.encryptionEnabled);
 
-    const USING_DEFAULT_DIR_PATH =
-      lazy.backupDirPref ==
-      PathUtils.join(
-        BackupService.DEFAULT_PARENT_DIR_PATH,
-        BackupService.BACKUP_DIR_NAME
-      );
-    Glean.browserBackup.locationOnDevice.set(USING_DEFAULT_DIR_PATH ? 1 : 2);
+    // No default location to compare against, so leave locationOnDevice unset.
+    let defaultParentDirPath = BackupService.DEFAULT_PARENT_DIR_PATH;
+    if (defaultParentDirPath) {
+      const USING_DEFAULT_DIR_PATH =
+        lazy.backupDirPref ==
+        PathUtils.join(defaultParentDirPath, BackupService.BACKUP_DIR_NAME);
+      Glean.browserBackup.locationOnDevice.set(USING_DEFAULT_DIR_PATH ? 1 : 2);
+    }
 
     // Next, we'll measure the available disk space on the storage
     // device that the profile directory is on.
@@ -4989,7 +4990,10 @@ export class BackupService extends EventTarget {
   async onIdle() {
     lazy.logConsole.debug("Saw idle callback");
     if (!this.#takenMeasurements) {
-      this.takeMeasurements();
+      // Measurement failures should not block other onIdle backup activity.
+      this.takeMeasurements().catch(e =>
+        lazy.logConsole.error("Failed to take Telemetry measurements", e)
+      );
       this.#takenMeasurements = true;
     }
 

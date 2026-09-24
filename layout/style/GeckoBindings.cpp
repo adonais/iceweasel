@@ -378,8 +378,8 @@ const StyleLockedDeclarationBlock* Gecko_GetStyleAttrDeclarationBlock(
   return aElement->GetInlineStyleDeclaration();
 }
 
-const StyleLockedDeclarationBlock*
-Gecko_GetHTMLPresentationAttrDeclarationBlock(const Element* aElement) {
+const StyleLockedDeclarationBlock* Gecko_GetMappedAttributeDeclarations(
+    const Element* aElement) {
   return aElement->GetMappedAttributeStyle();
 }
 
@@ -839,20 +839,6 @@ bool Gecko_HasActiveViewTransitionTypes(
   return false;
 }
 
-nsAtom* Gecko_GetXMLLangValue(const Element* aElement) {
-  const nsAttrValue* attr =
-      aElement->GetParsedAttr(nsGkAtoms::lang, kNameSpaceID_XML);
-
-  if (!attr) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(attr->Type() == nsAttrValue::eAtom);
-
-  RefPtr<nsAtom> atom = attr->GetAtomValue();
-  return atom.forget().take();
-}
-
 const PreferenceSheet::Prefs* Gecko_GetPrefSheetPrefs(const Document* aDoc) {
   return &PreferenceSheet::PrefsFor(*aDoc);
 }
@@ -1040,7 +1026,7 @@ void Gecko_SetFontPaletteOverride(
     return;
   }
   aValues->mOverrides.AppendElement(gfx::FontPaletteValueSet::OverrideColor{
-      uint32_t(aIndex), gfx::sRGBColor::FromABGR(aColor->ToColor())});
+      uint32_t(aIndex), aColor->ToColor()});
 }
 
 void Gecko_EnsureImageLayersLength(nsStyleImageLayers* aLayers, size_t aLen,

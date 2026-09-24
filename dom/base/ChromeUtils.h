@@ -344,6 +344,8 @@ class ChromeUtils {
 
   static double Now(GlobalObject&);
 
+  static double AwakeNow(GlobalObject&);
+
   static void EnsureJSOracleStarted(GlobalObject&);
 
   static unsigned AliveUtilityProcesses(const GlobalObject&);

@@ -2996,7 +2996,10 @@ int ARGBBlend(const uint8_t* src_argb0,
 #endif
 #if defined(HAS_ARGBBLENDROW_LSX)
   if (TestCpuFlag(kCpuHasLSX)) {
-    ARGBBlendRow = ARGBBlendRow_LSX;
+    ARGBBlendRow = ARGBBlendRow_Any_LSX;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBBlendRow = ARGBBlendRow_LSX;
+    }
   }
 #endif
 #if defined(HAS_ARGBBLENDROW_RVV)
@@ -3062,6 +3065,22 @@ int BlendPlane(const uint8_t* src_y0,
     BlendPlaneRow = BlendPlaneRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    BlendPlaneRow = BlendPlaneRow_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      BlendPlaneRow = BlendPlaneRow_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    BlendPlaneRow = BlendPlaneRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      BlendPlaneRow = BlendPlaneRow_NEON;
     }
   }
 #endif
@@ -3145,6 +3164,22 @@ int I420Blend(const uint8_t* src_y0,
     BlendPlaneRow = BlendPlaneRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    BlendPlaneRow = BlendPlaneRow_Any_AVX512BW;
+    if (IS_ALIGNED(halfwidth, 64)) {
+      BlendPlaneRow = BlendPlaneRow_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    BlendPlaneRow = BlendPlaneRow_Any_NEON;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      BlendPlaneRow = BlendPlaneRow_NEON;
     }
   }
 #endif
@@ -3506,6 +3541,30 @@ int RAWToRGB24(const uint8_t* src_raw,
     RAWToRGB24Row = RAWToRGB24Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       RAWToRGB24Row = RAWToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX512BW;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_AVX512VBMI)
+  if (TestCpuFlag(kCpuHasAVX512VBMI)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_AVX512VBMI;
+    if (IS_ALIGNED(width, 64)) {
+      RAWToRGB24Row = RAWToRGB24Row_AVX512VBMI;
     }
   }
 #endif

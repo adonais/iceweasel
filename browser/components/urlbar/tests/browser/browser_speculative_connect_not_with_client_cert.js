@@ -130,11 +130,11 @@ function startServer(cert) {
 
 let server;
 
-function getTestServerCertificate() {
+async function getTestServerCertificate() {
   const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
-  for (const cert of certDB.getCerts()) {
+  for (const cert of await certDB.getCerts()) {
     if (cert.commonName == "Mochitest client") {
       return cert;
     }
@@ -163,7 +163,7 @@ add_setup(async function () {
     clientAuthDialogService
   );
 
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   server = startServer(cert);
   uri = `https://${host}:${server.port}/`;
   info(`running tls server at ${uri}`);

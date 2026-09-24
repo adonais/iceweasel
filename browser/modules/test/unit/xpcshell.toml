@@ -71,5 +71,3 @@ firefox-appdir = "browser"
 ["test_UpdatePolicySettings.js"]
 head =  "../../../../toolkit/components/enterprisepolicies/tests/xpcshell/head.js"
 firefox-appdir = "browser"
-
-["test_discovery.js"]

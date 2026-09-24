@@ -23,12 +23,12 @@ class SettingsCustomizeTest : BaseTest() {
     @Test
     fun verifyTheToolbarLayoutSectionTest() {
         on.settingsCustomize.navigateToPage()
-        on.settingsCustomize.mozVerifyElementsByGroup("toolbarLayout")
+        on.settingsCustomize.mozVerifyElementsByGroup(SettingsCustomizeSelectors.Group.TOOLBAR_LAYOUT)
         on.settingsCustomize.verifyOptionIsSelected(SettingsCustomizeSelectors.TOOLBAR_LAYOUT_SIMPLE)
         on.settingsCustomize.mozClick(SettingsCustomizeSelectors.TOOLBAR_LAYOUT_EXPANDED)
         on.settingsCustomize.mozClick(SettingsCustomizeSelectors.TOOLBAR_POSITION_BOTTOM)
         on.settingsCustomize.verifyOptionIsSelected(SettingsCustomizeSelectors.TOOLBAR_POSITION_BOTTOM)
-        on.settingsCustomize.mozVerifyElementsByGroup("toolbarLayout")
+        on.settingsCustomize.mozVerifyElementsByGroup(SettingsCustomizeSelectors.Group.TOOLBAR_LAYOUT)
         on.settingsCustomize.verifyOptionIsSelected(SettingsCustomizeSelectors.TOOLBAR_LAYOUT_EXPANDED)
     }
 
@@ -45,7 +45,7 @@ class SettingsCustomizeTest : BaseTest() {
         on.settingsAppIcon
             .navigateToPage()
             .clickAppIconOption(SettingsAppIconSelectors.DARK_ICON)
-            .mozVerifyElementsByGroup("changeIconDialog")
+            .mozVerifyElementsByGroup(SettingsAppIconSelectors.Group.CHANGE_ICON_DIALOG)
         on.settingsAppIcon.clickChangeIconButton()
         on.settingsAppIcon.restartApp()
         on.settingsCustomize
@@ -62,8 +62,8 @@ class SettingsCustomizeTest : BaseTest() {
     fun verifyTheAppIconSelectionPageTest() {
         on.settingsAppIcon
             .navigateToPage()
-            .mozVerifyElementsByGroup("appIconItems")
-            .mozVerifyElementsByGroup("appIconGradientsItems")
+            .mozVerifyElementsByGroup(SettingsAppIconSelectors.Group.APP_ICON_ITEMS)
+            .mozVerifyElementsByGroup(SettingsAppIconSelectors.Group.APP_ICON_GRADIENTS_ITEMS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3186732

@@ -89,13 +89,30 @@ function buildHeadRows(nRows, dim) {
   return rows;
 }
 
+// DEFAULT single-model classifier, shared by the latency and accuracy tasks so
+// both measure the exact same engine.
+const SINGLE_MODEL_CONFIG = {
+  taskName: "text-classification",
+  modelId: "mozilla/tinybert-address-autofill",
+  modelHubUrlTemplate: "{model}/{revision}",
+  modelRevision: "v0.2.5",
+  // q8 resolves to onnx/model_quantized.onnx
+  dtype: "q8",
+  // Prefer the native onnxruntime when the platform bundles it, else wasm.
+  backend: "best-onnx",
+  numThreads: 2,
+  timeoutMS: -1,
+};
+
+const SINGLE_MODEL_RUN_OPTIONS = { pooling: "mean", normalize: true };
+
 const ENGINES = {
   "autofill-encoder": {
     engineId: "autofill-encoder",
     metricPrefix: "AUTOFILL-encoder",
     taskName: "feature-extraction",
     modelId: "mozilla/form-autofill-embed",
-    modelRevision: "v0.1.0",
+    modelRevision: "v0.3.1",
     modelHubUrlTemplate: "{model}/{revision}",
     dtype: "q8",
     // Prefer the native onnxruntime when the platform bundles it, else wasm.
@@ -113,7 +130,10 @@ const ENGINES = {
     metricPrefix: "AUTOFILL-head",
     taskName: "moz-formfill-head",
     modelId: "mozilla/form-autofill-head",
-    modelRevision: "v0.1.0",
+    // The head model itself has not changed -- v0.1.0, v0.3.0 and v0.3.1 are
+    // byte-identical. v0.3.1 is published so the encoder and head of the
+    // two-head pair carry the same revision.
+    modelRevision: "v0.3.1",
     modelHubUrlTemplate: "{model}/{revision}",
     dtype: "fp32",
     // Prefer the native onnxruntime when the platform bundles it, else wasm.
@@ -132,6 +152,27 @@ const concurrentInitLatencyMetric = tag =>
   `AUTOFILL-two-engine-concurrent-init-latency-${tag}`;
 const twoEngineMemoryMetric = tag =>
   `AUTOFILL-two-engine-total-memory-usage-${tag}`;
+
+// Accuracy corpus: one labeled field per line, as
+// "<page>,<expected label>,<label id>,<mlData>". The mlData column is the very
+// string FormAutofillHeuristics hands the default classifier (own tokens plus
+// the "bb"/"aa" prefixed neighbor tokens), so no preprocessing is needed here.
+const ACCURACY_DATA_ROOT =
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data/autofill/";
+const ACCURACY_DATASET = "testing-supported.txt";
+
+// The corpus spells "this field is not autofillable" as "--NONE--"; the model
+// spells it "other" (see FormAutofillML.#applyResults, which drops that label).
+const NONE_LABEL = "--NONE--";
+
+// Fields are classified a form at a time in production, but scoring them one by
+// one would dominate the task's runtime; batching does not change any
+// prediction.
+const ACCURACY_BATCH_SIZE = 64;
+
+// Smoke-test floor, below the model's real score: it catches a broken label
+// mapping or a model that failed to load.
+const MIN_ACCURACY = 0.85;
 
 const perfMetadata = {
   owner: "GenAI Team",
@@ -250,25 +291,276 @@ requestLongerTimeout(10);
  * `AUTOFILL-two-engine-e2e-run-latency`.
  */
 add_task(async function test_ml_generic_pipeline() {
-  const options = new PipelineOptions({
-    taskName: "text-classification",
-    modelId: "Mozilla/tinybert-address-autofill",
-    modelHubUrlTemplate: "{model}/{revision}",
-    modelRevision: "main",
-    dtype: "int8",
-    // Prefer the native onnxruntime when the platform bundles it, else wasm.
-    backend: "best-onnx",
-    numThreads: 2,
-    timeoutMS: -1,
-  });
+  const options = new PipelineOptions(SINGLE_MODEL_CONFIG);
 
   const request = {
     args: [SINGLE_MODEL_INPUTS],
-    options: { pooling: "mean", normalize: true },
+    options: SINGLE_MODEL_RUN_OPTIONS,
   };
 
   await runMLPerfTest({ name: "autofill", options, request });
 });
+
+/**
+ * Parses the labeled corpus into `{ label, mlData }` rows. The mlData column is
+ * taken as everything after the third comma, since it can contain commas of its
+ * own.
+ *
+ * @param {string} text Raw contents of the dataset file.
+ * @returns {Array<{label: string, mlData: string}>}
+ */
+function parseAccuracyDataset(text) {
+  const rows = [];
+  for (const line of text.split("\n")) {
+    if (!line.trim()) {
+      continue;
+    }
+    const columns = line.split(",");
+    if (columns.length < 4) {
+      continue;
+    }
+    const mlData = columns.slice(3).join(",").trim();
+    if (mlData) {
+      rows.push({ label: columns[1].trim(), mlData });
+    }
+  }
+  return rows;
+}
+
+function normalizeLabel(label) {
+  return !label || label === "other" ? NONE_LABEL : label;
+}
+
+/**
+ * DEFAULT model quality: predicted vs. expected field type over the labeled
+ * corpus, using the same engine and request shape as
+ * `test_ml_generic_pipeline`.
+ */
+add_task(async function test_ml_autofill_accuracy() {
+  await runMLPerfTestForEachBackend({
+    name: "AUTOFILL-ACCURACY",
+    run: runAccuracySweep,
+  });
+});
+
+async function runAccuracySweep({ backend, tag }) {
+  const rows = parseAccuracyDataset(
+    await fetchFile(ACCURACY_DATA_ROOT, ACCURACY_DATASET)
+  );
+  Assert.greater(rows.length, 0, `${ACCURACY_DATASET} yielded labeled fields`);
+  info(`Scoring ${rows.length} labeled fields from ${ACCURACY_DATASET}`);
+
+  const { cleanup, engine } = await initializeEngine(
+    new PipelineOptions({ ...SINGLE_MODEL_CONFIG, backend })
+  );
+
+  const predictions = [];
+  try {
+    for (let i = 0; i < rows.length; i += ACCURACY_BATCH_SIZE) {
+      const batch = rows.slice(i, i + ACCURACY_BATCH_SIZE);
+      const results = await engine.run({
+        args: [batch.map(row => row.mlData)],
+        options: SINGLE_MODEL_RUN_OPTIONS,
+      });
+      predictions.push(...(Array.isArray(results) ? results : results.output));
+    }
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+
+  Assert.equal(
+    predictions.length,
+    rows.length,
+    "The model returned one prediction per labeled field"
+  );
+
+  // Overall is what the model gets right; the two splits separate "recognized
+  // the right field type" from "correctly stayed out of the way", which move in
+  // opposite directions when a model gets more or less eager.
+  const tally = { overall: [0, 0], supported: [0, 0], none: [0, 0] };
+  const perLabel = new Map();
+  for (let i = 0; i < rows.length; i++) {
+    const expected = rows[i].label;
+    const correct = normalizeLabel(predictions[i].label) === expected;
+    const split = expected === NONE_LABEL ? "none" : "supported";
+    for (const bucket of ["overall", split]) {
+      tally[bucket][0] += correct ? 1 : 0;
+      tally[bucket][1] += 1;
+    }
+    const counts = perLabel.get(expected) || [0, 0];
+    counts[0] += correct ? 1 : 0;
+    counts[1] += 1;
+    perLabel.set(expected, counts);
+  }
+
+  // Per-label numbers are for triaging a drop, so they're logged rather than
+  // turned into perfherder series.
+  for (const [label, [correct, total]] of [...perLabel].sort()) {
+    info(`${label}: ${correct}/${total}`);
+  }
+
+  // Logged rather than reported to perfherder: this is a smoke test, not a
+  // quality-tracking series.
+  for (const [kind, [hits, seen]] of Object.entries(tally)) {
+    if (seen) {
+      info(`[${tag}] accuracy ${kind}: ${((100 * hits) / seen).toFixed(2)}%`);
+    }
+  }
+
+  const [correct, total] = tally.overall;
+  Assert.greaterOrEqual(
+    correct / total,
+    MIN_ACCURACY,
+    `Accuracy ${correct}/${total} is above the smoke-test floor`
+  );
+}
+
+/**
+ * Two-head model quality: encoder + fusion head over the same labeled
+ * corpus `test_ml_autofill_accuracy` scores the default classifier on, so the
+ * two architectures are directly comparable in perfherder.
+ *
+ * The encoder is quantized (q8) and the head is fp32, so this is what catches a
+ * bad encoder quantization -- the head has no argmax of its own to absorb a
+ * drifting embedding.
+ */
+add_task(async function test_ml_autofill_two_head_accuracy() {
+  await runMLPerfTestForEachBackend({
+    name: "AUTOFILL-TWO-HEAD-ACCURACY",
+    run: runTwoHeadAccuracySweep,
+  });
+});
+
+async function runTwoHeadAccuracySweep({ backend, tag }) {
+  const rows = parseAccuracyDataset(
+    await fetchFile(ACCURACY_DATA_ROOT, ACCURACY_DATASET)
+  );
+  Assert.greater(rows.length, 0, `${ACCURACY_DATASET} yielded labeled fields`);
+
+  // Mirrors FormAutofillML.#identifyFields: split every field into its three
+  // sections, embed each DISTINCT section once, then look the three up by value.
+  const sections = rows.map(r => splitContext(r.mlData));
+  const uniqueStrings = [...new Set([""].concat(...sections.flat()))];
+  info(
+    `Scoring ${rows.length} labeled fields via ${uniqueStrings.length} unique sections`
+  );
+
+  const encoderCfg = ENGINES["autofill-encoder"];
+  const headCfg = ENGINES["autofill-head"];
+  const encoder = await initializeEngine(
+    new PipelineOptions({ timeoutMS: -1, ...encoderCfg, backend })
+  );
+  const head = await initializeEngine(
+    new PipelineOptions({ timeoutMS: -1, ...headCfg, backend })
+  );
+
+  const predictions = [];
+  try {
+    // Pooling must match training exactly: attention-masked mean, NO L2
+    // normalization. The head was trained on un-normalized vectors.
+    const embByString = new Map();
+    for (let i = 0; i < uniqueStrings.length; i += ACCURACY_BATCH_SIZE) {
+      const batch = uniqueStrings.slice(i, i + ACCURACY_BATCH_SIZE);
+      let embeddings = await encoder.engine.run({
+        args: [batch],
+        options: { pooling: "mean", normalize: false },
+      });
+      // feature-extraction can triple-nest a singleton batch.
+      if (
+        Array.isArray(embeddings) &&
+        embeddings.length === 1 &&
+        Array.isArray(embeddings[0]) &&
+        embeddings[0].length !== EMBEDDING_DIM
+      ) {
+        embeddings = embeddings[0];
+      }
+      Assert.equal(
+        embeddings.length,
+        batch.length,
+        "The encoder returned one embedding per section"
+      );
+      for (let j = 0; j < batch.length; j++) {
+        embByString.set(batch[j], embeddings[j]);
+      }
+    }
+
+    // [e_cur, e_prev, e_next, e_cur - e_prev, e_cur - e_next] -- 1920 dims.
+    const featureRows = sections.map(([curStr, prevStr, nextStr]) => {
+      const cur = embByString.get(curStr);
+      const prev = embByString.get(prevStr);
+      const next = embByString.get(nextStr);
+      return [
+        ...cur,
+        ...prev,
+        ...next,
+        ...cur.map((v, j) => v - prev[j]),
+        ...cur.map((v, j) => v - next[j]),
+      ];
+    });
+    Assert.equal(
+      featureRows[0].length,
+      HEAD_FEATURE_DIM,
+      "Feature rows are the width the head expects"
+    );
+
+    for (let i = 0; i < featureRows.length; i += ACCURACY_BATCH_SIZE) {
+      const scores = await head.engine.run({
+        args: [featureRows.slice(i, i + ACCURACY_BATCH_SIZE)],
+      });
+      // No optional chaining here: mozperftest statically parses this file with
+      // a vendored esprima that rejects `?.`.
+      predictions.push(...(scores && scores.output ? scores.output : scores));
+    }
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await encoder.cleanup();
+    await head.cleanup();
+  }
+
+  Assert.equal(
+    predictions.length,
+    rows.length,
+    "The two-head pipeline returned one prediction per labeled field"
+  );
+
+  const tally = { overall: [0, 0], supported: [0, 0], none: [0, 0] };
+  const perLabel = new Map();
+  for (let i = 0; i < rows.length; i++) {
+    const expected = rows[i].label;
+    const correct = normalizeLabel(predictions[i].label) === expected;
+    const split = expected === NONE_LABEL ? "none" : "supported";
+    for (const bucket of ["overall", split]) {
+      tally[bucket][0] += correct ? 1 : 0;
+      tally[bucket][1] += 1;
+    }
+    const counts = perLabel.get(expected) || [0, 0];
+    counts[0] += correct ? 1 : 0;
+    counts[1] += 1;
+    perLabel.set(expected, counts);
+  }
+
+  for (const [label, [correct, total]] of [...perLabel].sort()) {
+    info(`${label}: ${correct}/${total}`);
+  }
+
+  // Logged rather than reported to perfherder: this is a smoke test, not a
+  // quality-tracking series.
+  for (const [kind, [hits, seen]] of Object.entries(tally)) {
+    if (seen) {
+      info(
+        `[${tag}] twohead accuracy ${kind}: ${((100 * hits) / seen).toFixed(2)}%`
+      );
+    }
+  }
+
+  const [correct, total] = tally.overall;
+  Assert.greaterOrEqual(
+    correct / total,
+    MIN_ACCURACY,
+    `Two-head accuracy ${correct}/${total} is above the smoke-test floor`
+  );
+}
 
 /**
  * Runs inference on an initialized engine `iterations` times and collects the

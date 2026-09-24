@@ -1,18 +1,4 @@
 {
-  "nova": {
-    "border": {
-      "color": {
-        "value": "{panel.border.color}"
-      }
-    },
-    "box": {
-      "shadow": {
-        "@base": {
-          "value": "{panel.box.shadow.@base}"
-        }
-      }
-    }
-  },
   "background": {
     "color": {
       "@base": {
@@ -22,7 +8,13 @@
   },
   "border": {
     "color": {
-      "value": "{border.color.deemphasized.@base}"
+      "value": {
+        "default": "{border.color.deemphasized.@base}",
+        "nova": {
+          "comment": "There is no equivalent value for this token in Figma",
+          "value": "{panel.border.color}"
+        }
+      }
     },
     "radius": {
       "value": "{panel.border.radius}"
@@ -31,7 +23,13 @@
   "box": {
     "shadow": {
       "@base": {
-        "value": "{popup.box.shadow}"
+        "value": {
+          "default": "{popup.box.shadow}",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "{panel.box.shadow.@base}"
+          }
+        }
       }
     }
   },

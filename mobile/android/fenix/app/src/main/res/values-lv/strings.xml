@@ -9,6 +9,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Content description for the toolbar back button while searching bookmarks -->
   <string name="bookmark_close_search_description">Doties atpakaļ un aizvērt meklēšanu</string>
+  <!-- Placeholder text shown in search bar when using tabs search -->
+  <string name="tab_search_hint">Meklēt cilnes</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Pievienot jaunu krājumu</string>
   <!--
@@ -51,6 +53,14 @@
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Uzzināt vairāk</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Uzzināt vairāk</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">Turpināt</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Turpināt</string>
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button">Turpināt</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Turpināt pārlūkošanu</string>
   <!-- "Set to default" onboarding button. -->
   <string name="nova_onboarding_set_to_default_button">Iestatīt kā noklusējuma pārlūku</string>
   <!-- Marketing onboarding body link text. -->
@@ -75,6 +85,8 @@
   <string name="toolbar_shortcut_menu_edit_option">Labot īsceļu</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Pielāgot</string>
+  <!-- Preference title for switch preference to suggest synced tabs when searching -->
+  <string name="preferences_search_synced_tabs">Meklēt vienādotajās cilnēs</string>
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">Vienmēr</string>
   <!-- Preference title for choosing an app to handle downloads -->
@@ -101,6 +113,8 @@
   <string name="wallpaper_learn_more">Uzzināt vairāk</string>
   <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
   <string name="shortcuts_update_error">Lietotnes ikonas atjaunināšana neizdevās. Jānoņem esošās saīsnes un jāmēģina vēlreiz.</string>
+  <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
+  <string name="extension_process_crash_dialog_disable_extensions_button_text">Turpināt ar atspējotiem paplašinājumiem</string>
   <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
   <string name="addon_failure_retry_action">Atkārtot</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
@@ -154,6 +168,8 @@
   <string name="add_tab">Pievienot cilni</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Pievienot privātu cilni</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">Meklē savas cilnes</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Pievienot krājumam</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
@@ -328,6 +344,8 @@
   <string name="login_deletion_confirmation_2">Vai tiešām izdzēst šo paroli?</string>
   <!-- The page title for adding new password. -->
   <string name="add_login_2">Pievienot paroli</string>
+  <!-- Text displayed when user has disabled tab syncing in Firefox Sync Account -->
+  <string name="synced_tabs_enable_tab_syncing">Lūgums iespējot ciļņu vienādošanu.</string>
   <!--
     Label for the button in the shortcuts home screen section that expands the section to show
     every shortcut.
@@ -358,6 +376,36 @@
   <string name="translation_error_could_not_translate_warning_text">Tulkošanas laikā radās sarežģījums. Lūgums mēģināt vēlreiz.</string>
   <!-- The title of the warning card informs the user that the list of languages cannot be loaded. -->
   <string name="translation_error_could_not_load_languages_warning_text">Nevarēja ielādēt valodas. Jāpārbauda savienojums ar internetu un jāmēģina vēlreiz.</string>
+  <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
+  <string name="translation_settings_download_language">Lejupielādēt valodas</string>
+  <!-- The title of the warning card informs the user that the system could not load languages for translation settings. -->
+  <string name="automatic_translation_error_warning_text">Nevarēja ielādēt valodas. Lūgums atgriezties vēlāk.</string>
+  <!--
+    Download languages preference screen
+
+    Title of the toolbar for the translation feature screen where users may download different languages for translation.
+  -->
+  <string name="download_languages_translations_toolbar_title_preference">Lejupielādēt valodas</string>
+  <!-- The subhead of the download language preference screen will appear above the pivot language. -->
+  <string name="download_languages_available_languages_preference">Pieejamās valodas</string>
+  <!-- The subhead of the download language preference screen will appear above the items that were not downloaded. -->
+  <string name="download_language_header_preference">Lejupielādēt valodas</string>
+  <!-- All languages list item. When the user presses this item, they can download all languages. -->
+  <string name="download_language_all_languages_item_preference">Visas valodas</string>
+  <!-- All languages list item. When the user presses this item, they can delete all languages that were downloaded. -->
+  <string name="download_language_all_languages_item_preference_to_delete">Izdzēst visas valodas</string>
+  <!-- The title of the warning card informs the user that an error has occurred when fetching the list of languages. -->
+  <string name="download_languages_fetch_error_warning_text">Nevarēja ielādēt valodas. Lūgums atgriezties vēlāk.</string>
+  <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="delete_language_file_dialog_message">Ja izdzēsīsi šo valodu, %1$s tulkošanas laikā kešatmiņā lejupielādēs daļējas valodas.</string>
+  <!--
+    Title for the dialog used by the translations feature to confirm deleting all languages file.
+    The dialog will be presented when the user requests deletion of all languages file.
+    %1$s is the size in kilobytes or megabytes of the language file.
+  -->
+  <string name="delete_language_all_languages_file_dialog_title">Izdzēst visas valodas (%1$s)?</string>
+  <!-- Additional information for the dialog used by the translations feature to confirm deleting all languages file. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="delete_language_all_languages_file_dialog_message">Ja izdzēsīsi visas valodas, %1$s tulkošanas laikā kešatmiņā lejupielādēs daļējas valodas.</string>
   <!--
     Unified Trust Panel
 
@@ -370,6 +418,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_inactive">Pievienot neizmantotajām cilnēm</string>
   <!-- The button text to add tabs to the private tab group in the tab creation tool. -->
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Pievienot privātajām cilnēm</string>
+  <!-- The continue button label -->
+  <string name="micro_survey_continue_button_label" tools:ignore="UnusedResources">Turpināt</string>
   <!--
     Add-ons debug tools
 

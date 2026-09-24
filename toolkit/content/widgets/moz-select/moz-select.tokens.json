@@ -1,21 +1,4 @@
 {
-  "nova": {
-    "min": {
-      "height": {
-        "@base": {
-          "value": "{button.min-height.@base}"
-        },
-        "small": {
-          "value": "{button.min-height.small}"
-        }
-      }
-    },
-    "padding": {
-      "block": {
-        "value": "{button.padding.block.@base}"
-      }
-    }
-  },
   "background": {
     "color": {
       "@base": {
@@ -31,9 +14,12 @@
   },
   "border": {
     "@base": {
-      "value": "{button.border.@base}"
+      "value": "{border.width} solid {select.border.color.@base}"
     },
     "color": {
+      "@base": {
+        "value": "{button.border.color.@base}"
+      },
       "hover": {
         "value": "{button.border.color.hover}"
       },

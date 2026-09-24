@@ -1201,7 +1201,9 @@ this.VideoControlsImplWidget = class {
         this.scrubber.isDragging = false;
 
         if (this.isPausedByDragging) {
-          this.video.play();
+          this.video.play().catch(() => {
+            /* Do nothing on rejection */
+          });
           this.isPausedByDragging = false;
         }
       },
@@ -1667,7 +1669,9 @@ this.VideoControlsImplWidget = class {
       startPlay() {
         this._triggeredByControls = true;
         this.hideClickToPlay();
-        this.video.play();
+        this.video.play().catch(() => {
+          /* Do nothing on rejection */
+        });
       },
 
       togglePause() {
@@ -2680,7 +2684,9 @@ this.VideoControlsImplWidget = class {
           case "mouseup":
             if (aEvent.originalTarget == this.Utils.controlsSpacer) {
               if (this.firstShow) {
-                this.Utils.video.play();
+                this.Utils.video.play().catch(() => {
+                  /* Do nothing on rejection */
+                });
                 this.firstShow = false;
               }
               this.toggleControls();
@@ -2975,7 +2981,9 @@ this.NoControlsMobileImplWidget = class {
         }
 
         this.noControlsOverlay.hidden = true;
-        this.video.play();
+        this.video.play().catch(() => {
+          /* Do nothing on rejection */
+        });
       },
 
       init(shadowRoot) {

@@ -29,8 +29,9 @@ promise_test(async () => {
 
   const { promise, resolve } = Promise.withResolvers();
   input.addEventListener("change", resolve, { once: true });
-  await promise;
+  const event = await promise;
 
+  assert_true(event.bubbles, "The change event should bubble");
   assert_equals(input.value, "#1a334d", "HTML compatibility serialization should happen");
 }, "Input picker value without alpha nor colorspace attributes");
 
@@ -47,8 +48,9 @@ promise_test(async () => {
 
   const { promise, resolve } = Promise.withResolvers();
   inputDisplayP3.addEventListener("change", resolve, { once: true });
-  await promise;
+  const event = await promise;
 
+  assert_true(event.bubbles, "The change event should bubble");
   assert_equals(
     inputDisplayP3.value,
     "color(display-p3 0.123797 0.197524 0.291819)",

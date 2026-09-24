@@ -28,7 +28,7 @@ fn validate_shaders() {
         for config in configs {
             let features = config.split(",").filter(|f| !f.is_empty()).collect::<Vec<_>>();
 
-            let (vs, fs) = build_shader_strings(
+            let (vs, fs, _, _) = build_shader_strings(
                 ShaderVersion::Gles,
                 &features,
                 shader,

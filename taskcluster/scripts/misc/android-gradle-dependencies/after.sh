@@ -16,7 +16,7 @@ VERIFY_DEPENDENCIES="$PWD/taskcluster/scripts/misc/android-gradle-dependencies/v
 
 # Package everything up.
 pushd $WORKSPACE
-mkdir -p /builds/worker/artifacts
+mkdir -p /builds/worker/artifacts android-gradle-dependencies
 
 # NEXUS_WORK is exported by `before.sh`.
 cp -R ${NEXUS_WORK}/storage/mozilla android-gradle-dependencies
@@ -49,8 +49,7 @@ python3 "$VERIFY_DEPENDENCIES" --inventories "$DEPENDENCY_INVENTORIES" \
     android-gradle-dependencies/mozilla \
     android-gradle-dependencies/central \
     android-gradle-dependencies/google \
-    android-gradle-dependencies/gradle-plugins \
-    android-gradle-dependencies/plugins.gradle.org/m2
+    android-gradle-dependencies/gradle-plugins
 
 tar cavf /builds/worker/artifacts/android-gradle-dependencies.tar.zst android-gradle-dependencies
 

@@ -50,7 +50,6 @@ class TaggedProto {
   }
 
   bool operator==(const TaggedProto& other) const = default;
-  bool operator!=(const TaggedProto& other) const = default;
 
   HashNumber hashCode() const;
 

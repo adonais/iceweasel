@@ -111,6 +111,21 @@
   white-space: nowrap;
 }
 
+.stocks-list-button::part(button),
+.stocks-context-menu-button::part(button) {
+  background-color: transparent;
+}
+
+.stocks-list-button::part(button):hover,
+.stocks-context-menu-button::part(button):hover {
+  background-color: var(--button-background-color-hover);
+}
+
+.stocks-list-button::part(button):active,
+.stocks-context-menu-button::part(button):active {
+  background-color: var(--button-background-color-active);
+}
+
 .stocks-context-menu-wrapper {
   opacity: 0;
   pointer-events: none;
@@ -420,6 +435,7 @@
   block-size: var(--size-item-medium);
   border-radius: var(--border-radius-circle);
   background-color: var(--button-background-color-primary);
+  color: var(--button-text-color-primary);
   background-image: url('chrome://global/skin/icons/check.svg');
   background-position: center;
   background-repeat: no-repeat;
@@ -496,4 +512,7 @@
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

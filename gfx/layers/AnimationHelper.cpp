@@ -29,17 +29,16 @@
 
 namespace mozilla::layers {
 
-static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
+static Maybe<double> GetScrollProgress(
     const Maybe<APZSampler::ScrollOffsetAndRange> aScrollMeta,
-    const ScrollTimelineOptions& aOptions, const StickyTimeDuration& aEndTime,
-    const TimeDuration& aStartTime, float aPlaybackRate) {
+    const ScrollTimelineOptions& aOptions) {
   // We return Nothing If the associated APZ controller is not available
   // (because it may be destroyed but this animation is still alive).
   if (!aScrollMeta) {
     // This may happen after we reload a page. There may be a race condition
     // because the animation is still alive but the APZ is destroyed. In this
     // case, this animation is invalid, so we return nullptr.
-    return nullptr;
+    return Nothing{};
   }
 
   const bool isHorizontal =
@@ -51,7 +50,7 @@ static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
   if (range == 0.0) {
     // If the range is zero, we cannot calculate the progress, so just return
     // nullptr.
-    return nullptr;
+    return Nothing{};
   }
   MOZ_ASSERT(
       range > 0.0,
@@ -63,8 +62,18 @@ static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
       std::abs(isHorizontal ? aScrollMeta->mOffset.x : aScrollMeta->mOffset.y);
   double progress = position / range;
   // Just in case to avoid getting a progress more than 100%, for overscrolling.
-  progress = std::min(progress, 1.0);
-  auto timelineTime = TimeDuration(aEndTime.MultDouble(progress));
+  return Some(std::min(progress, 1.0));
+}
+
+static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
+    const Maybe<APZSampler::ScrollOffsetAndRange> aScrollMeta,
+    const ScrollTimelineOptions& aOptions, const StickyTimeDuration& aEndTime,
+    const TimeDuration& aStartTime, float aPlaybackRate) {
+  const auto progress = GetScrollProgress(aScrollMeta, aOptions);
+  if (!progress) {
+    return nullptr;
+  }
+  auto timelineTime = TimeDuration(aEndTime.MultDouble(*progress));
   return dom::Animation::CurrentTimeFromTimelineTime(timelineTime, aStartTime,
                                                      aPlaybackRate);
 }
@@ -183,14 +192,33 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
         aAPZSampler, aLayersId, aProofOfMapLock, animation, aPreviousFrameTime,
         aCurrentFrameTime, aPreviousValue);
 
-    const auto progressTimelinePosition =
-        animation.mScrollTimelineOptions
-            ? dom::Animation::AtProgressTimelineBoundary(
-                  TimeDuration::FromMilliseconds(
-                      PROGRESS_TIMELINE_DURATION_MILLISEC),
-                  elapsedDuration, animation.mStartTime.refOr(TimeDuration()),
-                  animation.mPlaybackRate)
-            : dom::Animation::ProgressTimelinePosition::NotBoundary;
+    const auto progressTimelinePosition = [&]() {
+      if (!animation.mScrollTimelineOptions) {
+        return dom::Animation::ProgressTimelinePosition::NotBoundary;
+      }
+
+      MOZ_ASSERT(aAPZSampler,
+                 "We don't send scroll animations to the compositor if APZ is "
+                 "disabled");
+
+      const auto progress = GetScrollProgress(
+          aAPZSampler->GetCurrentScrollOffsetAndRange(
+              aLayersId, animation.mScrollTimelineOptions.value().source(),
+              aProofOfMapLock),
+          animation.mScrollTimelineOptions.value());
+
+      if (!progress) {
+        return dom::Animation::ProgressTimelinePosition::NotBoundary;
+      }
+
+      const auto minTimelineTime = animation.mStartTime.valueOr(TimeDuration{});
+      const TimeDuration maxTimelineTime{animation.mTiming.EndTime()};
+
+      return dom::Animation::AtTimelineBoundary(
+          TimeDuration::FromMilliseconds(*progress *
+                                         PROGRESS_TIMELINE_DURATION_MILLISEC),
+          minTimelineTime, maxTimelineTime);
+    }();
 
     ComputedTiming computedTiming = dom::AnimationEffect::GetComputedTimingAt(
         elapsedDuration, animation.mTiming, animation.mPlaybackRate,

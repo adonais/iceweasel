@@ -42,12 +42,6 @@ dom/media/platforms/ffmpeg/libav55/
 dom/media/webaudio/test/blink/
 dom/media/webrtc/tests/mochitests/helpers_from_wpt/sdp.js
 dom/media/webrtc/transport/third_party/
-dom/media/webspeech/recognition/endpointer.cc
-dom/media/webspeech/recognition/endpointer.h
-dom/media/webspeech/recognition/energy_endpointer.cc
-dom/media/webspeech/recognition/energy_endpointer.h
-dom/media/webspeech/recognition/energy_endpointer_params.cc
-dom/media/webspeech/recognition/energy_endpointer_params.h
 dom/media/webvtt/vtt.sys.mjs
 dom/security/sanitizer/safe-default-configuration.json
 dom/tests/mochitest/ajax/
@@ -60,8 +54,6 @@ dom/webgpu/tests/cts/checkout/
 editor/libeditor/tests/browserscope/lib/richtext/
 editor/libeditor/tests/browserscope/lib/richtext2/
 extensions/spellcheck/hunspell/src/
-function2/
-fmt/
 gfx/angle/checkout/
 gfx/cairo/
 gfx/graphite2/
@@ -152,6 +144,7 @@ mozglue/baseprofiler/core/vtune/
 mozglue/misc/decimal/
 mozglue/static/lz4/
 mozglue/tests/glibc_printf_tests/
+mozpkix/
 netwerk/sctp/src/
 netwerk/srtp/src/
 nsprpub/
@@ -192,7 +185,8 @@ toolkit/components/jsoncpp/
 toolkit/components/ml/vendor/
 toolkit/components/normandy/vendor/
 toolkit/components/passwordmgr/shared/PasswordRulesParser.sys.mjs
-toolkit/components/protobuf/
+toolkit/components/protobuf/src/
+toolkit/components/protobuf/third_party/
 toolkit/components/reader/readability/
 toolkit/components/reputationservice/chromium/
 toolkit/components/resistfingerprinting/content/gl-matrix.js
@@ -209,7 +203,7 @@ toolkit/modules/third_party/
 tools/fuzzing/libfuzzer/
 tools/lint/eslint/eslint-plugin-sdl-vendored/vendor/
 tools/profiler/core/vtune/
+unicode/
 xpcom/build/mach_override.c
 xpcom/build/mach_override.h
 xpcom/io/crc32c.c
-rlbox/rlbox_sandbox.hpp

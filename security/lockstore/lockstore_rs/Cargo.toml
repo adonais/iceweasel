@@ -7,17 +7,17 @@ rust-version.workspace = true
 [dependencies]
 base64 = "0.21"
 kvstore = { path = "../../../toolkit/components/kvstore" }
-nserror = { path = "../../../xpcom/rust/nserror" }
-nss-rs = { git = "https://github.com/mozilla/nss-rs", version = "0.13", default-features = false }
-nsstring = { path = "../../../xpcom/rust/nsstring" }
+nss-rs = { git = "https://github.com/mozilla/nss-rs", version = "0.14", default-features = false }
 serde = "1"
 serde_json = { version = "1", features = ["float_roundtrip"] }
 thiserror = "1"
-xpcom = { path = "../../../xpcom/rust/xpcom" }
 zeroize = { version = "1.8", features = ["zeroize_derive"] }
 
 [dev-dependencies]
 kvstore = { path = "../../../toolkit/components/kvstore" }
-nss-rs = { git = "https://github.com/mozilla/nss-rs", version = "0.13", default-features = false }
+nss-rs = { git = "https://github.com/mozilla/nss-rs", version = "0.14", default-features = false }
 rusqlite = "0.31"
 tempfile = "3"
+
+[build-dependencies]
+mozbuild = { path = "../../../build/rust/mozbuild" }

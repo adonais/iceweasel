@@ -71,6 +71,10 @@ class DebugDrawerNavigationMiddleware(
                 navController.navigate(route = DebugDrawerRoute.TabProcessTools.route)
             is DebugDrawerAction.NavigateTo.DistributionTools ->
                 navController.navigate(route = DebugDrawerRoute.DistributionTools.route)
+            is DebugDrawerAction.NavigateTo.IPProtectionLocationTools ->
+                navController.navigate(route = DebugDrawerRoute.IPProtectionLocationTools.route)
+            is DebugDrawerAction.NavigateTo.ListenToPageTools ->
+                navController.navigate(route = DebugDrawerRoute.ListenToPageTools.route)
         }
     }
 }

@@ -758,6 +758,14 @@ skip-if = [
   "http3",
 ]
 
+["test_wasm_offthread_compile.html"]
+support-files = [
+  "file_wasm_offthread_module.sjs",
+]
+skip-if = [
+  "!nightly_build",
+]
+
 ["test_window_close.html"]
 
 ["test_window_constructor.html"]

@@ -31,6 +31,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 
+#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -68,6 +69,10 @@ bool IsDMABufEnabled();
 }
 
 namespace webrtc {
+
+namespace {
+std::atomic<bool> g_pipewire_thread_loop_exists{false};
+}  // namespace
 
 constexpr int kBytesPerPixel = 4;
 constexpr int kMaxCursorSize = 1024;
@@ -159,12 +164,84 @@ class SharedScreenCastStreamPrivate {
   std::unique_ptr<SharedMemoryFactory> shared_memory_factory_;
 
   // PipeWire types
+  struct PipeWireThreadLoop {
+    static std::unique_ptr<PipeWireThreadLoop> Create() {
+      bool expected = false;
+      if (!g_pipewire_thread_loop_exists.compare_exchange_strong(expected,
+                                                                 true)) {
+        RTC_LOG(LS_ERROR) << "PipeWireThreadLoop already exists";
+        return nullptr;
+      }
+
+      struct pw_thread_loop* main_loop =
+          pw_thread_loop_new("pipewire-main-loop", nullptr);
+      if (!main_loop) {
+        RTC_LOG(LS_ERROR) << "Failed to create PipeWire main loop";
+        g_pipewire_thread_loop_exists.store(false);
+        return nullptr;
+      }
+
+      struct pw_context* context =
+          pw_context_new(pw_thread_loop_get_loop(main_loop), nullptr, 0);
+      if (!context) {
+        pw_thread_loop_destroy(main_loop);
+        RTC_LOG(LS_ERROR) << "Failed to create PipeWire context";
+        g_pipewire_thread_loop_exists.store(false);
+        return nullptr;
+      }
+
+      if (pw_thread_loop_start(main_loop) < 0) {
+        pw_context_destroy(context);
+        pw_thread_loop_destroy(main_loop);
+        RTC_LOG(LS_ERROR) << "Failed to start main PipeWire loop";
+        g_pipewire_thread_loop_exists.store(false);
+        return nullptr;
+      }
+
+      return std::make_unique<PipeWireThreadLoop>(main_loop, context);
+    }
+
+    PipeWireThreadLoop(struct pw_thread_loop* main_loop,
+                       struct pw_context* context)
+        : main_loop(main_loop), context(context) {
+      RTC_CHECK(g_pipewire_thread_loop_exists.load());
+      RTC_CHECK(main_loop);
+      RTC_CHECK(context);
+    }
+
+    PipeWireThreadLoop(const PipeWireThreadLoop&) = delete;
+    PipeWireThreadLoop(PipeWireThreadLoop&&) = delete;
+    PipeWireThreadLoop& operator=(const PipeWireThreadLoop&) = delete;
+    PipeWireThreadLoop& operator=(PipeWireThreadLoop&&) = delete;
+
+    ~PipeWireThreadLoop() {
+      RTC_CHECK(g_pipewire_thread_loop_exists.load());
+      pw_thread_loop_stop(main_loop);
+
+      if (stream) {
+        pw_stream_disconnect(stream);
+        pw_stream_destroy(stream);
+      }
+
+      if (core) {
+        pw_core_disconnect(core);
+      }
+
+      pw_context_destroy(context);
+      pw_thread_loop_destroy(main_loop);
+
+      g_pipewire_thread_loop_exists.store(false);
+    }
+
+    struct pw_thread_loop* const main_loop;
+    struct pw_context* const context;
+    struct pw_core* core = nullptr;
+    struct pw_stream* stream = nullptr;
+    struct spa_source* renegotiate = nullptr;
+  };
+
   std::unique_ptr<PipeWireInitializer> pw_initializer_;
-  struct pw_context* pw_context_ = nullptr;
-  struct pw_core* pw_core_ = nullptr;
-  struct pw_stream* pw_stream_ = nullptr;
-  struct pw_thread_loop* pw_main_loop_ = nullptr;
-  struct spa_source* renegotiate_ = nullptr;
+  std::unique_ptr<PipeWireThreadLoop> pw_;
 
   spa_hook spa_core_listener_;
   spa_hook spa_stream_listener_;
@@ -241,7 +318,7 @@ void SharedScreenCastStreamPrivate::OnCoreError(void* data,
   RTC_DCHECK(stream);
 
   RTC_LOG(LS_ERROR) << "PipeWire remote error: " << message;
-  pw_thread_loop_signal(stream->pw_main_loop_, false);
+  pw_thread_loop_signal(stream->pw_->main_loop, false);
 }
 
 void SharedScreenCastStreamPrivate::OnCoreInfo(void* data,
@@ -263,7 +340,7 @@ void SharedScreenCastStreamPrivate::OnCoreDone(void* data,
   RTC_DCHECK(stream);
 
   if (id == PW_ID_CORE && stream->server_version_sync_ == seq) {
-    pw_thread_loop_signal(stream->pw_main_loop_, false);
+    pw_thread_loop_signal(stream->pw_->main_loop, false);
   }
 }
 
@@ -371,7 +448,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
        << that->spa_video_format_.size.height << "\n";
     sb << "    Framerate: " << that->spa_video_format_.framerate.num << "/"
        << that->spa_video_format_.framerate.denom;
-    RTC_LOG(LS_INFO) << sb.str();
+    RTC_LOG(LS_INFO) << sb.Release();
   }
 
   const int buffer_types = has_modifier && mozilla::gfx::IsDMABufEnabled()
@@ -407,7 +484,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
           sizeof(struct spa_meta_region) * 1,
           sizeof(struct spa_meta_region) * kVideoDamageRegionCount))));
 
-  pw_stream_update_params(that->pw_stream_, params.data(), params.size());
+  pw_stream_update_params(that->pw_->stream, params.data(), params.size());
 }
 
 // static
@@ -419,13 +496,13 @@ void SharedScreenCastStreamPrivate::OnStreamProcess(void* data) {
   struct pw_buffer* next_buffer;
   struct pw_buffer* buffer = nullptr;
 
-  next_buffer = pw_stream_dequeue_buffer(that->pw_stream_);
+  next_buffer = pw_stream_dequeue_buffer(that->pw_->stream);
   while (next_buffer) {
     buffer = next_buffer;
-    next_buffer = pw_stream_dequeue_buffer(that->pw_stream_);
+    next_buffer = pw_stream_dequeue_buffer(that->pw_->stream);
 
     if (next_buffer) {
-      pw_stream_queue_buffer(that->pw_stream_, buffer);
+      pw_stream_queue_buffer(that->pw_->stream, buffer);
     }
   }
 
@@ -442,13 +519,13 @@ void SharedScreenCastStreamPrivate::OnStreamProcess(void* data) {
       that->observer_->OnBufferCorruptedMetadata();
     }
     // Queue buffer for reuse; it will not be processed further.
-    pw_stream_queue_buffer(that->pw_stream_, buffer);
+    pw_stream_queue_buffer(that->pw_->stream, buffer);
     return;
   }
 
   that->ProcessBuffer(buffer);
 
-  pw_stream_queue_buffer(that->pw_stream_, buffer);
+  pw_stream_queue_buffer(that->pw_->stream, buffer);
 }
 
 void SharedScreenCastStreamPrivate::OnRenegotiateFormat(void* data, uint64_t) {
@@ -457,7 +534,7 @@ void SharedScreenCastStreamPrivate::OnRenegotiateFormat(void* data, uint64_t) {
   RTC_DCHECK(that);
 
   {
-    PipeWireThreadLoopLock thread_loop_lock(that->pw_main_loop_);
+    PipeWireThreadLoopLock thread_loop_lock(that->pw_->main_loop);
 
     uint8_t buffer[4096] = {};
     spa_pod_builder builder =
@@ -471,7 +548,7 @@ void SharedScreenCastStreamPrivate::OnRenegotiateFormat(void* data, uint64_t) {
                     that->width_ && that->height_ ? &resolution : nullptr,
                     &frame_rate, params);
 
-    pw_stream_update_params(that->pw_stream_, params.data(), params.size());
+    pw_stream_update_params(that->pw_->stream, params.data(), params.size());
   }
 }
 
@@ -509,23 +586,15 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
 
   pw_initializer_ = std::make_unique<PipeWireInitializer>();
 
-  pw_main_loop_ = pw_thread_loop_new("pipewire-main-loop", nullptr);
-
-  pw_context_ =
-      pw_context_new(pw_thread_loop_get_loop(pw_main_loop_), nullptr, 0);
-  if (!pw_context_) {
-    RTC_LOG(LS_ERROR) << "Failed to create PipeWire context";
-    return false;
-  }
-
-  if (pw_thread_loop_start(pw_main_loop_) < 0) {
-    RTC_LOG(LS_ERROR) << "Failed to start main PipeWire loop";
+  pw_ = PipeWireThreadLoop::Create();
+  if (!pw_) {
     return false;
   }
 
   pw_client_version_ = PipeWireVersion::Parse(pw_get_library_version());
   RTC_LOG(LS_INFO) << "PipeWire client version: "
                    << pw_client_version_.ToStringView();
+  RTC_LOG(LS_INFO) << "PipeWire headers version: " << pw_get_headers_version();
 
   // Initialize event handlers, remote end and stream-related.
   pw_core_events_.version = PW_VERSION_CORE_EVENTS;
@@ -539,41 +608,42 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
   pw_stream_events_.process = &OnStreamProcess;
 
   {
-    PipeWireThreadLoopLock thread_loop_lock(pw_main_loop_);
+    PipeWireThreadLoopLock thread_loop_lock(pw_->main_loop);
 
     if (fd != kInvalidPipeWireFd) {
-      pw_core_ = pw_context_connect_fd(
-          pw_context_, fcntl(fd, F_DUPFD_CLOEXEC, 0), nullptr, 0);
+      pw_->core = pw_context_connect_fd(
+          pw_->context, fcntl(fd, F_DUPFD_CLOEXEC, 0), nullptr, 0);
     } else {
-      pw_core_ = pw_context_connect(pw_context_, nullptr, 0);
+      pw_->core = pw_context_connect(pw_->context, nullptr, 0);
     }
 
-    if (!pw_core_) {
+    if (!pw_->core) {
       RTC_LOG(LS_ERROR) << "Failed to connect PipeWire context";
       return false;
     }
 
-    pw_core_add_listener(pw_core_, &spa_core_listener_, &pw_core_events_, this);
+    pw_core_add_listener(pw_->core, &spa_core_listener_, &pw_core_events_,
+                         this);
 
     // Add an event that can be later invoked by pw_loop_signal_event()
-    renegotiate_ = pw_loop_add_event(pw_thread_loop_get_loop(pw_main_loop_),
-                                     OnRenegotiateFormat, this);
+    pw_->renegotiate = pw_loop_add_event(
+        pw_thread_loop_get_loop(pw_->main_loop), OnRenegotiateFormat, this);
 
     server_version_sync_ =
-        pw_core_sync(pw_core_, PW_ID_CORE, server_version_sync_);
+        pw_core_sync(pw_->core, PW_ID_CORE, server_version_sync_);
 
-    pw_thread_loop_wait(pw_main_loop_);
+    pw_thread_loop_wait(pw_->main_loop);
 
     pw_properties* reuseProps =
         pw_properties_new_string("pipewire.client.reuse=1");
-    pw_stream_ = pw_stream_new(pw_core_, "webrtc-consume-stream", reuseProps);
+    pw_->stream = pw_stream_new(pw_->core, "webrtc-consume-stream", reuseProps);
 
-    if (!pw_stream_) {
+    if (!pw_->stream) {
       RTC_LOG(LS_ERROR) << "Failed to create PipeWire stream";
       return false;
     }
 
-    pw_stream_add_listener(pw_stream_, &spa_stream_listener_,
+    pw_stream_add_listener(pw_->stream, &spa_stream_listener_,
                            &pw_stream_events_, this);
 
     // Modifiers can be used with PipeWire >= 0.3.33
@@ -606,7 +676,7 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
                       &default_frame_rate, params);
     }
 
-    if (pw_stream_connect(pw_stream_, PW_DIRECTION_INPUT, pw_stream_node_id_,
+    if (pw_stream_connect(pw_->stream, PW_DIRECTION_INPUT, pw_stream_node_id_,
                           PW_STREAM_FLAG_AUTOCONNECT, params.data(),
                           params.size()) != 0) {
       RTC_LOG(LS_ERROR) << "Could not connect receiving stream";
@@ -625,11 +695,11 @@ void SharedScreenCastStreamPrivate::UpdateScreenCastStreamResolution(
                         << height;
     return;
   }
-  if (!pw_main_loop_) {
+  if (!pw_) {
     RTC_LOG(LS_WARNING) << "No main pipewire loop, ignoring resolution change";
     return;
   }
-  if (!renegotiate_) {
+  if (!pw_->renegotiate) {
     RTC_LOG(LS_WARNING) << "Can not renegotiate stream params, ignoring "
                         << "resolution change";
     return;
@@ -637,25 +707,27 @@ void SharedScreenCastStreamPrivate::UpdateScreenCastStreamResolution(
   if (width_ != width || height_ != height) {
     width_ = width;
     height_ = height;
-    pw_loop_signal_event(pw_thread_loop_get_loop(pw_main_loop_), renegotiate_);
+    pw_loop_signal_event(pw_thread_loop_get_loop(pw_->main_loop),
+                         pw_->renegotiate);
   }
 }
 
 RTC_NO_SANITIZE("cfi-icall")
 void SharedScreenCastStreamPrivate::UpdateScreenCastStreamFrameRate(
     uint32_t frame_rate) {
-  if (!pw_main_loop_) {
+  if (!pw_) {
     RTC_LOG(LS_WARNING) << "No main pipewire loop, ignoring frame rate change";
     return;
   }
-  if (!renegotiate_) {
+  if (!pw_->renegotiate) {
     RTC_LOG(LS_WARNING) << "Can not renegotiate stream params, ignoring "
                         << "frame rate change";
     return;
   }
   if (frame_rate_ != frame_rate) {
     frame_rate_ = frame_rate;
-    pw_loop_signal_event(pw_thread_loop_get_loop(pw_main_loop_), renegotiate_);
+    pw_loop_signal_event(pw_thread_loop_get_loop(pw_->main_loop),
+                         pw_->renegotiate);
   }
 }
 
@@ -671,18 +743,14 @@ void SharedScreenCastStreamPrivate::StopAndCleanupStream() {
 
   // Even if we *do* somehow have the other objects without a pipewire thread,
   // destroying them without a thread causes a crash.
-  if (!pw_main_loop_)
+  if (!pw_)
     return;
 
   // While we can stop the thread now, we cannot destroy it until we've cleaned
   // up the other members.
-  pw_thread_loop_stop(pw_main_loop_);
+  pw_thread_loop_stop(pw_->main_loop);
 
-  if (pw_stream_) {
-    pw_stream_disconnect(pw_stream_);
-    pw_stream_destroy(pw_stream_);
-    pw_stream_ = nullptr;
-
+  if (pw_->stream) {
     {
       MutexLock latest_frame_lock(&latest_frame_lock_);
       latest_available_frame_ = nullptr;
@@ -693,25 +761,14 @@ void SharedScreenCastStreamPrivate::StopAndCleanupStream() {
     }
   }
 
-  if (pw_core_) {
-    pw_core_disconnect(pw_core_);
-    pw_core_ = nullptr;
-  }
-
-  if (pw_context_) {
-    pw_context_destroy(pw_context_);
-    pw_context_ = nullptr;
-  }
-
-  pw_thread_loop_destroy(pw_main_loop_);
-  pw_main_loop_ = nullptr;
+  pw_.reset();
 }
 
 std::unique_ptr<SharedDesktopFrame>
 SharedScreenCastStreamPrivate::CaptureFrame() {
   MutexLock latest_frame_lock(&latest_frame_lock_);
 
-  if (!latest_available_frame_) {
+  if (!pw_ || !pw_->stream || !latest_available_frame_) {
     return std::unique_ptr<SharedDesktopFrame>{};
   }
 
@@ -1132,7 +1189,8 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
                                         DRM_FORMAT_MOD_INVALID);
     }
 
-    pw_loop_signal_event(pw_thread_loop_get_loop(pw_main_loop_), renegotiate_);
+    pw_loop_signal_event(pw_thread_loop_get_loop(pw_->main_loop),
+                         pw_->renegotiate);
     return false;
   }
 

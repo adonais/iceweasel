@@ -130,8 +130,7 @@ def android_sdk_root(value, android_os_info, toolchains_base_dir, want_bootstrap
             if not is_default or not want_bootstrap("android-sdk"):
                 die(
                     "Android cmdline-tools %s not found under %s. "
-                    "Try |mach bootstrap|."
-                    % (CMDLINE_TOOLS_VERSION_STRING, sdk_path)
+                    "Try |mach bootstrap|." % (CMDLINE_TOOLS_VERSION_STRING, sdk_path)
                 )
             ensure_android_sdk(android_os_info.os_name, android_os_info.os_tag)
             sdk_path = str(get_sdk_path(android_os_info.os_name))

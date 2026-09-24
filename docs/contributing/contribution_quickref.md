@@ -20,7 +20,7 @@ Please obtain an API Token (Settings >> Conduit API Tokens)
 
 ## Windows dependencies
 
-1. You need a {ref}`supported version of Windows<tier_1_hosts>`.
+1. You need a {ref}`supported version of Windows<tier-1-hosts>`.
 
 2. Download the [MozillaBuild Package.](https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe) Installation directory should be:
 

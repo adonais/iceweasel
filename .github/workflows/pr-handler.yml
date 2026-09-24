@@ -86,10 +86,13 @@ jobs:
           gh pr lock "${PR}"
 
       - name: Check PR target
-        if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened' && github.base_ref == 'main'
+        if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened' && github.base_ref != 'autoland'
         run: |
+          gh pr edit "${PR}" --base "autoland"
           gh pr comment "${PR}" --body "> [!WARNING]
-          The base branch is currently set to \`main\`. Please [Edit this PR](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/changing-the-base-branch-of-a-pull-request) and set the base to \`autoland\`."
+          The target branch has been automatically set to \`autoland\`.
+
+          Please [Edit this PR](https://docs.github.com/en/pull-requests/how-tos/create-pull-requests/changing-the-base-branch-of-a-pull-request) if this wasn't your intention."
 
       - name: Add Lando link
         if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened'

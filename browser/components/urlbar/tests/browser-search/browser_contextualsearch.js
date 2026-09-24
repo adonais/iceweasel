@@ -528,35 +528,6 @@ add_task(async function test_dont_suggest_default_engine() {
   });
 });
 
-add_task(async function test_dont_suggest_default_engine() {
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "default",
-  });
-
-  Assert.ok(
-    await hasActions(1),
-    "Default engine is suggested when it matches the query"
-  );
-
-  // Load a URI from the host of the default engine.
-  await loadUri("https://example.com/");
-
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "something",
-  });
-
-  Assert.ok(
-    !(await hasActions(1)),
-    "Default engine is not suggested based on current host"
-  );
-
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    EventUtils.synthesizeKey("KEY_Escape");
-  });
-});
-
 add_task(async function test_onboarding() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.quickactions.timesToShowOnboardingLabel", 3]],

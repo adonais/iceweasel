@@ -11,8 +11,7 @@ const { AppProvidedConfigEngine } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs"
 );
 
-const legacyUseSavedOrderPrefName =
-  SearchUtils.BROWSER_SEARCH_PREF + "useDBForOrder";
+const legacyUseSavedOrderPrefName = "browser.search.useDBForOrder";
 
 var settingsTemplate;
 

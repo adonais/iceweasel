@@ -170,7 +170,7 @@ class nsCompressedAudioVideoImageDetector : public nsUnknownDecoder {
     mCallback(httpChannel, (const uint8_t*)testData, testDataLen);
 
     nsAutoCString contentType;
-    rv = httpChannel->GetContentType(contentType);
+    httpChannel->GetContentType(contentType);
 
     MutexAutoLock lock(mMutex);
     if (!contentType.IsEmpty()) {

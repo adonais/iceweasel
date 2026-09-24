@@ -51,7 +51,9 @@
         "value": "{space.small}"
       },
       "inline": {
-        "value": "{space.medium} {space.small}"
+        "value": {
+          "default": "{space.medium} {space.small}"
+        }
       }
     }
   },
@@ -83,7 +85,13 @@
     "container": {
       "border": {
         "@base": {
-          "value": "none"
+          "value": {
+            "default": "none",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "1px solid {message-bar.icon.container.border.color}"
+            }
+          }
         },
         "color": {
           "value": "transparent"
@@ -93,15 +101,57 @@
         }
       },
       "height": {
-        "value": "min-content"
+        "value": {
+          "default": "min-content",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "{message-bar.icon.size}"
+          }
+        }
       },
       "margin": {
-        "block-start": {
-          "value": "calc({space.small} + 2px)"
+        "block": {
+          "start": {
+            "@base": {
+              "value": {
+                "default": "{space.small}",
+                "nova": {
+                  "comment": "There is no equivalent value for this token in Figma, and we need the unit for calculations",
+                  "value": "0px"
+                }
+              }
+            },
+            "offset": {
+              "value": {
+                "default": "2px",
+                "nova": {
+                  "comment": "There is no equivalent value for this token in Figma, and we need the unit for calculations",
+                  "value": "0px"
+                }
+              }
+            }
+          }
         }
       },
       "padding": {
-        "value": "0"
+        "@base": {
+          "value": {
+            "default": "0px",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "{space.small}"
+            }
+          }
+        },
+        "offset": {
+          "value": {
+            "default": "0px",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "1px"
+            }
+          }
+        }
       }
     },
     "size": {
@@ -125,7 +175,13 @@
       },
       "padding": {
         "block": {
-          "value": "calc(({message-bar.container.min-height} - {message-bar.icon.size}) / 2)"
+          "value": {
+            "default": "calc(({message-bar.container.min-height} - {message-bar.icon.size}) / 2)",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "0"
+            }
+          }
         }
       }
     },

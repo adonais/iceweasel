@@ -2,6 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1965307 - Disqus embed placeholder
+ *
+ * When Disqus' embed.js is blocked, comment sections silently fail to appear.
+ * This shim puts a SmartBlock placeholder where the embed would have been, so
+ * that the user can see something is missing and choose to load it, at which
+ * point the original script is unblocked and run.
+ */
+
 /* globals browser, embedHelperLib */
 
 if (!window.smartblockDisqusShimInitialized) {

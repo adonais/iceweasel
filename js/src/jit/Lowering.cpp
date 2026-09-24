@@ -1102,7 +1102,6 @@ void LIRGenerator::visitTest(MTest* test) {
         comp->compareType() == MCompare::Compare_Symbol ||
         comp->compareType() == MCompare::Compare_WasmAnyRef) {
       JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-      LAllocation lhs = useRegister(left);
       LAllocation rhs;
       if (comp->isInt32Comparison() ||
           comp->compareType() == MCompare::Compare_UInt32 ||
@@ -1111,6 +1110,16 @@ void LIRGenerator::visitTest(MTest* test) {
         rhs = useAnyOrInt32Constant(right);
       } else {
         rhs = useAny(right);
+      }
+      // A memory lhs needs a non-memory rhs to stay encodable in one
+      // instruction.
+      LAllocation lhs;
+      if (rhs.isConstant() &&
+          (comp->isInt32Comparison() ||
+           comp->compareType() == MCompare::Compare_UInt32)) {
+        lhs = useAny(left);
+      } else {
+        lhs = useRegister(left);
       }
       auto* lir =
           new (alloc()) LCompareAndBranch(ifTrue, ifFalse, lhs, rhs, comp, op);
@@ -1180,7 +1189,7 @@ void LIRGenerator::visitTest(MTest* test) {
     }
   }
 
-#if defined(ENABLE_WASM_SIMD) &&                           \
+#if defined(ENABLE_JIT_SIMD) &&                            \
     (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
      defined(JS_CODEGEN_ARM64))
   // Check if the operand for this test is an any_true/all_true SIMD operation.
@@ -1334,7 +1343,7 @@ void LIRGenerator::visitTest(MTest* test) {
       break;
     case MIRType::Int32:
     case MIRType::Boolean:
-      add(new (alloc()) LTestIAndBranch(ifTrue, ifFalse, useRegister(opd)));
+      add(new (alloc()) LTestIAndBranch(ifTrue, ifFalse, useAny(opd)));
       break;
     case MIRType::IntPtr:
       add(new (alloc()) LTestIPtrAndBranch(ifTrue, ifFalse, useRegister(opd)));
@@ -1509,7 +1518,6 @@ void LIRGenerator::visitCompare(MCompare* comp) {
       comp->compareType() == MCompare::Compare_Symbol ||
       comp->compareType() == MCompare::Compare_WasmAnyRef) {
     JSOp op = ReorderComparison(comp->jsop(), &left, &right);
-    LAllocation lhs = useRegisterAtStart(left);
     LAllocation rhs;
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
@@ -1518,6 +1526,15 @@ void LIRGenerator::visitCompare(MCompare* comp) {
       rhs = useAnyOrInt32ConstantAtStart(right);
     } else {
       rhs = useAnyAtStart(right);
+    }
+    // A memory lhs needs a non-memory rhs to stay encodable in one
+    // instruction.
+    LAllocation lhs;
+    if (rhs.isConstant() && (comp->isInt32Comparison() ||
+                             comp->compareType() == MCompare::Compare_UInt32)) {
+      lhs = useAnyAtStart(left);
+    } else {
+      lhs = useRegisterAtStart(left);
     }
     define(new (alloc()) LCompare(lhs, rhs, op), comp);
     return;
@@ -7242,7 +7259,7 @@ void LIRGenerator::visitWasmParameter(MWasmParameter* ins) {
     );
   } else {
     MOZ_ASSERT(IsNumberType(ins->type()) || ins->type() == MIRType::WasmAnyRef
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
                || ins->type() == MIRType::Simd128
 #endif
     );
@@ -7266,7 +7283,7 @@ void LIRGenerator::visitWasmReturn(MWasmReturn* ins) {
     returnReg = useFixed(rval, ReturnFloat32Reg);
   } else if (rval->type() == MIRType::Double) {
     returnReg = useFixed(rval, ReturnDoubleReg);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   } else if (rval->type() == MIRType::Simd128) {
     returnReg = useFixed(rval, ReturnSimd128Reg);
 #endif
@@ -8511,7 +8528,7 @@ void LIRGenerator::visitWasmFloatConstant(MWasmFloatConstant* ins) {
     case MIRType::Float32:
       define(new (alloc()) LFloat32(ins->toFloat32()), ins);
       break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128:
       define(new (alloc()) LSimd128(ins->toSimd128()), ins);
       break;
@@ -9076,6 +9093,18 @@ void LIRGenerator::visitWasmMulI64WideHI64(MWasmMulI64WideHI64* ins) {
   // On 32-bit targets, we never create MWasmMulI64WideHI64 nodes.
   MOZ_CRASH();
 #endif
+}
+
+void LIRGenerator::visitUnsignedToDouble(MUnsignedToDouble* ins) {
+  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
+  auto* lir = new (alloc()) LUint32ToDouble(useRegisterAtStart(ins->input()));
+  define(lir, ins);
+}
+
+void LIRGenerator::visitUnsignedToFloat32(MUnsignedToFloat32* ins) {
+  MOZ_ASSERT(ins->input()->type() == MIRType::Int32);
+  auto* lir = new (alloc()) LUint32ToFloat32(useRegisterAtStart(ins->input()));
+  define(lir, ins);
 }
 
 void LIRGenerator::visitAddDisposableResource(MAddDisposableResource* ins) {

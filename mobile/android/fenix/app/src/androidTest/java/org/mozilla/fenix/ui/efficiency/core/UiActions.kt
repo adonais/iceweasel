@@ -29,9 +29,7 @@ object UiActions {
     private val device: UiDevice
         get() = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
-    fun click(element: Any) {
-        // resolve() hands back the UiElement facade; mozGetElement hands back a raw backend node.
-        if (element is UiElement) return element.click()
+    fun click(element: UiElement) {
         dispatch(
             element,
             "click",
@@ -49,7 +47,7 @@ object UiActions {
         )
     }
 
-    fun longClick(element: Any, durationMillis: Long = 5_000) =
+    fun longClick(element: UiElement, durationMillis: Long = 5_000) =
         dispatch(
             element,
             "long click",
@@ -66,7 +64,7 @@ object UiActions {
             },
         )
 
-    fun enterText(element: Any, text: String) =
+    fun enterText(element: UiElement, text: String) =
         dispatch(
             element,
             "enter text",
@@ -76,7 +74,7 @@ object UiActions {
             compose = { it.performTextInput(text) },
         )
 
-    fun clear(element: Any) =
+    fun clear(element: UiElement) =
         dispatch(
             element,
             "clear",
@@ -88,7 +86,7 @@ object UiActions {
 
     // UiAutomator has no per-element IME action, so the key goes to the focused field via the device -
     // which is what the hand-written copies of this branch already did.
-    fun pressEnter(element: Any) =
+    fun pressEnter(element: UiElement) =
         dispatch(
             element,
             "press enter",
@@ -99,19 +97,20 @@ object UiActions {
         )
 
     private inline fun dispatch(
-        element: Any,
+        element: UiElement,
         action: String,
         espresso: (ViewInteraction) -> Unit,
         uiObject: (UiObject) -> Unit,
         uiObject2: (UiObject2) -> Unit,
         compose: (SemanticsNodeInteraction) -> Unit,
     ) {
-        when (element) {
-            is ViewInteraction -> espresso(element)
-            is UiObject -> uiObject(element)
-            is UiObject2 -> uiObject2(element)
-            is SemanticsNodeInteraction -> compose(element)
-            else -> unsupported(element, action)
+        val raw = element.backend()
+        when (raw) {
+            is ViewInteraction -> espresso(raw)
+            is UiObject -> uiObject(raw)
+            is UiObject2 -> uiObject2(raw)
+            is SemanticsNodeInteraction -> compose(raw)
+            else -> unsupported(raw, action)
         }
     }
 

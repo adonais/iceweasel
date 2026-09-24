@@ -93,6 +93,9 @@ class CanvasRenderingContextHelper {
 
   virtual CSSIntSize GetWidthHeight() = 0;
 
+  // Whether a new context may be installed on this canvas.
+  virtual bool CanCreateContext() const = 0;
+
   CanvasContextType mCurrentContextType;
   nsCOMPtr<nsICanvasRenderingContextInternal> mCurrentContext;
 };

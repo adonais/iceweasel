@@ -6,7 +6,6 @@ use firefox_on_glean::factory;
 use firefox_on_glean::private::traits::HistogramType;
 use firefox_on_glean::private::{CommonMetricData, Lifetime, MemoryUnit, TimeUnit};
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
-#[cfg(feature = "with_gecko")]
 use nsstring::{nsACString, nsAString, nsCString};
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -41,7 +40,6 @@ struct ExtraMetricArgs {
 ///
 /// No effort has been made to make this pleasant to use, since it's for
 /// internal testing only (ie, the testing of JOG itself).
-#[cfg(feature = "with_gecko")]
 #[no_mangle]
 pub extern "C" fn jog_test_register_metric(
     metric_type: &nsACString,
@@ -103,7 +101,6 @@ pub extern "C" fn jog_test_register_metric(
 /// # Returns
 ///
 /// NS_OK if the metric was registered successfully, or NS_ERROR_FAILURE if registration failed
-#[cfg(feature = "with_gecko")]
 #[no_mangle]
 pub extern "C" fn jog_register_metric(
     metric_type: &nsACString,

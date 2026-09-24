@@ -119,7 +119,8 @@ class CTFontEntry final : public gfxFontEntry {
 
   nsTHashtable<nsUint32HashKey> mAvailableTables MOZ_GUARDED_BY(mLock);
 
-  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont;
+  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontMac> mUnscaledFont
+      MOZ_GUARDED_BY(mLock);
 };
 
 class CTFontFamily : public gfxFontFamily {

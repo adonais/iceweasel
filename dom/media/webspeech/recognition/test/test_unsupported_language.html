@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: languages no on-device model recognizes</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// Valid BCP-47, deliberately absent from every model's supported_locales.
+const UNSUPPORTED = "xx-XX";
+
+// Starts a session and reports whether it got going, and the error it failed
+// or ended with, if any. A session refused before it started fires "error"
+// without "end" (see DispatchErrorAndEnd), so either event settles the start;
+// a started one is aborted, as only one runs at a time, and an error firing
+// between the two is reported as well.
+async function startAndWaitForOutcome(lang) {
+  const sr = new SpeechRecognition();
+  sr.lang = lang;
+  let error;
+  sr.addEventListener("error", e => { error = e.error; });
+  const started = await new Promise(resolve => {
+    sr.onstart = () => resolve(true);
+    sr.onerror = () => resolve(false);
+    sr.onend = () => resolve(false);
+    sr.start();
+  });
+  if (started) {
+    await new Promise(resolve => {
+      sr.onend = resolve;
+      sr.abort();
+    });
+  }
+  return { started, error };
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHub.testing", true],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function available_reports_unavailable() {
+  is(await SpeechRecognition.available({
+    langs: [UNSUPPORTED],
+    processLocally: true,
+  }), "unavailable", "available() reports unavailable for an unsupported language");
+
+  is(await SpeechRecognition.available({
+    langs: ["en-US", UNSUPPORTED],
+    processLocally: true,
+  }), "unavailable",
+     "available() reports unavailable when only one of the requested languages " +
+     "is unsupported");
+});
+
+add_task(async function install_resolves_false() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  is(await SpeechRecognition.install({
+    langs: [UNSUPPORTED],
+    processLocally: true,
+  }), false, "install() resolves false for an unsupported language");
+});
+
+add_task(async function start_fails() {
+  const outcome = await startAndWaitForOutcome(UNSUPPORTED);
+  ok(!outcome.started, "start() does not start for an unsupported language");
+  is(outcome.error, "service-not-allowed",
+     "start() fails with service-not-allowed for an unsupported language");
+});
+
+add_task(async function region_the_model_lacks_is_still_recognized() {
+  // es-MX is not one of the multilingual model's locales, but Spanish is.
+  const outcome = await startAndWaitForOutcome("es-MX");
+  ok(outcome.started,
+     "start() accepts a language the model supports under another region, " +
+     "got error: " + outcome.error);
+  is(outcome.error, undefined, "the session ran without an error");
+});
+
+add_task(async function unset_language_uses_the_user_language() {
+  // Neither this page nor the object names a language, so recognition runs in
+  // the user's own, which the multilingual model recognizes.
+  await SpecialPowers.pushPrefEnv({ set: [["intl.accept_languages", "fr-CA"]] });
+  const outcome = await startAndWaitForOutcome("");
+  ok(outcome.started,
+     "start() with an unset lang starts, got error: " + outcome.error);
+  is(outcome.error, undefined, "the session ran without an error");
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function unset_language_with_an_unsupported_user_language() {
+  // Same path, but nothing recognizes what the user speaks.
+  await SpecialPowers.pushPrefEnv({
+    set: [["intl.accept_languages", UNSUPPORTED]],
+  });
+  const outcome = await startAndWaitForOutcome("");
+  ok(!outcome.started,
+     "start() does not start when no model recognizes the user's language");
+  is(outcome.error, "service-not-allowed",
+     "start() fails with service-not-allowed for an unsupported user language");
+  await SpecialPowers.popPrefEnv();
+});
+</script>
+</pre>
+</body>
+</html>

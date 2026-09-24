@@ -15,6 +15,6 @@
 
 /* JSONView doesn't load dark-theme.css */
 .theme-dark .devtools-filterinput {
-  background-color: rgba(24, 29, 32, 1);
-  color: rgba(184, 200, 217, 1);
+  background-color: rgb(24 29 32 / 1);
+  color: rgb(184 200 217 / 1);
 }

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { isEmbeddedPdfLoad } from "resource://gre/modules/pdfjs.sys.mjs";
+
 const PDF_EMBED_FALLBACK_WEB_PAGE = "resource://pdf.js/embedFallback.html";
 
 const lazy = {};
@@ -35,9 +37,8 @@ function getDOMWindow(channel, principal) {
  * derives the URI and principal from the browsing context. The original
  * referrer is forwarded.
  *
- * The fallback retains no PDF bytes, so opening it starts a new request that may
- * return different content. The retry is a frame load checked by frame-src
- * rather than object-src; the fallback converter handles only object loads.
+ * The fallback retains no PDF bytes, so opening starts a new request. The retry
+ * is not an attribute-triggered load, so this converter declines it.
  *
  * @param {Window} domWindow the window displaying the fallback page.
  * @param {nsIReferrerInfo|null} referrerInfo the original request's referrer.
@@ -51,14 +52,9 @@ function openPdf(domWindow, referrerInfo) {
 }
 
 /**
- * Stream converter serving a page that lets the user open a PDF embedded with
- * an object or embed element through the normal PDF handling flow, when the
- * built-in viewer is disabled: such an element cannot invoke the configured PDF
- * handler by itself. The page is built on the in-content design system, which
- * is desktop-only, hence pdfjs.embedFallback defaults to false on Android.
+ * Serves an open-PDF page for embedded PDFs when PDF.js is disabled.
  *
- * PdfStreamConverter handles the PDFs the viewer displays, and only one of the
- * two converters is registered at a time (see StreamConverterFactory).
+ * StreamConverterFactory registers this instead of PdfStreamConverter.
  */
 export class PdfEmbedFallbackStreamConverter {
   QueryInterface = ChromeUtils.generateQI([
@@ -95,11 +91,9 @@ export class PdfEmbedFallbackStreamConverter {
     }
     if (
       aFromType != "application/pdf" ||
-      aChannel.loadInfo?.externalContentPolicyType !=
-        Ci.nsIContentPolicy.TYPE_OBJECT
+      !isEmbeddedPdfLoad(aChannel.loadInfo)
     ) {
-      // The open button retries as TYPE_SUBDOCUMENT. Decline quietly so normal
-      // handler selection does not produce a console error.
+      // Decline quietly so normal handler selection can continue.
       Components.returnCode = Cr.NS_ERROR_FAILURE;
       return "";
     }

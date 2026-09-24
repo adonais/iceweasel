@@ -90,6 +90,14 @@ already_AddRefed<Path> PathBuilderSkia::Finish() {
   return path.forget();
 }
 
+bool PathBuilderSkia::Reset(FillRule aFillRule) {
+  mPathBuilder.reset();
+  SetFillRule(aFillRule);
+  mCurrentPoint = Point();
+  mBeginPoint = Point();
+  return true;
+}
+
 void PathBuilderSkia::AppendPath(const SkPath& aPath) {
   mPathBuilder.addPath(aPath);
 }

@@ -4,7 +4,8 @@
 
 package org.mozilla.fenix.ui.efficiency.generation.behavior
 
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.generation.NavigationGraphBootstrap
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
 import org.mozilla.fenix.ui.efficiency.navigation.PageCatalog
 
 object BehaviorTestPlanner {
@@ -13,9 +14,15 @@ object BehaviorTestPlanner {
         capabilities: List<BehaviorCapability> = BehaviorCapabilityCatalog.all,
         selectorTemplates: List<SelectorTemplate> = SelectorTemplateCatalog.all,
         contexts: List<BehaviorContextVariant> = BehaviorContextMatrix.variants(),
+        graph: NavigationGraph = NavigationGraphBootstrap.buildGraph(),
     ): List<BehaviorCasePlan> {
         val capabilitiesByFeatureEntity = capabilities.groupBy { it.feature to it.entity }
-        val pageRefsByProperty = PageCatalog.discoverPages().associateBy { it.propertyName }
+        val catalog =
+            PlanningCatalog(
+                selectorTemplates,
+                PageCatalog.discoverPages().associateBy { it.propertyName },
+                graph,
+            )
 
         return buildList {
                 capabilitiesByFeatureEntity.keys.sortedWith(compareBy({ it.first }, { it.second })).forEach {
@@ -28,9 +35,8 @@ object BehaviorTestPlanner {
                                     entity = entity,
                                     template = template,
                                     capabilities = capabilitiesByFeatureEntity.getValue(feature to entity),
-                                    selectorTemplates = selectorTemplates,
-                                    pageRefsByProperty = pageRefsByProperty,
                                     context = context,
+                                    catalog = catalog,
                                 )
                             )
                         }
@@ -45,9 +51,8 @@ object BehaviorTestPlanner {
         entity: String,
         template: BehaviorTemplate,
         capabilities: List<BehaviorCapability>,
-        selectorTemplates: List<SelectorTemplate>,
-        pageRefsByProperty: Map<String, PageCatalog.PageRef>,
         context: BehaviorContextVariant,
+        catalog: PlanningCatalog,
     ): BehaviorCasePlan {
         val missing = mutableListOf<String>()
 
@@ -61,18 +66,19 @@ object BehaviorTestPlanner {
             }
 
         selectedCapabilities.forEach { capability ->
-            if (pageRefsByProperty[capability.pagePropertyName] == null) {
+            if (catalog.pageRefsByProperty[capability.pagePropertyName] == null) {
                 missing += "page:${capability.pagePropertyName}"
             }
         }
 
-        val assertionTemplate = selectorTemplates.firstOrNull {
-            it.feature == feature && it.entity == entity && it.target == template.assertionTarget
-        }
+        val assertionTemplate =
+            catalog.selectorTemplates.firstOrNull {
+                it.feature == feature && it.entity == entity && it.target == template.assertionTarget
+            }
 
         if (assertionTemplate == null) {
             missing += "selectorTemplate:$feature.$entity.${template.assertionTarget}"
-        } else if (pageRefsByProperty[assertionTemplate.pagePropertyName] == null) {
+        } else if (catalog.pageRefsByProperty[assertionTemplate.pagePropertyName] == null) {
             missing += "page:${assertionTemplate.pagePropertyName}"
         }
 
@@ -100,7 +106,7 @@ object BehaviorTestPlanner {
             val parts = transition.split(" -> ")
             val from = parts[0]
             val to = parts[1]
-            if (from != to && NavigationRegistry.findAllPaths(from, to).isEmpty()) {
+            if (from != to && catalog.graph.findAllPaths(from, to).isEmpty()) {
                 missing += "navigationPath:$transition"
             }
         }
@@ -152,4 +158,10 @@ object BehaviorTestPlanner {
             "${name}Page"
         }
     }
+
+    private data class PlanningCatalog(
+        val selectorTemplates: List<SelectorTemplate>,
+        val pageRefsByProperty: Map<String, PageCatalog.PageRef>,
+        val graph: NavigationGraph,
+    )
 }

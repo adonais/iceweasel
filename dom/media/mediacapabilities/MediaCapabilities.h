@@ -72,10 +72,12 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
 
   explicit MediaCapabilities(nsIGlobalObject* aParent);
 
-  // Asynchronously queries the platform decoder to determine video decoding
-  // capabilities (supported, smooth, powerEfficient). Used by the DRM path for
-  // software-encrypted content to determine the powerEfficient field, and also
-  // used by the non-DRM video path to query the platform decoder.
+  // Asynchronously determines video decoding capabilities (supported, smooth,
+  // powerEfficient). Used by the DRM path for software-encrypted content to
+  // determine the powerEfficient field, and also used by the non-DRM video
+  // path. Depending on media.mediacapabilities.codec-support-cache.enabled this
+  // either queries the cached codec-support snapshot or creates a decoder and
+  // queries it directly (in which case aCompositor is used).
   static RefPtr<CapabilitiesPromise> CheckVideoDecodingInfo(
       RefPtr<TaskQueue> aTaskQueue, RefPtr<layers::KnowsCompositor> aCompositor,
       float aFrameRate, bool aShouldResistFingerprinting,

@@ -25,7 +25,6 @@ remote.jar:
   content/marionette/reftest.sys.mjs (reftest.sys.mjs)
   content/marionette/server.sys.mjs (server.sys.mjs)
   content/marionette/stream-utils.sys.mjs (stream-utils.sys.mjs)
-  content/marionette/sync.sys.mjs (sync.sys.mjs)
   content/marionette/transport.sys.mjs (transport.sys.mjs)
   content/marionette/web-reference.sys.mjs (web-reference.sys.mjs)
   content/marionette/webauthn.sys.mjs (webauthn.sys.mjs)

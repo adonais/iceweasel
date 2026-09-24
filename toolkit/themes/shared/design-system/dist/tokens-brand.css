@@ -30,8 +30,11 @@
 
     /** font-size **/
     --font-size-root: 15px;
-    /* 13px (in-content) */
+    /* 13px in-content, unset in platform (we want to avoid going too small when the root font size is already quite small) */
     --font-size-small: 0.867rem;
+
+    /** input **/
+    --input-text-color: var(--text-color);
 
     /** page **/
     --page-main-content-width: 664px;
@@ -50,10 +53,7 @@
   @layer tokens-prefers-contrast {
     @media (prefers-contrast) {
       /** button **/
-      --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
-      --button-text-color-toolbar: var(--button-text-color);
-      --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
 
@@ -62,19 +62,38 @@
       /** button **/
       --button-background-color-ghost: ButtonFace;
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
-      --button-background-color-toolbar: var(--button-background-color);
-      --button-background-color-toolbar-disabled: var(--button-background-color-disabled);
-      --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
-      --button-text-color-toolbar: var(--button-text-color);
-      --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
 
   @media -moz-pref("browser.nova.enabled") {
     @layer tokens-foundation-brand-nova {
+      /** background-color **/
+      --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
+      --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
+      --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-85));
+
+      /** border **/
+      --border-color: light-dark(var(--color-gray-30), var(--color-gray-40));
+      --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-50));
+
+      /** button **/
+      --button-text-color-ghost-disabled: var(--button-text-color-ghost);
+
+      /** table **/
+      /* TODO Bug 1821203 - Gray use needs to be consolidated */
+      --table-row-background-color-alternate: light-dark(var(--color-gray-20), var(--color-gray-65));
+
       /** text-color **/
       --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
+    }
+
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
+        /** button **/
+        --button-text-color-ghost: ButtonText;
+        --button-text-color-ghost-disabled: GrayText;
+      }
     }
   }
 }

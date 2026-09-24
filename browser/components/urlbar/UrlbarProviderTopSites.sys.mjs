@@ -346,6 +346,12 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {string} state
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {{index: number, result: UrlbarResult}[]} providerVisibleResults
+   */
   onImpression(state, queryContext, controller, providerVisibleResults) {
     if (queryContext.isPrivate) {
       return;

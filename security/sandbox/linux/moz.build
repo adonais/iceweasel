@@ -89,6 +89,7 @@ SOURCES += [
 
 SOURCES += [
     "/third_party/abseil-cpp/absl/base/internal/raw_logging.cc",
+    "/third_party/abseil-cpp/absl/base/throw_delegate.cc",
     "/third_party/abseil-cpp/absl/numeric/int128.cc",
     "/third_party/abseil-cpp/absl/strings/ascii.cc",
     "/third_party/abseil-cpp/absl/strings/charconv.cc",

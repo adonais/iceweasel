@@ -16,6 +16,7 @@ using mozilla::Atomic;
 using mozilla::MakeRefPtr;
 using mozilla::Monitor;
 using mozilla::MonitorAutoLock;
+using mozilla::TailDispatchPolicy;
 using mozilla::TaskQueue;
 
 namespace {
@@ -118,13 +119,13 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
       mozilla::SharedThreadPool::Get("Test Pool");
   auto tailTaskQueue1 =
       TaskQueue::Create(do_AddRef(pool), "TestDelayedRunnable tailTaskQueue1",
-                        /* aSupportsTailDispatch = */ true);
+                        TailDispatchPolicy::ConsistentOrdering);
   auto tailTaskQueue2 =
       TaskQueue::Create(do_AddRef(pool), "TestDelayedRunnable tailTaskQueue2",
-                        /* aSupportsTailDispatch = */ true);
+                        TailDispatchPolicy::ConsistentOrdering);
   auto noTailTaskQueue =
       TaskQueue::Create(do_AddRef(pool), "TestDelayedRunnable noTailTaskQueue",
-                        /* aSupportsTailDispatch = */ false);
+                        TailDispatchPolicy::NoTailDispatch);
   enum class State : uint8_t {
     Start,
     TimerRan,

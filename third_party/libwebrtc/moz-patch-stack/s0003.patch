@@ -14,10 +14,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b55b0368d9f21849f
  6 files changed, 26 insertions(+)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index ae877a0539..089ab8d528 100644
+index fdafd985a3..eb82f9eab2 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -171,6 +171,9 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -175,6 +175,9 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
      RtcpPacketTypeCounter rtcp_packet_type_counts;
      std::optional<RtpReceiveStats> rtx_rtp_stats;
  
@@ -28,10 +28,10 @@ index ae877a0539..089ab8d528 100644
      // single 'timing frame'.
      std::optional<webrtc::TimingFrameInfo> timing_frame_info;
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index 72b5c35ffa..255fed7df9 100644
+index acc618df5c..73d037121f 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -338,6 +338,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
+@@ -318,6 +318,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
    return last_xr_rtis;
  }
  
@@ -46,10 +46,10 @@ index 72b5c35ffa..255fed7df9 100644
    std::vector<ReportBlockData> result;
    MutexLock lock(&rtcp_receiver_lock_);
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.h b/modules/rtp_rtcp/source/rtcp_receiver.h
-index 09b6f587d1..4f24d26b24 100644
+index eabbf9fd8e..09fc0cdced 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.h
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.h
-@@ -117,6 +117,10 @@ class RTCPReceiver final {
+@@ -107,6 +107,10 @@ class RTCPReceiver final {
  
    std::vector<rtcp::ReceiveTimeInfo> ConsumeReceivedXrReferenceTimeInfo();
  
@@ -91,10 +91,10 @@ index 0ab5b78b9b..771a19c88a 100644
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
    // Within this list, the `ReportBlockData::source_ssrc()`, which is the SSRC
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index dabe38e9f9..47419e80db 100644
+index a97fce73f2..114c302c21 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-@@ -410,6 +410,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
+@@ -400,6 +400,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
        StreamDataCounters* rtp_counters,
        StreamDataCounters* rtx_counters) const = 0;
  

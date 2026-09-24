@@ -64,6 +64,8 @@ skip-if = ["os == 'win'"]
 
 ["test_node_package_names.py"]
 
+["test_pnpm_audit.py"]
+
 ["test_python_sites.py"]
 
 ["test_ruff.py"]

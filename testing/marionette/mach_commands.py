@@ -119,5 +119,5 @@ def marionette_test(command_context, tests, allow_nonlocal_connections=False, **
         tests,
         topsrcdir=command_context.topsrcdir,
         allow_nonlocal_connections=allow_nonlocal_connections,
-        **kwargs
+        **kwargs,
     )

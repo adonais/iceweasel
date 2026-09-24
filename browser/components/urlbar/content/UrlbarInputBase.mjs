@@ -58,6 +58,8 @@ if (lazy) {
     ExtensionSearchHandler:
       "resource://gre/modules/ExtensionSearchHandler.sys.mjs",
     ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+    handleBounceEventTrigger:
+      "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
     QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
     ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
     SharingUtils: "moz-src:///browser/components/sharing/SharingUtils.sys.mjs",
@@ -93,24 +95,6 @@ const UNLIMITED_MAX_RESULTS = 99;
 // which a content realm has no `Ci` to read them from.
 const SCHEMELESS_INPUT_SCHEMEFUL = 1;
 const SCHEMELESS_INPUT_SCHEMELESS = 2;
-
-let getBoundsWithoutFlushing = UrlbarShared.getBoundsWithoutFlushing;
-
-// `promiseDocumentFlushed` is chrome-only. A frame does instead, since the
-// measurements it guards flush layout themselves in a content document.
-let promiseLayoutFlushed =
-  typeof ChromeUtils != "undefined"
-    ? win => win.promiseDocumentFlushed(() => {})
-    : win => new Promise(resolve => win.requestAnimationFrame(resolve));
-
-// `getBoxQuads` is gated on a pref for a content caller, and the transform it
-// ignores is the toolbar's.
-let getUntransformedTop =
-  typeof ChromeUtils != "undefined"
-    ? element =>
-        element.getBoxQuads({ ignoreTransforms: true, flush: false })[0].p1.y
-    : element => element.getBoundingClientRect().top;
-let px = number => number.toFixed(2) + "px";
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -155,6 +139,7 @@ export class UrlbarInputBase extends HTMLElement {
     return `
       <div class="urlbar-background"/>
       <div class="urlbar-input-container"
+           role="presentation"
            pageproxystate="invalid">
         <moz-urlbar-slot name="remote-control-box" />
 
@@ -194,7 +179,6 @@ ${
           <!-- In the addressbar, there will be an input with id="urlbar-scheme" here. -->
           <input class="urlbar-input textbox-input"
                  role="combobox"
-                 dir="auto"
                  aria-autocomplete="both"
                  inputmode="mozAwesomebar"
                  preserveundohistory=""
@@ -208,8 +192,10 @@ ${
         <moz-urlbar-slot name="page-actions" />
       </div>
       <div class="urlbarView"
+           popover="manual"
            role="group"
            tooltip="aHTMLTooltip">
+        <div class="urlbarView-background"/>
         <div class="urlbarView-body-outer">
           <div class="urlbarView-body-inner">
             <div class="urlbarView-results"
@@ -266,13 +252,18 @@ ${
   ];
 
   /**
-   * Whether expanding is allowed. Requires a parent
-   * toolbar, and us not being read-only.
+   * Whether the element may show its popover at all: it has something to
+   * overlay (a toolbar in a chrome window, the popover attribute in a page),
+   * the window isn't in customize mode and the input isn't read-only.
    */
-  #allowBreakout = false;
+  #popoverAllowed = false;
+
   #gBrowserListenersAdded = false;
-  #breakoutBlockerCount = 0;
   #isAddressbar = false;
+  /**
+   * @see {UrlbarShared.navigationEnabled}
+   */
+  #navigationEnabled = false;
   /**
    * The search access point name of the UrlbarInput for use with telemetry or
    * logging, e.g. `urlbar`, `searchbar`.
@@ -385,6 +376,7 @@ ${
         this.getAttribute("sap-name")
       );
     this.#isAddressbar = this.#sapName == "urlbar";
+    this.#navigationEnabled = UrlbarShared.navigationEnabled(this.#sapName);
 
     this.#addStylesheet();
 
@@ -413,6 +405,10 @@ ${
 
     if (this.#isAddressbar) {
       this.inputField.id = "urlbar-input";
+      // A URL is inherently LTR, so the value's own direction lays the field
+      // out. Elsewhere the field holds free-form text and takes the locale's
+      // direction like any other text input.
+      this.inputField.dir = "auto";
 
       let schemeField = document.createElement("input");
       schemeField.id = "urlbar-scheme";
@@ -471,14 +467,25 @@ ${
     // reflect value of keyword.enabled or set the searchbar placeholder.
     this._setPlaceholder(null);
 
-    if (this.controller.maybeInitEngineStore()) {
-      // Engine store is initialized now and placeholder with
-      // engine name will be set in #connectedCallback.
+    if (this.sapName != "newtab_searchbar") {
+      if (this.controller.maybeInitEngineStore()) {
+        // Engine store is initialized now and placeholder with
+        // engine name will be set in #connectedCallback.
+      } else {
+        // This happens on browser startup. We wait a bit before
+        // initializing the search service to improve startup times.
+        this.#initEngineStoreAfterPaint().then(
+          () => this.#deferUpdatePlaceholder(),
+          () => {} // Do nothing if search service failed.
+        );
+      }
     } else {
-      // This happens on browser startup. We wait a bit before
-      // initializing the search service to improve startup times.
-      this.#initEngineStoreAfterPaint().then(
-        () => this.#deferUpdatePlaceholder(),
+      // In newtab, we don't wait before initializing the search service.
+      // We also don't use #deferUpdatePlaceholder in newtab. This causes
+      // flicker but it should be less often because of newtab preloading
+      // and it allows us to never show the magnifying glass placeholder.
+      this.controller.engineStore.init().then(
+        () => this.searchModeSwitcher.updateSearchIcon(),
         () => {} // Do nothing if search service failed.
       );
     }
@@ -489,7 +496,7 @@ ${
       return;
     }
 
-    this.updateLayoutExtend();
+    this.updatePopover();
   }
 
   connectedCallback() {
@@ -519,8 +526,8 @@ ${
 
     // Don't attach event listeners if the urlbar is readonly.
     if (this.readOnly) {
-      this.#stopBreakout();
-      this.#allowBreakout = false;
+      this.#popoverAllowed = false;
+      this.updatePopover();
       // Focused won't be updated so remove it to avoid it becoming stale.
       this.removeAttribute("focused");
       return;
@@ -569,14 +576,6 @@ ${
     // recording abandonment events when the command causes a blur event.
     this.view.panel.addEventListener("command", this, true);
 
-    this.window.addEventListener("toolbarvisibilitychange", this);
-    let menuToolbar = this.window.document.getElementById("toolbar-menubar");
-    if (menuToolbar) {
-      menuToolbar.addEventListener("DOMMenuBarInactive", this);
-      menuToolbar.addEventListener("DOMMenuBarActive", this);
-    }
-    this.window.addEventListener("uidensitychanged", this);
-
     if (this.window.gBrowser) {
       // On startup, this will be called again by browser-init.js
       // once gBrowser has been initialized.
@@ -592,31 +591,15 @@ ${
       this.#initPlaceholderFromPref();
     }
 
-    this.#allowBreakout =
-      // A content document has no toolbar to break out of, so there the popover
-      // attribute is what says the element can go in the top layer.
+    this.#popoverAllowed =
+      // A content document has no toolbar to overlay, so there the embedder
+      // saying the bar is hosted in a page is what says it may use the top
+      // layer.
       (typeof ChromeUtils == "undefined"
-        ? this.hasAttribute("popover")
+        ? this.hasAttribute("in-page")
         : !!this.closest("toolbar")) &&
       !document.documentElement.hasAttribute("customizing");
-    if (this.#allowBreakout) {
-      if (!this.hasAttribute("in-page")) {
-        // TODO(emilio, bug 2065901): This could use CSS anchor positioning
-        // rather than this ResizeObserver, eventually, as an in-page element
-        // already does.
-        this._resizeObserver = new this.window.ResizeObserver(([entry]) => {
-          this.style.setProperty(
-            "--urlbar-width",
-            px(entry.borderBoxSize[0].inlineSize)
-          );
-        });
-        this._resizeObserver.observe(this.parentNode);
-      }
-
-      this.#updateLayoutBreakout();
-    } else {
-      this.#stopBreakout();
-    }
+    this.updatePopover();
 
     this._addObservers();
   }
@@ -670,22 +653,12 @@ ${
     // recording abandonment events when the command causes a blur event.
     this.view.panel.removeEventListener("command", this, true);
 
-    this.window.removeEventListener("toolbarvisibilitychange", this);
-    let menuToolbar = this.window.document.getElementById("toolbar-menubar");
-    if (menuToolbar) {
-      menuToolbar.removeEventListener("DOMMenuBarInactive", this);
-      menuToolbar.removeEventListener("DOMMenuBarActive", this);
-    }
-    this.window.removeEventListener("uidensitychanged", this);
-
     if (this.#gBrowserListenersAdded) {
       this.window.gBrowser.tabContainer.removeEventListener("TabSelect", this);
       this.window.gBrowser.tabContainer.removeEventListener("TabClose", this);
       this.window.gBrowser.removeTabsProgressListener(this);
       this.#gBrowserListenersAdded = false;
     }
-
-    this._resizeObserver?.disconnect();
 
     this.#removeContextMenuItems();
 
@@ -818,6 +791,10 @@ ${
     return lazy?.AIWindow.isAIWindowActive(this.window)
       ? "smartwindow"
       : "classic";
+  }
+
+  get parentController() {
+    return this.controller.parentController;
   }
 
   blur() {
@@ -1005,6 +982,13 @@ ${
       // the opener will be a secure context, i.e. no about:blank
       throw new Error("Document PiP should show its opener URL");
     }
+
+    // A load finishing behind the open view must not overwrite the value the
+    // user's selection put in the input, otherwise Enter won't pick it.
+    if (uri && !dueToTabSwitch && this.view.selectedResult) {
+      return;
+    }
+
     // We only need to update the searchModeUI on tab switch conditionally
     // as we only persist searchMode with ScotchBonnet enabled.
     if (
@@ -1231,9 +1215,7 @@ ${
     // Using browser navigation buttons should potentially trigger a bounce
     // telemetry event.
     if (webProgress.loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
-      this.controller.engagementEvent.handleBounceEventTrigger(
-        browser.browserId
-      );
+      lazy.handleBounceEventTrigger(browser);
     }
   }
 
@@ -1401,7 +1383,7 @@ ${
       where,
       query: searchString,
     });
-    this.controller.openSERP(
+    this.parentController.openSERP(
       engine.id,
       searchString,
       where,
@@ -1736,6 +1718,17 @@ ${
   }
 
   /**
+   * Whether pickResult() implements the result menu's commands for opening a
+   * result in a new tab or window. The container-tab submenu is built by a
+   * chrome window helper, so a bar hosted in a content page can't offer them.
+   *
+   * @returns {boolean}
+   */
+  get handlesOpenInCommands() {
+    return typeof this.window.createUserContextMenu == "function";
+  }
+
+  /**
    * Called when a result is picked.
    *
    * @param {object} options
@@ -1765,7 +1758,9 @@ ${
       result.payload?.url &&
       !this.isPrivate
     ) {
-      this.controller.clearAutofillBackspaceEntryForUrl(result.payload.url);
+      this.parentController.clearAutofillBackspaceEntryForUrl(
+        result.payload.url
+      );
     }
 
     if (
@@ -1839,30 +1834,31 @@ ${
       private: this.isPrivate,
     };
 
-    if (element?.closest("#urlbarView-context-menu")) {
-      switch (element.id) {
-        case "urlbar-view-context-menu-open-in-tab": {
+    let userContextId = element?.dataset.usercontextid;
+    let openIn = userContextId ? "container-tab" : element?.dataset.openIn;
+
+    if (openIn) {
+      switch (openIn) {
+        case "tab": {
           where = "tab";
           break;
         }
-        case "urlbarView-context-menu-open-in-window": {
-          where = "window";
-          break;
-        }
-        case "urlbarView-context-menu-open-in-private-window": {
-          where = "window";
-          openParams.private = true;
-          break;
-        }
-        default: {
-          // Open in a container tab.
+        case "container-tab": {
           where = "tab";
-          openParams.userContextId = parseInt(
-            element.getAttribute("data-usercontextid")
-          );
+          openParams.userContextId = parseInt(userContextId);
           openParams.eventDetail = {
             containerSource: "urlbar_result_context_menu",
           };
+          break;
+        }
+        case "window": {
+          where = "window";
+          break;
+        }
+        case "private-window": {
+          where = "window";
+          openParams.private = true;
+          break;
         }
       }
 
@@ -1981,7 +1977,7 @@ ${
           windowMode: this.windowMode,
         });
 
-        this.controller.switchToTab({
+        this.parentController.switchToTab({
           url: result.payload.url,
           searchString,
           userContextId: result.payload.userContext?.id,
@@ -2027,7 +2023,7 @@ ${
           // Because we are directly asking for a search here, bypassing the
           // docShell, we need to do the same ourselves.
           // See also keyword-uri-fixup.
-          this.controller.checkKeywordURIFixup(
+          this.parentController.checkKeywordURIFixup(
             originalUntrimmedValue.trim(),
             browserId
           );
@@ -2219,14 +2215,14 @@ ${
         // The origin root URL (e.g. http://example.com/) may not be in
         // moz_places yet. It's derived from a deep-link visit. Defer the
         // write until the navigation records the visit.
-        this.controller.addToInputHistory(url, this._lastSearchString, {
+        this.parentController.addToInputHistory(url, this._lastSearchString, {
           whenReady: true,
         });
       }
 
       // `input` may be an empty string, so do a strict comparison here.
       if (input !== undefined) {
-        this.controller.addToInputHistory(url, input);
+        this.parentController.addToInputHistory(url, input);
       }
 
       // Re-integration: If the user picks a non-autofill result, or a "url"
@@ -2237,29 +2233,23 @@ ${
         (!result.autofill || result.autofill.type == "url") &&
         result.type == UrlbarShared.RESULT_TYPE.URL
       ) {
-        this.controller.handleAutofillReintegration(url);
+        this.parentController.handleAutofillReintegration(url);
       }
     }
 
-    // Bounce tracking starts on the selected tab and triggers on chrome tab
-    // events (navigation, tab close), so it only runs in a browser window. TBD
-    // if and how this should work for a moz-urlbar living in a content process.
-    if (this.window.gBrowser) {
-      this.controller.engagementEvent
-        .startTrackingBounceEvent(
-          this.window.gBrowser.selectedBrowser.browserId,
-          event,
-          {
-            result,
-            element,
-            searchString: this._lastSearchString,
-            selType: this.view.telemetryTypeFromElement(result, element),
-            searchSource: this.getSearchSource(event),
-            windowMode: this.windowMode,
-          }
-        )
-        .catch(e => logger().error(e));
-    }
+    // Bounce tracking keys on the tab the engagement happened in: the chrome
+    // window's selected tab, or the tab hosting an input that has no chrome
+    // window, which the parent resolves.
+    this.controller.engagementEvent
+      .startTrackingBounceEvent(this.#selectedBrowserId, event, {
+        result,
+        element,
+        searchString: this._lastSearchString,
+        selType: this.view.telemetryTypeFromElement(result, element),
+        searchSource: this.getSearchSource(event),
+        windowMode: this.windowMode,
+      })
+      .catch(e => logger().error(e));
 
     this.controller.engagementEvent.record(event, {
       result,
@@ -2787,7 +2777,7 @@ ${
           this.window.gBrowser?.selectedBrowser
         );
       }
-      this.controller.openSERP(
+      this.parentController.openSERP(
         searchEngine.id,
         trimmedValue,
         where,
@@ -2796,7 +2786,7 @@ ${
       );
     } else {
       // Telemetry is handled by the function.
-      this.controller.openSearchForm(
+      this.parentController.openSearchForm(
         searchEngine.id,
         where,
         inBackground,
@@ -2981,7 +2971,7 @@ ${
         this.userTypedValue = this.untrimmedValue;
         this.valueIsTyped = true;
         if (!searchMode.isPreview && !areSearchModesSame) {
-          this.controller.recordSearchMode(searchMode);
+          this.parentController.recordSearchMode(searchMode);
         }
       }
     }
@@ -3162,72 +3152,35 @@ ${
     return state;
   }
 
-  async #updateLayoutBreakout() {
-    if (!this.#allowBreakout) {
+  #openPopover() {
+    if (this.panel.matches(":popover-open")) {
       return;
     }
-    if (this.document.fullscreenElement) {
-      // Toolbars are hidden in DOM fullscreen mode, so we can't get proper
-      // layout information and need to retry after leaving that mode.
-      this.window.addEventListener(
-        "fullscreen",
-        () => {
-          this.#updateLayoutBreakout();
-        },
-        { once: true }
-      );
-      return;
-    }
-    await this.#updateLayoutBreakoutDimensions();
+
+    this.panel.showPopover();
   }
 
-  startLayoutExtend() {
-    if (!this.#allowBreakout || this.hasAttribute("breakout-extend")) {
-      // Do not expand if the Urlbar does not support being expanded or it is
-      // already expanded.
+  #closePopover() {
+    if (!this.panel.matches(":popover-open")) {
       return;
     }
 
-    if (!this.view.isOpen) {
-      return;
-    }
-
-    this.toggleAttribute("breakout-extend", true);
-    this.#updateTextboxPosition();
-
-    // Enable the animation only after the first extend call to ensure it
-    // doesn't run when opening a new window.
-    if (!this.hasAttribute("breakout-extend-animate")) {
-      promiseLayoutFlushed(this.window).then(() => {
-        this.window.requestAnimationFrame(() => {
-          this.toggleAttribute("breakout-extend-animate", true);
-        });
-      });
-    }
+    this.panel.hidePopover();
   }
 
-  endLayoutExtend() {
-    // If reduce motion is enabled, we want to collapse the Urlbar here so the
-    // user sees only sees two states: not expanded, and expanded with the view
-    // open.
-    if (!this.hasAttribute("breakout-extend")) {
-      return;
-    }
-
-    if (this.view.isOpen && this.view.visibleRowCount) {
-      return;
-    }
-
-    this.toggleAttribute("breakout-extend", false);
-    this.#updateTextboxPosition();
-  }
-
-  updateLayoutExtend() {
-    if (this.view.isOpen) {
-      this.startLayoutExtend();
+  /**
+   * Keeps the view's popover in the top layer, and the `popover-open`
+   * attribute set, for as long as the view is open. `popover-open` says the
+   * sheet the background paints is bigger than the input.
+   */
+  updatePopover() {
+    let popoverOpen = this.#popoverAllowed && this.view.isOpen;
+    if (popoverOpen) {
+      this.#openPopover();
     } else {
-      this.endLayoutExtend();
+      this.#closePopover();
     }
+    this.toggleAttribute("popover-open", popoverOpen);
   }
 
   /**
@@ -3351,22 +3304,6 @@ ${
   }
 
   /**
-   * @param {Window} subject
-   * @param {"ai-window-state-changed"} _topic
-   * @param {string} data
-   */
-  observe = (subject, _topic, data) => {
-    // nav-bar-visible event is unique to Smart Window and emits when the urlbar
-    // is revealed after completing onboarding.
-    if (
-      subject == this.window &&
-      (data == "classic" || data == "nav-bar-visible")
-    ) {
-      this.#updateLayoutBreakout();
-    }
-  };
-
-  /**
    * @param {"removed"|"changed"|"default"} modifiedType
    * @param {PartialSearchEngine} engine
    */
@@ -3452,24 +3389,9 @@ ${
     return result.payload.providesSearchMode;
   }
 
-  // The observer service holds this weakly, so it has to outlive _addObservers.
-  _observer;
-
   _addObservers() {
     if (this._observersAdded) {
       return;
-    }
-    // The AI window's state only ever concerns a chrome window, so there is
-    // nothing there for a content-realm input to observe.
-    if (typeof ChromeUtils != "undefined") {
-      this._observer = {
-        observe: this.observe,
-        QueryInterface: ChromeUtils.generateQI([
-          "nsIObserver",
-          "nsISupportsWeakReference",
-        ]),
-      };
-      Services.obs.addObserver(this._observer, "ai-window-state-changed", true);
     }
     this.controller.engineStore.addObserver(this.onSearchEngineUpdate);
     this._observersAdded = true;
@@ -3478,9 +3400,6 @@ ${
   _removeObservers() {
     if (!this._observersAdded) {
       return;
-    }
-    if (this._observer) {
-      Services.obs.removeObserver(this._observer, "ai-window-state-changed");
     }
     this.controller.engineStore.removeObserver(this.onSearchEngineUpdate);
     this._observersAdded = false;
@@ -3521,94 +3440,6 @@ ${
     // need to close the view and search mode switcher popup explicitly.
     this.searchModeSwitcher.closePanel();
     this.view.close();
-  }
-
-  #updateTextboxPosition() {
-    if (this.hasAttribute("in-page")) {
-      // An in-page element anchors its popover to its container in CSS.
-      return;
-    }
-    if (!this.hasAttribute("breakout-extend")) {
-      this.style.top = "";
-      return;
-    }
-
-    this.style.top = px(getUntransformedTop(this.parentNode));
-  }
-
-  #updateTextboxPositionNextFrame() {
-    if (!this.hasAttribute("breakout")) {
-      return;
-    }
-    // Allow for any layout changes to take place (e.g. when the menubar becomes
-    // inactive) before re-measuring to position the textbox
-    this.window.requestAnimationFrame(() => {
-      this.window.requestAnimationFrame(() => {
-        this.#updateTextboxPosition();
-      });
-    });
-  }
-
-  #stopBreakout() {
-    this.removeAttribute("breakout");
-    this.parentNode.removeAttribute("breakout");
-    this.style.top = "";
-    try {
-      this.hidePopover();
-    } catch (ex) {
-      // No big deal if not a popover already.
-    }
-    this._layoutBreakoutUpdateKey = {};
-  }
-
-  incrementBreakoutBlockerCount() {
-    this.#breakoutBlockerCount++;
-    if (this.#breakoutBlockerCount == 1) {
-      this.#stopBreakout();
-    }
-  }
-
-  decrementBreakoutBlockerCount() {
-    if (this.#breakoutBlockerCount > 0) {
-      this.#breakoutBlockerCount--;
-    }
-    if (this.#breakoutBlockerCount === 0) {
-      this.#updateLayoutBreakout();
-    }
-  }
-
-  async #updateLayoutBreakoutDimensions() {
-    this.#stopBreakout();
-
-    // When this method gets called a second time before the first call
-    // finishes, we need to disregard the first one.
-    let updateKey = {};
-    this._layoutBreakoutUpdateKey = updateKey;
-    await promiseLayoutFlushed(this.window);
-    await new Promise(resolve => {
-      this.window.requestAnimationFrame(() => {
-        if (this._layoutBreakoutUpdateKey != updateKey || !this.isConnected) {
-          return;
-        }
-
-        this.parentNode.style.setProperty(
-          "--urlbar-container-height",
-          px(getBoundsWithoutFlushing(this.parentNode).height)
-        );
-
-        if (this.#breakoutBlockerCount) {
-          return;
-        }
-
-        this.setAttribute("breakout", "true");
-        this.parentNode.setAttribute("breakout", "true");
-        this.showPopover();
-        this.#fixAddressbarSearchbarOrder();
-        this.#updateTextboxPosition();
-
-        resolve();
-      });
-    });
   }
 
   /**
@@ -3952,52 +3783,6 @@ ${
     );
   }
 
-  /**
-   * Should be directly after every showPopover to fix the popover order
-   * among urlbar and searchbar.
-   * Since a moz-urlbar only extends downwards when focused, the moz-urlbar
-   * that's higher (along the y axis) should also be on top (along the z axis).
-   *
-   * Note: this is a hack necessary because of bug 2014481.
-   * Once that's fixed, we can simply always show the focused one on top.
-   */
-  #fixAddressbarSearchbarOrder() {
-    let addressbar = /** @type {?UrlbarInput} */ (
-      this.document.getElementById("urlbar")
-    );
-    let searchbar = /** @type {?UrlbarInput} */ (
-      this.document.getElementById("searchbar-new")
-    );
-    if (
-      !searchbar?.matches(":popover-open") ||
-      !addressbar?.matches(":popover-open")
-    ) {
-      return;
-    }
-
-    let searchbarArea =
-      lazy.CustomizableUI.getPlacementOfWidget("search-container")?.area;
-    if (!searchbarArea) {
-      return;
-    }
-
-    const areasAboveNavbar = [
-      lazy.CustomizableUI.AREA_MENUBAR,
-      lazy.CustomizableUI.AREA_TABSTRIP,
-    ];
-    const areasBelowNavbar = [lazy.CustomizableUI.AREA_BOOKMARKS];
-
-    // If `this` is higher than the other bar, we don't need to do anything since
-    // showPopover was just called (hence we're already on top of the other one).
-    if (areasAboveNavbar.includes(searchbarArea) && this != searchbar) {
-      searchbar.hidePopover();
-      searchbar.showPopover();
-    } else if (areasBelowNavbar.includes(searchbarArea) && this != addressbar) {
-      addressbar.hidePopover();
-      addressbar.showPopover();
-    }
-  }
-
   _updateUrlTooltip() {
     if (this.focused || !this._overflowing) {
       this.inputField.removeAttribute("title");
@@ -4188,9 +3973,9 @@ ${
       },
     };
     if (where.startsWith("tab")) {
-      this.controller.recordSearchInOpenedTab(searchData);
+      this.parentController.recordSearchInOpenedTab(searchData);
     } else {
-      this.controller.recordSearch(searchData);
+      this.parentController.recordSearch(searchData);
     }
   }
 
@@ -4320,7 +4105,7 @@ ${
     });
 
     if (element.dataset.command == "manage") {
-      this.window.openPreferences("search-locationBar");
+      this.parentController.openPreferences("search-locationBar");
       return;
     }
 
@@ -4360,7 +4145,7 @@ ${
   /**
    * @typedef {object} LoadURLParams
    *   The parameters related to how and where the result will be opened.
-   *   Further supported parameters are listed in utilityOverlay.js#openUILinkIn.
+   *   Further supported parameters are listed in UrlbarChildController.mjs#loadURL.
    *
    * @property {object} [triggeringPrincipal]
    *   The principal that the action was triggered from.
@@ -4462,7 +4247,7 @@ ${
     // Make sure the domain name stays visible for spoof protection and
     // usability. The browser itself is focused parent-side, where the load
     // runs against the chrome window.
-    if (!params.avoidBrowserFocus) {
+    if (this.#isAddressbar && !params.avoidBrowserFocus) {
       this.inputField.setSelectionRange(0, 0);
     }
 
@@ -4473,7 +4258,7 @@ ${
     // Notify about the start of navigation.
     this.#notifyStartNavigation(resultDetails);
 
-    let loadStatus = await this.controller.loadURL({
+    let loadStatus = await this.parentController.loadURL({
       loadRequest,
       where,
       params,
@@ -4730,7 +4515,7 @@ ${
           this.window.goDoCommand("cmd_paste");
           this.setResultForCurrentValue(null);
           this.handleCommand();
-          this.controller.clearLastQueryContextCache();
+          this.parentController.clearLastQueryContextCache();
 
           this._suppressStartQuery = false;
         });
@@ -4740,8 +4525,8 @@ ${
       },
       onShowing: (input, [pasteAndGo]) => {
         // Close the results pane, because paste and go doesn't want a result
-        // selection. This has to happen before the menu opens: ending
-        // breakout-extend once it's open keeps it from showing (bug 2037468).
+        // selection. This has to happen before the menu opens: hiding the
+        // popover once it's open keeps it from showing (bug 2037468).
         this.view.close();
 
         let controller =
@@ -4856,7 +4641,7 @@ ${
       return;
     }
 
-    await this.controller
+    await this.parentController
       .dismissAutofill(result.payload.url, action)
       .catch(console.error);
 
@@ -5037,10 +4822,12 @@ ${
       return;
     }
 
-    if (this.#isAddressbar) {
+    if (this.#navigationEnabled) {
       if (engineName) {
         // Set text content for the search mode indicator.
-        this._searchModeIndicatorTitle.textContent = engineName;
+        if (this._searchModeIndicatorTitle) {
+          this._searchModeIndicatorTitle.textContent = engineName;
+        }
         this.document.l10n.setAttributes(
           this.inputField,
           isGeneralPurposeEngine
@@ -5057,11 +4844,12 @@ ${
           tabs: "urlbar-placeholder-search-mode-other-tabs",
         };
         let sourceName = UrlbarShared.getResultSourceName(source);
-        let l10nID = `urlbar-search-mode-${sourceName}`;
-        this.document.l10n.setAttributes(
-          this._searchModeIndicatorTitle,
-          l10nID
-        );
+        if (this._searchModeIndicatorTitle) {
+          this.document.l10n.setAttributes(
+            this._searchModeIndicatorTitle,
+            `urlbar-search-mode-${sourceName}`
+          );
+        }
         this.document.l10n.setAttributes(
           this.inputField,
           messageIDs[sourceName]
@@ -5179,7 +4967,7 @@ ${
    * placeholder is a string which doesn't have the engine name.
    */
   #initPlaceholderFromPref() {
-    if (!this.#isAddressbar || this.controller.engineStore.failed) {
+    if (!this.#navigationEnabled || this.controller.engineStore.failed) {
       return;
     }
 
@@ -5295,7 +5083,7 @@ ${
    * Updates the urlbar placeholder based on the default engine.
    */
   updatePlaceholder() {
-    if (this.searchMode || !this.#isAddressbar) {
+    if (this.searchMode || !this.#navigationEnabled) {
       return;
     }
 
@@ -5319,13 +5107,13 @@ ${
    * The name of the engine or null to use the default placeholder.
    */
   _setPlaceholder(engineName) {
-    if (!this.#isAddressbar) {
+    if (!this.#navigationEnabled) {
       this.document.l10n.setAttributes(this.inputField, "searchbar-input");
       return;
     }
 
     let l10nId;
-    if (UrlbarPrefs.get("keyword.enabled")) {
+    if (UrlbarShared.keywordEnabled(this.#sapName)) {
       l10nId = engineName
         ? "urlbar-placeholder-with-name"
         : "urlbar-placeholder";
@@ -5380,7 +5168,7 @@ ${
   }
 
   _on_blur(event) {
-    if (this.view.resultMenu.hasAttribute("open")) {
+    if (this.view.isResultMenuOpen()) {
       return;
     }
 
@@ -5609,8 +5397,8 @@ ${
       case this: {
         this._mousedownOnUrlbarDescendant = true;
         if (
-          event.composedTarget != this.inputField &&
-          event.composedTarget != this._inputContainer
+          event.target != this.inputField &&
+          event.target != this._inputContainer
         ) {
           break;
         }
@@ -5621,7 +5409,7 @@ ${
         // Keep the focus status, since the attribute may be changed
         // upon calling this.focus().
         const hasFocus = this.hasAttribute("focused");
-        if (event.composedTarget != this.inputField) {
+        if (event.target != this.inputField) {
           this.focus();
         }
 
@@ -5652,9 +5440,7 @@ ${
         }
         // Don't close the view when clicking on a tab; we may want to keep the
         // view open on tab switch, and the TabSelect event arrived earlier.
-        // Also ignore mousedown on the urlbarView context menu: opening/closing the
-        // view is already handled by the result opening flow.
-        if (event.target.closest?.("tab, #urlbarView-context-menu")) {
+        if (event.target.closest?.("tab")) {
           break;
         }
 
@@ -5693,7 +5479,7 @@ ${
         event.inputType === "deleteContentForward")
     ) {
       // Take a telemetry if user deleted whole autofilled value.
-      this.controller.recordAutofillDeletion();
+      this.parentController.recordAutofillDeletion();
     }
 
     if (
@@ -5704,7 +5490,7 @@ ${
       this.value === this.userTypedValue &&
       this._resultForCurrentValue?.payload?.url
     ) {
-      this.controller.recordAutofillBackspace(
+      this.parentController.recordAutofillBackspace(
         this._resultForCurrentValue.payload.url
       );
     }
@@ -6005,9 +5791,7 @@ ${
   }
 
   _on_TabClose(event) {
-    this.controller.engagementEvent.handleBounceEventTrigger(
-      event.target.linkedBrowser.browserId
-    );
+    lazy.handleBounceEventTrigger(event.target.linkedBrowser);
 
     if (this.view.isOpen) {
       // Refresh results when a tab is closed while the results view is open.
@@ -6030,7 +5814,7 @@ ${
 
   _on_keydown(event) {
     // If the resultMenu is open then let them handle any key events.
-    if (this.view.resultMenu.hasAttribute("open")) {
+    if (this.view.isResultMenuOpen()) {
       return;
     }
 
@@ -6096,7 +5880,7 @@ ${
     });
   }
 
-  async _on_keyup(event) {
+  _on_keyup(event) {
     if (event.currentTarget == this.window) {
       this._untrimOnFocusAfterKeydown = false;
       return;
@@ -6125,34 +5909,56 @@ ${
     // Pressing Enter key while pressing Meta key, and next, even when releasing
     // Enter key before releasing Meta key, the keyup event is not fired.
     // Therefore, if Enter keydown is detecting, continue the post processing
-    // for Enter key when any keyup event is detected.
+    // for Enter key when any keyup event is detected. Keep this handler
+    // synchronous -- only the rare deferred-Enter path awaits, so it runs as a
+    // fire-and-forget task instead of allocating a microtask on every keyup.
+    if (this._keyDownEnterDeferred && !this._finishingDeferredEnter) {
+      this.#finishDeferredEnter();
+    }
+  }
+
+  /**
+   * Completes the deferred handling of an Enter keypress once a keyup arrives.
+   * Split out of `_on_keyup` so the common keyup path stays synchronous.
+   */
+  async #finishDeferredEnter() {
+    // Guard against a second keyup re-entering while the awaits below are
+    // pending; released in the finally along with the deferred.
+    this._finishingDeferredEnter = true;
     let keyDownEnterDeferred = this._keyDownEnterDeferred;
-    if (keyDownEnterDeferred) {
+    try {
       if (keyDownEnterDeferred.loadedContent) {
         try {
           const browserId = await keyDownEnterDeferred.promise;
           // The parent focuses the loading browser if it's still selected,
           // since only it can reach the browser element and the chrome window.
-          let { focused } = await this.controller.focusBrowser(browserId);
+          let { focused } = await this.parentController.focusBrowser(browserId);
           // focusBrowser resolves asynchronously; if the user began a fresh
           // search since this Enter (a later input bumped the epoch), its
           // caret must be left alone -- only keep the domain visible for our load.
-          if (focused && keyDownEnterDeferred.inputEpoch === this.#inputEpoch) {
+          if (
+            this.#isAddressbar &&
+            focused &&
+            keyDownEnterDeferred.inputEpoch === this.#inputEpoch
+          ) {
             // Make sure the domain name stays visible for spoof protection and usability.
             this.inputField.setSelectionRange(0, 0);
           }
         } catch (ex) {
           // Not all the Enter actions in the urlbar will cause a navigation, then it
           // is normal for this to be rejected.
-          // If _keyDownEnterDeferred was rejected on keydown, we don't nullify it here
-          // to ensure not overwriting the new value created by keydown.
         }
       } else {
         // Discard the _keyDownEnterDeferred promise to receive any key inputs immediately.
         keyDownEnterDeferred.resolve();
       }
-
-      this._keyDownEnterDeferred = null;
+    } finally {
+      // Only clear if a newer Enter keydown hasn't already replaced it, so we
+      // don't overwrite that fresh deferred; then release the re-entry guard.
+      if (this._keyDownEnterDeferred === keyDownEnterDeferred) {
+        this._keyDownEnterDeferred = null;
+      }
+      this._finishingDeferredEnter = false;
     }
   }
 
@@ -6263,7 +6069,10 @@ ${
 
     event.dataTransfer.setData("text/x-moz-url", `${href}\n${title}`);
     event.dataTransfer.setData("text/plain", href);
-    event.dataTransfer.setData("text/html", `<a href="${href}">${title}</a>`);
+    event.dataTransfer.setData(
+      "text/html",
+      `<a href="${UrlbarShared.escapeHtmlEntities(href)}">${UrlbarShared.escapeHtmlEntities(title)}</a>`
+    );
     event.dataTransfer.effectAllowed = "copyLink";
     event.stopPropagation();
   }
@@ -6326,7 +6135,7 @@ ${
     let queryContext = this.#makeQueryContext({
       searchString: droppedString,
     });
-    this.controller.setLastQueryContextCache(queryContext);
+    this.parentController.setLastQueryContextCache(queryContext);
     this.controller.engagementEvent.start(event, queryContext);
     this.handleNavigation({ triggeringPrincipal: principal });
     // For safety reasons, in the drop case we don't want to immediately show
@@ -6335,25 +6144,6 @@ ${
     // See the handling in `setURI` for further details.
     this.userTypedValue = null;
     this.setURI({ dueToTabSwitch: true });
-  }
-
-  _on_uidensitychanged() {
-    if (this.#breakoutBlockerCount) {
-      return;
-    }
-    this.#updateLayoutBreakout();
-  }
-
-  _on_toolbarvisibilitychange() {
-    this.#updateTextboxPositionNextFrame();
-  }
-
-  _on_DOMMenuBarActive() {
-    this.#updateTextboxPositionNextFrame();
-  }
-
-  _on_DOMMenuBarInactive() {
-    this.#updateTextboxPositionNextFrame();
   }
 
   #allTextSelectedOnKeyDown = false;

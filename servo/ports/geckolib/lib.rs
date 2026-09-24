@@ -17,7 +17,7 @@ pub mod glue;
 mod stylesheet_loader;
 
 // FIXME(bholley): This should probably go away once we harmonize the allocators.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn je_malloc_usable_size(_: *const ::libc::c_void) -> ::libc::size_t {
     0
 }

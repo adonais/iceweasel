@@ -1817,9 +1817,6 @@ stfk_CopyTokenPrivateKey(SFTKObject *destObject, SFTKTokenObject *src_to)
             crv = stfk_CopyTokenAttributes(destObject, src_to, mldsaPrivKeyAttrs,
                                            mldsaPrivKeyAttrsCount);
             break;
-#ifndef NSS_DISABLE_KYBER
-        case CKK_NSS_KYBER:
-#endif
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
             crv = stfk_CopyTokenAttributes(destObject, src_to, mlkemPrivKeyAttrs,
@@ -1889,9 +1886,6 @@ stfk_CopyTokenPublicKey(SFTKObject *destObject, SFTKTokenObject *src_to)
             crv = stfk_CopyTokenAttributes(destObject, src_to, mldsaPubKeyAttrs,
                                            mldsaPubKeyAttrsCount);
             break;
-#ifndef NSS_DISABLE_KYBER
-        case CKK_NSS_KYBER:
-#endif
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
             crv = stfk_CopyTokenAttributes(destObject, src_to, mlkemPubKeyAttrs,

@@ -1,8 +1,0 @@
-[
-  [
-    "warning",
-    "do not use 'memcpy' to cast between pointers",
-    "bugprone-bitwise-pointer-cast"
-  ],
-  { "reliability": "high" }
-]

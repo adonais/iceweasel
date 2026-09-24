@@ -23,7 +23,7 @@
   },
   "twitter": {
     "queryParams": ["refsrc", "cxt", "s"],
-    "origins": ["www.twitter.com", "twitter.com", "x.com"]
+    "hosts": ["www.twitter.com", "twitter.com", "x.com"]
   },
   "amazon": {
     "queryParams": [
@@ -63,7 +63,7 @@
       "_encoding",
       "qualifier"
     ],
-    "origins": [
+    "hosts": [
       "www.amazon.com",
       "www.amazon.de",
       "www.amazon.nl",
@@ -104,7 +104,7 @@
   },
   "youtube": {
     "queryParams": ["si", "is", "feature", "kw", "pp"],
-    "origins": ["www.youtube.com", "youtube.com", "m.youtube.com", "youtu.be"]
+    "hosts": ["www.youtube.com", "youtube.com", "m.youtube.com", "youtu.be"]
   },
   "carousell": {
     "queryParams": [
@@ -120,7 +120,7 @@
       "t-referrer_browse_type",
       "t-id"
     ],
-    "origins": [
+    "hosts": [
       "ca.carousell.com",
       "www.carousell.sg",
       "www.carousell.com.hk",
@@ -130,23 +130,23 @@
   },
   "etsy": {
     "queryParams": ["click_sum", "ref", "click_key", "organic_search_click"],
-    "origins": ["www.etsy.com"]
+    "hosts": ["www.etsy.com"]
   },
   "wallstreetjournal": {
     "queryParams": ["reflink"],
-    "origins": ["www.wsj.com"]
+    "hosts": ["www.wsj.com"]
   },
   "theathletic": {
     "queryParams": ["source"],
-    "origins": ["theathletic.com"]
+    "hosts": ["theathletic.com"]
   },
   "forbes": {
     "queryParams": ["sh"],
-    "origins": ["www.forbes.com"]
+    "hosts": ["www.forbes.com"]
   },
   "bloomberg": {
     "queryParams": ["leadSource", "sref", "srnd"],
-    "origins": ["www.bloomberg.com"]
+    "hosts": ["www.bloomberg.com"]
   },
   "tiktok": {
     "queryParams": [
@@ -164,7 +164,7 @@
       "t",
       "q"
     ],
-    "origins": ["www.tiktok.com"]
+    "hosts": ["www.tiktok.com"]
   },
   "bbc": {
     "queryParams": [
@@ -178,11 +178,11 @@
       "ns_fee",
       "xtor"
     ],
-    "origins": ["www.bbc.com"]
+    "hosts": ["www.bbc.com"]
   },
   "cnn": {
     "queryParams": ["ref"],
-    "origins": ["www.cnn.co.jp", "www.cnn.com", "edition.cnn.com"]
+    "hosts": ["www.cnn.co.jp", "www.cnn.com", "edition.cnn.com"]
   },
   "imdb": {
     "queryParams": [
@@ -194,19 +194,19 @@
       "pf_rd_r",
       "ref_"
     ],
-    "origins": ["www.imdb.com", "m.imdb.com"]
+    "hosts": ["www.imdb.com", "m.imdb.com"]
   },
   "mirror": {
     "queryParams": ["int_source"],
-    "origins": ["www.mirror.co.uk"]
+    "hosts": ["www.mirror.co.uk"]
   },
   "wise": {
     "queryParams": ["partnerizecampaignID", "clickref", "adref", "partnerID"],
-    "origins": ["wise.com"]
+    "hosts": ["wise.com"]
   },
   "facebook": {
     "queryParams": ["tracking", "extid", "mibextid"],
-    "origins": ["www.facebook.com"]
+    "hosts": ["www.facebook.com"]
   },
   "lazada": {
     "queryParams": [
@@ -223,7 +223,7 @@
       "cid",
       "pos"
     ],
-    "origins": [
+    "hosts": [
       "www.lazada.com.ph",
       "www.lazada.vn",
       "www.lazada.sg",
@@ -234,7 +234,7 @@
   },
   "msn": {
     "queryParams": ["cvid", "pc", "ei"],
-    "origins": ["www.msn.com"]
+    "hosts": ["www.msn.com"]
   },
   "aliexpress": {
     "queryParams": [
@@ -259,7 +259,7 @@
       "algo_expid",
       "gps-id"
     ],
-    "origins": [
+    "hosts": [
       "www.aliexpress.com",
       "robotime.aliexpress.com",
       "ar.aliexpress.com"
@@ -273,11 +273,11 @@
       "correlation_id",
       "share_id"
     ],
-    "origins": ["www.reddit.com"]
+    "hosts": ["www.reddit.com"]
   },
   "wired": {
     "queryParams": ["mbid"],
-    "origins": ["www.wired.co.uk", "www.wired.com"]
+    "hosts": ["www.wired.co.uk", "www.wired.com"]
   },
   "yandex": {
     "queryParams": [
@@ -292,7 +292,7 @@
       "suggest_reqid",
       "clid"
     ],
-    "origins": ["yandex.com"]
+    "hosts": ["yandex.com"]
   },
   "ebay": {
     "queryParams": [
@@ -309,7 +309,7 @@
       "_from",
       "hash"
     ],
-    "origins": ["www.ebay.com", "www.ebay.co.uk"]
+    "hosts": ["www.ebay.com", "www.ebay.co.uk"]
   },
   "flipkart": {
     "queryParams": [
@@ -323,7 +323,7 @@
       "pageUID",
       "lid"
     ],
-    "origins": ["www.flipkart.com"]
+    "hosts": ["www.flipkart.com"]
   },
   "google": {
     "queryParams": [
@@ -354,7 +354,7 @@
       "gs_lcp",
       "gs_lcrp"
     ],
-    "origins": [
+    "hosts": [
       "www.google.com",
       "www.google.ad",
       "www.google.ae",
@@ -548,34 +548,34 @@
   },
   "bing": {
     "queryParams": ["qp", "cvid", "qs", "form", "sk", "sc", "sp"],
-    "origins": ["www.bing.com"]
+    "hosts": ["www.bing.com"]
   },
   "twitch": {
     "queryParams": ["tt_content", "tt_medium"],
-    "origins": ["www.twitch.tv", "dev.twitch.tv"]
+    "hosts": ["www.twitch.tv", "dev.twitch.tv"]
   },
   "cnet": {
     "queryParams": ["ftag"],
-    "origins": ["www.cnet.com"]
+    "hosts": ["www.cnet.com"]
   },
   "nytimes": {
     "queryParams": ["smid"],
-    "origins": ["www.nytimes.com"]
+    "hosts": ["www.nytimes.com"]
   },
   "github": {
     "queryParams": ["email_token", "email_source"],
-    "origins": ["github.com"]
+    "hosts": ["github.com"]
   },
   "linkedin": {
     "queryParams": ["refId", "trk", "trackingId"],
-    "origins": ["ca.linkedin.com", "ro.linkedin.com"]
+    "hosts": ["ca.linkedin.com", "ro.linkedin.com"]
   },
   "newyorker": {
     "queryParams": ["esrc", "bxid", "cndid", "source", "mbid"],
-    "origins": ["www.newyorker.com"]
+    "hosts": ["www.newyorker.com"]
   },
   "bestbuy": {
     "queryParams": ["acampID", "irclickid", "irgwc", "loc", "mpid", "intl"],
-    "origins": ["www.bestbuy.com"]
+    "hosts": ["www.bestbuy.com"]
   }
 }

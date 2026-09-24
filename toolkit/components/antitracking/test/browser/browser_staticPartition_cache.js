@@ -54,10 +54,7 @@ async function checkCache(suffixes, originAttributes) {
 add_task(async function () {
   info("accept all");
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["test.wait300msAfterTabSwitch", true],
-      ["network.cookie.cookieBehavior", 0],
-    ],
+    set: [["network.cookie.cookieBehavior", 0]],
   });
 
   const originAttributes = { partitionKey: "(http,example.org)" };

@@ -413,6 +413,7 @@ export class OpenAIPipeline {
         purpose,
         extraHeaders,
         engineId,
+        maxRetries,
       } = this.#options;
       const fxAccountToken = request.fxAccountToken
         ? request.fxAccountToken
@@ -423,6 +424,7 @@ export class OpenAIPipeline {
       const client = new OpenAIPipeline.OpenAILib.OpenAI({
         baseURL: baseURL ? baseURL : "http://localhost:11434/v1",
         apiKey: apiKey || fxAccountToken || "apiKey",
+        maxRetries,
         defaultHeaders: {
           "user-agent": userAgent,
           ...extraHeaders,

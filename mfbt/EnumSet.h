@@ -177,17 +177,6 @@ class EnumSet {
   /**
    * Not equal
    */
-#ifdef DEBUG
-  constexpr bool operator!=(const EnumSet& aEnumSet) const {
-    return mBitField != aEnumSet.mBitField;
-  }
-#else
-  bool operator!=(const EnumSet& aEnumSet) const = default;
-#endif
-
-  /**
-   * Not equal
-   */
   constexpr bool operator!=(T aEnum) const { return !operator==(aEnum); }
 
   /**

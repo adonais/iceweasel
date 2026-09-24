@@ -84,10 +84,7 @@ a candidate for a real primitive/helper, and worth flagging:
 - Permissions (`GrantPermissionRule`), account sign-in, and app-restart flows.
 - A launcher-intent launch (some flows only appear via a launcher intent; the efficiency
   `HomeActivityIntentTestRule` path may need this option — verify against onboarding).
-- Scroll as a first-class step (today it's a `requiresScroll` selector-group side effect).
-- `mozClick` resolves through `Resolvers.displayed()` while every other verb resolves through
-  `mozGetElement`, so an element can be clickable but unverifiable. Both paths now live in
-  `core/Resolvers.kt`; closing the gap is tracked on MTE-5737.
+- Scroll as a first-class step (selectors now declare an explicit `scrollDirection`).
 
 ## Gotchas
 

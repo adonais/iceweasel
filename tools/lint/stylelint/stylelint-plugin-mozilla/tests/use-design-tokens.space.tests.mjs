@@ -360,14 +360,6 @@ testRule({
         "Using a locally declared variable that resolves to a space token is valid.",
     },
     {
-      code: `
-        :root { --local-padding: var(--dimension-relative-100); }
-        .a { padding: var(--local-padding); }
-      `,
-      description:
-        "Using a locally declared variable that resolves to a dimension token is valid.",
-    },
-    {
       code: ".a { padding: var(--random-padding, var(--space-small)); }",
       description:
         "Using a variable that falls back to a space token is valid.",
@@ -621,11 +613,6 @@ testRule({
       message: messages.rejected("var(--random-padding, 5px)", ["space"]),
       description:
         "Using a variable that does not fall back to a space token is invalid.",
-    },
-    {
-      code: ".a { padding: var(--dimension-relative-150); }",
-      message: messages.rejected("var(--dimension-relative-150)", ["space"]),
-      description: "Using a dimension token directly is invalid.",
     },
   ],
 });

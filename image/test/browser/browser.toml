@@ -51,5 +51,14 @@ run-if = [
 https_first_disabled = true
 support-files = ["empty.html"]
 
+["browser_remote_image_size.js"]
+support-files = [
+  "firebird_200x100.png",
+  "intrinsic_size_100x3000.svg",
+  "intrinsic_size_3000x100.svg",
+  "intrinsic_size_none.svg",
+  "intrinsic_size_none_viewBox_3000x100.svg",
+]
+
 ["browser_remote_image_svg.js"]
 support-files = ["file_light_dark.svg"]

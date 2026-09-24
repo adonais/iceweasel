@@ -1,5 +1,6 @@
 [DEFAULT]
 scheme = "https"
+prefs = ["dom.webcrypto.encapsulation.enabled=true"]
 support-files = [
   "file_indexedDB.html",
   "test-array.js",
@@ -24,6 +25,8 @@ support-files = [
 ["test_WebCrypto_Import_Multiple_Identical_Keys.html"]
 
 ["test_WebCrypto_JWK.html"]
+
+["test_WebCrypto_MLKEM.html"]
 
 ["test_WebCrypto_Normalize.html"]
 

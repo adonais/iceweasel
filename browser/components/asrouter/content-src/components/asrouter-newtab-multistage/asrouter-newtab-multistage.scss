@@ -48,6 +48,7 @@ $split-screen-min-height: 280px;
 .multistage-newtab-wrapper {
   position: relative;
   max-width: 904px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  min-width: var(--size-layout-large);
   margin-inline: auto;
 
   > moz-button {
@@ -94,5 +95,11 @@ $split-screen-min-height: 280px;
         }
       }
     }
+  }
+}
+
+@media (width <= 800px) {
+  .multistage-newtab-wrapper {
+    height: unset !important; /* stylelint-disable-line declaration-no-important */
   }
 }

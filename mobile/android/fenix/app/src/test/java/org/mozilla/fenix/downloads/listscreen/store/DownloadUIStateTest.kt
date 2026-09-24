@@ -10,7 +10,7 @@ import org.junit.Test
 class DownloadUIStateTest {
 
     @Test
-    fun `items pending deletion are not displayed`() {
+    fun `WHEN items are pending deletion THEN they are not displayed`() {
         val fileItems =
             listOf(
                 fileItem(
@@ -113,7 +113,7 @@ class DownloadUIStateTest {
     }
 
     @Test
-    fun `items are grouped by time period`() {
+    fun `WHEN items are provided THEN they are grouped by time period`() {
         val fileItems =
             listOf(
                 fileItem(
@@ -1139,6 +1139,33 @@ class DownloadUIStateTest {
             )
 
         val expected = DownloadUIState.ItemsState.NoItems
+
+        assertEquals(expected, downloadUIState.itemsState)
+    }
+
+    @Test
+    fun `WHEN items are visually deleted THEN they are not displayed`() {
+        val fileItems =
+            listOf(
+                fileItem(id = "1"),
+                fileItem(id = "2"),
+            )
+
+        val downloadUIState =
+            DownloadUIState(
+                items = fileItems,
+                mode = DownloadUIState.Mode.Normal,
+                pendingDeletionIds = emptySet(),
+                unconfirmedDeletionIds = setOf("1"),
+            )
+
+        val expected =
+            DownloadUIState.ItemsState.Items(
+                listOf(
+                    HeaderItem(timeCategory = TimeCategory.LAST_30_DAYS),
+                    fileItem(id = "2"),
+                )
+            )
 
         assertEquals(expected, downloadUIState.itemsState)
     }

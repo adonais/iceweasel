@@ -161,8 +161,21 @@ add_task(async function testLangpackStaged() {
   await downloadUpdate();
 
   // We have to wait for the update to be applied and then check that the
-  // notification hasn't been sent.
-  await TestUtils.waitForCondition(() => readStatusFile() == "applied");
+  // notification hasn't been sent. Staging runs the updater in a separate
+  // process, so allow considerably more time than waitForCondition's default
+  // five seconds.
+  try {
+    await TestUtils.waitForCondition(
+      () => readStatusFile() == "applied",
+      "Waiting for the update to be staged",
+      /* interval */ 500,
+      /* maxTries */ 60
+    );
+  } catch (e) {
+    logTestInfo(`the update status is "${readStatusFile()}"`);
+    logUpdateLog(FILE_UPDATE_LOG);
+    throw e;
+  }
 
   Assert.ok(
     !updateStagedNotified,

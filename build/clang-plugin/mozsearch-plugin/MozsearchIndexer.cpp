@@ -34,8 +34,8 @@
 
 #include "BindingOperations.h"
 #include "FileOperations.h"
-#include "StringOperations.h"
 #include "MozsearchAction.h"
+#include "StringOperations.h"
 
 using namespace clang;
 
@@ -71,7 +71,8 @@ enum class FileType {
 // it's a Source or Generated file, the provided inout path argument is modified
 // in-place so that it is relative to the source dir or objdir, respectively.
 // Otherwise we strip the first include path that matches, if any.
-FileType relativizePath(std::string &path, const HeaderSearchOptions &HeaderSearchOpts) {
+FileType relativizePath(std::string &path,
+                        const HeaderSearchOptions &HeaderSearchOpts) {
   if (path.compare(0, Objdir.length(), Objdir) == 0) {
     path.replace(0, Objdir.length(), GENERATED);
     return FileType::Generated;
@@ -185,7 +186,8 @@ bool isPure(FunctionDecl *D) {
 // it's in the source dir or the objdir). We also store the analysis output
 // here.
 struct FileInfo {
-  FileInfo(std::string &Rname, const HeaderSearchOptions &HeaderSearchOptions) : Realname(Rname) {
+  FileInfo(std::string &Rname, const HeaderSearchOptions &HeaderSearchOptions)
+      : Realname(Rname) {
     switch (relativizePath(Realname, HeaderSearchOptions)) {
     case FileType::Generated:
       Interesting = true;
@@ -327,7 +329,8 @@ private:
           Absolute = Filename;
         }
       }
-      std::unique_ptr<FileInfo> Info = std::make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
+      std::unique_ptr<FileInfo> Info =
+          std::make_unique<FileInfo>(Absolute, CI.getHeaderSearchOpts());
       It = FileMap.insert(std::make_pair(Id, std::move(Info))).first;
     }
     return It->second.get();
@@ -374,8 +377,10 @@ private:
   // Convert SourceRange to "line-line" or "line".
   // In the resulting string rep, line is 1-based.
   std::string lineRangeToString(SourceRange Range, bool omitEnd = false) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin =
+        SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End =
+        SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -420,9 +425,11 @@ private:
     return result;
   }
 
-  bool needsNestingRangeForVarDecl(SourceRange& Range) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
+  bool needsNestingRangeForVarDecl(SourceRange &Range) {
+    std::pair<FileID, unsigned> Begin =
+        SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End =
+        SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -442,8 +449,10 @@ private:
   // Convert SourceRange to "line:column-line:column".
   // In the resulting string rep, line is 1-based, column is 0-based.
   std::string fullRangeToString(SourceRange Range) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin =
+        SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End =
+        SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -534,7 +543,8 @@ private:
           sprintf(index, "%u", cxxDecl->getLambdaIndexInContext());
 
           std::string Component;
-          if (!ReversedComponents.empty() && ReversedComponents.back() == "operator()") {
+          if (!ReversedComponents.empty() &&
+              ReversedComponents.back() == "operator()") {
             ReversedComponents.pop_back();
             Component = "(lambda";
           } else {
@@ -564,7 +574,7 @@ private:
     }
 
     std::string Result;
-    for (const auto& Component : ReversedComponents) {
+    for (const auto &Component : ReversedComponents) {
       if (Result.empty()) {
         Result = Component;
       } else {
@@ -759,7 +769,8 @@ public:
         CurMangleContext(nullptr), AstContext(nullptr),
         ConcatInfo(CI.getPreprocessor()), CurDeclContext(nullptr),
         TemplateStack(nullptr) {
-    CI.getPreprocessor().addPPCallbacks(std::make_unique<PreprocessorHook>(this));
+    CI.getPreprocessor().addPPCallbacks(
+        std::make_unique<PreprocessorHook>(this));
     CI.getPreprocessor().setTokenWatcher(
         [this](const auto &token) { onTokenLexed(token); });
   }
@@ -1001,7 +1012,7 @@ public:
   }
 
   void AddImplicitLambdaUse(LambdaExpr *E) {
-    CXXMethodDecl* Lambda = E->getCallOperator();
+    CXXMethodDecl *Lambda = E->getCallOperator();
     if (!Lambda) {
       return;
     }
@@ -1010,9 +1021,9 @@ public:
     SourceLocation SpellingLoc = SM.getSpellingLoc(Loc);
     std::string Mangled = getMangledName(CurMangleContext, Lambda);
 
-    visitIdentifier("use", "function", getQualifiedName(Lambda), Loc,
-                    Mangled, Lambda->getType(),
-                    getContext(SpellingLoc), NotIdentifierToken);
+    visitIdentifier("use", "function", getQualifiedName(Lambda), Loc, Mangled,
+                    Lambda->getType(), getContext(SpellingLoc),
+                    NotIdentifierToken);
   }
 
   bool TraverseLambdaExpr(LambdaExpr *E) {
@@ -1043,8 +1054,7 @@ public:
       D = F->getTemplateInstantiationPattern();
     }
 
-    return Context(getQualifiedName(D),
-                   getMangledName(CurMangleContext, D));
+    return Context(getQualifiedName(D), getMangledName(CurMangleContext, D));
   }
 
   Context getContext(SourceLocation Loc) {
@@ -1334,12 +1344,11 @@ public:
   }
 
   // Returns true if the class has template in its entire class hierarchy.
-  bool hasTemplateInHierarchy(const CXXRecordDecl* cxxDecl) {
+  bool hasTemplateInHierarchy(const CXXRecordDecl *cxxDecl) {
     if (cxxDecl->isDependentType()) {
       // This class is templatized.
       return true;
     }
-
 
     if (dyn_cast<const ClassTemplateSpecializationDecl>(cxxDecl)) {
       // This class is template specialization.
@@ -1353,7 +1362,7 @@ public:
         return true;
       }
 
-      const Type* ty = Base.getType().getTypePtr();
+      const Type *ty = Base.getType().getTypePtr();
       if (dyn_cast<const SubstTemplateTypeParmType>(ty)) {
         // The base class is a substituted template parameter.
         return true;
@@ -1395,9 +1404,9 @@ public:
     LayoutOnly,
   };
 
-  void emitStructuredRecordInfo(llvm::json::OStream &J, SourceLocation Loc,
-                                const RecordDecl *decl,
-                                LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
+  void emitStructuredRecordInfo(
+      llvm::json::OStream &J, SourceLocation Loc, const RecordDecl *decl,
+      LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
     if (layoutHandling != LayoutHandling::LayoutOnly) {
       J.attribute("kind",
                   TypeWithKeyword::getTagTypeKindName(decl->getTagKind()));
@@ -1504,9 +1513,10 @@ public:
           J.attribute("sym", getMangledName(CurMangleContext, MethodDecl));
 
           // TODO: Better figure out what to do for non-isUserProvided methods
-          // which means there's potentially semantic data that doesn't correspond
-          // to a source location in the source.  Should we be emitting
-          // structured info for those when we're processing the class here?
+          // which means there's potentially semantic data that doesn't
+          // correspond to a source location in the source.  Should we be
+          // emitting structured info for those when we're processing the class
+          // here?
 
           J.attributeBegin("props");
           J.arrayBegin();
@@ -1780,8 +1790,9 @@ public:
     emitBindingAttributes(J, *decl);
   }
 
-  void emitStructuredInfo(SourceLocation Loc, const NamedDecl *decl,
-                          LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
+  void emitStructuredInfo(
+      SourceLocation Loc, const NamedDecl *decl,
+      LayoutHandling layoutHandling = LayoutHandling::UseLayout) {
     std::string json_str;
     llvm::raw_string_ostream ros(json_str);
     llvm::json::OStream J(ros);
@@ -1819,10 +1830,11 @@ public:
     F->Output.push_back(std::move(ros.str()));
   }
 
-  std::string typeToString(QualType Type, PrintingPolicy policy = LangOptions{}) {
+  std::string typeToString(QualType Type,
+                           PrintingPolicy policy = LangOptions{}) {
     policy.FullyQualifiedName = true;
 
-    if (CXXRecordDecl* cxxDecl = Type->getAsCXXRecordDecl()) {
+    if (CXXRecordDecl *cxxDecl = Type->getAsCXXRecordDecl()) {
       if (cxxDecl->isLambda()) {
         return getQualifiedName(cxxDecl);
       }
@@ -2131,7 +2143,8 @@ public:
     if (CXXRecordDecl *D2 = dyn_cast<CXXRecordDecl>(D)) {
       // But if there are parameters, we want to include those as well.
       for (CXXBaseSpecifier &Base : D2->bases()) {
-        std::pair<FileID, unsigned> Loc = SM.getDecomposedExpansionLoc(Base.getEndLoc());
+        std::pair<FileID, unsigned> Loc =
+            SM.getDecomposedExpansionLoc(Base.getEndLoc());
 
         // It's possible there are macros involved or something. We don't
         // include the parameters in that case.
@@ -2168,10 +2181,14 @@ public:
       return Range1;
     }
 
-    std::pair<FileID, unsigned> Begin1 = SM.getDecomposedExpansionLoc(Range1.getBegin());
-    std::pair<FileID, unsigned> End1 = SM.getDecomposedExpansionLoc(Range1.getEnd());
-    std::pair<FileID, unsigned> Begin2 = SM.getDecomposedExpansionLoc(Range2.getBegin());
-    std::pair<FileID, unsigned> End2 = SM.getDecomposedExpansionLoc(Range2.getEnd());
+    std::pair<FileID, unsigned> Begin1 =
+        SM.getDecomposedExpansionLoc(Range1.getBegin());
+    std::pair<FileID, unsigned> End1 =
+        SM.getDecomposedExpansionLoc(Range1.getEnd());
+    std::pair<FileID, unsigned> Begin2 =
+        SM.getDecomposedExpansionLoc(Range2.getBegin());
+    std::pair<FileID, unsigned> End2 =
+        SM.getDecomposedExpansionLoc(Range2.getEnd());
 
     if (End1.first != Begin2.first) {
       // Something weird is probably happening with the preprocessor. Just
@@ -2193,8 +2210,10 @@ public:
   // Returns an empty range otherwise.
   SourceRange validateRange(SourceLocation Loc, SourceRange Range) {
     std::pair<FileID, unsigned> Decomposed = SM.getDecomposedExpansionLoc(Loc);
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin =
+        SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End =
+        SM.getDecomposedExpansionLoc(Range.getEnd());
 
     if (Begin.first != Decomposed.first || End.first != Decomposed.first) {
       return SourceRange();
@@ -2468,7 +2487,8 @@ public:
         if (const auto *DeclRef = dyn_cast<DeclRefExpr>(CalleeExpr)) {
           return DeclRef->getLocation();
         }
-        if (const auto *UnresolvedLookup = dyn_cast<UnresolvedLookupExpr>(CalleeExpr)) {
+        if (const auto *UnresolvedLookup =
+                dyn_cast<UnresolvedLookupExpr>(CalleeExpr)) {
           return UnresolvedLookup->getNameLoc();
         }
 
@@ -2484,7 +2504,8 @@ public:
       //   ForwardedTemplateLocations, convert the location to an actual Stmt*
       //   in ForwardingTemplates
       if (TemplateStack->inGatherMode()) {
-        if (CalleeExpr->isTypeDependent() || isa<UnresolvedLookupExpr>(CalleeExpr)) {
+        if (CalleeExpr->isTypeDependent() ||
+            isa<UnresolvedLookupExpr>(CalleeExpr)) {
           TemplateStack->visitDependent(CalleeLocation);
           ForwardedTemplateLocations.insert(CalleeLocation.getRawEncoding());
         }
@@ -2965,8 +2986,7 @@ public:
     bool isMozSrc = stringStartsWith(s, "moz-src:///");
 
     if (!stringStartsWith(s, "chrome://") &&
-        !stringStartsWith(s, "resource://") &&
-        !isMozSrc) {
+        !stringStartsWith(s, "resource://") && !isMozSrc) {
       return true;
     }
 
@@ -2980,7 +3000,8 @@ public:
     std::string symbol;
 
     if (isMozSrc) {
-      symbol = std::string("FILE_") + mangleFile(s.substr(11), FileType::Source);
+      symbol =
+          std::string("FILE_") + mangleFile(s.substr(11), FileType::Source);
     } else {
       symbol = std::string("URL_") + mangleURL(s);
     }
@@ -3009,7 +3030,8 @@ public:
                     NotIdentifierToken | LocRangeEndValid);
   }
 
-  void inclusionDirective(SourceLocation HashLoc, SourceRange FileNameRange, const FileEntry *File) {
+  void inclusionDirective(SourceLocation HashLoc, SourceRange FileNameRange,
+                          const FileEntry *File) {
     std::string includedFile(File->tryGetRealPathName());
     FileType type = relativizePath(includedFile, CI.getHeaderSearchOpts());
     if (type == FileType::Unknown) {
@@ -3036,7 +3058,8 @@ public:
 
     normalizeLocation(&HashLoc);
     FileInfo *thisFile = getFileInfo(HashLoc);
-    FileType thisType = thisFile->Generated ? FileType::Generated : FileType::Source;
+    FileType thisType =
+        thisFile->Generated ? FileType::Generated : FileType::Source;
     std::string thisFilePretty = thisFile->Realname;
     std::string thisFileSym =
         std::string("FILE_") + mangleFile(thisFile->Realname, thisType);
@@ -3267,8 +3290,7 @@ void PreprocessorHook::FileChanged(SourceLocation Loc, FileChangeReason Reason,
 
 void PreprocessorHook::InclusionDirective(
     SourceLocation HashLoc, const Token &IncludeTok, StringRef FileName,
-    bool IsAngled, CharSourceRange FileNameRange,
-    OptionalFileEntryRef File,
+    bool IsAngled, CharSourceRange FileNameRange, OptionalFileEntryRef File,
     StringRef SearchPath, StringRef RelativePath,
 #if CLANG_VERSION_MAJOR >= 19
     const Module *SuggestedModule, bool ModuleImported,
@@ -3314,13 +3336,13 @@ void PreprocessorHook::Ifndef(SourceLocation Loc, const Token &Tok,
   Indexer->macroUsed(Tok, Md.getMacroInfo());
 }
 
-std::unique_ptr<ASTConsumer> MozsearchAction::CreateASTConsumer(CompilerInstance &CI,
-                                                llvm::StringRef F) {
+std::unique_ptr<ASTConsumer>
+MozsearchAction::CreateASTConsumer(CompilerInstance &CI, llvm::StringRef F) {
   return std::make_unique<IndexConsumer>(CI);
 }
 
 bool MozsearchAction::ParseArgs(const CompilerInstance &CI,
-                const std::vector<std::string> &Args) {
+                                const std::vector<std::string> &Args) {
   if (Args.size() != 3) {
     DiagnosticsEngine &D = CI.getDiagnostics();
     unsigned DiagID = D.getCustomDiagID(
@@ -3334,8 +3356,8 @@ bool MozsearchAction::ParseArgs(const CompilerInstance &CI,
   Srcdir = getAbsolutePath(Args[0]);
   if (Srcdir.empty()) {
     DiagnosticsEngine &D = CI.getDiagnostics();
-    unsigned DiagID = D.getCustomDiagID(
-        DiagnosticsEngine::Error, "Source directory '%0' does not exist");
+    unsigned DiagID = D.getCustomDiagID(DiagnosticsEngine::Error,
+                                        "Source directory '%0' does not exist");
     D.Report(DiagID) << Args[0];
     return false;
   }
@@ -3355,9 +3377,11 @@ bool MozsearchAction::ParseArgs(const CompilerInstance &CI,
   Objdir += PATHSEP_STRING;
 
   printf("MOZSEARCH: %s %s %s\n", Srcdir.c_str(), Outdir.c_str(),
-          Objdir.c_str());
+         Objdir.c_str());
 
   return true;
 }
 
-PluginASTAction::ActionType MozsearchAction::getActionType() { return CmdlineBeforeMainAction; }
+PluginASTAction::ActionType MozsearchAction::getActionType() {
+  return CmdlineBeforeMainAction;
+}

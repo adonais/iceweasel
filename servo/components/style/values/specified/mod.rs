@@ -6,12 +6,13 @@
 //!
 //! TODO(emilio): Enhance docs.
 
+use super::CSSFloat;
 use super::computed::{Context, ToComputedValue};
 use super::generics::grid::ImplicitGridTracks as GenericImplicitGridTracks;
 use super::generics::grid::{GridLine as GenericGridLine, TrackBreadth as GenericTrackBreadth};
 use super::generics::grid::{TrackList as GenericTrackList, TrackSize as GenericTrackSize};
 use super::generics::{self, NonNegative};
-use super::CSSFloat;
+use crate::FxHashMap;
 use crate::context::QuirksMode;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
@@ -21,7 +22,6 @@ use crate::values::specified::calc::PercentageContext;
 use crate::values::specified::number::parse_number_with_clamping_mode;
 use crate::{Namespace, Prefix};
 use cssparser::{Parser, Token};
-use rustc_hash::FxHashMap;
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{ParseError, StyleParseErrorKind};
 
@@ -45,8 +45,8 @@ pub use self::box_::{
     Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
     DominantBaseline, Float, LineClamp, MarginTrim, Overflow, OverflowAnchor, OverflowClipMargin,
     OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
-    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
-    WillChangeBits, WritingModeProperty, Zoom,
+    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, ScrollbarInset,
+    TouchAction, WillChange, WillChangeBits, WritingModeProperty, Zoom,
 };
 pub use self::calc::{CalcLengthPercentage, CalcNumeric};
 pub use self::color::{
@@ -344,9 +344,9 @@ impl ToComputedValue for Opacity {
     #[inline]
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
         let value = self.0.to_computed_value(context).value();
-        if context.for_animation {
-            // Type <number> and <percentage> should be able to interpolate
-            // out-of-range opacity values which benefits additive animation
+        if context.for_smil_animation {
+            // SMIL expects to be able to interpolate between out-of-range
+            // opacity values.
             value
         } else {
             value.min(1.0).max(0.0)
@@ -510,7 +510,7 @@ pub fn parse_namespace(
     input: &mut Parser,
 ) -> Result<(Prefix, ParsedNamespace), ParseError> {
     let ns_prefix = match input.next()? {
-        Token::Ident(ref prefix) => Some(Prefix::from(prefix.as_ref())),
+        Token::Ident(prefix) => Some(Prefix::from(prefix.as_ref())),
         Token::Delim('|') => None,
         _ => return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
     };

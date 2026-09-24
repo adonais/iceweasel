@@ -4,17 +4,19 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SiteSecuritySelectors {
+object SiteSecuritySelectors : SelectorContainer {
 
     val CLEAR_COOKIES_AND_SITE_DATA_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "clearSiteData",
             description = "Clear cookies and site date quick settings sheet button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val ETP_QUICK_SETTINGS_SHEET =
@@ -22,12 +24,6 @@ object SiteSecuritySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "trackingProtectionLayout",
             description = "Enhanced tracking protection section from quick settings sheet",
-            groups = listOf("requiredForPage"),
-        )
-
-    val all =
-        listOf(
-            CLEAR_COOKIES_AND_SITE_DATA_BUTTON,
-            ETP_QUICK_SETTINGS_SHEET,
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 }

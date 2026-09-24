@@ -38,6 +38,12 @@ you're going to want to write some automated tests.
         * If your instrumentation isn't on the parent process,
           you should call `await Services.fog.testFlushAllChildren()` before `testResetFOG`.
           That will ensure all pending data makes it to the parent process to be cleared.
+        * In a browser-chrome (`browser_*.js`) test this reaches beyond your own test:
+          mochitest gives one browser to a whole manifest,
+          so it also clears `lifetime: application` metrics recorded once during startup,
+          for every test that follows yours, and those cannot be recorded again.
+          A test that reads such a metric needs a manifest of its own
+          (see `browser/components/sessionstore/test/browser_startup_telemetry.toml`).
     * You shouldn't have to do this in C++ or Rust since there you should use the
       `FOGFixture` test fixture.
 * If your metric is based on timing (`timespan`, `timing_distribution`),

@@ -12,6 +12,7 @@ BROWSER_CHROME_MANIFESTS += [
     "test/browser/focus-leak/browser.toml",
     "test/browser/heuristics/browser.toml",
     "test/browser/heuristics/third_party/browser.toml",
+    "test/browser/rust/browser.toml",
 ]
 
 XPCSHELL_TESTS_MANIFESTS += [

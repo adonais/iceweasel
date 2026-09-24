@@ -27,10 +27,6 @@ const PROFILE_RESTORATION_DATE_PREF = "browser.backup.profile-restoration-date";
 const PROFILES_ENABLED_PREF = "browser.profiles.enabled";
 const PROFILES_CREATED_PREF = "browser.profiles.created";
 const STOREID_PREF = "toolkit.profiles.storeID";
-const WALLPAPER_TYPE_PREF =
-  "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
-const CUSTOM_WALLPAPER_UUID_PREF =
-  "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid";
 const CUSTOM_WALLPAPER_FOLDER = "wallpaper";
 
 /**
@@ -144,29 +140,19 @@ export class PreferencesBackupResource extends BackupResource {
       "search.json.mozlz4",
       "user.js",
       "chrome",
+      // Every saved wallpaper, not just the one on the page. The copy is
+      // recursive, so the library subfolder comes along.
+      CUSTOM_WALLPAPER_FOLDER,
     ];
     await BackupResource.copyFiles(profilePath, stagingPath, simpleCopyFiles);
-
-    const WALLPAPER_TYPE = Services.prefs.getStringPref(
-      WALLPAPER_TYPE_PREF,
-      ""
-    );
-    const WALLPAPER_UUID = Services.prefs.getStringPref(
-      CUSTOM_WALLPAPER_UUID_PREF,
-      ""
-    );
-    if (WALLPAPER_TYPE == "custom" && WALLPAPER_UUID) {
-      await BackupResource.copyFiles(
-        PathUtils.join(profilePath, CUSTOM_WALLPAPER_FOLDER),
-        PathUtils.join(stagingPath, CUSTOM_WALLPAPER_FOLDER),
-        [WALLPAPER_UUID]
-      );
-    }
 
     // prefs.js is a special case - we have a helper function to flush the
     // current prefs state to disk off of the main thread.
     let prefsDestPath = PathUtils.join(stagingPath, "prefs.js");
     let prefsDestFile = await IOUtils.getFile(prefsDestPath);
+
+    // NB: withUpdateLock() will throw if it is not able to acquire the lock
+    // before shutdown begins.
     await lazy.ExperimentAPI._rsLoader.withUpdateLock(async () => {
       await Services.prefs.backupPrefFile(
         prefsDestFile,
@@ -374,6 +360,17 @@ export class PreferencesBackupResource extends BackupResource {
       await BackupResource.getDirectorySize(chromeDirectoryPath);
     if (Number.isInteger(chromeDirectorySize)) {
       fullSize += chromeDirectorySize;
+    }
+
+    const wallpaperDirectoryPath = PathUtils.join(
+      profilePath,
+      CUSTOM_WALLPAPER_FOLDER
+    );
+    let wallpaperDirectorySize = await BackupResource.getDirectorySize(
+      wallpaperDirectoryPath
+    );
+    if (Number.isInteger(wallpaperDirectorySize)) {
+      fullSize += wallpaperDirectorySize;
     }
 
     Glean.browserBackup.preferencesSize.set(fullSize);

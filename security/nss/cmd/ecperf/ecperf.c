@@ -31,6 +31,7 @@ typedef SECStatus (*pk11_op_func)(CK_SESSION_HANDLE, void *, void *, void *);
 
 typedef struct ThreadDataStr {
     op_func op;
+    pk11_op_func pk11_op;
     void *p1;
     void *p2;
     void *p3;
@@ -47,7 +48,7 @@ void
 PKCS11Thread(void *data)
 {
     ThreadData *threadData = (ThreadData *)data;
-    pk11_op_func op = (pk11_op_func)threadData->op;
+    pk11_op_func op = threadData->pk11_op;
     int iters = threadData->iters;
     unsigned char sigData[256];
     SECItem sig;
@@ -125,21 +126,21 @@ genericThread(void *data)
 /* Time iter repetitions of operation op. */
 SECStatus
 M_TimeOperation(void (*threadFunc)(void *),
-                op_func opfunc, char *op, void *param1, void *param2,
-                void *param3, int iters, int numThreads, PRLock *lock,
-                CK_SESSION_HANDLE session, int isSign, double *rate)
+                op_func opfunc, pk11_op_func pk11_opfunc, char *op,
+                void *param1, void *param2, void *param3, int iters,
+                int numThreads, PRLock *lock, CK_SESSION_HANDLE session,
+                int isSign, double *rate)
 {
     double dUserTime;
     int i, total;
     PRIntervalTime startTime, totalTime;
     PRThread **threadIDs;
     ThreadData *threadData;
-    pk11_op_func pk11_op = (pk11_op_func)opfunc;
     SECStatus rv;
 
     /* verify operation works before testing performance */
     if (session) {
-        rv = (*pk11_op)(session, param1, param2, param3);
+        rv = (*pk11_opfunc)(session, param1, param2, param3);
     } else {
         rv = (*opfunc)(param1, param2, param3);
     }
@@ -156,7 +157,7 @@ M_TimeOperation(void (*threadFunc)(void *),
     if (numThreads == 1) {
         for (i = 0; i < iters; i++) {
             if (session) {
-                rv = (*pk11_op)(session, param1, param2, param3);
+                rv = (*pk11_opfunc)(session, param1, param2, param3);
             } else {
                 rv = (*opfunc)(param1, param2, param3);
             }
@@ -171,6 +172,7 @@ M_TimeOperation(void (*threadFunc)(void *),
     } else {
         for (i = 0; i < numThreads; i++) {
             threadData[i].op = opfunc;
+            threadData[i].pk11_op = pk11_opfunc;
             threadData[i].p1 = (void *)param1;
             threadData[i].p2 = (void *)param2;
             threadData[i].p3 = (void *)param3;
@@ -305,6 +307,29 @@ PKCS11_Verify(CK_SESSION_HANDLE session, CK_OBJECT_HANDLE *hKey,
     return SECSuccess;
 }
 
+SECStatus
+PKCS11_DeriveWrap(CK_SESSION_HANDLE session, void *hKey, void *pMech,
+                  void *dummy)
+{
+    return PKCS11_Derive(session, (CK_OBJECT_HANDLE *)hKey,
+                         (CK_MECHANISM *)pMech, (int *)dummy);
+}
+
+SECStatus
+PKCS11_SignWrap(CK_SESSION_HANDLE session, void *hKey, void *sig, void *digest)
+{
+    return PKCS11_Sign(session, (CK_OBJECT_HANDLE *)hKey, (SECItem *)sig,
+                       (SECItem *)digest);
+}
+
+SECStatus
+PKCS11_VerifyWrap(CK_SESSION_HANDLE session, void *hKey, void *sig,
+                  void *digest)
+{
+    return PKCS11_Verify(session, (CK_OBJECT_HANDLE *)hKey, (SECItem *)sig,
+                         (SECItem *)digest);
+}
+
 /* Performs basic tests of elliptic curve cryptography over prime fields.
  * If tests fail, then it prints an error message, aborts, and returns an
  * error code. Otherwise, returns 0. */
@@ -382,16 +407,16 @@ ectest_curve_pkcs11(ECCurveName curve, int iterations, int numThreads)
     lock = PR_NewLock();
 
     if (ecCurve_map[curve]->usage & KU_KEY_AGREEMENT) {
-        rv = M_TimeOperation(PKCS11Thread, (op_func)PKCS11_Derive, "ECDH_Derive",
-                             &ecPriv, &mech, NULL, iterations, numThreads,
-                             lock, session, 0, &deriveRate);
+        rv = M_TimeOperation(PKCS11Thread, NULL, PKCS11_DeriveWrap,
+                             "ECDH_Derive", &ecPriv, &mech, NULL, iterations,
+                             numThreads, lock, session, 0, &deriveRate);
         if (rv != SECSuccess) {
             goto cleanup;
         }
     }
 
     if (ecCurve_map[curve]->usage & KU_DIGITAL_SIGNATURE) {
-        rv = M_TimeOperation(PKCS11Thread, (op_func)PKCS11_Sign, "ECDSA_Sign",
+        rv = M_TimeOperation(PKCS11Thread, NULL, PKCS11_SignWrap, "ECDSA_Sign",
                              (void *)&ecPriv, &sig, &digest, iterations, numThreads,
                              lock, session, 1, &signRate);
         if (rv != SECSuccess) {
@@ -403,9 +428,9 @@ ectest_curve_pkcs11(ECCurveName curve, int iterations, int numThreads)
         if (rv != SECSuccess) {
             goto cleanup;
         }
-        rv = M_TimeOperation(PKCS11Thread, (op_func)PKCS11_Verify, "ECDSA_Verify",
-                             (void *)&ecPub, &sig, &digest, iterations, numThreads,
-                             lock, session, 0, NULL);
+        rv = M_TimeOperation(PKCS11Thread, NULL, PKCS11_VerifyWrap,
+                             "ECDSA_Verify", (void *)&ecPub, &sig, &digest,
+                             iterations, numThreads, lock, session, 0, NULL);
         if (rv != SECSuccess) {
             goto cleanup;
         }
@@ -419,8 +444,10 @@ cleanup:
 }
 
 SECStatus
-ECDH_DeriveWrap(ECPrivateKey *priv, ECPublicKey *pub, int *dummy)
+ECDH_DeriveWrap(void *privKey, void *pubKey, void *dummy)
 {
+    ECPrivateKey *priv = (ECPrivateKey *)privKey;
+    ECPublicKey *pub = (ECPublicKey *)pubKey;
     SECItem secret;
     unsigned char secretData[256];
     SECStatus rv;
@@ -432,6 +459,20 @@ ECDH_DeriveWrap(ECPrivateKey *priv, ECPublicKey *pub, int *dummy)
                      &priv->privateValue, 0, &secret);
     SECITEM_FreeItem(&secret, PR_FALSE);
     return rv;
+}
+
+SECStatus
+ECDSA_SignDigestWrap(void *key, void *signature, void *digest)
+{
+    return ECDSA_SignDigest((ECPrivateKey *)key, (SECItem *)signature,
+                            (const SECItem *)digest);
+}
+
+SECStatus
+ECDSA_VerifyDigestWrap(void *key, void *signature, void *digest)
+{
+    return ECDSA_VerifyDigest((ECPublicKey *)key, (const SECItem *)signature,
+                              (const SECItem *)digest);
 }
 
 /* Performs basic tests of elliptic curve cryptography over prime fields.
@@ -482,7 +523,7 @@ ectest_curve_freebl(ECCurveName curve, int iterations, int numThreads)
     ecPub.publicValue = ecPriv->publicValue;
 
     if (ecCurve_map[curve]->usage & KU_KEY_AGREEMENT) {
-        rv = M_TimeOperation(genericThread, (op_func)ECDH_DeriveWrap, "ECDH_Derive",
+        rv = M_TimeOperation(genericThread, ECDH_DeriveWrap, NULL, "ECDH_Derive",
                              ecPriv, &ecPub, NULL, iterations, numThreads, 0, 0, 0, &deriveRate);
         if (rv != SECSuccess) {
             goto cleanup;
@@ -490,7 +531,7 @@ ectest_curve_freebl(ECCurveName curve, int iterations, int numThreads)
     }
 
     if (ecCurve_map[curve]->usage & KU_DIGITAL_SIGNATURE) {
-        rv = M_TimeOperation(genericThread, (op_func)ECDSA_SignDigest, "ECDSA_Sign",
+        rv = M_TimeOperation(genericThread, ECDSA_SignDigestWrap, NULL, "ECDSA_Sign",
                              ecPriv, &sig, &digest, iterations, numThreads, 0, 0, 1, &signRate);
         if (rv != SECSuccess)
             goto cleanup;
@@ -499,7 +540,7 @@ ectest_curve_freebl(ECCurveName curve, int iterations, int numThreads)
         if (rv != SECSuccess) {
             goto cleanup;
         }
-        rv = M_TimeOperation(genericThread, (op_func)ECDSA_VerifyDigest, "ECDSA_Verify",
+        rv = M_TimeOperation(genericThread, ECDSA_VerifyDigestWrap, NULL, "ECDSA_Verify",
                              &ecPub, &sig, &digest, iterations, numThreads, 0, 0, 0, NULL);
         if (rv != SECSuccess) {
             goto cleanup;

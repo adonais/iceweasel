@@ -269,14 +269,6 @@ static bool isGarbageCollecting;
 static uint32_t eventloopNestingLevel = 0;
 static time_t inactiveStateStart = 0;
 
-static
-#if defined(XP_UNIX)
-    pthread_t
-#elif defined(XP_WIN)  // defined(XP_UNIX)
-    DWORD
-#endif                 // defined(XP_WIN)
-        gMainThreadId;
-
 // Avoid a race during application termination.
 static Mutex* dumpSafetyLock;
 static bool isSafeToDump = false;
@@ -297,32 +289,6 @@ static int serverSocketFd = -1;
 static int crashHelperClientFd = -1;
 #  endif
 #endif
-
-void RecordMainThreadId() {
-  gMainThreadId =
-#if defined(XP_UNIX)
-      pthread_self()
-#elif defined(XP_WIN)  // defined(XP_UNIX)
-      GetCurrentThreadId()
-#endif                 // defined(XP_WIN)
-      ;
-}
-
-bool SignalSafeIsMainThread() {
-  // We can't rely on NS_IsMainThread() because we are in a signal handler, and
-  // sTLSIsMainThread is a thread local variable and it can be lazy allocated
-  // i.e., we could hit code path where this variable has not been accessed
-  // before and needs to be allocated right now, which will lead to spinlock
-  // deadlock effectively hanging the process, as in bug 1756407.
-
-#if defined(XP_UNIX)
-  pthread_t th = pthread_self();
-  return pthread_equal(th, gMainThreadId);
-#elif defined(XP_WIN)  // defined(XP_UNIX)
-  DWORD th = GetCurrentThreadId();
-  return th == gMainThreadId;
-#endif                 // defined(XP_WIN)
-}
 
 #if defined(XP_WIN)
 // the following are used to prevent other DLLs reverting the last chance
@@ -2131,8 +2097,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force /*=false*/) {
   SetJitExceptionHandler();
 #  endif
 
-  RecordMainThreadId();
-
   // protect the crash reporter from being unloaded
   gBlockUnhandledExceptionFilter = true;
   gKernel32Intercept.Init("kernel32.dll");
@@ -3543,8 +3507,6 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
                                             crash_pipe);
 #endif
 
-  RecordMainThreadId();
-
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
   // If we didn't fail earlier because of a missing IPC channel then all of the
@@ -3701,39 +3663,14 @@ ThreadId CurrentThreadId() {
   return ::GetCurrentThreadId();
 #elif defined(XP_LINUX)
   return sys_gettid();
-#elif defined(XP_MACOSX)
-  // Just return an index, since Mach ports can't be directly serialized
-  thread_act_port_array_t threads_for_task;
-  mach_msg_type_number_t thread_count;
-
-  if (task_threads(mach_task_self(), &threads_for_task, &thread_count))
-    return -1;
-
-  for (unsigned int i = 0; i < thread_count; ++i) {
-    if (threads_for_task[i] == mach_thread_self()) return i;
-  }
-  abort();
+#elif defined(XP_DARWIN)
+  // Note that this will leak the mach port unless it's explicitly closed or
+  // assigned to a RAII type such as `UniqueMachSendRight`.
+  return mach_thread_self();
 #else
 #  error "Unsupported platform"
 #endif
 }
-
-#ifdef XP_MACOSX
-static mach_port_t GetChildThread(ProcessHandle childPid,
-                                  ThreadId childBlamedThread) {
-  mach_port_t childThread = MACH_PORT_NULL;
-  thread_act_port_array_t threads_for_task;
-  mach_msg_type_number_t thread_count;
-
-  if (task_threads(childPid, &threads_for_task, &thread_count) ==
-          KERN_SUCCESS &&
-      childBlamedThread < thread_count) {
-    childThread = threads_for_task[childBlamedThread];
-  }
-
-  return childThread;
-}
-#endif
 
 bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
                             ThreadId aTargetBlamedThread,
@@ -3745,12 +3682,6 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
   }
 
   AutoIOInterposerDisable disableIOInterposition;
-
-#ifdef XP_MACOSX
-  mach_port_t targetThread = GetChildThread(aTargetHandle, aTargetBlamedThread);
-#else
-  ThreadId targetThread = aTargetBlamedThread;
-#endif
 
   xpstring dump_path;
 #ifndef XP_LINUX
@@ -3765,7 +3696,7 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
 
   // dump the target
   if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
-          aTargetHandle, targetThread,
+          aTargetHandle, aTargetBlamedThread,
 #if defined(XP_LINUX) && defined(MOZ_OXIDIZED_BREAKPAD)
           /* auxvInfo */ nullptr,
 #endif  // defined(XP_LINUX) && defined(MOZ_OXIDIZED_BREAKPAD)

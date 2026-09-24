@@ -1,3 +1,10 @@
 set_config("MOZ_JAR_MAKER_FILE_FORMAT", "jar")
 
 include("newtab/webext-glue/locales.configure")
+
+# The newtab extension generates its JS/CSS bundles at build time (see
+# browser/extensions/newtab/moz.build), which requires Node.js. Unlike a full
+# browser build, the browser/extensions project does not pull in
+# toolkit/moz.configure, so include node.configure directly to ensure NODEJS is
+# detected and CONFIG["NODEJS"] is set.
+include("../../build/moz.configure/node.configure")

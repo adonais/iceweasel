@@ -6,10 +6,10 @@
 //!
 //! [ratio]: https://drafts.csswg.org/css-values/#ratios
 
+use crate::One;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::ratio::Ratio as GenericRatio;
 use crate::values::specified::NonNegativeNumber;
-use crate::One;
 use cssparser::Parser;
 use style_traits::ParseError;
 

@@ -54,6 +54,12 @@ static RefPtr<VulkanDeviceHolder> LookupHolder(HolderMap& aMap,
 RefPtr<VulkanDeviceHolder> VulkanDeviceHolder::GetOrCreate(
     const FFmpegLibWrapper* aLib, const char* aDeviceName,
     const char* aDeviceExtensions) {
+  if (!aDeviceName || !aDeviceName[0]) {
+    FFMPEGP_LOG(
+        "VulkanDeviceHolder: refusing to create VkDevice with empty name");
+    return nullptr;
+  }
+
   {
     auto map = sDeviceHolders.Lock();
     if (RefPtr<VulkanDeviceHolder> instance =

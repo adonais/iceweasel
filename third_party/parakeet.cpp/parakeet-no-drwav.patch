@@ -1,0 +1,36 @@
+# Firefox-local: drop the vendored dr_wav.h dependency. Firefox only feeds
+# PCM directly into the model (parakeet_capi_transcribe_pcm*); the WAV-file
+# loading path (transcribe_path*) is unused, so avoid vendoring the large
+# dr_wav.h single-header library for it.
+#
+--- a/src/audio_io.cpp
++++ b/src/audio_io.cpp
+@@ -1,5 +1,3 @@
+-#define DR_WAV_IMPLEMENTATION
+-#include "dr_wav.h"
+ #include "audio_io.hpp"
+ #include "common.hpp"
+ #include <cmath>
+@@ -23,18 +21,10 @@
+ }
+
+ bool load_audio_16k_mono(const std::string& path, Audio& out) {
+-    unsigned int ch = 0, sr = 0; drwav_uint64 frames = 0;
+-    float* pcm = drwav_open_file_and_read_pcm_frames_f32(path.c_str(), &ch, &sr, &frames, nullptr);
+-    if (!pcm) { PK_LOG("failed to open wav: %s", path.c_str()); return false; }
+-    std::vector<float> mono(frames);
+-    for (drwav_uint64 i = 0; i < frames; ++i) {
+-        double acc = 0; for (unsigned int c = 0; c < ch; ++c) acc += pcm[i*ch + c];
+-        mono[i] = (float)(acc / (ch ? ch : 1));
+-    }
+-    drwav_free(pcm, nullptr);
+-    out.samples = resample_linear(mono, (int)sr, 16000);
+-    out.sample_rate = 16000;
+-    return true;
++    // Firefox-local: dr_wav.h is not vendored, so WAV-file loading is
++    // unsupported here. Firefox only feeds PCM directly (transcribe_pcm*).
++    PK_LOG("load_audio_16k_mono: WAV file loading not supported in this build: %s", path.c_str());
++    return false;
+ }
+
+ } // namespace pk

@@ -877,6 +877,94 @@ add_task(async function test_bad_executable() {
   );
 });
 
+add_task(
+  { skip_if: () => AppConstants.platform == "win" },
+  async function test_launch_failure_closes_pipes() {
+    // A script whose interpreter does not exist passes the executable check
+    // but cannot run. posix_spawn (macOS) reports that to the parent as a
+    // failed launch. Linux forks first, so the launch succeeds and the child
+    // exits without ever running. Neither case may leak descriptors.
+    let script = PathUtils.join(
+      PathUtils.tempDir,
+      "subprocess_missing_interpreter.sh"
+    );
+    await IOUtils.writeUTF8(script, "#!/nonexistent/interpreter\n");
+    await IOUtils.setPermissions(script, 0o755);
+
+    // Count only descriptors that are not regular files or directories, which
+    // is what pipes are, so that unrelated file activity cannot skew the count.
+    let fdDir = AppConstants.platform == "linux" ? "/proc/self/fd" : "/dev/fd";
+    let countPipeLikeFds = async () => {
+      let count = 0;
+      for (let fd of await IOUtils.getChildren(fdDir)) {
+        try {
+          if ((await IOUtils.stat(fd)).type == "other") {
+            count++;
+          }
+        } catch (e) {
+          // The descriptor was closed between listing and stat, or it is not
+          // something stat can describe.
+        }
+      }
+      return count;
+    };
+
+    let before = await countPipeLikeFds();
+    Assert.greater(before, 0, "The count sees the process's existing pipes");
+    const ATTEMPTS = 20;
+    let launchFailures = 0;
+    let childFailures = 0;
+    for (let i = 0; i < ATTEMPTS; i++) {
+      let proc;
+      try {
+        proc = await Subprocess.call({
+          command: script,
+          arguments: [],
+          stderr: "pipe",
+        });
+      } catch (error) {
+        equal(
+          error.errorCode,
+          Subprocess.ERROR_BAD_EXECUTABLE,
+          "A failed launch is reported as a bad executable"
+        );
+        ok(
+          /^Failed to launch process/.test(error.message),
+          `A failed launch carries the launch error (${error.message})`
+        );
+        launchFailures++;
+        continue;
+      }
+      let { exitCode } = await proc.wait();
+      notEqual(exitCode, 0, "The child could not run its interpreter");
+      // The worker closes the pipes itself once the child is gone. Closing one
+      // that is already closed rejects, and that is fine.
+      await Promise.allSettled([
+        proc.stdin.close(),
+        proc.stdout.close(),
+        proc.stderr.close(),
+      ]);
+      childFailures++;
+    }
+    info(
+      `launch failures: ${launchFailures}, child failures: ${childFailures}`
+    );
+    equal(
+      launchFailures + childFailures,
+      ATTEMPTS,
+      "Every attempt failed one way or the other"
+    );
+    let after = await countPipeLikeFds();
+    Assert.less(
+      after - before,
+      ATTEMPTS,
+      `Failed launches should not leak descriptors (before ${before}, after ${after})`
+    );
+
+    await IOUtils.remove(script);
+  }
+);
+
 add_task(async function test_cleanup() {
   let { getSubprocessImplForTest } = ChromeUtils.importESModule(
     "resource://gre/modules/Subprocess.sys.mjs"

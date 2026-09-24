@@ -1,50 +1,26 @@
 {
-  "nova": {
-    "badge": {
-      "inset": {
-        "block": {
-          "start": {
-            "value": "{space.xsmall}"
-          }
-        },
-        "inline": {
-          "start": {
-            "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base})"
-          }
-        }
-      }
-    },
-    "button": {
-      "border": {
-        "radius": {
-          "value": "{panel-menuitem.border.radius}"
-        }
-      },
-      "margin": {
-        "value": "{panel-menuitem.margin.@base}"
-      },
-      "padding": {
-        "@base": {
-          "value": "{panel-menuitem.padding.@base}"
-        },
-        "inline": {
-          "start": {
-            "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base} + {space.small})"
-          }
-        }
-      }
-    }
-  },
   "badge": {
     "inset": {
       "block": {
         "start": {
-          "value": "4px"
+          "value": {
+            "default": "4px",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "{space.xsmall}"
+            }
+          }
         }
       },
       "inline": {
         "start": {
-          "value": "24px"
+          "value": {
+            "default": "24px",
+            "nova": {
+              "comment": "There is no equivalent value for this token in Figma",
+              "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base})"
+            }
+          }
         }
       }
     }
@@ -52,21 +28,59 @@
   "button": {
     "border": {
       "radius": {
-        "value": "0"
+        "value": {
+          "default": "0",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "{panel-menuitem.border.radius}"
+          }
+        }
       }
     },
     "margin": {
-      "value": "0"
+      "value": {
+        "default": "0",
+        "nova": {
+          "comment": "There is no equivalent value for this token in Figma",
+          "value": "{panel-menuitem.margin.@base}"
+        }
+      }
     },
     "padding": {
       "@base": {
-        "value": "{space.xsmall} {space.small}"
+        "value": {
+          "default": "{space.xsmall} {space.small}",
+          "nova": {
+            "comment": "There is no equivalent value for this token in Figma",
+            "value": "{panel-menuitem.padding.@base}"
+          }
+        }
       },
       "inline": {
         "start": {
-          "value": "{space.xxlarge}"
+          "@base": {
+            "value": {
+              "default": "{space.xxlarge}",
+              "nova": {
+                "comment": "There is no equivalent value for this token in Figma",
+                "value": "calc({panel-menuitem.padding.inline} + {icon.size.@base})"
+              }
+            }
+          },
+          "offset": {
+            "value": {
+              "default": "0px",
+              "nova": {
+                "comment": "There is no equivalent value for this token in Figma",
+                "value": "{space.small}"
+              }
+            }
+          }
         }
       }
     }
+  },
+  "fill": {
+    "value": "currentColor"
   }
 }

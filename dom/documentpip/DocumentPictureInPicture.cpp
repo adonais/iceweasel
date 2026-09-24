@@ -152,7 +152,7 @@ static nsresult OpenPiPWindowUtility(nsPIDOMWindowOuter* aParent,
     features += ",disallow_return_to_opener";
   }
 
-  rv = pww->OpenWindow2(aParent, uri, "_blank"_ns, features,
+  rv = pww->OpenWindow2(aParent, uri, u"_blank"_ns, features,
                         mozilla::dom::UserActivation::Modifiers::None(), false,
                         false, true, nullptr, false, false, false,
                         nsPIWindowWatcher::PrintKind::PRINT_NONE, loadState,

@@ -11,10 +11,6 @@
 #ifndef API_RTP_HEADER_EXTENSION_ID_H_
 #define API_RTP_HEADER_EXTENSION_ID_H_
 
-#include <concepts>
-#include <type_traits>
-
-#include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
 #include "rtc_base/strong_alias.h"
 
@@ -42,50 +38,12 @@ class RtpHeaderExtensionId
 
   // The default constructor makes a NotSet.
   constexpr RtpHeaderExtensionId() : StrongAlias(0) {}
-  // This constructor is finagled via templates to allow declaring
-  // both an explicit and an implicit variant, deprecating the
-  // implicit one. When it is no longer needed, it should just be:
-  // explicit constexpr RtpHeaderExtensionId(int id)
-  //      : StrongAlias(id) {
+
   // TODO: bugs.webrtc.org/514817938 - enable these checks when tests fixed.
   //   RTC_DCHECK_GE(id, kMinId.value());
   //   RTC_DCHECK_LE(id, kMaxId.value());
   // }
-  template <typename T>
-    requires std::is_integral_v<T> && std::convertible_to<T, int>
-  explicit constexpr RtpHeaderExtensionId(T id)
-      : StrongAlias(static_cast<int>(id)) {}
-
-  template <typename T>
-    requires std::is_enum_v<T> && std::convertible_to<T, int>
-  explicit constexpr RtpHeaderExtensionId(T id)
-      : StrongAlias(static_cast<int>(id)) {}
-
-  template <typename T>
-    requires std::is_enum_v<T> && (!std::convertible_to<T, int>)
-  explicit constexpr RtpHeaderExtensionId(T id)
-      : StrongAlias(static_cast<int>(id)) {}
-
-  template <typename T>
-    requires std::convertible_to<T, int> && (!std::is_integral_v<T>) &&
-             (!std::is_enum_v<T>)
-  explicit constexpr RtpHeaderExtensionId(T id)
-      : StrongAlias(static_cast<int>(id)) {}
-
-  template <typename T = void>
-    requires std::convertible_to<T, int>
-  [[deprecated("Use explicit conversion")]]
-  constexpr RtpHeaderExtensionId(T id)  // NOLINT: explicit
-      : StrongAlias(static_cast<int>(id)) {}
-
-  // Deprecated operator to allow implicit conversion to int in
-  // downstream code.
-  // TODO: bugs.webrtc.org/514817938 - remove when downstream fixed.
-  [[deprecated]] ABSL_REFACTOR_INLINE  //
-      constexpr
-      operator int() const& {  // NOLINT: explicit
-    return value();
-  }
+  explicit constexpr RtpHeaderExtensionId(int id) : StrongAlias(id) {}
 
   // Returns true for an extension id that is set and is in the legal range.
   constexpr bool Valid() const {

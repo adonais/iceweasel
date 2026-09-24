@@ -32,6 +32,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604
 ]
 
+["test_collectorLogAnalyzer.xhtml"]
+
 ["test_dumpGCAndCCLogsToFile.xhtml"]
 
 ["test_memoryReporters.xhtml"]

@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
@@ -43,7 +44,8 @@ class CrashPullDelegateTest {
         runBlocking {
             scope
                 .launch {
-                    val runtime = GeckoProvider.getOrCreateRuntime(context, mockAutofill, mockLogin, mockPolicy)
+                    val runtime =
+                        GeckoProvider.getOrCreateRuntime(context, mockAutofill, mockLogin, mockPolicy, TestScope())
                     assertNotNull(runtime.crashPullDelegate)
                     runtime.crashPullDelegate?.onCrashPull(arrayOf("1", "2"))
                 }

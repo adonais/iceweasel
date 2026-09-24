@@ -191,7 +191,6 @@ security.ui.certerror:
         description: >
           If the error is due to wildcard trying to match reference ID label with hyphen at begin/end
         type: boolean
-    telemetry_mirror: SecurityUiCerterror_Load_Aboutcerterror
 
   click_advanced_button:
     type: event
@@ -373,7 +372,6 @@ security.ui.tlserror:
         description: >
           The status of the failed channel, as an nsresult.
         type: quantity
-    telemetry_mirror: SecurityUiTlserror_Load_Abouttlserror
 
 security.ui.neterror:
   load_aboutneterror:
@@ -517,6 +515,12 @@ security.ui.neterror:
       authoritative re-check came back offline/captive or timed out, so no CTA
       was shown. Connectivity dropping *after* the CTA was shown is a different
       thing and is counted by search_cta_click_aborted, not here.
+      decision_timed_out means the decision did not finish inside
+      browser.netError.searchCTA.decisionTimeoutMs, the deadline the page waits
+      out before rendering without a CTA, so it was abandoned and no CTA was
+      shown. It absorbs most of what used to be counted under
+      connectivity_unconfirmed. The stale-reading re-check is the slowest step
+      here and rarely finishes inside that deadline.
       not_top_level means the error document was not the top-level document (a
       DNS failure inside an embedded document on a page that loaded fine), so no
       CTA was offered; it is evaluated before the failed URL is looked at, which
@@ -533,16 +537,19 @@ security.ui.neterror:
       - engine_not_general
       - connectivity_unconfirmed
       - not_top_level
+      - decision_timed_out
     bugs:
       - https://bugzil.la/2055675
       - https://bugzil.la/2055637
       - https://bugzil.la/2055712
       - https://bugzil.la/2063091
+      - https://bugzil.la/2067882
     data_reviews:
       - https://bugzil.la/2055675
       - https://bugzil.la/2055637
       - https://bugzil.la/2055712
       - https://bugzil.la/2063091
+      - https://bugzil.la/2067882
     notification_emails:
       - jbrown@mozilla.com
       - seceng-telemetry@mozilla.com

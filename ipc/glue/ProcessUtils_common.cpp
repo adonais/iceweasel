@@ -32,13 +32,12 @@ SharedPreferenceSerializer::SharedPreferenceSerializer(
 
 bool SharedPreferenceSerializer::SerializeToSharedMemory(
     const GeckoProcessType aDestinationProcessType,
-    const nsACString& aDestinationRemoteType) {
+    const mozilla::dom::RemoteType& aDestinationRemoteType) {
   mPrefMapHandle = Preferences::EnsureSnapshot();
 
   bool destIsWebContent =
       aDestinationProcessType == GeckoProcessType_Content &&
-      (StringBeginsWith(aDestinationRemoteType, WEB_REMOTE_TYPE) ||
-       StringBeginsWith(aDestinationRemoteType, PREALLOC_REMOTE_TYPE));
+      (aDestinationRemoteType.IsWeb() || aDestinationRemoteType.IsPrealloc());
 
   // Serialize the early prefs.
   nsAutoCStringN<1024> prefs;

@@ -11,7 +11,6 @@ import re
 import subprocess
 import sys
 import mozpack.path as mozpath
-from collections import OrderedDict
 from mozpack.executables import (
     get_type,
     ELF,
@@ -122,7 +121,7 @@ def dependentlibs(lib, libpaths, func):
     be found in the given list of paths, followed by the library itself."""
     assert libpaths
     assert isinstance(libpaths, list)
-    deps = OrderedDict()
+    deps = {}
     for dep in func(lib):
         if dep in deps or os.path.isabs(dep):
             continue

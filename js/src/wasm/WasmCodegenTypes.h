@@ -46,6 +46,7 @@ class ABIArgIter;
 namespace wasm {
 
 struct CodeMetadata;
+struct StackMap;
 struct TableDesc;
 struct V128;
 
@@ -892,6 +893,18 @@ struct TrapData {
   // For Trap::OutOfBounds triggered by a memory fault, the memory index and
   // byte offset of the faulting address within the memory's mapped region.
   mozilla::Maybe<FaultInfo> faultInfo;
+};
+
+// A class that abstractifies the process of adding stackmaps to a collection
+// thereof.  The idea is that an instantiation of this interface can perform any
+// action it wants in `addMap`, and `addMap` will be called deep within the
+// assembler stack, normally to add a stackmap corresponding to a trap site.
+// This decouples the assembler stack from any knowledge of how baseline/Ion
+// manage stackmaps.
+class StackMapRegistry {
+ public:
+  [[nodiscard]]
+  virtual bool addMap(StackMap* map, FaultingCodeRange insnRange) = 0;
 };
 
 // The (,Callable,Func)Offsets classes are used to record the offsets of

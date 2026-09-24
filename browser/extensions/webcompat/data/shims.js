@@ -988,7 +988,26 @@ const AVAILABLE_SHIMS = [
     // Blank stub file just so we run the script above when the matched script
     // files get blocked.
     file: "empty-script.js",
-    matches: ["https://platform.twitter.com/widgets.js"],
+    matches: [
+      "https://platform.twitter.com/widgets.js",
+      "https://platform.x.com/widgets.js",
+      {
+        patterns: [
+          // Sites which bundle their own copy of widgets.js never request the
+          // script above, so also shim the widget iframe that copy loads.
+          "*://platform.twitter.com/widgets/widget_iframe.*",
+          "*://platform.x.com/widgets/widget_iframe.*",
+          // Some sites render a tweet's content iframe
+          // directly via their own server-side embed.
+          "*://platform.twitter.com/embed/index.html*",
+          "*://platform.x.com/embed/index.html*",
+          "*://platform.twitter.com/embed/Tweet.html*",
+          "*://platform.x.com/embed/Tweet.html*",
+        ],
+        types: ["sub_frame"],
+        target: "empty-page.html",
+      },
+    ],
     logos: ["x-logo.svg"],
     needsShimHelpers: [
       "embedClicked",
@@ -1000,7 +1019,9 @@ const AVAILABLE_SHIMS = [
     onlyIfBlockedByETP: true,
     unblocksOnOptIn: [
       "*://platform.twitter.com/*",
+      "*://platform.x.com/*",
       "*://syndication.twitter.com/*",
+      "*://syndication.x.com/*",
       "*://cdn.syndication.twimg.com/*",
       "*://video.twimg.com/*",
       "*://pbs.twimg.com/*",

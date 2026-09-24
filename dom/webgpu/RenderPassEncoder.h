@@ -28,8 +28,7 @@ namespace ffi {
 struct WGPURecordedRenderPass;
 }  // namespace ffi
 
-RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
-                         RawId aEncoderId,
+RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aEncoderId,
                          const dom::GPURenderPassDescriptor& aDesc);
 
 class BindGroup;

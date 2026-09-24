@@ -2288,6 +2288,7 @@ product.
             <p>This license applies to portions of WHATWG specification incorporated into source code and to files in the following directories:
             <ul>
                 <li><code>toolkit/content/vendor/react/react-transition-group.js</code></li>
+                <li><code>third_party/node/node_modules/react-transition-group/</code></li>
                 <li><code>third_party/rust/bindgen/</code></li>
                 <li><code>third_party/rust/subtle/</code></li>
                 <li><code>third_party/rust/uritemplate-next/</code></li>
@@ -4117,9 +4118,21 @@ product.
               <li><code>devtools/client/shared/vendor/react*</code>,
                   <code>toolkit/content/vendor/react/react*</code>,
                   <code>devtools/client/debugger/test/mochitest/examples/react/build/main.js</code></li>
+              <li><code>third_party/node/node_modules/@babel/runtime</code>,
+                  <code>third_party/node/node_modules/dom-helpers</code>,
+                  <code>third_party/node/node_modules/js-tokens</code>,
+                  <code>third_party/node/node_modules/loose-envify</code>,
+                  <code>third_party/node/node_modules/object-assign</code>,
+                  <code>third_party/node/node_modules/prop-types</code>,
+                  <code>third_party/node/node_modules/react</code>,
+                  <code>third_party/node/node_modules/react-dom</code>,
+                  <code>third_party/node/node_modules/react-is</code>,
+                  <code>third_party/node/node_modules/scheduler</code>,
+                  <code>third_party/node/node_modules/use-sync-external-store</code>,
+                  <code>third_party/node/node_modules/webpack</code> and
+                  <code>third_party/node/node_modules/webpack-cli</code></li>
               <li><code>devtools/client/shared/vendor/react-router-dom.js</code></li>
-              <li><code>devtools/client/shared/vendor/reselect.js</code> and
-                  <code>browser/extensions/newtab/data/content/activity-stream.bundle.js</code></li>
+              <li><code>devtools/client/shared/vendor/reselect.js</code></li>
               <li><code>third_party/rlbox</code></li>
               <li><code>devtools/client/netmonitor/src/components/messages/parsers/socket-io/binary.js</code>,
                   <code>devtools/client/netmonitor/src/components/messages/parsers/socket-io/index.js</code> and
@@ -4133,6 +4146,9 @@ product.
               <li><code>third_party/rust/void</code></li>
 #ifdef MOZ_JXL
               <li><code>third_party/rust/array-init</code></li>
+#endif
+#ifndef ANDROID
+              <li><code>third_party/llama.cpp</code></li>
 #endif
               <li><code>js/src/zydis</code> (unless otherwise specified)</li>
               <li><code>js/src/vm/Float16.h</code>(the code contained in the half namespace)</li>
@@ -4883,6 +4899,7 @@ product.
             <ul>
               <li><code>devtools/client/shared/vendor/react-redux.js</code></li>
               <li><code>toolkit/content/vendor/react/react-redux.js</code></li>
+              <li><code>third_party/node/node_modules/react-redux</code></li>
             </ul>
           </td>
           <td>
@@ -4953,6 +4970,7 @@ product.
             <ul>
               <li><code>devtools/client/shared/vendor/redux.js</code></li>
               <li><code>toolkit/content/vendor/react/Redux.sys.mjs</code></li>
+              <li><code>third_party/node/node_modules/redux</code></li>
             </ul>
           </td>
           <td>

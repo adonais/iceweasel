@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_Chacha20_H
 #define __Hacl_Chacha20_H
 
@@ -36,21 +37,23 @@ extern "C" {
 
 void
 Hacl_Chacha20_chacha20_encrypt(
-    uint32_t len,
-    uint8_t *out,
-    uint8_t *text,
-    uint8_t *key,
-    uint8_t *n,
-    uint32_t ctr);
+  uint32_t len,
+  uint8_t *out,
+  uint8_t *text,
+  uint8_t *key,
+  uint8_t *n,
+  uint32_t ctr
+);
 
 void
 Hacl_Chacha20_chacha20_decrypt(
-    uint32_t len,
-    uint8_t *out,
-    uint8_t *cipher,
-    uint8_t *key,
-    uint8_t *n,
-    uint32_t ctr);
+  uint32_t len,
+  uint8_t *out,
+  uint8_t *cipher,
+  uint8_t *key,
+  uint8_t *n,
+  uint32_t ctr
+);
 
 #if defined(__cplusplus)
 }

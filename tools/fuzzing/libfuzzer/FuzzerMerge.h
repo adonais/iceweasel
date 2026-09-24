@@ -64,7 +64,7 @@ struct Merger {
 
   bool Parse(std::istream &IS, bool ParseCoverage);
   bool Parse(const std::string &Str, bool ParseCoverage);
-  void ParseOrExit(std::istream &IS, bool ParseCoverage);
+  int ParseOrExit(std::istream &IS, bool ParseCoverage);
   size_t Merge(const std::set<uint32_t> &InitialFeatures,
                std::set<uint32_t> *NewFeatures,
                const std::set<uint32_t> &InitialCov, std::set<uint32_t> *NewCov,
@@ -78,7 +78,7 @@ struct Merger {
   std::set<uint32_t> AllFeatures() const;
 };
 
-void CrashResistantMerge(const std::vector<std::string> &Args,
+int CrashResistantMerge(const std::vector<std::string> &Args,
                          const std::vector<SizedFile> &OldCorpus,
                          const std::vector<SizedFile> &NewCorpus,
                          std::vector<std::string> *NewFiles,

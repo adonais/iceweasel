@@ -71,8 +71,8 @@ fn derive_variant_arm(
     where_clause: &mut Option<WhereClause>,
 ) -> TokenStream {
     let variant_attrs = cg::parse_variant_attrs_from_ast::<AnimationVariantAttrs>(&variant.ast());
-    let (this_pattern, this_info) = cg::ref_pattern(&variant, "this");
-    let (other_pattern, other_info) = cg::ref_pattern(&variant, "other");
+    let (this_pattern, this_info) = cg::ref_pattern(variant, "this");
+    let (other_pattern, other_info) = cg::ref_pattern(variant, "other");
 
     if variant_attrs.error {
         return quote! {
@@ -80,11 +80,11 @@ fn derive_variant_arm(
         };
     }
 
-    let (result_value, result_info) = cg::value(&variant, "result");
+    let (result_value, result_info) = cg::value(variant, "result");
     let mut computations = quote!();
     let iter = result_info.iter().zip(this_info.iter().zip(&other_info));
     computations.append_all(iter.map(|(result, (this, other))| {
-        let field_attrs = cg::parse_field_attrs::<AnimationFieldAttrs>(&result.ast());
+        let field_attrs = cg::parse_field_attrs::<AnimationFieldAttrs>(result.ast());
         if field_attrs.field_bound {
             let ty = &this.ast().ty;
             cg::add_predicate(

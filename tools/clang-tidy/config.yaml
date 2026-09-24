@@ -4,13 +4,17 @@ target: obj-x86_64-pc-linux-gnu
 # in order to have consistency across the used checkers.
 # All the clang checks used by the static-analysis tools.
 #
-# To add a new checker:
-# 1. Add it in this file
-# 2. Create a C/C++ test case in tools/clang-tidy/test/ reproducing the
-#    warning/error that the checker will detect
-# 3. Run './mach static-analysis autotest -d' to create the reference
-# 4. Check the json file in tools/clang-tidy/test/
-# 5. Commit this file + the .cpp test case + the json result
+# To add a new checker, say `new-checker`:
+# 1. Configure a static analyzer build, using
+# `./mach configure --disable-unified-build --enable-debug --disable-tests`
+# 2. Check that build with your new check, using
+# `./mach static-analysis check --checks='-*,
+# new-checker' --output=clang-tidy.json --format=json`
+# 3. Fix all issues found in `clang-tidy.json`. Running the above with
+# `--fix` may help, depending on the confidence you have in the checker.
+#    Eventually use // NOLINT(new-checker)
+# 4. Add it in this file
+#
 platforms:
   - linux64
   - macosx64

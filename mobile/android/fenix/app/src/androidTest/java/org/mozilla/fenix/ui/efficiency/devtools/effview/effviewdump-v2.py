@@ -242,13 +242,12 @@ def render_v2(json_path, png_path, out_html):
                 "edit" in classname or "textfield" in classname or "input" in classname
             )
 
-            # Generate snippet with groups field
+            # Generate a selector snippet; add typed groups/readiness in the target catalog.
             strat_name = strategy.split()[0].replace("/", "_").replace("-", "_")
             snippet = f'''val MY_ELEMENT = Selector(
     strategy = SelectorStrategy.{strat_name},
     value = "{value}",
     description = "{label}",
-    groups = listOf(),  // e.g., "toolbar", "mainMenu", "requiredForPage"
 )'''
 
             group_info.append({

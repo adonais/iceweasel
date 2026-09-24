@@ -136,6 +136,10 @@ autofill-card-expires-year-2 =
     .label = Expires year
 autofill-card-billing-address-2 =
     .label = Billing address
+# "CVV" is a common abbreviation for the security code printed on a payment
+# card. Use whichever abbreviation is most familiar in your locale.
+autofill-card-security-code =
+    .label = CVV
 autofill-card-network = Card Type
 
 # This string is never actually displayed, but is used to make it easier to

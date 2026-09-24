@@ -71,7 +71,7 @@ class JSWindowActorProtocol final : public JSActorProtocol,
   void AddObservers();
   void RemoveObservers();
   bool Matches(BrowsingContext* aBrowsingContext, nsIURI* aURI,
-               const nsACString& aRemoteType, ErrorResult& aRv);
+               const RemoteType& aRemoteType, ErrorResult& aRv);
 
  private:
   explicit JSWindowActorProtocol(const nsACString& aName)

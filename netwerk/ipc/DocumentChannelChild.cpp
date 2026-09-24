@@ -243,9 +243,9 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     cspToInheritLoadingDocument = do_QueryReferent(ctx);
   }
   nsCOMPtr<nsILoadInfo> loadInfo;
-  MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(aArgs.loadInfo(), NOT_REMOTE_TYPE,
-                                             cspToInheritLoadingDocument,
-                                             getter_AddRefs(loadInfo)));
+  MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(
+      aArgs.loadInfo(), RemoteType::NotRemote(), cspToInheritLoadingDocument,
+      getter_AddRefs(loadInfo)));
 
   mRedirectResolver = std::move(aResolve);
 

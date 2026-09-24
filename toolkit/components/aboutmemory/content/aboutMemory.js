@@ -346,6 +346,12 @@ function appendElement(aP, aTagName, aClassName) {
   return e;
 }
 
+function insertElementAfter(aBefore, aTagName, aClassName) {
+  let e = newElement(aTagName, aClassName);
+  aBefore.after(e);
+  return e;
+}
+
 function appendElementWithText(aP, aTagName, aClassName, aText) {
   let e = appendElement(aP, aTagName, aClassName);
   // Setting textContent clobbers existing children, but there are none.  More
@@ -456,6 +462,11 @@ window.onload = function () {
       updateAboutMemoryFromTwoFiles(filename1, file.mozFullPath);
     }
   );
+
+  let fileInput3 = appendHiddenFileInput(header, "fileInput3", function () {
+    loadCCAndGCLogs([...this.files].map(f => f.mozFullPath));
+  });
+  fileInput3.multiple = true;
 
   const CuDesc = "Measure current memory reports and show.";
   const LdDesc = "Load memory reports from file and show.";
@@ -569,6 +580,13 @@ window.onload = function () {
     saveGCLogAndVerboseCCLog,
     "Save verbose",
     "saveLogsVerbose"
+  );
+  appendButton(
+    row4,
+    GCAndCCAllLogDesc,
+    () => fileInput3.click(),
+    "Load…",
+    "loadLogs"
   );
 
   // Three cases here:
@@ -708,19 +726,742 @@ function doDMD() {
   }
 }
 
+const DEFAULT_NODE_QUERY_CAP = 100;
+const DOWN_ARROW = "\u2193";
+const UP_ARROW = "\u2191";
+const VERTICAL_ELLIPSIS = "\u22EE";
+
+const INSPECTOR_STATE_DEFAULT = "loading";
+const INSPECTOR_STATE_PATH = "path";
+const INSPECTOR_STATE_NODE = "node";
+
+class CollectorLogAnalyzerSection {
+  constructor(log) {
+    this.log = log;
+    this.analyzer = new CollectorLogAnalyzer(
+      this.log.cc || "",
+      this.log.gc || ""
+    );
+    this.nodeQueryCap = DEFAULT_NODE_QUERY_CAP;
+    this.nodeQueryMatches = [];
+    this.inspectorStack = [];
+    this.inspectorStackCursor = -1;
+  }
+
+  async init(container) {
+    this.el = insertElementAfter(container, "div", "ccgcLogAnalyzer");
+
+    await this.doProgressLoop(
+      this.analyzer.init(),
+      () => this.analyzer.getInitProgress(),
+      this.el
+    );
+
+    this.nodesOuter = appendElement(this.el, "div", "nodesOuter");
+    this.nodesSearch = appendElement(
+      this.nodesOuter,
+      "moz-input-search",
+      "nodesSearch"
+    );
+    this.nodesSearch.setAttribute("placeholder", "Search nodes");
+    this.nodesSearch.addEventListener(
+      "MozInputSearch:search",
+      e => {
+        this.queryNodes(e.detail.query);
+      },
+      true
+    );
+
+    this.nodesResults = appendElement(this.nodesOuter, "div", "nodesResults");
+    this.inspector = appendElement(this.el, "div", "inspector");
+    this.pathInspector = appendElement(this.inspector, "div", "pathInspector");
+    this.nodeInspector = appendElement(this.inspector, "div", "nodeInspector");
+
+    this.inspectorBack = appendElement(
+      this.inspector,
+      "div",
+      "navButton inspectorBack"
+    );
+    this.inspectorForward = appendElement(
+      this.inspector,
+      "div",
+      "navButton inspectorForward"
+    );
+    this.inspectorBack.addEventListener("click", () => {
+      this.popInspectorState();
+    });
+    this.inspectorForward.addEventListener("click", () => {
+      this.replayInspectorState();
+    });
+    this.inspectorInfo = appendElement(
+      this.inspector,
+      "div",
+      "navButton inspectorInfo enabled"
+    );
+    this.inspectorLegend = appendElement(
+      this.inspector,
+      "div",
+      "hoverPanel inspectorLegend"
+    );
+    this.inspectorInfo.addEventListener("mouseover", () => {
+      this.inspectorLegend.classList.add("show");
+    });
+    this.inspectorInfo.addEventListener("mouseout", () => {
+      this.inspectorLegend.classList.remove("show");
+    });
+
+    const legendEntries = [
+      [
+        "gc-marked root",
+        "Garbage Collector (GC) Root",
+        `This is typically either a node explicitly registered as a root by
+        Firefox code, or a node living somewhere on the JS stack.`,
+      ],
+      [
+        "cc-managed root",
+        "Reference Counted (CC) Root",
+        `This is a Reference Counted / Cycle Collected (CC) node which has a 
+        reference count greater than the number of references from other nodes 
+        in the graph (i.e. it is a node kept alive by something that the cycle
+        collector doesn't know about.)`,
+      ],
+      [
+        "gc-marked gc-gray soft-root",
+        "GC Gray Root",
+        `This is a root for the GC which belongs to a CC node that could be
+        cleaned up. If we do not have a CC log, root paths will terminate in
+        these nodes, otherwise they will be treated like any other
+        intermediate node in the path.`,
+      ],
+      [
+        "gc-marked",
+        "Black-Marked GC Node",
+        `This is a node which was marked "black" by the GC. This typically
+        means it was reachable from a GC Root. However, there are cases where
+        we mark nodes as black even if they're not reachable, but those should
+        be transient and not a source of long-term leaks.`,
+      ],
+      [
+        "gc-marked gc-gray",
+        "Gray-Marked GC Node",
+        `This is a node which was marked "gray" by the GC. This means it was
+        only reachable through a chain of edges originating in a GC Gray Root.`,
+      ],
+      [
+        "gc-white",
+        "White (Unmarked) GC Node",
+        `This is a node which hasn't been marked by the GC. Due to the way GC
+        logging works, this typically means that a GC hasn't run since this
+        node was created.`,
+      ],
+      [
+        "cc-managed",
+        "CC Node",
+        `This is a node kept alive due to its reference count, and it is the
+        responsibility of the Cycle Collector to clean up it in case it's only
+        kept alive by cyclical references from other nodes.`,
+      ],
+      [
+        "garbage",
+        "Garbage",
+        `This is a node identified as garbage by the cycle collector. It should
+        be freed shortly after the logged cycle collection.`,
+      ],
+    ];
+    let legendTable = appendElement(this.inspectorLegend, "div", "legendTable");
+    for (let entry of legendEntries) {
+      let cssClass = entry[0];
+      let label = entry[1];
+      let explainer = entry[2];
+      let key = appendElement(legendTable, "div", "legendItemKey");
+      appendElement(key, "div", cssClass);
+      appendElementWithText(legendTable, "div", "legendItemLabel", label);
+      appendElementWithText(legendTable, "div", "legendItemDetail", explainer);
+    }
+    this.queryNodes();
+  }
+
+  async doProgressLoop(promise, getProgress, container) {
+    let bar = this.makeProgressBar(container);
+    let magic = {};
+    while (true) {
+      try {
+        let promiseResult = await Promise.race([
+          promise,
+          new Promise(resolve => setTimeout(() => resolve(magic), 100)),
+        ]);
+        if (promiseResult !== magic) {
+          bar.outer.remove();
+          return promiseResult;
+        }
+        bar.inner.style.width = Math.floor(getProgress() * 100.0) + "%";
+      } catch (err) {
+        bar.inner.classList.add("failed");
+        bar.error = appendElementWithText(
+          bar.outer,
+          "div",
+          "progressError",
+          err.toString()
+        );
+        throw err;
+      }
+    }
+  }
+
+  makeProgressBar(container) {
+    let result = {
+      inner: null,
+      outer: null,
+      error: null,
+    };
+    result.outer = appendElement(container, "div", "progressBar");
+    result.inner = appendElement(result.outer, "div", "progressBarFill");
+    result.inner.style.width = "0%";
+    return result;
+  }
+
+  markInspectorLoading() {
+    this.inspector.classList = "inspector loading";
+  }
+
+  addInspectorStackClasses() {
+    if (this.inspectorStackCursor > 0) {
+      this.inspectorBack.classList.add("enabled");
+    } else {
+      this.inspectorBack.classList.remove("enabled");
+    }
+    if (this.inspectorStackCursor < this.inspectorStack.length - 1) {
+      this.inspectorForward.classList.add("enabled");
+    } else {
+      this.inspectorForward.classList.remove("enabled");
+    }
+  }
+
+  pushInspectorState(state) {
+    this.inspectorStack.splice(this.inspectorStackCursor + 1);
+    this.inspectorStackCursor = this.inspectorStack.length;
+    this.inspectorStack.push(state);
+    this.displayInspectorState();
+    this.addInspectorStackClasses();
+  }
+
+  popInspectorState() {
+    if (this.inspectorStackCursor > 0) {
+      this.inspectorStackCursor--;
+      this.displayInspectorState();
+    } else {
+      this.inspectorStackCursor = -1;
+    }
+    this.addInspectorStackClasses();
+  }
+
+  replayInspectorState() {
+    if (this.inspectorStackCursor < this.inspectorStack.length - 1) {
+      this.inspectorStackCursor++;
+      this.displayInspectorState();
+    } else {
+      this.inspectorStackCursor = this.inspectorStack.length - 1;
+    }
+    this.addInspectorStackClasses();
+  }
+
+  displayInspectorState() {
+    const state = this.inspectorStack[this.inspectorStackCursor];
+    this.inspector.classList = `inspector ${state.kind}`;
+    switch (state.kind) {
+      case INSPECTOR_STATE_PATH:
+        this.displayPath(state);
+        break;
+      case INSPECTOR_STATE_NODE:
+        this.displayNode(state);
+        break;
+    }
+  }
+
+  displayPath(state) {
+    this.pathInspector.innerHTML = "";
+    const node = state.node;
+    this.updateFocusedNode(node);
+    const pathToRoot = state.pathToRoot;
+    if (pathToRoot.path.length) {
+      let rootFlagDescriptions = [
+        [CollectorNodeFlags.CC_MANAGED | CollectorNodeFlags.ROOT, "CC Root"],
+        [CollectorNodeFlags.ROOT, "GC Root"],
+        [
+          CollectorNodeFlags.CC_MANAGED | CollectorNodeFlags.SOFT_ROOT,
+          "Soft CC Root",
+        ],
+        [
+          CollectorNodeFlags.GC_GRAY | CollectorNodeFlags.SOFT_ROOT,
+          "Soft GC Root",
+        ],
+      ];
+      let rootNode = pathToRoot.path[0].other;
+      let rootText = null;
+      for (let [flags, text] of rootFlagDescriptions) {
+        if ((rootNode.flags & flags) == flags) {
+          rootText = text;
+          break;
+        }
+      }
+      if (!rootText) {
+        rootText = `Bugged Root (flags: ${rootNode.flags.toString(16)})`;
+      }
+
+      if (pathToRoot.kind == "soft") {
+        appendElementWithText(
+          this.pathInspector,
+          "div",
+          "graphRoot",
+          "No path to hard root"
+        );
+
+        appendElementWithText(
+          this.pathInspector,
+          "div",
+          "edgeArrow",
+          VERTICAL_ELLIPSIS
+        );
+      }
+
+      appendElementWithText(this.pathInspector, "div", "graphRoot", rootText);
+      let weakmapKeys = new Map();
+      for (let wmPath of pathToRoot.weakMapPaths) {
+        weakmapKeys.set(wmPath.key.ptr, wmPath.path);
+      }
+      let prev = null;
+      for (let i = 0; i < pathToRoot.path.length; i++) {
+        let pathNode = pathToRoot.path[i];
+        let other = pathNode.other;
+
+        if (prev && weakmapKeys.has(prev.ptr)) {
+          let wmPath = weakmapKeys.get(prev.ptr);
+          let wmEl = appendElementWithText(
+            this.pathInspector,
+            "div",
+            "weakmapTag",
+            "WeakMap"
+          );
+          wmEl.addEventListener("click", () => {
+            this.pushInspectorState({
+              kind: INSPECTOR_STATE_PATH,
+              node: wmPath[wmPath.length - 1].other,
+              pathToRoot: {
+                path: wmPath,
+                weakMapPaths: pathToRoot.weakMapPaths,
+              },
+            });
+          });
+          appendElementWithText(
+            this.pathInspector,
+            "div",
+            "edgeArrow weakMap",
+            DOWN_ARROW
+          );
+        } else {
+          let edgeArrow = appendElementWithText(
+            this.pathInspector,
+            "div",
+            "edgeArrow",
+            DOWN_ARROW
+          );
+          appendElementWithText(edgeArrow, "div", "edgeLabel", pathNode.label);
+        }
+        this.makeNodeResult(this.pathInspector, other, () =>
+          this.focusNodeInNodeInspector(other)
+        );
+
+        if (i == pathToRoot.path.length - 1) {
+          this.pathInspector.scrollTo({
+            top: this.pathInspector.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+        prev = other;
+      }
+    } else {
+      appendElementWithText(
+        this.pathInspector,
+        "div",
+        "graphRoot",
+        "No path to root"
+      );
+
+      appendElementWithText(
+        this.pathInspector,
+        "div",
+        "edgeArrow",
+        VERTICAL_ELLIPSIS
+      );
+
+      this.makeNodeResult(this.pathInspector, node, () =>
+        this.focusNodeInNodeInspector(node)
+      );
+    }
+  }
+
+  displayAdjacents(adjacents, labelFirst) {
+    if (adjacents.length) {
+      for (let i = 0; i < adjacents.length; i++) {
+        let adjacent = adjacents[i];
+        if (labelFirst) {
+          appendElementWithText(
+            this.nodeInspector,
+            "div",
+            "edgeLabel right",
+            `${adjacent.label}`
+          );
+        }
+        this.makeNodeResult(this.nodeInspector, adjacent.other, () =>
+          this.focusNodeInNodeInspector(adjacent.other)
+        );
+        if (!labelFirst) {
+          appendElementWithText(
+            this.nodeInspector,
+            "div",
+            "edgeLabel",
+            `${adjacent.label}`
+          );
+        }
+      }
+    } else {
+      appendElementWithText(
+        this.nodeInspector,
+        "div",
+        "deadRow",
+        "No known edges"
+      );
+    }
+  }
+
+  displayNode(state) {
+    this.nodeInspector.innerHTML = "";
+
+    this.updateFocusedNode(state.node);
+
+    let nodeEl = this.makeNodeResult(this.nodeInspector, state.node, () =>
+      this.focusNodeInPathInspector(state.node)
+    );
+    nodeEl.classList.add("wide");
+
+    appendElementWithText(
+      this.nodeInspector,
+      "h4",
+      "gridHeader",
+      `Logged edges to this node (${state.adjacents.toSelf.length})`
+    );
+    this.displayAdjacents(state.adjacents.toSelf, false);
+
+    appendElementWithText(
+      this.nodeInspector,
+      "h4",
+      "gridHeader",
+      `Logged edges from this node (${state.adjacents.fromSelf.length})`
+    );
+    this.displayAdjacents(state.adjacents.fromSelf, true);
+  }
+
+  updateFocusedNode(node) {
+    for (let nodeEl of this.nodesResults.querySelectorAll(
+      ".nodesResultsEntry"
+    )) {
+      if (nodeEl.getAttribute("nodeId") != node.ptr) {
+        nodeEl.classList.remove("selected");
+      } else {
+        nodeEl.classList.add("selected");
+      }
+    }
+  }
+
+  async focusNodeInPathInspector(node) {
+    this.markInspectorLoading();
+    let pathToRoot = await this.doProgressLoop(
+      this.analyzer.getPathToRoot(node),
+      () => this.analyzer.getQueryProgress(),
+      this.inspector
+    );
+    this.pushInspectorState({
+      kind: INSPECTOR_STATE_PATH,
+      node,
+      pathToRoot,
+    });
+  }
+
+  async focusNodeInNodeInspector(node) {
+    this.markInspectorLoading();
+    let adjacents = await this.doProgressLoop(
+      this.analyzer.getNodeAdjacents(node),
+      () => this.analyzer.getQueryProgress(),
+      this.inspector
+    );
+    this.pushInspectorState({
+      kind: INSPECTOR_STATE_NODE,
+      node,
+      adjacents,
+    });
+  }
+
+  makeNodeResult(container, node, nodeCallback) {
+    let nodeEl = appendElement(container, "div", "nodesResultsEntry");
+
+    let flagClassMappings = [
+      [CollectorNodeFlags.GARBAGE, "garbage"],
+      [CollectorNodeFlags.INCREMENTAL_ROOT, "incremental-root"],
+      [CollectorNodeFlags.ROOT, "root"],
+      [CollectorNodeFlags.SOFT_ROOT, "soft-root"],
+      [CollectorNodeFlags.CC_MANAGED, "cc-managed"],
+      [CollectorNodeFlags.GC_MARKED, "gc-marked"],
+      [CollectorNodeFlags.GC_GRAY, "gc-gray"],
+    ];
+
+    nodeEl.setAttribute("nodeId", node.ptr);
+
+    for (let [flag, cssClass] of flagClassMappings) {
+      if (node.flags & flag) {
+        nodeEl.classList.add(cssClass);
+      }
+    }
+
+    if (
+      !(
+        node.flags &
+        (CollectorNodeFlags.GC_MARKED | CollectorNodeFlags.CC_MANAGED)
+      )
+    ) {
+      nodeEl.classList.add("gc-white");
+    }
+
+    let labelAndPtr = appendElement(nodeEl, "div", "labelAndPtr");
+    let labelReg = /(?<primary>[^ ]*) (?<secondary>.*)/;
+    let labelMatch = node.label.match(labelReg);
+    let label = labelMatch ? labelMatch.groups.primary : node.label;
+    let desc = labelMatch ? labelMatch.groups.secondary : "";
+
+    appendElementWithText(labelAndPtr, "div", "label", label);
+    let ptr = appendElementWithText(labelAndPtr, "div", "ptr", node.ptr);
+    appendElement(ptr, "div", "copyIcon");
+    let copiedText = appendElementWithText(ptr, "div", "copiedText", "copied");
+    appendElementWithText(nodeEl, "div", "description", desc);
+    appendElement(nodeEl, "div", "copyDescription");
+
+    if (node.referenceCount !== -1) {
+      appendElementWithText(
+        nodeEl,
+        "div",
+        "referenceCount",
+        node.referenceCount
+      );
+    }
+
+    nodeEl.addEventListener("click", e => {
+      if (e.target.classList.contains("copyDescription")) {
+        navigator.clipboard.writeText(desc);
+      } else if (e.target.classList.contains("ptr")) {
+        navigator.clipboard.writeText(node.ptr.replace("0x", ""));
+        copiedText.classList.add("visible");
+        setTimeout(() => {
+          copiedText.classList.remove("visible");
+        }, 0);
+      } else {
+        nodeCallback(nodeEl);
+      }
+    });
+    return nodeEl;
+  }
+
+  showNodes(start) {
+    if (this.showMoreButton) {
+      this.showMoreButton.remove();
+      this.showMoreButton = null;
+    }
+    let i = start;
+    for (; i < this.nodeQueryCap && i < this.nodeQueryMatches.length; i++) {
+      let node = this.nodeQueryMatches[i];
+      this.makeNodeResult(this.nodesResults, node, () =>
+        this.focusNodeInPathInspector(node)
+      );
+    }
+    if (i < this.nodeQueryMatches.length) {
+      this.showMoreButton = appendElementWithText(
+        this.nodesResults,
+        "a",
+        "showMoreButton",
+        "Show more"
+      );
+      this.showMoreButton.addEventListener(
+        "click",
+        () => {
+          let newStart = this.nodeQueryCap;
+          this.nodeQueryCap *= 2;
+          this.showNodes(newStart);
+        },
+        true
+      );
+    }
+  }
+
+  async queryNodes(query) {
+    if (!query || query === "") {
+      this.nodeQueryCap = DEFAULT_NODE_QUERY_CAP;
+      this.nodeQueryMatches = await this.analyzer.sampleNodes();
+      this.showNodes(0);
+      return;
+    }
+
+    this.nodesResults.innerHTML = "";
+    if (query.length) {
+      this.nodeQueryCap = DEFAULT_NODE_QUERY_CAP;
+      this.nodeQueryMatches = await this.analyzer.queryNodes(query);
+      this.showNodes(0);
+    }
+  }
+}
+
+function displayCCGCLogItem(aSection, aLogData) {
+  let name = aLogData.cc || aLogData.gc;
+  if (aLogData.process) {
+    if (aLogData.process.type == "browser") {
+      name = `Main Process (pid ${aLogData.process.pid})`;
+    } else if (
+      aLogData.process.type == "webIsolated" ||
+      aLogData.process.type == "withCoopCoep"
+    ) {
+      name = `${aLogData.process.origin || ""} (pid ${aLogData.process.pid})`;
+    } else if (aLogData.process.type == "webServiceWorker") {
+      name = `${aLogData.process.origin || ""} [service worker] (pid ${aLogData.process.pid})`;
+    } else {
+      name = `${aLogData.process.type} (pid ${aLogData.process.pid})`;
+    }
+  } else if (aLogData.subkey) {
+    name = `pid ${aLogData.pid} [${aLogData.subkey}]`;
+  }
+  let entry = appendElement(aSection, "div", "ccgcLogProcess");
+  let nameAndPaths = appendElement(entry, "div", "ccgcLogProcessNameAndPaths");
+  appendElementWithText(nameAndPaths, "div", "ccgcLogProcessName", name);
+
+  if (aLogData.cc) {
+    appendElementWithText(
+      nameAndPaths,
+      "div",
+      "ccgcLogEntryPath",
+      `CC: ${aLogData.cc}`
+    );
+  } else {
+    let addLink = appendElementWithText(
+      nameAndPaths,
+      "a",
+      "ccgcLogEntryPath",
+      `CC: +add`
+    );
+    let fileInput = appendHiddenFileInput(nameAndPaths, "", () => {
+      const path = fileInput.files[0].mozFullPath;
+      aLogData.cc = path;
+      addLink.textContent = `CC: ${path}`;
+      ccButton.disabled = false;
+    });
+    addLink.addEventListener("click", () => {
+      fileInput.click();
+    });
+  }
+  if (aLogData.gc) {
+    appendElementWithText(
+      nameAndPaths,
+      "div",
+      "ccgcLogEntryPath",
+      `GC: ${aLogData.gc}`
+    );
+  } else {
+    let addLink = appendElementWithText(
+      nameAndPaths,
+      "a",
+      "ccgcLogEntryPath",
+      `GC: +add`
+    );
+    let fileInput = appendHiddenFileInput(nameAndPaths, "", () => {
+      const path = fileInput.files[0].mozFullPath;
+      aLogData.gc = path;
+      addLink.textContent = `GC: ${path}`;
+      gcButton.disabled = false;
+    });
+    addLink.addEventListener("click", () => {
+      fileInput.click();
+    });
+  }
+  let ccButton = appendElementWithText(
+    entry,
+    "button",
+    "ccgcLogCCButton",
+    "CC Log"
+  );
+  let gcButton = appendElementWithText(
+    entry,
+    "button",
+    "ccgcLogGCButton",
+    "GC Log"
+  );
+  let analyzeButton = appendElementWithText(
+    entry,
+    "button",
+    "ccgcLogAnalyzeButton",
+    "Analyze"
+  );
+
+  ccButton.disabled = !aLogData.cc;
+  gcButton.disabled = !aLogData.gc;
+
+  if (aLogData.cc) {
+    ccButton.addEventListener(
+      "click",
+      () => {
+        new nsFile(aLogData.cc).reveal();
+      },
+      true
+    );
+  } else {
+    ccButton.disabled = true;
+  }
+
+  if (aLogData.gc) {
+    gcButton.addEventListener(
+      "click",
+      () => {
+        new nsFile(aLogData.gc).reveal();
+      },
+      true
+    );
+  } else {
+    gcButton.disabled = true;
+  }
+  analyzeButton.addEventListener(
+    "click",
+    async () => {
+      let analyzer = new CollectorLogAnalyzerSection(aLogData);
+      analyzeButton.disabled = true;
+      await analyzer.init(entry);
+    },
+    true
+  );
+}
+
 function dumpGCLogAndCCLog(aVerbose) {
   let dumper = Cc["@mozilla.org/memory-info-dumper;1"].getService(
     Ci.nsIMemoryInfoDumper
   );
 
-  let inProgress = updateMainAndFooter(
+  let section = updateMainAndFooter(
     "Saving logs...",
     NO_TIMESTAMP,
-    HIDE_FOOTER
+    HIDE_FOOTER,
+    "ccgcLogResults"
   );
-  let section = appendElement(gMain, "div", "section");
 
-  function displayInfo(aGCLog, aCCLog) {
+  let logs = [];
+
+  function collectAndDisplayInfo(aGCLog, aCCLog) {
+    logs.push({
+      gc: aGCLog.path,
+      cc: aCCLog.path,
+    });
     appendElementWithText(section, "div", "", "Saved GC log to " + aGCLog.path);
 
     let ccLogType = aVerbose ? "verbose" : "concise";
@@ -733,11 +1474,141 @@ function dumpGCLogAndCCLog(aVerbose) {
   }
 
   dumper.dumpGCAndCCLogsToFile("", aVerbose, /* dumpChildProcesses = */ true, {
-    onDump: displayInfo,
-    onFinish() {
-      inProgress.remove();
+    onDump: collectAndDisplayInfo,
+    async onFinish() {
+      section.innerHTML = "";
+      let main = await ChromeUtils.requestProcInfo();
+      let processes = new Map();
+      processes.set(main.pid, main);
+      for (let child of main.children) {
+        processes.set(child.pid, child);
+      }
+
+      const logFilenameReg = /-edges\.(?<pid>[0-9]+)\.[0-9]+\.log/;
+      for (let log of logs) {
+        let match = null;
+        let proc = null;
+        let pid = -1;
+        if (
+          (match = log.cc?.match(logFilenameReg)) ||
+          (match = log.gc?.match(logFilenameReg))
+        ) {
+          pid = parseInt(match.groups.pid);
+          proc = processes.get(pid);
+        }
+
+        log.pid = pid;
+        log.process = proc;
+      }
+
+      function sortLogs(a, b) {
+        if (!a.process || !b.process) {
+          return !!b.process - !!a.process;
+        }
+
+        const processTypeSortOrder = [
+          "browser",
+          "webIsolated",
+          "withCoopCoep",
+          "webServiceWorker",
+          "web",
+          "privilegedabout",
+          "extension",
+        ];
+        const aTypeSort = processTypeSortOrder.indexOf(a.process.type);
+        const bTypeSort = processTypeSortOrder.indexOf(b.process.type);
+
+        if (aTypeSort != bTypeSort) {
+          if (aTypeSort == -1) {
+            return 1;
+          }
+          if (bTypeSort == -1) {
+            return -1;
+          }
+          return aTypeSort - bTypeSort;
+        }
+
+        return a.process.memory - b.process.memory;
+      }
+
+      logs.sort((a, b) => sortLogs(a, b));
+
+      section.textContent = "";
+
+      let tabMap = new Map();
+      for (let win of Services.wm.getEnumerator("navigator:browser")) {
+        let tabbrowser = win.gBrowser;
+        for (let browser of tabbrowser.browsers) {
+          let id = browser.outerWindowID; // May be `null` if the browser isn't loaded yet
+          if (id != null) {
+            tabMap.set(id, browser);
+          }
+        }
+        if (tabbrowser.preloadedBrowser) {
+          let browser = tabbrowser.preloadedBrowser;
+          if (browser.outerWindowID) {
+            tabMap.set(browser.outerWindowID, browser);
+          }
+        }
+      }
+
+      for (let log of logs) {
+        displayCCGCLogItem(section, log);
+      }
     },
   });
+}
+
+function loadCCAndGCLogs(filepaths) {
+  let section = updateMainAndFooter(
+    "Saving logs...",
+    NO_TIMESTAMP,
+    HIDE_FOOTER,
+    "ccgcLogResults"
+  );
+  section.innerHTML = "";
+
+  const filepathReg =
+    /(?:\/|\\)(?<tag>cc|gc)-edges\.(?<pid>\d+)(?:-(?<index>\d+))?(?:\.(?<timestamp>\d+))?\.log$/;
+  const byPid = {};
+  const unrecognizedLogs = [];
+  for (let filepath of filepaths) {
+    let match = filepath.match(filepathReg);
+    if (match) {
+      const pid = match.groups.pid;
+      const timestamp = match.groups.timestamp;
+      const index = match.groups.index;
+      byPid[pid] = byPid[pid] || {};
+
+      let subkey = "0";
+      if (timestamp) {
+        subkey = timestamp;
+      } else if (index) {
+        subkey = index;
+      }
+      byPid[pid][subkey] = byPid[pid][subkey] || {
+        pid,
+        subkey,
+      };
+      if (match.groups.tag == "cc") {
+        byPid[pid][subkey].cc = filepath;
+      } else {
+        byPid[pid][subkey].gc = filepath;
+      }
+    } else {
+      unrecognizedLogs.push({
+        cc: filepath,
+      });
+    }
+  }
+
+  for (let log of Object.values(byPid).flatMap(Object.values)) {
+    displayCCGCLogItem(section, log);
+  }
+
+  for (let log of unrecognizedLogs) {
+    displayCCGCLogItem(section, log);
+  }
 }
 
 /**
@@ -905,7 +1776,7 @@ function updateAboutMemoryFromJSONString(aStr) {
  *        The function to call and pass the read string to upon completion.
  */
 function loadMemoryReportsFromFile(aFilename, aTitleNote, aFn) {
-  updateMainAndFooter("Loading...", NO_TIMESTAMP, HIDE_FOOTER);
+  updateMainAndFooter("Loading…", NO_TIMESTAMP, HIDE_FOOTER);
 
   try {
     let reader = new FileReader();

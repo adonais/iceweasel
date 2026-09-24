@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -207,7 +208,8 @@ ReceiveAudioStream::ReceiveAudioStream(
       {VideoTestConstants::kAudioSendPayloadType, {"opus", 48000, 2}}};
   recv_config.sync_group = config.render.sync_group;
   receiver_->SendTask([&] {
-    receive_stream_ = receiver_->call_->CreateAudioReceiveStream(recv_config);
+    receive_stream_ =
+        receiver_->call_->CreateAudioReceiveStream(std::move(recv_config));
   });
 }
 ReceiveAudioStream::~ReceiveAudioStream() {

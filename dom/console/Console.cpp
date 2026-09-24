@@ -46,7 +46,6 @@
 #include "nsIException.h"  // for nsIStackFrame
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILoadContext.h"
-#include "nsISensitiveInfoHiddenURI.h"
 #include "nsISupportsPrimitives.h"
 #include "nsIWebNavigation.h"
 #include "nsIXPConnect.h"
@@ -1719,21 +1718,9 @@ bool Console::PopulateConsoleNotificationInTheTargetScope(
 
   event.mConsoleID = aData->mConsoleID;
   event.mLevel = aData->mMethodString;
-  event.mFilename = frame.mFilename;
   event.mPrefix = aData->mPrefix;
 
-  nsCOMPtr<nsIURI> filenameURI;
-  nsAutoCString pass;
-  if (NS_IsMainThread() &&
-      NS_SUCCEEDED(NS_NewURI(getter_AddRefs(filenameURI), frame.mFilename)) &&
-      NS_SUCCEEDED(filenameURI->GetPassword(pass)) && !pass.IsEmpty()) {
-    nsCOMPtr<nsISensitiveInfoHiddenURI> safeURI =
-        do_QueryInterface(filenameURI);
-    nsAutoCString spec;
-    if (safeURI && NS_SUCCEEDED(safeURI->GetSensitiveInfoHiddenSpec(spec))) {
-      event.mFilename = spec;
-    }
-  }
+  NS_GetSanitizedSpecFromSpec(frame.mFilename, event.mFilename);
 
   event.mSourceId = frame.mSourceId;
   event.mLineNumber = frame.mLineNumber;

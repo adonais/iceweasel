@@ -210,6 +210,45 @@ async function getPanelItemForView(items, view) {
   return items.find(item => item.textContent.trim() === target?.label);
 }
 
+add_task(async function test_switcher_label_for_tool_missing_from_pref() {
+  // A panel can be opened without being one of the enabled tools, e.g. with the
+  // keyboard shortcut or the View menu and we don't want to show an empty string.
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.main.tools", "syncedtabs,history"]],
+  });
+
+  info("Open the bookmarks panel while bookmarks isn't an enabled tool.");
+  await SidebarController.show("viewBookmarksSidebar");
+  await SidebarController.waitUntilStable();
+
+  const switcher = await getPanelSwitcher("viewBookmarksSidebar");
+  const labelEl = switcher.shadowRoot.querySelector(".switcher-label");
+  await BrowserTestUtils.waitForMutationCondition(
+    labelEl,
+    { childList: true, characterData: true, subtree: true },
+    () => !!switcher.label
+  );
+
+  const [message] = await document.l10n.formatMessages([
+    { id: "sidebar-menu-bookmarks-label" },
+  ]);
+  const expectedLabel = message.attributes.find(a => a.name === "label").value;
+  Assert.equal(
+    switcher.label,
+    expectedLabel,
+    "Switcher is labelled with the bookmarks panel name"
+  );
+  Assert.equal(
+    labelEl.textContent.trim(),
+    expectedLabel,
+    "Switcher button renders the bookmarks panel name"
+  );
+
+  SidebarController.hide();
+  await SidebarController.waitUntilStable();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_close_button_preserves_panel() {
   info("Open the bookmarks panel.");
   await SidebarController.show("viewBookmarksSidebar");

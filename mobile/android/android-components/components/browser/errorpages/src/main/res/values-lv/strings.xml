@@ -9,6 +9,16 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">Mēģināt vēlreiz</string>
+  <!--
+    The text shown underneath the archive button, explaining what the button does. The %1$s will be replaced by
+    the app name and %2$s will be replaced by the name of the archive service as a link
+  -->
+  <string name="mozac_browser_errorpages_archive_description">%1$s var uzmeklēt šīs lapas agrāku versiju ar Internet Archive %2$s.</string>
+  <!--
+    The name of the Internet Archive service, shown as a link at the end of
+    mozac_browser_errorpages_archive_description.
+  -->
+  <string name="mozac_browser_errorpages_archive_wayback_machine">Wayback Machine</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Nevar pabeigt pieprasījumu</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -19,6 +29,8 @@
   <string name="mozac_browser_errorpages_security_bad_cert_advanced">Paplašināti…</string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_back">Doties atpakaļ (ieteicams)</string>
+  <!-- The text shown inside the advanced options button used to bypass the invalid SSL certificate. It's only shown if the user has expanded the advanced options. -->
+  <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">Pieņemt apdraudējumu un turpināt</string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">Paplašināti…</string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
@@ -35,4 +47,6 @@
   <string name="mozac_browser_errorpages_no_internet_error_code">Kļūdas kods: NS_ERROR_OFFLINE</string>
   <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>Pārlūks ir konfigurēts izmantot starpniekserveri, bet starpniekserveris atteica savienojumu.</p>\n<ul>\n<li>Vai pārlūka starpniekservera konfigurācija ir pareiza? Jāpārbauda iestatījumi un jāmēģina vēlreiz.</li>\n<li>Vai starpniekservera pakalpojums atļauj savienojumus no šī tīkla?</li>\n<li>Joprojām ir sarežģījumi? Jāsazinās ar tīkla pārvaldītāju vai interneta pakalpojuma sniedzēju, lai iegūtu palīdzību.</li>\n</ul>]]></string>
   <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>Pārlūks ir konfigurēts izmantot starpniekserveri, bet to nevarēja atrast.</p>\n<ul>\n<li>Vai pārlūka starpniekservera konfigurācija ir pareiza? Jāpārbauda iestatījumi un jāmēģina vēlreiz.</li>\n<li>Vai ierīce ir savienota ar darbīgu tīklu?</li>\n<li>Joprojām ir sarežģījumi? Jāsazinās ar tīkla pārvaldītāju vai interneta pakalpojuma sniedzēju, lai iegūtu palīdzību.</li>\n</ul>]]></string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
+  <string name="mozac_browser_errorpages_httpsonly_button">Doties uz HTTP vietni</string>
 </resources>

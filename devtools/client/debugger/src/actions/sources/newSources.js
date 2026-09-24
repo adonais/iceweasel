@@ -29,7 +29,6 @@ import { createLocation } from "../../utils/location";
 import {
   getBlackBoxRanges,
   getSource,
-  getSourceFromId,
   hasSourceActor,
   getPendingSelectedLocation,
   getPendingBreakpointsForSource,
@@ -287,21 +286,12 @@ export function newOriginalSources(originalSourcesInfo) {
   };
 }
 
-// Wrapper around newGeneratedSources, only used by tests
-export function newGeneratedSource(sourceInfo) {
-  return async ({ dispatch }) => {
-    const sources = await dispatch(newGeneratedSources([sourceInfo]));
-    return sources[0];
-  };
-}
-
 export function newGeneratedSources(sourceResources) {
   return async ({ dispatch, getState }) => {
     if (!sourceResources.length) {
-      return [];
+      return;
     }
 
-    const resultIds = [];
     const newSourcesObj = {};
     const newSourceActors = [];
 
@@ -331,8 +321,6 @@ export function newGeneratedSources(sourceResources) {
           )
         );
       }
-
-      resultIds.push(id);
     }
 
     const newSources = Object.values(newSourcesObj);
@@ -373,8 +361,6 @@ export function newGeneratedSources(sourceResources) {
         );
       }
     })();
-
-    return resultIds.map(id => getSourceFromId(getState(), id));
   };
 }
 

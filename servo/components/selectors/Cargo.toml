@@ -8,7 +8,7 @@ repository = "https://github.com/servo/stylo"
 readme = "README.md"
 keywords = ["css", "selectors"]
 license = "MPL-2.0"
-edition = "2021"
+edition = "2024"
 
 [lib]
 name = "selectors"
@@ -22,6 +22,7 @@ to_shmem = ["dep:to_shmem", "dep:to_shmem_derive"]
 bitflags = "2"
 cssparser = "0.38"
 derive_more = { version = "2", features = ["add", "add_assign"] }
+hashbrown = "0.17"
 rustc-hash = "2.1.1"
 log = "0.4"
 precomputed-hash = "0.1"

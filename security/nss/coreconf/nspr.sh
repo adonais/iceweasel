@@ -21,10 +21,51 @@ nspr_set_flags()
     nspr_ldflags="$LDFLAGS $@"
 }
 
+# Echo the path from $2 to $1, given two absolute, symlink-free directories.
+# Falls back to $1 unchanged if the two share no directory below the root.
+nspr_relative_path()
+{
+    local src="$1" base="$2" up= shared=0 src_top base_top rel
+    while true; do
+        src_top="${src#/}"; src_top="${src_top%%/*}"
+        base_top="${base#/}"; base_top="${base_top%%/*}"
+        [ -n "$src_top" ] && [ "$src_top" = "$base_top" ] || break
+        src="${src#"/$src_top"}"
+        base="${base#"/$base_top"}"
+        shared=1
+    done
+    if [ "$shared" = 0 ]; then
+        echo "$src"
+        return
+    fi
+    while [ -n "${base#/}" ]; do
+        base="${base%/*}"
+        up="../$up"
+    done
+    rel="$up${src#/}"
+    rel="${rel%/}"
+    echo "${rel:-.}"
+}
+
 nspr_build()
 {
-    local nspr_dir="$cwd"/../nspr/$target
+    # NSPR is built out of tree, into the dist it is installed into. Several
+    # NSS checkouts routinely share one NSPR source tree, so an in-tree object
+    # directory makes their builds clobber each other; keying it to the dist
+    # also keeps separate --dist trees from one checkout independent.
+    local nspr_src nspr_dir
+    nspr_src=$(cd "$cwd"/../nspr && pwd -P)
+    nspr_dir="$dist_dir"/nspr/$target
     mkdir -p "$nspr_dir"
+
+    # NSPR's configure copies the path it was invoked by straight into
+    # topsrcdir, srcdir and VPATH in every makefile it generates, so that path
+    # has to be one the make that runs next can resolve. On Windows the shell
+    # is MSYS but make is a native Windows program, and the two disagree about
+    # absolute paths ("/d/x" versus "D:/x"); a relative path is read the same
+    # way by both.
+    local nspr_configure
+    nspr_configure=$(nspr_relative_path "$nspr_src" "$nspr_dir")/configure
 
     # These NSPR options are directory-specific, so they don't need to be
     # included in nspr_opt and changing them doesn't force a rebuild of NSPR.
@@ -51,7 +92,7 @@ nspr_build()
 
     CFLAGS="$nspr_cflags" CXXFLAGS="$nspr_cxxflags" \
           LDFLAGS="$nspr_ldflags" HOST_CC="$HOST_CC" CC="$CC" CXX="$CCC" \
-          run_verbose ../configure "${extra_params[@]}" "$@"
+          run_verbose "$nspr_configure" "${extra_params[@]}" "$@"
     popd >/dev/null
     echo "NSPR [2/5] make ..."
     run_verbose make -C "$nspr_dir"
@@ -76,7 +117,7 @@ nspr_build()
 
 nspr_clean()
 {
-    rm -rf "$cwd"/../nspr/$target
+    rm -rf "$dist_dir"/nspr/$target
 }
 
 set_nspr_path()

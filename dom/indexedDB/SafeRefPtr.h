@@ -256,7 +256,6 @@ class MOZ_IS_REFPTR MOZ_TRIVIAL_ABI SafeRefPtr {
   }
 
   bool operator==(const SafeRefPtr<T>& aOther) const = default;
-  bool operator!=(const SafeRefPtr<T>& aOther) const = default;
 
   template <typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
   SafeRefPtr<U> downcast() && {

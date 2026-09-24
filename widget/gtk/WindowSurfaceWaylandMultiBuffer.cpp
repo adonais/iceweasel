@@ -59,7 +59,7 @@ namespace mozilla::widget {
         |       |  | WaylandBufferSHM    |      |
         |       |  |                     |      |
         |       |  | ------------------- |      |
-        |       |  | |  WaylandShmPool | |      |
+        |       |  | |  SHMBufSurface  | |      |
         |       |  | ------------------- |      |
         |       |  -----------------------      |
         |       |                               |
@@ -67,7 +67,7 @@ namespace mozilla::widget {
         |       |  | WaylandBufferSHM    |      |
         |       |  |                     |      |
         |       |  | ------------------- |      |
-        |       |  | |  WaylandShmPool | |      |
+        |       |  | |  SHMBufSurface  | |      |
         |       |  | ------------------- |      |
         |       |  -----------------------      |
         |       ---------------------------------
@@ -80,7 +80,7 @@ namespace mozilla::widget {
   |  | WaylandBufferSHM    |      |
   |  |                     |      |
   |  | ------------------- |      |
-  |  | |  WaylandShmPool | |      |
+  |  | |  SHMBufSurface  | |      |
   |  | ------------------- |      |
   |  -----------------------      |
   |                               |
@@ -88,7 +88,7 @@ namespace mozilla::widget {
   |  | WaylandBufferSHM    |      |
   |  |                     |      |
   |  | ------------------- |      |
-  |  | |  WaylandShmPool | |      |
+  |  | |  SHMBufSurface  | |      |
   |  | ------------------- |      |
   |  -----------------------      |
   ---------------------------------
@@ -133,12 +133,12 @@ utilises two wl_buffers which are cycled. One is filed with data by application
 and one is rendered by compositor.
 
 WaylandBufferSHM is implemented by shared memory (shm).
-It owns wl_buffer object, owns WaylandShmPool
+It owns wl_buffer object, owns SHMBufSurface
 (which provides the shared memory) and ties them together.
 
-WaylandShmPool
+SHMBufSurface
 
-WaylandShmPool acts as a manager of shared memory for WaylandBufferSHM.
+SHMBufSurface acts as a manager of shared memory for WaylandBufferSHM.
 Allocates it, holds reference to it and releases it.
 
 We allocate shared memory (shm) by mmap(..., MAP_SHARED,...) as an interface
@@ -242,7 +242,7 @@ void WindowSurfaceWaylandMB::HandlePartialUpdate(
         mozilla::gfx::CreateDataSourceSurfaceFromData(
             mFrontBuffer->GetSize().ToUnknownSize(),
             mFrontBuffer->GetSurfaceFormat(),
-            (const uint8_t*)mFrontBuffer->GetShmPool()->GetImageData(),
+            (const uint8_t*)mFrontBuffer->GetImageData(),
             mFrontBuffer->GetSize().width *
                 BytesPerPixel(mFrontBuffer->GetSurfaceFormat()));
     RefPtr<DrawTarget> dt = mInProgressBuffer->Lock();

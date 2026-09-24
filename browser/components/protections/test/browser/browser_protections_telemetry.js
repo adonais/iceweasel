@@ -80,6 +80,27 @@ add_setup(async function () {
   });
 });
 
+// Waits until the security.ui.protections Glean event named `name` has recorded
+// exactly `count` events, and resolves with all of them in recording order.
+// Events are recorded in the content process, so child data has to be flushed
+// into the parent before it can be read back.
+function waitForProtectionsEvents(name, count) {
+  info(`waiting for ${count} ${name} event(s)`);
+  return TestUtils.waitForCondition(async () => {
+    await Services.fog.testFlushAllChildren();
+    let events = Glean.securityUiProtections[name].testGetValue();
+    info(`got ${events ? events.length : 0} ${name} event(s)`);
+    return events?.length === count ? events : null;
+  }, `waiting for ${count} ${name} event(s)`);
+}
+
+async function clearProtectionsEvents() {
+  // Flush first, so events still in flight from a previous task are discarded
+  // by the reset rather than landing in the middle of the next one.
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+}
+
 add_task(async function checkTelemetryLoadEvents() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -92,78 +113,22 @@ add_task(async function checkTelemetryLoadEvents() {
   await addArbitraryTimeout();
 
   // Clear everything.
-  Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    return !events || !events.length;
-  });
+  await clearProtectionsEvents();
 
   let tab = await BrowserTestUtils.openNewForegroundTab({
     url: "about:protections",
     gBrowser,
   });
 
-  let loadEvents = await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    if (events && events.length) {
-      events = events.filter(
-        e => e[1] == "security.ui.protections" && e[2] == "show"
-      );
-      if (events.length == 1) {
-        return events;
-      }
-    }
-    return null;
-  }, "recorded telemetry for showing the report");
-
+  let loadEvents = await waitForProtectionsEvents("showProtectionReport", 1);
   is(loadEvents.length, 1, `recorded telemetry for showing the report`);
-  await BrowserTestUtils.reloadTab(tab);
-  loadEvents = await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    if (events && events.length) {
-      events = events.filter(
-        e => e[1] == "security.ui.protections" && e[2] == "close"
-      );
-      if (events.length == 1) {
-        return events;
-      }
-    }
-    return null;
-  }, "recorded telemetry for closing the report");
 
+  await BrowserTestUtils.reloadTab(tab);
+  loadEvents = await waitForProtectionsEvents("closeProtectionReport", 1);
   is(loadEvents.length, 1, `recorded telemetry for closing the report`);
 
   await BrowserTestUtils.removeTab(tab);
 });
-
-function waitForTelemetryEventCount(count) {
-  info("waiting for telemetry event count of " + count);
-  return TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      false
-    ).content;
-    if (!events) {
-      return null;
-    }
-    // Ignore irrelevant events from other parts of the browser.
-    events = events.filter(e => e[1] == "security.ui.protections");
-    info("got " + (events && events.length) + " events");
-    if (events.length == count) {
-      return events;
-    }
-    return null;
-  }, "waiting for telemetry event count of: " + count);
-}
 
 let addArbitraryTimeout = async () => {
   // There's an arbitrary interval of 2 seconds in which the content
@@ -186,14 +151,7 @@ add_task(async function checkTelemetryClickEvents() {
   await addArbitraryTimeout();
 
   // Clear everything.
-  Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    return !events || !events.length;
-  });
+  await clearProtectionsEvents();
 
   let tab = await BrowserTestUtils.openNewForegroundTab({
     url: "about:protections",
@@ -217,17 +175,10 @@ add_task(async function checkTelemetryClickEvents() {
     managePasswordsButton.click();
   });
 
-  let events = await waitForTelemetryEventCount(4);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "lw_open_button" &&
-      e[4] == "manage_passwords"
-  );
+  let events = await waitForProtectionsEvents("clickLwOpenButton", 1);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "manage_passwords",
     `recorded telemetry for lw_open_button when there are no breached passwords`
   );
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -251,17 +202,10 @@ add_task(async function checkTelemetryClickEvents() {
     managePasswordsButton.click();
   });
 
-  events = await waitForTelemetryEventCount(7);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "lw_open_button" &&
-      e[4] == "manage_breached_passwords"
-  );
+  events = await waitForProtectionsEvents("clickLwOpenButton", 2);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "manage_breached_passwords",
     `recorded telemetry for lw_open_button when there are breached passwords`
   );
   AboutProtectionsParent.setTestOverride(null);
@@ -284,17 +228,10 @@ add_task(async function checkTelemetryClickEvents() {
     savePasswordsButton.click();
   });
 
-  events = await waitForTelemetryEventCount(10);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "lw_open_button" &&
-      e[4] == "save_passwords"
-  );
+  events = await waitForProtectionsEvents("clickLwOpenButton", 3);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "save_passwords",
     `recorded telemetry for lw_open_button when there are no stored passwords`
   );
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -307,14 +244,7 @@ add_task(async function checkTelemetryClickEvents() {
     lockwiseAboutLink.click();
   });
 
-  events = await waitForTelemetryEventCount(11);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "lw_about_link"
-  );
+  events = await waitForProtectionsEvents("clickLwAboutLink", 1);
   is(events.length, 1, `recorded telemetry for lw_about_link`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -325,14 +255,7 @@ add_task(async function checkTelemetryClickEvents() {
     monitorAboutLink.click();
   });
 
-  events = await waitForTelemetryEventCount(12);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_about_link"
-  );
+  events = await waitForProtectionsEvents("clickMtrAboutLink", 1);
   is(events.length, 1, `recorded telemetry for mtr_about_link`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -343,14 +266,7 @@ add_task(async function checkTelemetryClickEvents() {
     signUpForMonitorLink.click();
   });
 
-  events = await waitForTelemetryEventCount(13);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_signup_button"
-  );
+  events = await waitForProtectionsEvents("clickMtrSignupButton", 1);
   is(events.length, 1, `recorded telemetry for mtr_signup_button`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -361,16 +277,12 @@ add_task(async function checkTelemetryClickEvents() {
     socialLearnMoreLink.click();
   });
 
-  events = await waitForTelemetryEventCount(14);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "trackers_about_link" &&
-      e[4] == "social"
+  events = await waitForProtectionsEvents("clickTrackersAboutLink", 1);
+  is(
+    events.at(-1).extra.value,
+    "social",
+    `recorded telemetry for social trackers_about_link`
   );
-  is(events.length, 1, `recorded telemetry for social trackers_about_link`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const cookieLearnMoreLink = await ContentTaskUtils.waitForCondition(() => {
@@ -380,16 +292,12 @@ add_task(async function checkTelemetryClickEvents() {
     cookieLearnMoreLink.click();
   });
 
-  events = await waitForTelemetryEventCount(15);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "trackers_about_link" &&
-      e[4] == "cookie"
+  events = await waitForProtectionsEvents("clickTrackersAboutLink", 2);
+  is(
+    events.at(-1).extra.value,
+    "cookie",
+    `recorded telemetry for cookie trackers_about_link`
   );
-  is(events.length, 1, `recorded telemetry for cookie trackers_about_link`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const trackerLearnMoreLink = await ContentTaskUtils.waitForCondition(() => {
@@ -399,18 +307,10 @@ add_task(async function checkTelemetryClickEvents() {
     trackerLearnMoreLink.click();
   });
 
-  events = await waitForTelemetryEventCount(16);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "trackers_about_link" &&
-      e[4] == "tracker"
-  );
+  events = await waitForProtectionsEvents("clickTrackersAboutLink", 3);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "tracker",
     `recorded telemetry for content tracker trackers_about_link`
   );
 
@@ -425,18 +325,10 @@ add_task(async function checkTelemetryClickEvents() {
     fingerprinterLearnMoreLink.click();
   });
 
-  events = await waitForTelemetryEventCount(17);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "trackers_about_link" &&
-      e[4] == "fingerprinter"
-  );
+  events = await waitForProtectionsEvents("clickTrackersAboutLink", 4);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "fingerprinter",
     `recorded telemetry for fingerprinter trackers_about_link`
   );
 
@@ -451,18 +343,10 @@ add_task(async function checkTelemetryClickEvents() {
     cryptominerLearnMoreLink.click();
   });
 
-  events = await waitForTelemetryEventCount(18);
-
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "trackers_about_link" &&
-      e[4] == "cryptominer"
-  );
+  events = await waitForProtectionsEvents("clickTrackersAboutLink", 5);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "cryptominer",
     `recorded telemetry for cryptominer trackers_about_link`
   );
 
@@ -474,15 +358,12 @@ add_task(async function checkTelemetryClickEvents() {
     protectionSettings.click();
   });
 
-  events = await waitForTelemetryEventCount(19);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "settings_link" &&
-      e[4] == "header-settings"
+  events = await waitForProtectionsEvents("clickSettingsLink", 1);
+  is(
+    events.at(-1).extra.value,
+    "header-settings",
+    `recorded telemetry for settings_link header-settings`
   );
-  is(events.length, 1, `recorded telemetry for settings_link header-settings`);
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -498,17 +379,10 @@ add_task(async function checkTelemetryClickEvents() {
     customProtectionSettings.click();
   });
 
-  events = await waitForTelemetryEventCount(20);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "settings_link" &&
-      e[4] == "custom-card-settings"
-  );
+  events = await waitForProtectionsEvents("clickSettingsLink", 2);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "custom-card-settings",
     `recorded telemetry for settings_link custom-card-settings`
   );
   await BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -538,15 +412,12 @@ add_task(async function checkTelemetryClickEvents() {
     resolveBreachesButton.click();
   });
 
-  events = await waitForTelemetryEventCount(23);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "resolve_breaches"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 1);
+  is(
+    events.at(-1).extra.value,
+    "resolve_breaches",
+    `recorded telemetry for resolve breaches button`
   );
-  is(events.length, 1, `recorded telemetry for resolve breaches button`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const monitorKnownBreachesBlock = await ContentTaskUtils.waitForCondition(
@@ -559,15 +430,12 @@ add_task(async function checkTelemetryClickEvents() {
     monitorKnownBreachesBlock.click();
   });
 
-  events = await waitForTelemetryEventCount(24);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "known_resolved_breaches"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 2);
+  is(
+    events.at(-1).extra.value,
+    "known_resolved_breaches",
+    `recorded telemetry for monitor known breaches block`
   );
-  is(events.length, 1, `recorded telemetry for monitor known breaches block`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const monitorExposedPasswordsBlock =
@@ -580,17 +448,10 @@ add_task(async function checkTelemetryClickEvents() {
     monitorExposedPasswordsBlock.click();
   });
 
-  events = await waitForTelemetryEventCount(25);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "exposed_passwords_unresolved_breaches"
-  );
+  events = await waitForProtectionsEvents("clickMtrReportLink", 3);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "exposed_passwords_unresolved_breaches",
     `recorded telemetry for monitor exposed passwords block`
   );
 
@@ -616,15 +477,12 @@ add_task(async function checkTelemetryClickEvents() {
     manageBreachesButton.click();
   });
 
-  events = await waitForTelemetryEventCount(28);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "manage_breaches"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 4);
+  is(
+    events.at(-1).extra.value,
+    "manage_breaches",
+    `recorded telemetry for manage breaches button`
   );
-  is(events.length, 1, `recorded telemetry for manage breaches button`);
 
   // All breaches are resolved.
   AboutProtectionsParent.setTestOverride(
@@ -647,15 +505,12 @@ add_task(async function checkTelemetryClickEvents() {
     viewReportButton.click();
   });
 
-  events = await waitForTelemetryEventCount(31);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "view_report"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 5);
+  is(
+    events.at(-1).extra.value,
+    "view_report",
+    `recorded telemetry for view report button`
   );
-  is(events.length, 1, `recorded telemetry for view report button`);
 
   // No breaches are present.
   AboutProtectionsParent.setTestOverride(
@@ -678,15 +533,12 @@ add_task(async function checkTelemetryClickEvents() {
     viewReportButton.click();
   });
 
-  events = await waitForTelemetryEventCount(34);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "view_report"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 6);
+  is(
+    events.at(-1).extra.value,
+    "view_report",
+    `recorded telemetry for view report button`
   );
-  is(events.length, 2, `recorded telemetry for view report button`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const monitorEmailBlock = await ContentTaskUtils.waitForCondition(() => {
@@ -696,15 +548,12 @@ add_task(async function checkTelemetryClickEvents() {
     monitorEmailBlock.click();
   });
 
-  events = await waitForTelemetryEventCount(35);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "stored_emails"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 7);
+  is(
+    events.at(-1).extra.value,
+    "stored_emails",
+    `recorded telemetry for monitor email block`
   );
-  is(events.length, 1, `recorded telemetry for monitor email block`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const monitorKnownBreachesBlock = await ContentTaskUtils.waitForCondition(
@@ -717,15 +566,12 @@ add_task(async function checkTelemetryClickEvents() {
     monitorKnownBreachesBlock.click();
   });
 
-  events = await waitForTelemetryEventCount(36);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "known_unresolved_breaches"
+  events = await waitForProtectionsEvents("clickMtrReportLink", 8);
+  is(
+    events.at(-1).extra.value,
+    "known_unresolved_breaches",
+    `recorded telemetry for monitor known breaches block`
   );
-  is(events.length, 1, `recorded telemetry for monitor known breaches block`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
     const monitorExposedPasswordsBlock =
@@ -738,17 +584,10 @@ add_task(async function checkTelemetryClickEvents() {
     monitorExposedPasswordsBlock.click();
   });
 
-  events = await waitForTelemetryEventCount(37);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "mtr_report_link" &&
-      e[4] == "exposed_passwords_all_breaches"
-  );
+  events = await waitForProtectionsEvents("clickMtrReportLink", 9);
   is(
-    events.length,
-    1,
+    events.at(-1).extra.value,
+    "exposed_passwords_all_breaches",
     `recorded telemetry for monitor exposed passwords block`
   );
 
@@ -788,14 +627,7 @@ add_task(async function checkTelemetryLoadEventForEntrypoint() {
   await addArbitraryTimeout();
 
   // Clear everything.
-  Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    return !events || !events.length;
-  });
+  await clearProtectionsEvents();
 
   info("Typo in 'entrypoint' should not be recorded");
   let tab = await BrowserTestUtils.openNewForegroundTab({
@@ -803,28 +635,10 @@ add_task(async function checkTelemetryLoadEventForEntrypoint() {
     gBrowser,
   });
 
-  let loadEvents = await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    if (events && events.length) {
-      events = events.filter(
-        e =>
-          e[1] == "security.ui.protections" &&
-          e[2] == "show" &&
-          e[4] == "direct"
-      );
-      if (events.length == 1) {
-        return events;
-      }
-    }
-    return null;
-  }, "recorded telemetry for showing the report contains default 'direct' entrypoint");
-
+  let loadEvents = await waitForProtectionsEvents("showProtectionReport", 1);
   is(
-    loadEvents.length,
-    1,
+    loadEvents.at(-1).extra.value,
+    "direct",
     `recorded telemetry for showing the report contains default 'direct' entrypoint`
   );
 
@@ -835,26 +649,10 @@ add_task(async function checkTelemetryLoadEventForEntrypoint() {
     gBrowser,
   });
 
-  loadEvents = await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    if (events && events.length) {
-      events = events.filter(
-        e =>
-          e[1] == "security.ui.protections" && e[2] == "show" && e[4] == "page"
-      );
-      if (events.length == 1) {
-        return events;
-      }
-    }
-    return null;
-  }, "recorded telemetry for showing the report contains correct entrypoint");
-
+  loadEvents = await waitForProtectionsEvents("showProtectionReport", 2);
   is(
-    loadEvents.length,
-    1,
+    loadEvents.at(-1).extra.value,
+    "page",
     "recorded telemetry for showing the report contains correct entrypoint"
   );
 
@@ -871,14 +669,7 @@ add_task(async function checkTelemetryClickEventsVPN() {
   }
   await addArbitraryTimeout();
   // Clear everything.
-  Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    return !events || !events.length;
-  });
+  await clearProtectionsEvents();
   // user is not subscribed to VPN, and is in the us
   AboutProtectionsParent.setTestOverride(getVPNOverrides(false, "us"));
   await SpecialPowers.pushPrefEnv({
@@ -923,13 +714,7 @@ add_task(async function checkTelemetryClickEventsVPN() {
     );
   });
 
-  let events = await waitForTelemetryEventCount(2);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "vpn_card_link"
-  );
+  let events = await waitForProtectionsEvents("clickVpnCardLink", 1);
   is(
     events.length,
     1,
@@ -960,13 +745,7 @@ add_task(async function checkTelemetryClickEventsVPN() {
     );
   });
 
-  events = await waitForTelemetryEventCount(5);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "vpn_app_link_android"
-  );
+  events = await waitForProtectionsEvents("clickVpnAppLinkAndroid", 1);
   is(events.length, 1, `recorded telemetry for vpn_app_link_android link`);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
@@ -990,13 +769,7 @@ add_task(async function checkTelemetryClickEventsVPN() {
     );
   });
 
-  events = await waitForTelemetryEventCount(6);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "vpn_app_link_ios"
-  );
+  events = await waitForProtectionsEvents("clickVpnAppLinkIos", 1);
   is(events.length, 1, `recorded telemetry for vpn_app_link_ios link`);
 
   // Clean up.
@@ -1033,14 +806,7 @@ add_task(async function checkTelemetryEventsVPNBanner() {
   Services.locale.requestedLocales = ["en-US"];
 
   // Clear everything.
-  Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
-    let events = Services.telemetry.snapshotEvents(
-      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-      true
-    ).content;
-    return !events || !events.length;
-  });
+  await clearProtectionsEvents();
 
   // User is not subscribed to VPN
   AboutProtectionsParent.setTestOverride(getVPNOverrides(false, "us"));
@@ -1065,13 +831,7 @@ add_task(async function checkTelemetryEventsVPNBanner() {
     );
   });
 
-  let events = await waitForTelemetryEventCount(3);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "vpn_banner_link"
-  );
+  let events = await waitForProtectionsEvents("clickVpnBannerLink", 1);
   is(events.length, 1, `recorded telemetry for vpn_banner_link`);
 
   // VPN Banner flips this pref each time it shows, flip back between each instruction.
@@ -1095,13 +855,7 @@ add_task(async function checkTelemetryEventsVPNBanner() {
     );
   });
 
-  events = await waitForTelemetryEventCount(7);
-  events = events.filter(
-    e =>
-      e[1] == "security.ui.protections" &&
-      e[2] == "click" &&
-      e[3] == "vpn_banner_close"
-  );
+  events = await waitForProtectionsEvents("clickVpnBannerClose", 1);
   is(events.length, 1, `recorded telemetry for vpn_banner_close`);
 
   // Clean up.

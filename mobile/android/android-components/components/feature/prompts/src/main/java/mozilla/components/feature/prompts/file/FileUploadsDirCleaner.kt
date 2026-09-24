@@ -9,18 +9,23 @@ import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.prompt.PromptRequest.File.Companion.DEFAULT_UPLOADS_DIR_NAME
 import mozilla.components.support.base.log.logger.Logger
 
-/** A storage implementation for organizing temporal uploads metadata to be clean up. */
-@OptIn(DelicateCoroutinesApi::class)
+/**
+ * A storage implementation for organizing temporal uploads metadata to be clean up. *
+ *
+ * @param scope The [CoroutineScope] used for launching cleanup operations. Callers should pass an application-scoped
+ *   scope so cleanup is not cancelled when the UI component is destroyed. The application-lifetime scope is appropriate
+ *   here since cleanup tasks should outlive individual Activities.
+ * @param ioDispatcher The dispatcher used for I/O operations.
+ * @param cacheDirectory Provider for the cache directory used to store temporary uploads.
+ */
 class FileUploadsDirCleaner(
-    private val scope: CoroutineScope = GlobalScope,
+    private val scope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher = IO,
     private val cacheDirectory: () -> File,
 ) {

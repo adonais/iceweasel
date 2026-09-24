@@ -67,6 +67,59 @@ add_task(async function test_unconfigured_initial_state() {
   await tearDown(sandbox);
 });
 
+add_task(async function test_loading_state() {
+  const isNovaEnabled = Services.prefs.getBoolPref(
+    "browser.nova.enabled",
+    false
+  );
+  const loadingHeaderL10nId = isNovaEnabled
+    ? "firefoxview-syncedtabs-loading-header-2"
+    : "firefoxview-syncedtabs-loading-header";
+  const loadingImageUrl = isNovaEnabled
+    ? "chrome://browser/skin/sidebar/kit-tabs-devices.svg"
+    : "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
+
+  const { SyncedTabsErrorHandler } = ChromeUtils.importESModule(
+    "resource:///modules/firefox-view-synced-tabs-error-handler.sys.mjs"
+  );
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(TabsSetupFlowManager, "uiStateIndex").value(0);
+  sandbox.stub(SyncedTabsErrorHandler, "getErrorType").returns(null);
+
+  await withFirefoxView({}, async browser => {
+    const { document } = browser.contentWindow;
+    await navigateToViewAndWait(document, "syncedtabs");
+
+    let syncedTabsComponent = document.querySelector(
+      "view-syncedtabs:not([slot=syncedtabs])"
+    );
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "Synced tabs component is fully updated."
+    );
+
+    let emptyState =
+      syncedTabsComponent.shadowRoot.querySelector("fxview-empty-state");
+    is(
+      emptyState.getAttribute("headerlabel"),
+      loadingHeaderL10nId,
+      "Loading message is shown"
+    );
+
+    const image = emptyState.shadowRoot.querySelector("img.image");
+    ok(
+      !image.hidden,
+      "The main image is not hidden while the loading state is shown"
+    );
+    is(
+      image.getAttribute("src"),
+      loadingImageUrl,
+      "The loading state shows its configured main image"
+    );
+  });
+  sandbox.restore();
+});
+
 add_task(async function test_signed_in() {
   const sandbox = setupMocks({
     state: UIState.STATUS_SIGNED_IN,

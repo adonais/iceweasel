@@ -105,6 +105,15 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
     iconUri->GetSpec(aRetval);
   }
 
+  void GetNavigate(nsACString& aRetval) {
+    nsIURI* navigateUri = mIPCNotification.options().navigate();
+    if (!navigateUri) {
+      aRetval.Truncate();
+      return;
+    }
+    navigateUri->GetSpec(aRetval);
+  }
+
   void MaybeNotifyClose();
 
   static bool RequestPermissionEnabledForScope(JSContext* aCx,
@@ -204,8 +213,9 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   void LoadImageAndShow(Promise* aPromise, ContextInfo&& aInfo);
   void SendShow(Promise* aPromise, Maybe<IPCImage>&& aIcon);
 
-  static already_AddRefed<nsIURI> ResolveIconURL(nsIGlobalObject* aGlobal,
-                                                 const nsACString& aIconUrl);
+  // Resolve possibly-relative URL either for icon or navigate.
+  static already_AddRefed<nsIURI> ResolveURL(nsIGlobalObject* aGlobal,
+                                             const nsACString& aUrl);
 };
 
 }  // namespace mozilla::dom

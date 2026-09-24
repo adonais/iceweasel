@@ -1485,6 +1485,7 @@ Document::Document(const char* aContentType,
       mLoadedAsData(aLoadedAsData == LoadedAsData::AsData),
       mRenderingSuppressedForViewTransitions(false),
       mBidiEnabled(false),
+      mNeedsDirHandling(false),
       mInitialAboutBlankLoadCompleting(false),
       mIgnoreDocGroupMismatches(false),
       mAddedToMemoryReportingAsDataDocument(false),
@@ -4297,7 +4298,8 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
     InitFeaturePolicy(AsVariant(Nothing{}));
   }
 
-  // We don't want to parse the http Feature-Policy header if this pref is off.
+  // We don't want to parse the http Permissions-Policy header if this pref is
+  // off.
   if (!StaticPrefs::dom_security_featurePolicy_header_enabled()) {
     return NS_OK;
   }
@@ -4314,10 +4316,10 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
 
   // query the policy from the header
   nsAutoCString value;
-  rv = httpChannel->GetResponseHeader("Feature-Policy"_ns, value);
+  rv = httpChannel->GetResponseHeader("Permissions-Policy"_ns, value);
   if (NS_SUCCEEDED(rv)) {
-    FeaturePolicy()->SetDeclaredPolicy(this, NS_ConvertUTF8toUTF16(value),
-                                       NodePrincipal(), nullptr);
+    FeaturePolicy()->SetDeclaredHeaderPolicy(this, NS_ConvertUTF8toUTF16(value),
+                                             NodePrincipal());
   }
 
   return NS_OK;
@@ -12528,9 +12530,7 @@ void Document::Destroy() {
     return;
   }
 
-  if (RefPtr transition = mActiveViewTransition) {
-    transition->SkipTransition(SkipTransitionReason::DocumentHidden);
-  }
+  MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
 
   RemoveCustomContentContainer();
 
@@ -12931,9 +12931,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   }
 
   if (inFrameLoaderSwap) {
-    if (RefPtr transition = mActiveViewTransition) {
-      transition->SkipTransition(SkipTransitionReason::PageSwap);
-    }
+    MaybeSkipActiveViewTransition(SkipTransitionReason::PageSwap);
   } else {
     if (aPersisted) {
       // We do not stop the animations (bug 1024343) when the page is refreshing
@@ -13043,9 +13041,7 @@ void Document::WillRemoveRoot() {
   // tree is attached to our root element. This is not in the spec (yet), but
   // prevents the view transition pseudo tree from being in an inconsistent
   // state. See https://github.com/w3c/csswg-drafts/issues/12149
-  if (RefPtr transition = mActiveViewTransition) {
-    transition->SkipTransition(SkipTransitionReason::RootRemoved);
-  }
+  MaybeSkipActiveViewTransition(SkipTransitionReason::RootRemoved);
 
   RemoveCustomContentContainer();
   IncrementExpandoGeneration(*this);
@@ -15918,27 +15914,36 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
 }
 
 bool Document::IsFullscreenLeaf() {
-  // A fullscreen leaf document is fullscreen, and has no fullscreen
-  // subdocuments.
-  //
-  // FIXME(emilio): This doesn't seem to account for fission iframes, is that
-  // ok?
-  return Fullscreen() && CountFullscreenSubDocuments(*this) == 0;
+  // A fullscreen leaf document is fullscreen, and its fullscreen element does
+  // not embed another in-process fullscreen document, i.e. it is at the bottom
+  // of the fullscreen document chain. Other subdocuments may still be
+  // fullscreen without being part of that chain, for example when this document
+  // has more than one fullscreen element in its top layer.
+  Element* fsElement = GetUnretargetedFullscreenElement();
+  if (!fsElement) {
+    return false;
+  }
+
+  Document* subDoc = GetSubDocumentFor(fsElement);
+  if (!subDoc) {
+    return true;
+  }
+
+  return !subDoc->Fullscreen();
 }
 
 /* static */ Document* Document::GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
-  if (!aDoc.Fullscreen()) {
+  Element* fsElement = aDoc.GetUnretargetedFullscreenElement();
+  if (!fsElement) {
     return nullptr;
   }
-  Document* leaf = nullptr;
-  aDoc.EnumerateSubDocuments([&leaf](Document& aSubDoc) {
-    leaf = GetFullscreenLeaf(aSubDoc);
-    return leaf ? CallState::Stop : CallState::Continue;
-  });
-  return leaf;
+  Document* subDoc = aDoc.GetSubDocumentFor(fsElement);
+  MOZ_ASSERT(subDoc);
+  MOZ_ASSERT(subDoc->Fullscreen());
+  return GetFullscreenLeaf(*subDoc);
 }
 
 /* static */ Document* Document::GetFullscreenLeaf(Document* aDoc) {
@@ -15953,8 +15958,6 @@ bool Document::IsFullscreenLeaf() {
 
 static CallState ResetFullscreen(Document& aDocument) {
   if (Element* fsElement = aDocument.GetUnretargetedFullscreenElement()) {
-    NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
-                 "Should have at most 1 fullscreen subdocument.");
     aDocument.CleanupFullscreenState();
     NS_ASSERTION(!aDocument.Fullscreen(), "Should reset fullscreen");
     DispatchFullscreenChange(aDocument, fsElement);
@@ -16129,7 +16132,8 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
 
   Document* lastDoc = exitElements.LastElement()->OwnerDoc();
   size_t fullscreenCount = lastDoc->CountFullscreenElements();
-  if (!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) {
+  if ((!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) ||
+      GetFullscreenLeaf(lastDoc) != fullScreenDoc) {
     // If we are fully exiting fullscreen, don't touch anything here,
     // just wait for the window to get out from fullscreen first.
     PendingFullscreenChangeList::Add(std::move(aExit));
@@ -16929,8 +16933,6 @@ void Document::RemoteFrameFullscreenReverted() {
 
 static bool HasFullscreenSubDocument(Document& aDoc) {
   uint32_t count = CountFullscreenSubDocuments(aDoc);
-  NS_ASSERTION(count <= 1,
-               "Fullscreen docs should have at most 1 fullscreen child!");
   return count >= 1;
 }
 
@@ -17465,9 +17467,15 @@ bool Document::SetOrientationPendingPromise(Promise* aPromise) {
   return true;
 }
 
+void Document::MaybeSkipActiveViewTransition(SkipTransitionReason aReason) {
+  if (RefPtr transition = mActiveViewTransition) {
+    transition->SkipTransition(aReason);
+  }
+}
+
 void Document::MaybeSkipTransitionAfterVisibilityChange() {
-  if (Hidden() && mActiveViewTransition) {
-    mActiveViewTransition->SkipTransition(SkipTransitionReason::DocumentHidden);
+  if (Hidden()) {
+    MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
   }
 }
 
@@ -19773,13 +19781,11 @@ already_AddRefed<ViewTransition> Document::StartViewTransition(
     transition->SkipTransition(SkipTransitionReason::DocumentHidden);
     return transition.forget();
   }
-  if (mActiveViewTransition) {
-    // Step 5:
-    // If document's active view transition is not null, then skip that view
-    // transition with an "AbortError" DOMException in this's relevant Realm.
-    mActiveViewTransition->SkipTransition(
-        SkipTransitionReason::ClobberedActiveTransition);
-  }
+  // Step 5:
+  // If document's active view transition is not null, then skip that view
+  // transition with an "AbortError" DOMException in this's relevant Realm.
+  MaybeSkipActiveViewTransition(
+      SkipTransitionReason::ClobberedActiveTransition);
   // Step 6: Set document's active view transition to transition.
   mActiveViewTransition = transition;
 
@@ -20222,6 +20228,28 @@ Document::CreatePermissionGrantPromise(nsPIDOMWindowInner* aInnerWindow,
   };
 }
 
+void Document::ConsumeUserGestureAndRejectRequestStorageAccessPromise(
+    Promise* aPromise) {
+  MOZ_ASSERT(aPromise);
+  ConsumeTransientUserGestureActivation();
+  aPromise->MaybeRejectWithNotAllowedError(
+      "requestStorageAccess not allowed"_ns);
+}
+
+bool Document::MaybeResolveOrRejectRequestStorageAccessPromise(
+    const Maybe<bool>& aMaybeResult, Promise* aPromise) {
+  MOZ_ASSERT(aPromise);
+  if (aMaybeResult.isNothing()) {
+    return false;
+  }
+  if (aMaybeResult.value()) {
+    aPromise->MaybeResolveWithUndefined();
+  } else {
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(aPromise);
+  }
+  return true;
+}
+
 already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     mozilla::ErrorResult& aRv) {
   nsIGlobalObject* global = GetScopeObject();
@@ -20244,9 +20272,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   // Get a pointer to the inner window- We need this for convenience sake
   RefPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
   if (!inner) {
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
 
@@ -20257,16 +20283,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   Maybe<bool> resultBecauseCookiesApproved =
       StorageAccessAPIHelper::CheckCookiesPermittedDecidesStorageAccessAPI(
           CookieJarSettings(), NodePrincipal());
-  if (resultBecauseCookiesApproved.isSome()) {
-    if (resultBecauseCookiesApproved.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    } else {
-      ConsumeTransientUserGestureActivation();
-      promise->MaybeRejectWithNotAllowedError(
-          "requestStorageAccess not allowed"_ns);
-      return promise.forget();
-    }
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(
+          resultBecauseCookiesApproved, promise)) {
+    return promise.forget();
   }
 
   // Step 2: Check if the browser settings always allow or deny cookies.
@@ -20286,16 +20305,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
       StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
           CookieJarSettings(), isThirdPartyDocument, isOnThirdPartySkipList,
           isThirdPartyTracker);
-  if (resultBecauseBrowserSettings.isSome()) {
-    if (resultBecauseBrowserSettings.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    } else {
-      ConsumeTransientUserGestureActivation();
-      promise->MaybeRejectWithNotAllowedError(
-          "requestStorageAccess not allowed"_ns);
-      return promise.forget();
-    }
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(
+          resultBecauseBrowserSettings, promise)) {
+    return promise.forget();
   }
 
   // Step 3: Check if the Document calling requestStorageAccess has anything to
@@ -20303,16 +20315,9 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   Maybe<bool> resultBecauseCallContext =
       StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(this,
                                                                          true);
-  if (resultBecauseCallContext.isSome()) {
-    if (resultBecauseCallContext.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    } else {
-      ConsumeTransientUserGestureActivation();
-      promise->MaybeRejectWithNotAllowedError(
-          "requestStorageAccess not allowed"_ns);
-      return promise.forget();
-    }
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(resultBecauseCallContext,
+                                                      promise)) {
+    return promise.forget();
   }
 
   // Step 4: Check if we already allowed or denied storage access for this
@@ -20320,26 +20325,15 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   Maybe<bool> resultBecausePreviousPermission =
       StorageAccessAPIHelper::CheckExistingPermissionDecidesStorageAccessAPI(
           this, true);
-  if (resultBecausePreviousPermission.isSome()) {
-    if (resultBecausePreviousPermission.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    } else {
-      ConsumeTransientUserGestureActivation();
-      promise->MaybeRejectWithNotAllowedError(
-          "requestStorageAccess not allowed"_ns);
-      return promise.forget();
-    }
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(
+          resultBecausePreviousPermission, promise)) {
+    return promise.forget();
   }
 
   // Get pointers to some objects that will be used in the async portion
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
-  RefPtr<nsGlobalWindowOuter> outer =
-      nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-  if (!outer) {
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+  if (!inner->GetOuterWindow()) {
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
   RefPtr<Document> self(this);
@@ -20355,9 +20349,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
           GetCurrentSerialEventTarget(), __func__,
           [promise] { promise->MaybeResolveWithUndefined(); },
           [promise, self] {
-            self->ConsumeTransientUserGestureActivation();
-            promise->MaybeRejectWithNotAllowedError(
-                "requestStorageAccess not allowed"_ns);
+            self->ConsumeUserGestureAndRejectRequestStorageAccessPromise(
+                promise);
           });
       return promise.forget();
     }
@@ -20381,9 +20374,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
           GetCurrentSerialEventTarget(), __func__,
           [promise] { promise->MaybeResolveWithUndefined(); },
           [promise, self] {
-            self->ConsumeTransientUserGestureActivation();
-            promise->MaybeRejectWithNotAllowedError(
-                "requestStorageAccess not allowed"_ns);
+            self->ConsumeUserGestureAndRejectRequestStorageAccessPromise(
+                promise);
           });
 
   return promise.forget();
@@ -20410,9 +20402,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
                                     nsLiteralCString("requestStorageAccess"),
                                     this, PropertiesFile::DOM_PROPERTIES,
                                     "RequestStorageAccessUserGesture");
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
 
@@ -20432,14 +20422,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   Maybe<bool> resultBecauseBrowserSettings =
       StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
           CookieJarSettings(), isThirdPartyDocument, false, true);
-  if (resultBecauseBrowserSettings.isSome()) {
-    if (resultBecauseBrowserSettings.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    }
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(
+          resultBecauseBrowserSettings, promise)) {
     return promise.forget();
   }
 
@@ -20448,14 +20432,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   Maybe<bool> resultBecauseCallContext = StorageAccessAPIHelper::
       CheckSameSiteCallingContextDecidesStorageAccessAPI(
           this, aRequireUserActivation);
-  if (resultBecauseCallContext.isSome()) {
-    if (resultBecauseCallContext.value()) {
-      promise->MaybeResolveWithUndefined();
-      return promise.forget();
-    }
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+  if (MaybeResolveOrRejectRequestStorageAccessPromise(resultBecauseCallContext,
+                                                      promise)) {
     return promise.forget();
   }
 
@@ -20464,25 +20442,17 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
   nsCOMPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
   if (!inner) {
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
-  RefPtr<nsGlobalWindowOuter> outer =
-      nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-  if (!outer) {
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+  if (!inner->GetOuterWindow()) {
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
   nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
       thirdPartyURI, NodePrincipal()->OriginAttributesRef());
   if (!principal) {
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
+    ConsumeUserGestureAndRejectRequestStorageAccessPromise(promise);
     return promise.forget();
   }
 
@@ -21488,7 +21458,9 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   }
 
   // TODO: Always initialize the sanitizer.
-  bool sanitize = aOptions.mSanitizer.WasPassed();
+  const bool sanitize = aOptions.mSanitizer.WasPassed();
+  const bool sanitizeWhileParsing =
+      sanitize && StaticPrefs::dom_security_sanitizer_while_parsing();
 
   // Step 2. Let document be a new Document, whose content type is "text/html".
   // Step 3. Set document’s allow declarative shadow roots to true.
@@ -21497,39 +21469,43 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
     return nullptr;
   }
 
-  // Step 4. Parse HTML from a string given document and compliantHTML.
+  // Step 4. Let sanitizerConfig be the result of calling get a sanitizer
+  // config from options with compliantOptions and false.
+  RefPtr<Sanitizer> sanitizer;
+  if (sanitize) {
+    sanitizer = Sanitizer::GetInstance(global, aOptions.mSanitizer.Value(),
+                                       /* aSafe */ false, aError);
+    if (aError.Failed()) {
+      return nullptr;
+    }
+  }
+
+  // Step 5. Parse HTML from a string given document, compliantHTML,
+  // sanitizerConfig and false.
   // TODO(bug 1960845): Investigate the behavior around <noscript> with
   // parseHTML
   aError = nsContentUtils::ParseDocumentHTML(
       *compliantString, doc,
-      /* aScriptingEnabledForNoscriptParsing */ sanitize);
+      /* aScriptingEnabledForNoscriptParsing */ sanitize,
+      sanitizeWhileParsing ? sanitizer.get() : nullptr, /* aSafe */ false);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  if (sanitize) {
-    // Step 5. Let sanitizer be the result of calling get a sanitizer instance
-    // from options with options and false.
-    nsCOMPtr<nsIGlobalObject> global =
-        do_QueryInterface(aGlobal.GetAsSupports());
-    RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
-        global, aOptions.mSanitizer.Value(), /* aSafe */ false, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-
-    // Step 6. Call sanitize on document with sanitizer and false.
+  if (sanitize && !sanitizeWhileParsing) {
+    // (Pre sanitize-while-parsing) Call sanitize on document with sanitizer
+    // and false.
     sanitizer->Sanitize(doc, /* aSafe */ false, aError);
     if (aError.Failed()) {
       return nullptr;
     }
   }
 
-  // Step 7. Return document.
+  // Step 6. Return document.
   return doc.forget();
 }
 
-// https://wicg.github.io/sanitizer-api/#document-parsehtml
+// https://html.spec.whatwg.org/#dom-parsehtml
 /* static */
 already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
                                                const nsAString& aHTML,
@@ -21542,17 +21518,8 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
     return nullptr;
   }
 
-  // Step 3. Parse HTML from a string given document and html.
-  // TODO(bug 1960845): Investigate the behavior around <noscript> with
-  // parseHTML
-  aError = nsContentUtils::ParseDocumentHTML(
-      aHTML, doc, /* aScriptingEnabledForNoscriptParsing */ true);
-  if (aError.Failed()) {
-    return nullptr;
-  }
-
-  // Step 4. Let sanitizer be the result of calling get a sanitizer instance
-  // from options with options and true.
+  // Step 3. Let sanitizerConfig be the result of calling get a sanitizer
+  // config from options with options and true.
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
   RefPtr<Sanitizer> sanitizer = Sanitizer::GetInstance(
       global, aOptions.mSanitizer, /* aSafe */ true, aError);
@@ -21560,13 +21527,30 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
     return nullptr;
   }
 
-  // Step 5. Call sanitize on document with sanitizer and true.
-  sanitizer->Sanitize(doc, /* aSafe */ true, aError);
+  const bool sanitizeWhileParsing =
+      StaticPrefs::dom_security_sanitizer_while_parsing();
+
+  // Step 4. Parse HTML from a string given document, html, sanitizerConfig
+  // and true.
+  // TODO(bug 1960845): Investigate the behavior around <noscript> with
+  // parseHTML
+  aError = nsContentUtils::ParseDocumentHTML(
+      aHTML, doc, /* aScriptingEnabledForNoscriptParsing */ true,
+      sanitizeWhileParsing ? sanitizer.get() : nullptr, /* aSafe */ true);
   if (aError.Failed()) {
     return nullptr;
   }
 
-  // Step 6. Return document.
+  if (!sanitizeWhileParsing) {
+    // (Pre sanitize-while-parsing) Call sanitize on document with sanitizer
+    // and true.
+    sanitizer->Sanitize(doc, /* aSafe */ true, aError);
+    if (aError.Failed()) {
+      return nullptr;
+    }
+  }
+
+  // Step 5. Return document.
   return doc.forget();
 }
 

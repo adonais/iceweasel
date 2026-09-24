@@ -22,10 +22,9 @@ class StateMirroringTest : public ::testing::Test {
   using Promise = MozPromise<ValueType, bool, /*IsExclusive =*/true>;
 
   StateMirroringTest()
-      : mTarget(
-            TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
-                              "TestStateMirroring",
-                              /*aSupportsTailDispatch =*/true)),
+      : mTarget(TaskQueue::Create(
+            GetMediaThreadPool(MediaThreadType::SUPERVISOR),
+            "TestStateMirroring", TailDispatchPolicy::ConsistentOrdering)),
         mCanonical(AbstractThread::GetCurrent(), 0, "TestCanonical"),
         mMirror(mTarget, 0, "TestMirror") {}
 

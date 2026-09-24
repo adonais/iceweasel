@@ -9,11 +9,11 @@
 #include <memory>
 #include <utility>
 
-#include "api/frame_transformer_factory.h"
 #include "api/frame_transformer_interface.h"
 #include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
 #include "jsapi/RTCStatsReport.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
@@ -31,11 +31,7 @@ RTCEncodedVideoFrame::RTCEncodedVideoFrame(
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
     uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
     const Maybe<RTCStatsTimestampMaker>& aTimestampMaker)
-    : RTCEncodedVideoFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
-                                                    /*timestamp*/ 0}},
-      RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
-                          aOwner) {
-  InitMetadata();
+    : RTCEncodedFrameBase(aGlobal, std::move(aFrame), aCounter, aOwner) {
   const DebugOnly<bool> isReceived =
       mFrame->GetDirection() ==
       webrtc::TransformableFrameInterface::Direction::kReceiver;
@@ -48,19 +44,7 @@ RTCEncodedVideoFrame::RTCEncodedVideoFrame(
               .ToDomNoTimeOrigin());
     }
   }
-}
 
-RTCEncodedVideoFrame::RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
-                                           RTCEncodedVideoFrameData&& aData)
-    : RTCEncodedVideoFrameData{RTCEncodedFrameState{std::move(aData.mFrame),
-                                                    aData.mCounter,
-                                                    aData.mTimestamp},
-                               aData.mType, std::move(aData.mMetadata),
-                               aData.mRid},
-      RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
-                          nullptr) {}
-
-void RTCEncodedVideoFrame::InitMetadata() {
   const auto& videoFrame(
       static_cast<webrtc::TransformableVideoFrameInterface&>(*mFrame));
   mType = videoFrame.IsKeyFrame() ? RTCEncodedVideoFrameType::Key
@@ -70,10 +54,13 @@ void RTCEncodedVideoFrame::InitMetadata() {
   if (metadata.GetFrameId().has_value()) {
     mMetadata.mFrameId.Construct(*metadata.GetFrameId());
   }
-  mMetadata.mDependencies.Construct();
-  for (const auto dep : metadata.GetFrameDependencies()) {
-    (void)mMetadata.mDependencies.Value().AppendElement(
-        static_cast<unsigned long long>(dep), fallible);
+  auto deps = metadata.GetDependencies();
+  if (deps) {
+    mMetadata.mDependencies.Construct();
+    for (const auto& dep : *deps) {
+      (void)mMetadata.mDependencies.Value().AppendElement(
+          static_cast<unsigned long long>(dep), fallible);
+    }
   }
   mMetadata.mWidth.Construct(metadata.GetWidth());
   mMetadata.mHeight.Construct(metadata.GetHeight());
@@ -99,6 +86,18 @@ void RTCEncodedVideoFrame::InitMetadata() {
   }
 }
 
+RTCEncodedVideoFrame::RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
+                                           RTCEncodedVideoFrameData aData,
+                                           JS::Handle<JSObject*> aBuffer)
+    : RTCEncodedFrameBase(aGlobal, aBuffer),
+      mType(aData.mType),
+      mMetadata(std::move(aData.mMetadata)),
+      mRid(std::move(aData.mRid)) {}
+
+RTCEncodedVideoFrameData RTCEncodedVideoFrame::CloneMetadata() const {
+  return {mType, RTCEncodedVideoFrameMetadata(mMetadata), mRid};
+}
+
 JSObject* RTCEncodedVideoFrame::WrapObject(JSContext* aCx,
                                            JS::Handle<JSObject*> aGivenProto) {
   return RTCEncodedVideoFrame_Binding::Wrap(aCx, this, aGivenProto);
@@ -114,14 +113,28 @@ already_AddRefed<RTCEncodedVideoFrame> RTCEncodedVideoFrame::Constructor(
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
-  auto frame = MakeRefPtr<RTCEncodedVideoFrame>(global, aOriginalFrame.Clone());
+  JSContext* cx = aGlobal.Context();
+  JS::Rooted<JSObject*> buffer(cx);
+  if (!aOriginalFrame.CopyData(cx, &buffer)) {
+    aRv.NoteJSContextException(cx);
+    return nullptr;
+  }
+  auto frame = MakeRefPtr<RTCEncodedVideoFrame>(
+      global, aOriginalFrame.CloneMetadata(), buffer);
 
   if (aOptions.mMetadata.WasPassed()) {
     const auto& src = aOptions.mMetadata.Value();
     auto& dst = frame->mMetadata;
 
     auto set_if = [](auto& dst, const auto& src) {
-      if (src.WasPassed()) dst.Value() = src.Value();
+      if (!src.WasPassed()) {
+        return;
+      }
+      if (!dst.WasPassed()) {
+        // The original frame's metadata need not have the field at all
+        dst.Construct();
+      }
+      dst.Value() = src.Value();
     };
     set_if(dst.mFrameId, src.mFrameId);
     set_if(dst.mDependencies, src.mDependencies);
@@ -140,25 +153,16 @@ already_AddRefed<RTCEncodedVideoFrame> RTCEncodedVideoFrame::Constructor(
   return frame.forget();
 }
 
-RTCEncodedVideoFrameData RTCEncodedVideoFrameData::Clone() const {
-  return RTCEncodedVideoFrameData{
-      RTCEncodedFrameState{
-          webrtc::CloneVideoFrame(
-              static_cast<webrtc::TransformableVideoFrameInterface*>(
-                  mFrame.get())),
-          mCounter, mTimestamp},
-      mType, RTCEncodedVideoFrameMetadata(mMetadata), mRid};
-}
-
 RTCEncodedVideoFrameType RTCEncodedVideoFrame::Type() const { return mType; }
+
+unsigned long RTCEncodedVideoFrame::Timestamp() const {
+  return mMetadata.mRtpTimestamp.WasPassed() ? mMetadata.mRtpTimestamp.Value()
+                                             : 0;
+}
 
 void RTCEncodedVideoFrame::GetMetadata(
     RTCEncodedVideoFrameMetadata& aMetadata) {
   aMetadata = mMetadata;
-}
-
-bool RTCEncodedVideoFrame::CheckOwner(RTCRtpScriptTransformer* aOwner) const {
-  return aOwner == mOwner;
 }
 
 Maybe<nsCString> RTCEncodedVideoFrame::Rid() const { return mRid; }
@@ -167,7 +171,12 @@ Maybe<nsCString> RTCEncodedVideoFrame::Rid() const { return mRid; }
 /* static */
 JSObject* RTCEncodedVideoFrame::ReadStructuredClone(
     JSContext* aCx, nsIGlobalObject* aGlobal, JSStructuredCloneReader* aReader,
-    RTCEncodedVideoFrameData& aData) {
+    RTCEncodedVideoFrameData aData) {
+  JS::Rooted<JSObject*> buffer(aCx);
+  if (!ReadData(aCx, aReader, &buffer)) {
+    return nullptr;
+  }
+
   JS::Rooted<JS::Value> value(aCx, JS::NullValue());
   // To avoid a rooting hazard error from returning a raw JSObject* before
   // running the RefPtr destructor, RefPtr needs to be destructed before
@@ -176,7 +185,8 @@ JSObject* RTCEncodedVideoFrame::ReadStructuredClone(
   // RefPtr cannot be safely destructed while the unrooted return JSObject* is
   // on the stack.
   {
-    auto frame = MakeRefPtr<RTCEncodedVideoFrame>(aGlobal, std::move(aData));
+    auto frame =
+        MakeRefPtr<RTCEncodedVideoFrame>(aGlobal, std::move(aData), buffer);
     if (!GetOrCreateDOMReflector(aCx, frame, &value) || !value.isObject()) {
       return nullptr;
     }
@@ -185,20 +195,22 @@ JSObject* RTCEncodedVideoFrame::ReadStructuredClone(
 }
 
 bool RTCEncodedVideoFrame::WriteStructuredClone(
-    JSStructuredCloneWriter* aWriter, StructuredCloneHolder* aHolder) const {
+    JSContext* aCx, JSStructuredCloneWriter* aWriter,
+    StructuredCloneHolder* aHolder) const {
   AssertIsOnOwningThread();
 
-  // Indexing the chunk and send the index to the receiver.
+  // Indexing the chunk and send the index to the receiver. The data buffer
+  // follows the pair in the stream; only the metadata needs the side channel.
   const uint32_t index =
       static_cast<uint32_t>(aHolder->RtcEncodedVideoFrames().Length());
-  // The serialization is limited to the same process scope so it's ok to
-  // hand over a (copy of a) webrtc internal object here.
-  //
-  // TODO: optimize later once encoded source API materializes
-  // .AppendElement(aHolder->IsTransferred(mData) ? Take() : Clone())
-  aHolder->RtcEncodedVideoFrames().AppendElement(Clone());
-  return !NS_WARN_IF(
-      !JS_WriteUint32Pair(aWriter, SCTAG_DOM_RTCENCODEDVIDEOFRAME, index));
+  if (NS_WARN_IF(!JS_WriteUint32Pair(aWriter, SCTAG_DOM_RTCENCODEDVIDEOFRAME,
+                                     index)) ||
+      !WriteData(aCx, aWriter)) {
+    return false;
+  }
+
+  aHolder->RtcEncodedVideoFrames().AppendElement(CloneMetadata());
+  return true;
 }
 
 }  // namespace mozilla::dom

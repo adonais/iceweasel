@@ -93,7 +93,7 @@ MOZ_ALWAYS_INLINE bool js::AtomHasher::match(const WeakHeapPtr<JSAtom*>& entry,
   if (lookup.atom) {
     return lookup.atom == key;
   }
-  if (key->length() != lookup.length || key->hash() != lookup.hash) {
+  if (key->length() != lookup.length) {
     return false;
   }
 

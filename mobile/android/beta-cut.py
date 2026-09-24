@@ -256,7 +256,7 @@ def main():
         print("☐ Review the changes and make sure they are correct")
         print("☐ Run `moz-phab submit --no-wip`")
         print(
-            "☐ Run `mach try --preset firefox-android` and add a comment "
+            "☐ Run `mach try --preset android-frontend` and add a comment "
             "with the try link on the patch"
         )
 

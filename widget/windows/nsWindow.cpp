@@ -1417,7 +1417,7 @@ static DWORD WindowStylesRemovedForBorderStyle(BorderStyle aStyle) {
 }
 
 // Return nsWindow styles
-DWORD nsWindow::WindowStyle() {
+DWORD nsWindow::WindowStyle() const {
   DWORD style;
   switch (mWindowType) {
     case WindowType::Dialog:
@@ -2373,34 +2373,23 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
     screenRect = screen->GetRectDisplayPix();
   }
 
-  // Check for the case where the window was Aero Snapped to the right. (The
-  // window will extend off the right and bottom of the screen in this case by a
-  // small but DPI-dependent value.)
+  // A window's *visible* edges are what get aligned with the work area -- by
+  // the shell when it snaps a window, and by users dragging a window against a
+  // screen edge -- so the window rect itself extends off the left, right and
+  // bottom of the work area by the width of the sizing border that Windows
+  // draws outside those edges. Allow for that overhang, so that we don't nudge
+  // such a window (or one we are restoring into such a position) out of place.
   //
   // We do not check WINDOWPLACEMENT for a position mismatch. That would catch
-  // whether the window is _currently_ Aero Snapped to the right, but we may be
-  // restoring the window. (We can't guarantee a restore into a snapped state:
-  // there is no known API to do so. Fortunately, the shell seems to detect this
-  // case anyway, and treats the window as snapped.)
-  //
-  // Note that this _is_ a heuristic. False positives are possible; but they
-  // seem unlikely (it would require manually positioning a window to extend
-  // just barely offscreen to the lower right), and anyway are probably
-  // harmless: the effect will simply be that we leave the window exactly where
-  // the user put it, instead of nudging it slightly.
-  if (aPoint.y == 0) {
-    auto const xMax = aPoint.x + logWidth;
-    auto const yMax = aPoint.y + logHeight;
-    auto const deltaX = xMax - screenRect.XMost();
-    auto const deltaY = yMax - screenRect.YMost();
-    if (deltaX == deltaY) {
-      if (8 <= deltaX && deltaX <= 16) {
-        // If so, don't try to fix the position; Windows will (probably) deal
-        // with it.
-        return;
-      }
-    }
-  }
+  // whether the window is _currently_ snapped, but we may be restoring the
+  // window. (We can't guarantee a restore into a snapped state: there is no
+  // known API to do so. Fortunately, the shell seems to detect this case
+  // anyway, and treats the window as snapped.)
+  const LayoutDeviceIntMargin overhang = ResizeBorderOverhang();
+  screenRect.Inflate(DesktopIntMargin(NSToIntRound(overhang.top / dpiScale),
+                                      NSToIntRound(overhang.right / dpiScale),
+                                      NSToIntRound(overhang.bottom / dpiScale),
+                                      NSToIntRound(overhang.left / dpiScale)));
 
   aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
 }
@@ -2451,6 +2440,26 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   HWND toplevelWnd = WinUtils::GetTopLevelHWND(mWnd);
   if (aRaise == Raise::Yes && ::IsIconic(toplevelWnd)) {
     ::ShowWindow(toplevelWnd, SW_RESTORE);
+  }
+  // The file picker disables our root window while a native modal dialog is
+  // up, and ::SetFocus cannot activate a disabled window. Activate the dialog
+  // instead. Raise the widget immediately behind it. nsWindow::Show does a
+  // similar two-step process for popups but, where we need the popup in the
+  // foreground, it uses another SetWindowPos call to place it right behind the
+  // current widget z-position.
+  // NB: toplevelWnd may be a popup.  rootWnd never is.
+  HWND const rootWnd = ::GetAncestor(mWnd, GA_ROOT);
+  if (aRaise == Raise::Yes && !::IsWindowEnabled(rootWnd)) {
+    HWND const popup = ::GetWindow(rootWnd, GW_ENABLEDPOPUP);
+    if (popup && ::IsWindowVisible(popup)) {
+      if (::SetForegroundWindow(popup)) {
+        ::SetWindowPos(rootWnd, popup, 0, 0, 0, 0,
+                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+      }
+    } else {
+      ::SetForegroundWindow(rootWnd);
+    }
+    return;
   }
   ::SetFocus(mWnd);
 }
@@ -2733,6 +2742,39 @@ LayoutDeviceIntMargin nsWindow::NormalWindowNonClientOffset() const {
  * For maximized, fullscreen, and minimized windows special processing takes
  * place.
  */
+bool nsWindow::HasCaption() const {
+  return bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
+                              BorderStyle::Menu | BorderStyle::Default));
+}
+
+nsWindow::ResizeMargins nsWindow::DefaultResizeMargins(UINT aDpi) const {
+  const int32_t padding =
+      HasCaption() ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, aDpi)
+                   : 0;
+  return {WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, aDpi) + padding,
+          WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, aDpi) + padding};
+}
+
+// The window rect overhangs the work area by this much, so any check for a
+// window extending beyond its screen has to tolerate this overhang, or it
+// will drag the window out of position.
+LayoutDeviceIntMargin nsWindow::ResizeBorderOverhang() const {
+  // Only a sizing border is drawn outside the window's visible edges, so a
+  // window without one doesn't overhang at all.
+  if (!(WindowStyle() & WS_THICKFRAME)) {
+    return {};
+  }
+
+  // We use LogToPhysFactor instead of GetDPI nsWindow::GetDPI(), because that
+  // infers the monitor from the window's bounds.  WM_DPICHANGED may be sent
+  // before the window's bounds have been updated, but the DPI will be the
+  // right one.
+  const UINT dpi = UINT(NSToIntRound(WinUtils::LogToPhysFactor(mWnd) * 96.0));
+  const auto margins = DefaultResizeMargins(dpi);
+  return LayoutDeviceIntMargin(0, margins.mHorizontal, margins.mVertical,
+                               margins.mHorizontal);
+}
+
 bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
   if (!mCustomNonClient) {
     return false;
@@ -2743,40 +2785,18 @@ bool nsWindow::UpdateNonClientMargins(bool aReflowWindow) {
     return false;
   }
 
-  const bool hasCaption =
-      bool(mBorderStyle & (BorderStyle::All | BorderStyle::Title |
-                           BorderStyle::Menu | BorderStyle::Default));
+  const bool hasCaption = HasCaption();
 
   float dpi = GetDPI();
 
   auto& metrics = mCustomNonClientMetrics;
 
-  // mHorResizeMargin is the size of the default NC areas on the
-  // left and right sides of our window.  It is calculated as
-  // the sum of:
-  //      SM_CXFRAME        - The thickness of the sizing border
-  //      SM_CXPADDEDBORDER - The amount of border padding
-  //                          for captioned windows
-  //
-  // If the window does not have a caption, mHorResizeMargin will be equal to
-  // `WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi)`
-  metrics.mHorResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
-
-  // mVertResizeMargin is the size of the default NC area at the
-  // bottom of the window. It is calculated as the sum of:
-  //      SM_CYFRAME        - The thickness of the sizing border
-  //      SM_CXPADDEDBORDER - The amount of border padding
-  //                          for captioned windows.
-  //
-  // If the window does not have a caption, mVertResizeMargin will be equal to
-  // `WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi)`
-  metrics.mVertResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
+  // mHorResizeMargin is the size of the default NC areas on the left and right
+  // sides of our window, and mVertResizeMargin the size of the one at the
+  // bottom.
+  const auto resizeMargins = DefaultResizeMargins(UINT(dpi));
+  metrics.mHorResizeMargin = resizeMargins.mHorizontal;
+  metrics.mVertResizeMargin = resizeMargins.mVertical;
 
   // mCaptionHeight is the default size of the caption. You need to include
   // mVertResizeMargin if you want the whole size of the default NC area at the
@@ -3486,6 +3506,9 @@ void nsWindow::OnFullscreenChanged(nsSizeMode aOldSizeMode, bool aFullScreen) {
       mFrameState->GetSizeMode() == nsSizeMode_Minimized ||
       aOldSizeMode == nsSizeMode_Minimized;
   if (!toOrFromMinimized) {
+    if (aFullScreen) {
+      TaskbarConcealer::OnFullscreenWillBeEntered(this);
+    }
     InfallibleMakeFullScreen(aFullScreen);
   }
 
@@ -7073,12 +7096,16 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
       if (screen) {
         int32_t availLeft, availTop, availWidth, availHeight;
         screen->GetAvailRect(&availLeft, &availTop, &availWidth, &availHeight);
+        // Windows' suggested rect preserves the window's overhang past the work
+        // area. Allow for that, so that we only reposition or shrink
+        // windows which really don't fit on the destination screen.
+        const LayoutDeviceIntMargin overhang = ResizeBorderOverhang();
         if (mResizeState != MOVING) {
-          x = std::max(x, availLeft);
-          y = std::max(y, availTop);
+          x = std::max(x, availLeft - overhang.left);
+          y = std::max(y, availTop - overhang.top);
         }
-        width = std::min(width, availWidth);
-        height = std::min(height, availHeight);
+        width = std::min(width, availWidth + overhang.LeftRight());
+        height = std::min(height, availHeight + overhang.TopBottom());
       }
     }
 

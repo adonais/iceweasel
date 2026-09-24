@@ -71,7 +71,6 @@ header-guards:
     - python/mozbuild/mozbuild/test/frontend/data/exports/pprthred.h
     - python/mozbuild/mozbuild/test/frontend/data/local_includes-filename/foo.h
     - toolkit/components/maintenanceservice/resource.h
-    - tools/clang-tidy/test/structures.h
   type: external
   payload: header_guards:lint
   support-files: ['tools/lint/header_guards/**']

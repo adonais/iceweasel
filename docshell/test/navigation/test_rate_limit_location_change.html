@@ -44,6 +44,23 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1314912
     "location.reload": () => win.location.reload(),
   });
 
+  // pushState is rate limited and takes effect synchronously, which makes it
+  // usable as a probe for whether the rate limit is currently in effect.
+  function isRateLimited(win) {
+    const before = win.location.href;
+    win.history.pushState(null, "test", `#probe${inc++}`);
+    return win.location.href == before;
+  }
+
+  function mustNotThrow(fn, name) {
+    try {
+      fn();
+      ok(true, `${name} must not throw.`);
+    } catch (error) {
+      ok(false, `${name} must not throw, but threw ${error}.`);
+    }
+  }
+
   async function test() {
     await setup();
 
@@ -61,27 +78,21 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1314912
       for(let i = 0; i< RATE_LIMIT_COUNT; i++) {
         fn.call(this);
       }
-      // Next calls should throw because we're above the rate limit
+      // Next calls are above the rate limit, and should be silently ignored.
       for(let i = 0; i < 5; i++)  {
-        SimpleTest.doesThrow(() => fn.call(this), `Call #${RATE_LIMIT_COUNT + i + 1} to ${name} should throw.`);
+        mustNotThrow(() => fn.call(this), `Call #${RATE_LIMIT_COUNT + i + 1} to ${name}`);
       }
+
+      ok(isRateLimited(win), `Calling ${name} should reach the rate limit.`);
     })
 
     // We didn't reset the rate limit after the last loop iteration above.
     // Wait for the rate limit timer to expire.
     SimpleTest.requestFlakyTimeout("Waiting to trigger rate limit reset.");
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, (RATE_LIMIT_TIME_SPAN + 2) * 1000));
 
-    // Calls should be allowed again.
-    Object.entries(rateLimitedFunctions(win)).forEach(([name, fn]) => {
-      let didThrow = false;
-      try {
-        fn.call(this);
-      } catch(error) {
-        didThrow = true;
-      }
-      is(didThrow, false, `Call to ${name} must not throw.`)
-    });
+    // Navigations should be allowed again.
+    ok(!isRateLimited(win), "The rate limit should be lifted after the time span.");
 
     // Cleanup
     win.close();

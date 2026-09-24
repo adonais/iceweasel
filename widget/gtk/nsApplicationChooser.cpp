@@ -7,6 +7,8 @@
 #include <gio/gdesktopappinfo.h>
 #include <gtk/gtk.h>
 
+#include <utility>
+
 #include "WidgetUtils.h"
 #include "mozilla/GRefPtr.h"
 #include "nsCExternalHandlerService.h"
@@ -75,6 +77,13 @@ void nsApplicationChooser::OnDestroy(GtkWidget* chooser, gpointer user_data) {
 }
 
 void nsApplicationChooser::Done(GtkWidget* chooser, gint response) {
+  // A null callback means a re-entrant call; the outer one owns the teardown.
+  nsCOMPtr<nsIApplicationChooserFinishedCallback> callback =
+      std::move(mCallback);
+  if (!callback) {
+    return;
+  }
+
   nsCOMPtr<nsIGIOHandlerApp> gioHandler;
   switch (response) {
     case GTK_RESPONSE_OK:
@@ -105,9 +114,6 @@ void nsApplicationChooser::Done(GtkWidget* chooser, gint response) {
                                        this);
   gtk_widget_destroy(chooser);
 
-  if (mCallback) {
-    mCallback->Done(gioHandler);
-    mCallback = nullptr;
-  }
+  callback->Done(gioHandler);
   NS_RELEASE_THIS();
 }

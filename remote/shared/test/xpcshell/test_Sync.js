@@ -8,10 +8,14 @@ const { setTimeout } = ChromeUtils.importESModule(
 
 const {
   AnimationFramePromise,
+  DebounceCallback,
   Deferred,
   EventPromise,
   PollPromise,
+  Sleep,
   TimedPromise,
+  waitForMessage,
+  waitForObserverTopic,
 } = ChromeUtils.importESModule("chrome://remote/content/shared/Sync.sys.mjs");
 
 const { Log } = ChromeUtils.importESModule(
@@ -84,6 +88,59 @@ class MockAppender extends Log.Appender {
 
   doAppend(message) {
     this.messages.push(message);
+  }
+}
+
+/**
+ * Mimic a message manager for sending messages.
+ */
+class MessageManager {
+  constructor() {
+    this.func = null;
+    this.message = null;
+  }
+
+  addMessageListener(message, func) {
+    this.func = func;
+    this.message = message;
+  }
+
+  removeMessageListener() {
+    this.func = null;
+    this.message = null;
+  }
+
+  send(message, data) {
+    if (this.func) {
+      this.func({
+        data,
+        message,
+        target: this,
+      });
+    }
+  }
+}
+
+/**
+ * Mimics nsITimer, but instead of using a system clock you can
+ * preprogram it to invoke the callback after a given number of ticks.
+ */
+class MockTimer {
+  constructor(ticksBeforeFiring) {
+    this.goal = ticksBeforeFiring;
+    this.ticks = 0;
+    this.cancelled = false;
+  }
+
+  initWithCallback(cb) {
+    this.ticks++;
+    if (this.ticks >= this.goal) {
+      cb();
+    }
+  }
+
+  cancel() {
+    this.cancelled = true;
   }
 }
 
@@ -526,6 +583,165 @@ add_task(async function test_TimedPromise_errorMessage() {
     ok(
       e.message.includes("Not found after"),
       "Expected custom error message found"
+    );
+  }
+});
+
+add_task(async function test_Sleep() {
+  await Sleep(0);
+  for (let type of ["foo", true, null, undefined]) {
+    Assert.throws(() => new Sleep(type), /TypeError/);
+  }
+  Assert.throws(() => new Sleep(1.2), /RangeError/);
+  Assert.throws(() => new Sleep(-1), /RangeError/);
+});
+
+add_task(function test_DebounceCallback_constructor() {
+  for (let cb of [42, "foo", true, null, undefined, [], {}]) {
+    Assert.throws(() => new DebounceCallback(cb), /TypeError/);
+  }
+  for (let timeout of ["foo", true, [], {}, () => {}]) {
+    Assert.throws(
+      () => new DebounceCallback(() => {}, { timeout }),
+      /TypeError/
+    );
+  }
+  for (let timeout of [-1, 2.3, NaN]) {
+    Assert.throws(
+      () => new DebounceCallback(() => {}, { timeout }),
+      /RangeError/
+    );
+  }
+});
+
+add_task(async function test_DebounceCallback_repeatedCallback() {
+  let uniqueEvent = {};
+  let ncalls = 0;
+
+  let cb = ev => {
+    ncalls++;
+    equal(ev, uniqueEvent);
+  };
+  let debouncer = new DebounceCallback(cb);
+  debouncer.timer = new MockTimer(3);
+
+  // flood the debouncer with events,
+  // we only expect the last one to fire
+  debouncer.handleEvent(uniqueEvent);
+  debouncer.handleEvent(uniqueEvent);
+  debouncer.handleEvent(uniqueEvent);
+
+  equal(ncalls, 1);
+  ok(debouncer.timer.cancelled);
+});
+
+add_task(async function test_waitForMessage_messageManagerAndMessageTypes() {
+  let messageManager = new MessageManager();
+
+  for (let manager of ["foo", 42, null, undefined, true, [], {}]) {
+    Assert.throws(() => waitForMessage(manager, "message"), /TypeError/);
+  }
+
+  for (let message of [42, null, undefined, true, [], {}]) {
+    Assert.throws(() => waitForMessage(messageManager, message), /TypeError/);
+  }
+
+  let data = { foo: "bar" };
+  let sent = waitForMessage(messageManager, "message");
+  messageManager.send("message", data);
+  equal(data, await sent);
+});
+
+add_task(async function test_waitForMessage_checkFnTypes() {
+  let messageManager = new MessageManager();
+
+  for (let checkFn of ["foo", 42, true, [], {}]) {
+    Assert.throws(
+      () => waitForMessage(messageManager, "message", { checkFn }),
+      /TypeError/
+    );
+  }
+
+  let data1 = { notFoo: "bar" };
+  let data2 = { foo: "bar" };
+
+  for (let checkFn of [null, undefined, msg => "foo" in msg.data]) {
+    let expected_data = checkFn == null ? data1 : data2;
+
+    messageManager = new MessageManager();
+    let sent = waitForMessage(messageManager, "message", { checkFn });
+    messageManager.send("message", data1);
+    messageManager.send("message", data2);
+    equal(expected_data, await sent);
+  }
+});
+
+add_task(async function test_waitForObserverTopic_topicTypes() {
+  for (let topic of [42, null, undefined, true, [], {}]) {
+    Assert.throws(() => waitForObserverTopic(topic), /TypeError/);
+  }
+
+  let data = { foo: "bar" };
+  let sent = waitForObserverTopic("message");
+  Services.obs.notifyObservers(this, "message", data);
+  let result = await sent;
+  equal(this, result.subject);
+  equal(data, result.data);
+});
+
+add_task(async function test_waitForObserverTopic_checkFnTypes() {
+  for (let checkFn of ["foo", 42, true, [], {}]) {
+    Assert.throws(
+      () => waitForObserverTopic("message", { checkFn }),
+      /TypeError/
+    );
+  }
+
+  let data1 = { notFoo: "bar" };
+  let data2 = { foo: "bar" };
+
+  for (let checkFn of [null, undefined, (subject, data) => data == data2]) {
+    let expected_data = checkFn == null ? data1 : data2;
+
+    let sent = waitForObserverTopic("message");
+    Services.obs.notifyObservers(this, "message", data1);
+    Services.obs.notifyObservers(this, "message", data2);
+    let result = await sent;
+    equal(expected_data, result.data);
+  }
+});
+
+add_task(async function test_waitForObserverTopic_timeoutTypes() {
+  for (let timeout of ["foo", true, [], {}]) {
+    Assert.throws(
+      () => waitForObserverTopic("message", { timeout }),
+      /TypeError/
+    );
+  }
+  for (let timeout of [1.2, -1]) {
+    Assert.throws(
+      () => waitForObserverTopic("message", { timeout }),
+      /RangeError/
+    );
+  }
+  for (let timeout of [null, undefined, 42]) {
+    let data = { foo: "bar" };
+    let sent = waitForObserverTopic("message", { timeout });
+    Services.obs.notifyObservers(this, "message", data);
+    let result = await sent;
+    equal(this, result.subject);
+    equal(data, result.data);
+  }
+});
+
+add_task(async function test_waitForObserverTopic_timeoutElapse() {
+  try {
+    await waitForObserverTopic("message", { timeout: 0 });
+    ok(false, "Expected Timeout error not raised");
+  } catch (e) {
+    ok(
+      e.message.includes("waitForObserverTopic timed out after"),
+      "Expected error received"
     );
   }
 });

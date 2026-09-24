@@ -9,6 +9,17 @@ if CONFIG["OS_ARCH"] == "Linux":
         "TestElfSoVersion.cpp",
     ]
 
+if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["MOZ_CRASHREPORTER"]:
+    UNIFIED_SOURCES = [
+        "TestMacExceptionHandler.cpp",
+    ]
+
+    LOCAL_INCLUDES += [
+        "/toolkit/crashreporter",
+        "/toolkit/crashreporter/breakpad-client",
+        "/toolkit/crashreporter/google-breakpad/src",
+    ]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul-gtest"

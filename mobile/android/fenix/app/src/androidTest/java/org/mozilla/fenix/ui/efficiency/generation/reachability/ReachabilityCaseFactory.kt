@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.generation.reachability
 
 import android.util.Log
-import org.mozilla.fenix.ui.efficiency.generation.NavigationGraphBootstrap
 import org.mozilla.fenix.ui.efficiency.generation.NavigationTestPlanner
 import org.mozilla.fenix.ui.efficiency.generation.ShardUtils
 import org.mozilla.fenix.ui.efficiency.generation.toDisplayLabel
@@ -15,7 +14,6 @@ object ReachabilityCaseFactory {
     private const val TAG = "ReachabilityCaseFactory"
 
     fun buildReachabilityCases(runState: String): List<ReachabilityCase> {
-        NavigationGraphBootstrap.ensureInitialized()
         val generatedCases = NavigationTestPlanner.buildReachabilityCases()
 
         val cases = generatedCases.map { generated ->

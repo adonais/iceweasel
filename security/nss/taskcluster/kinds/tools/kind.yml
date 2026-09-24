@@ -82,7 +82,9 @@ tasks:
         treeherder:
             symbol: hacl
         worker:
-            docker-image: {in-tree: builds-legacy}
+            # run_hacl.sh compiles nothing -- it clones upstream and diffs it
+            # against the vendored copy -- so it does not need a build image.
+            docker-image: {in-tree: base}
         run:
             command: "${VCS_PATH}/nss/automation/taskcluster/scripts/run_hacl.sh"
 

@@ -11,6 +11,8 @@ copies hunspell dictionaries that moz.l10n doesn't handle.
 Invoked in make via $(call py_action,l10n_merge,...).
 """
 
+from __future__ import annotations
+
 import argparse
 import shutil
 import subprocess

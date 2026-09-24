@@ -1388,12 +1388,6 @@ dom/media/platforms/ffmpeg/libav55/
 dom/media/webaudio/test/blink/
 dom/media/webrtc/tests/mochitests/helpers_from_wpt/sdp.js
 dom/media/webrtc/transport/third_party/
-dom/media/webspeech/recognition/endpointer.cc
-dom/media/webspeech/recognition/endpointer.h
-dom/media/webspeech/recognition/energy_endpointer.cc
-dom/media/webspeech/recognition/energy_endpointer.h
-dom/media/webspeech/recognition/energy_endpointer_params.cc
-dom/media/webspeech/recognition/energy_endpointer_params.h
 dom/media/webvtt/vtt.sys.mjs
 dom/security/sanitizer/safe-default-configuration.json
 dom/tests/mochitest/ajax/

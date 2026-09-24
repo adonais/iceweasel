@@ -4,22 +4,12 @@
 
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
 import { Dedupe } from "resource:///modules/Dedupe.sys.mjs";
-// Namespace import: a named import of an export missing on older train-hop
-// platforms is a link error; a namespace member is just undefined.
-import * as PlatformTopSitesConstants from "resource:///modules/topsites/constants.mjs";
 
 export {
   TOP_SITES_DEFAULT_ROWS,
+  TOP_SITES_MAX_ROWS,
   TOP_SITES_MAX_SITES_PER_ROW,
 } from "resource:///modules/topsites/constants.mjs";
-
-// @backward-compat { version 154 }
-// TOP_SITES_MAX_ROWS lands in platform constants.mjs in 154; until that reaches
-// Release it's absent on train-hop, so fall back to 4. At 154-Release: drop the
-// namespace import above, delete this shim, and add TOP_SITES_MAX_ROWS to the
-// re-export block above.
-export const TOP_SITES_MAX_ROWS =
-  PlatformTopSitesConstants.TOP_SITES_MAX_ROWS ?? 4;
 
 const dedupe = new Dedupe(site => site && site.url);
 
@@ -169,6 +159,12 @@ export const INITIAL_STATE = {
     highlightSeenCounter: 0,
     categories: [],
     uploadedWallpaper: "",
+    uploadResult: null,
+    // The images someone has saved, newest first. Shown as "Your images".
+    customWallpapers: [],
+    // Picker thumbnails, one { filename, file } per saved image. The library
+    // is not reachable by URL, so the bytes come over when the picker opens.
+    customWallpaperThumbnails: [],
   },
   SectionsLayout: {
     configs: {},
@@ -328,8 +324,24 @@ export const INITIAL_STATE = {
   },
   RecentSearches: {
     initialized: false,
-    // Recent search strings, newest first.
+    /**
+     * @type {[{value: string, lastUsed: number}]}
+     *   Recent searches, newest first, as { value, lastUsed } where lastUsed is
+     *   a ms epoch.
+     */
     searches: [],
+    /**
+     * @type {?Array<string>}
+     *   Trending search strings for the default engine. Null until a user opens
+     *   the Trending tab and the engine answers, so an empty list means the
+     *   engine had nothing rather than that nothing has been asked for yet.
+     */
+    trending: null,
+    /**
+     * Name of the default engine, for the Trending tab attribution. Empty until
+     * the first update arrives, and for a profile with no default engine.
+     */
+    engineName: "",
   },
 };
 
@@ -499,8 +511,6 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
         site => !action.data.urls.includes(site.url)
       );
       return Object.assign({}, prevState, { rows: newRows });
-    case at.UPDATE_SEARCH_SHORTCUTS:
-      return { ...prevState, searchShortcuts: action.data.searchShortcuts };
     case at.SOV_UPDATED: {
       const sov = {
         ready: action.data.ready,
@@ -1133,6 +1143,12 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
       return { ...prevState, categories: action.data };
     case at.WALLPAPERS_CUSTOM_SET:
       return { ...prevState, uploadedWallpaper: action.data };
+    case at.WALLPAPERS_CUSTOM_LIBRARY_SET:
+      return { ...prevState, customWallpapers: action.data };
+    case at.WALLPAPERS_CUSTOM_THUMBNAILS_SET:
+      return { ...prevState, customWallpaperThumbnails: action.data };
+    case at.WALLPAPER_UPLOAD_RESULT:
+      return { ...prevState, uploadResult: action.data };
     default:
       return prevState;
   }
@@ -1304,7 +1320,7 @@ function RecentSearches(prevState = INITIAL_STATE.RecentSearches, action) {
       return {
         ...prevState,
         ...action.data,
-        initialized: true,
+        initialized: prevState.initialized || "searches" in action.data,
       };
     default:
       return prevState;

@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: overlapping install() calls for the same language both settle correctly</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-install
+// has no completed install cache in content: every install() call is
+// expected to eventually resolve according to the requested languages'
+// download outcome. A second install() call for a language with an in-flight
+// install transaction must not just resolve false immediately; it must wait
+// for that transaction and resolve the same way it does.
+
+SimpleTest.waitForExplicitFinish();
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    // Fire without awaiting: both requests are in flight for the same
+    // language at once, so the second must wait on the first rather than
+    // resolving false immediately. install() consumes the transient user
+    // activation it requires, hence one per call.
+    const opts = { langs: ["en-US"], processLocally: true };
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const p1 = SpeechRecognition.install(opts);
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const p2 = SpeechRecognition.install(opts);
+
+    const [r1, r2] = await Promise.all([p1, p2]);
+    ok(r1, "First install() call succeeds");
+    ok(r2, "Second, overlapping install() call for the same language " +
+       "also succeeds instead of resolving false immediately");
+
+    // A subsequent, non-overlapping install() call must still work (no
+    // language stuck permanently marked "downloading").
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const r3 = await SpeechRecognition.install(opts);
+    ok(r3, "A later install() call for the same language still succeeds");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

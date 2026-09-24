@@ -176,7 +176,7 @@ add_task(async function () {
   Services.prefs.setIntPref("security.tls.version.min", 4);
   Services.prefs.setIntPref("security.tls.version.max", 4);
   Services.prefs.setCharPref("network.dns.localDomains", hostname);
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
 
   // Run a server that accepts TLS 1.2 and 1.3. The connection should succeed.
   let server = startServer(

@@ -192,6 +192,10 @@ add_task(async function testPreferencesCert() {
 
       doc.getElementById("certmanagertabs").selectedTab =
         doc.getElementById("ca_tab");
+      await TestUtils.waitForCondition(
+        () => !!doc.getElementById("ca-tree").view.rowCount,
+        "ca list populated"
+      );
       let treeView = doc.getElementById("ca-tree").view;
       let selectedCert;
 

@@ -95,7 +95,7 @@ add_task(async function test_restrictions() {
 });
 
 async function get_results(test) {
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let options = {
     allowAutofill: false,
     isPrivate: false,

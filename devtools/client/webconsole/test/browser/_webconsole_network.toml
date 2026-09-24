@@ -36,6 +36,8 @@ support-files = [
 
 ["browser_webconsole_network_messages_html_preview.js"]
 
+["browser_webconsole_network_messages_jsonl.js"]
+
 ["browser_webconsole_network_messages_openinnet.js"]
 
 ["browser_webconsole_network_messages_resend_request.js"]

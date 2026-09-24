@@ -48,8 +48,6 @@ class DefaultTopSitesBindingTest {
             {
                 this.javaClass.classLoader!!.getResourceAsStream("raw/test_initial_shortcuts.json")!!
             }
-
-        every { settings.showFirefoxJpGuideDefaultSite } returns true
     }
 
     @Test
@@ -145,29 +143,6 @@ class DefaultTopSitesBindingTest {
             assertEquals("https://www.example6.com/", topSites[5].second)
             assertEquals("www.example7.com", topSites[6].first)
             assertEquals("https://www.example7.com/", topSites[6].second)
-        }
-
-    @Test
-    fun `GIVEN region is in an included region and Japan default site experiment is turned off WHEN getTopSites is called THEN the sites for that region are returned`() =
-        runTest(dispatcher) {
-            every { settings.showFirefoxJpGuideDefaultSite } returns false
-
-            val binding = createBinding()
-            val topSites = binding.getTopSites(region = "US")
-
-            assertEquals(6, topSites.size)
-            assertEquals("US Region Site", topSites[0].first)
-            assertEquals("https://www.example1.com/", topSites[0].second)
-            assertEquals("CA Excluded Region Site", topSites[1].first)
-            assertEquals("https://www.example2.com/", topSites[1].second)
-            assertEquals("All Region Site", topSites[2].first)
-            assertEquals("https://www.example3.com/", topSites[2].second)
-            assertEquals("www.example4.com", topSites[3].first)
-            assertEquals("https://www.example4.com/", topSites[3].second)
-            assertEquals("www.example5.com", topSites[4].first)
-            assertEquals("https://www.example5.com/", topSites[4].second)
-            assertEquals("www.example7.com", topSites[5].first)
-            assertEquals("https://www.example7.com/", topSites[5].second)
         }
 
     @Test

@@ -59,6 +59,20 @@ class APZInputBridgeParent final : public PAPZInputBridgeParent {
       ScrollableLayerGuid* aOutTargetGuid, uint64_t* aOutFocusSequenceNumber,
       LayersId* aOutLayersId);
 
+  mozilla::ipc::IPCResult RecvSetKeyboardMap(const KeyboardMap& aKeyboardMap);
+
+  mozilla::ipc::IPCResult RecvSetDPI(const float& aDpiValue);
+
+  mozilla::ipc::IPCResult RecvSetBrowserGestureResponse(
+      const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse);
+
+  mozilla::ipc::IPCResult RecvStartAutoscroll(
+      const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation);
+
+  mozilla::ipc::IPCResult RecvStopAutoscroll(const ScrollableLayerGuid& aGuid);
+
+  mozilla::ipc::IPCResult RecvSetLongTapEnabled(const bool& aTapGestureEnabled);
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  protected:

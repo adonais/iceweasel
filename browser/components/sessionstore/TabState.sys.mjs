@@ -4,6 +4,102 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+/**
+ * @typedef {object} TabStateData
+ *   State of a tab, validated in the session file by the `tab` definition in
+ *   `session.schema.json`.
+ * @property {object[]} entries
+ *   Session history entries, oldest first, matching the schema's `entry`
+ *   definition.
+ * @property {number} lastAccessed
+ *   Timestamp from `Date.now()` of when the tab was last selected.
+ * @property {number} [index]
+ *   1-based index of the active entry in `entries`.
+ * @property {number} [requestedIndex]
+ *   1-based index of the entry a pending restore is navigating to.
+ * @property {boolean} [hidden]
+ *   Whether the tab is hidden from the tab strip.
+ * @property {boolean} [pinned]
+ *   Whether the tab is pinned.
+ * @property {boolean} [muted]
+ *   Whether the tab was muted through the tab, i.e. by the user or an
+ *   extension, as opposed to a mute the browser applies internally, such as
+ *   the one a closing tab gets.
+ * @property {string} [muteReason]
+ *   Extension that muted the tab, if an extension did.
+ * @property {TabGroupId} [groupId]
+ *   Tab group the tab belongs to.
+ * @property {number} [splitViewId]
+ *   Split view the tab belongs to.
+ * @property {string} [canonicalUrl]
+ *   Canonical URL of the tab's document, subject to the privacy level.
+ * @property {object} [searchMode]
+ *   Address bar search mode the tab is in.
+ * @property {number} [userContextId]
+ *   Container the tab is in, 0 for the default context.
+ * @property {Record<string, string>} [attributes]
+ *   Persisted tab attributes, collected by `TabAttributes`.
+ * @property {Record<string, string>} [extData]
+ *   Values set through `SessionStore.setCustomTabValue`.
+ * @property {string} [image]
+ *   URL of the tab's icon.
+ * @property {string} [userTypedValue]
+ *   Address bar input that hasn't been loaded.
+ * @property {number} [userTypedClear]
+ *   1 if a load started after `userTypedValue` was typed, 0 otherwise.
+ * @property {object} [storage]
+ *   Session storage of the tab's document, keyed by origin.
+ * @property {object} [formdata]
+ *   Form data of the tab's document.
+ * @property {object} [scroll]
+ *   Scroll position of the tab's document.
+ * @property {string} [disallow]
+ *   Comma-separated docshell capabilities to turn off on restore.
+ * @property {boolean} [isPrivate]
+ *   Whether the tab belongs to a private window.
+ * @property {boolean} [connectionPrepared]
+ *   Whether a speculative connection has been made for the pending restore.
+ * @property {boolean} [removeAfterRestore]
+ *   Whether the tab is to be closed once it has been restored.
+ */
+
+/**
+ * @typedef {object} ClosedTabStateData
+ *   State of a closed tab, kept in a window's `_closedTabs` or in a closed or
+ *   saved tab group's `tabs`, and validated in the session file by the
+ *   `closedTab` definition in `session.schema.json`.
+ * @property {TabStateData} state
+ *   State the tab had when it closed.
+ * @property {number} closedId
+ *   ID identifying the closed tab, unique across windows.
+ * @property {number} closedAt
+ *   Timestamp from `Date.now()`.
+ * @property {string} title
+ *   Label the tab had when it closed.
+ * @property {string} [image]
+ *   URL of the tab's icon.
+ * @property {number} pos
+ *   Position the tab had in the tab strip.
+ * @property {WindowID} sourceWindowId
+ *   Window the tab closed in.
+ * @property {number} [sourceClosedId]
+ *   `closedId` of the window the tab closed in, set once that window itself
+ *   has closed.
+ * @property {boolean} [closedInGroup]
+ *   Whether the tab closed along with the other selected tabs.
+ * @property {TabGroupId} [closedInTabGroupId]
+ *   Tab group whose closing closed this tab.
+ * @property {object} [permanentKey]
+ *   Permanent key of the tab's browser, dropped once the browser's final state
+ *   update has arrived.
+ * @property {number} [_originalStateIndex]
+ *   Index of the tab within the list it came from, set while closed tabs from
+ *   a window and its closed tab groups are merged into one list.
+ * @property {number} [_originalGroupStateIndex]
+ *   Index of the closed tab group the tab came from, set along with
+ *   `_originalStateIndex` and left unset for tabs that closed on their own.
+ */
+
 const lazy = XPCOMUtils.declareLazy({
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.sys.mjs",
   TabAttributes:

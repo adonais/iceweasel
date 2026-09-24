@@ -3902,7 +3902,7 @@ class nsDisplayListFocus final : public nsPaintedDisplayItem {
       br->DrawBorders();
     }
   }
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
       layers::RenderRootStateManager* aManager,
@@ -3910,7 +3910,7 @@ class nsDisplayListFocus final : public nsPaintedDisplayItem {
     if (auto br = Renderer(nullptr)) {
       br->CreateWebRenderCommands(this, aBuilder, aResources, aSc);
     }
-    return true;
+    return Ok();
   }
   NS_DISPLAY_DECL_NAME("ListFocus", TYPE_LIST_FOCUS)
 };
@@ -5882,6 +5882,11 @@ GetWebkitScrollbarWidthAndHeight(
   return {toSize(webkitScrollbarWidth), toSize(webkitScrollbarHeight)};
 }
 
+static nsMargin StyleScrollbarInsets(const ComputedStyle& aStyle,
+                                     const WritingMode aWm) {
+  return aStyle.StyleDisplay()->GetScrollbarInset(aWm).GetPhysicalMargin(aWm);
+}
+
 void ScrollContainerFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
@@ -5932,10 +5937,15 @@ void ScrollContainerFrame::DidSetComputedStyle(
     }
   }
 
-  if (aOldComputedStyle && !mIsRoot &&
-      StyleDisplay()->mScrollSnapType !=
-          aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
-    PostPendingResnap();
+  if (aOldComputedStyle && !mIsRoot) {
+    if (StyleDisplay()->mScrollSnapType !=
+        aOldComputedStyle->StyleDisplay()->mScrollSnapType) {
+      PostPendingResnap();
+    }
+    if (ScrollbarInsets() !=
+        StyleScrollbarInsets(*aOldComputedStyle, GetWritingMode())) {
+      MarkScrollbarsDirtyForReflow();
+    }
   }
 }
 
@@ -6969,6 +6979,13 @@ void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
   }
 }
 
+nsMargin ScrollContainerFrame::ScrollbarInsets() const {
+  if (mIsRoot) {
+    return PresContext()->EmbedderScrollbarInset();
+  }
+  return StyleScrollbarInsets(*Style(), GetWritingMode());
+}
+
 static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
   // In order to ensure that the inside edge of the border has no
   // curvature, we need at least one of its radii to be zero.
@@ -6981,6 +6998,20 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
                           double(aYBorder) / aRadius.height);
   aRadius.width *= ratio;
   aRadius.height *= ratio;
+}
+// Whether a scrollbar on one side of a corner reaches that corner's curve, and
+// so forces it square.
+// aInset: the scrollbar's inset at the given corner
+// aRadius: the corner radius measured along the scrollbar's axis
+// aBorder: border width on the side the curve starts from
+static bool ScrollbarReachesCorner(bool aHasScrollbar, nscoord aInset,
+                                   nscoord aRadius, nscoord aBorder) {
+  if (!aHasScrollbar) {
+    return false;
+  }
+  // Subtracting aBorder because ReduceRadii only squares the border's inner
+  // edge; that also matches its early-out when the border swallows the radius.
+  return aInset < aRadius - aBorder;
 }
 
 /**
@@ -7006,16 +7037,33 @@ bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
   nsMargin sb = GetActualScrollbarSizes();
   nsMargin border = GetUsedBorder();
 
-  if (sb.left > 0 || sb.top > 0) {
+  // A scrollbar with an inset holds clear of a corner leaves that corner's
+  // radius alone. A vertical scrollbar is inset at the top and bottom, and a
+  // horizontal one at the left and right.
+  const nsMargin inset = ScrollbarInsets();
+
+  if (ScrollbarReachesCorner(sb.left, inset.top, aRadii.TopLeft().height,
+                             border.top) ||
+      ScrollbarReachesCorner(sb.top, inset.left, aRadii.TopLeft().width,
+                             border.left)) {
     ReduceRadii(border.left, border.top, aRadii.TopLeft());
   }
-  if (sb.top > 0 || sb.right > 0) {
+  if (ScrollbarReachesCorner(sb.right, inset.top, aRadii.TopRight().height,
+                             border.top) ||
+      ScrollbarReachesCorner(sb.top, inset.right, aRadii.TopRight().width,
+                             border.right)) {
     ReduceRadii(border.right, border.top, aRadii.TopRight());
   }
-  if (sb.right > 0 || sb.bottom > 0) {
+  if (ScrollbarReachesCorner(sb.right, inset.bottom,
+                             aRadii.BottomRight().height, border.bottom) ||
+      ScrollbarReachesCorner(sb.bottom, inset.right, aRadii.BottomRight().width,
+                             border.right)) {
     ReduceRadii(border.right, border.bottom, aRadii.BottomRight());
   }
-  if (sb.bottom > 0 || sb.left > 0) {
+  if (ScrollbarReachesCorner(sb.left, inset.bottom, aRadii.BottomLeft().height,
+                             border.bottom) ||
+      ScrollbarReachesCorner(sb.bottom, inset.left, aRadii.BottomLeft().width,
+                             border.left)) {
     ReduceRadii(border.left, border.bottom, aRadii.BottomLeft());
   }
   return true;
@@ -7406,15 +7454,13 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState() {
   }
 
   // Don't store a scroll state if we never have been scrolled or restored
-  // a previous scroll state, we're not in the middle of a smooth scroll,
-  // and we have no overflow state.
+  // a previous scroll state, and we're not in the middle of a smooth scroll.
   auto scrollAnimationState = ScrollAnimationState();
   bool isScrollAnimating =
       scrollAnimationState.contains(AnimationState::MainThread) ||
       scrollAnimationState.contains(AnimationState::APZPending) ||
       scrollAnimationState.contains(AnimationState::APZRequested);
-  if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating &&
-      !mHorizontalOverflow && !mVerticalOverflow) {
+  if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
     return nullptr;
   }
 
@@ -7444,8 +7490,6 @@ UniquePtr<PresState> ScrollContainerFrame::SaveState() {
   }
   state->scrollState() = pt;
   state->allowScrollOriginDowngrade() = allowScrollOriginDowngrade;
-  state->horizontalOverflow() = mHorizontalOverflow;
-  state->verticalOverflow() = mVerticalOverflow;
   if (mIsRoot) {
     // Only save resolution properties for root scroll frames
     state->resolution() = PresShell()->GetResolution();
@@ -7457,8 +7501,6 @@ NS_IMETHODIMP ScrollContainerFrame::RestoreState(PresState* aState) {
   mRestorePos = aState->scrollState();
   MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
-  mHorizontalOverflow = aState->horizontalOverflow();
-  mVerticalOverflow = aState->verticalOverflow();
   // When restoring state, we promote mLastScrollOrigin to a stronger value
   // from the default of eNone, to restore the behaviour that existed when
   // the state was saved. If mLastScrollOrigin was a weaker value previously,

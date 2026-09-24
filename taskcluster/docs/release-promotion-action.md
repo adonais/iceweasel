@@ -2,7 +2,7 @@
 
 The release promotion action is how Releng triggers [release promotion]
 taskgraphs. The one action covers all release promotion needs: different
-*flavors* allow for us to trigger the different {ref}`release promotion phases`
+*flavors* allow for us to trigger the different {ref}`release promotion phases <release-promotion-flavors>`
 for each product. The input schema and release promotion flavors are defined in
 the {searchfox}`release promotion action <taskcluster/gecko_taskgraph/actions/release_promotion.py>`.
 
@@ -89,9 +89,9 @@ specifying kinds to rebuild.
 
 ## Release promotion action mechanics
 
-There are a number of inputs defined in the {searchfox}`release promotion action <taskcluster/gecko_taskgraph/actions/release_promotion.py>`. Among these are the `previous_graph_ids`, which is an ordered list of taskGroupIds of the task groups that we want to build our task group, off of. In the {ref}`snowman model`, these define the already-built portions of the snowman.
+There are a number of inputs defined in the {searchfox}`release promotion action <taskcluster/gecko_taskgraph/actions/release_promotion.py>`. Among these are the `previous_graph_ids`, which is an ordered list of taskGroupIds of the task groups that we want to build our task group, off of. In the {ref}`snowman-model`, these define the already-built portions of the snowman.
 
-The action downloads the `parameters.yml` from the initial `previous_graph_id`, which matches the decision- or action- taskId. (See {ref}`taskid vs taskgroupid`.) This is most likely the decision task of the revision to promote, which is generally the same revision the release promotion action is run against.
+The action downloads the `parameters.yml` from the initial `previous_graph_id`, which matches the decision- or action- taskId. (See {ref}`taskid-vs-taskgroupid`.) This is most likely the decision task of the revision to promote, which is generally the same revision the release promotion action is run against.
 
 :::{note}
 If the parameters have been changed since the build happened, *and* we explicitly want the new parameters for the release promotion action task, the first `previous_graph_id` should be the new revision's decision task. Then the build and other previous action task group IDs can follow, so we're still replacing the task labels with the task IDs from the original revision.
@@ -100,6 +100,8 @@ If the parameters have been changed since the build happened, *and* we explicitl
 The action then downloads the various `label-to-taskid.json` artifacts from each previous task group, and builds an `existing_tasks` parameter of which labels to replace with which task IDs. Each successive update to this dictionary overwrites existing keys with new task IDs, so the rightmost task group with a given label takes precedence. Any labels that match the `do_not_optimize` list or that belong to tasks in the `rebuild_kinds` list are excluded from the `existing_tasks` parameter.
 
 Once all that happens, and we've gotten our configuration from the original parameters and our action config and inputs, we run the decision task function with our custom parameters. The [optimization] phase replaces any `existing_tasks` with the task IDs we've built from the previous task groups.
+
+(release-promotion-flavors)=
 
 ## Release Promotion Flavors
 
@@ -117,6 +119,8 @@ The various flavors are defined in the {searchfox}`release promotion action <tas
 Currently, we're able to trigger this action via [Treeherder]; we sometimes use this method for testing purposes. This is powerful, because we can modify the inputs directly, but is less production friendly, because it requires us to enter the inputs manually. At some point we may disable the ability to trigger the action via Treeherder.
 
 This requires being signed in with the right scopes. On [Release Promotion Projects], there's a dropdown in the top right of a given revision. Choose `Custom Push Action`, then `Release Promotion`. The inputs are specifiable as raw yaml on the left hand column.
+
+(taskid-vs-taskgroupid)=
 
 ## Release promotion action taskId and taskGroupId
 

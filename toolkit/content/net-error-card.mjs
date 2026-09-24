@@ -63,7 +63,6 @@ export class NetErrorCard extends MozLitElement {
     showTrrSettingsButton: { type: Boolean },
     searchCTAResolved: { type: Boolean },
     searchCTAHasEngine: { type: Boolean },
-    searchCTADomain: { type: String },
     searchCTAQuery: { type: String },
     searchCTAAction: { type: String },
     searchCTAOfflineAborted: { type: Boolean },
@@ -148,7 +147,6 @@ export class NetErrorCard extends MozLitElement {
     this.trrTelemetryData = null;
     this.searchCTAResolved = false;
     this.searchCTAHasEngine = false;
-    this.searchCTADomain = "";
     this.searchCTAQuery = "";
     this.searchCTAAction = "";
     this.searchCTAOfflineAborted = false;
@@ -183,6 +181,16 @@ export class NetErrorCard extends MozLitElement {
     return super.getUpdateComplete();
   }
 
+  // Hold the first render until the parent's Search CTA decision is in, so the
+  // page appears once, with its final hint wording and buttons, rather than
+  // rendering a placeholder and swapping it out a frame later (bug 2067882).
+  scheduleUpdate() {
+    if (!this.hasUpdated && this.searchCTAInfoPromise) {
+      return this.searchCTAInfoPromise.then(() => super.scheduleUpdate());
+    }
+    return super.scheduleUpdate();
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.init();
@@ -194,6 +202,10 @@ export class NetErrorCard extends MozLitElement {
       new CustomEvent("AboutNetErrorLoad", { bubbles: true })
     );
     this.focusPrimaryButton();
+
+    // Only ask once the page exists. Asking from init() would race the first
+    // render, which waits for the Search CTA decision (bug 2067882).
+    this.checkForDomainSuggestions();
 
     // Record how the user leaves a CTA-eligible page (bug 2055717). The
     // suggestion link is injected into the shadow tree by NetErrorChild, so
@@ -309,12 +321,10 @@ export class NetErrorCard extends MozLitElement {
     }
 
     this.checkAndRecordTRRTelemetry();
-    this.checkForDomainSuggestions();
 
     // Eligibility rather than shouldShowSearchCTA(): a frame still asks, so its
     // decision is still recorded, and only the layout is suppressed.
     if (this.isSearchCTAEligible()) {
-      this.searchCTADomain = this.hostname;
       this.searchCTAInfoPromise = this.requestSearchCTAInfo();
     }
   }
@@ -363,7 +373,6 @@ export class NetErrorCard extends MozLitElement {
     const failedURL = searchParams.get("u");
     try {
       const info = await RPMSendQuery("SearchCTA:GetInfo", { url: failedURL });
-      this.searchCTADomain = info.domain ?? this.hostname;
       this.searchCTAQuery = info.query ?? "";
       this.searchCTAAction = info.action ?? SEARCH_CTA_ACTION_NONE;
       this.searchCTAHasEngine = !!info.hasEngine;
@@ -384,11 +393,10 @@ export class NetErrorCard extends MozLitElement {
   }
 
   // Focus the first button in the CTA layout, which is Search when it renders
-  // and Reload otherwise. This waits for the parent to answer rather than
-  // focusing Reload and moving focus once Search appears: one focus event, in
-  // DOM order, so keyboard users are not left having to tab backwards to reach
-  // the primary action. If the user has already moved focus while waiting,
-  // leave it where they put it.
+  // and Reload otherwise. The first render already waits for the parent's
+  // answer (see scheduleUpdate), so this is one focus event, in DOM order, and
+  // keyboard users are never left tabbing backwards to reach the primary
+  // action. If the user has already moved focus, leave it where they put it.
   async focusSearchCTAButton() {
     await this.searchCTAInfoPromise;
     await this.getUpdateComplete();
@@ -927,8 +935,8 @@ export class NetErrorCard extends MozLitElement {
       ></h1>
       <p
         id="error-intro"
-        data-l10n-id="neterror-search-cta-intro"
-        data-l10n-args=${JSON.stringify({ domain: this.searchCTADomain })}
+        data-l10n-id="neterror-search-cta-intro2"
+        data-l10n-args=${JSON.stringify({ hostname: this.hostname })}
       ></p>
       <div>
         <h2
@@ -962,7 +970,7 @@ export class NetErrorCard extends MozLitElement {
 
   // Name the exact query the Search button will run, so the user can see what
   // would be sent before choosing to send it. Falls back to generic wording
-  // while the parent is still answering, and when no Search button will show.
+  // when no Search button will show, and so has no query to name.
   searchCTAHintTemplate() {
     if (!this.hasSearchCTAButton() || !this.searchCTAQuery) {
       return html`<li data-l10n-id="neterror-search-cta-hint-search"></li>`;
@@ -984,21 +992,6 @@ export class NetErrorCard extends MozLitElement {
         role="alert"
         data-l10n-id="neterror-search-cta-offline"
       ></p>`;
-    }
-
-    if (!this.searchCTAResolved) {
-      // The label is visible rather than screen-reader-only: it is the only
-      // text equivalent for the spinner, which is decorative. loading.svg
-      // swaps its rotating arrows for a static hourglass under
-      // prefers-reduced-motion, so the busy state survives by shape.
-      return html`<div class="search-cta-loading">
-        <img
-          class="search-cta-loading-icon"
-          src="chrome://global/skin/icons/loading.svg"
-          alt=""
-        />
-        <span data-l10n-id="neterror-search-cta-loading"></span>
-      </div>`;
     }
 
     // No engine, or the query-derivation module rejected the host: keep the

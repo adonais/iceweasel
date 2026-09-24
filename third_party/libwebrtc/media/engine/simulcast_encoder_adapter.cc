@@ -663,7 +663,7 @@ int SimulcastEncoderAdapter::Encode(
             });
       } else {
         size_t stream_idx = static_cast<size_t>(layer.stream_idx());
-        if (frame_types->size() >= stream_idx &&
+        if (frame_types->size() > stream_idx &&
             (*frame_types)[stream_idx] == VideoFrameType::kVideoFrameKey) {
           stream_frame_types[0] = VideoFrameType::kVideoFrameKey;
           keyframe_requested = true;

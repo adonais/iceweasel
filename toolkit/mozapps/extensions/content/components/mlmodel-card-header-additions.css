@@ -29,6 +29,7 @@ mlmodel-card-header-additions {
     display: flex;
     justify-content: flex-end;
     background-color: var(--button-background-color-destructive);
+    color: var(--button-text-color-destructive);
     margin: 0;
   }
 

@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -72,7 +74,7 @@ class SourceLocation:
     end_column: int
 
     @classmethod
-    def from_node(cls, node) -> "SourceLocation":
+    def from_node(cls, node) -> SourceLocation:
         return cls(
             file_path=Path(node.start_mark.name).relative_to(topsrcdir),
             # YAML line numbers are 0-based, we want 1-based for user display

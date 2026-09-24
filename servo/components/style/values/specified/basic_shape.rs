@@ -7,8 +7,10 @@
 //!
 //! [basic-shape]: https://drafts.csswg.org/css-shapes/#typedef-basic-shape
 
+use crate::Zero;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::values::CSSFloat;
 use crate::values::computed::basic_shape::InsetRect as ComputedInsetRect;
 use crate::values::computed::{
     Context, LengthPercentage as ComputedLengthPercentage, ToComputedValue,
@@ -26,9 +28,7 @@ use crate::values::specified::url::SpecifiedUrl;
 use crate::values::specified::{
     LengthPercentage, NoCalcPercentage, NonNegativeLengthPercentage, SVGPathData,
 };
-use crate::values::CSSFloat;
-use crate::Zero;
-use cssparser::{match_ignore_ascii_case, Parser};
+use cssparser::{Parser, match_ignore_ascii_case};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
@@ -330,7 +330,7 @@ impl BasicShape {
                 },
                 "shape"
                     if flags.contains(AllowedBasicShapes::SHAPE)
-                        && static_prefs::pref!("layout.css.basic-shape-shape.enabled") =>
+                        && crate::pref!("layout.css.basic-shape-shape.enabled") =>
                 {
                     generic::Shape::parse_function_arguments(context, i, shape_type)
                         .map(PathOrShapeFunction::Shape)
@@ -420,7 +420,7 @@ impl Ellipse {
             .try_parse(|i| -> Result<_, ParseError> {
                 let s_x = ShapeRadius::parse(context, i)?;
                 let s_y = ShapeRadius::parse(context, i)?;
-                if !static_prefs::pref!("layout.css.ellipse-corners.enabled")
+                if !crate::pref!("layout.css.ellipse-corners.enabled")
                     && (matches!(
                         s_x,
                         ShapeRadius::ClosestCorner | ShapeRadius::FarthestCorner
@@ -600,8 +600,8 @@ impl ToComputedValue for BasicShapeRect {
         use style_traits::values::specified::AllowedNumericType;
 
         match self {
-            Self::Inset(ref inset) => inset.to_computed_value(context),
-            Self::Xywh(ref xywh) => {
+            Self::Inset(inset) => inset.to_computed_value(context),
+            Self::Xywh(xywh) => {
                 // Given `xywh(x y w h)`, construct the equivalent inset() function,
                 // `inset(y calc(100% - x - w) calc(100% - y - h) x)`.
                 //
@@ -627,7 +627,7 @@ impl ToComputedValue for BasicShapeRect {
                     round: xywh.round.to_computed_value(context),
                 }
             },
-            Self::Rect(ref rect) => {
+            Self::Rect(rect) => {
                 // Given `rect(t r b l)`, the equivalent function is
                 // `inset(t calc(100% - r) calc(100% - b) l)`.
                 //

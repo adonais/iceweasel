@@ -264,7 +264,6 @@ class CompositableHandle final {
   explicit operator bool() const { return IsValid(); }
   explicit operator uint64_t() const { return mHandle; }
   bool operator==(const CompositableHandle& aOther) const = default;
-  bool operator!=(const CompositableHandle& aOther) const = default;
   uint64_t Value() const { return mHandle; }
 
  private:
@@ -532,6 +531,20 @@ struct CompositionPayload {
   /* When this payload was generated */
   TimeStamp mTimeStamp;
 };
+
+// clang-format off
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+  RemoteDecoderVideoType, int8_t, (
+    TypeNone,
+    Buffer,
+    D3D10,
+    DXGIYCbCr,
+    DMABuf,
+    MacIOSurface,
+    DcompSurface,
+    AndroidImageReaderImage
+));
+// clang-format on
 
 }  // namespace layers
 }  // namespace mozilla

@@ -5,6 +5,8 @@
 #ifndef mozilla_widget_AsyncDBus_h
 #define mozilla_widget_AsyncDBus_h
 
+#include <utility>
+
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/MozPromise.h"
@@ -17,6 +19,11 @@ using DBusProxyPromise = MozPromise<RefPtr<GDBusProxy>, GUniquePtr<GError>,
 using DBusCallPromise = MozPromise<RefPtr<GVariant>, GUniquePtr<GError>,
                                    /* IsExclusive = */ true>;
 
+using DBusCallFDListPromise =
+    MozPromise<std::pair<RefPtr<GVariant>, RefPtr<GUnixFDList>>,
+               GUniquePtr<GError>,
+               /* IsExclusive = */ true>;
+
 RefPtr<DBusProxyPromise> CreateDBusProxyForBus(
     GBusType aBusType, GDBusProxyFlags aFlags,
     GDBusInterfaceInfo* aInterfaceInfo, const char* aName,
@@ -28,7 +35,7 @@ RefPtr<DBusCallPromise> DBusProxyCall(GDBusProxy*, const char* aMethod,
                                       gint aTimeout = -1,
                                       GCancellable* = nullptr);
 
-RefPtr<DBusCallPromise> DBusProxyCallWithUnixFDList(
+RefPtr<DBusCallFDListPromise> DBusProxyCallWithUnixFDList(
     GDBusProxy*, const char* aMethod, GVariant* aArgs, GDBusCallFlags,
     gint aTimeout = -1, GUnixFDList* = nullptr, GCancellable* = nullptr);
 

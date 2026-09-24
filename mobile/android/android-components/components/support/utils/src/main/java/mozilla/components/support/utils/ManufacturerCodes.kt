@@ -19,6 +19,7 @@ internal object ManufacturerCodes {
     private const val ONE_PLUS = "OnePlus"
     private const val LG = "LGE"
     private const val OPPO = "OPPO"
+    private const val REALME = "realme"
 
     @VisibleForTesting internal var manufacturer = Build.MANUFACTURER // is a var for testing purposes
 
@@ -39,6 +40,9 @@ internal object ManufacturerCodes {
 
     internal val isOppo
         get() = manufacturer.equals(OPPO, ignoreCase = true)
+
+    internal val isRealme
+        get() = manufacturer.equals(REALME, ignoreCase = true)
 }
 
 /** Interface for checking the device's manufacturer. */
@@ -60,6 +64,9 @@ interface ManufacturerChecker {
 
     /** Returns true if the device is manufactured by OPPO. */
     fun isOppo(): Boolean
+
+    /** Returns true if the device is manufactured by realme. */
+    fun isRealme(): Boolean
 }
 
 /**
@@ -78,4 +85,6 @@ class BuildManufacturerChecker : ManufacturerChecker {
     override fun isLG(): Boolean = ManufacturerCodes.isLG
 
     override fun isOppo(): Boolean = ManufacturerCodes.isOppo
+
+    override fun isRealme(): Boolean = ManufacturerCodes.isRealme
 }

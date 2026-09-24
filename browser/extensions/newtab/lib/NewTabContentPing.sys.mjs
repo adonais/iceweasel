@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 
@@ -81,7 +82,7 @@ export class NewTabContentPing {
    *   The extra data being recorded with the event.
    */
   recordEvent(name, data) {
-    this.#eventBuffer.push([name, this.sanitizeEventData(data)]);
+    this.#eventBuffer.push([name, this.sanitizeEventData(name, data)]);
   }
 
   /**
@@ -264,12 +265,14 @@ export class NewTabContentPing {
    * ensure we don't accidentally send these if copying information between
    * the newtab ping and the newtab-content ping.
    *
+   * @param {string} eventName
+   *   The name of the event being recorded.
    * @param {object} eventDataDict
    *   The Glean event data that would be passed to a `record` method.
    * @returns {object}
    *   The sanitized event data.
    */
-  sanitizeEventData(eventDataDict) {
+  sanitizeEventData(eventName, eventDataDict) {
     const {
       // eslint-disable-next-line no-unused-vars
       tile_id,
@@ -284,9 +287,24 @@ export class NewTabContentPing {
       // eslint-disable-next-line no-unused-vars
       event_source,
       // eslint-disable-next-line no-unused-vars
-      layout_name,
+      card_column,
+      // eslint-disable-next-line no-unused-vars
+      is_ad_eligible_position,
       ...result
     } = eventDataDict;
+    // @backward-compat { version 157 } layout_name was added as an extra_key to
+    // the newtab_content impression/click events in 157. A train-hopped XPI can
+    // run on older platform builds whose schema lacks it, which would throw a
+    // Glean error, so drop it below 157.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "157.0a1") < 0) {
+      delete result.layout_name;
+    }
+    // Bug 2067937: section_position can't be kept consistent for randomized
+    // (DP-noised) content, so it is not collected on the impression and click
+    // events of the newtab_content ping.
+    if (eventName === "impression" || eventName === "click") {
+      delete result.section_position;
+    }
     return result;
   }
 

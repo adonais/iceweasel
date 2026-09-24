@@ -212,7 +212,8 @@ class DocAccessible : public HyperTextAccessible,
   void FireEventsOnInsertion(LocalAccessible* aContainer);
 
   /**
-   * Fire value change event on the given accessible if applicable.
+   * Fire value change event on the given accessible, or the nearest ancestor
+   * whose value might depend on it, if applicable.
    */
   void MaybeNotifyOfValueChange(LocalAccessible* aAccessible);
 

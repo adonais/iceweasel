@@ -12,8 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.awesomebar.AwesomeBarColors
 
 /** Renders a header for a group of suggestions. */
@@ -33,8 +33,8 @@ internal fun SuggestionGroup(
             color = colors.groupTitle,
             modifier =
                 Modifier.padding(
-                        vertical = 12.dp,
-                        horizontal = 16.dp,
+                        vertical = AcornTheme.layout.space.static100,
+                        horizontal = AcornTheme.layout.space.dynamic200,
                     )
                     .fillMaxWidth(),
             fontSize = 14.sp,

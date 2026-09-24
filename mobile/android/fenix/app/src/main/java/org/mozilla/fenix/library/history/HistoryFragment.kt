@@ -829,6 +829,8 @@ class HistoryFragment :
                             toolbarStore = toolbarStore,
                             navController = findNavController(),
                             browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
+                            shareUseCases = requireComponents.useCases.shareUseCases,
+                            clipboardHandler = requireComponents.clipboardHandler,
                         ),
                     ),
             )

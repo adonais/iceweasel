@@ -9,7 +9,7 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 /**
  * What a [SelectorStrategy] actually asks for, as data.
  *
- * The 34 strategies are not 34 ideas. They are the product of five small ones:
+ * The strategies are not all separate ideas. They are the product of five small ones:
  *
  * layer which UI toolkit answers the question handle what to match on match exactly, or as a substring tree Compose
  * only: the merged semantics tree or the unmerged one pick Compose only: the single node, or the first of all matches
@@ -72,6 +72,7 @@ enum class Extra {
     TEXT_SUBSTRING,
     DESC_SUBSTRING,
     SIBLING_TEXT,
+    DESCENDANT_TEXT,
     CHILD_TEXT,
     EDITABLE_UNDER,
 }
@@ -105,6 +106,8 @@ val STRATEGY_LOCATORS: Map<SelectorStrategy, Locator> =
 
         // Espresso
         SelectorStrategy.ESPRESSO_BY_ID to Locator(Layer.ESPRESSO, Handle.ID),
+        SelectorStrategy.ESPRESSO_BY_ID_WITH_DESCENDANT_TEXT to
+            Locator(Layer.ESPRESSO, Handle.ID, extra = Extra.DESCENDANT_TEXT),
         SelectorStrategy.ESPRESSO_BY_ID_WITH_SIBLING_TEXT to
             Locator(Layer.ESPRESSO, Handle.ID, extra = Extra.SIBLING_TEXT),
         SelectorStrategy.ESPRESSO_BY_TEXT to Locator(Layer.ESPRESSO, Handle.TEXT),

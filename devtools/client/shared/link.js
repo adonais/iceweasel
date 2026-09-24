@@ -32,7 +32,8 @@ function _getTopWindow() {
  * @param {string} url
  *        The url to open.
  * @param {object} options
- *        Optional parameters, see documentation for openUILinkIn in utilityOverlay.js
+ *        Optional parameters, see documentation for openWebLinkIn
+ *        in browser/modules/URILoadingHelper.sys.mjs#openWebLinkIn
  */
 exports.openDocLink = async function (url, options) {
   const top = _getTopWindow();
@@ -52,7 +53,8 @@ exports.openDocLink = async function (url, options) {
  * @param {string} url
  *        The url to open.
  * @param {object} options
- *        Optional parameters, see documentation for openUILinkIn in utilityOverlay.js
+ *        Optional parameters, see documentation for openWebLinkIn
+ *        in browser/modules/URILoadingHelper.sys.mjs#openWebLinkIn
  */
 exports.openContentLink = async function (url, options = {}) {
   const top = _getTopWindow();
@@ -75,7 +77,8 @@ exports.openContentLink = async function (url, options = {}) {
  * @param {string} url
  *        The url to open.
  * @param {object} options
- *        Optional parameters, see documentation for openUILinkIn in utilityOverlay.js
+ *        Optional parameters, see documentation for openTrustedLinkIn in
+ *        browser/modules/URILoadingHelper.sys.mjs#openTrustedLinkIn
  */
 exports.openTrustedLink = async function (url, options) {
   const top = _getTopWindow();

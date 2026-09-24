@@ -33,9 +33,9 @@ pub fn derive(mut input: DeriveInput) -> TokenStream {
         match input.data {
             Data::Enum(ref e) => {
                 for v in e.variants.iter() {
-                    let css_attrs = cg::parse_variant_attrs::<CssVariantAttrs>(&v);
-                    let info_attrs = cg::parse_variant_attrs::<ValueInfoVariantAttrs>(&v);
-                    let parse_attrs = cg::parse_variant_attrs::<ParseVariantAttrs>(&v);
+                    let css_attrs = cg::parse_variant_attrs::<CssVariantAttrs>(v);
+                    let info_attrs = cg::parse_variant_attrs::<ValueInfoVariantAttrs>(v);
+                    let parse_attrs = cg::parse_variant_attrs::<ParseVariantAttrs>(v);
                     if css_attrs.skip || info_attrs.skip {
                         continue;
                     }

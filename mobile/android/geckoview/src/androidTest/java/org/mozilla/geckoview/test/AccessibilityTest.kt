@@ -263,15 +263,11 @@ class AccessibilityTest : BaseSessionTest() {
 
     @Test
     fun testForceEnabledByPrefSurvivesNewSessionAttach() {
-        // Force enable accessibility via the pref instead of the GeckoView
-        // API.
+        // Force enable accessibility via the pref.
         sessionRule.setPrefsUntilTestEnd(mapOf("accessibility.force_disabled" to -1))
-        // Confirm that accessibility is enabled.
-        assertThat(
-            "Root node should have WebView class name",
-            createNodeInfo(AccessibilityNodeProvider.HOST_VIEW_ID).className.toString(),
-            equalTo("android.webkit.WebView"),
-        )
+        // Check that accessibility is enabled.
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        waitForInitialFocus()
 
         // Clear the Android specific force enable set in @Before, so the pref
         // is the only thing keeping accessibility on. This will be set to true
@@ -822,6 +818,55 @@ class AccessibilityTest : BaseSessionTest() {
                         "Accessibility focus on first text leaf",
                         node.hintText.toString(),
                         equalTo("partially checked"),
+                    )
+                }
+            }
+        )
+    }
+
+    @Test
+    fun testSummary() {
+        var nodeId = AccessibilityNodeProvider.HOST_VIEW_ID
+        mainSession.loadUri("data:text/html;charset=utf-8,<details><summary>Question</summary><p>Answer</p></details>")
+        waitForInitialFocus(true)
+
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onAccessibilityFocused(event: AccessibilityEvent) {
+                    nodeId = getSourceId(event)
+                    val node = createNodeInfo(nodeId)
+                    assertThat("Accessibility focus on summary", node.text.toString(), equalTo("Question"))
+                    assertThat(
+                        "Summary has role description",
+                        node.extras.getCharSequence("AccessibilityNodeInfo.roleDescription")!!.toString(),
+                        equalTo("summary"),
+                    )
+                    assertThat(
+                        "summary is expandable",
+                        node.actionList,
+                        hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND),
+                    )
+                }
+            }
+        )
+
+        provider.performAction(nodeId, AccessibilityNodeInfo.ACTION_EXPAND, null)
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onClicked(event: AccessibilityEvent) {
+                    assertThat("Clicked event is from same node", getSourceId(event), equalTo(nodeId))
+                    val node = createNodeInfo(nodeId)
+                    assertThat(
+                        "summary is collapsable",
+                        node.actionList,
+                        hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_COLLAPSE),
+                    )
+                    assertThat(
+                        "node is not expandable",
+                        node.actionList,
+                        not(hasItem(AccessibilityNodeInfo.AccessibilityAction.ACTION_EXPAND)),
                     )
                 }
             }
@@ -2125,10 +2170,20 @@ class AccessibilityTest : BaseSessionTest() {
     @Test
     fun testRange() {
         loadTestPage("test-range")
-        waitForInitialFocus()
+        waitForInitialFocus(true)
 
         val rootNode = createNodeInfo(View.NO_ID)
         assertThat("Document has 3 children", rootNode.childCount, equalTo(3))
+
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onAccessibilityFocused(event: AccessibilityEvent) {
+                    val nodeId = getSourceId(event)
+                    assertThat("Event source is first child", nodeId, equalTo(rootNode.getChildId(0)))
+                }
+            }
+        )
 
         val firstRange = createNodeInfo(rootNode.getChildId(0))
         assertThat("Range has right label", firstRange.text.toString(), equalTo("Rating"))
@@ -2142,29 +2197,75 @@ class AccessibilityTest : BaseSessionTest() {
             firstRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_INT),
         )
+        assertThat(
+            "'Rating' has scroll forward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD in firstRange.actionList,
+            equalTo(true),
+        )
+        assertThat(
+            "'Rating' has scroll backward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD in firstRange.actionList,
+            equalTo(true),
+        )
 
         val secondRange = createNodeInfo(rootNode.getChildId(1))
         assertThat("Range has right label", secondRange.text.toString(), equalTo("Stars"))
-        assertThat("'Rating' has rangeInfo", secondRange.rangeInfo, notNullValue())
-        assertThat("'Rating' has correct value", secondRange.rangeInfo.current, equalTo(4.5f))
-        assertThat("'Rating' has correct max", secondRange.rangeInfo.max, equalTo(5f))
-        assertThat("'Rating' has correct min", secondRange.rangeInfo.min, equalTo(1f))
+        assertThat("'Stars' has rangeInfo", secondRange.rangeInfo, notNullValue())
+        assertThat("'Stars' has correct value", secondRange.rangeInfo.current, equalTo(5f))
+        assertThat("'Stars' has correct max", secondRange.rangeInfo.max, equalTo(5f))
+        assertThat("'Stars' has correct min", secondRange.rangeInfo.min, equalTo(1f))
         assertThat(
-            "'Rating' has correct range type",
+            "'Stars' has correct range type",
             secondRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_FLOAT),
+        )
+        assertThat(
+            "'Stars' has scroll forward",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD in secondRange.actionList,
+            equalTo(true),
+        )
+        assertThat(
+            "'Stars' does not have scroll backward because it is at the max",
+            AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_BACKWARD in secondRange.actionList,
+            equalTo(false),
         )
 
         val thirdRange = createNodeInfo(rootNode.getChildId(2))
         assertThat("Range has right label", thirdRange.text.toString(), equalTo("Percent"))
-        assertThat("'Rating' has rangeInfo", thirdRange.rangeInfo, notNullValue())
-        assertThat("'Rating' has correct value", thirdRange.rangeInfo.current, equalTo(0.83f))
-        assertThat("'Rating' has correct max", thirdRange.rangeInfo.max, equalTo(1f))
-        assertThat("'Rating' has correct min", thirdRange.rangeInfo.min, equalTo(0f))
+        assertThat("'Percent' has rangeInfo", thirdRange.rangeInfo, notNullValue())
+        assertThat("'Percent' has correct value", thirdRange.rangeInfo.current, equalTo(0.83f))
+        assertThat("'Percent' has correct max", thirdRange.rangeInfo.max, equalTo(1f))
+        assertThat("'Percent' has correct min", thirdRange.rangeInfo.min, equalTo(0f))
         assertThat(
-            "'Rating' has correct range type",
+            "'Percent' has correct range type",
             thirdRange.rangeInfo.type,
             equalTo(AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_PERCENT),
+        )
+
+        provider.performAction(rootNode.getChildId(0), AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null)
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onSelected(event: AccessibilityEvent) {
+                    val nodeId = getSourceId(event)
+                    val node = createNodeInfo(nodeId)
+                    assertThat("Focused range gets TYPE_VIEW_SELECTED event", nodeId, equalTo(rootNode.getChildId(0)))
+                    assertThat("'Rating' has correct new value", node.rangeInfo.current, equalTo(5f))
+                }
+            }
+        )
+
+        provider.performAction(rootNode.getChildId(1), AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD, null)
+        sessionRule.waitUntilCalled(
+            object : EventDelegate {
+                @AssertCalled(count = 1)
+                override fun onScrolled(event: AccessibilityEvent) {
+                    val nodeId = getSourceId(event)
+                    val node = createNodeInfo(nodeId)
+                    assertThat("Unfocused range gets TYPE_VIEW_SCROLLED event", nodeId, equalTo(rootNode.getChildId(1)))
+                    assertThat("'Stars' has correct new value", node.rangeInfo.current, equalTo(4.5f))
+                }
+            }
         )
     }
 

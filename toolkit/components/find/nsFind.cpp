@@ -191,7 +191,8 @@ static bool ShouldFindAnonymousContent(const nsIContent& aContent) {
   return true;
 }
 
-static bool SkipNode(const nsIContent* aContent) {
+static bool SkipNode(const nsIContent* aContent,
+                     bool aSkipNativeAnonymousContent) {
   const nsIContent* content = aContent;
   while (content) {
     if (!IsDisplayedNode(content) || content->IsComment() ||
@@ -220,7 +221,8 @@ static bool SkipNode(const nsIContent* aContent) {
     }
 
     if (content->IsInNativeAnonymousSubtree() &&
-        !ShouldFindAnonymousContent(*content)) {
+        (aSkipNativeAnonymousContent ||
+         !ShouldFindAnonymousContent(*content))) {
       DEBUG_FIND_PRINTF("Skipping node: ");
       DumpNode(content);
       return true;
@@ -260,8 +262,10 @@ static bool ForceBreakBetweenText(const Text& aPrevious, const Text& aNext) {
 }
 
 struct nsFind::State final {
-  State(bool aFindBackward, nsIContent& aRoot, const RangeBoundary& aStartPoint)
+  State(bool aFindBackward, bool aSkipNativeAnonymousContent, nsIContent& aRoot,
+        const RangeBoundary& aStartPoint)
       : mFindBackward(aFindBackward),
+        mSkipNativeAnonymousContent(aSkipNativeAnonymousContent),
         mInitialized(false),
         mFoundBreak(false),
         mIterOffset(-1),
@@ -302,12 +306,14 @@ struct nsFind::State final {
 
   // Returns whether the node should be used (true) or skipped over (false)
   static bool AnalyzeNode(const nsINode& aNode, const Text* aPrev,
-                          bool aAlreadyMatching, bool* aForcedBreak) {
+                          bool aAlreadyMatching,
+                          bool aSkipNativeAnonymousContent,
+                          bool* aForcedBreak) {
     if (!aNode.IsText()) {
       *aForcedBreak = *aForcedBreak || NonTextNodeForcesBreak(aNode);
       return false;
     }
-    if (SkipNode(aNode.AsText())) {
+    if (SkipNode(aNode.AsText(), aSkipNativeAnonymousContent)) {
       return false;
     }
     *aForcedBreak = *aForcedBreak ||
@@ -341,6 +347,7 @@ struct nsFind::State final {
   }
 
   const bool mFindBackward;
+  const bool mSkipNativeAnonymousContent;
 
   // Whether we've called GetNextNode() at least once.
   bool mInitialized;
@@ -372,7 +379,8 @@ void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
     if (!current) {
       return;
     }
-    if (AnalyzeNode(*current, prev, aAlreadyMatching, &mFoundBreak)) {
+    if (AnalyzeNode(*current, prev, aAlreadyMatching,
+                    mSkipNativeAnonymousContent, &mFoundBreak)) {
       break;
     }
   }
@@ -406,7 +414,8 @@ void nsFind::State::Initialize() {
   }
 
   const bool kAlreadyMatching = false;
-  if (!AnalyzeNode(*current, nullptr, kAlreadyMatching, &mFoundBreak)) {
+  if (!AnalyzeNode(*current, nullptr, kAlreadyMatching,
+                   mSkipNativeAnonymousContent, &mFoundBreak)) {
     Advance(Initializing::Yes, kAlreadyMatching);
     current = mIterator.GetCurrent();
     if (!current) {
@@ -704,7 +713,8 @@ already_AddRefed<nsRange> nsFind::FindFromRangeBoundaries(
   char32_t patc = 0;
   char32_t prevCharInMatch = 0;
 
-  State state(mFindBackward, *root, mFindBackward ? aEndPoint : aStartPoint);
+  State state(mFindBackward, mSkipNativeAnonymousContent, *root,
+              mFindBackward ? aEndPoint : aStartPoint);
   Text* current = nullptr;
 
   auto EndPartialMatch = [&]() -> bool {

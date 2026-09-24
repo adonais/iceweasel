@@ -74,9 +74,6 @@ FilterPrimitiveDescription SVGFEDropShadowElement::GetPrimitiveDescription(
   float stdY = aInstance->GetPrimitiveNumber(
       SVGLength::Axis::Y, &mNumberPairAttributes[STD_DEV],
       SVGAnimatedNumberPairWhichOne::Second);
-  if (stdX < 0 || stdY < 0) {
-    return FilterPrimitiveDescription();
-  }
 
   Point offset(
       aInstance->GetPrimitiveNumber(SVGLength::Axis::X, &mNumberAttributes[DX]),
@@ -84,7 +81,7 @@ FilterPrimitiveDescription SVGFEDropShadowElement::GetPrimitiveDescription(
                                     &mNumberAttributes[DY]));
 
   DropShadowAttributes atts;
-  atts.mStdDeviation = Size(stdX, stdY);
+  atts.mStdDeviation = Size(std::max(stdX, 0.f), std::max(stdY, 0.f));
   atts.mOffset = offset;
 
   if (const auto* frame = GetPrimaryFrame()) {

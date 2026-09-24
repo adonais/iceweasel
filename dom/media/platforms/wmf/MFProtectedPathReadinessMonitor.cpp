@@ -7,6 +7,7 @@
 #include "MFMediaEngineUtils.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/EnumeratedRange.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
@@ -17,6 +18,12 @@ namespace mozilla {
 
 namespace {
 bool IsRecoverableActivationError(HRESULT aError) {
+  // Disabled by default; the pref exists to restore the old behaviour on a
+  // release branch.
+  if (!StaticPrefs::
+          media_wmf_media_engine_protected_readiness_gate_recovery_enabled()) {
+    return false;
+  }
   // These two errors are reported when Media Foundation fails to build the
   // protected topology because the protected pipeline was not fully in place
   // yet (for example output protection had not settled), not because the system

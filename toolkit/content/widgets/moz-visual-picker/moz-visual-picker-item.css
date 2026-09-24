@@ -5,6 +5,8 @@
 @import url("chrome://global/content/elements/moz-visual-picker-item.tokens.css");
 
 :host {
+  --visual-picker-item-border-radius-inner: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width-checked));
+
   cursor: default;
   display: flex;
 }
@@ -34,6 +36,8 @@
       padding: var(--visual-picker-item-padding, 0);
       object-fit: cover;
       flex-shrink: 0;
+      border-start-end-radius: 0;
+      border-end-end-radius: 0;
     }
   }
 }
@@ -47,19 +51,33 @@
   flex: 1;
 }
 
-.picker-item {
-  --visual-picker-item-border-radius-inner: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
+:host(:not([orientation="vertical"], [labelposition="outside"])) .image-item img {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
 
+.picker-item {
   appearance: none;
   overflow: hidden;
-  border: var(--visual-picker-item-border-width) solid var(--visual-picker-item-border-color);
+  position: relative;
+  border: none;
   border-radius: var(--visual-picker-item-border-radius);
-  /* The margin needs to account for the increased border-width on the checked item. */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  margin: calc(var(--visual-picker-item-border-width-checked) - var(--visual-picker-item-border-width));
   background-color: var(--button-background-color-ghost);
-  padding: 0;
+  background-clip: content-box;
+  color: var(--button-text-color-ghost);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding: var(--visual-picker-item-border-width-checked);
   flex: 1;
+
+  &::after {
+    content: "";
+    position: absolute;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    inset: var(--visual-picker-item-border-width-checked);
+    outline: var(--visual-picker-item-border-width) solid var(--visual-picker-item-border-color);
+    border-radius: var(--visual-picker-item-border-radius-inner);
+    pointer-events: none;
+  }
 
   &:focus {
     outline: none;
@@ -67,7 +85,7 @@
 
   &:focus-visible {
     outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
+    outline-offset: calc(var(--focus-outline-offset) - var(--visual-picker-item-border-width-checked) + var(--visual-picker-item-border-width));
   }
 
   &:hover {
@@ -82,8 +100,7 @@
 
   &[checked] {
     --visual-picker-item-border-width: var(--visual-picker-item-border-width-checked);
-    border-color: var(--border-color-selected);
-    margin: 0;
+    --visual-picker-item-border-color: var(--border-color-selected);
   }
 
   ::slotted(:first-child) {
@@ -100,6 +117,7 @@
   img {
     display: block;
     width: 100%;
+    border-radius: var(--visual-picker-item-border-radius-inner);
   }
 }
 

@@ -339,7 +339,7 @@ RTCError JsepTransport::VerifyCertificateFingerprint(
   desc << "Local fingerprint does not match identity. Expected: ";
   desc << fp_tmp->ToString();
   desc << " Got: " << fingerprint->ToString();
-  return RTCError(RTCErrorType::INVALID_PARAMETER, std::string(desc.str()));
+  return RTCError(RTCErrorType::INVALID_PARAMETER, desc.Release());
 }
 
 void JsepTransport::SetRemoteIceParameters(

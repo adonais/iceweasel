@@ -166,6 +166,7 @@ class AlignedBuffer {
   }
 
   Type* Data() const { return mData; }
+  Type* Elements() const { return mData; }
   size_t Length() const { return mLength; }
   size_t Size() const { return mLength * sizeof(Type); }
   Type& operator[](size_t aIndex) {

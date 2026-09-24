@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /* eslint-disable no-unused-vars */
 
+/* import-globals-from ../../utils/build-query.js */
+
 "use strict";
 
 /**
@@ -361,4 +363,31 @@ function searchInObject(query, modifiers, obj, data) {
   }
 
   return matches;
+}
+
+function getMatches(query, text, options) {
+  if (!query || !text || !options) {
+    return [];
+  }
+  const regexQuery = buildQuery(query, options, {
+    isGlobal: true,
+  });
+  const matchedLocations = [];
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    let singleMatch;
+    const line = lines[i];
+    while ((singleMatch = regexQuery.exec(line)) !== null) {
+      matchedLocations.push({
+        line: i,
+        ch: singleMatch.index,
+        match: singleMatch[0],
+      });
+
+      if (singleMatch[0] === "") {
+        regexQuery.lastIndex++;
+      }
+    }
+  }
+  return matchedLocations;
 }

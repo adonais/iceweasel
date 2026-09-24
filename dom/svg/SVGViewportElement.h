@@ -35,7 +35,7 @@ class SVGViewportElement : public SVGGraphicsElement {
 
  public:
   // nsIContent interface
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   // SVGElement specializations:
   gfxMatrix ChildToUserSpaceTransform() const override;

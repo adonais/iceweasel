@@ -117,6 +117,7 @@ EXPORTS.mozilla += [
     "ConnectedAncestorTracker.h",
     "ContentIterator.h",
     "CORSMode.h",
+    "Directionality.h",
     "FlushType.h",
     "FocusModel.h",
     "FullscreenChange.h",

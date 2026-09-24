@@ -29,7 +29,6 @@ describe("<WidgetsManagementPanel>", () => {
     sandbox = sinon.createSandbox();
 
     DEFAULT_PROPS = {
-      onSubpanelToggle: sandbox.stub(),
       togglePanel: sandbox.stub(),
       showPanel: false,
       enabledSections: { weatherEnabled: false },
@@ -100,26 +99,6 @@ describe("<WidgetsManagementPanel>", () => {
       </WrapWithProvider>
     );
     assert.isFalse(wrapper.find(".widgets-mgmt-panel").exists());
-  });
-
-  it("should call onSubpanelToggle when panel opens", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={false} />
-      </WrapWithProvider>
-    );
-
-    wrapper.setProps({
-      children: (
-        <WidgetsManagementPanel
-          {...DEFAULT_PROPS}
-          showPanel={true}
-          onSubpanelToggle={DEFAULT_PROPS.onSubpanelToggle}
-        />
-      ),
-    });
-
-    assert.called(DEFAULT_PROPS.onSubpanelToggle);
   });
 
   it("should call togglePanel when arrow button is clicked", () => {

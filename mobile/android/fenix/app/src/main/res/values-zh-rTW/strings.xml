@@ -358,13 +358,13 @@
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">更多資訊</string>
   <!-- Title for the block AI enhancements toggle -->
-  <string name="ai_controls_block_ai_title">封鎖 AI 功能</string>
+  <string name="ai_controls_block_ai_title">封鎖 AI 強化功能</string>
   <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_ai_description">封鎖的話，代表您不會在 %s 看到目前已有，或新推出的 AI 擴充功能，或是任何有關這些功能的彈出提示。</string>
+  <string name="ai_controls_block_ai_description">封鎖的話，代表您不會在 %s 看到目前已有，或新推出的 AI 強化功能，或是任何有關這些功能的彈出提示。</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">看看包含哪些項目，又不含哪些項目</string>
   <!-- Banner text shown when AI enhancements are blocked -->
-  <string name="ai_controls_blocked_info_banner">預設會封鎖目前與新推出的 AI 擴充功能，可在下方解除封鎖特定功能。</string>
+  <string name="ai_controls_blocked_info_banner">預設會封鎖目前與新推出的 AI 強化功能，可在下方解除封鎖特定功能。</string>
   <!-- Section header for the AI-powered features list -->
   <string name="ai_controls_ai_powered_features">由 AI 驅動的功能</string>
   <!-- Title for the translations AI feature toggle -->
@@ -380,9 +380,9 @@
   <!-- Description for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_description">語音內容會透過 Google Speech Services 轉換為文字。</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
-  <string name="ai_controls_block_dialog_title">要封鎖 AI 功能嗎？</string>
+  <string name="ai_controls_block_dialog_title">要封鎖 AI 強化功能嗎？</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">您不會在 %1$s 看到目前已有，或新推出的 AI 擴充功能，或是任何有關這些功能的彈出提示。但之後還是可以解除封鎖任何想要使用的功能。\n\n封鎖 AI 功能也會影響使用到 %1$s 提供的 AI 的擴充套件的相關功能。</string>
+  <string name="ai_controls_block_dialog_body">您不會在 %1$s 看到目前已有，或新推出的 AI 強化功能，或是任何有關這些功能的彈出提示。但之後還是可以解除封鎖任何想要使用的功能。\n\n封鎖也會影響使用到 %1$s 提供的 AI 的擴充套件。</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">會封鎖哪些功能：</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -2538,7 +2538,7 @@
   <!-- Title for the Delete browsing data on quit preference -->
   <string name="preferences_delete_browsing_data_on_quit">離開時刪除瀏覽資料</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
-  <string name="preference_summary_delete_browsing_data_on_quit_2">點擊主選單中的「離開」時，自動清除上網資料</string>
+  <string name="preference_summary_delete_browsing_data_on_quit_2">點擊主選單中的「離開」時，自動清除瀏覽資料</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">要清除的時間範圍</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2558,7 +2558,7 @@
   <!-- Text for the snackbar confirmation that the data was deleted -->
   <string name="preferences_delete_browsing_data_snackbar">已刪除瀏覽資料</string>
   <!-- Text for the snackbar to show the user that the deletion of browsing data is in progress -->
-  <string name="deleting_browsing_data_in_progress">正在刪除上網資料…</string>
+  <string name="deleting_browsing_data_in_progress">正在刪除瀏覽資料…</string>
   <!-- Dialog message to the user asking to delete all history items inside the opened group. %s is a history group name. -->
   <string name="delete_all_history_group_prompt_message">要刪除「%s」中的所有網站？</string>
   <!-- Text for the cancel button for the history group deletion dialog -->
@@ -2708,7 +2708,7 @@
   <!-- Category of trackers (cross-site tracking cookies) that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cookies_title_2">跨網站 Cookie</string>
   <!-- Description of cross-site tracking cookies that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_cookies_description">封鎖廣告網與分析公司用來在各個網站中收集您的上網資料的 Cookie。</string>
+  <string name="etp_cookies_description">封鎖廣告網與分析公司用來在各個網站中收集您的瀏覽資料的 Cookie。</string>
   <!-- Description of cross-site tracking cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cookies_description_2">全方位 Cookie 保護功能會將 Cookie 隔離於您所在的網站當中，這樣廣告網所送出的追蹤器就無法透過 Cookie 在不同網站間追蹤您。</string>
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
@@ -2769,11 +2769,11 @@
   <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection">預設保護</string>
   <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_doh_default_protection_summary">%1$s 會為您決定使用安全的 DNS 的時機，以保護您的隱私。</string>
+  <string name="preference_doh_default_protection_summary">%1$s 會為您決定使用安全 DNS 的時機，以保護您的隱私。</string>
   <!-- Bullet point 1 for "Default Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection_info_1">使用您選擇的提供者</string>
   <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
-  <string name="preference_doh_default_protection_info_2">若無法使用安全的 DNS 提供者，就使用您的預設 DNS 解析器。</string>
+  <string name="preference_doh_default_protection_info_2">若無法使用安全 DNS 提供者，就使用您的預設 DNS 解析器</string>
   <!-- Bullet point 3 for "Default Protection" information page under "DNS over HTTPS". %1$s is replaced by a link using `preference_doh_learn_more` at text ("Learn More"). -->
   <string name="preference_doh_default_protection_info_3">盡可能使用本機提供者。%1$s</string>
   <!-- Bullet point 4 for "Default Protection" information page under "DNS over HTTPS" -->
@@ -2787,7 +2787,7 @@
   <!-- Bullet point 1 for "Increased Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_increased_protection_info_1">使用您選擇的提供者</string>
   <!-- Bullet point 2 for "Increased Protection" information page under "DNS over HTTPS" -->
-  <string name="preference_doh_increased_protection_info_2">只在無法使用安全的 DNS 提供者時，使用您的預設 DNS 解析器。</string>
+  <string name="preference_doh_increased_protection_info_2">只在無法使用安全 DNS 提供者時，使用您的預設 DNS 解析器</string>
   <!-- Title displayed for "Max Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_max_protection">最大保護</string>
   <!-- Summary displayed for "Max Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
@@ -2823,7 +2823,7 @@
   <!-- Preference to access list of login exceptions that we don't use DNS over HTTPS -->
   <string name="preference_doh_exceptions">例外網站</string>
   <!-- Description of "exceptions" for "DNS over HTTPS". %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preference_doh_exceptions_summary">%1$s 不會對下列網站與子網域網站，使用安全的 DNS 進行查詢。</string>
+  <string name="preference_doh_exceptions_summary">%1$s 不會對下列網站與子網域網站，使用安全 DNS 進行查詢。</string>
   <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
   <string name="preference_doh_exceptions_add">新增網站</string>
   <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
@@ -3171,7 +3171,7 @@
   <!-- Preference option for adding an address -->
   <string name="preferences_addresses_add_address">新增地址</string>
   <!-- Preference option for managing saved addresses -->
-  <string name="preferences_addresses_manage_addresses">管理已存地址</string>
+  <string name="preferences_addresses_manage_addresses">管理已儲存的地址</string>
   <!-- Preference for saving and filling addresses -->
   <string name="preferences_addresses_save_and_autofill_addresses_2">儲存並自動填寫地址</string>
   <!-- Preference summary for saving and filling address data -->
@@ -3235,7 +3235,7 @@
   <!-- Title of the "Edit address" screen -->
   <string name="addresses_edit_address">編輯地址</string>
   <!-- Title of the "Manage addresses" screen -->
-  <string name="addresses_manage_addresses">管理已存地址</string>
+  <string name="addresses_manage_addresses">管理已儲存的地址</string>
   <!-- The header for the name of an address. Name represents a person's full name, typically made up of a first, middle and last name, e.g. John Joe Doe. -->
   <string name="addresses_name">姓名</string>
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The organization's name related to the address helps in distinguishing addresses used for business or personal purposes. -->
@@ -4116,7 +4116,7 @@
   <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
   <string name="debug_drawer_addresses_debug_locales_header">要開啟的除錯語系</string>
   <!-- The title of the header for the section for managing addresses. -->
-  <string name="debug_drawer_addresses_management_header">管理已存地址</string>
+  <string name="debug_drawer_addresses_management_header">管理已儲存的地址</string>
   <!-- The title of the button in the debug drawer for adding a new address. -->
   <string name="debug_drawer_add_new_address">新增所選語系的新地址</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->

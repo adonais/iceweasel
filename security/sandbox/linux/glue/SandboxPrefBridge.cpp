@@ -6,7 +6,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/SandboxSettings.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"  // for FILE_REMOTE_TYPE
+#include "mozilla/dom/ContentParent.h"
 
 namespace mozilla {
 
@@ -27,7 +27,7 @@ ContentProcessSandboxParams::ForThisProcess(
   // (Otherwise, mBrokerFd will remain -1 from the default ctor.)
 
   auto* cc = dom::ContentChild::GetSingleton();
-  params.mFileProcess = cc->GetRemoteType() == FILE_REMOTE_TYPE;
+  params.mFileProcess = cc->GetRemoteType().IsFile();
 
   nsAutoCString extraSyscalls;
   nsresult rv = Preferences::GetCString(

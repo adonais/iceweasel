@@ -9,10 +9,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
+#include "SHMBufSurface.h"
 #include "WaylandSurface.h"
 #include "WaylandSurfaceLock.h"
 #include "gfx2DGlue.h"
-#include "gfxPlatform.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Tools.h"
@@ -24,7 +24,6 @@
 #ifdef MOZ_LOGGING
 #  include "Units.h"
 #  include "mozilla/Logging.h"
-#  include "mozilla/ScopeExit.h"
 extern mozilla::LazyLogModule gWidgetWaylandLog;
 #  define LOGWAYLAND(...) \
     MOZ_LOG(gWidgetWaylandLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
@@ -36,56 +35,11 @@ using namespace mozilla::gl;
 
 namespace mozilla::widget {
 
-#define BUFFER_BPP 4
-
 #ifdef MOZ_LOGGING
 MOZ_RUNINIT int WaylandBuffer::mDumpSerial =
     PR_GetEnv("MOZ_WAYLAND_DUMP_WL_BUFFERS") ? 1 : 0;
 MOZ_RUNINIT char* WaylandBuffer::mDumpDir = PR_GetEnv("MOZ_WAYLAND_DUMP_DIR");
 #endif
-
-/* static */
-RefPtr<WaylandShmPool> WaylandShmPool::Create(nsWaylandDisplay* aWaylandDisplay,
-                                              int aSize) {
-  if (!aWaylandDisplay->GetShm()) {
-    NS_WARNING("WaylandShmPool: Missing Wayland shm interface!");
-    return nullptr;
-  }
-
-  RefPtr<WaylandShmPool> shmPool = new WaylandShmPool();
-
-  auto handle = ipc::shared_memory::Create(aSize);
-  if (!handle) {
-    NS_WARNING("WaylandShmPool: Unable to allocate shared memory!");
-    return nullptr;
-  }
-
-  shmPool->mShmHandle = handle.Clone();
-  shmPool->mShmPool =
-      wl_shm_create_pool(aWaylandDisplay->GetShm(),
-                         handle.Clone().TakePlatformHandle().get(), aSize);
-  if (!shmPool->mShmPool) {
-    NS_WARNING("WaylandShmPool: Unable to allocate shared memory pool!");
-    return nullptr;
-  }
-
-  return shmPool;
-}
-
-void* WaylandShmPool::GetImageData() {
-  if (!mShm) {
-    mShm = mShmHandle.Map();
-    if (!mShm) {
-      NS_WARNING("WaylandShmPool: Failed to map Shm!");
-      return nullptr;
-    }
-  }
-  return mShm.Address();
-}
-
-WaylandShmPool::~WaylandShmPool() {
-  MozClearPointer(mShmPool, wl_shm_pool_destroy);
-}
 
 WaylandBuffer::WaylandBuffer(const LayoutDeviceIntSize& aSize) : mSize(aSize) {}
 
@@ -147,22 +101,20 @@ void WaylandBuffer::SetExternalWLBuffer(wl_buffer* aWLBuffer) {
 
 /* static */
 RefPtr<WaylandBufferSHM> WaylandBufferSHM::Create(
-    const LayoutDeviceIntSize& aSize) {
+    const LayoutDeviceIntSize& aSize, RefPtr<widget::DRMFormat> aFormat) {
   RefPtr<WaylandBufferSHM> buffer = new WaylandBufferSHM(aSize);
-  nsWaylandDisplay* waylandDisplay = WaylandDisplayGet();
 
   LOGWAYLAND("WaylandBufferSHM::Create() [%p] [%d x %d]", (void*)buffer,
              aSize.width, aSize.height);
 
-  int size = aSize.width * aSize.height * BUFFER_BPP;
-  buffer->mShmPool = WaylandShmPool::Create(waylandDisplay, size);
-  if (!buffer->mShmPool) {
-    LOGWAYLAND("  failed to create shmPool");
+  int32_t FOURCCFormat = aFormat ? aFormat->GetFormat() : GBM_FORMAT_ARGB8888;
+  buffer->mSHMBufSurface = SHMBufSurface::Create(aSize, FOURCCFormat);
+  if (!buffer->mSHMBufSurface) {
+    LOGWAYLAND("  failed to create SHMBufSurface");
     return nullptr;
   }
 
-  LOGWAYLAND("  created [%p] WaylandDisplay [%p]\n", buffer.get(),
-             waylandDisplay);
+  LOGWAYLAND("  created [%p]\n", buffer.get());
 
   return buffer;
 }
@@ -170,9 +122,7 @@ RefPtr<WaylandBufferSHM> WaylandBufferSHM::Create(
 wl_buffer* WaylandBufferSHM::CreateWlBuffer() {
   MOZ_DIAGNOSTIC_ASSERT(!mExternalWlBuffer);
 
-  auto* buffer = wl_shm_pool_create_buffer(
-      mShmPool->GetShmPool(), 0, mSize.width, mSize.height,
-      mSize.width * BUFFER_BPP, WL_SHM_FORMAT_ARGB8888);
+  auto* buffer = mSHMBufSurface->CreateWlBuffer();
 
   LOGWAYLAND("WaylandBufferSHM::CreateWlBuffer() [%p] wl_buffer [%p]",
              (void*)this, buffer);
@@ -192,15 +142,20 @@ WaylandBufferSHM::~WaylandBufferSHM() {
 
 already_AddRefed<gfx::DrawTarget> WaylandBufferSHM::Lock() {
   LOGWAYLAND("WaylandBufferSHM::lock() [%p]\n", (void*)this);
-  return gfxPlatform::CreateDrawTargetForData(
-      static_cast<unsigned char*>(mShmPool->GetImageData()),
-      mSize.ToUnknownSize(), BUFFER_BPP * mSize.width, GetSurfaceFormat());
+  return mSHMBufSurface->Lock();
+}
+
+void* WaylandBufferSHM::GetImageData() {
+  return mSHMBufSurface->GetImageData();
 }
 
 void WaylandBufferSHM::Clear() {
   LOGWAYLAND("WaylandBufferSHM::Clear() [%p]\n", (void*)this);
-  memset(mShmPool->GetImageData(), 0xff,
-         mSize.height * mSize.width * BUFFER_BPP);
+  mSHMBufSurface->Clear();
+}
+
+gfx::SurfaceFormat WaylandBufferSHM::GetSurfaceFormat() {
+  return mSHMBufSurface->GetFormat();
 }
 
 #ifdef MOZ_LOGGING
@@ -210,26 +165,14 @@ void WaylandBufferSHM::DumpToFile(const char* aHint) {
     return;
   }
 
-  cairo_surface_t* surface = nullptr;
-  auto unmap = MakeScopeExit([&] {
-    if (surface) {
-      cairo_surface_destroy(surface);
-    }
-  });
-  surface = cairo_image_surface_create_for_data(
-      (unsigned char*)mShmPool->GetImageData(), CAIRO_FORMAT_ARGB32,
-      mSize.width, mSize.height, BUFFER_BPP * mSize.width);
-  if (cairo_surface_status(surface) == CAIRO_STATUS_SUCCESS) {
-    nsCString filename;
-    if (mDumpDir) {
-      filename.Append(mDumpDir);
-      filename.Append('/');
-    }
-    filename.Append(nsPrintfCString("firefox-wl-sw-buffer-%.5d-%s.png",
-                                    mDumpSerial++, aHint));
-    cairo_surface_write_to_png(surface, filename.get());
-    LOGWAYLAND("Dumped wl_buffer to %s\n", filename.get());
+  nsCString filename;
+  if (mDumpDir) {
+    filename.Append(mDumpDir);
+    filename.Append('/');
   }
+  filename.Append(nsPrintfCString("firefox-wl-sw-buffer-%.5d-%s.png",
+                                  mDumpSerial++, aHint));
+  mSHMBufSurface->DumpToFile(filename.get());
 }
 #endif
 

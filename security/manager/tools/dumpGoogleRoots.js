@@ -65,45 +65,64 @@ function makeFormattedNickname(cert, knownNicknames) {
   return `// "${cert.displayName}"`;
 }
 
-function gatherKnownNicknames() {
+async function gatherKnownNicknames() {
   let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
   let nicknames = {};
-  for (let cert of certDB.getCerts()) {
+  for (let cert of await certDB.getCerts()) {
     nicknames[cert.displayName] = true;
   }
   return nicknames;
 }
 
-var knownNicknames = gatherKnownNicknames();
-var roots = downloadRoots();
-var rootNicknames = [];
-for (var root of roots) {
-  rootNicknames.push(makeFormattedNickname(root, knownNicknames));
+async function run() {
+  let knownNicknames = await gatherKnownNicknames();
+  let roots = downloadRoots();
+  let rootNicknames = [];
+  for (let root of roots) {
+    rootNicknames.push(makeFormattedNickname(root, knownNicknames));
+  }
+  rootNicknames.sort(function (rootA, rootB) {
+    let rootALowercase = rootA.toLowerCase().replace(/(^[^"]*")|"/g, "");
+    let rootBLowercase = rootB.toLowerCase().replace(/(^[^"]*")|"/g, "");
+    if (rootALowercase < rootBLowercase) {
+      return -1;
+    }
+    if (rootALowercase > rootBLowercase) {
+      return 1;
+    }
+    return 0;
+  });
+  dump("    {\n");
+  dump('      "name": "google_root_pems",\n');
+  dump('      "sha256_hashes": [\n');
+  let first = true;
+  for (let nickname of rootNicknames) {
+    if (!first) {
+      dump(",\n");
+    }
+    first = false;
+    dump("        " + nickname);
+  }
+  dump("\n");
+  dump("      ]\n");
+  dump("    }\n");
 }
-rootNicknames.sort(function (rootA, rootB) {
-  let rootALowercase = rootA.toLowerCase().replace(/(^[^"]*")|"/g, "");
-  let rootBLowercase = rootB.toLowerCase().replace(/(^[^"]*")|"/g, "");
-  if (rootALowercase < rootBLowercase) {
-    return -1;
-  }
-  if (rootALowercase > rootBLowercase) {
-    return 1;
-  }
-  return 0;
-});
-dump("    {\n");
-dump('      "name": "google_root_pems",\n');
-dump('      "sha256_hashes": [\n');
-var first = true;
-for (var nickname of rootNicknames) {
-  if (!first) {
-    dump(",\n");
-  }
-  first = false;
-  dump("        " + nickname);
+
+let done = false;
+let error;
+run()
+  .catch(e => {
+    error = e;
+  })
+  .then(() => {
+    done = true;
+  });
+Services.tm.spinEventLoopUntil(
+  "dumpGoogleRoots.js: waiting for completion",
+  () => done
+);
+if (error) {
+  throw error;
 }
-dump("\n");
-dump("      ]\n");
-dump("    }\n");

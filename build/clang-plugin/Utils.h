@@ -138,27 +138,27 @@ inline bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
     return false;
   }
 
-  return Name == "std" ||               // standard C++ lib
-         Name == "__gnu_cxx" ||         // gnu C++ lib
-         Name == "boost" ||             // boost
-         Name == "webrtc" ||            // upstream webrtc
-         Name == "rtc" ||               // upstream webrtc 'base' package
+  return Name == "std" ||       // standard C++ lib
+         Name == "__gnu_cxx" || // gnu C++ lib
+         Name == "boost" ||     // boost
+         Name == "webrtc" ||    // upstream webrtc
+         Name == "rtc" ||       // upstream webrtc 'base' package
 #if CLANG_VERSION_MAJOR >= 16
-         Name.starts_with("icu_") ||    // icu
+         Name.starts_with("icu_") || // icu
 #else
-         Name.startswith("icu_") ||     // icu
+         Name.startswith("icu_") || // icu
 #endif
-         Name == "google" ||            // protobuf
-         Name == "google_breakpad" ||   // breakpad
-         Name == "soundtouch" ||        // libsoundtouch
-         Name == "stagefright" ||       // libstagefright
-         Name == "MacFileUtilities" ||  // MacFileUtilities
-         Name == "dwarf2reader" ||      // dwarf2reader
-         Name == "arm_ex_to_module" ||  // arm_ex_to_module
-         Name == "testing" ||           // gtest
-         Name == "Json" ||              // jsoncpp
-         Name == "rlbox" ||             // rlbox
-         Name == "v8";                  // irregexp
+         Name == "google" ||           // protobuf
+         Name == "google_breakpad" ||  // breakpad
+         Name == "soundtouch" ||       // libsoundtouch
+         Name == "stagefright" ||      // libstagefright
+         Name == "MacFileUtilities" || // MacFileUtilities
+         Name == "dwarf2reader" ||     // dwarf2reader
+         Name == "arm_ex_to_module" || // arm_ex_to_module
+         Name == "testing" ||          // gtest
+         Name == "Json" ||             // jsoncpp
+         Name == "rlbox" ||            // rlbox
+         Name == "v8";                 // irregexp
 }
 
 inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {

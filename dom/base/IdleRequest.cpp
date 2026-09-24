@@ -21,14 +21,14 @@ IdleRequest::IdleRequest(IdleRequestCallback* aCallback, uint32_t aHandle)
   MOZ_DIAGNOSTIC_ASSERT(mCallback);
 }
 
-IdleRequest::~IdleRequest() = default;
+IdleRequest::~IdleRequest() { SetContainer(nullptr); }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(IdleRequest)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IdleRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCallback)
   if (tmp->isInList()) {
-    tmp->remove();
+    tmp->RemoveFromList();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 

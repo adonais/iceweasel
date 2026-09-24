@@ -164,6 +164,20 @@ def _lint_pings(pings):
                 )
             )
 
+        if "ohttp" in ping.uploader_capabilities and (
+            "include_info_sections" not in ping.metadata
+            or ping.metadata["include_info_sections"]
+        ):
+            # bug 2074263 - Remove after we get the new version of glean_parser with its generic check.
+            nits.append(
+                GlinterNit(
+                    check_name="OHTTP_IMPLIES_NO_INFO",
+                    name=ping_name,
+                    msg=f"Ping {ping_name} requests an OHTTP upload capability, but still has *_info sections. Add `metadata.include_info_sections: false` to its definition.",
+                    check_type=CheckType.error,
+                )
+            )
+
     return nits
 
 

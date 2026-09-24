@@ -5,30 +5,24 @@
 package mozilla.components.service.fxa.sync
 
 import mozilla.appservices.syncmanager.SyncManager
-import mozilla.appservices.syncmanager.SyncParams
-import mozilla.appservices.syncmanager.SyncResult
+import mozilla.appservices.syncmanager.SyncManagerInterface
 
 /**
- * An abstract type around application services [SyncManager].
+ * This typealias helps us use the [SyncManagerInterface] from appservices, but with a more contextual name.
  *
- * This abstraction allows us to write tests easily. It also helps us work around
- * [bug 1923209](https://bugzilla.mozilla.org/show_bug.cgi?id=1923209) where we cannot run tests that use Rust generated
- * code on Apple silicon devices
+ * We are using this typealias becuase we currently have a two "SyncManager" types:
+ * [mozilla.appservices.syncmanager.SyncManager] and [mozilla.components.service.fxa.sync.SyncManager], and
+ * [SyncManagerInterface] does not immediately tell us which of these sync managers this interface defines.
+ *
+ * If this proves to be more confusing than using the [SyncManagerInterface] directly, we can remove the type alias.
  */
-internal interface RustSyncManager {
+internal typealias RustSyncManager = SyncManagerInterface
 
-    /** Performs a sync with [params] and returns a [SyncResult] */
-    fun sync(params: SyncParams): SyncResult
-}
+/**
+ * The Rust implemented SyncManager. Must be a singleton as it carries some state between syncs. Does no IO at creation
+ * time so is safe to call on any thread.
+ */
+private val realRustSyncManager by lazy { SyncManager() }
 
 /** A singleton implementation of [RustSyncManager] wrapping the Rust-implemented SyncManager. */
-internal object DefaultRustSyncManager : RustSyncManager {
-
-    /**
-     * The Rust implemented SyncManager. Must be a singleton as it carries some state between syncs. Does no IO at
-     * creation time so is safe to call on any thread.
-     */
-    private val syncManager by lazy { SyncManager() }
-
-    override fun sync(params: SyncParams): SyncResult = syncManager.sync(params)
-}
+internal object DefaultRustSyncManager : RustSyncManager by realRustSyncManager

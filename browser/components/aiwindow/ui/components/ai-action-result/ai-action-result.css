@@ -5,13 +5,17 @@
 :host {
   display: block;
   --ai-action-connector-background-color: color-mix(in srgb, var(--color-violet-20) 50%, transparent);
-  --ai-action-connector-width: var(--dimension-2);
+  --ai-action-connector-width: 2px;
   --ai-action-icon-fill-color: var(--color-violet-20);
   --ai-action-text-color: var(--color-violet-desaturated-50);
   --ai-action-loading-gradient-start: var(--color-violet-50);
   --ai-action-loading-gradient-mid: var(--color-violet-40);
   --ai-action-loading-gradient-accent: var(--color-pink-40);
   --ai-action-loading-gradient-highlight: var(--color-pink-30);
+
+  @media (forced-colors) {
+    --ai-action-text-color: var(--text-color);
+  }
 }
 
 .action-result-wrapper {
@@ -190,6 +194,7 @@
     inset-inline-start: calc(1px + var(--space-small) / 2 - var(--ai-action-connector-width) / 2);
     position: absolute;
     top: calc(var(--icon-size) + var(--space-xxsmall));
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--ai-action-connector-width);
   }
 }

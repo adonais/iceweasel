@@ -463,7 +463,7 @@ export const RecommendedPreferences = {
       // single map. Hereby the extra preferences have higher priority.
       preferences = new Map([...COMMON_PREFERENCES, ...preferences]);
 
-      Services.obs.addObserver(this, "xpcom-shutdown");
+      Services.obs.addObserver(this, "profile-before-change");
       this.isInitialized = true;
     }
 
@@ -486,14 +486,14 @@ export const RecommendedPreferences = {
         }
 
         // Keep track all the altered preferences to restore them on
-        // xpcom-shutdown.
+        // profile-before-change.
         this.alteredPrefs.add(k);
       }
     }
   },
 
   observe(subject, topic) {
-    if (topic === "xpcom-shutdown") {
+    if (topic === "profile-before-change") {
       this.restoreAllPreferences();
     }
   },
@@ -504,7 +504,7 @@ export const RecommendedPreferences = {
   restoreAllPreferences() {
     this.restorePreferences(this.alteredPrefs);
     if (this.isInitialized) {
-      Services.obs.removeObserver(this, "xpcom-shutdown");
+      Services.obs.removeObserver(this, "profile-before-change");
     }
     this.isInitialized = false;
   },

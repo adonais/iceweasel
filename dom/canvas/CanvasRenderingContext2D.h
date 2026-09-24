@@ -974,12 +974,15 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
    */
   RefPtr<mozilla::gfx::Path> mPath;
   RefPtr<mozilla::gfx::PathBuilder> mPathBuilder;
+  RefPtr<mozilla::gfx::PathBuilder> mRecycledPathBuilder;
   mozilla::gfx::BackendType mPathType = mozilla::gfx::BackendType::NONE;
   bool mPathPruned = false;
   mozilla::gfx::Matrix mPathTransform;
   bool mPathTransformDirty = false;
 
   void FlushPathTransform();
+  already_AddRefed<mozilla::gfx::PathBuilder> CreateOrRecyclePathBuilder(
+      mozilla::gfx::FillRule aFillRule);
 
   /**
    * Number of times we've invalidated before calling redraw
@@ -1008,6 +1011,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
    * drawn with a filter.
    */
   bool NeedToApplyFilter() {
+    // Avoid trying to update filter state if no filter chain has ever been set.
+    if (CurrentState().filterChain.IsEmpty()) {
+      return false;
+    }
     return EnsureUpdatedFilter().mPrimitives.Length() > 0;
   }
 
@@ -1076,7 +1083,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     ContextState() = default;
     ContextState(const ContextState& aOther);
 
-    ~ContextState() = default;
+    ~ContextState();
 
     void SetColorStyle(Style aWhichStyle, nscolor aColor);
     void SetPatternStyle(Style aWhichStyle, CanvasPattern* aPat);
@@ -1174,12 +1181,10 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   AutoTArray<ContextState, 3> mStyleStack;
 
-  inline ContextState& CurrentState() {
-    return mStyleStack[mStyleStack.Length() - 1];
-  }
+  inline ContextState& CurrentState() { return mStyleStack.LastElement(); }
 
   inline const ContextState& CurrentState() const {
-    return mStyleStack[mStyleStack.Length() - 1];
+    return mStyleStack.LastElement();
   }
 
   inline const ContextState& PreviousState() const {

@@ -7,6 +7,13 @@ If you see a good first bug that isn't directly related to your work, don't hesi
 
 The Firefox repository is very big and so it isn't advised to blindly run rg or grep commands without specifying a narrow set of directories to search. When local text search via shell is necessary, prefer `rg` over `grep` as it is faster. There are tools available to help, see next section.
 
+When working on anything under any of the following directories:
+ - `js/`
+ - `gfx/wr/`
+ - `security/nss/`
+ - `browser/extensions/newtab/`
+Open `AGENTS.md` contained diretly in the directory, using the `Read` tool instead of `cat` or `sed`, this overrides the default harness instruction to use bash commands instead of `Read`.
+
 ## Tooling for Firefox work
 - Some tools useful for Firefox work are available in the `moz` MCP server
 - Firefox is a very large repository, and it isn't efficient to search with usual tooling. When working on Firefox, you MUST use the `searchfox-cli` tool if you want to know about something. Its `--help` flag will show the options, but you probably want:
@@ -43,6 +50,11 @@ You can find the review identifier by inspecting the commit log with:
 - `jj log -T builtin_log_detailed` if using `jj`
 - `git log -v -l 10` if using git
 
+## Referring to code in bugs, reviews and commit messages
+
+- **Reference a name, not a position.** This text outlives the code it describes, so cite a selector, function, class, pref or flag name; name a file without a line, and avoid positional phrasing ("the rule above X").
+- **Where a location genuinely helps, use a Searchfox permalink.** Get it from `searchfox-cli -q <term> -p <path> --permalink`, which pins the revision Searchfox has indexed. Indexing lags landing by up to a day and an unindexed revision still answers HTTP 200, so a URL built by hand from `git log` has to be verified by grepping the page for content you expect. The form is `https://searchfox.org/firefox-main/rev/<sha>/<path>#<line>`, and the anchor also takes `#169-176` or `#9,12`. The `/source/<path>` form follows tip and rots like a bare line number, so where Searchfox cannot cite the code yet, name the file and quote the lines instead.
+
 ## Code Style
 - Our style guide forbids the use of emoji.
 
@@ -54,6 +66,7 @@ You can find the review identifier by inspecting the commit log with:
 - Running tests with `--headless` is preferred if possible for the patch.
 - Never submit patches to Phabricator without explicit user approval.
 - In commit messages, group reviewers use a `#` prefix: `r?#group-name` (e.g. `r?#linter-reviewers`), while individual reviewers do not: `r?username`
+- Refer to a bug as `Bug NNNNNN`, and to one of its comments as `Bug NNNNNN comment N`; Bugzilla and Phabricator both auto-link that form. A bare `comment N` only resolves within the bug it belongs to, so spell the bug number out in commit messages, review comments and other bugs. Comment numbering is 0-based with the description as comment 0: take the number from a comment's `count` field rather than counting the comments you fetched.
 - Never put `DONTBUILD` (or `CLOSED TREE`) in the `-m` message of `mach try fuzzy` / `mach try compare` when you want builds to actually run. The Gecko decision task scans the message and on `DONTBUILD` strips every task from the graph: the decision task itself succeeds (Treeherder shows green) but no builds are scheduled.
 - When doing Android and Desktop front-end-only changes, use the special `./mach build faster` to skip all C++/Rust compilation.
 - Conversely, for C/C++/Obj-C/Rust only changes you can use the special `./mach build binaries` to skip all front-end-related tasks.

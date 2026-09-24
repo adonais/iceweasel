@@ -28,103 +28,83 @@
 using namespace js;
 using namespace js::wasm;
 
-static constexpr mozilla::Span<const char> attributeConstructor =
-    mozilla::MakeStringSpan("[constructor]");
-static constexpr mozilla::Span<const char> attributeMethod =
-    mozilla::MakeStringSpan("[method]");
-static constexpr mozilla::Span<const char> attributeStatic =
-    mozilla::MakeStringSpan("[static]");
-
-// Component model names are encoded as UTF-8, and in fact an ASCII subset of
-// UTF-8, so this is fine.
-static char LowercaseNameChar(char c) {
-  return ('A' <= c && c <= 'Z') ? c + ('a' - 'A') : c;
-}
-
-static mozilla::Span<const char> TrimAttribute(mozilla::Span<const char> name) {
-  if (CharsStartsWith(name, attributeConstructor)) {
-    return name.Subspan(attributeConstructor.Length());
-  }
-  if (CharsStartsWith(name, attributeMethod)) {
-    return name.Subspan(attributeMethod.Length());
-  }
-  if (CharsStartsWith(name, attributeStatic)) {
-    return name.Subspan(attributeStatic.Length());
-  }
-  return name;
-}
-
-static bool NameHasAttribute(mozilla::Span<const char> name) {
-  // The name should already be well-formed from parse time.
-  return name.Length() == 0 || name.data()[0] == '[';
-}
-
-// We hash only the base part of the name, e.g. "foo" for "[constructor]foo".
-HashNumber StronglyUniqueNameHasher::hash(const Lookup& aLookup) {
-  mozilla::Span<const char> trimmed = TrimAttribute(aLookup);
-
-  HashNumber hash = 0;
-  for (size_t i = 0; i < trimmed.Length(); i++) {
-    char c = trimmed.data()[i];
-    if (c == '.') {
-      break;
+#  ifdef DEBUG
+static bool NameIsProbablyValid(mozilla::Span<const char> name) {
+  for (char c : name) {
+    bool validChar = ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+                     ('0' <= c && c <= '9') || c == '-' || c == '.' ||
+                     c == '[' || c == ']';
+    if (!validChar) {
+      return false;
     }
-    hash = mozilla::AddToHash(hash, LowercaseNameChar(trimmed.data()[i]));
   }
-  return hash;
+  return true;
 }
+#  endif
 
-bool StronglyUniqueNameHasher::match(const Key& aKey, const Lookup& aLookup) {
-  mozilla::Span<const char> keyBytes = aKey.utf8Bytes();
-  mozilla::Span<const char> newTrimmed = TrimAttribute(aLookup);
-  mozilla::Span<const char> existingTrimmed = TrimAttribute(keyBytes);
+bool wasm::CanonicalizeName(mozilla::Span<const char> name,
+                            CacheableName* result) {
+  MOZ_ASSERT(NameIsProbablyValid(name));
 
-  // Rule 1: If one name is l and the other name is [constructor]l (for the
-  // same label l), they are strongly-unique.
-  bool newIsConstructor = CharsStartsWith(aLookup, attributeConstructor);
-  bool existingIsConstructor = CharsStartsWith(keyBytes, attributeConstructor);
-  if (newIsConstructor != existingIsConstructor &&
-      newTrimmed == existingTrimmed) {
+  // Canonicalizing names only shrinks them, so we can reserve space up front.
+  UTF8Bytes buf;
+  if (!buf.reserve(name.size())) {
     return false;
   }
 
-  // Rule 2: If one name is l and the other name is [*]l.l (for the same label l
-  // and any annotation * with a dotted l.l name), they are not strongly-unique.
-  mozilla::Maybe<mozilla::Span<const char>> plain;
-  mozilla::Maybe<mozilla::Span<const char>> dotted;
-  if (!NameHasAttribute(aLookup)) {
-    plain.emplace(aLookup);
-  } else if (!NameHasAttribute(keyBytes)) {
-    plain.emplace(keyBytes);
+  // Step 1: Lowercase + de-hyphenate the name.
+  for (char c : name) {
+    if ('A' <= c && c <= 'Z') {
+      // Lowercase all letters
+      buf.infallibleAppend(c + ('a' - 'A'));
+    } else if (c == '-') {
+      // Omit hyphens
+    } else {
+      buf.infallibleAppend(c);
+    }
   }
-  if (CharsStartsWith(aLookup, attributeMethod) ||
-      CharsStartsWith(aLookup, attributeStatic)) {
-    dotted.emplace(aLookup);
-  } else if (CharsStartsWith(keyBytes, attributeMethod) ||
-             CharsStartsWith(keyBytes, attributeStatic)) {
-    dotted.emplace(keyBytes);
+
+  // Step 2: If the name is of the form [...]foo.foo, replace the entire name
+  // with `foo`.
+  intptr_t lastAttrEndIndex = -1;
+  intptr_t dotIndex = -1;
+  for (size_t i = 0; i < buf.length(); i++) {
+    if (buf[i] == ']') {
+      lastAttrEndIndex = i;
+    }
+    if (buf[i] == '.') {
+      dotIndex = i;
+    }
   }
-  if (plain.isSome() && dotted.isSome()) {
-    mozilla::Span<const char> dottedTrimmed = TrimAttribute(dotted.value());
-    size_t indexOfDot = dottedTrimmed.IndexOf('.');
-    MOZ_RELEASE_ASSERT(indexOfDot != mozilla::Span<const char>::npos);
-    auto [before, after] = dottedTrimmed.SplitAt(indexOfDot);
-    after = after.Subspan(1);  // The SplitAt method includes the dot.
-    if (plain.value() == after && plain.value() == before) {
+  if (dotIndex >= 0) {
+    MOZ_ASSERT(lastAttrEndIndex < dotIndex);
+    mozilla::Span<char> beforeDot(&buf[lastAttrEndIndex + 1], &buf[dotIndex]);
+    mozilla::Span<char> afterDot(&buf[dotIndex + 1], buf.end());
+    if (beforeDot == afterDot) {
+      memmove(buf.begin(), beforeDot.Elements(), beforeDot.LengthBytes());
+      buf.shrinkTo(beforeDot.LengthBytes());
+      *result = CacheableName(std::move(buf));
       return true;
     }
   }
 
-  // Rule 3: Lowercase the names, trim attributes, and compare directly.
-  if (newTrimmed.Length() != existingTrimmed.Length()) {
-    return false;
-  }
-  for (size_t i = 0; i < newTrimmed.Length(); i++) {
-    if (LowercaseNameChar(newTrimmed[i]) !=
-        LowercaseNameChar(existingTrimmed[i])) {
-      return false;
+  // Step 3: Strip all attributes from the name besides [constructor] and [set].
+  // This is always a trim from the beginning since [constructor] must appear
+  // solo and [set] must appear second.
+  if (buf[0] == '[') {
+    intptr_t newStartIndex = 0;
+    if (buf[1] == 'm') {
+      newStartIndex = strlen("[method]");
+    } else if (buf[1] == 's' && buf[2] == 't') {
+      newStartIndex = strlen("[static]");
     }
+    if (buf[newStartIndex] == '[' && buf[newStartIndex + 1] == 'g') {
+      newStartIndex += strlen("[get]");
+    }
+    buf.erase(buf.begin(), &buf[newStartIndex]);
   }
+
+  *result = CacheableName(std::move(buf));
   return true;
 }
 
@@ -132,17 +112,17 @@ bool StronglyUniqueNameSet::add(mozilla::Span<const char> name,
                                 bool* duplicate) {
   *duplicate = false;
 
-  auto p = data_.lookupForAdd(name);
+  CacheableName canonicalized;
+  if (!CanonicalizeName(name, &canonicalized)) {
+    return false;
+  }
+
+  auto p = data_.lookupForAdd(canonicalized.utf8Bytes());
   if (p) {
     *duplicate = true;
     return true;
   }
-
-  CacheableName owned;
-  if (!CacheableName::fromUTF8Bytes(name, &owned)) {
-    return false;
-  }
-  return data_.add(p, std::move(owned));
+  return data_.add(p, std::move(canonicalized));
 }
 
 uint32_t ComponentInlineExports::Builder::trackItemOfSort(ComponentSort sort) {

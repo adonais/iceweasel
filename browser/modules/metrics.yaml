@@ -2115,3 +2115,170 @@ nova:
       - sthompson@mozilla.com
       - jbrown@mozilla.com
     expires: never
+
+ui_density:
+  mode:
+    type: event
+    description: >
+      The window density the browser is using, both as configured by the user
+      ("Window density" in about:preferences and on the Customize page) and as
+      actually resolved for the window. Recorded once at startup, whenever the
+      user changes the setting, and whenever the resolved density changes on
+      its own, which happens when the setting is "Automatic" (or "Standard"
+      with touch spacing for tablet mode) and the window is resized, the
+      device enters tablet mode, and so on.
+      Recorded once per change for the whole session, using the topmost
+      browser window, rather than once per open window.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2023635
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2023635
+    data_sensitivity:
+      - interaction
+      - technical
+    notification_emails:
+      - kcochrane@mozilla.com
+      - sthompson@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - 'Firefox :: Settings UI'
+    extra_keys:
+      current:
+        description: >
+          The window density the user has chosen, one of "automatic",
+          "standard", "standard_and_touch_for_tablet_mode", "compact" or
+          "touch". "automatic" is only possible when the Nova redesign is
+          enabled.
+        type: string
+      effective:
+        description: >
+          The window density actually applied to the window, one of
+          "standard", "compact" or "touch". This can differ from `current`
+          when the chosen setting resolves automatically.
+        type: string
+      previous:
+        description: >
+          The value `current` had before this event. Only recorded when the
+          event was caused by the user changing the setting, so it is absent
+          on the startup event and when only `effective` changed.
+        type: string
+      auto_adjustments_prior:
+        description: >
+          How many times `effective` changed by itself, without the user
+          changing the setting, earlier in this session. Reset to 0 each time
+          the user changes the setting, so on a setting-change event this is
+          the number of automatic adjustments the user saw before making that
+          change. Counts adjustments strictly before this event, so the first
+          automatic adjustment of a session reports 0.
+        type: quantity
+      touch_capable:
+        description: >
+          Whether the device can be used as a touch device: "yes" or "no" on
+          Windows (whether it is capable of entering tablet mode), always "no"
+          on macOS, and "unknown" on Linux and elsewhere, where there is no
+          signal to go by.
+        type: string
+      window_height:
+        description: >
+          The outer height of the browser window, in CSS pixels.
+        type: quantity
+      window_width:
+        description: >
+          The outer width of the browser window, in CSS pixels.
+        type: quantity
+      device_pixel_ratio:
+        description: >
+          The window's `devicePixelRatio`, the number of device pixels per CSS
+          pixel: "1" at 100% scaling, "1.5" at 150%, "2" at 200%. This is the
+          OS/browser UI scale, not the physical density of the panel. Recorded
+          as a string because the ratio can be fractional.
+        type: string
+      on_startup:
+        description: >
+          Whether this is the event recorded at startup rather than one
+          recorded in response to a change.
+        type: boolean
+
+theme_picker:
+  shown: &theme_picker_shown
+    type: event
+    description: >
+      The theme picker was shown to the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052547
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2052547
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - tgiles@mozilla.com
+      - mstriemer@mozilla.com
+      - athomas@mozilla.com
+    expires: never
+    extra_keys:
+      session:
+        type: string
+        description: >
+          An opaque identifier for one showing of the picker. It links a
+          `shown` event to the `change` events from that same showing.
+          No call site supplies a session identifier yet, so this key is
+          absent from recorded events.
+      source:
+        type: string
+        description: >
+          The surface that hosts the picker. The values are `"about:newtab"`,
+          `"about:addons"`, `"profiles"`, and `"about:welcome"`.
+      layout:
+        type: string
+        description: >
+          The picker's layout mode, `"compact"` or `"full"`. Only
+          `about:newtab` has both. Other surfaces record `"full"`, and
+          `"unknown"` when the caller does not supply it.
+
+  change:
+    <<: *theme_picker_shown
+    description: >
+      The user changed a setting in the theme picker: selected a theme,
+      changed the appearance mode, or toggled native theme styling.
+
+      A theme selection in the profiles picker also records
+      `profiles.existing.theme` or `profiles.new.theme`. Both
+      metrics fire for one click, so do not sum this event with those two.
+    extra_keys:
+      session:
+        type: string
+        description: >
+          The `session` value of the picker showing this change came from. It
+          links this event back to the matching `shown` event. No call site
+          supplies a session identifier yet, so this key is absent from
+          recorded events.
+      source:
+        type: string
+        description: >
+          The surface that hosts the picker. The values are `"about:newtab"`,
+          `"about:addons"`, `"profiles"`, and `"about:welcome"`.
+      layout:
+        type: string
+        description: >
+          The picker's layout mode, `"compact"` or `"full"`. Only
+          `about:newtab` has both. Other surfaces record `"full"`, and
+          `"unknown"` when the caller does not supply it.
+      property:
+        type: string
+        description: >
+          Which setting changed: `"theme"`, `"appearance"`, or `"nativeTheme"`.
+      theme_id:
+        type: string
+        description: >
+          The addon ID of the theme selected. Set when `property` is `"theme"`.
+      appearance:
+        type: string
+        description: >
+          The appearance mode selected, one of `"light"`, `"dark"`, or
+          `"device"`. Set when `property` is `"appearance"`.
+      native_theme:
+        type: boolean
+        description: >
+          Whether native theme styling was enabled. Set when `property` is
+          `"nativeTheme"`.

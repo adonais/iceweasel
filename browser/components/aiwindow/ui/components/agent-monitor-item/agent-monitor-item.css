@@ -209,46 +209,6 @@ moz-input-text::part(label),
   gap: var(--space-small);
 }
 
-.page-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-xsmall);
-  max-width: 100%;
-  padding-block: var(--space-small);
-  padding-inline: var(--space-medium);
-  border: 1px solid var(--border-color-deemphasized);
-  border-radius: var(--border-radius-circle);
-  background: color-mix(in srgb, var(--background-color-information) 30%, transparent);
-  font-size: var(--font-size-small);
-}
-
-.page-pill-url {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.page-pill-remove {
-  width: var(--size-item-xsmall);
-  height: var(--size-item-xsmall);
-  padding: 0;
-  border: none;
-  flex: none;
-  cursor: pointer;
-  color: var(--text-color-deemphasized);
-  -moz-context-properties: fill;
-  fill: currentColor;
-  background-color: transparent;
-  background-image: url("chrome://global/skin/icons/close.svg");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: var(--size-item-xsmall);
-
-  &:hover {
-    color: var(--text-color);
-  }
-}
-
 .page-input-row {
   display: flex;
   align-items: end;

@@ -592,7 +592,6 @@ class AvailableLocalesEnumeration final {
     }
 
     bool operator==(const Iterator& aOther) const = default;
-    bool operator!=(const Iterator& aOther) const = default;
 
     value_type operator*() const {
       return mozilla::MakeStringSpan(GetAvailable(mLocalesPos));
@@ -676,8 +675,6 @@ class ICU4XEnumeration final {
     }
 
     bool operator==(const Iterator& aOther) const = default;
-
-    bool operator!=(const Iterator& aOther) const = default;
 
     value_type operator*() const {
       uintptr_t len;

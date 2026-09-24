@@ -15,6 +15,7 @@ dependencies {
     implementation project(':components:browser-state')
     implementation project(':components:concept-base')
     implementation project(':components:concept-engine')
+    implementation project(':components:support-base')
     implementation project(':components:support-images')
     implementation project(':components:support-ktx')
     implementation project(':components:support-utils')

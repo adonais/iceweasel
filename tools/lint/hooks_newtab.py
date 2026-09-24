@@ -36,8 +36,6 @@ topsrcdir = os.path.join(here, os.pardir, os.pardir)
 
 NEWTAB_SRC = "browser/extensions/newtab/content-src"
 BUNDLE_FILES = [
-    "browser/extensions/newtab/data/content/activity-stream.bundle.js",
-    "browser/extensions/newtab/css/activity-stream.css",
     "browser/extensions/newtab/prerendered/activity-stream.html",
 ]
 

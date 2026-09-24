@@ -14,6 +14,7 @@ export default class NavNotice extends MozLitElement {
     href: { type: String },
     iconSrc: { type: String },
     label: { type: String, fluent: true },
+    supportPage: { type: String, attribute: "support-page" },
     theme: { type: Object },
   };
 
@@ -39,7 +40,7 @@ export default class NavNotice extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/preferences/widgets/nav-notice.css"
       />
-      <${element} iconsrc=${this.iconSrc} label=${this.label} href=${ifDefined(this.href)}></${element}>`;
+      <${element} iconsrc=${this.iconSrc} label=${this.label} href=${ifDefined(this.href)} support-page=${ifDefined(this.supportPage)}></${element}>`;
   }
 }
 customElements.define("nav-notice", NavNotice);

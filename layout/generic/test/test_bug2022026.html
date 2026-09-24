@@ -1,0 +1,64 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Test for changing styles in selectstart event listener</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+</head>
+<body>
+<pre id="test">
+<script class="testbody">
+SimpleTest.waitForExplicitFinish();
+
+SpecialPowers.pushPrefEnv({"set": [
+  ["general.smoothScroll", false],
+  ["accessibility.browsewithcaret", true]
+]}, runTest);
+
+function getSelectionController() {
+  return SpecialPowers.wrap(window)
+    .docShell
+    .QueryInterface(SpecialPowers.Ci.nsIInterfaceRequestor)
+    .getInterface(SpecialPowers.Ci.nsISelectionDisplay)
+    .QueryInterface(SpecialPowers.Ci.nsISelectionController);
+}
+
+function runTest() {
+  let scroller = document.createElement("div");
+  scroller.style.cssText = "overflow:auto; height:200px; width:300px";
+  for (let i = 0; i < 100; i++) {
+    let p = document.createElement("p");
+    p.textContent = "Line " + i;
+    scroller.appendChild(p);
+  }
+  document.body.insertBefore(scroller, document.getElementById("test"));
+  scroller.offsetHeight;
+
+  getSelection().collapse(scroller.firstChild.firstChild, 0);
+
+  let selectstartFired = false;
+  document.addEventListener("selectstart", function() {
+    selectstartFired = true;
+    scroller.style.display = "none";
+    document.body.offsetHeight;
+  }, {once: true});
+
+  scroller.focus();
+  focus();
+  const selectionController = getSelectionController();
+  try {
+    selectionController.pageMove(true, true);
+  } catch (err) {
+    // Ignore exception which is caused by hiding the scroller.
+  }
+
+  SimpleTest.executeSoon(function() {
+    ok(selectstartFired, "selectstart event fired during Shift+PageDown");
+    SimpleTest.finish();
+  });
+}
+</script>
+</pre>
+</body>
+</html>

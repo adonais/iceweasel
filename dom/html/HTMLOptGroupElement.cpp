@@ -67,7 +67,7 @@ void HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
           node = node->GetNextNonChildNode(this);
           continue;
         }
-        if (HTMLOptionElement::IsOptionListBoundary(*node) ||
+        if (HTMLSelectElement::IsOptionListBoundary(*node) ||
             node->IsHTMLElement(nsGkAtoms::optgroup)) {
           node = node->GetNextNonChildNode(this);
           continue;

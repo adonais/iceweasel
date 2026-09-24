@@ -17,6 +17,7 @@ PRODUCTION_SIGNING_BUILD_TYPES = [
     "focus-release",
     "klar-release",
     "fenix-nightly",
+    "fenix-nightly-nobp",
     "fenix-beta",
     "fenix-release",
     "fenix-beta-mozillaonline",

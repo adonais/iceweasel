@@ -3,9 +3,7 @@
     "color": {
       "value": {
         "nativeTheme": "{border.color.deemphasized.@base}",
-        "light": "{color.gray.10}",
-        "dark": "{color.gray.65}",
-        "forcedColors": "{border.color.@base}"
+        "default": "{border.color.deemphasized.@base}"
       }
     },
     "radius": {

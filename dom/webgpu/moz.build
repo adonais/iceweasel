@@ -61,13 +61,11 @@ UNIFIED_SOURCES += [x + ".cpp" for x in h_and_cpp]
 
 IPDL_SOURCES += [
     "ipc/PWebGPU.ipdl",
-    "ipc/PWebGPUTypes.ipdlh",
 ]
 
 EXPORTS.mozilla.webgpu += [
     "ipc/WebGPUChild.h",
     "ipc/WebGPUParent.h",
-    "ipc/WebGPUSerialize.h",
     "ipc/WebGPUTypes.h",
 ]
 

@@ -237,12 +237,6 @@
     }
   }
 
-  @media -moz-pref("browser.nova.enabled") {
-    .urlbar[breakout-extend] > .urlbar-background {
-      border-color: currentColor;
-    }
-  }
-
   @media not -moz-pref("browser.nova.enabled") {
     :not([focused]) > .urlbar-background {
       border-color: ThreeDShadow;

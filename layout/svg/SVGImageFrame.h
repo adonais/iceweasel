@@ -34,12 +34,12 @@ class SVGImageFrame final : public nsIFrame,
 
   friend class DisplaySVGImage;
 
-  bool CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
-                               wr::IpcResourceUpdateQueue& aResources,
-                               const layers::StackingContextHelper& aSc,
-                               layers::RenderRootStateManager* aManager,
-                               nsDisplayListBuilder* aDisplayListBuilder,
-                               DisplaySVGImage* aItem, bool aDryRun);
+  WebRenderCommandsResult CreateWebRenderCommands(
+      wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+      const layers::StackingContextHelper& aSc,
+      layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGImage* aItem,
+      bool aDryRun);
 
  private:
   explicit SVGImageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
@@ -147,22 +147,25 @@ class DisplaySVGImage final : public DisplaySVGItem {
                       mozilla::layers::RenderRootStateManager* aManager,
                       nsDisplayListBuilder* aDisplayListBuilder) {
     auto* frame = static_cast<SVGImageFrame*>(mFrame);
-    return frame->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
-                                          aDisplayListBuilder, this,
-                                          /*aDryRun=*/true);
+    return frame
+        ->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
+                                  aDisplayListBuilder, this,
+                                  /*aDryRun=*/true)
+        .isOk();
   }
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override {
     auto* frame = static_cast<SVGImageFrame*>(mFrame);
-    bool result = frame->CreateWebRenderCommands(aBuilder, aResources, aSc,
-                                                 aManager, aDisplayListBuilder,
-                                                 this, /*aDryRun=*/false);
-    MOZ_ASSERT(result, "ShouldBeActive inconsistent with CreateWRCommands?");
+    WebRenderCommandsResult result = frame->CreateWebRenderCommands(
+        aBuilder, aResources, aSc, aManager, aDisplayListBuilder, this,
+        /*aDryRun=*/false);
+    MOZ_ASSERT(result.isOk(),
+               "ShouldBeActive inconsistent with CreateWRCommands?");
     return result;
   }
 

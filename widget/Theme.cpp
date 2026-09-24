@@ -476,7 +476,7 @@ void Theme::PaintCheckboxControl(DrawTarget& aDrawTarget,
                                  const Colors& aColors, DPIRatio aDpiRatio) {
   auto [backgroundColor, borderColor, checkColor] =
       ComputeCheckboxColors(aState, StyleAppearance::Checkbox, aColors);
-  const CSSCoord radius = 2.0f;
+  const CSSCoord radius = 4.0f;
   {
     CSSCoord borderWidth = kCheckboxRadioBorderWidth;
     if (backgroundColor == borderColor) {
@@ -504,10 +504,8 @@ void Theme::PaintCheckMark(DrawTarget& aDrawTarget,
                            const sRGBColor& aColor) {
   // Points come from the coordinates on a 14X14 (kCheckboxRadioSize)
   // unit box centered at 0,0
-  const float checkPolygonX[] = {-4.5f, -1.5f, -0.5f, 5.0f, 4.75f,
-                                 3.5f,  -0.5f, -1.5f, -3.5f};
-  const float checkPolygonY[] = {0.5f,  4.0f, 4.0f,  -2.5f, -4.0f,
-                                 -4.0f, 1.0f, 1.25f, -1.0f};
+  const float checkPolygonX[] = {3.5f, -1.3f, -3.9f};
+  const float checkPolygonY[] = {-3.1f, 2.6f, 0.0f};
   const int32_t checkNumPoints = sizeof(checkPolygonX) / sizeof(float);
   const float scale = ThemeDrawing::ScaleToFillRect(aRect, kCheckboxRadioSize);
   auto center = aRect.Center().ToUnknownPoint();
@@ -521,7 +519,11 @@ void Theme::PaintCheckMark(DrawTarget& aDrawTarget,
   }
   RefPtr<Path> path = builder->Finish();
 
-  aDrawTarget.Fill(path, ColorPattern(ToDeviceColor(aColor)));
+  // We want it to be ~2px in the reference space.
+  const float strokeWidth = 2.0f * scale;
+  aDrawTarget.Stroke(
+      path, ColorPattern(ToDeviceColor(aColor)),
+      StrokeOptions(strokeWidth, JoinStyle::ROUND, CapStyle::ROUND));
 }
 
 void Theme::PaintIndeterminateMark(DrawTarget& aDrawTarget,
@@ -648,7 +650,7 @@ void Theme::PaintRadioControl(PaintBackendData& aPaintData,
 
   if (isChecked) {
     // See bug 1951930 / bug 1941755 for discussion on this chunk of code.
-    constexpr CSSCoord kInnerBorderWidth = 2.0f;
+    constexpr CSSCoord kInnerBorderWidth = 3.0f;
     LayoutDeviceRect innerCircleBounds(aRect);
     // It's important that these are two different calls so that the snapping of
     // the inner rect matches the one PaintStrokedCircle above does.
@@ -675,7 +677,7 @@ void Theme::PaintTextField(PaintBackendData& aPaintData,
   auto [backgroundColor, borderColor] =
       ComputeTextfieldColors(aState, aColors, OutlineCoversBorder::Yes);
 
-  const CSSCoord radius = 2.0f;
+  const CSSCoord radius = 4.0f;
 
   ThemeDrawing::PaintRoundedRectWithRadius(aPaintData, aRect, backgroundColor,
                                            borderColor, kTextFieldBorderWidth,

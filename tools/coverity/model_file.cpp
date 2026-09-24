@@ -168,6 +168,7 @@ class Buffer {
     if (!CheckBounds(n_bytes)) {
       return false;
     }
+    __coverity_writeall__(static_cast<void*>(buf));
     __coverity_tainted_data_sanitize__(static_cast<void*>(buf));
     return true;
   }

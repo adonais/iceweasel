@@ -17,6 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.DebugAction
 import mozilla.components.browser.state.action.LastAccessAction
+import mozilla.components.browser.state.selector.normalTabs
+import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
@@ -53,6 +55,7 @@ import org.mozilla.fenix.ext.DEFAULT_ACTIVE_DAYS
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.potentialInactiveTabs
+import org.mozilla.fenix.ext.removeAllActiveNormalTabs
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_ACTIVE_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
@@ -216,6 +219,8 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
  * @param showUndoSnackbarForTab Lambda used to display an undo snackbar when a normal or private tab is closed.
  * @param showUndoSnackbarForInactiveTab Lambda used to display an undo snackbar when an inactive tab is closed.
  * @param showUndoSnackbarForSyncedTab Lambda used to display an undo snackbar when a synced tab is closed.
+ * @param showUndoSnackbarForMultipleTabs Lambda used to display an undo snackbar when multiple normal or private tabs
+ *   are closed.
  * @property showCancelledDownloadWarning Lambda used to display a cancelled download warning.
  * @param showBookmarkSnackbar Lambda used to display a snackbar upon saving tabs as bookmarks.
  * @param showCollectionSnackbar Lambda used to display a snackbar upon successfully saving tabs to a collection.
@@ -244,6 +249,7 @@ class DefaultTabManagerController(
     private val showUndoSnackbarForTab: (Boolean) -> Unit,
     private val showUndoSnackbarForInactiveTab: (Int) -> Unit,
     private val showUndoSnackbarForSyncedTab: (CloseTabsUseCases.UndoableOperation) -> Unit,
+    private val showUndoSnackbarForMultipleTabs: (isPrivate: Boolean, count: Int) -> Unit,
     internal val showCancelledDownloadWarning: (downloadCount: Int, tabId: String?, source: String?) -> Unit,
     private val showBookmarkSnackbar: (tabSize: Int, parentFolderTitle: String?) -> Unit,
     private val showCollectionSnackbar:
@@ -344,23 +350,48 @@ class DefaultTabManagerController(
         val isCurrentTab = tabsTrayStore.state.selectedTabId == tab.id
 
         if (tabsRemaining || !isCurrentTab) {
-            // Using isNormal here makes it read beautifully
-            val excludedTabIds = if (isNormal) getExcludedNormalTabIds() else emptySet()
+            val excludedFallbackTabIds = if (isNormal) getExcludedFallbackNormalTabIds() else emptySet()
 
-            tabsUseCases.removeTab(excludedTabIds = excludedTabIds, tabId = tab.id)
+            tabsUseCases.removeTab(excludedFallbackTabIds = excludedFallbackTabIds, tabId = tab.id)
+            showUndoSnackbarForTab(isPrivate)
+
+            TabsTray.closedExistingTab.record(TabsTray.ClosedExistingTabExtra(source ?: "unknown"))
+            tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
+        } else {
+            handleNoTabsRemainingDeleteTab(
+                isPrivate = isPrivate,
+                tab = tab,
+                source = source,
+                isConfirmed = isConfirmed,
+            )
+        }
+    }
+
+    private fun handleNoTabsRemainingDeleteTab(
+        isPrivate: Boolean,
+        tab: TabsTrayItem.Tab,
+        source: String?,
+        isConfirmed: Boolean,
+    ) {
+        val browserState = browserStore.state
+        val privateDownloads =
+            browserState.downloads.filter { map ->
+                map.value.private && map.value.isActiveDownload()
+            }
+        if (!isConfirmed && privateDownloads.isNotEmpty()) {
+            showCancelledDownloadWarning(privateDownloads.size, tab.id, source)
+            return
+        } else if (settings.enableHomepageAsNewTab) {
+            val excludedFallbackTabIds = if (isPrivate) emptySet() else getExcludedFallbackNormalTabIds()
+            tabsUseCases.removeTab(
+                tabId = tab.id,
+                excludedFallbackTabIds = excludedFallbackTabIds,
+            )
             showUndoSnackbarForTab(isPrivate)
         } else {
-            val privateDownloads =
-                browserStore.state.downloads.filter { map ->
-                    map.value.private && map.value.isActiveDownload()
-                }
-            if (!isConfirmed && privateDownloads.isNotEmpty()) {
-                showCancelledDownloadWarning(privateDownloads.size, tab.id, source)
-                return
-            } else {
-                dismissTabManagerAndNavigateHome(tab.id)
-            }
+            dismissTabManagerAndNavigateHome(tab.id)
         }
+
         TabsTray.closedExistingTab.record(TabsTray.ClosedExistingTabExtra(source ?: "unknown"))
         tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
     }
@@ -369,7 +400,7 @@ class DefaultTabManagerController(
      * Calculates the IDs of normal tabs that should be protected from being selected after other tabs are deleted. This
      * includes all inactive tabs and tabs inside open (visible) tab groups.
      */
-    private fun getExcludedNormalTabIds(): Set<String> {
+    private fun getExcludedFallbackNormalTabIds(): Set<String> {
         val state = tabsTrayStore.state
 
         val inactiveTabIds = state.inactiveTabs.tabs.map { it.id }
@@ -422,12 +453,15 @@ class DefaultTabManagerController(
         val closingTabIds = tabs.map { it.id }.toSet()
 
         if (willTabsRemainAfterDeletion(isPrivate = isPrivate, closingTabIds = closingTabIds)) {
-            val excludedTabIds = if (isNormal) getExcludedNormalTabIds() else emptySet()
+            val excludedFallbackTabIds = if (isNormal) getExcludedFallbackNormalTabIds() else emptySet()
 
-            tabsUseCases.removeTabs(excludedTabIds = excludedTabIds, ids = tabs.map { it.id })
-            showUndoSnackbarForTab(isPrivate)
+            tabsUseCases.removeTabs(excludedFallbackTabIds = excludedFallbackTabIds, ids = tabs.map { it.id })
+            showUndoSnackbarForMultipleTabs(isPrivate, tabs.size)
         } else {
-            dismissTabManagerAndNavigateHome(if (isPrivate) ALL_PRIVATE_TABS else ALL_ACTIVE_NORMAL_TABS)
+            handleRemoveAllTabs(
+                isHomepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+                sessionId = if (isPrivate) ALL_PRIVATE_TABS else ALL_ACTIVE_NORMAL_TABS,
+            )
         }
     }
 
@@ -692,7 +726,7 @@ class DefaultTabManagerController(
         browserStore.state.potentialInactiveTabs
             .map { it.id }
             .let {
-                tabsUseCases.removeTabs(it, excludedTabIds = emptySet())
+                tabsUseCases.removeTabs(it, excludedFallbackTabIds = emptySet())
                 numTabs = it.size
             }
         showUndoSnackbarForInactiveTab(numTabs)
@@ -723,11 +757,19 @@ class DefaultTabManagerController(
     }
 
     override fun onCloseAllTabsClicked(private: Boolean) {
-        closeAllTabs(private = private, isConfirmed = false)
+        closeAllTabs(
+            private = private,
+            isConfirmed = false,
+            isHomepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+        )
     }
 
     override fun onCloseAllPrivateTabsWarningConfirmed(private: Boolean) {
-        closeAllTabs(private = private, isConfirmed = true)
+        closeAllTabs(
+            private = private,
+            isConfirmed = true,
+            isHomepageAsNewTabEnabled = settings.enableHomepageAsNewTab,
+        )
     }
 
     override fun onOpenRecentlyClosedClicked() {
@@ -758,9 +800,14 @@ class DefaultTabManagerController(
      * Close all tabs.
      *
      * @param private Whether to close all of the Private tabs or all of the Normal tabs.
-     * @param isConfirmed: whether the user has confirmed the warning message
+     * @param isConfirmed Whether the user has confirmed the warning message.
+     * @param isHomepageAsNewTabEnabled Whether homepage as new tab is enabled.
      */
-    private fun closeAllTabs(private: Boolean, isConfirmed: Boolean) {
+    private fun closeAllTabs(
+        private: Boolean,
+        isConfirmed: Boolean,
+        isHomepageAsNewTabEnabled: Boolean,
+    ) {
         val sessionsToClose =
             if (private) {
                 ALL_PRIVATE_TABS
@@ -778,6 +825,32 @@ class DefaultTabManagerController(
                 return
             }
         }
-        dismissTabManagerAndNavigateHome(sessionsToClose)
+
+        handleRemoveAllTabs(
+            isHomepageAsNewTabEnabled = isHomepageAsNewTabEnabled,
+            sessionId = sessionsToClose,
+        )
+    }
+
+    private fun handleRemoveAllTabs(
+        isHomepageAsNewTabEnabled: Boolean,
+        sessionId: String,
+    ) {
+        if (!isHomepageAsNewTabEnabled) {
+            dismissTabManagerAndNavigateHome(sessionId)
+            return
+        }
+
+        val tabsCount =
+            when (sessionId) {
+                ALL_NORMAL_TABS -> browserStore.state.normalTabs.size.also { tabsUseCases.removeNormalTabs() }
+                ALL_ACTIVE_NORMAL_TABS ->
+                    tabsUseCases.removeAllActiveNormalTabs(state = browserStore.state, settings = settings)
+                ALL_PRIVATE_TABS -> browserStore.state.privateTabs.size.also { tabsUseCases.removePrivateTabs() }
+                else -> return
+            }
+
+        val isPrivate = sessionId == ALL_PRIVATE_TABS
+        showUndoSnackbarForMultipleTabs(isPrivate, tabsCount)
     }
 }

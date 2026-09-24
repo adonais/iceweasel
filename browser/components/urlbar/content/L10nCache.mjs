@@ -119,7 +119,7 @@ export class L10nCache {
    */
   async add({ id, args = undefined }) {
     let messages = await this.l10n.formatMessages([{ id, args }]);
-    if (!messages?.length) {
+    if (!messages?.[0]) {
       console.error(
         "l10n.formatMessages returned an unexpected value for ID: ",
         id

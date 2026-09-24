@@ -6,6 +6,7 @@
 //!
 //! [font-feature-values]: https://drafts.csswg.org/css-fonts-3/#at-font-feature-values-rule
 
+use crate::Atom;
 use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 #[cfg(feature = "gecko")]
@@ -17,11 +18,10 @@ use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::CssRuleType;
 use crate::values::computed::font::FamilyName;
 use crate::values::serialize_atom_identifier;
-use crate::Atom;
 use cssparser::{
-    match_ignore_ascii_case, AtRuleParser, BasicParseErrorKind, CowRcStr, DeclarationParser,
-    Parser, ParserState, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
-    Token,
+    AtRuleParser, BasicParseErrorKind, CowRcStr, DeclarationParser, Parser, ParserState,
+    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation, Token,
+    match_ignore_ascii_case,
 };
 use std::fmt::{self, Write};
 use style_traits::{CssStringWriter, CssWriter, ParseError, StyleParseErrorKind, ToCss};
@@ -34,7 +34,7 @@ use thin_vec::ThinVec;
 /// - `SingleValue` is to keep just one unsigned integer value.
 /// - `PairValues` is to keep one or two unsigned integer values.
 /// - `VectorValues` is to keep a list of unsigned integer values.
-#[derive(Clone, Debug, PartialEq, ToShmem)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct FFVDeclaration<T> {
     /// An `<ident>` for declaration name.
     pub name: Atom,
@@ -62,7 +62,7 @@ pub trait ToGeckoFontFeatureValues {
 }
 
 /// A @font-feature-values block declaration value that keeps one value.
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct SingleValue(pub u32);
 
 impl Parse for SingleValue {
@@ -79,12 +79,12 @@ impl Parse for SingleValue {
 #[cfg(feature = "gecko")]
 impl ToGeckoFontFeatureValues for SingleValue {
     fn to_gecko_font_feature_values(&self) -> ThinVec<u32> {
-        thin_vec::thin_vec![self.0 as u32]
+        thin_vec::thin_vec![self.0]
     }
 }
 
 /// A @font-feature-values block declaration value that keeps one or two values.
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct PairValues(pub u32, pub Option<u32>);
 
 impl Parse for PairValues {
@@ -110,16 +110,16 @@ impl Parse for PairValues {
 #[cfg(feature = "gecko")]
 impl ToGeckoFontFeatureValues for PairValues {
     fn to_gecko_font_feature_values(&self) -> ThinVec<u32> {
-        let mut result = thin_vec::thin_vec![self.0 as u32];
+        let mut result = thin_vec::thin_vec![self.0];
         if let Some(second) = self.1 {
-            result.push(second as u32);
+            result.push(second);
         }
         result
     }
 }
 
 /// A @font-feature-values block declaration value that keeps a list of values.
-#[derive(Clone, Debug, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct VectorValues(#[css(iterable)] pub Vec<u32>);
 
 impl Parse for VectorValues {
@@ -138,7 +138,7 @@ impl Parse for VectorValues {
             }
         }
 
-        if vec.len() == 0 {
+        if vec.is_empty() {
             return Err(ParseError::from_basic_kind(BasicParseErrorKind::EndOfInput));
         }
 
@@ -193,7 +193,7 @@ where
     fn parse_value(
         &mut self,
         name: CowRcStr<'i>,
-        input: &mut Parser<'i, '_>,
+        input: &mut Parser<'i>,
         _declaration_start: &ParserState,
     ) -> Result<(), ParseError> {
         let value = input.parse_entirely(|i| T::parse(self.context, i))?;
@@ -201,7 +201,7 @@ where
             name: Atom::from(&*name),
             value,
         };
-        update_or_push(&mut self.declarations, new);
+        update_or_push(self.declarations, new);
         Ok(())
     }
 }
@@ -228,7 +228,7 @@ macro_rules! font_feature_values_blocks {
         /// The [`@font-feature-values`][font-feature-values] at-rule.
         ///
         /// [font-feature-values]: https://drafts.csswg.org/css-fonts-3/#at-font-feature-values-rule
-        #[derive(Clone, Debug, PartialEq, ToShmem)]
+        #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
         pub struct FontFeatureValuesRule {
             /// Font family list for @font-feature-values rule.
             /// Family names cannot contain generic families. FamilyName
@@ -246,7 +246,7 @@ macro_rules! font_feature_values_blocks {
             /// Creates an empty FontFeatureValuesRule with given location and family name list.
             fn new(family_names: Vec<FamilyName>, location: SourceLocation) -> Self {
                 FontFeatureValuesRule {
-                    family_names: family_names,
+                    family_names,
                     $(
                         $ident: vec![],
                     )*
@@ -395,7 +395,7 @@ macro_rules! font_feature_values_blocks {
             fn parse_prelude(
                 &mut self,
                 name: CowRcStr<'i>,
-                _input: &mut Parser<'i, '_>,
+                _input: &mut Parser<'i>,
             ) -> Result<FontFeatureValuesBlockType, ParseError> {
                 FontFeatureValuesBlockType::from_name(&name)
                     .ok_or_else(|| ParseError::from_basic_kind(BasicParseErrorKind::AtRuleBodyInvalid))
@@ -405,7 +405,7 @@ macro_rules! font_feature_values_blocks {
                 &mut self,
                 prelude: FontFeatureValuesBlockType,
                 _: &ParserState,
-                input: &mut Parser<'i, '_>
+                input: &mut Parser<'i>
             ) -> Result<Self::AtRule, ParseError> {
                 debug_assert!(self.context.rule_types().contains(CssRuleType::FontFeatureValues));
                 match prelude {

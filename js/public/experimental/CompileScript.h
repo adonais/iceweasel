@@ -27,8 +27,12 @@ struct CompilationInput;
 namespace JS {
 using FrontendContext = js::FrontendContext;
 
+enum class AllowCancellingCompilation : bool { No, Yes };
+
 // Create a new front-end context.
-JS_PUBLIC_API JS::FrontendContext* NewFrontendContext();
+JS_PUBLIC_API JS::FrontendContext* NewFrontendContext(
+    AllowCancellingCompilation allowCancellingCompilation =
+        AllowCancellingCompilation::No);
 
 // Destroy a front-end context allocated with NewFrontendContext.
 JS_PUBLIC_API void DestroyFrontendContext(JS::FrontendContext* fc);
@@ -87,6 +91,19 @@ JS_PUBLIC_API bool HadFrontendOutOfMemory(JS::FrontendContext* fc);
 
 // Returns true if the JS::FrontendContext had allocation overflow error.
 JS_PUBLIC_API bool HadFrontendAllocationOverflow(JS::FrontendContext* fc);
+
+// Request that the compilation using the given JS::FrontendContext be
+// cancelled, which then fails as if an error had been reported. Requires
+// AllowCancellingCompilation::Yes, and can be called from any thread. A running
+// compilation aborts before the next function it parses or emits, so it can
+// also still succeed. The request is permanent, and the resulting failure
+// cannot be converted with ConvertFrontendErrorsToRuntimeErrors, so the result
+// must be discarded.
+JS_PUBLIC_API void RequestFrontendCompilationCancellation(
+    JS::FrontendContext* fc);
+
+// Returns true if a cancellation request aborted the compilation.
+JS_PUBLIC_API bool HadFrontendCancelled(JS::FrontendContext* fc);
 
 // Clear errors reported to the JS::FrontendContext.
 // No-op when there's no errors.

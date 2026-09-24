@@ -10,7 +10,7 @@ use crate::derives::*;
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
-use cssparser::{match_ignore_ascii_case, SourceLocation};
+use cssparser::{SourceLocation, match_ignore_ascii_case};
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use servo_arc::Arc;
@@ -119,7 +119,7 @@ margin_rule_types! {
 impl MarginRuleType {
     #[inline]
     fn to_str(&self) -> &'static str {
-        &MARGIN_RULE_AT_NAMES[*self as usize]
+        MARGIN_RULE_AT_NAMES[*self as usize]
     }
     #[inline]
     fn name(&self) -> &'static str {
@@ -183,8 +183,8 @@ impl DeepCloneWithLock for MarginRule {
     fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
         MarginRule {
             rule_type: self.rule_type,
-            block: Arc::new(lock.wrap(self.block.read_with(&guard).clone())),
-            source_location: self.source_location.clone(),
+            block: Arc::new(lock.wrap(self.block.read_with(guard).clone())),
+            source_location: self.source_location,
         }
     }
 }

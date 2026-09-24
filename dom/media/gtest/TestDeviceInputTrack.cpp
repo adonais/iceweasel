@@ -24,7 +24,7 @@ namespace {
 class MockGraphImpl : public MediaTrackGraphImpl {
  public:
   explicit MockGraphImpl(TrackRate aRate)
-      : MediaTrackGraphImpl(0, aRate, nullptr, NS_GetCurrentThread()) {
+      : MediaTrackGraphImpl(0, aRate, nullptr, AbstractThread::GetCurrent()) {
     ON_CALL(*this, OnGraphThread).WillByDefault(Return(true));
   }
 

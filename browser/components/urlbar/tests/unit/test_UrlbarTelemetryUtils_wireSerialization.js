@@ -147,12 +147,42 @@ add_task(function test_recordedEngagement_roundtrip() {
   );
 });
 
+add_task(function test_recordedEngagement_resolves_live_results() {
+  let engagement = makeRecordedEngagement();
+  // The parent's own results, whose ids the wire carries.
+  let liveResults = engagement.visibleResults;
+  liveResults.forEach((result, i) => (result.id = i + 1));
+  let wire = structuredClone(toWire(engagement));
+  // The parent's results never went through a view, so they have no rowIndex.
+  liveResults.forEach(result => (result.rowIndex = undefined));
+
+  let restored = UrlbarTelemetryUtils.recordedEngagementFromWire(
+    wire,
+    liveResults
+  );
+
+  Assert.strictEqual(
+    restored.internalDetails.result,
+    liveResults[0],
+    "the picked result resolved to the parent's own result"
+  );
+  Assert.equal(
+    restored.internalDetails.result.rowIndex,
+    2,
+    "the wire's rowIndex carried over to it"
+  );
+  Assert.ok(
+    restored.visibleResults.every((result, i) => result === liveResults[i]),
+    "the visible results resolved to the parent's own results"
+  );
+});
+
 add_task(function test_recordFromChild_records_engagement() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   // Hand the controller the payload exactly as the actor message would.
-  controller.recordEngagement(
+  controller.parentController.recordEngagement(
     structuredClone(toWire(makeRecordedEngagement()))
   );
 
@@ -221,7 +251,7 @@ add_task(function test_collectBounceSnapshot() {
 
 add_task(function test_recordFromChild_records_exposures() {
   Services.fog.testResetFOG();
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
 
   // The child collector resolves exposures content-side and bundles the list
   // into the engagement payload.
@@ -231,7 +261,9 @@ add_task(function test_recordFromChild_records_exposures() {
       { resultType: "search_suggest", keyword: null, terminal: false },
     ],
   });
-  controller.recordEngagement(structuredClone(toWire(engagement)));
+  controller.parentController.recordEngagement(
+    structuredClone(toWire(engagement))
+  );
 
   let events = Glean.urlbar.exposure.testGetValue();
   Assert.equal(events?.length, 1, "recorded one exposure event over the wire");

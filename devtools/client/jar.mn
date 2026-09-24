@@ -34,6 +34,7 @@ devtools.jar:
     skin/images/pencil-icon.svg (themes/images/pencil-icon.svg)
     skin/images/play.svg (themes/images/play.svg)
     skin/images/rewind.svg (themes/images/rewind.svg)
+    skin/images/dock-auto.svg (themes/images/dock-auto.svg)
     skin/images/dock-bottom.svg (themes/images/dock-bottom.svg)
     skin/images/dock-side-left.svg (themes/images/dock-side-left.svg)
     skin/images/dock-side-right.svg (themes/images/dock-side-right.svg)

@@ -57,7 +57,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  41 files changed, 102 insertions(+), 101 deletions(-)
 
 diff --git a/.gn b/.gn
-index 44447d3a34..a034bc9814 100644
+index 9962d2845d..485df8f5e1 100644
 --- a/.gn
 +++ b/.gn
 @@ -6,10 +6,10 @@
@@ -74,7 +74,7 @@ index 44447d3a34..a034bc9814 100644
  # The python interpreter to use by default. On Windows, this will look
  # for python3.exe and python3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index 5c61c7a981..e4dce7bd42 100644
+index afa6710ed1..4eb65649cd 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,8 +21,8 @@
@@ -108,7 +108,7 @@ index 5c61c7a981..e4dce7bd42 100644
      defines = []
  
      deps = [
-@@ -860,7 +860,7 @@ rtc_static_library("dcsctp") {
+@@ -856,7 +856,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -117,7 +117,7 @@ index 5c61c7a981..e4dce7bd42 100644
    defines = []
    deps = [
      "net/dcsctp/public:factory",
-@@ -898,7 +898,7 @@ group("poison_default_neural_residual_echo_estimator") {
+@@ -894,7 +894,7 @@ group("poison_default_neural_residual_echo_estimator") {
  if (!build_with_chromium) {
    # Write debug logs to gn_logs.txt.
    # This is also required for Siso builds.
@@ -127,7 +127,7 @@ index 5c61c7a981..e4dce7bd42 100644
              "Generated during 'gn gen' by //BUILD.gn.",
              "",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 7d89dfc9b2..25ca4792b8 100644
+index 7ecbbaa254..39f36272dd 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -247,7 +247,7 @@ index 9b12fcdf59..b32274a9ab 100644
  
  if (rtc_include_tests) {
 diff --git a/api/video/BUILD.gn b/api/video/BUILD.gn
-index e1719b8c96..4914138139 100644
+index 96520cf02f..8112a3d28d 100644
 --- a/api/video/BUILD.gn
 +++ b/api/video/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -413,7 +413,7 @@ index d2eabafb59..2f2834fb28 100644
      deps = [
        ":generated_jni",
 diff --git a/logging/BUILD.gn b/logging/BUILD.gn
-index 880d6bbfd8..6db3c29f03 100644
+index 4ad82d0c29..0cb9cfb49f 100644
 --- a/logging/BUILD.gn
 +++ b/logging/BUILD.gn
 @@ -11,8 +11,8 @@ if (rtc_enable_protobuf) {
@@ -428,7 +428,7 @@ index 880d6bbfd8..6db3c29f03 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 0b695751ff..b648193d82 100644
+index a8f2e045b3..a3072febba 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -441,7 +441,7 @@ index 0b695751ff..b648193d82 100644
  import("../webrtc.gni")
  
 diff --git a/modules/audio_device/BUILD.gn b/modules/audio_device/BUILD.gn
-index 7481db1b85..d77b0c49c5 100644
+index ebeffb6802..827d965dcb 100644
 --- a/modules/audio_device/BUILD.gn
 +++ b/modules/audio_device/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -456,7 +456,7 @@ index 7481db1b85..d77b0c49c5 100644
  
  config("audio_device_warnings_config") {
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 540af562a2..c91e22bcc3 100644
+index 709dcbdd24..d725d75449 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -126,7 +126,7 @@ rtc_library("aec3") {
@@ -547,7 +547,7 @@ index d0b66cd592..838d961ce6 100644
    }
  
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 63c91cbe12..d8c10399ef 100644
+index f91d8556a5..6fdac0cabf 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -6,8 +6,8 @@
@@ -562,7 +562,7 @@ index 63c91cbe12..d8c10399ef 100644
  
  use_desktop_capture_differ_sse2 = target_cpu == "x86" || target_cpu == "x64"
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 70466453f4..0a463c7619 100644
+index 43317503c1..dc0d234db3 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -575,7 +575,7 @@ index 70466453f4..0a463c7619 100644
  import("../../webrtc.gni")
  
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 739e0ebe98..761e5f30ca 100644
+index f65ca9d8c2..78ba20bcf4 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -588,7 +588,7 @@ index 739e0ebe98..761e5f30ca 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 4018fa4813..dcafeb0aa2 100644
+index 8883e91252..926e86c846 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -29,8 +29,8 @@

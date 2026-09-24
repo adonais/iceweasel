@@ -179,6 +179,32 @@ devToolsOpenedCount > 10
 declare const devToolsOpenedCount: number;
 ```
 
+### `recentSearchCount`
+
+Number of distinct search terms submitted from a Search Access Point (SAP) in the last 28 days based on form history. Excludes private-browsing searches.
+
+#### Definition
+
+```ts
+declare const recentSearchCount: Promise<number>;
+```
+
+#### Examples
+* Has the user performed more than one SAP search in the last 28 days?
+```ts
+recentSearchCount > 1
+```
+
+* Has the user performed no SAP searches in the last 28 days?
+```ts
+recentSearchCount == 0
+```
+
+* Has the user performed between 1 to 10 SAP searches in the last 28 days?
+```ts
+recentSearchCount >= 1 && recentSearchCount <= 10
+```
+
 ### `isDefaultBrowser`
 
 Is Firefox the user's default browser?

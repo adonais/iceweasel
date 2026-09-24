@@ -312,6 +312,7 @@ JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
                                             0x01, 0x00, 0x00, 0x00};
   js::Vector<uint8_t, 0, js::MallocAllocPolicy> srcBuf;
   if (!srcBuf.append(emptyWasmModule, sizeof(emptyWasmModule))) {
+    ReportOutOfMemory(cx);
     return nullptr;
   }
 

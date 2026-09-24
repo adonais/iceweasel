@@ -28,6 +28,7 @@
 #include "api/task_queue/task_queue_base.h"
 #include "p2p/base/transport_description_factory.h"
 #include "pc/codec_vendor.h"
+#include "pc/connection_context.h"
 #include "pc/media_options.h"
 #include "pc/media_session.h"
 #include "pc/sdp_state_provider.h"

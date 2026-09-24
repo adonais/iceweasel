@@ -32,7 +32,8 @@ class RemoteImageProtocolHandler : public nsIProtocolHandler,
   }
 
   static already_AddRefed<gfx::SourceSurface> GetImageSurface(
-      imgIContainer* aContainer, gfx::IntSize aSize, ColorScheme aColorScheme);
+      imgIContainer* aContainer, gfx::IntSize aSize, bool aStretch,
+      ColorScheme aColorScheme);
 
  private:
   virtual ~RemoteImageProtocolHandler() = default;

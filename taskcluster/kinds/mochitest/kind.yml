@@ -25,7 +25,17 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: system
+    use-python:
+        by-test-platform:
+            # android-hw tasks are driven by the host's script.py wrapper,
+            # which imports mozdevice from the host environment; a fetched CI
+            # Python would shadow the host Python on PATH and break that import.
+            android-hw.*: system
+            # Fetched CI python is x86_64; under Rosetta it forces the universal
+            # mac Firefox onto its x86_64 slice and hits a Rosetta hang.  Keep mac
+            # on the native system python until there's an arm64 fetched python.
+            macosx.*: system
+            default: default
     use-uv: true
     worker-type:
         by-test-platform:
@@ -444,7 +454,7 @@ tasks:
                         .*-artifact.*: []
                         .*-asan.*: []
                         .*-ccov.*: []
-                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['mozilla-central']
+                        macosx1[45].*64(-shippable)?(-qr)?/opt: ['autoland', 'mozilla-central']
                         windows11.*-64.*(-shippable)?/opt: ['autoland', 'mozilla-central']
                         default: []
                 webrender-sw+urlbar-ipc:
@@ -564,6 +574,17 @@ tasks:
             name: mochitest-browser-a11y
         treeherder-symbol: M(ba)
         schedules-component: mochitest-browser-a11y
+        use-python:
+            by-test-platform:
+                # The linux ATK tests (accessible/tests/browser/atk/a11y_setup.py)
+                # borrow pyatspi/gi from the system Python; a fetched CI Python
+                # can't load those. Windows uses comtypes (pip) and Mac doesn't
+                # run the python runner, so only linux needs the system Python.
+                linux.*: system
+                # Keep mac on the native system python (fetched python is x86_64
+                # and hits a Rosetta hang on the universal mac build).
+                macosx.*: system
+                default: default
         loopback-video: true
         run-on-projects:
             by-test-platform:
@@ -1018,6 +1039,32 @@ tasks:
             by-test-platform:
                 linux.*64-tsan/opt: xlarge-noscratch  # runs out of memory using 8GB of memory
                 default: default
+
+    mochitest-speech-recognition:
+        description: "Mochitest speech recognition (parakeet) run"
+        suite:
+            name: mochitest-speech-recognition
+        treeherder-symbol: M(sr)
+        schedules-component: mochitest-plain
+        loopback-video: true
+        run-on-projects:
+            by-test-platform:
+                # ASR is impractical on debug and instrumented builds; opt only.
+                android.*: []
+                .*-asan.*: []
+                .*-tsan.*: []
+                .*-ccov.*: []
+                .*/debug: []
+                default: built-projects
+        tier: default
+        max-run-time: 1800
+        instance-size: default
+        allow-software-gl-layers: false
+        virtualization: virtual
+        fetches:
+            fetch:
+                - parakeet-eou-120m
+                - parakeet-nemotron-0.6b
 
     mochitest-media:
         description: "Mochitest media run"

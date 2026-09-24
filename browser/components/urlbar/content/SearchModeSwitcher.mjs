@@ -144,7 +144,7 @@ export class SearchModeSwitcher {
   }
 
   #openPreferences() {
-    this.#input.window.openPreferences("paneSearch");
+    this.#input.parentController.openPreferences("paneSearch");
 
     if (this.#input.sapName == "urlbar") {
       Glean.urlbarUnifiedsearchbutton.picked.settings.add(1);
@@ -283,6 +283,7 @@ export class SearchModeSwitcher {
         ) {
           return;
         }
+        event.preventDefault();
         break;
       }
       case "auxclick": {

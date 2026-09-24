@@ -10,7 +10,7 @@ minutes of work, spread out over an hour or two.
 - **Memory:** 4GB RAM minimum, 8GB+ recommended.
 - **Disk Space:** At least 30GB of free disk space.
 - **Operating System:** A 64-bit installation of Linux. It is strongly advised
-  that you use a supported distribution; see {ref}`build_hosts`. We also
+  that you use a supported distribution; see {ref}`build-hosts`. We also
   recommend that your system is fully up-to-date.
 
 :::{note}
@@ -52,7 +52,7 @@ python3 bootstrap.py
 ### Choosing a build type
 
 If you aren't modifying the Firefox backend, then select one of the
-{ref}`Artifact Mode <understanding-artifact-builds>` options. If you are
+[Artifact Mode](/contributing/build/artifact_builds.md) options. If you are
 building Firefox for Android, you should also see the {ref}`GeckoView Contributor Guide <geckoview-contributor-guide>`.
 
 ## 3. Build
@@ -78,7 +78,7 @@ You can now use the `./mach run` command to run your locally built Firefox!
 
 If your build fails, please reference the steps in the [Troubleshooting section](#troubleshooting).
 
-To customize your build with different options (like optimization levels, debug builds, or project selection), see {ref}`configuring-build-options`.
+To customize your build with different options (like optimization levels, debug builds, or project selection), see [Configuring Build Options](configuring_build_options.md).
 
 ## Now the fun starts
 

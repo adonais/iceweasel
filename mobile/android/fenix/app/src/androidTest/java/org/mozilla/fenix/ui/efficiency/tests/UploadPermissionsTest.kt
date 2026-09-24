@@ -16,9 +16,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 
 class UploadPermissionsTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // Instantiated locally rather than taken from PageContext, as SearchTest does: this page is reached by
     // a system dialog appearing over the app, not by any navigable click path.
     private val systemSettings

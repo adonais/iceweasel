@@ -77,6 +77,7 @@ class MitmproxyDesktop(Mitmproxy):
            location, and turns on the the browser proxy settings
         """
         LOG.info("Installing mitmproxy CA certificate into Firefox")
+        self.wait_for_ca_cert(DEFAULT_CERT_PATH)
 
         # browser_path is the exe, we want the folder
         self.policies_dir = os.path.dirname(browser_path)

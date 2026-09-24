@@ -117,7 +117,7 @@ void FrameInstrumentationGeneratorImpl::OnCapturedFrame(VideoFrame frame) {
   while (captured_frames_.size() >= kMaxPendingFrames) {
     captured_frames_.pop();
   }
-  captured_frames_.push(frame);
+  captured_frames_.push(std::move(frame));
 }
 
 std::optional<FrameInstrumentationData>

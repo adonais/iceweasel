@@ -21,6 +21,7 @@ WRShell can connect to either a local instance of WR (default), or an instance r
  * Query connected status
  * Get or set debug flags
  * Query and display the current spatial tree (basic only, needs additional functionality)
+ * Inspect the built scene's picture / primitive tree, highlight the hovered primitive in the rendered frame and disable primitives (see below)
  * Display profile counter graphs (basic only, needs to be extended)
  * Capture the current frame as a RenderDoc trace and open it in RenderDoc
 
@@ -77,6 +78,21 @@ The `.rdc` is written under `<objdir>/tmp/renderdoc-captures/` and opened in `qr
 To capture against a manually-launched instance, run it with `LD_PRELOAD=.../librenderdoc.so` and set `WR_RENDERDOC_CAPTURE_PATH` to the desired capture-file template.
 
 Capturing forces a full picture-cache invalidation for the captured frame, so all tiles are re-rasterized within the capture — a single-frame capture cannot replay WebRender's persistent cached tile textures.
+
+### Scene inspector
+
+The **Scene** panel (GUI) and the `get-scene` command (CLI) show the tree of pictures and primitive instances of the built scene currently held by the render backend, that is, what WebRender actually renders after scene building rather than the display list as sent by the content process. Each node shows the primitive index, kind, a kind-specific summary (composite mode, glyph count, ...) and, for rectangles, box shadows and text runs, a swatch of the primitive color.
+
+In the GUI:
+
+* Clicking a primitive selects it. The panel on the right shows its details (local rect, approximate device rect, spatial node, outcome of the last visibility pass, ...) along with its ancestors and children, which can be clicked to navigate.
+* Hovering a primitive highlights it in the rendered frame. **Replace** swaps the primitive for an opaque pink quad (honoring its clips, transform and z-order), **Overlay** outlines its device rect in pink on top of the composited frame, leaving its content visible, so that it can be located even when occluded. Moving the pointer away clears the highlight.
+* The checkbox next to each primitive disables it; a disabled picture hides its whole subtree. **Enable all** clears the disabled set.
+* Right-clicking a node opens a menu of bulk actions. **Focus on this node** disables every other primitive, except the node's ancestors (disabling them would hide the node too) and, for pictures and tile caches, its descendants. **Disable children** / **Enable children** act on the subtree of a picture.
+
+Both take effect at frame building time without rebuilding the scene. Primitive indices are only valid for one built scene: when a new display list arrives, WebRender drops the override, and the panel reports an error if a stale selection is pushed. Click **Refresh** to fetch the new scene.
+
+Highlighting a pass-through picture (one without its own surface) in Replace mode hides it instead, as it has no rect of its own.
 
 ### Extending
 

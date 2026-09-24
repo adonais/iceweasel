@@ -306,6 +306,63 @@ add_task(async function () {
     checkTabs(1);
   }
 
+  {
+    info("Bug 2070184: Test previews when the tab list shifts under the panel");
+
+    checkTabs(1);
+
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.pagethumbnails.capturing_disabled", false]],
+    });
+
+    for (let i = 0; i < 5; i++) {
+      await BrowserTestUtils.openNewForegroundTab(
+        gBrowser,
+        `${getRootDirectory(gTestPath)}dummy_page.html`
+      );
+    }
+
+    let visiblePreviews = () =>
+      ctrlTab.previews.filter(preview => preview._tab && !preview.hidden);
+    let hasThumbnail = preview =>
+      preview._canvas.firstElementChild &&
+      !preview._canvas.firstElementChild.classList.contains(
+        "ctrlTab-placeholder"
+      );
+
+    await pressCtrlTab();
+    await TestUtils.waitForCondition(
+      () => visiblePreviews().every(hasThumbnail),
+      "Every preview should have a thumbnail"
+    );
+
+    // Two tabs, because the first close is what replaces the freshly captured
+    // thumbnails with the images cached on the tabs, and it's those that the
+    // second close shifts from one preview to another.
+    for (let i = 0; i < 2; i++) {
+      info("Closing the selected tab while the panel is open");
+      await synthesizeCtrlW();
+      await TestUtils.waitForCondition(
+        () => visiblePreviews().every(hasThumbnail),
+        "Every preview should still have a thumbnail after a tab is closed"
+      );
+    }
+
+    let widths = new Set(
+      visiblePreviews().map(preview =>
+        Math.round(preview._canvas.getBoundingClientRect().width)
+      )
+    );
+    is(widths.size, 1, "The previews are all the same width");
+
+    await releaseCtrl();
+
+    for (let i = gBrowser.tabs.length - 1; i > 0; i--) {
+      await BrowserTestUtils.removeTab(gBrowser.tabs[i]);
+    }
+    checkTabs(1);
+  }
+
   /* private utility functions */
 
   /**

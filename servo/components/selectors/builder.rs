@@ -412,7 +412,7 @@ where
     let mut flags = Default::default();
     for simple_selector in iter {
         component_specificity(
-            &simple_selector,
+            simple_selector,
             &mut specificity,
             &mut flags,
             for_nesting_parent,

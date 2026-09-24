@@ -48,15 +48,15 @@ Bits  Usage
 0     Extractable
 1-7   [reserved]
 8-15  KeyType
-16-23 KeyUsage
-24-31 [reserved]
+16-27 KeyUsage
+28-31 [reserved]
 
 In the order of a hex value for a uint32_t
 
    3                   2                   1                   0
  1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|~~~~~~~~~~~~~~~|     Usage     |     Type      |~~~~~~~~~~~~~|E|
+|~~~~~~~|         Usage         |     Type      |~~~~~~~~~~~~~|E|
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 Thus, internally, a key has the following fields:
@@ -85,8 +85,8 @@ class CryptoKey final : public nsISupports, public nsWrapperCache {
     PRIVATE = 0x00000300
   };
 
-  static const uint32_t CLEAR_USAGES = 0xFF00FFFF;
-  static const uint32_t USAGES_MASK = 0x00FF0000;
+  static const uint32_t CLEAR_USAGES = 0xF000FFFF;
+  static const uint32_t USAGES_MASK = 0x0FFF0000;
   enum KeyUsage {
     ENCRYPT = 0x00010000,
     DECRYPT = 0x00020000,
@@ -95,7 +95,11 @@ class CryptoKey final : public nsISupports, public nsWrapperCache {
     DERIVEKEY = 0x00100000,
     DERIVEBITS = 0x00200000,
     WRAPKEY = 0x00400000,
-    UNWRAPKEY = 0x00800000
+    UNWRAPKEY = 0x00800000,
+    ENCAPSULATEKEY = 0x01000000,
+    ENCAPSULATEBITS = 0x02000000,
+    DECAPSULATEKEY = 0x04000000,
+    DECAPSULATEBITS = 0x08000000
   };
 
   explicit CryptoKey(nsIGlobalObject* aWindow);
@@ -172,6 +176,16 @@ class CryptoKey final : public nsISupports, public nsWrapperCache {
 
   static UniqueSECKEYPublicKey PublicOKPKeyFromRaw(CryptoBuffer& aKeyData,
                                                    const nsString& aNamedCurve);
+
+  static UniqueSECKEYPublicKey PublicMLKEMKeyFromRaw(
+      CryptoBuffer& aKeyData, const MLKEMParams& aMLKEMParams);
+  static nsresult PublicMLKEMKeyToRaw(SECKEYPublicKey* aPubKey,
+                                      CryptoBuffer& aRetVal);
+
+  static UniqueSECKEYPrivateKey PrivateMLKEMKeyFromSeed(
+      const CryptoBuffer& aSeed, const MLKEMParams& aMLKEMParams);
+  static nsresult PrivateMLKEMKeyToSeed(SECKEYPrivateKey* aPrivKey,
+                                        CryptoBuffer& aRetVal);
 
   static bool PublicKeyValid(SECKEYPublicKey* aPubKey);
 

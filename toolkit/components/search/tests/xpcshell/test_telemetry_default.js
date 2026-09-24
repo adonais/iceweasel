@@ -362,13 +362,14 @@ add_task(async function test_region_changes_default() {
 
 add_task(async function test_user_changes_separate_private_pref() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   await SearchService.setDefaultPrivate(
     SearchService.getEngineById("newDefault"),
@@ -382,14 +383,14 @@ add_task(async function test_user_changes_separate_private_pref() {
   );
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
 
   clearTelemetry();
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     false
   );
 
@@ -398,13 +399,14 @@ add_task(async function test_user_changes_separate_private_pref() {
 
 add_task(async function test_ui_enabled_with_separate_default_notifies() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   await SearchService.setDefaultPrivate(
     SearchService.getEngineById("newDefault"),
@@ -420,7 +422,7 @@ add_task(async function test_ui_enabled_with_separate_default_notifies() {
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
   await defaultChanged;
@@ -438,7 +440,7 @@ add_task(async function test_ui_enabled_with_separate_default_notifies() {
   // was turned off, so the private engine falls back to the app default (same
   // as the normal default). No notification fires, but telemetry records the change.
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
 
@@ -447,20 +449,21 @@ add_task(async function test_ui_enabled_with_separate_default_notifies() {
   clearTelemetry();
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
 });
 
 add_task(async function test_default_engine_update_private() {
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   let extension = await SearchTestUtils.installSearchExtension(
     {
@@ -520,7 +523,7 @@ add_task(async function test_default_engine_update_private() {
   await extension.unload();
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
 });

@@ -8,7 +8,7 @@ import re
 from typing import NewType, Tuple, Union, cast
 
 from .tags import Tag, parse_tag
-from .version import InvalidVersion, Version
+from .version import InvalidVersion, Version, _TrimmedRelease
 
 BuildTag = Union[Tuple[()], Tuple[int, str]]
 NormalizedName = NewType("NormalizedName", str)
@@ -33,73 +33,57 @@ class InvalidSdistFilename(ValueError):
 
 
 # Core metadata spec for `Name`
-_validate_regex = re.compile(
-    r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$", re.IGNORECASE
-)
-_canonicalize_regex = re.compile(r"[-_.]+")
-_normalized_regex = re.compile(r"^([a-z0-9]|[a-z0-9]([a-z0-9-](?!--))*[a-z0-9])$")
+_validate_regex = re.compile(r"[A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9]", re.IGNORECASE)
+_normalized_regex = re.compile(r"[a-z0-9]|[a-z0-9]([a-z0-9-](?!--))*[a-z0-9]")
 # PEP 427: The build number must start with a digit.
 _build_tag_regex = re.compile(r"(\d+)(.*)")
 
 
 def canonicalize_name(name: str, *, validate: bool = False) -> NormalizedName:
-    if validate and not _validate_regex.match(name):
+    if validate and not _validate_regex.fullmatch(name):
         raise InvalidName(f"name is invalid: {name!r}")
-    # This is taken from PEP 503.
-    value = _canonicalize_regex.sub("-", name).lower()
-    return cast(NormalizedName, value)
+    # Ensure all ``.`` and ``_`` are ``-``
+    # Emulates ``re.sub(r"[-_.]+", "-", name).lower()`` from PEP 503
+    # Much faster than re, and even faster than str.translate
+    value = name.lower().replace("_", "-").replace(".", "-")
+    # Condense repeats (faster than regex)
+    while "--" in value:
+        value = value.replace("--", "-")
+    return cast("NormalizedName", value)
 
 
 def is_normalized_name(name: str) -> bool:
-    return _normalized_regex.match(name) is not None
+    return _normalized_regex.fullmatch(name) is not None
 
 
 def canonicalize_version(
     version: Version | str, *, strip_trailing_zero: bool = True
 ) -> str:
     """
-    This is very similar to Version.__str__, but has one subtle difference
-    with the way it handles the release segment.
+    Return a canonical form of a version as a string.
+
+    >>> canonicalize_version('1.0.1')
+    '1.0.1'
+
+    Per PEP 625, versions may have multiple canonical forms, differing
+    only by trailing zeros.
+
+    >>> canonicalize_version('1.0.0')
+    '1'
+    >>> canonicalize_version('1.0.0', strip_trailing_zero=False)
+    '1.0.0'
+
+    Invalid versions are returned unaltered.
+
+    >>> canonicalize_version('foo bar baz')
+    'foo bar baz'
     """
     if isinstance(version, str):
         try:
-            parsed = Version(version)
+            version = Version(version)
         except InvalidVersion:
-            # Legacy versions cannot be normalized
-            return version
-    else:
-        parsed = version
-
-    parts = []
-
-    # Epoch
-    if parsed.epoch != 0:
-        parts.append(f"{parsed.epoch}!")
-
-    # Release segment
-    release_segment = ".".join(str(x) for x in parsed.release)
-    if strip_trailing_zero:
-        # NB: This strips trailing '.0's to normalize
-        release_segment = re.sub(r"(\.0)+$", "", release_segment)
-    parts.append(release_segment)
-
-    # Pre-release
-    if parsed.pre is not None:
-        parts.append("".join(str(x) for x in parsed.pre))
-
-    # Post-release
-    if parsed.post is not None:
-        parts.append(f".post{parsed.post}")
-
-    # Development release
-    if parsed.dev is not None:
-        parts.append(f".dev{parsed.dev}")
-
-    # Local version segment
-    if parsed.local is not None:
-        parts.append(f"+{parsed.local}")
-
-    return "".join(parts)
+            return str(version)
+    return str(_TrimmedRelease(version) if strip_trailing_zero else version)
 
 
 def parse_wheel_filename(
@@ -107,28 +91,28 @@ def parse_wheel_filename(
 ) -> tuple[NormalizedName, Version, BuildTag, frozenset[Tag]]:
     if not filename.endswith(".whl"):
         raise InvalidWheelFilename(
-            f"Invalid wheel filename (extension must be '.whl'): {filename}"
+            f"Invalid wheel filename (extension must be '.whl'): {filename!r}"
         )
 
     filename = filename[:-4]
     dashes = filename.count("-")
     if dashes not in (4, 5):
         raise InvalidWheelFilename(
-            f"Invalid wheel filename (wrong number of parts): {filename}"
+            f"Invalid wheel filename (wrong number of parts): {filename!r}"
         )
 
     parts = filename.split("-", dashes - 2)
     name_part = parts[0]
     # See PEP 427 for the rules on escaping the project name.
     if "__" in name_part or re.match(r"^[\w\d._]*$", name_part, re.UNICODE) is None:
-        raise InvalidWheelFilename(f"Invalid project name: {filename}")
+        raise InvalidWheelFilename(f"Invalid project name: {filename!r}")
     name = canonicalize_name(name_part)
 
     try:
         version = Version(parts[1])
     except InvalidVersion as e:
         raise InvalidWheelFilename(
-            f"Invalid wheel filename (invalid version): {filename}"
+            f"Invalid wheel filename (invalid version): {filename!r}"
         ) from e
 
     if dashes == 5:
@@ -136,9 +120,9 @@ def parse_wheel_filename(
         build_match = _build_tag_regex.match(build_part)
         if build_match is None:
             raise InvalidWheelFilename(
-                f"Invalid build number: {build_part} in '{filename}'"
+                f"Invalid build number: {build_part} in {filename!r}"
             )
-        build = cast(BuildTag, (int(build_match.group(1)), build_match.group(2)))
+        build = cast("BuildTag", (int(build_match.group(1)), build_match.group(2)))
     else:
         build = ()
     tags = parse_tag(parts[-1])
@@ -153,14 +137,14 @@ def parse_sdist_filename(filename: str) -> tuple[NormalizedName, Version]:
     else:
         raise InvalidSdistFilename(
             f"Invalid sdist filename (extension must be '.tar.gz' or '.zip'):"
-            f" {filename}"
+            f" {filename!r}"
         )
 
     # We are requiring a PEP 440 version, which cannot contain dashes,
     # so we split on the last dash.
     name_part, sep, version_part = file_stem.rpartition("-")
     if not sep:
-        raise InvalidSdistFilename(f"Invalid sdist filename: {filename}")
+        raise InvalidSdistFilename(f"Invalid sdist filename: {filename!r}")
 
     name = canonicalize_name(name_part)
 
@@ -168,7 +152,7 @@ def parse_sdist_filename(filename: str) -> tuple[NormalizedName, Version]:
         version = Version(version_part)
     except InvalidVersion as e:
         raise InvalidSdistFilename(
-            f"Invalid sdist filename (invalid version): {filename}"
+            f"Invalid sdist filename (invalid version): {filename!r}"
         ) from e
 
     return (name, version)

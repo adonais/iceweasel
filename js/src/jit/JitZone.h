@@ -70,17 +70,23 @@ enum class ICStubEngine : uint8_t {
 
 struct CacheIRStubKey : public DefaultHasher<CacheIRStubKey> {
   struct Lookup {
-    CacheKind kind;
-    ICStubEngine engine;
     const uint8_t* code;
     uint32_t length;
+    HashNumber hash;
+    CacheKind kind;
+    ICStubEngine engine;
 
     Lookup(CacheKind kind, ICStubEngine engine, const uint8_t* code,
            uint32_t length)
-        : kind(kind), engine(engine), code(code), length(length) {}
+        : code(code),
+          length(length),
+          hash(mozilla::AddToHash(mozilla::HashBytes(code, length),
+                                  uint32_t(kind), uint32_t(engine))),
+          kind(kind),
+          engine(engine) {}
   };
 
-  static HashNumber hash(const Lookup& l);
+  static HashNumber hash(const Lookup& l) { return l.hash; }
   static bool match(const CacheIRStubKey& entry, const Lookup& l);
 
   UniquePtr<CacheIRStubInfo, JS::FreePolicy> stubInfo;

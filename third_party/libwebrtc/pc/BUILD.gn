@@ -366,7 +366,6 @@ rtc_library("media_session") {
     "../call:payload_type",
     "../media:codec",
     "../media:media_constants",
-    "../media:media_engine",
     "../media:rid_description",
     "../media:stream_params",
     "../p2p:ice_credentials_iterator",
@@ -709,6 +708,7 @@ rtc_library("sctp_utils") {
     "../rtc_base:byte_buffer",
     "../rtc_base:copy_on_write_buffer",
     "../rtc_base:logging",
+    "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
 rtc_library("srtp_session") {
@@ -1994,10 +1994,11 @@ rtc_library("video_track") {
     "../api:scoped_refptr",
     "../api:sequence_checker",
     "../api/video:video_frame",
-    "../media:video_source_base",
+    "../rtc_base:checks",
     "../rtc_base:macromagic",
     "../rtc_base:threading",
     "../rtc_base/system:no_unique_address",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -2144,6 +2145,7 @@ rtc_library("media_stream") {
     "../api:media_stream_interface",
     "../api:scoped_refptr",
     "../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
 
@@ -3197,11 +3199,13 @@ if (rtc_include_tests && !build_with_chromium) {
       "../rtc_base:checks",
       "../rtc_base:refcount",
       "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:stringutils",
       "../rtc_base:threading",
       "../test:create_test_environment",
       "../test:run_loop",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/algorithm:container",
+      "//third_party/abseil-cpp/absl/strings:string_view",
     ]
   }
 
@@ -3640,6 +3644,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "../api:create_peerconnection_factory",
       "../api:field_trials",
       "../api:jsep",
+      "../api:payload_type",
       "../api:peer_connection_interface",
       "../api:rtc_error",
       "../api:rtc_error_matchers",

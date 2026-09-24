@@ -6,6 +6,7 @@
 #define mozilla_BinarySearch_h
 
 #include <cstddef>
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/Assertions.h"
@@ -32,8 +33,8 @@ namespace mozilla {
  *
  * The BinarySearchIf() version behaves similarly, but takes |aComparator|, a
  * functor to compare the values with, instead of a value to find.
- * That functor should take one argument - the value to compare - and return an
- * |int| with the comparison result:
+ * That functor should take one argument - the value to compare - and return a
+ * signed integer with the comparison result:
  *
  *   * 0, if the argument is equal to,
  *   * less than 0, if the argument is greater than,
@@ -57,7 +58,8 @@ namespace mozilla {
  *
  *   size_t match;
  *   if (BinarySearchIf(sortedInts, 0, sortedInts.length(), Comparator(13),
- * &match)) { printf("found 13 at %lu\n", match);
+ *                      &match)) {
+ *     printf("found 13 at %lu\n", match);
  *   }
  *
  */
@@ -75,7 +77,9 @@ bool BinarySearchIf(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     // Allow any intermediate type so long as it provides a suitable ordering
     // relation.
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
+    static_assert(!std::is_unsigned_v<decltype(result)>,
+                  "comparator result must allow negative values");
 
     if (result == 0) {
       *aMatchOrInsertionPoint = middle;
@@ -173,7 +177,9 @@ size_t LowerBound(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     // Allow any intermediate type so long as it provides a suitable ordering
     // relation.
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
+    static_assert(!std::is_unsigned_v<decltype(result)>,
+                  "comparator result must allow negative values");
 
     // The range returning from LowerBound does include elements
     // equivalent to the given value i.e. aCompare(element) == 0
@@ -199,7 +205,9 @@ size_t UpperBound(const Container& aContainer, size_t aBegin, size_t aEnd,
 
     // Allow any intermediate type so long as it provides a suitable ordering
     // relation.
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
+    static_assert(!std::is_unsigned_v<decltype(result)>,
+                  "comparator result must allow negative values");
 
     // The range returning from UpperBound does NOT include elements
     // equivalent to the given value i.e. aCompare(element) == 0
@@ -225,7 +233,9 @@ std::pair<size_t, size_t> EqualRange(const Container& aContainer, size_t aBegin,
 
     // Allow any intermediate type so long as it provides a suitable ordering
     // relation.
-    const int result = aCompare(aContainer[middle]);
+    const auto result = aCompare(aContainer[middle]);
+    static_assert(!std::is_unsigned_v<decltype(result)>,
+                  "comparator result must allow negative values");
 
     if (result < 0) {
       high = middle;

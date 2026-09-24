@@ -69,10 +69,9 @@ static ffi::WGPUColor ConvertColor(
   return ffi::WGPUColor();
 }
 
-RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
-                         RawId aEncoderId,
+RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aEncoderId,
                          const dom::GPURenderPassDescriptor& aDesc) {
-  ffi::WGPURenderPassDescriptor desc = {};
+  ffi::WGPUFfiRenderPassDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -158,20 +157,18 @@ RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
     desc.depth_stencil_attachment = &dsDesc;
   }
 
-  AutoTArray<ffi::WGPUFfiOption_FfiRenderPassColorAttachment,
-             WGPUMAX_COLOR_ATTACHMENTS>
-      colorDescs;
+  nsTArray<ffi::WGPUFfiOption_RenderPassColorAttachment> colorDescs;
 
   for (const auto& caOrNull : aDesc.mColorAttachments) {
-    ffi::WGPUFfiOption_FfiRenderPassColorAttachment opt = {};
+    ffi::WGPUFfiOption_RenderPassColorAttachment opt = {};
     if (caOrNull.IsNull()) {
       opt.tag = ffi::
-          WGPUFfiOption_FfiRenderPassColorAttachment_None_FfiRenderPassColorAttachment;
+          WGPUFfiOption_RenderPassColorAttachment_None_RenderPassColorAttachment;
       colorDescs.AppendElement(opt);
       continue;
     }
     const auto& ca = caOrNull.Value();
-    ffi::WGPUFfiRenderPassColorAttachment cd = {};
+    ffi::WGPURenderPassColorAttachment cd = {};
     // NOTE: We're assuming callers reified this to be a view.
     cd.view = ca.mView.GetAsGPUTextureView()->GetId();
     cd.store_op = ConvertStoreOp(ca.mStoreOp);
@@ -202,7 +199,7 @@ RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
         break;
     }
     opt.tag = ffi::
-        WGPUFfiOption_FfiRenderPassColorAttachment_Some_FfiRenderPassColorAttachment;
+        WGPUFfiOption_RenderPassColorAttachment_Some_RenderPassColorAttachment;
     opt.some = cd;
     colorDescs.AppendElement(opt);
   }
@@ -220,8 +217,8 @@ RawId BeginFfiRenderPass(ffi::WGPUClient* aClient, RawId aDeviceId,
     desc.timestamp_writes = &passTimestampWrites;
   }
 
-  return ffi::wgpu_client_command_encoder_begin_render_pass(aClient, aDeviceId,
-                                                            aEncoderId, &desc);
+  return ffi::wgpu_client_command_encoder_begin_render_pass(aClient, aEncoderId,
+                                                            &desc);
 }
 
 RenderPassEncoder::RenderPassEncoder(CommandEncoder* const aParent, RawId aId)
@@ -242,7 +239,7 @@ void RenderPassEncoder::SetBindGroup(uint32_t aSlot,
     bindGroup = aBindGroup->GetId();
   }
   ffi::wgpu_client_render_pass_encoder_set_bind_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aSlot, bindGroup,
+      GetClient(), GetId(), aSlot, bindGroup,
       {aDynamicOffsets, aDynamicOffsetsLength});
 }
 
@@ -269,8 +266,8 @@ void RenderPassEncoder::SetBindGroup(
 }
 
 void RenderPassEncoder::SetPipeline(const RenderPipeline& aPipeline) {
-  ffi::wgpu_client_render_pass_encoder_set_pipeline(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aPipeline.GetId());
+  ffi::wgpu_client_render_pass_encoder_set_pipeline(GetClient(), GetId(),
+                                                    aPipeline.GetId());
 }
 
 void RenderPassEncoder::SetIndexBuffer(const Buffer& aBuffer,
@@ -288,8 +285,7 @@ void RenderPassEncoder::SetIndexBuffer(const Buffer& aBuffer,
     bufferSize.tag = ffi::WGPUFfiOption_BufferAddress_None_BufferAddress;
   }
   ffi::wgpu_client_render_pass_encoder_set_index_buffer(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aBuffer.GetId(),
-      iformat, aOffset, bufferSize);
+      GetClient(), GetId(), aBuffer.GetId(), iformat, aOffset, bufferSize);
 }
 
 void RenderPassEncoder::SetVertexBuffer(uint32_t aSlot,
@@ -308,15 +304,14 @@ void RenderPassEncoder::SetVertexBuffer(uint32_t aSlot,
     bufferSize.tag = ffi::WGPUFfiOption_BufferAddress_None_BufferAddress;
   }
   ffi::wgpu_client_render_pass_encoder_set_vertex_buffer(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aSlot, bufferId,
-      aOffset, bufferSize);
+      GetClient(), GetId(), aSlot, bufferId, aOffset, bufferSize);
 }
 
 void RenderPassEncoder::Draw(uint32_t aVertexCount, uint32_t aInstanceCount,
                              uint32_t aFirstVertex, uint32_t aFirstInstance) {
-  ffi::wgpu_client_render_pass_encoder_draw(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aVertexCount,
-      aInstanceCount, aFirstVertex, aFirstInstance);
+  ffi::wgpu_client_render_pass_encoder_draw(GetClient(), GetId(), aVertexCount,
+                                            aInstanceCount, aFirstVertex,
+                                            aFirstInstance);
 }
 
 void RenderPassEncoder::DrawIndexed(uint32_t aIndexCount,
@@ -324,57 +319,54 @@ void RenderPassEncoder::DrawIndexed(uint32_t aIndexCount,
                                     uint32_t aFirstIndex, int32_t aBaseVertex,
                                     uint32_t aFirstInstance) {
   ffi::wgpu_client_render_pass_encoder_draw_indexed(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aIndexCount,
-      aInstanceCount, aFirstIndex, aBaseVertex, aFirstInstance);
+      GetClient(), GetId(), aIndexCount, aInstanceCount, aFirstIndex,
+      aBaseVertex, aFirstInstance);
 }
 
 void RenderPassEncoder::DrawIndirect(const Buffer& aIndirectBuffer,
                                      uint64_t aIndirectOffset) {
   ffi::wgpu_client_render_pass_encoder_draw_indirect(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(),
-      aIndirectBuffer.GetId(), aIndirectOffset);
+      GetClient(), GetId(), aIndirectBuffer.GetId(), aIndirectOffset);
 }
 
 void RenderPassEncoder::DrawIndexedIndirect(const Buffer& aIndirectBuffer,
                                             uint64_t aIndirectOffset) {
   ffi::wgpu_client_render_pass_encoder_draw_indexed_indirect(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(),
-      aIndirectBuffer.GetId(), aIndirectOffset);
+      GetClient(), GetId(), aIndirectBuffer.GetId(), aIndirectOffset);
 }
 
 void RenderPassEncoder::SetViewport(float x, float y, float width, float height,
                                     float minDepth, float maxDepth) {
   ffi::wgpu_client_render_pass_encoder_set_viewport(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), x, y, width, height,
-      minDepth, maxDepth);
+      GetClient(), GetId(), x, y, width, height, minDepth, maxDepth);
 }
 
 void RenderPassEncoder::SetScissorRect(uint32_t x, uint32_t y, uint32_t width,
                                        uint32_t height) {
-  ffi::wgpu_client_render_pass_encoder_set_scissor_rect(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), x, y, width, height);
+  ffi::wgpu_client_render_pass_encoder_set_scissor_rect(GetClient(), GetId(), x,
+                                                        y, width, height);
 }
 
 void RenderPassEncoder::SetBlendConstant(
     const dom::DoubleSequenceOrGPUColorDict& color) {
   ffi::WGPUColor aColor = ConvertColor(color);
-  ffi::wgpu_client_render_pass_encoder_set_blend_constant(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), &aColor);
+  ffi::wgpu_client_render_pass_encoder_set_blend_constant(GetClient(), GetId(),
+                                                          &aColor);
 }
 
 void RenderPassEncoder::SetStencilReference(uint32_t reference) {
   ffi::wgpu_client_render_pass_encoder_set_stencil_reference(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), reference);
+      GetClient(), GetId(), reference);
 }
 
 void RenderPassEncoder::BeginOcclusionQuery(uint32_t aQueryIndex) {
   ffi::wgpu_client_render_pass_encoder_begin_occlusion_query(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aQueryIndex);
+      GetClient(), GetId(), aQueryIndex);
 }
 
 void RenderPassEncoder::EndOcclusionQuery() {
-  ffi::wgpu_client_render_pass_encoder_end_occlusion_query(
-      GetClient(), mParent->GetDevice()->GetId(), GetId());
+  ffi::wgpu_client_render_pass_encoder_end_occlusion_query(GetClient(),
+                                                           GetId());
 }
 
 void RenderPassEncoder::ExecuteBundles(
@@ -386,23 +378,21 @@ void RenderPassEncoder::ExecuteBundles(
     renderBundles.AppendElement(bundle->GetId());
   }
   ffi::wgpu_client_render_pass_encoder_execute_bundles(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(),
-      {renderBundles.Elements(), renderBundles.Length()});
+      GetClient(), GetId(), {renderBundles.Elements(), renderBundles.Length()});
 }
 
 void RenderPassEncoder::PushDebugGroup(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
-  ffi::wgpu_client_render_pass_encoder_push_debug_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), utf8.get());
+  ffi::wgpu_client_render_pass_encoder_push_debug_group(GetClient(), GetId(),
+                                                        utf8.get());
 }
 void RenderPassEncoder::PopDebugGroup() {
-  ffi::wgpu_client_render_pass_encoder_pop_debug_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId());
+  ffi::wgpu_client_render_pass_encoder_pop_debug_group(GetClient(), GetId());
 }
 void RenderPassEncoder::InsertDebugMarker(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
-  ffi::wgpu_client_render_pass_encoder_insert_debug_marker(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), utf8.get());
+  ffi::wgpu_client_render_pass_encoder_insert_debug_marker(GetClient(), GetId(),
+                                                           utf8.get());
 }
 
 void RenderPassEncoder::End() {

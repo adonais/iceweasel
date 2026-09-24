@@ -27,8 +27,25 @@ async function setup_mockFilePicker(mockParentDir) {
 
 add_setup(async () => {
   MockFilePicker.init();
-  registerCleanupFunction(() => {
+
+  // The default backup location comes from the machine's OneDrive or Documents
+  // folder. Point it somewhere we control so no task depends on what the
+  // machine has.
+  let defaultParentPath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "turn-on-scheduled-backups-default-parent"
+  );
+  let defaultParent = await IOUtils.getFile(defaultParentPath);
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
+  sandbox.stub(BackupService, "docsDirFolderPath").get(() => defaultParent);
+  getAndMaybeInitBackupService().resetDefaultParentInternalState();
+
+  registerCleanupFunction(async () => {
     MockFilePicker.cleanup();
+    sandbox.restore();
+    getAndMaybeInitBackupService().resetDefaultParentInternalState();
+    await IOUtils.remove(defaultParentPath, { recursive: true });
   });
 });
 

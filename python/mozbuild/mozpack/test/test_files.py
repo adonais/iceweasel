@@ -13,6 +13,7 @@ from mozpack.files import (
     ComposedFinder,
     DeflatedFile,
     Dest,
+    ExecutableFile,
     ExistingFile,
     ExtractedTarFile,
     File,
@@ -43,6 +44,7 @@ import tarfile
 import unittest
 from io import BytesIO
 from tempfile import mkdtemp
+from unittest import mock
 
 import mozfile
 import mozunit
@@ -1122,6 +1124,56 @@ class TestFileFinder(MatchTestTemplate, TestWithTmpDir):
         res = finder.get("bar")
         self.assertIsInstance(res, File)
         self.assertEqual(mozpath.normpath(res.path), mozpath.join(self.tmpdir, "bar"))
+
+    def test_scandir_reuses_entry_metadata(self):
+        self.add("foo/bar")
+        original_isdir = os.path.isdir
+        original_lexists = os.path.lexists
+
+        with mock.patch("mozpack.files.os.path.isdir", wraps=original_isdir) as isdir:
+            with mock.patch(
+                "mozpack.files.os.path.lexists", wraps=original_lexists
+            ) as lexists:
+                self.assertEqual(
+                    [path for path, _ in FileFinder(self.tmpdir).find("**")],
+                    ["foo/bar"],
+                )
+
+        self.assertEqual(isdir.call_count, 1)
+        lexists.assert_not_called()
+
+    def test_symlinks(self):
+        if not self.symlink_supported:
+            self.skipTest("symlinks are not supported")
+
+        self.add("target/file")
+        os.symlink(self.tmppath("target"), self.tmppath("link"))
+        os.symlink(self.tmppath("missing"), self.tmppath("broken"))
+
+        self.assertEqual(
+            sorted(path for path, _ in FileFinder(self.tmpdir).find("**")),
+            ["broken", "link/file", "target/file"],
+        )
+        self.assertEqual(
+            sorted(
+                path
+                for path, _ in FileFinder(
+                    self.tmpdir, ignore_broken_symlinks=True
+                ).find("**")
+            ),
+            ["link/file", "target/file"],
+        )
+
+    def test_find_executables(self):
+        self.add("binary")
+        with mock.patch("mozpack.files.is_executable", return_value=True) as check:
+            files = dict(FileFinder(self.tmpdir, find_executables=True).find("**"))
+
+        self.assertIsInstance(files["binary"], ExecutableFile)
+        check.assert_called_once()
+        self.assertEqual(
+            os.path.normpath(check.call_args.args[0]), self.tmppath("binary")
+        )
 
     def test_ignored_dirs(self):
         """Ignored directories should not have results returned."""

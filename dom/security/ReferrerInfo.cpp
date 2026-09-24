@@ -1194,7 +1194,8 @@ ReferrerInfo::InitWithDocument(const Document* aDocument) {
 static ReferrerPolicy ReferrerPolicyFromAttribute(const Element& aElement) {
   if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
                                     nsGkAtoms::script, nsGkAtoms::iframe,
-                                    nsGkAtoms::link, nsGkAtoms::img)) {
+                                    nsGkAtoms::link, nsGkAtoms::img) &&
+      !aElement.IsAnyOfSVGElements(nsGkAtoms::a)) {
     return ReferrerPolicy::_empty;
   }
   return aElement.GetReferrerPolicyAsEnum();

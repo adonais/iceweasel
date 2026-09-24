@@ -1,23 +1,38 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Oct 2024 13:42:00 +0000
-Subject: Bug 1921707 - add filtering for new build directory location in
- third_party/abseil-cpp/absl.gni r=ng
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sun, 23 Aug 2026 13:55:24 -0400
+Subject: Bug 1974813, Bug 1965053 - abseil-cpp compiler flag adjustments in
+ absl.gni.
 
-Differential Revision: https://phabricator.services.mozilla.com/D224546
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c4cbc65577ab4012dc243185d5d87c83e29b7446
+Drops the prevent_unsafe_narrowing config, which chromium/build now includes
+automatically, and silences -Wcomma and -Wtautological-type-limit-compare.
+Those fire on deliberate comma expressions and on portability range checks that
+are tautological only on 64-bit; abseil does not enable either warning.
 ---
- abseil-cpp/absl.gni | 1 +
- 1 file changed, 1 insertion(+)
+ abseil-cpp/absl.gni | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
 diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
-index 99de650cfb3..3632789e941 100644
+index 3632789e941..8cb6e8b61d4 100644
 --- a/abseil-cpp/absl.gni
 +++ b/abseil-cpp/absl.gni
-@@ -91,6 +91,7 @@ template("absl_source_set") {
-         modified_deps = []
-         foreach (dep, deps) {
-           newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+          newdep = string_replace(newdep, "//build", "//chromium/build")
-           modified_deps += [ newdep ]
-         }
-         deps = []
+@@ -38,6 +38,20 @@ template("absl_source_set") {
+         "//abseil-cpp:absl_define_config",
+       ]
+ 
++      if (moz_webrtc_build) {
++        configs -= [ "//chromium/build/config/compiler:prevent_unsafe_narrowing" ]
++
++        # Silence -Wcomma / -Wtautological-type-limit-compare spam from
++        # third-party abseil sources. See bug 1965053.
++        if (!defined(cflags_cc)) {
++          cflags_cc = []
++        }
++        cflags_cc += [
++          "-Wno-comma",
++          "-Wno-tautological-type-limit-compare",
++        ]
++      }
++
+       if (!defined(defines)) {
+         defines = []
+       }

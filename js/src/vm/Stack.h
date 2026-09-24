@@ -171,7 +171,6 @@ class AbstractFramePtr {
   }
 
   bool operator==(const AbstractFramePtr& other) const = default;
-  bool operator!=(const AbstractFramePtr& other) const = default;
 
   explicit operator bool() const { return !!ptr_; }
 

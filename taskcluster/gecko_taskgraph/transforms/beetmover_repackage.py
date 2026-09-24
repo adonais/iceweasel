@@ -122,7 +122,7 @@ def make_task_description(config, jobs):
         attribution_name = "attribution"
         repackage_deb_name = "repackage-deb"
         if job.get("locale"):
-            signing_name = "shippable-l10n-signing"
+            signing_name = "l10n-signing"
             build_name = "shippable-l10n"
             repackage_name = "repackage-l10n"
             repackage_signing_name = "repackage-signing-l10n"

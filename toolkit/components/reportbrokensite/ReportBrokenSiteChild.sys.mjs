@@ -342,6 +342,7 @@ export class ReportBrokenSiteChild extends JSWindowActorChild {
               ? `true (${blockList})`
               : "false";
           details["btp has purged site"] = antitracking.btpHasPurgedSite;
+          details["btp purge history"] = antitracking.btpPurgeHistory;
 
           if (antitracking.hasTrackingContentBlocked) {
             extra_labels.push(`type-tracking-protection-${blockList}`);

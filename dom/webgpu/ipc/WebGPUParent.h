@@ -7,14 +7,12 @@
 
 #include <unordered_map>
 
-#include "WebGPUTypes.h"
 #include "base/timer.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/webgpu/ExternalTexture.h"
 #include "mozilla/webgpu/PWebGPUParent.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
-#include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {
 
@@ -26,56 +24,6 @@ namespace webgpu {
 
 class SharedTexture;
 class PresentationData;
-
-// A fixed-capacity buffer for receiving textual error messages from
-// `wgpu_bindings`.
-//
-// The `ToFFI` method returns an `ffi::WGPUErrorBuffer` pointing to our
-// buffer, for you to pass to fallible FFI-visible `wgpu_bindings`
-// functions. These indicate failure by storing an error message in the
-// buffer, which you can retrieve by calling `GetError`.
-//
-// If you call `ToFFI` on this type, you must also call `GetError` to check for
-// an error. Otherwise, the destructor asserts.
-//
-// TODO: refactor this to avoid stack-allocating the buffer all the time.
-class ErrorBuffer {
-  // if the message doesn't fit, it will be truncated
-  static constexpr unsigned BUFFER_SIZE = 512;
-  ffi::WGPUErrorBufferType mType = ffi::WGPUErrorBufferType_None;
-  char mMessageUtf8[BUFFER_SIZE] = {};
-  bool mAwaitingGetError = false;
-  RawId mDeviceId = 0;
-
- public:
-  ErrorBuffer();
-  ErrorBuffer(const ErrorBuffer&) = delete;
-  ~ErrorBuffer();
-
-  ffi::WGPUErrorBuffer ToFFI();
-
-  ffi::WGPUErrorBufferType GetType();
-
-  static Maybe<dom::GPUErrorFilter> ErrorTypeToFilterType(
-      ffi::WGPUErrorBufferType aType);
-
-  struct Error {
-    dom::GPUErrorFilter type;
-    bool isDeviceLost;
-    nsCString message;
-    RawId deviceId;
-  };
-
-  // Retrieve the error message was stored in this buffer. Asserts that
-  // this instance actually contains an error (viz., that `GetType() !=
-  // ffi::WGPUErrorBufferType_None`).
-  //
-  // Mark this `ErrorBuffer` as having been handled, so its destructor
-  // won't assert.
-  Maybe<Error> GetError();
-
-  void CoerceValidationToInternal();
-};
 
 // Destroy/Drop messages:
 // - Messages with "Destroy" in their name request deallocation of resources
@@ -123,9 +71,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                      layers::RemoteTextureTxnType aTxnType,
                      layers::RemoteTextureTxnId aTxnId);
 
-  void DevicePushErrorScope(RawId aDeviceId, dom::GPUErrorFilter);
-  PopErrorScopeResult DevicePopErrorScope(RawId aDeviceId);
-
   ipc::IPCResult GetFrontBufferSnapshot(
       IProtocol* aProtocol, const layers::RemoteTextureOwnerId& aOwnerId,
       const RawId& aCommandEncoderId, const RawId& aCommandBufferId,
@@ -139,6 +84,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
     bool mHasMapFlags;
     uint64_t mMappedOffset;
     uint64_t mMappedSize;
+    bool mIsMapped;
     RawId mDeviceId;
   };
 
@@ -172,13 +118,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
                          const layers::RemoteTextureId aRemoteTextureId,
                          const layers::RemoteTextureOwnerId aOwnerId);
 
-  bool ForwardError(ErrorBuffer& aError);
-
   ffi::WGPUGlobal* GetContext() const { return mContext.get(); }
-
-  bool IsDeviceActive(const RawId aDeviceId) {
-    return mActiveDeviceIds.Contains(aDeviceId);
-  }
 
   RefPtr<gfx::FileHandleWrapper> GetDeviceFenceHandle(const RawId aDeviceId);
 
@@ -216,8 +156,6 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   static void OnSubmittedWorkDoneCallback(
       /* std::unique_ptr<OnSubmittedWorkDoneRequest> */ uint8_t* userdata);
 
-  void ReportError(RawId aDeviceId, GPUErrorFilter, const nsCString& message);
-
   std::vector<std::shared_ptr<ipc::SharedMemoryMapping>> mTempMappings;
 
   /// A map from wgpu buffer ids to data about their shared memory segments.
@@ -228,13 +166,8 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   const dom::ContentParentId mContentId;
 
  private:
-  static void DeviceLostCallback(uint8_t* aUserData, uint8_t aReason,
-                                 const char* aMessage);
-
   virtual ~WebGPUParent();
   void MaintainDevices();
-  void LoseDevice(const RawId aDeviceId, dom::GPUDeviceLostReason aReason,
-                  const nsACString& aMessage);
 
   UniquePtr<ffi::WGPUGlobal> mContext;
   base::RepeatingTimer<WebGPUParent> mTimer;
@@ -246,65 +179,14 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
 
-  /// Associated stack of error scopes for each device.
-  std::unordered_map<uint64_t, std::vector<ErrorScope>>
-      mErrorScopeStackByDevice;
-
   std::unordered_map<ffi::WGPUTextureId, std::shared_ptr<SharedTexture>>
       mSharedTextures;
 
   std::unordered_map<RawId, ExternalTextureSourceHost> mExternalTextureSources;
 
-  // Store a set of DeviceIds that have been SendDeviceLost. We use this to
-  // limit each Device to one DeviceLost message.
-  nsTHashSet<RawId> mLostDeviceIds;
-
-  // Store active DeviceIds
-  nsTHashSet<RawId> mActiveDeviceIds;
-
   // Shared handle of wgpu device's fence.
   std::unordered_map<RawId, RefPtr<gfx::FileHandleWrapper>> mDeviceFenceHandles;
 };
-
-#if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
-class VkImageHandle {
- public:
-  explicit VkImageHandle(WebGPUParent* aParent,
-                         const ffi::WGPUDeviceId aDeviceId,
-                         ffi::WGPUVkImageHandle* aVkImageHandle)
-      : mParent(aParent),
-        mDeviceId(aDeviceId),
-        mVkImageHandle(aVkImageHandle) {}
-
-  const ffi::WGPUVkImageHandle* Get() { return mVkImageHandle; }
-
-  ~VkImageHandle();
-
- protected:
-  const WeakPtr<WebGPUParent> mParent;
-  const RawId mDeviceId;
-  ffi::WGPUVkImageHandle* mVkImageHandle;
-};
-
-class VkSemaphoreHandle {
- public:
-  explicit VkSemaphoreHandle(WebGPUParent* aParent,
-                             const ffi::WGPUDeviceId aDeviceId,
-                             ffi::WGPUVkSemaphoreHandle* aVkSemaphoreHandle)
-      : mParent(aParent),
-        mDeviceId(aDeviceId),
-        mVkSemaphoreHandle(aVkSemaphoreHandle) {}
-
-  const ffi::WGPUVkSemaphoreHandle* Get() { return mVkSemaphoreHandle; }
-
-  ~VkSemaphoreHandle();
-
- protected:
-  const WeakPtr<WebGPUParent> mParent;
-  const RawId mDeviceId;
-  ffi::WGPUVkSemaphoreHandle* mVkSemaphoreHandle;
-};
-#endif
 
 }  // namespace webgpu
 }  // namespace mozilla

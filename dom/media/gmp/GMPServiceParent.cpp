@@ -365,7 +365,7 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
       mozilla::dom::Pref pref(strData, /* isLocked */ false,
                               /* isSanitized */ false, Nothing(), Nothing());
       Preferences::GetPreference(&pref, GeckoProcessType_GMPlugin,
-                                 /* remoteType */ ""_ns);
+                                 /* remoteType */ {});
       return GMPDispatch(NewRunnableMethod<mozilla::dom::Pref&&>(
           "gmp::GeckoMediaPluginServiceParent::OnPreferenceChanged", this,
           &GeckoMediaPluginServiceParent::OnPreferenceChanged,
@@ -1943,7 +1943,9 @@ void GeckoMediaPluginServiceParent::ClearStorage() {
     return;
   }
 
-  if (NS_FAILED(path->Remove(true))) {
+  bool exists = false;
+  if (NS_SUCCEEDED(path->Exists(&exists)) && exists &&
+      NS_FAILED(path->Remove(true))) {
     NS_WARNING("Failed to delete GMP storage directory");
   }
 

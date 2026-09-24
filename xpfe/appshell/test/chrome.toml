@@ -1,3 +1,7 @@
 [DEFAULT]
 
+["test_bug2070008_independent_window_position.xhtml"]
+skip-if = ["os == 'linux' && display == 'wayland'"] # Wayland compositors place toplevels themselves.
+support-files = ["window_bug2070008.xhtml"]
+
 ["test_windowlessBrowser.xhtml"]

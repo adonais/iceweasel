@@ -18,14 +18,17 @@
  *
  * Behavior:
  *   - Host viability is checked first: IP literals, single-label hosts, and
- *     reserved/special-use TLDs yield { none, null, host-unusable } (no CTA).
+ *     reserved, special-use or private-use intranet suffixes yield
+ *     { none, null, host-unusable } (no CTA).
  *   - Keywords are extracted from the path: the in-tree CountVectorizer does the
  *     tokenizing only (lowercasing, digit stripping, Unicode-aware splitting)
  *     with its stopword filtering disabled, and we apply our own stopword list
  *     (SEARCH_CTA_STOP_WORDS, forked from the shared list; see bug 2057648).
- *     When the path yields keywords, the host's tokens (non-www subdomains kept,
- *     public suffix dropped) are appended so the query is anchored to the site,
- *     capped at MAX_SEARCH_KEYWORDS with the path first.
+ *     When the path yields keywords, the query leads with the host's tokens
+ *     (non-www subdomains kept, public suffix dropped) so it is anchored to the
+ *     site, followed by the path's, capped at MAX_SEARCH_KEYWORDS. The host's
+ *     tokens keep their place when the cap is reached and the path is truncated
+ *     instead (bug 2070753).
  *   - When the path yields nothing meaningful, the query falls back to the
  *     registrable domain only ({ host, ... }); userinfo, port, query string,
  *     and fragment are never inspected.
@@ -68,10 +71,12 @@ const DEFAULT_MIN_KEYWORDS = 1;
 // Upper bound on keywords fed into the search query.
 const MAX_SEARCH_KEYWORDS = 8;
 
-// Special-use / reserved TLDs that never resolve on the public internet
-// (RFC 6761 plus ICANN's reserved .internal and .onion). A host under one of
-// these is not a recoverable typo, so no CTA is offered.
-const RESERVED_TLDS = new Set([
+// Special-use, reserved and private-use suffixes that never resolve on the
+// public internet: RFC 6761, RFC 6762 (.local, plus the private-use intranet
+// TLDs of its Appendix G), RFC 7686 (.onion), RFC 8375 (home.arpa) and ICANN's
+// reserved .internal. A host under any of these is not recoverable, so no CTA
+// is offered (bug 2066447). Entries can be multi-label.
+const RESERVED_SUFFIXES = new Set([
   "localhost",
   "local",
   "localdomain",
@@ -80,6 +85,12 @@ const RESERVED_TLDS = new Set([
   "invalid",
   "internal",
   "onion",
+  "corp",
+  "home",
+  "home.arpa",
+  "intranet",
+  "lan",
+  "private",
 ]);
 
 // Everything removed from derived keywords: function words plus URL-structure
@@ -88,8 +99,29 @@ const RESERVED_TLDS = new Set([
 const STOP_WORDS = new Set(SEARCH_CTA_STOP_WORDS);
 
 /**
+ * Whether a host sits under one of RESERVED_SUFFIXES. A reserved suffix can
+ * be multi-label, so we have to traverse trailing labels rather than just test
+ * the TLD alone. So "mysite.test.com" is tested as "com" and "test.com" and
+ * never as the bare "test".
+ *
+ * @param {string} host A host already normalized and lowercased by the eTLD
+ *   service.
+ * @returns {boolean} True when the host is under a reserved suffix.
+ */
+function hasReservedSuffix(host) {
+  const labels = host.split(".");
+  for (let i = labels.length - 1; i >= 0; i--) {
+    if (RESERVED_SUFFIXES.has(labels.slice(i).join("."))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Return the registrable domain for a usable host, or null when the host fails
- * viability (IP literal, single-label host, or reserved/special-use TLD).
+ * viability (IP literal, single-label host, or a reserved, special-use or
+ * private-use intranet suffix).
  *
  * @param {nsIURI} uri The failed URI.
  * @returns {?string} The registrable domain, or null if the host is unusable.
@@ -103,8 +135,7 @@ function getRegistrableDomain(uri) {
     // host (NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS).
     return null;
   }
-  const tld = baseDomain.split(".").pop();
-  if (RESERVED_TLDS.has(tld)) {
+  if (hasReservedSuffix(baseDomain)) {
     return null;
   }
   return baseDomain;
@@ -193,10 +224,11 @@ export function analyzeURL(
   const pathKeywords = keywordsFrom(pathText);
 
   if (pathKeywords.length >= minKeywords) {
-    // Anchor the query to the site by appending the host's tokens, path first.
-    // A Set dedups while keeping first-appearance order.
-    const keywords = new Set(pathKeywords);
-    for (const word of hostKeywords(uri)) {
+    // Lead with the host's tokens so the query is anchored to the site the
+    // user meant, then the path's. A Set dedups while keeping first-appearance
+    // order, so a word carried by both surfaces at the front.
+    const keywords = new Set(hostKeywords(uri));
+    for (const word of pathKeywords) {
       keywords.add(word);
     }
     return {

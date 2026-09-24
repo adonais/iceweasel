@@ -402,8 +402,8 @@ fn derive_variant_fields_expr(
     let mut iter = bindings
         .iter()
         .filter_map(|binding| {
-            let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
-            let field_attrs = cg::parse_field_attrs::<TypedFieldAttrs>(&binding.ast());
+            let css_field_attrs = cg::parse_field_attrs::<CssFieldAttrs>(binding.ast());
+            let field_attrs = cg::parse_field_attrs::<TypedFieldAttrs>(binding.ast());
             if css_field_attrs.skip {
                 return None;
             }

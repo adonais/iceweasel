@@ -653,8 +653,8 @@ SettingGroupManager.registerGroups({
         l10nId: "data-collection",
         control: "moz-fieldset",
         iconSrc: "chrome://global/skin/icons/trending.svg",
+        headingLevel: 2,
         controlAttrs: {
-          headinglevel: 2,
           "data-l10n-attrs": "searchkeywords",
         },
         items: [

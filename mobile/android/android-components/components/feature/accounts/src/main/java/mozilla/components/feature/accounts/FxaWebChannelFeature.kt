@@ -58,6 +58,14 @@ enum class FxaCapability {
 
     // Advertises `pairingVersion` to FxA and enables the v2 pairing web channel commands.
     PAIRING_V2,
+
+    /**
+     * Indicates to FxA that the authentication may not require the existence of "keys".
+     *
+     * This enables the ability for FxA to decide based on other parameters (like the service being authenticated),
+     * whether or not to enforce a password used to generate the keys
+     */
+    KEYS_OPTIONAL,
 }
 
 private object PairingWebChannelEntryPoint : FxAEntryPoint {
@@ -404,6 +412,8 @@ class FxaWebChannelFeature(
                                     }
                                     // we can check for uid in canLinkAccount
                                     capabilities.put("can_link_account_uid", true)
+
+                                    capabilities.maybePutKeysOptional(fxaCapabilities)
                                 },
                             )
                             val account = accountManager.authenticatedAccount()
@@ -418,6 +428,13 @@ class FxaWebChannelFeature(
                 },
             )
             return status
+        }
+
+        /** Conditionally add "keys_optional=true" if [fxaCapabilities] contains [FxaCapability.KEYS_OPTIONAL] */
+        private fun JSONObject.maybePutKeysOptional(fxaCapabilities: Set<FxaCapability>) {
+            if (fxaCapabilities.contains(FxaCapability.KEYS_OPTIONAL)) {
+                put("keys_optional", true)
+            }
         }
 
         private fun JSONArray.toStringList(): List<String> {

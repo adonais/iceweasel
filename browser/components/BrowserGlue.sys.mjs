@@ -23,8 +23,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ContentBlockingPrefs:
     "moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs",
-  ContextualIdentityService:
-    "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DAPIncrementality: "resource://gre/modules/DAPIncrementality.sys.mjs",
   DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
   DAPVisitCounter: "resource://gre/modules/DAPVisitCounter.sys.mjs",
@@ -32,7 +30,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/DefaultBrowserCheck.sys.mjs",
   DesktopActorRegistry:
     "moz-src:///browser/components/DesktopActorRegistry.sys.mjs",
-  Discovery: "resource:///modules/Discovery.sys.mjs",
   DistributionManagement: "resource:///modules/distribution.sys.mjs",
   DownloadsViewableInternally:
     "moz-src:///browser/components/downloads/DownloadsViewableInternally.sys.mjs",
@@ -40,7 +37,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
   LaunchOnLogin: "resource://gre/modules/LaunchOnLogin.sys.mjs",
-  LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
+  LoginBreaches:
+    "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -631,6 +629,11 @@ BrowserGlue.prototype = {
         return false;
       }
 
+      // Don't display the blank window with the --receive-push-messages argument
+      if (cmdLine.findFlag("receive-push-messages", false) != -1) {
+        return false;
+      }
+
       // Bug 1635927: skip the early blank window when the user passes window
       // sizing/positioning flags, otherwise the blank window's persisted size
       // from xulstore is reused and the CLI values are silently dropped.
@@ -1068,14 +1071,6 @@ BrowserGlue.prototype = {
           lazy.SafeBrowsing.init();
         },
         timeout: 5000,
-      },
-
-      {
-        name: "ContextualIdentityService.load",
-        task: async () => {
-          await lazy.ContextualIdentityService.load();
-          lazy.Discovery.update();
-        },
       },
     ];
 
@@ -1623,7 +1618,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 181;
+    const APP_DATA_VERSION = 183;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

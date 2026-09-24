@@ -1,0 +1,31 @@
+# The snapshot area is in the local space of the snapshotted stacking context,
+# so the snapshot captures the rounded rect before the 3D transform above it is
+# applied, and the image item draws that unrotated result at its own bounds.
+#
+# Only the snapshot image is drawn here, because the source stacking context is
+# observed to contribute nothing on screen under this perspective and rotation
+# pair. Whether that is itself correct is not something this reference
+# establishes; it only pins down the snapshot.
+#
+# The fuzz covers the snapshot's perimeter: its content is rasterized into a
+# texture and then drawn, so its antialiased edge lands slightly differently
+# from the directly drawn rect here.
+---
+root:
+  items:
+    - type: stacking-context
+      bounds: [300, 0, 100, 200]
+      items:
+        - type: clip
+          id: 101
+          complex:
+            - rect: [0, 0, 100, 200]
+              radius: [32, 32]
+        - type: clip-chain
+          id: 201
+          clips: [101]
+        -
+          bounds: [0, 0, 100, 200]
+          type: rect
+          color: blue
+          clip-chain: 201

@@ -34,19 +34,17 @@
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
 #include "absl/base/port.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
-
-#ifdef _GLIBCXX_DEBUG
-#include "absl/strings/internal/stl_type_traits.h"
-#endif  // _GLIBCXX_DEBUG
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -231,13 +229,9 @@ template <typename C>
 struct SplitterIsConvertibleTo
     : SplitterIsConvertibleToImpl<
           C,
-#ifdef _GLIBCXX_DEBUG
-          !IsStrictlyBaseOfAndConvertibleToSTLContainer<C>::value &&
-#endif  // _GLIBCXX_DEBUG
-              !IsInitializerList<std::remove_reference_t<C>>::value &&
+          !IsInitializerList<std::remove_reference_t<C>>::value &&
               HasValueType<C>::value && HasConstIterator<C>::value,
-          HasMappedType<C>::value> {
-};
+          HasMappedType<C>::value> {};
 
 template <typename StringType, typename Container, typename = void>
 struct ShouldUseLifetimeBound : std::false_type {};
@@ -252,16 +246,14 @@ struct ShouldUseLifetimeBound<
 
 template <typename StringType, typename First, typename Second>
 using ShouldUseLifetimeBoundForPair =
-    std::integral_constant<bool,
-                           std::is_same_v<StringType, std::string> &&
-                               (std::is_same_v<First, absl::string_view> ||
-                                std::is_same_v<Second, absl::string_view>)>;
+    std::bool_constant<std::is_same_v<StringType, std::string> &&
+                       (std::is_same_v<First, absl::string_view> ||
+                        std::is_same_v<Second, absl::string_view>)>;
 
 template <typename StringType, typename ElementType, std::size_t Size>
 using ShouldUseLifetimeBoundForArray =
-    std::integral_constant<bool,
-                           std::is_same_v<StringType, std::string> &&
-                               std::is_same_v<ElementType, absl::string_view>>;
+    std::bool_constant<std::is_same_v<StringType, std::string> &&
+                       std::is_same_v<ElementType, absl::string_view>>;
 
 // This class implements the range that is returned by absl::StrSplit(). This
 // class has templated conversion operators that allow it to be implicitly

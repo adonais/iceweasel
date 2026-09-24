@@ -14,7 +14,7 @@
 #  include "mozilla/arm.h"
 #  include "nsRectIntersectGeneric.h"
 #endif
-#if defined(USE_SSE42)
+#if defined(USE_SSE4_2)
 #  include "mozilla/SSE.h"
 #  include "nsRectIntersectGeneric.h"
 #endif
@@ -43,7 +43,7 @@ bool nsRect::Overflows() const {
     return mozilla::IntersectEngine<xsimd::neon64>::Intersect(&aRect, this);
   }
 #endif
-#ifdef USE_SSE42
+#ifdef USE_SSE4_2
   if (mozilla::supports_sse4_2()) {
     return mozilla::IntersectEngine<xsimd::sse4_2>::Intersect(&aRect, this);
   }
@@ -71,10 +71,10 @@ bool nsRect::IntersectRect(const nsRect& aRect1, const nsRect& aRect2) {
         &aRect1, &aRect2, this);
   }
 #endif
-#ifdef USE_SSE42
+#ifdef USE_SSE4_2
   if (mozilla::supports_sse4_2()) {
-    return mozilla::IntersectEngine<xsimd::sse4_2>::Intersect(&aRect1, &aRect2,
-                                                              this);
+    return mozilla::IntersectEngine<xsimd::sse4_2>::IntersectRect(
+        &aRect1, &aRect2, this);
   }
 #endif
 

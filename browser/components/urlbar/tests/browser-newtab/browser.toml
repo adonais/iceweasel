@@ -6,19 +6,57 @@ support-files = [
   "head.js",
   "richSuggestionEngine.sjs",
 ]
-prefs = ["browser.urlbar.newtab.featureGate=true"]
-# Painting the results view, anchored inside New Tab's sticky search
-# wrapper, asserts in a debug build. Bug 2065180.
-skip-if = ["debug"]
+prefs = ["browser.nova.enabled=true", "browser.urlbar.newtab.featureGate=true"]
 
 ["browser_blur.js"]
 
+["browser_bounceTelemetry.js"]
+
+["browser_caret.js"]
+support-files = ["../browser/slow-page.sjs"]
+
+["browser_disableTelemetry.js"]
+
+["browser_engagementTelemetry.js"]
+
+["browser_engagementTelemetryGroups.js"]
+
+["browser_engineIcon.js"]
+
 ["browser_escape.js"]
 
+["browser_inputBackground.js"]
+
+["browser_mousedown.js"]
+
 ["browser_pickResult.js"]
+
+["browser_placeholder.js"]
 
 ["browser_resultIcon.js"]
 
 ["browser_resultMenu.js"]
 
+["browser_rtl.js"]
+
 ["browser_searchModeSwitcher.js"]
+
+["browser_searchTelemetry.js"]
+support-files = [
+  "../../../search/test/browser/telemetry/searchTelemetry.html",
+  "../../../search/test/browser/telemetry/searchTelemetryAd.html",
+  "../../../search/test/browser/telemetry/serp.css",
+]
+
+["browser_selection.js"]
+
+["browser_topLayer.js"]
+
+["browser_trendingDismissal.js"]
+support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
+
+["browser_undo_history.js"]
+
+["browser_viewBounds.js"]
+
+["browser_zeroPrefixTelemetry.js"]

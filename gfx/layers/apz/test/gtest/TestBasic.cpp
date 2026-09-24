@@ -217,8 +217,7 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   // Start a touch-drag and scroll some amount, not lifting the finger.
   SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 1.0f / 1000.0f);
   ScreenIntPoint touchPos(10, 50);
-  uint64_t touchBlock = TouchDown(apzc, touchPos, mcc->Time()).mInputBlockId;
-  SetDefaultAllowedTouchBehavior(apzc, touchBlock);
+  TouchDown(apzc, touchPos, mcc->Time());
   for (int i = 0; i < 20; ++i) {
     touchPos.y -= 1;
     mcc->AdvanceByMillis(1);
@@ -995,8 +994,7 @@ TEST_F(APZCBasicTester, StartTolerance) {
   fm.SetIsRootContent(true);
   apzc->SetFrameMetrics(fm);
 
-  uint64_t touchBlock = TouchDown(apzc, {50, 50}, mcc->Time()).mInputBlockId;
-  SetDefaultAllowedTouchBehavior(apzc, touchBlock);
+  TouchDown(apzc, {50, 50}, mcc->Time());
 
   CSSPoint initialScrollOffset =
       apzc->GetFrameMetrics().GetVisualScrollOffset();
@@ -1020,6 +1018,23 @@ TEST_F(APZCBasicTester, StartTolerance) {
   // Clean up by ending the touch gesture.
   mcc->AdvanceByMillis(1);
   TouchUp(apzc, {50, 90}, mcc->Time());
+}
+
+TEST_F(APZCBasicTester, Bug1198900) {
+  // This is just a test that cancels a wheel event to make sure it doesn't
+  // crash. The wheel block needs to be waiting for a content response for the
+  // cancellation to have any effect.
+  MakeApzcWaitForMainThread();
+
+  uint64_t blockId =
+      Wheel(apzc, ScreenIntPoint(100, 50), ScreenPoint(0, 10), mcc->Time())
+          .mInputBlockId;
+  // The event is sitting in the input queue, so it hasn't scrolled anything.
+  EXPECT_EQ(CSSPoint(0, 0), apzc->GetFrameMetrics().GetVisualScrollOffset());
+
+  apzc->ContentReceivedInputBlock(blockId, /* preventDefault= */ true);
+  // The block was cancelled, so the event never gets processed.
+  EXPECT_EQ(CSSPoint(0, 0), apzc->GetFrameMetrics().GetVisualScrollOffset());
 }
 
 // A helper class for the ImmediatelyInterruptedSmoothScroll_Bug1984589

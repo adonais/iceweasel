@@ -89,7 +89,6 @@ struct AlternativeCharCode {
   uint32_t mShiftedCharCode = 0u;
 
   bool operator==(const AlternativeCharCode& aOther) const = default;
-  bool operator!=(const AlternativeCharCode& aOther) const = default;
 };
 
 /******************************************************************************

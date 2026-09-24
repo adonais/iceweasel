@@ -150,7 +150,7 @@ ssl_BeginClientHandshake(sslSocket *ss)
 
     /* If there's an sid set from an external cache, use it. */
     if (ss->sec.ci.sid && ss->sec.ci.sid->cached == in_external_cache) {
-        sid = ss->sec.ci.sid;
+        sid = ssl_ReferenceSID(ss->sec.ci.sid);
         SSL_TRC(3, ("%d: SSL[%d]: using external token", SSL_GETPID(), ss->fd));
     } else if (!ss->opt.noCache) {
         /* Try to find server in our session-id cache */
@@ -165,10 +165,10 @@ ssl_BeginClientHandshake(sslSocket *ss)
         } else {
             ssl_UncacheSessionID(ss);
             if (ss->sec.ci.sid == sid) {
-                /* sid aliases ss->sec.ci.sid (external cache); clear it so
-                 * the socket cannot hold a dangling pointer if the
-                 * ssl3_NewSessionID allocation below fails. */
-                ss->sec.ci.sid = NULL;
+                /* sid aliases ss->sec.ci.sid (external cache); release the
+                 * socket's reference so it cannot hold a dangling pointer if
+                 * the ssl3_NewSessionID allocation below fails. */
+                ssl_SetSocketSID(ss, NULL);
             }
             ssl_FreeSID(sid);
             sid = NULL;
@@ -182,7 +182,7 @@ ssl_BeginClientHandshake(sslSocket *ss)
         /* This session is a dummy, which we don't want to resume. */
         sid->u.ssl3.keys.resumable = PR_FALSE;
     }
-    ss->sec.ci.sid = sid;
+    ssl_SetSocketSID(ss, sid);
 
     ss->gs.state = GS_INIT;
     ss->handshake = ssl_GatherRecord1stHandshake;

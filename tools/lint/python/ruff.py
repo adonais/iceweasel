@@ -7,22 +7,10 @@ import os
 import re
 import signal
 import subprocess
-from pathlib import Path
 
-import toml
 from mozlint import result
 
 here = os.path.abspath(os.path.dirname(__file__))
-
-
-def get_pyproject_excludes(pyproject_toml: Path):
-    if not pyproject_toml.exists():
-        return []
-
-    with pyproject_toml.open() as f:
-        data = toml.load(f)
-
-    return data.get("tool", {}).get("ruff", {}).get("exclude", [])
 
 
 def get_ruff_version(binary):
@@ -151,18 +139,8 @@ def format(paths, config, log, **lintargs):
 
     log.debug(f"Ruff version {get_ruff_version('ruff')}")
 
-    topsrcdir = Path(lintargs["root"])
-    pyproject_toml = topsrcdir / "pyproject.toml"
-    exclude_patterns = get_pyproject_excludes(pyproject_toml)
-
-    # Merge pyproject.toml excludes with config excludes.
-    # This is needed because ruff format's --exclude replaces rather than extends
-    # the pyproject.toml excludes (unlike ruff check which has --extend-exclude).
     if config.get("exclude"):
-        exclude_patterns.extend(config["exclude"])
-
-    for exclude in exclude_patterns:
-        args.append(f"--exclude={exclude}")
+        args.append(f"--extend-exclude={','.join(config['exclude'])}")
 
     if lintargs.get("fix"):
         # Do a first pass to fix, as JSON output doesn't include fix counts

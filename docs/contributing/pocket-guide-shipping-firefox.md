@@ -156,7 +156,7 @@ Beta release notes draft                              Nightly W2       Thursday
 Nightly QA sign-off.                                  Nightly W2       Wednesday
 Merge Day                                             Nightly W2       Thursday          Day 1 of the new Beta cycle
 User affecting changes identified & provided to SUMO  Beta W1          Thursday
-Deadline for security-approval requests               Beta W2          Wednesday
+Deadline for security bug uplifts                     Beta W2          Tuesday
 Release note submission deadline                      Beta W2          Wednesday
 What’s new page & release notes ready                 Beta W2          Thursday
 Firefox Release Candidate build creation              Beta W2          Thursday          End of the current Beta cycle in preparation for the upcoming Firefox Release

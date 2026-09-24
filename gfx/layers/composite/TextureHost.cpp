@@ -180,10 +180,15 @@ already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
   aFlags |= TextureFlags::DUMMY_TEXTURE;
   UniquePtr<TextureData> textureData(BufferTextureData::Create(
       gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::ColorSpace2::SRGB,
-      gfx::TransferFunction::SRGB, gfx::BackendType::SKIA, aBackend, aFlags,
-      TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
+      gfx::TransferFunction::SRGB, gfx::BackendType::SKIA, aBackend,
+      TextureFlags::NO_FLAGS, TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
+  if (!textureData) {
+    return nullptr;
+  }
   SurfaceDescriptor surfDesc;
-  textureData->Serialize(surfDesc);
+  if (!textureData->Serialize(surfDesc)) {
+    return nullptr;
+  }
   const SurfaceDescriptorBuffer& bufferDesc =
       surfDesc.get_SurfaceDescriptorBuffer();
   const MemoryOrShmem& data = bufferDesc.data();
@@ -268,10 +273,10 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
             // We failed to map the shmem so we can't verify its size.
             // Attempting to construct a ShmemTextureHost with it will succeed,
             // but the resulting object will have a null shmem and can't ever be
-            // locked or mapped -- it's not useful at all. We just return
-            // nullptr instead.
-            gfxCriticalError() << "Failed texture host with unmappable shmem.";
-            return nullptr;
+            // locked or mapped -- it's not useful at all. We return a dummy
+            // texture host of the appropriate size instead.
+            gfxCriticalNote << "Failed texture host with unmappable shmem.";
+            return CreateDummyBufferTextureHost(aBackend, aFlags);
           }
 
           size_t bufSize = shmem.Size<char>();

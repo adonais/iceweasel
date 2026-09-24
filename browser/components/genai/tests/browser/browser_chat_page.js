@@ -112,12 +112,6 @@ function assertContextMenuStubResult(stub) {
 // Schedule reset to the initial sidebar state after the test.
 SidebarTestUtils.restoreStateAtCleanup(window);
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 /**
  * Check page, tab, and tool context menu have summarize prompt
  */

@@ -131,10 +131,12 @@ void BrowsingContextGroup::EnsureHostProcess(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(!mDestroyed);
   MOZ_DIAGNOSTIC_ASSERT(this != sChromeGroup,
                         "cannot have content host for chrome group");
-  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType() != PREALLOC_REMOTE_TYPE,
-                        "cannot use preallocated process as host");
-  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsEmpty(),
+  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType().IsKnown(),
                         "host process must have remote type");
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsPrealloc(),
+                        "cannot use preallocated process as host");
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsNotRemote(),
+                        "host process must be remote");
 
   // XXX: The diagnostic crashes in bug 1816025 seemed to come through caller
   // ContentParent::GetNewOrUsedLaunchingBrowserProcess where we already
@@ -168,7 +170,7 @@ void BrowsingContextGroup::EnsureHostProcess(ContentParent* aProcess) {
 
 void BrowsingContextGroup::RemoveHostProcess(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(aProcess);
-  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType() != PREALLOC_REMOTE_TYPE);
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsPrealloc());
   auto entry = mHosts.Lookup(aProcess->GetRemoteType());
   if (entry && entry.Data() == aProcess) {
     entry.Remove();
@@ -193,7 +195,7 @@ static void CollectContextInitializers(
 void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(!mDestroyed);
   MOZ_DIAGNOSTIC_ASSERT(aProcess && !aProcess->IsLaunching());
-  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType() != PREALLOC_REMOTE_TYPE);
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsPrealloc());
 
   // Check if we're already subscribed to this process.
   if (!mSubscribers.EnsureInserted(aProcess)) {
@@ -235,7 +237,7 @@ void BrowsingContextGroup::Subscribe(ContentParent* aProcess) {
 
 void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
   MOZ_DIAGNOSTIC_ASSERT(aProcess);
-  MOZ_DIAGNOSTIC_ASSERT(aProcess->GetRemoteType() != PREALLOC_REMOTE_TYPE);
+  MOZ_DIAGNOSTIC_ASSERT(!aProcess->GetRemoteType().IsPrealloc());
   mSubscribers.Remove(aProcess);
   aProcess->RemoveBrowsingContextGroup(this);
 
@@ -247,7 +249,7 @@ void BrowsingContextGroup::Unsubscribe(ContentParent* aProcess) {
 }
 
 ContentParent* BrowsingContextGroup::GetHostProcess(
-    const nsACString& aRemoteType) {
+    const RemoteType& aRemoteType) {
   return mHosts.GetWeak(aRemoteType);
 }
 

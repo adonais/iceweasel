@@ -3,10 +3,27 @@
 
 "use strict";
 
-Services.prefs.setBoolPref(
-  "toolkit.telemetry.testing.overrideProductsCheck",
-  true
-);
+// Asserts that a single sample of `expectedSample` was recorded under the
+// `verdict` label of the downloads.user_action_on_blocked_download labeled
+// custom distribution.
+function assertUserAction(verdict, expectedSample) {
+  let distribution =
+    Glean.downloads.userActionOnBlockedDownload[verdict].testGetValue();
+
+  Assert.ok(distribution, `${verdict} should have been recorded`);
+  Assert.equal(distribution?.count, 1, `${verdict} should have one sample`);
+  Assert.equal(
+    distribution?.sum,
+    expectedSample,
+    `${verdict} sample should be ${expectedSample}`
+  );
+}
+
+add_setup(function () {
+  // head.js calls do_get_profile() in run_test(), so FOG can only be
+  // initialized once the tasks start running.
+  Services.fog.initializeFOG();
+});
 
 const verdictToErrorsMap = new Map([
   [
@@ -31,9 +48,7 @@ add_task(async function test_confirm_block_download() {
   for (const verdict of verdictToErrorsMap.keys()) {
     const error = verdictToErrorsMap.get(verdict);
     info(`Testing block ${error} download`);
-    let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
-      "DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD"
-    );
+    Services.fog.testResetFOG();
 
     let download;
     try {
@@ -60,15 +75,13 @@ add_task(async function test_confirm_block_download() {
     }
 
     // Test blocked download is recorded
-    TelemetryTestUtils.assertKeyedHistogramValue(histogram, error, 0, 1);
+    assertUserAction(error, 0);
 
     // Test confirm block
-    histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
-      "DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD"
-    );
+    Services.fog.testResetFOG();
     info(`Block ${error} download`);
     await download.confirmBlock();
-    TelemetryTestUtils.assertKeyedHistogramValue(histogram, error, 1, 1);
+    assertUserAction(error, 1);
   }
 });
 
@@ -76,9 +89,7 @@ add_task(async function test_confirm_unblock_download() {
   for (const verdict of verdictToErrorsMap.keys()) {
     const error = verdictToErrorsMap.get(verdict);
     info(`Testing unblock ${error} download`);
-    let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
-      "DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD"
-    );
+    Services.fog.testResetFOG();
 
     let download;
     try {
@@ -105,12 +116,10 @@ add_task(async function test_confirm_unblock_download() {
     }
 
     // Test blocked download is recorded
-    TelemetryTestUtils.assertKeyedHistogramValue(histogram, error, 0, 1);
+    assertUserAction(error, 0);
 
     // Test unblock
-    histogram = TelemetryTestUtils.getAndClearKeyedHistogram(
-      "DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD"
-    );
+    Services.fog.testResetFOG();
     info(`Unblock ${error} download`);
     let promise = new Promise(r => (download.onchange = r));
     await download.unblock();
@@ -122,6 +131,6 @@ add_task(async function test_confirm_unblock_download() {
       Assert.ok(!download.error, "Ensure we didn't set download.error");
     }
 
-    TelemetryTestUtils.assertKeyedHistogramValue(histogram, error, 2, 1);
+    assertUserAction(error, 2);
   }
 });

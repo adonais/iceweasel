@@ -779,6 +779,10 @@ export class FormAutofillChild extends JSWindowActorChild {
           }, 0);
         });
       }
+      case "FormAutofill:RepopulateAutocompletePopup": {
+        lazy.FormAutofillContent.repopulatePopup();
+        break;
+      }
       case "FormAutofill:ClearFilledFields": {
         const { focusedId, ids } = message.data;
         this.clearFields(focusedId, ids);

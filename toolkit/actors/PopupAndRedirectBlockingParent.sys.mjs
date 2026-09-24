@@ -89,7 +89,7 @@ export class PopupAndRedirectBlocker {
    * Event callback for the notification that is shown when a popup or
    * redirect is blocked. This is used in the observer.
    *
-   * @param {*} reason
+   * @param {any} reason
    */
   eventCallback(reason) {
     if (reason == "dismissed") {

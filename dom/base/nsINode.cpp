@@ -4323,6 +4323,12 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     bool wasRegistered = false;
     if (elem) {
       wasRegistered = oldDoc->UnregisterActivityObserver(elem);
+
+      if (elem->State().HasAtLeastOneOfStates(
+              ElementState::HAS_DIR_ATTR_RTL |
+              ElementState::HAS_DIR_ATTR_LIKE_AUTO)) {
+        newDoc->SetNeedsDirHandling();
+      }
     }
 
     const bool hadProperties = aNode->HasProperties();

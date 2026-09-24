@@ -281,6 +281,21 @@ void DrawTargetRecording::StrokeLine(const Point& aBegin, const Point& aEnd,
       RecordedStrokeLine(aBegin, aEnd, aPattern, aStrokeOptions, aOptions));
 }
 
+void DrawTargetRecording::StrokeCircle(const Point& aOrigin, float aRadius,
+                                       const Pattern& aPattern,
+                                       const StrokeOptions& aStrokeOptions,
+                                       const DrawOptions& aOptions) {
+  if (aRadius > 0.0f) {
+    MarkChanged();
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedStrokeCircle(Path::Circle{aOrigin, aRadius, true},
+                                         aPattern, aStrokeOptions, aOptions));
+  } else {
+    DrawTarget::StrokeCircle(aOrigin, aRadius, aPattern, aStrokeOptions,
+                             aOptions);
+  }
+}
+
 void DrawTargetRecording::Fill(const Path* aPath, const Pattern& aPattern,
                                const DrawOptions& aOptions) {
   if (!aPath) {
@@ -302,6 +317,20 @@ void DrawTargetRecording::Fill(const Path* aPath, const Pattern& aPattern,
   RefPtr<PathRecording> pathRecording = EnsurePathStored(aPath);
   EnsurePatternDependenciesStored(aPattern);
   RecordEventSelf(RecordedFill(pathRecording, aPattern, aOptions));
+}
+
+void DrawTargetRecording::FillCircle(const Point& aOrigin, float aRadius,
+                                     const Pattern& aPattern,
+                                     const DrawOptions& aOptions) {
+  if (aRadius > 0.0f) {
+    // For circles with valid, positive radii, generate FillCircle events.
+    MarkChanged();
+    EnsurePatternDependenciesStored(aPattern);
+    RecordEventSelf(RecordedFillCircle(Path::Circle{aOrigin, aRadius, true},
+                                       aPattern, aOptions));
+  } else {
+    DrawTarget::FillCircle(aOrigin, aRadius, aPattern, aOptions);
+  }
 }
 
 struct RecordingFontUserData {

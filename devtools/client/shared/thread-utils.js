@@ -43,10 +43,6 @@ exports.getThreadOptions = async function () {
     logEventBreakpoints: Services.prefs.getBoolPref(
       "devtools.debugger.log-event-breakpoints"
     ),
-    // @backward-compat { version 154 } asm.js was removed in Fx154; this is
-    // sent to old servers to disable ahead-of-time asm.js compilation for
-    // debugging. Can be removed when Fx154 is no longer a remote debugging target.
-    observeAsmJS: true,
     breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     // XXX: `event-listener-breakpoints` is a copy of the event-listeners state
     // of the debugger panel. The `active` property is therefore linked to

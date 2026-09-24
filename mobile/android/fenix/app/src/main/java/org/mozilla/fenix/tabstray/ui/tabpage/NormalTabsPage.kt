@@ -78,6 +78,7 @@ private val EmptyPageWidth = 170.dp
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
  * @param onShareTabGroupClick Invoked when the user clicks to share a tab group.
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
+ * @param onUngroupTabGroupClick Invoked when the user clicks to ungroup a tab group.
  * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
  * @param onTabGroupOnboardingShown Invoked when the tab group onboarding card is shown to the user.
  * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
@@ -115,6 +116,7 @@ internal fun NormalTabsPage(
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onShareTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onUngroupTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onTabGroupOnboardingDismiss: () -> Unit,
     onTabGroupOnboardingShown: () -> Unit,
     onPrivacyReportTapped: (() -> Unit)? = null,
@@ -177,6 +179,7 @@ internal fun NormalTabsPage(
             onCloseTabGroupClick = onCloseTabGroupClick,
             onShareTabGroupClick = onShareTabGroupClick,
             onDeleteTabGroupClick = onDeleteTabGroupClick,
+            onUngroupTabGroupClick = onUngroupTabGroupClick,
             onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
             onTabGroupOnboardingShown = onTabGroupOnboardingShown,
             tabInteractionHandler = tabInteractionHandler,

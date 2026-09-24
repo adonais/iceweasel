@@ -75,6 +75,8 @@ class BounceTrackingPurgeEntry final : public BTPMapEntry,
     mChainRecord = aRecord;
   }
 
+  BounceTrackingRecord* GetBounceChainRecord() const { return mChainRecord; }
+
  private:
   ~BounceTrackingPurgeEntry() = default;
   // Timestamp of when the purge completed. mTimeStamp is the time of when the

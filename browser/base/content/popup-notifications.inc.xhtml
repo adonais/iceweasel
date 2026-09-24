@@ -13,6 +13,27 @@
            role="alert"
            remote="true"/>
 
+    <popupnotification id="speech-recognition-model-download-notification" hidden="true">
+      <popupnotificationheader id="speech-recognition-model-download-header">
+        <html:span id="speech-recognition-model-download-header-text"
+                   data-l10n-id="speech-recognition-model-download-header"/>
+      </popupnotificationheader>
+    </popupnotification>
+
+    <popupnotification id="speech-recognition-model-download-progress-notification"
+                       hidden="true">
+      <popupnotificationcontent id="speech-recognition-model-download-progress-content"
+                                orient="vertical"
+                                hidden="true">
+        <html:progress id="speech-recognition-model-download-progress"
+                       class="speech-recognition-model-download-progress"
+                       data-l10n-id="speech-recognition-model-download-progressbar"
+                       max="100"
+                       value="0"/>
+        <description id="speech-recognition-model-download-progress-status"/>
+      </popupnotificationcontent>
+    </popupnotification>
+
     <popupnotification id="webRTC-shareDevices-notification" hidden="true"
                        descriptionid="webRTC-shareDevices-notification-description">
       <popupnotificationcontent id="webRTC-selectCamera" orient="vertical">

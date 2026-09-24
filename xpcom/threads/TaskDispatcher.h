@@ -105,9 +105,10 @@ class TaskDispatcher {
 class AutoTaskDispatcher : public TaskDispatcher {
  public:
   explicit AutoTaskDispatcher(nsIDirectTaskDispatcher* aDirectTaskDispatcher,
-                              bool aIsTailDispatcher = false)
+                              TailDispatchPolicy aTailDispatchPolicy =
+                                  TailDispatchPolicy::NoTailDispatch)
       : mDirectTaskDispatcher(aDirectTaskDispatcher),
-        mIsTailDispatcher(aIsTailDispatcher) {}
+        mTailDispatchPolicy(aTailDispatchPolicy) {}
 
   ~AutoTaskDispatcher() {
     // Given that direct tasks may trigger other code that uses the tail
@@ -152,17 +153,48 @@ class AutoTaskDispatcher : public TaskDispatcher {
                    already_AddRefed<nsIRunnable> aRunnable) override {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     MOZ_RELEASE_ASSERT(r);
-    // To preserve the event order, we need to append a new group if the last
-    // group is not targeted for |aThread|.
-    // See https://bugzilla.mozilla.org/show_bug.cgi?id=1318226&mark=0-3#c0
-    // for the details of the issue.
-    if (mTaskGroups.Length() == 0 ||
-        mTaskGroups.LastElement()->mThread != aThread) {
-      mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
+
+    // Callers guarantee that tasks are only added when both the origin
+    // (current) and target threads support tail dispatch, and the current
+    // thread's tail dispatcher is available.
+    MOZ_ASSERT(AbstractThread::GetCurrent());
+    MOZ_ASSERT(AbstractThread::GetCurrent()->IsTailDispatcherAvailable());
+    MOZ_ASSERT(&AbstractThread::GetCurrent()->TailDispatcher() == this);
+
+    PerThreadTaskGroup* group = nullptr;
+    if (aThread->TailDispatcherPolicy() ==
+            TailDispatchPolicy::TargetAtomicity ||
+        mTailDispatchPolicy == TailDispatchPolicy::TargetAtomicity) {
+      // If we're not trying to preserve dispatch order across targets,
+      // search for our target in mTaskGroups before adding a new group.
+      for (const auto& g : mTaskGroups) {
+        if (g->mThread == aThread) {
+          group = g.get();
+          break;
+        }
+      }
+      if (!group) {
+        group =
+            mTaskGroups
+                .AppendElement(std::make_unique<PerThreadTaskGroup>(aThread))
+                ->get();
+      }
+    } else {
+      MOZ_ASSERT(aThread->TailDispatcherPolicy() ==
+                 TailDispatchPolicy::ConsistentOrdering);
+      // To preserve the event order, we need to append a new group if the last
+      // group is not targeted for |aThread|.
+      // See https://bugzilla.mozilla.org/show_bug.cgi?id=1318226&mark=0-3#c0
+      // for the details of the issue.
+      if (mTaskGroups.Length() == 0 ||
+          mTaskGroups.LastElement()->mThread != aThread) {
+        mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
+      }
+
+      group = mTaskGroups.LastElement().get();
     }
 
-    PerThreadTaskGroup& group = *mTaskGroups.LastElement();
-    group.mRegularTasks.AppendElement(r.forget());
+    group->mRegularTasks.AppendElement(r.forget());
 
     return NS_OK;
   }
@@ -208,10 +240,10 @@ class AutoTaskDispatcher : public TaskDispatcher {
     nsTArray<nsCOMPtr<nsIRunnable>> mRegularTasks;
   };
 
-  class TaskGroupRunnable : public Runnable {
+  class TaskGroupRunnable : public CancelableRunnable {
    public:
     explicit TaskGroupRunnable(UniquePtr<PerThreadTaskGroup>&& aTasks)
-        : Runnable("AutoTaskDispatcher::TaskGroupRunnable"),
+        : CancelableRunnable("AutoTaskDispatcher::TaskGroupRunnable"),
           mTasks(std::move(aTasks)) {}
 
     NS_IMETHOD Run() override {
@@ -238,12 +270,49 @@ class AutoTaskDispatcher : public TaskDispatcher {
       return NS_OK;
     }
 
+    nsresult Cancel() override {
+      nsTArray<nsCOMPtr<nsIRunnable>> stateChangeTasks =
+          std::move(mTasks->mStateChangeTasks);
+      nsTArray<nsCOMPtr<nsIRunnable>> regularTasks =
+          std::move(mTasks->mRegularTasks);
+
+      for (auto& task : stateChangeTasks) {
+        CancelTask(task);
+        task = nullptr;
+      }
+
+      // Mimic Run() here as a task could have run something on Cancel() or
+      // OnDiscard().
+      MaybeDrainDirectTasks();
+
+      for (auto& task : regularTasks) {
+        CancelTask(task);
+        task = nullptr;
+
+        // Mimic Run() here as a task could have run something on Cancel() or
+        // OnDiscard().
+        MaybeDrainDirectTasks();
+      }
+
+      return NS_OK;
+    }
+
    private:
     void MaybeDrainDirectTasks() {
       AbstractThread* currentThread = AbstractThread::GetCurrent();
       if (currentThread && currentThread->MightHaveTailTasks()) {
         currentThread->TailDispatcher().DrainDirectTasks();
       }
+    }
+
+    nsresult CancelTask(nsIRunnable* aTask) {
+      if (nsCOMPtr<nsIDiscardableRunnable> discardable =
+              do_QueryInterface(aTask)) {
+        discardable->OnDiscard();
+        return NS_OK;
+      }
+
+      return NS_OK;
     }
 
     UniquePtr<PerThreadTaskGroup> mTasks;
@@ -274,8 +343,9 @@ class AutoTaskDispatcher : public TaskDispatcher {
     RefPtr<AbstractThread> thread = aGroup->mThread;
 
     AbstractThread::DispatchReason reason =
-        mIsTailDispatcher ? AbstractThread::TailDispatch
-                          : AbstractThread::NormalDispatch;
+        mTailDispatchPolicy == TailDispatchPolicy::NoTailDispatch
+            ? AbstractThread::NormalDispatch
+            : AbstractThread::TailDispatch;
     nsCOMPtr<nsIRunnable> r = new TaskGroupRunnable(std::move(aGroup));
     return thread->Dispatch(r.forget(), reason);
   }
@@ -284,9 +354,8 @@ class AutoTaskDispatcher : public TaskDispatcher {
   nsTArray<UniquePtr<PerThreadTaskGroup>> mTaskGroups;
 
   nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher;
-  // True if this TaskDispatcher represents the tail dispatcher for the thread
-  // upon which it runs.
-  const bool mIsTailDispatcher;
+  // The tail dispatch policy for the thread on which this TaskDispatcher runs.
+  const TailDispatchPolicy mTailDispatchPolicy;
 };
 
 // Little utility class to allow declaring AutoTaskDispatcher as a default

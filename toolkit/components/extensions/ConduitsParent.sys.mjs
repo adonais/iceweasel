@@ -24,7 +24,7 @@
  * @property {string[]} [query]
  * @property {string[]} [cast]
  *
- * @property {*} [actor]
+ * @property {any} [actor]
  * @property {boolean} [verified]
  * @property {string} [url]
  * @property {number} [frameId]
@@ -219,6 +219,11 @@ const Hub = {
    * @param {ConduitsParent} actor
    */
   recvConduitOpened(address, actor) {
+    if (this.remotes.has(address.id)) {
+      Cu.reportError(`Duplicate conduit id ${address.id}`);
+      return;
+    }
+
     this.fillInAddress(address, actor);
 
     for (let [key, conduit] of this.reportOnOpened.entries()) {

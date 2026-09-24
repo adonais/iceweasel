@@ -34,6 +34,8 @@ dependencies {
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
 
+    implementation ComponentsDependencies.mozilla_appservices_merino
+
     implementation libs.androidx.core
     implementation libs.androidx.room.runtime
     ksp libs.androidx.room.compiler

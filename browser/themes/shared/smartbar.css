@@ -4,6 +4,7 @@
 
 /* TODO (Bug 2008938): Make in-page Smartbar styling not dependent on chrome styles */
 @import url("chrome://browser/skin/urlbar.css");
+@import url("chrome://browser/skin/tabbrowser/tab.tokens.css");
 
 :host,
 :root {
@@ -61,6 +62,13 @@
       outline-offset: var(--focus-outline-offset);
     }
   }
+
+  /* Neutralize the UA popover rules. */
+  inset: auto;
+  border: none;
+  padding: 0;
+  overflow: visible;
+  background-color: transparent;
 
   display: flex;
   flex-direction: column;

@@ -106,7 +106,6 @@ class Opcode {
   uint32_t bits() const { return bits_; }
 
   bool operator==(const Opcode& that) const = default;
-  bool operator!=(const Opcode& that) const = default;
 };
 
 // The Encoder class appends bytes to the Bytes object it is given during
@@ -483,7 +482,7 @@ class Decoder {
   [[nodiscard]] bool readFixedU32(uint32_t* u) { return read<uint32_t>(u); }
   [[nodiscard]] bool readFixedF32(float* f) { return read<float>(f); }
   [[nodiscard]] bool readFixedF64(double* d) { return read<double>(d); }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   [[nodiscard]] bool readFixedV128(V128* d) {
     for (unsigned i = 0; i < 16; i++) {
       if (!read<uint8_t>(d->bytes + i)) {
@@ -552,7 +551,7 @@ class Decoder {
   [[nodiscard]] bool readI64Const(int64_t* i64);
   [[nodiscard]] bool readF32Const(float* f32);
   [[nodiscard]] bool readF64Const(double* f64);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   [[nodiscard]] bool readV128Const(V128* value);
 #endif
   [[nodiscard]] bool readRefNull(const TypeContext& types,
@@ -747,7 +746,7 @@ inline bool Decoder::readPackedType(const TypeContext& types,
   }
   switch (code) {
     case uint8_t(TypeCode::V128): {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       if (!features.simd) {
         return fail("v128 not enabled");
       }
@@ -957,7 +956,7 @@ inline bool Decoder::readF64Const(double* f64) {
   return true;
 }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 inline bool Decoder::readV128Const(V128* value) {
   if (!readFixedV128(value)) {
     return fail("unable to read V128 constant");

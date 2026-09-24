@@ -28,6 +28,7 @@ def main(output, input_path, mac_app_name):
     substs = buildconfig.substs
     requirements = substs.get("MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS") or ""
     pp = Preprocessor()
+    pp.context.update(buildconfig.defines["ALLDEFINES"])
     pp.out = output
     pp.handleCommandLine(
         [

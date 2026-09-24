@@ -12,9 +12,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAutofillSelectors
 
 class AddressAutofillTest : BaseTest() {
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3205329
     @SmokeTest
     @Test

@@ -3,6 +3,9 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { ProfileDataUpgrader } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs"
 );
@@ -44,10 +47,13 @@ add_task(async function test_check_form_autofill_module_detect() {
     Services.prefs.getCharPref("extensions.formautofill.creditCards.supported"),
     "on"
   );
-  // old address available pref follows the main module pref
+  // "detect" is not migrated, so this reads the default from all.js, which
+  // only enables the all-regions rollout on pre-release channels.
   Assert.equal(
     Services.prefs.getCharPref("extensions.formautofill.addresses.supported"),
-    "on"
+    ["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)
+      ? "detect"
+      : "on"
   );
   ensureOldPrefsAreCleared();
 });

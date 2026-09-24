@@ -78,7 +78,9 @@ enum class ImportNameValueType : uint8_t {
   String,
   Namespace,
   Source,
-  AllButDefault
+  // Used for `export * from` entries. The preference decides whether the
+  // default export is included.
+  All
 };
 
 class ModuleRequestObject : public NativeObject {

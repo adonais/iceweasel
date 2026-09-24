@@ -879,8 +879,7 @@ void HTMLTableElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTableElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTableElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::cellpadding}, {nsGkAtoms::cellspacing},
       {nsGkAtoms::border},      {nsGkAtoms::width},

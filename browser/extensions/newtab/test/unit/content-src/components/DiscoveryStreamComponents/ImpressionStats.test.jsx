@@ -140,6 +140,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
       {
@@ -153,6 +154,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
       {
@@ -166,6 +168,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
     ]);
@@ -255,6 +258,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
       {
@@ -268,6 +272,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
       {
@@ -281,6 +286,7 @@ describe("<ImpressionStats>", () => {
         topic: undefined,
         features: undefined,
         attribution: undefined,
+        is_ad_eligible_position: undefined,
         format: "medium-card",
       },
     ]);

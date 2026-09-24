@@ -26,6 +26,9 @@ exports.grid = {
   // The grid fragment object of the grid container
   gridFragments: PropTypes.array,
 
+  // The GridFront of the grid container, used to retrieve grid fragments
+  gridFront: PropTypes.object,
+
   // Whether or not the grid highlighter is highlighting the grid
   highlighted: PropTypes.bool,
 

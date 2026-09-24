@@ -713,7 +713,8 @@ bool DataTransfer::PrincipalMaySetData(const nsAString& aType,
     // special-case the url types as they are simple variations of urls.
     // In addition, allow x-moz-place flavors to be added by WebExtensions.
     if (FindInReadable(kInternal_Mimetype_Prefix, aType) &&
-        !StringBeginsWith(aType, u"text/x-moz-url"_ns)) {
+        (!StringBeginsWith(aType, u"text/x-moz-url"_ns) ||
+         aType.EqualsLiteral(kURLPrivateMime))) {
       auto principal = BasePrincipal::Cast(aPrincipal);
       if (!principal->AddonPolicy() ||
           !StringBeginsWith(aType, u"text/x-moz-place"_ns)) {

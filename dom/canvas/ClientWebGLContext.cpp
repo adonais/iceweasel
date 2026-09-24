@@ -4738,18 +4738,6 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
                 std::string{"SurfaceDescriptorBuffer data is not Shmem."});
           }
         } break;
-        case layers::SurfaceDescriptor::TSurfaceDescriptorD3D10: {
-          MOZ_ASSERT(desc->image);
-          keepAliveImage = desc->image;
-        } break;
-        case layers::SurfaceDescriptor::TSurfaceDescriptorDXGIYCbCr: {
-          MOZ_ASSERT(desc->image);
-          keepAliveImage = desc->image;
-        } break;
-        case layers::SurfaceDescriptor::TSurfaceDescriptorMacIOSurface: {
-          MOZ_ASSERT(desc->image);
-          keepAliveImage = desc->image;
-        } break;
         case layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo: {
           MOZ_ASSERT(desc->image);
           keepAliveImage = desc->image;
@@ -4760,12 +4748,16 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
                 "SurfaceDescriptorGPUVideo does not contain RemoteDecoder."});
           }
           const auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
-          const auto& subdesc = sdrd.subdesc();
-          if (subdesc.type() !=
-              layers::RemoteDecoderVideoSubDescriptor::Tnull_t) {
+          if (sdrd.videoType() == layers::RemoteDecoderVideoType::TypeNone) {
             return Some(
-                std::string{"SurfaceDescriptorGPUVideo does not contain "
-                            "RemoteDecoder null subdesc."});
+                std::string{"SurfaceDescriptorRemoteDecoder type is none."});
+          }
+          if (sdrd.videoType() == layers::RemoteDecoderVideoType::D3D10 ||
+              sdrd.videoType() == layers::RemoteDecoderVideoType::DXGIYCbCr ||
+              sdrd.videoType() ==
+                  layers::RemoteDecoderVideoType::MacIOSurface) {
+            MOZ_ASSERT(desc->image);
+            keepAliveImage = desc->image;
           }
         } break;
         case layers::SurfaceDescriptor::TSurfaceDescriptorExternalImage: {

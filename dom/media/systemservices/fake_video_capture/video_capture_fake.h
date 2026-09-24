@@ -6,6 +6,7 @@
 #define DOM_MEDIA_SYSTEMSERVICES_FAKE_VIDEO_CAPTURE_VIDEO_CAPTURE_FAKE_H_
 
 #include "MediaEventSource.h"
+#include "MediaInfo.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
@@ -48,7 +49,8 @@ class VideoCaptureFake : public webrtc::videocapturemodule::VideoCaptureImpl {
 
  private:
   void OnGeneratedImage(const RefPtr<mozilla::layers::Image>& aImage,
-                        mozilla::TimeStamp aTime);
+                        mozilla::TimeStamp aTime,
+                        mozilla::VideoRotation aRotation);
 
   const nsCOMPtr<nsISerialEventTarget> mTarget;
   const RefPtr<mozilla::FakeVideoSource> mSource;

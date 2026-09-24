@@ -361,7 +361,7 @@ void DecoderTemplate<DecoderType>::OutputDecodedData(
       DecodedDataToOutputType(GetParentObject(), std::move(aData), aConfig);
   RefPtr<OutputCallbackType> cb(mOutputCallback);
   for (RefPtr<OutputType>& frame : frames) {
-    LOG("Outputing decoded data: ts: {}", frame->Timestamp());
+    LOGV("Outputting decoded data: {}", frame->ToString().get());
     RefPtr<OutputType> f = frame;
     mAsyncDurationTracker.End(f->Timestamp());
     cb->Call((OutputType&)(*f));
@@ -913,9 +913,10 @@ bool DecoderTemplate<DecoderType>::CreateDecoderAgent(
         MOZ_ASSERT(!self->mAgent || self->mAgent->mId != id);
       });
 
-  LOG("{} {} creates DecoderAgent #{} @ {} and its shutdown-blocker",
+  LOG("{} {} creates DecoderAgent #{} @ {} and its shutdown-blocker with "
+      "config {}",
       DecoderType::Name.get(), fmt::ptr(this), mAgent->mId,
-      fmt::ptr(mAgent.get()));
+      fmt::ptr(mAgent.get()), mActiveConfig->ToString().get());
 
   resetOnFailure.release();
   return true;

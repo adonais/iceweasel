@@ -893,8 +893,8 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     if (aContentParent) {
       RefPtr<BrowsingContextGroup> group =
           BrowsingContextGroup::GetExisting(aAddon.GetBrowsingContextGroupId());
-      if (!group ||
-          group->GetHostProcess(EXTENSION_REMOTE_TYPE) != aContentParent) {
+      if (!group || group->GetHostProcess(RemoteType(
+                        RemoteType::Kind::Extension)) != aContentParent) {
         return nullptr;
       }
     } else {

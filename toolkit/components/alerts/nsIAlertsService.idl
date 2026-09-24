@@ -42,6 +42,12 @@ interface nsIAlertAction : nsISupports
   readonly attribute AString iconURL;
 
   /**
+   * Returns the URI to navigate to if this action is chosen, or null if it
+   * wasn't set. https://notifications.spec.whatwg.org/#notification-navigation-url
+   */
+  readonly attribute nsIURI navigate;
+
+  /**
    * On Windows, chrome-privileged notifications -- i.e., those with a
    * non-actionable principal -- can have actions that are activated by Windows
    * and not processed by Firefox.  When `windowsSystemActivationType` is true,

@@ -135,7 +135,7 @@
 }
 
 .notificationbox .messageCloseButton:active {
-  background-color: rgba(170, 170, 170, 0.4); /* --toolbar-tab-hover-active */
+  background-color: rgb(170 170 170 / 0.4); /* --toolbar-tab-hover-active */
 }
 
 .notificationbox.wrapping .notificationInner .messageText {

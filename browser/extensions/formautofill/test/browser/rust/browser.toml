@@ -1,0 +1,22 @@
+# Address browser tests run with the Rust address store enabled, so it serves
+# every address read and write.
+#
+# head.js asserts the backend actually switched, since a migration that quietly
+# fell back to JSON would let these pass while proving nothing.
+#
+# Addresses only. Credit cards are not copied into Rust, and the open Rust store
+# races the NSS token reset their tests perform (Bug 2041273).
+[DEFAULT]
+head = "head.js"
+prefs = [
+  "extensions.formautofill.addresses.enabled=true",
+  "extensions.formautofill.skipProgrammaticCheckForTests=true",
+  "extensions.formautofill.addresses.storage.rust.enabled=true",
+]
+support-files = [
+  "head_address.js",
+  "!/browser/extensions/formautofill/test/fixtures/autocomplete_basic.html",
+  "../../fixtures/**",
+]
+
+["browser_address_migration.js"]

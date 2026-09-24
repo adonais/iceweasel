@@ -22,6 +22,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   ProxyUsage:
     "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
+  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
 const mockIdleService = {
@@ -154,6 +156,8 @@ add_setup(async function () {
     requestLongerTimeout(2);
   }
 
+  UrlbarTestUtils.init(this);
+
   // Installing this search extension prevents errors that
   // are generated from contacting the outside world
   // when completing searches during tests
@@ -238,6 +242,423 @@ add_task(async function test_openURL_visit_counter_withPattern() {
     2,
     "Third call should have count 2 for http://example.com"
   );
+});
+
+add_task(async function test_openURL_total_visit_counter() {
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  // Match any valid URL
+  trigger.init(stub, [], ["*://*/*"]);
+
+  await waitForUrlLoad("about:blank");
+  await waitForUrlLoad("https://example.com/");
+  await waitForUrlLoad("about:blank");
+  await waitForUrlLoad("http://example.com/");
+  await waitForUrlLoad("about:blank");
+  await waitForUrlLoad("https://example.com/?v=2");
+
+  Assert.equal(stub.callCount, 3, "Stub called for each matched page load");
+  Assert.deepEqual(
+    stub.getCalls().map(call => call.args[1].context.totalVisitsCount),
+    [1, 2, 3],
+    "totalVisitsCount accumulates across distinct URLs matching the pattern"
+  );
+  Assert.deepEqual(
+    stub.getCalls().map(call => call.args[1].context.visitsCount),
+    [1, 1, 1],
+    "visitsCount stays per-URL"
+  );
+
+  trigger.uninit();
+});
+
+add_task(async function test_openURL_isAddressBarUrlNavigation_typed() {
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  trigger.init(stub, ["example.com"]);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "https://example.com/",
+  });
+  const loaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    "https://example.com/"
+  );
+  EventUtils.synthesizeKey("KEY_Enter");
+  await loaded;
+
+  Assert.equal(stub.callCount, 1, "Trigger fired for the typed navigation");
+  Assert.equal(
+    stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+    true,
+    "Navigation caused by typing a URL into the address bar and hitting " +
+      "Enter should be flagged as such"
+  );
+
+  trigger.uninit();
+});
+
+add_task(async function test_openURL_isAddressBarUrlNavigation_notTyped() {
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  trigger.init(stub, ["example.com"]);
+
+  await waitForUrlLoad("https://example.com/");
+
+  Assert.equal(
+    stub.callCount,
+    1,
+    "Trigger fired for the programmatic navigation"
+  );
+  Assert.equal(
+    stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+    false,
+    "A navigation not preceded by an address bar interaction should not " +
+      "be flagged as an address bar URL navigation"
+  );
+
+  trigger.uninit();
+});
+
+add_task(
+  async function test_openURL_isAddressBarUrlNavigation_notLeakedForward() {
+    const trigger = ASRouterTriggerListeners.get("openURL");
+    const stub = sinon.stub();
+    trigger.uninit();
+
+    trigger.init(stub, ["example.com", "example.org"]);
+
+    // Type a URL that doesn't match either host we're listening for, so it
+    // won't itself cause the trigger to fire, but it does record a direct
+    // navigation urlbar interaction for the current browser.
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "https://example.net/",
+    });
+    const firstLoaded = BrowserTestUtils.browserLoaded(
+      gBrowser.selectedBrowser,
+      false,
+      "https://example.net/"
+    );
+    EventUtils.synthesizeKey("KEY_Enter");
+    await firstLoaded;
+
+    Assert.equal(
+      stub.callCount,
+      0,
+      "Trigger should not fire for a host it isn't listening for"
+    );
+
+    // A second, unrelated (non-address-bar) navigation on the same browser
+    // shouldn't inherit the flag from the previous one.
+    await waitForUrlLoad("https://example.com/");
+
+    Assert.equal(stub.callCount, 1, "Trigger fired for example.com");
+    Assert.equal(
+      stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+      false,
+      "The earlier address bar navigation to a different host must not be " +
+        "attributed to this one"
+    );
+
+    trigger.uninit();
+  }
+);
+
+add_task(
+  async function test_openURL_isAddressBarUrlNavigation_backNavigationAfterSearch() {
+    const trigger = ASRouterTriggerListeners.get("openURL");
+    const stub = sinon.stub();
+    trigger.uninit();
+
+    trigger.init(stub, ["example.com"]);
+
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+
+    // Simulate a SAP search from the address bar (e.g. searching "iphone"),
+    // landing on a search-results page hosted on example.com.
+    const searchLoaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    gURLBar.value = "test search term";
+    gURLBar.focus();
+    EventUtils.synthesizeKey("KEY_Enter");
+    await searchLoaded;
+    const serpUrl = tab.linkedBrowser.currentURI.spec;
+
+    Assert.equal(
+      stub.callCount,
+      1,
+      "Trigger fired for the initial search-results visit"
+    );
+    Assert.equal(
+      stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+      false,
+      "The initial SAP search should not be flagged as an address bar URL " +
+        "navigation"
+    );
+
+    // Simulate clicking a result that navigates away from the SERP (e.g. a
+    // shopping result), then clicking Back to return to it.
+    await waitForUrlLoad("https://example.org/");
+
+    const backLoaded = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      serpUrl
+    );
+    tab.linkedBrowser.goBack();
+    await backLoaded;
+
+    Assert.equal(
+      stub.callCount,
+      2,
+      "Trigger fired again when navigating back to the search-results page"
+    );
+    Assert.equal(
+      stub.secondCall.args[1].context.isAddressBarUrlNavigation,
+      false,
+      "Navigating back to a SAP search-results page must not be flagged " +
+        "as an address bar URL navigation, even though the address bar " +
+        "was used earlier in the session"
+    );
+
+    trigger.uninit();
+    BrowserTestUtils.removeTab(tab);
+  }
+);
+
+add_task(async function test_openURL_isAddressBarUrlNavigation_bookmark() {
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  trigger.init(stub, ["example.com"]);
+
+  const bookmarkURL = "https://example.com/bookmarked-path";
+  const bookmark = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: bookmarkURL,
+    title: "bookmark for isAddressBarUrlNavigation test",
+  });
+  await PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
+  // -1 means the matching row hasn't been found yet.
+  let bookmarkRowIndex = -1;
+
+  // Use bookmarks keyword to filter by bookmarks
+  await TestUtils.waitForCondition(async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "@bookmarks",
+    });
+
+    EventUtils.synthesizeKey("KEY_Enter", {}, window);
+
+    // Then search the actual bookmark
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "bookmarked-path",
+    });
+
+    let resultCount = UrlbarTestUtils.getResultCount(window);
+    for (let i = 0; i < resultCount; i++) {
+      let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+      if (
+        details.result.payload.url === bookmarkURL &&
+        details.result.source === UrlbarShared.RESULT_SOURCE.BOOKMARKS
+      ) {
+        bookmarkRowIndex = i;
+        return true;
+      }
+    }
+    return false;
+  }, "Waiting for the newly-inserted bookmark to appear in the urlbar results");
+
+  let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  UrlbarTestUtils.setSelectedRowIndex(window, bookmarkRowIndex);
+  EventUtils.synthesizeKey("KEY_Enter", {}, window);
+  await loadPromise;
+
+  Assert.equal(stub.callCount, 1, "Trigger fired for the bookmark navigation");
+  Assert.equal(
+    stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+    true,
+    "Picking a bookmark match from the address bar dropdown should be " +
+      "flagged as an address bar navigation"
+  );
+
+  trigger.uninit();
+  await PlacesUtils.bookmarks.remove(bookmark.guid);
+});
+
+add_task(async function test_openURL_isAddressBarUrlNavigation_remoteTab() {
+  const { SyncedTabs } = ChromeUtils.importESModule(
+    "resource://services-sync/SyncedTabs.sys.mjs"
+  );
+
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  trigger.init(stub, ["example.com"]);
+
+  const sandbox = sinon.createSandbox();
+  const originalSyncedTabsInternal = SyncedTabs._internal;
+  SyncedTabs._internal = {
+    isConfiguredToSyncTabs: true,
+    hasSyncedThisSession: true,
+    getTabClients() {
+      return Promise.resolve([]);
+    },
+    syncTabs() {
+      return Promise.resolve();
+    },
+  };
+
+  const weaveXPCService = Cc["@mozilla.org/weave/service;1"].getService(
+    Ci.nsISupports
+  ).wrappedJSObject;
+  const oldWeaveServiceReady = weaveXPCService.ready;
+  weaveXPCService.ready = true;
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill", false],
+      ["services.sync.username", "fake"],
+    ],
+  });
+
+  const remoteTabURL = "https://example.com/remote-tab";
+  const REMOTE_TAB = {
+    id: "openURLTriggerRemoteClient",
+    type: "client",
+    lastModified: 1492201200,
+    name: "Remote client",
+    clientType: "desktop",
+    tabs: [
+      {
+        type: "tab",
+        title: "Remote example",
+        url: remoteTabURL,
+        icon: UrlbarShared.ICON.DEFAULT,
+        client: "openURLTriggerRemoteClient",
+        lastUsed: Math.floor(Date.now() / 1000),
+      },
+    ],
+  };
+  sandbox
+    .stub(SyncedTabs._internal, "getTabClients")
+    .callsFake(() => Promise.resolve(Cu.cloneInto([REMOTE_TAB], {})));
+
+  try {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "Remote example",
+    });
+    await UrlbarTestUtils.pickResultAndWaitForLoad(
+      window,
+      remoteTabURL,
+      UrlbarShared.RESULT_TYPE.REMOTE_TAB
+    );
+
+    Assert.equal(
+      stub.callCount,
+      1,
+      "Trigger fired for the remote tab navigation"
+    );
+    Assert.equal(
+      stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+      false,
+      "Picking a synced-device (remote tab) result should not be flagged " +
+        "as an address bar URL navigation"
+    );
+  } finally {
+    trigger.uninit();
+    sandbox.restore();
+    weaveXPCService.ready = oldWeaveServiceReady;
+    SyncedTabs._internal = originalSyncedTabsInternal;
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+function notifyUrlbarUserStartNavigation(result) {
+  Services.obs.notifyObservers(
+    { wrappedJSObject: { result } },
+    "urlbar-user-start-navigation"
+  );
+}
+
+add_task(
+  async function test_openURL_isAddressBarUrlNavigation_sponsoredSuggestion() {
+    const trigger = ASRouterTriggerListeners.get("openURL");
+    const stub = sinon.stub();
+    trigger.uninit();
+
+    trigger.init(stub, ["example.com"]);
+
+    // Sponsored/Suggest results (AMP, Yelp, Weather, Wikipedia, Addon,
+    // Dynamic) are RESULT_TYPE.URL with RESULT_SOURCE.SEARCH: search-intent
+    // results, not a direct URL navigation.
+    notifyUrlbarUserStartNavigation({
+      type: UrlbarShared.RESULT_TYPE.URL,
+      source: UrlbarShared.RESULT_SOURCE.SEARCH,
+    });
+
+    await waitForUrlLoad("https://example.com/");
+
+    Assert.equal(
+      stub.callCount,
+      1,
+      "Trigger fired for the sponsored-suggestion-triggered navigation"
+    );
+    Assert.equal(
+      stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+      false,
+      "Picking a sponsored/Suggest result should not be flagged as an " +
+        "address bar URL navigation"
+    );
+
+    trigger.uninit();
+  }
+);
+
+add_task(async function test_openURL_isAddressBarUrlNavigation_mdnSuggestion() {
+  const trigger = ASRouterTriggerListeners.get("openURL");
+  const stub = sinon.stub();
+  trigger.uninit();
+
+  trigger.init(stub, ["example.com"]);
+
+  // MDN suggestions are RESULT_TYPE.URL with RESULT_SOURCE.OTHER_NETWORK,
+  // so they need their own check separate from the SEARCH-sourced Suggest
+  // results above.
+  notifyUrlbarUserStartNavigation({
+    type: UrlbarShared.RESULT_TYPE.URL,
+    source: UrlbarShared.RESULT_SOURCE.OTHER_NETWORK,
+  });
+
+  await waitForUrlLoad("https://example.com/");
+
+  Assert.equal(
+    stub.callCount,
+    1,
+    "Trigger fired for the MDN-suggestion-triggered navigation"
+  );
+  Assert.equal(
+    stub.firstCall.args[1].context.isAddressBarUrlNavigation,
+    false,
+    "Picking an MDN suggestion should not be flagged as an address bar " +
+      "URL navigation"
+  );
+
+  trigger.uninit();
 });
 
 add_task(async function test_captivePortalLogin() {
@@ -746,6 +1167,18 @@ add_task(async function test_ipprotection_ready() {
 
   IPProtection.uninit();
   sandbox.restore();
+
+  if (PanelUI.panel.state === "showing") {
+    await BrowserTestUtils.waitForEvent(PanelUI.panel, "popupshown");
+  }
+  if (PanelUI.panel.state !== "closed") {
+    let panelHidden = BrowserTestUtils.waitForEvent(
+      PanelUI.panel,
+      "popuphidden"
+    );
+    PanelUI.hide();
+    await panelHidden;
+  }
 });
 
 add_task(async function test_tabSwitch() {
@@ -832,7 +1265,9 @@ add_task(async function test_ipprotection_panel_closed() {
   await panel.open(window);
 
   // Close the panel, which should trigger ipProtectionPanelClosed
+  let panelHidden = BrowserTestUtils.waitForEvent(panel.panel, "popuphidden");
   panel.close();
+  await panelHidden;
 
   Assert.ok(
     await receivedTrigger,
@@ -841,9 +1276,9 @@ add_task(async function test_ipprotection_panel_closed() {
 
   // Open and close the panel again
   await panel.open(window);
+  panelHidden = BrowserTestUtils.waitForEvent(panel.panel, "popuphidden");
   panel.close();
-
-  await TestUtils.waitForTick();
+  await panelHidden;
 
   // Clean up prefs
   Services.prefs.clearUserPref("browser.ipProtection.added");

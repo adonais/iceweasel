@@ -10,8 +10,8 @@ import subprocess
 import traceback
 from textwrap import dedent, fill
 
-MIN_PYTHON_VERSION = (3, 9)
-MAX_PYTHON_VERSION_TO_CONSIDER = (3, 12)
+MIN_PYTHON_VERSION = (3, 10)
+MAX_PYTHON_VERSION_TO_CONSIDER = (3, 14)
 
 
 def load_mach(dir_path, mach_path, args):
@@ -80,7 +80,7 @@ def try_alternate_python3_executables(args):
 
 
 def main(args):
-    # Ensure we are running Python 3.9+. We run this check as soon as
+    # Ensure we are running Python 3.10+. We run this check as soon as
     # possible to avoid a cryptic import/usage error.
     if sys.version_info < MIN_PYTHON_VERSION:
         print(

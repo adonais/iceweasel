@@ -30,6 +30,7 @@ const HEADING_LEVEL_TEMPLATES = {
  * @property {boolean} disabled - Whether the fieldset and its children are disabled.
  * @property {string} iconSrc - The src for an optional icon.
  * @property {"beta" | "new" | undefined} badge - Include a badge of this type with matching text.
+ * @property {string | undefined} role - Role of the inner fieldset element.
  */
 export default class MozFieldset extends MozLitElement {
   static properties = {
@@ -38,6 +39,7 @@ export default class MozFieldset extends MozLitElement {
     supportPage: { type: String, attribute: "support-page" },
     ariaLabel: { type: String, fluent: true, mapped: true },
     ariaOrientation: { type: String, mapped: true },
+    role: { type: String, mapped: true },
     headingLevel: { type: Number },
     disabled: { type: Boolean, reflect: true },
     iconSrc: { type: String },
@@ -175,6 +177,7 @@ export default class MozFieldset extends MozLitElement {
           this.description ? "description" : undefined
         )}
         aria-orientation=${ifDefined(this.ariaOrientation)}
+        role=${ifDefined(this.role)}
       >
         ${this.label ? this.legendTemplate() : ""}
         ${!this.description ? this.supportPageTemplate() : ""}

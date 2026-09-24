@@ -3,7 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-import { html, repeat } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  repeat,
+  nothing,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MAX_SELECTED_TABS } from "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs";
 
 /**
@@ -65,9 +69,15 @@ export class AiSffTabSelector extends MozLitElement {
 
   #renderTabList(tabLabelFluentId, tabs, selectedTabCount, scrollable = false) {
     return html`
-      <moz-box-group type="list" class=${scrollable ? "scrollable" : ""}>
+      <moz-box-group
+        type="list"
+        class=${scrollable ? "tab-selector-tabs-scrollable" : ""}
+      >
         <moz-box-item slot="header">
-          <h2 data-l10n-id=${tabLabelFluentId}></h2>
+          <h2
+            class="tab-selector-list-heading"
+            data-l10n-id=${tabLabelFluentId}
+          ></h2>
         </moz-box-item>
 
         ${repeat(
@@ -107,28 +117,37 @@ export class AiSffTabSelector extends MozLitElement {
       />
 
       <div class="tab-selector-dialog">
-        <h1 data-l10n-id="ai-smart-form-fill-edit-sources"></h1>
+        <h1
+          class="tab-selector-title"
+          data-l10n-id="ai-smart-form-fill-edit-sources"
+        ></h1>
 
-        ${this.#renderTabList(
-          "ai-smart-form-fill-suggested-tabs",
-          this.suggestedTabs,
-          selectedTabCount
-        )}
-        ${this.#renderTabList(
-          "ai-smart-form-fill-other-tabs",
-          this.otherTabs,
-          selectedTabCount,
-          true
-        )}
+        ${this.suggestedTabs?.length
+          ? this.#renderTabList(
+              "ai-smart-form-fill-suggested-tabs",
+              this.suggestedTabs,
+              selectedTabCount
+            )
+          : nothing}
+        ${this.otherTabs?.length
+          ? this.#renderTabList(
+              "ai-smart-form-fill-other-tabs",
+              this.otherTabs,
+              selectedTabCount,
+              true
+            )
+          : nothing}
 
-        <moz-button-group>
+        <moz-button-group class="tab-selector-actions">
           <moz-button
             data-l10n-id="ai-smart-form-fill-cancel-tab-select"
+            size="large"
             @click=${this.#handleCancel}
           ></moz-button>
           <moz-button
             data-l10n-id="ai-smart-form-fill-accept-tab-select"
             type="primary"
+            size="large"
             .disabled=${selectedTabCount == 0 ||
             selectedTabCount > MAX_SELECTED_TABS}
             @click=${this.#handleAccept}

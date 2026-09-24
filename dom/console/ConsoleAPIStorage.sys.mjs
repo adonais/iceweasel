@@ -6,6 +6,11 @@ const STORAGE_MAX_EVENTS = 1000;
 
 var _consoleStorage = new Map();
 
+// The process type never changes, so read it once rather than paying an
+// XPConnect getter on every recorded console event.
+const _isParentProcess =
+  Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
+
 /**
  * Check whether aId is the inner window ID of a window that no longer exists.
  *
@@ -17,8 +22,8 @@ var _consoleStorage = new Map();
  */
 function _isDestroyedInnerWindow(aId) {
   // Content processes rely on Nuking to sever references to destroyed-window
-  // globals, so this check is only meaningful in the parent process.
-  if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
+  // globals, so _isDestroyedInnerWindow is only meaningful in the parent process.
+  if (!_isParentProcess) {
     return false;
   }
   let innerId = Number(aId);

@@ -12,6 +12,12 @@
           "platform": {
             "light": "rgba(207, 207, 216, 0.33)",
             "dark": "rgba(0, 0, 0, 0.33)"
+          },
+          "nova": {
+            "value": {
+              "default": "transparent",
+              "forcedColors": "ButtonFace"
+            }
           }
         }
       },
@@ -25,6 +31,14 @@
           "platform": {
             "light": "rgba(207, 207, 216, 0.66)",
             "dark": "rgba(207, 207, 216, 0.2)"
+          },
+          "nova": {
+            "value": {
+              "nativeTheme": "color-mix(in srgb, AccentColor 20%, transparent)",
+              "light": "{color.violet-desaturated.20}",
+              "dark": "{color.violet-desaturated.50}",
+              "forcedColors": "SelectedItemText"
+            }
           }
         }
       },
@@ -38,6 +52,14 @@
           "platform": {
             "light": "rgb(207, 207, 216)",
             "dark": "rgba(207, 207, 216, 0.4)"
+          },
+          "nova": {
+            "value": {
+              "nativeTheme": "color-mix(in srgb, AccentColor 30%, transparent)",
+              "light": "{color.violet-desaturated.30}",
+              "dark": "{color.violet-desaturated.40}",
+              "forcedColors": "SelectedItemText"
+            }
           }
         }
       },
@@ -120,9 +142,14 @@
           }
         },
         "active": {
-          "value": "{button.background.color.active}"
+          "value": {
+            "default": "{button.background.color.active}",
+            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
+            "forcedColors": "{button.background.color.active}"
+          }
         },
         "disabled": {
+          "ignoreFigma": "Preserve token structure that can't be replicated in Figma",
           "value": {
             "default": "{button.background.color.ghost.@base}",
             "brand": {
@@ -131,7 +158,11 @@
           }
         },
         "hover": {
-          "value": "{button.background.color.hover}"
+          "value": {
+            "default": "{button.background.color.hover}",
+            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+            "forcedColors": "{button.background.color.hover}"
+          }
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -161,7 +192,13 @@
         "active": {
           "value": {
             "default": "{button.background.color.ghost.active}",
-            "forcedColors": "{button.background.color.primary.@base}"
+            "forcedColors": "{button.background.color.primary.@base}",
+            "nova": {
+              "comment": "The HCM value in Figma needs to be updated",
+              "value": {
+                "forcedColors": "ButtonText"
+              }
+            }
           }
         },
         "disabled": {
@@ -170,7 +207,13 @@
         "hover": {
           "value": {
             "default": "{button.background.color.ghost.hover}",
-            "forcedColors": "{button.background.color.primary.@base}"
+            "forcedColors": "{button.background.color.primary.@base}",
+            "nova": {
+              "comment": "The HCM value in Figma needs to be updated",
+              "value": {
+                "forcedColors": "ButtonText"
+              }
+            }
           }
         },
         "selected": {
@@ -185,26 +228,19 @@
       },
       "toolbar": {
         "@base": {
-          "value": {
-            "default": "transparent",
-            "brand": {
-              "forcedColors": "{button.background.color.@base}"
-            }
-          }
+          "value": "{toolbarbutton.background.color.@base}"
+        },
+        "hover": {
+          "value": "{toolbarbutton.background.color.hover}"
         },
         "active": {
           "value": "{toolbarbutton.background.color.active}"
         },
         "disabled": {
           "value": {
-            "default": "{button.background.color.ghost.@base}",
-            "brand": {
-              "forcedColors": "{button.background.color.disabled}"
-            }
+            "default": "{toolbarbutton.background.color.@base}",
+            "forcedColors": "{button.background.color.disabled}"
           }
-        },
-        "hover": {
-          "value": "{toolbarbutton.background.color.hover}"
         },
         "selected": {
           "value": "{button.background.color.ghost.active}"
@@ -231,7 +267,13 @@
         "value": {
           "default": "transparent",
           "prefersContrast": "{button.text.color.@base}",
-          "forcedColors": "{border.color.interactive.@base}"
+          "forcedColors": "{border.color.interactive.@base}",
+          "nova": {
+            "comment": "Preserve prefersContrast value",
+            "value": {
+              "default": "{color.accent.primary.@base}"
+            }
+          }
         }
       },
       "active": {
@@ -381,22 +423,22 @@
       "toolbar": {
         "@base": {
           "value": {
-            "default": "{button.border.color.@base}"
+            "default": "{toolbarbutton.outline.color.@base}"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "{toolbarbutton.outline.color.hover}"
           }
         },
         "active": {
           "value": {
-            "default": "{button.border.color.active}"
+            "default": "{toolbarbutton.outline.color.active}"
           }
         },
         "disabled": {
           "value": {
             "default": "{button.border.color.disabled}"
-          }
-        },
-        "hover": {
-          "value": {
-            "default": "{button.border.color.hover}"
           }
         },
         "selected": {
@@ -577,9 +619,15 @@
         "@base": {
           "value": {
             "default": "inherit",
-            "brand": {
-              "prefersContrast": "{button.text.color.@base}",
-              "forcedColors": "{button.text.color.@base}"
+            "prefersContrast": "{button.text.color.@base}",
+            "forcedColors": "{button.text.color.@base}",
+            "nova": {
+              "comment": "Preserve token structure that can't be replicated in Figma",
+              "value": {
+                "brand": {
+                  "forcedColors": "ButtonText"
+                }
+              }
             }
           }
         },
@@ -587,7 +635,13 @@
           "value": {
             "default": "inherit",
             "prefersContrast": "{button.text.color.active}",
-            "forcedColors": "{button.text.color.active}"
+            "forcedColors": "{button.text.color.active}",
+            "nova": {
+              "comment": "Preserve prefersContrast value",
+              "value": {
+                "default": "{button.text.color.ghost.@base}"
+              }
+            }
           }
         },
         "disabled": {
@@ -596,6 +650,15 @@
             "brand": {
               "prefersContrast": "{button.text.color.disabled}",
               "forcedColors": "{button.text.color.disabled}"
+            },
+            "nova": {
+              "comment": "Preserve token structure that can't be replicated in Figma",
+              "value": {
+                "brand": {
+                  "default": "{button.text.color.ghost.@base}",
+                  "forcedColors": "GrayText"
+                }
+              }
             }
           }
         },
@@ -603,7 +666,14 @@
           "value": {
             "default": "inherit",
             "prefersContrast": "{button.text.color.hover}",
-            "forcedColors": "{button.text.color.hover}"
+            "forcedColors": "{button.text.color.hover}",
+            "nova": {
+              "comment": "Preserve prefersContrast value",
+              "value": {
+                "default": "{button.text.color.ghost.@base}",
+                "forcedColors": "{button.text.color.ghost.active}"
+              }
+            }
           }
         },
         "selected": {
@@ -640,7 +710,15 @@
         "active": {
           "value": {
             "default": "{button.text.color.ghost.active}",
-            "forcedColors": "{button.text.color.primary.@base}"
+            "forcedColors": "{button.text.color.primary.@base}",
+            "nova": {
+              "comment": "The HCM value in Figma needs to be updated",
+              "value": {
+                "light": "{button.text.color.ghost.active}",
+                "dark": "{button.text.color.active}",
+                "forcedColors": "ButtonFace"
+              }
+            }
           }
         },
         "disabled": {
@@ -649,7 +727,15 @@
         "hover": {
           "value": {
             "default": "{button.text.color.ghost.hover}",
-            "forcedColors": "{button.text.color.primary.@base}"
+            "forcedColors": "{button.text.color.primary.@base}",
+            "nova": {
+              "comment": "The HCM value in Figma needs to be updated",
+              "value": {
+                "light": "{button.text.color.ghost.hover}",
+                "dark": "{button.text.color.hover}",
+                "forcedColors": "ButtonFace"
+              }
+            }
           }
         },
         "selected": {
@@ -697,34 +783,25 @@
       "toolbar": {
         "@base": {
           "value": {
-            "default": "inherit",
-            "brand": {
-              "prefersContrast": "{button.text.color.@base}",
-              "forcedColors": "{button.text.color.@base}"
-            }
+            "default": "currentColor",
+            "forcedColors": "{button.text.color.@base}"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "currentColor",
+            "forcedColors": "{button.text.color.hover}"
           }
         },
         "active": {
           "value": {
-            "default": "inherit",
-            "prefersContrast": "{button.text.color.active}",
+            "default": "currentColor",
             "forcedColors": "{button.text.color.active}"
           }
         },
         "disabled": {
           "value": {
-            "default": "inherit",
-            "brand": {
-              "prefersContrast": "{button.text.color.disabled}",
-              "forcedColors": "{button.text.color.disabled}"
-            }
-          }
-        },
-        "hover": {
-          "value": {
-            "default": "inherit",
-            "prefersContrast": "{button.text.color.hover}",
-            "forcedColors": "{button.text.color.hover}"
+            "default": "{button.text.color.disabled}"
           }
         },
         "selected": {

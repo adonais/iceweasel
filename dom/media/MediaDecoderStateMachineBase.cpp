@@ -36,7 +36,7 @@ MediaDecoderStateMachineBase::MediaDecoderStateMachineBase(
       mVideoFrameContainer(aDecoder->GetVideoFrameContainer()),
       mTaskQueue(TaskQueue::Create(GetMediaThreadPool(MediaThreadType::MDSM),
                                    "MDSM::mTaskQueue",
-                                   /* aSupportsTailDispatch = */ true)),
+                                   TailDispatchPolicy::ConsistentOrdering)),
       mReader(new ReaderProxy(mTaskQueue, aReader)),
       mPlaybackRate(1.0),
       INIT_MIRROR(mBuffered, media::TimeIntervals()),

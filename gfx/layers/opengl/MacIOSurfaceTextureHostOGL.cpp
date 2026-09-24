@@ -17,6 +17,7 @@ namespace layers {
 MacIOSurfaceTextureHostOGL::MacIOSurfaceTextureHostOGL(
     TextureFlags aFlags, const SurfaceDescriptorMacIOSurface& aDescriptor)
     : TextureHost(TextureHostType::MacIOSurface, aFlags),
+      mDescriptor(aDescriptor),
       mSurface(MacIOSurface::LookupSurface(
           aDescriptor.surfaceId(), aDescriptor.yUVColorSpace(),
           aDescriptor.transferFunction(),
@@ -298,6 +299,10 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
       MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     }
   }
+}
+
+SurfaceDescriptor MacIOSurfaceTextureHostOGL::GetSurfaceDescriptor() {
+  return mDescriptor;
 }
 
 }  // namespace layers

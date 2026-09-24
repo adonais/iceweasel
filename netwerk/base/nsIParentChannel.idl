@@ -9,6 +9,9 @@ interface nsIRemoteTab;
 
 %{C++
 namespace mozilla {
+namespace dom {
+struct RemoteType;
+}
 namespace net {
 class ParentChannelListener;
 }
@@ -16,6 +19,7 @@ class ParentChannelListener;
 %}
 
 [ptr] native ParentChannelListener(mozilla::net::ParentChannelListener);
+[ref] native RemoteType(mozilla::dom::RemoteType);
 
 /**
  * Implemented by chrome side of IPC protocols.
@@ -72,5 +76,5 @@ interface nsIParentChannel : nsIStreamListener
   /**
    * The remote type of the target process for this load.
    */
-  readonly attribute AUTF8String remoteType;
+  [noscript] RemoteType getRemoteType();
 };

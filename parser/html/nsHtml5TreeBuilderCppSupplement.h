@@ -17,6 +17,292 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/dom/Sanitizer.h"
+#include "nsTHashMap.h"
+
+// The spec's "parser sanitizer configuration", "remove javascript navigation
+// URLs" and "insertion target redirection map", as of whatwg/html#12756.
+//
+// The spec sanitizes an element in "insert an element at the adjusted
+// insertion location"; we sanitize it in createElement() instead, so that an
+// element can never reach the tree unsanitized, and remember here what the
+// insertion hooks have to do with it. The attributes are sanitized on the
+// start tag token, before they are applied to the new element, so that the
+// element creation process never sees a disallowed "is".
+//
+// Main thread only: sanitizing while parsing only happens on the op-less
+// builder, which the main thread drives from beginning to end.
+class nsHtml5TreeBuilder::SanitizerState {
+ public:
+  // A resolved "adjusted insertion location": append to mParent, or insert
+  // before mBefore when it is non-null.
+  struct Location {
+    nsIContent* mParent = nullptr;
+    nsIContent* mBefore = nullptr;
+  };
+
+  // The "appropriate place for inserting a node" when foster parenting:
+  // before the table in the table's parent, or the end of the stack parent
+  // when the table has no parent to insert into.
+  static Location FosterLocation(nsIContent* aStackParent, nsIContent* aTable) {
+    if (nsIContent* foster =
+            nsHtml5TreeOperation::GetFosterParentForInsertBefore(aTable)) {
+      return {foster, aTable};
+    }
+    return {aStackParent, nullptr};
+  }
+
+  SanitizerState(const mozilla::dom::Sanitizer* aSanitizer, bool aSafe)
+      : mSanitizer(aSanitizer), mSafe(aSafe) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(aSanitizer);
+  }
+
+  bool CommentsAllowed() const { return mSanitizer->CommentsAllowed(); }
+
+  // Runs the configuration against a start tag token, once per token:
+  // removes the disallowed attributes from aAttributes in place and remembers
+  // what the configuration does with the element the token creates, for the
+  // RecordNewElement() call that follows once the element exists. The tree
+  // builder sanitizes the token itself when it has to consult the sanitized
+  // attributes before the element exists, so this runs before createElement()
+  // on those paths and from createElement() on all the others.
+  void EnsureTokenSanitized(int32_t aNamespace, nsAtom* aLocalName,
+                            nsHtml5HtmlAttributes* aAttributes) {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mTokenSanitized) {
+      MOZ_ASSERT(mTokenNamespace == aNamespace && mTokenLocalName == aLocalName,
+                 "Sanitized a token other than the one being created.");
+      return;
+    }
+    mTokenSanitized = true;
+#ifdef DEBUG
+    mTokenNamespace = aNamespace;
+    mTokenLocalName = aLocalName;
+#endif
+    mozilla::dom::SanitizerElementMatch match =
+        mSanitizer->MatchElement(aLocalName, aNamespace, mSafe);
+    mTokenAction = match.Action();
+    if (mTokenAction ==
+            mozilla::dom::SanitizerElementAction::ReplaceWithChildren &&
+        aNamespace == kNameSpaceID_XHTML &&
+        aLocalName == nsGkAtoms::_template) {
+      mTokenAction = mozilla::dom::SanitizerElementAction::Remove;
+    }
+    if (mTokenAction != mozilla::dom::SanitizerElementAction::Keep) {
+      return;
+    }
+    for (int32_t i = aAttributes->getLength(); i > 0; --i) {
+      nsHtml5AttributeEntry& entry = aAttributes->entryAt(i - 1);
+      nsHtml5NameTriple name = AttributeName(entry, aNamespace);
+      if (mSanitizer->ShouldRemoveAttribute(match, name.mLocal, name.mNamespace,
+                                            [&entry](nsAString& aValue) {
+                                              entry.Value().ToString(aValue);
+                                            })) {
+        aAttributes->removeAttributeAt(i - 1);
+      }
+    }
+  }
+
+  // What the configuration does with the element the sanitized token creates.
+  mozilla::dom::SanitizerElementAction TokenAction() const {
+    MOZ_ASSERT(mTokenSanitized);
+    return mTokenAction;
+  }
+
+  // Remembers the element the last sanitized token created, if the
+  // configuration does not keep it. Such an element is never inserted, not
+  // even when it is replaced with its children, so it gives up the form
+  // association that element creation gave it, like an element the tree
+  // builder itself fails to insert.
+  void RecordNewElement(nsIContent* aElement) {
+    using mozilla::dom::SanitizerElementAction;
+    MOZ_ASSERT(mTokenSanitized);
+    mTokenSanitized = false;
+    if (mTokenAction != SanitizerElementAction::Keep) {
+      nsHtml5TreeOperation::AbortNodeInsertion(aElement);
+      mDropped.InsertOrUpdate(
+          aElement,
+          Dropped{mTokenAction == SanitizerElementAction::ReplaceWithChildren});
+    }
+  }
+
+  // Sanitizes the attributes a second start tag merged onto the html or body
+  // element. The action is discarded: whatwg/html#12756 asserts it is "Keep"
+  // instead, which does not hold for a configuration that replaces body with
+  // its children.
+  void SanitizeMergedAttributes(nsIContent* aElement) {
+    mSanitizer->SanitizeElement(aElement->AsElement(), mSafe);
+  }
+
+  bool IsDropped(nsIContent* aElement) const {
+    return mDropped.Contains(aElement);
+  }
+
+  // Redirects the content of an element the configuration replaces with its
+  // children to where the content of aParent goes. The adoption agency
+  // algorithm never inserts the clones it makes, so a clone that is replaced
+  // with its children gets its redirection here instead of from
+  // ResolveLocationForChild(). Returns whether the clone was replaced with
+  // its children, which is when the algorithm leaves lastNode where it is.
+  bool RedirectClone(nsIContent* aClone, nsIContent* aParent) {
+    auto entry = mDropped.Lookup(aClone);
+    if (!entry || !entry.Data().mReplaceWithChildren) {
+      return false;
+    }
+    entry.Data().mLocationResolved = true;
+    entry.Data().mLocation = LocationFor(aParent);
+    return true;
+  }
+
+  // Moves the redirection of an element that has one already, which the
+  // adoption agency algorithm does for a furthest block once it has moved the
+  // block's content to (aParent, aBefore).
+  void MoveRedirection(nsIContent* aElement, nsIContent* aParent,
+                       nsIContent* aBefore = nullptr) {
+    auto entry = mDropped.Lookup(aElement);
+    if (!entry || !entry.Data().mLocation.mParent) {
+      return;
+    }
+    entry.Data().mLocation = LocationFor(aParent, aBefore);
+  }
+
+  // The location content whose tree construction parent is aParent goes to.
+  // An element the sanitizer removed is not in the tree, but it still is the
+  // parent its content is inserted into, like in the spec, where the content
+  // ends up in the removed element's detached subtree. The adoption agency
+  // algorithm can move nodes back out of such a subtree, so dropping the
+  // content here instead would lose nodes the spec keeps.
+  Location LocationFor(nsIContent* aParent,
+                       nsIContent* aBefore = nullptr) const {
+    auto entry = mDropped.Lookup(aParent);
+    // Only a "Replace with children" element that reached an insertion point
+    // redirects its content; everything else takes its content with it.
+    if (!entry || !entry.Data().mReplaceWithChildren ||
+        !entry.Data().mLocation.mParent) {
+      return Location{aParent, aBefore};
+    }
+    Location location = entry.Data().mLocation;
+    // The tree can have moved since the location was recorded. Inserting
+    // before a node that is no longer a child of mParent would corrupt
+    // mParent's child list, so fall back to appending.
+    if (location.mBefore && location.mBefore->GetParent() != location.mParent) {
+      location.mBefore = nullptr;
+    }
+    if (aBefore && aBefore->GetParent() == location.mParent) {
+      location.mBefore = aBefore;
+    }
+    return location;
+  }
+
+  // The location aChild is inserted at, or Nothing() when the sanitizer
+  // dropped aChild itself, which the spec never inserts anywhere. Records
+  // where the children of a "Replace with children" element go, which is only
+  // known now that the element itself would be inserted. Only the first
+  // attempt counts: the adoption agency algorithm re-inserts elements it has
+  // already placed, which must not move the recorded location.
+  mozilla::Maybe<Location> ResolveLocationForChild(
+      nsIContent* aChild, nsIContent* aParent, nsIContent* aBefore = nullptr) {
+    Location location = LocationFor(aParent, aBefore);
+    auto entry = mDropped.Lookup(aChild);
+    if (!entry) {
+      return mozilla::Some(location);
+    }
+    if (!entry.Data().mLocationResolved) {
+      entry.Data().mLocationResolved = true;
+      // The spec checks whether the element can be inserted at all before it
+      // sanitizes it, so an element that cannot be inserted never redirects
+      // its children either.
+      if (entry.Data().mReplaceWithChildren &&
+          nsHtml5TreeOperation::CanInsert(aChild, location.mParent)) {
+        entry.Data().mLocation = location;
+      }
+    }
+    return mozilla::Nothing();
+  }
+
+ private:
+  // The name an attribute of a token in aNamespace ends up with on the
+  // element, which is what the configuration matches against.
+  static nsHtml5NameTriple AttributeName(const nsHtml5AttributeEntry& aEntry,
+                                         int32_t aNamespace) {
+    if (aNamespace == kNameSpaceID_SVG) {
+      return aEntry.NameSVG();
+    }
+    if (aNamespace == kNameSpaceID_MathML) {
+      return aEntry.NameMathML();
+    }
+    return {kNameSpaceID_None, nullptr, aEntry.NameHTML()};
+  }
+
+  struct Dropped {
+    bool mReplaceWithChildren = false;
+    // Whether the element has already reached the insertion point that decides
+    // mLocation, whether or not there was a location to record.
+    bool mLocationResolved = false;
+    // Where the children of a "Replace with children" element go. mParent is
+    // null until the element would have been inserted.
+    Location mLocation;
+  };
+
+  // Raw pointers: every element the tree builder creates is kept alive for the
+  // whole parse by nsHtml5DocumentBuilder::HoldElement(), so an entry can
+  // neither dangle nor be matched by a later element at the same address.
+  nsTHashMap<nsPtrHashKey<nsIContent>, Dropped> mDropped;
+  const mozilla::dom::Sanitizer* const mSanitizer;
+  const bool mSafe;
+  // What the configuration does with the element the last sanitized start tag
+  // token creates. Set by EnsureTokenSanitized(), consumed by
+  // RecordNewElement(), so that createElement() does not have to keep it live
+  // across the element creation on the path that does not sanitize.
+  mozilla::dom::SanitizerElementAction mTokenAction =
+      mozilla::dom::SanitizerElementAction::Keep;
+  // Whether mTokenAction belongs to the token being processed, i.e. whether
+  // the token was already sanitized before its element was created.
+  bool mTokenSanitized = false;
+#ifdef DEBUG
+  int32_t mTokenNamespace = kNameSpaceID_None;
+  nsAtom* mTokenLocalName = nullptr;
+#endif
+};
+
+void nsHtml5TreeBuilder::SetSanitizer(mozilla::dom::Sanitizer* aSanitizer,
+                                      bool aSafe) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!aSanitizer || mBuilder,
+             "Sanitizing while parsing needs the op-less builder.");
+  if (aSanitizer) {
+    mSanitizerState = mozilla::MakeUnique<SanitizerState>(aSanitizer, aSafe);
+  } else {
+    mSanitizerState = nullptr;
+  }
+}
+
+bool nsHtml5TreeBuilder::SanitizerRedirectsCloneImpl(
+    nsIContent* aClone, nsIContent* aCommonAncestor) {
+  return mSanitizerState->RedirectClone(aClone, aCommonAncestor);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockImpl(
+    nsIContent* aFurthestBlock, nsIContent* aParent) {
+  mSanitizerState->MoveRedirection(aFurthestBlock, aParent);
+}
+
+void nsHtml5TreeBuilder::SanitizerRedirectFurthestBlockToFosterParentImpl(
+    nsIContent* aFurthestBlock, nsIContent* aTable, nsIContent* aStackParent) {
+  SanitizerState::Location foster =
+      SanitizerState::FosterLocation(aStackParent, aTable);
+  mSanitizerState->MoveRedirection(aFurthestBlock, foster.mParent,
+                                   foster.mBefore);
+}
+
+bool nsHtml5TreeBuilder::SanitizerDropsTemplateTokenImpl(
+    nsHtml5HtmlAttributes* aAttributes) {
+  mSanitizerState->EnsureTokenSanitized(kNameSpaceID_XHTML,
+                                        nsGkAtoms::_template, aAttributes);
+  return mSanitizerState->TokenAction() !=
+         mozilla::dom::SanitizerElementAction::Keep;
+}
 
 nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder)
     : mode(0),
@@ -147,6 +433,10 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                                              ? intendedParent->NodeInfoManager()
                                              : mBuilder->GetNodeInfoManager();
 
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      mSanitizerState->EnsureTokenSanitized(aNamespace, aName, aAttributes);
+    }
+
     nsIContent* elem;
     if (aNamespace == kNameSpaceID_XHTML) {
       elem = nsHtml5TreeOperation::CreateHTMLElement(
@@ -166,6 +456,11 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                      aAttributes != nsHtml5HtmlAttributes::EMPTY_ATTRIBUTES)) {
       delete aAttributes;
     }
+
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      mSanitizerState->RecordNewElement(elem);
+    }
+
     return elem;
   }
 
@@ -780,8 +1075,13 @@ nsIContentHandle* nsHtml5TreeBuilder::createHtmlElementSetAsRoot(
   nsIContentHandle* content = createElement(kNameSpaceID_XHTML, nsGkAtoms::html,
                                             aAttributes, nullptr, creator);
   if (mBuilder) {
-    nsresult rv = nsHtml5TreeOperation::AppendToDocument(
-        static_cast<nsIContent*>(content), mBuilder);
+    nsIContent* elem = static_cast<nsIContent*>(content);
+    // The html element is on the built-in non-replaceable elements list, so
+    // the sanitizer either keeps or removes it.
+    if (MOZ_UNLIKELY(mSanitizerState) && mSanitizerState->IsDropped(elem)) {
+      return content;
+    }
+    nsresult rv = nsHtml5TreeOperation::AppendToDocument(elem, mBuilder);
     if (NS_FAILED(rv)) {
       MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
     }
@@ -860,12 +1160,32 @@ void nsHtml5TreeBuilder::detachFromParent(nsIContentHandle* aElement) {
   treeOp->Init(mozilla::AsVariant(operation));
 }
 
+void nsHtml5TreeBuilder::SanitizedAppendElement(nsIContent* aChild,
+                                                nsIContent* aParent) {
+  mozilla::Maybe<SanitizerState::Location> location =
+      mSanitizerState->ResolveLocationForChild(aChild, aParent);
+  if (!location) {
+    return;
+  }
+  nsresult rv = nsHtml5TreeOperation::InsertBefore(aChild, location->mParent,
+                                                   location->mBefore, mBuilder);
+  if (NS_FAILED(rv)) {
+    MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+  }
+}
+
 void nsHtml5TreeBuilder::appendElement(nsIContentHandle* aChild,
                                        nsIContentHandle* aParent) {
   MOZ_ASSERT(aChild, "Null child");
   MOZ_ASSERT(aParent, "Null parent");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      SanitizedAppendElement(static_cast<nsIContent*>(aChild),
+                             static_cast<nsIContent*>(aParent));
+      return;
+    }
+
     nsresult rv = nsHtml5TreeOperation::Append(
         static_cast<nsIContent*>(aChild), static_cast<nsIContent*>(aParent),
         mozilla::dom::FROM_PARSER_FRAGMENT, mBuilder);
@@ -894,9 +1214,16 @@ void nsHtml5TreeBuilder::appendChildrenToNewParent(
   MOZ_ASSERT(aNewParent, "Null new parent");
 
   if (mBuilder) {
+    nsIContent* newParent = static_cast<nsIContent*>(aNewParent);
+    // The adoption agency algorithm's new parent. When the sanitizer removes
+    // it or replaces it with its children, the spec does nothing here, so
+    // that the old parent keeps the children it already has.
+    if (MOZ_UNLIKELY(mSanitizerState) &&
+        mSanitizerState->IsDropped(newParent)) {
+      return;
+    }
     nsresult rv = nsHtml5TreeOperation::AppendChildrenToNewParent(
-        static_cast<nsIContent*>(aOldParent),
-        static_cast<nsIContent*>(aNewParent), mBuilder);
+        static_cast<nsIContent*>(aOldParent), newParent, mBuilder);
     if (NS_FAILED(rv)) {
       MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
     }
@@ -912,6 +1239,38 @@ void nsHtml5TreeBuilder::appendChildrenToNewParent(
   treeOp->Init(mozilla::AsVariant(operation));
 }
 
+void nsHtml5TreeBuilder::SanitizedFosterParentCharacters(
+    char16_t* aBuffer, int32_t aLength, nsIContent* aTable,
+    nsIContent* aStackParent) {
+  SanitizerState::Location foster =
+      SanitizerState::FosterLocation(aStackParent, aTable);
+  SanitizerState::Location location =
+      mSanitizerState->LocationFor(foster.mParent, foster.mBefore);
+  nsresult rv = nsHtml5TreeOperation::InsertTextBefore(
+      aBuffer, aLength, location.mParent, location.mBefore, mBuilder);
+  if (NS_FAILED(rv)) {
+    MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+  }
+}
+
+void nsHtml5TreeBuilder::SanitizedFosterParentChild(nsIContent* aChild,
+                                                    nsIContent* aTable,
+                                                    nsIContent* aStackParent) {
+  SanitizerState::Location foster =
+      SanitizerState::FosterLocation(aStackParent, aTable);
+  mozilla::Maybe<SanitizerState::Location> location =
+      mSanitizerState->ResolveLocationForChild(aChild, foster.mParent,
+                                               foster.mBefore);
+  if (!location) {
+    return;
+  }
+  nsresult rv = nsHtml5TreeOperation::InsertBefore(aChild, location->mParent,
+                                                   location->mBefore, mBuilder);
+  if (NS_FAILED(rv)) {
+    MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+  }
+}
+
 void nsHtml5TreeBuilder::insertFosterParentedCharacters(
     char16_t* aBuffer, int32_t aStart, int32_t aLength,
     nsIContentHandle* aTable, nsIContentHandle* aStackParent) {
@@ -921,6 +1280,13 @@ void nsHtml5TreeBuilder::insertFosterParentedCharacters(
   MOZ_ASSERT(!aStart, "aStart must always be zero.");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      SanitizedFosterParentCharacters(aBuffer, aLength,
+                                      static_cast<nsIContent*>(aTable),
+                                      static_cast<nsIContent*>(aStackParent));
+      return;
+    }
+
     nsresult rv = nsHtml5TreeOperation::FosterParentText(
         static_cast<nsIContent*>(aStackParent),
         aBuffer,  // XXX aStart always ignored???
@@ -960,6 +1326,13 @@ void nsHtml5TreeBuilder::insertFosterParentedChild(
   MOZ_ASSERT(aStackParent, "Null stack parent");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      SanitizedFosterParentChild(static_cast<nsIContent*>(aChild),
+                                 static_cast<nsIContent*>(aTable),
+                                 static_cast<nsIContent*>(aStackParent));
+      return;
+    }
+
     nsresult rv = nsHtml5TreeOperation::FosterParent(
         static_cast<nsIContent*>(aChild),
         static_cast<nsIContent*>(aStackParent),
@@ -979,6 +1352,17 @@ void nsHtml5TreeBuilder::insertFosterParentedChild(
   treeOp->Init(mozilla::AsVariant(operation));
 }
 
+void nsHtml5TreeBuilder::SanitizedAppendCharacters(nsIContent* aParent,
+                                                   char16_t* aBuffer,
+                                                   int32_t aLength) {
+  SanitizerState::Location location = mSanitizerState->LocationFor(aParent);
+  nsresult rv = nsHtml5TreeOperation::InsertTextBefore(
+      aBuffer, aLength, location.mParent, location.mBefore, mBuilder);
+  if (NS_FAILED(rv)) {
+    MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+  }
+}
+
 void nsHtml5TreeBuilder::appendCharacters(nsIContentHandle* aParent,
                                           char16_t* aBuffer, int32_t aStart,
                                           int32_t aLength) {
@@ -987,6 +1371,12 @@ void nsHtml5TreeBuilder::appendCharacters(nsIContentHandle* aParent,
   MOZ_ASSERT(!aStart, "aStart must always be zero.");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      SanitizedAppendCharacters(static_cast<nsIContent*>(aParent), aBuffer,
+                                aLength);
+      return;
+    }
+
     nsresult rv = nsHtml5TreeOperation::AppendText(
         aBuffer,  // XXX aStart always ignored???
         aLength, static_cast<nsIContent*>(aParent), mBuilder);
@@ -1024,6 +1414,20 @@ void nsHtml5TreeBuilder::appendCharacters(nsIContentHandle* aParent,
   treeOp->Init(mozilla::AsVariant(operation));
 }
 
+void nsHtml5TreeBuilder::SanitizedAppendComment(nsIContent* aParent,
+                                                char16_t* aBuffer,
+                                                int32_t aLength) {
+  if (!mSanitizerState->CommentsAllowed()) {
+    return;
+  }
+  SanitizerState::Location location = mSanitizerState->LocationFor(aParent);
+  nsresult rv = nsHtml5TreeOperation::InsertCommentBefore(
+      location.mParent, aBuffer, aLength, location.mBefore, mBuilder);
+  if (NS_FAILED(rv)) {
+    MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+  }
+}
+
 void nsHtml5TreeBuilder::appendComment(nsIContentHandle* aParent,
                                        char16_t* aBuffer, int32_t aStart,
                                        int32_t aLength) {
@@ -1032,6 +1436,12 @@ void nsHtml5TreeBuilder::appendComment(nsIContentHandle* aParent,
   MOZ_ASSERT(!aStart, "aStart must always be zero.");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      SanitizedAppendComment(static_cast<nsIContent*>(aParent), aBuffer,
+                             aLength);
+      return;
+    }
+
     nsresult rv = nsHtml5TreeOperation::AppendComment(
         static_cast<nsIContent*>(aParent),
         aBuffer,  // XXX aStart always ignored???
@@ -1069,6 +1479,9 @@ void nsHtml5TreeBuilder::appendCommentToDocument(char16_t* aBuffer,
   MOZ_ASSERT(!aStart, "aStart must always be zero.");
 
   if (mBuilder) {
+    if (MOZ_UNLIKELY(mSanitizerState) && !mSanitizerState->CommentsAllowed()) {
+      return;
+    }
     nsresult rv = nsHtml5TreeOperation::AppendCommentToDocument(
         aBuffer,  // XXX aStart always ignored???
         aLength, mBuilder);
@@ -1111,10 +1524,16 @@ void nsHtml5TreeBuilder::addAttributesToElement(
     MOZ_ASSERT(
         aAttributes == tokenizer->GetAttributes(),
         "Using attribute other than the tokenizer's to add to body or html.");
-    nsresult rv = nsHtml5TreeOperation::AddAttributes(
-        static_cast<nsIContent*>(aElement), aAttributes, mBuilder);
+    nsIContent* elem = static_cast<nsIContent*>(aElement);
+    nsresult rv =
+        nsHtml5TreeOperation::AddAttributes(elem, aAttributes, mBuilder);
     if (NS_FAILED(rv)) {
       MarkAsBrokenAndRequestSuspensionWithBuilder(rv);
+    }
+    // The spec sanitizes the html/body element again after merging attributes
+    // from a second start tag onto it.
+    if (MOZ_UNLIKELY(mSanitizerState)) {
+      mSanitizerState->SanitizeMergedAttributes(elem);
     }
     return;
   }
@@ -1155,6 +1574,7 @@ void nsHtml5TreeBuilder::start(bool fragment) {
 
 void nsHtml5TreeBuilder::end() {
   mOpQueue.Clear();
+  mSanitizerState = nullptr;
 #ifdef DEBUG
   mActive = false;
 #endif
@@ -1758,6 +2178,12 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
   aShadowRootReferenceTarget.ToString(shadowRootReferenceTarget);
 
   if (mBuilder) {
+    // The template element the shadow root belongs to was already sanitized
+    // by sanitizerDropsTemplateToken(), so a configuration that drops the
+    // template or its shadowrootmode attribute never gets here. Declarative
+    // shadow roots are still attached below elements the sanitizer removed:
+    // the host is not inserted, so the shadow root is discarded with it,
+    // exactly as in the spec.
     nsIContent* root = nsContentUtils::AttachDeclarativeShadowRoot(
         static_cast<nsIContent*>(aHost), mode, aShadowRootIsClonable,
         aShadowRootIsSerializable, aShadowRootDelegatesFocus,

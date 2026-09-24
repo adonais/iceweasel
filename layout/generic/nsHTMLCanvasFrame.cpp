@@ -85,7 +85,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
     return Frame()->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
   }
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
@@ -113,10 +113,10 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         MOZ_ASSERT(container->IsAsync());
         aManager->CommandBuilder().PushImage(this, container, aBuilder,
                                              aResources, aSc, bounds, bounds);
-        return true;
+        return Ok();
       }
 
-      return true;
+      return Ok();
     }
 
     switch (element->GetCurrentContextType()) {
@@ -132,7 +132,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         auto* canvasFrame = static_cast<nsHTMLCanvasFrame*>(mFrame);
         if (!canvasFrame->UpdateWebRenderCanvasData(aDisplayListBuilder,
                                                     canvasData)) {
-          return true;
+          return Ok();
         }
         WebRenderCanvasRendererAsync* data = canvasData->GetCanvasRenderer();
         MOZ_ASSERT(data);
@@ -172,7 +172,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
             static_cast<nsHTMLCanvasFrame*>(mFrame);
         CSSIntSize canvasSizeInPx = canvasFrame->GetCanvasSize();
         if (canvasSizeInPx.width <= 0 || canvasSizeInPx.height <= 0) {
-          return true;
+          return Ok();
         }
         bool isRecycled;
         RefPtr<WebRenderCanvasData> canvasData =
@@ -182,7 +182,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         if (!canvasFrame->UpdateWebRenderCanvasData(aDisplayListBuilder,
                                                     canvasData)) {
           canvasData->ClearImageContainer();
-          return true;
+          return Ok();
         }
 
         nsRect dest = canvasFrame->GetDestRect(
@@ -204,7 +204,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
       default:
         MOZ_ASSERT_UNREACHABLE("unknown canvas context type");
     }
-    return true;
+    return Ok();
   }
 
   // FirstContentfulPaint is supposed to ignore "white" canvases.  We use

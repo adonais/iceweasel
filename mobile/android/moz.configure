@@ -135,6 +135,7 @@ imply_option("MOZ_APP_VENDOR", "Mozilla")
 imply_option("MOZ_APP_ID", "{aa3c5121-dab2-40e2-81ca-7ea25febc110}")
 imply_option("BROWSER_CHROME_URL", "chrome://geckoview/content/geckoview.xhtml")
 
+
 @depends(target)
 def check_target(target):
     if target.os != "Android":
@@ -166,6 +167,25 @@ option(
 set_config(
     "MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
     depends("MOZ_ANDROID_FAT_AAR_ARCHITECTURES")(lambda x: x),
+)
+
+option(
+    env="MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES",
+    nargs="*",
+    choices=(
+        "linux-x86-64",
+        "linux-aarch64",
+        "darwin-x86-64",
+        "darwin-aarch64",
+        "win32-x86-64",
+        "win32-aarch64",
+    ),
+    help='Comma-separated list of Desktop CPU architectures to include in fat AARS, like "linux-x86-64"',
+)
+
+set_config(
+    "MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES",
+    depends("MOZ_ANDROID_FAT_AAR_DESKTOP_ARCHITECTURES")(lambda x: x),
 )
 
 
@@ -291,8 +311,18 @@ set_config("MOZ_PKG_ALLOWED_DUPES", package_inputs.allowed_dupes)
 # When packaging an artifact build not all xpt files expected by the packager
 # will be present. Toolchain gradle-dependencies tasks use
 # --disable-compile-environment and bin/lib*.so files are missing.
-set_config(
-    "MOZ_PKG_FATAL_WARNINGS", True, when=~artifact_builds & compile_environment
-)
+set_config("MOZ_PKG_FATAL_WARNINGS", True, when=~artifact_builds & compile_environment)
 
 set_config("MOZ_CHROME_LOCALE_ENTRIES", ["@BINPATH@/chrome/"])
+
+
+@depends(real_branding_directory)
+@imports(_import="mozpack.path", _as="mozpath")
+def l10n_chrome_roots(branding_directory):
+    return [
+        "mobile/android/locales",
+        mozpath.join(branding_directory, "locales"),
+    ]
+
+
+set_config("MOZ_L10N_CHROME_ROOTS", l10n_chrome_roots)

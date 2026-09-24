@@ -21,17 +21,41 @@
           "value": {
             "light": "white",
             "dark": "rgb(66, 65, 77)",
-            "nativeTheme": "{button.background.color.@base}"
+            "nativeTheme": "{button.background.color.@base}",
+            "nova": {
+              "comment": "color-mix with currentColor cannot be expressed in Figma",
+              "value": {
+                "nativeTheme": "color-mix(in srgb, currentColor 16%, transparent)",
+                "default": "{urlbarview.background.color.hover}"
+              }
+            }
           }
         },
         "hover": {
           "value": {
             "light": "{button.background.color.hover}",
-            "dark": "color-mix(in srgb, currentColor 22%, transparent)"
+            "dark": "color-mix(in srgb, currentColor 22%, transparent)",
+            "nova": {
+              "comment": "color-mix with currentColor cannot be expressed in Figma",
+              "value": {
+                "nativeTheme": "color-mix(in srgb, currentColor 22%, transparent)",
+                "default": "{urlbarview.background.color.selected}"
+              }
+            }
           }
         },
         "active": {
-          "value": "{button.background.color.active}"
+          "value": {
+            "default": "{button.background.color.active}",
+            "nova": {
+              "comment": "color-mix with currentColor cannot be expressed in Figma",
+              "value": {
+                "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
+                "light": "rgba(117, 102, 159, 0.6)",
+                "dark": "rgba(176, 163, 210, 0.6)"
+              }
+            }
+          }
         },
         "focus": {
           "value": {
@@ -44,9 +68,13 @@
     "text": {
       "color": {
         "@base": {
+          "ignoreFigma": "Figma stores a token reference that would overwrite 'inherit'",
           "value": "inherit"
         },
         "hover": {
+          "value": "{urlbar.box.text.color.@base}"
+        },
+        "active": {
           "value": "{urlbar.box.text.color.@base}"
         }
       }
@@ -58,7 +86,16 @@
         "value": {
           "default": "0.72",
           "nativeTheme": "0.9",
-          "prefersContrast": "1"
+          "prefersContrast": "1",
+          "nova": {
+            "comment": "Figma's HCM maps to forcedColors, but we intentionally use the prefersContrast media query",
+            "value": {
+              "nativeTheme": "0.9",
+              "light": "0.7",
+              "dark": "0.95",
+              "prefersContrast": "1"
+            }
+          }
         }
       }
     }

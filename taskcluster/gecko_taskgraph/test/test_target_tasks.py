@@ -279,10 +279,90 @@ class TestTargetTasks(unittest.TestCase):
         """A missing label that isn't a test task keeps being reported as
         missing, rather than pulling in whatever shares its prefix."""
         method = get_method("try_tasks")
-        params = self._try_task_config_params(
-            ["fetch-clang-20"], MOZHARNESS_TEST_PATHS='{"suite": ["foo/bar"]}'
+        for tasks in (["fetch-clang-20"], ["fetch-clang"]):
+            for env in ({}, {"MOZHARNESS_TEST_PATHS": '{"suite": ["foo/bar"]}'}):
+                params = self._try_task_config_params(tasks, **env)
+                self.assertEqual(sorted(method(self.make_task_graph(), params, {})), [])
+
+    def test_try_task_config_renumbered_chunk_without_paths(self):
+        """A stale chunk label is recovered on a push that didn't restrict the
+        tests too, and there every chunk runs its own share of the suite."""
+        method = get_method("try_tasks")
+        params = self._try_task_config_params(["ddd-7"])
+        self.assertEqual(
+            sorted(method(self.make_task_graph(), params, {})), ["ddd-1", "ddd-2"]
         )
-        self.assertEqual(sorted(method(self.make_task_graph(), params, {})), [])
+
+    def test_try_task_config_unchunked_label_now_chunked(self):
+        """A task requested without a chunk suffix, because the graph the label
+        was picked from had it unchunked, is replaced by the chunks the decision
+        task split it into rather than dropped."""
+        method = get_method("try_tasks")
+        params = self._try_task_config_params(["ddd", "ddd-var"])
+        self.assertEqual(
+            sorted(method(self.make_task_graph(), params, {})),
+            ["ddd-1", "ddd-2", "ddd-var-1", "ddd-var-2"],
+        )
+
+    def test_try_task_config_unchunked_label_now_chunked_with_paths(self):
+        """Restricting the tests still keeps only the first chunk of a task the
+        taskgraph couldn't restrict to the requested paths."""
+        method = get_method("try_tasks")
+        paths = '{"suite": ["foo/bar"]}'
+        self.assertEqual(
+            sorted(
+                method(
+                    self.make_task_graph(),
+                    self._try_task_config_params(["ddd"], MOZHARNESS_TEST_PATHS=paths),
+                    {},
+                )
+            ),
+            ["ddd-1"],
+        )
+        self.assertEqual(
+            sorted(
+                method(
+                    self.make_task_graph(),
+                    self._try_task_config_params(["eee"], MOZHARNESS_TEST_PATHS=paths),
+                    {},
+                )
+            ),
+            ["eee-1", "eee-2"],
+        )
+
+    def test_try_task_config_unchunked_label_from_fuzzy(self):
+        """`mach try fuzzy` builds its task list with `taskgraph.fast` set,
+        which falls back to the hardcoded chunk counts, so it offers the
+        unchunked name of a task the decision task then splits into chunks."""
+        chunked = [
+            f"{platform}-{suite}-{chunk}"
+            for platform in (
+                "test-android-em-14-x86_64-lite/opt",
+                "test-android-em-14-x86_64/opt",
+            )
+            for suite in (
+                "geckoview-mochitest-media",
+                "geckoview-mochitest-media-nofis",
+                "geckoview-mochitest-media-nogpu",
+            )
+            for chunk in (1, 2)
+        ]
+        tg = TaskGraph(
+            {l: Task(kind="test", label=l, attributes={}, task={}) for l in chunked},
+            Graph(nodes=set(chunked), edges=set()),
+        )
+        method = get_method("try_tasks")
+        params = self._try_task_config_params(
+            sorted({l.rsplit("-", 1)[0] for l in chunked})
+        )
+        self.assertEqual(sorted(method(tg, params, {})), sorted(chunked))
+
+    def test_try_task_config_unknown_label(self):
+        """A label that names no task at all, chunked or not, is still reported
+        as missing."""
+        method = get_method("try_tasks")
+        params = self._try_task_config_params(["ddd-nosuchvariant", "a", "zzz"])
+        self.assertEqual(sorted(method(self.make_task_graph(), params, {})), ["a"])
 
     def test_try_task_config_absolute(self):
         "try_mode = try_task_config uses the try config with full task labels"
@@ -688,6 +768,24 @@ def test_general_perf_testing_selects_safari_video_playback_latency():
     selected = _general_perf_selection(_raptor_task(vpl_safari, _MACOS))
 
     assert _raptor_label(vpl_safari, _MACOS) in selected
+
+
+def test_perftest_applink_profiling_selects_only_the_applink_tasks():
+    """Only the applink startup tasks are selected, the perftest transforms
+    then run them with profiling enabled."""
+    labels = target_tasks.APPLINK_PROFILING_LABELS | {
+        "perftest-android-hw-a55-aarch64-shippable-startup-fenix-homeview-startup",
+        "test-linux1804-64/opt-mochitest-1",
+    }
+    tasks = {
+        label: Task(kind="perftest", label=label, attributes={}, task={})
+        for label in labels
+    }
+    graph = TaskGraph(tasks, Graph(nodes=set(tasks), edges=set()))
+
+    selected = set(get_method("perftest-applink-profiling")(graph, {}, {}))
+
+    assert selected == target_tasks.APPLINK_PROFILING_LABELS
 
 
 if __name__ == "__main__":

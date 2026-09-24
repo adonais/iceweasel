@@ -257,23 +257,4 @@ export class AboutReaderParent extends JSWindowActorParent {
 
     this.sendAsyncMessage("Reader:LeaveReaderMode", {});
   }
-
-  /**
-   * Gets an article for a given URL. This method will download and parse a document.
-   *
-   * @param url The article URL.
-   * @return {Promise<?object>}
-   *   Resolves to the JS object representing the article, or null if no article
-   *   is found.
-   */
-  async _getArticle(url) {
-    return lazy.ReaderMode.downloadAndParseDocument(url).catch(e => {
-      if (e && e.newURL) {
-        // Pass up the error so we can navigate the browser in question to the new URL:
-        throw e;
-      }
-      console.error("Error downloading and parsing document: ", e);
-      return null;
-    });
-  }
 }

@@ -22,6 +22,21 @@ add_setup(async function () {
   });
 });
 
+add_task(async function testEtpRadioGroupAccessibleName() {
+  let { doc, tab } = await openEtpPage();
+  let contentBlockingCategoryRadioGroup = doc.getElementById(
+    "contentBlockingCategoryRadioGroup"
+  );
+  ok(
+    contentBlockingCategoryRadioGroup,
+    "contentBlockingCategoryRadioGroup is rendered"
+  );
+
+  await assertRadioGroupAccessibleName(contentBlockingCategoryRadioGroup);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
 // Verifies category radios reflect pref changes and the customize entry point navigates correctly.
 add_task(async function test_etp_category_radios_and_customize_navigation() {
   await SpecialPowers.pushPrefEnv({

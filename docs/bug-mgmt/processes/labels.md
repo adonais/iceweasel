@@ -62,16 +62,16 @@ resolution](https://wiki.mozilla.org/BMO/UserGuide/BugStatuses#Resolutions).
 ## Severities (Required)
 
 The triage process for Firefox bugs in Bugzilla requires a non default
-value of a bug's {ref}`Severity (definitions) <defect-severity>`.
+value of a bug's [Severity (definitions)](/bug-mgmt/guides/severity.md).
 
 ## Release Status Flags
 
-Open Firefox bugs may also have {ref}`status flags <release-status-flags>`
+Open Firefox bugs may also have [status flags](/bug-mgmt/guides/status-flags.md)
 (`status_firefoxNN`) set for Nightly, Beta, Release, or ESR.
 
 ## Priorities
 
-Firefox projects in Bugzilla can use the {ref}`priority field <priority-definitions>`
+Firefox projects in Bugzilla can use the [priority field](/bug-mgmt/guides/priority.md)
 to indicate when a bug will be worked on.
 
 ## Keywords
@@ -121,17 +121,17 @@ To represent Bugzilla fields, use labels following this scheme.
   - `regression`, `regressionwindow-wanted`,
     `regression-internal`
 
-- {ref}`Severity <defect-severity>` (required)
+- [Severity](/bug-mgmt/guides/severity.md) (required)
 
   - `S1`, `S2`, `S3`, `S4`, `N/A` (reserved for bugs
     of type `task` or `enhancement`)
 
-- {ref}`Status flags <release-status-flags>`
+- [Status flags](/bug-mgmt/guides/status-flags.md)
 
   - `status_firefoxNN:<status>`
     (example `status_firefox77:affected`)
 
-- {ref}`Priority <priority-definitions>`
+- [Priority](/bug-mgmt/guides/priority.md)
 
   - `P1`, `P2`, `P3`, `P5`
 

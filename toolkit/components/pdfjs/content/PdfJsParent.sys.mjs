@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   MLUninstallService: "chrome://global/content/ml/Utils.sys.mjs",
   MultiProgressAggregator: "chrome://global/content/ml/Utils.sys.mjs",
   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
+  PdfJsPrint: "resource://pdf.js/PdfJsPrint.sys.mjs",
   Progress: "chrome://global/content/ml/Utils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -195,6 +196,14 @@ export class PdfJsParent extends JSWindowActorParent {
         return this._verifyPdfSignature(aMsg);
       case "PDFJS:Parent:viewPdfCertificate":
         return this._viewPdfCertificate(aMsg);
+      case "PDFJS:Parent:printToPDF": {
+        return lazy.PdfJsPrint.printToPDF(
+          this.browsingContext,
+          BrowsingContext.get(aMsg.data.id),
+          aMsg.data.width,
+          aMsg.data.height
+        );
+      }
     }
     return undefined;
   }

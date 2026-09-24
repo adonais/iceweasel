@@ -484,6 +484,40 @@ DecodeSupportSet PDMFactory::Supports(
   return current->Supports(aParams, aDiagnostics);
 }
 
+RefPtr<PDMSupportsDecoderPromise> PDMFactory::SupportsAsync(
+    const SupportDecoderParams& aParams) const {
+  if (mEMEPDM) {
+    return mEMEPDM->SupportsAsync(aParams);
+  }
+
+  nsTArray<RefPtr<PDMSupportsDecoderPromise>> promises(mCurrentPDMs.Length());
+  for (const auto& m : mCurrentPDMs) {
+    if (!m->Supports(aParams, nullptr).isEmpty()) {
+      promises.AppendElement(m->SupportsAsync(aParams));
+    }
+  }
+  return PDMSupportsDecoderPromise::AllSettled(GetCurrentSerialEventTarget(),
+                                               promises)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [mimeType = aParams.mConfig.mMimeType](
+              CopyableTArray<PDMSupportsDecoderPromise::ResolveOrRejectValue>&&
+                  aValues) -> RefPtr<PDMSupportsDecoderPromise> {
+            DecodeSupportSet support{};
+            for (const auto& value : aValues) {
+              if (value.IsResolve()) {
+                support += value.ResolveValue();
+              }
+            }
+            return PDMSupportsDecoderPromise::CreateAndResolve(support,
+                                                               __func__);
+          },
+          [] {
+            MOZ_CRASH("AllSettled does not reject");
+            return RefPtr<PDMSupportsDecoderPromise>(nullptr);
+          });
+}
+
 /* static */
 void PDMFactory::ForcePDM(PlatformDecoderModule* aPDM) {
   auto forced = sForcedPDM.Lock();

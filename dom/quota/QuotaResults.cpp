@@ -6,6 +6,7 @@
 
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/quota/Assertions.h"
 #include "nscore.h"
 
 namespace mozilla::dom::quota {
@@ -98,7 +99,7 @@ NS_IMETHODIMP
 FullOriginMetadataResult::GetOriginUsage(uint64_t* aOriginUsage) {
   MOZ_ASSERT(aOriginUsage);
 
-  *aOriginUsage = mFullOriginMetadata.mOriginUsage;
+  *aOriginUsage = QM_CLAMP_TO_ZERO(mFullOriginMetadata.mOriginUsage);
   return NS_OK;
 }
 

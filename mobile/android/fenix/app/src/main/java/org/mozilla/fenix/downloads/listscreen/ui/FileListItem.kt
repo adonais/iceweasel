@@ -6,6 +6,7 @@ package org.mozilla.fenix.downloads.listscreen.ui
 
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -15,10 +16,14 @@ import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -35,17 +40,21 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
+import mozilla.components.compose.base.theme.ThemedValue
+import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.feature.media.R as mediaR
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
+import org.mozilla.fenix.compose.SwipeToDismissBackground
 import org.mozilla.fenix.compose.list.SelectableListItem
+import org.mozilla.fenix.compose.rememberSwipeToDismissBoxState
+import org.mozilla.fenix.compose.swipeToDismissFade
 import org.mozilla.fenix.downloads.listscreen.DownloadsListTestTag
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.TimeCategory
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.ThemedValue
-import org.mozilla.fenix.theme.ThemedValueProvider
 
 /**
  * [SelectableListItem] used for displaying download items on the downloads screen.
@@ -53,11 +62,15 @@ import org.mozilla.fenix.theme.ThemedValueProvider
  * @param fileItem [FileItem] representing a download item.
  * @param isSelected The selected state of the item.
  * @param areAfterListItemIconsVisible Whether the menu icon is visible on the download item.
+ * @param swipingEnabled Whether swipe-to-dismiss is enabled.
  * @param modifier Modifier to be applied to the [SelectableListItem].
+ * @param onClick Invoked when the item is clicked.
+ * @param onLongClick Invoked when the item is long clicked.
  * @param onPauseClick Invoked when pause is clicked.
  * @param onResumeClick Invoked when resume is clicked.
  * @param onRetryClick Invoked when retry is clicked.
- * @param onDeleteClick Invoked when delete is clicked.
+ * @param onDeleteClick Invoked when delete is clicked. The boolean parameter indicates if the deletion was triggered by
+ *   a swipe gesture.
  * @param onShareUrlClick Invoked when share URL is clicked.
  * @param onShareFileClick Invoked when share file is clicked.
  * @param onRenameFileClick Invoked when rename file is clicked.
@@ -68,33 +81,94 @@ internal fun FileListItem(
     fileItem: FileItem,
     isSelected: Boolean,
     areAfterListItemIconsVisible: Boolean,
+    swipingEnabled: Boolean,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onPauseClick: (id: String) -> Unit,
     onResumeClick: (id: String) -> Unit,
     onRetryClick: (id: String) -> Unit,
-    onDeleteClick: (FileItem) -> Unit,
+    onDeleteClick: (FileItem, Boolean) -> Unit,
     onShareUrlClick: (FileItem) -> Unit,
     onShareFileClick: (FileItem) -> Unit,
     onRenameFileClick: (FileItem) -> Unit,
 ) {
+    val swipeToDismissBoxState = rememberSwipeToDismissBoxState(id = fileItem.id)
+    val currentFileItem by rememberUpdatedState(fileItem)
+    val currentOnDeleteClick by rememberUpdatedState(onDeleteClick)
+    val onDismiss =
+        remember<(SwipeToDismissBoxValue) -> Unit> {
+            {
+                currentOnDeleteClick(currentFileItem, true)
+            }
+        }
+
+    SwipeToDismissBox(
+        modifier = modifier,
+        state = swipeToDismissBoxState,
+        backgroundContent = {
+            SwipeToDismissBackground(swipeToDismissBoxState)
+        },
+        gesturesEnabled = swipingEnabled,
+        onDismiss = onDismiss,
+    ) {
+        FileListItemMainContent(
+            fileItem = fileItem,
+            isSelected = isSelected,
+            areAfterListItemIconsVisible = areAfterListItemIconsVisible,
+            swipeToDismissBoxState = swipeToDismissBoxState,
+            onClick = onClick,
+            onLongClick = onLongClick,
+            onPauseClick = onPauseClick,
+            onResumeClick = onResumeClick,
+            onRetryClick = onRetryClick,
+            onDeleteClick = onDeleteClick,
+            onShareUrlClick = onShareUrlClick,
+            onShareFileClick = onShareFileClick,
+            onRenameFileClick = onRenameFileClick,
+        )
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun FileListItemMainContent(
+    fileItem: FileItem,
+    isSelected: Boolean,
+    areAfterListItemIconsVisible: Boolean,
+    swipeToDismissBoxState: SwipeToDismissBoxState,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    onPauseClick: (id: String) -> Unit,
+    onResumeClick: (id: String) -> Unit,
+    onRetryClick: (id: String) -> Unit,
+    onDeleteClick: (FileItem, Boolean) -> Unit,
+    onShareUrlClick: (FileItem) -> Unit,
+    onShareFileClick: (FileItem) -> Unit,
+    onRenameFileClick: (FileItem) -> Unit,
+) {
+    val isFailed = fileItem.status == FileItem.Status.Failed
+    val colorScheme = MaterialTheme.colorScheme
+    val tint = if (isFailed) colorScheme.error else colorScheme.onSurfaceVariant
+
     SelectableListItem(
         label = fileItem.fileName ?: fileItem.url,
         description = fileItem.description,
-        icon = if (fileItem.status == FileItem.Status.Failed) iconsR.drawable.mozac_ic_critical_24 else fileItem.icon,
+        icon = if (isFailed) iconsR.drawable.mozac_ic_critical_24 else fileItem.icon,
         isSelected = isSelected,
-        modifier = modifier.selectableListItemProgressSemantics(status = fileItem.status),
-        descriptionTextColor =
-            if (fileItem.status == FileItem.Status.Failed) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-        iconTint =
-            if (fileItem.status == FileItem.Status.Failed) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+        modifier =
+            Modifier.swipeToDismissFade(swipeToDismissBoxState)
+                .selectableListItemProgressSemantics(status = fileItem.status)
+                .thenConditional(
+                    Modifier.combinedClickable(
+                        onClick = { onClick?.invoke() },
+                        onLongClick = { onLongClick?.invoke() },
+                    )
+                ) {
+                    onClick != null || onLongClick != null
+                },
+        descriptionTextColor = tint,
+        iconTint = tint,
         labelOverflow = TextOverflow.MiddleEllipsis,
         afterListItemAction = {
             if (areAfterListItemIconsVisible) {
@@ -111,22 +185,30 @@ internal fun FileListItem(
             }
         },
         belowListItemContent = {
-            when (fileItem.status) {
-                FileItem.Status.Initiated -> {
-                    DownloadProgressIndicator(progress = null)
-                }
-                is FileItem.Status.Downloading -> {
-                    DownloadProgressIndicator(progress = fileItem.status.progress)
-                }
-                is FileItem.Status.Paused -> {
-                    if (fileItem.status.progress != null) {
-                        DownloadProgressIndicator(progress = fileItem.status.progress)
-                    }
-                }
-                else -> {}
-            }
+            FileListItemProgressIndicator(status = fileItem.status)
         },
     )
+}
+
+@Composable
+private fun FileListItemProgressIndicator(status: FileItem.Status) {
+    when (status) {
+        FileItem.Status.Initiated -> {
+            DownloadProgressIndicator(progress = null)
+        }
+
+        is FileItem.Status.Downloading -> {
+            DownloadProgressIndicator(progress = status.progress)
+        }
+
+        is FileItem.Status.Paused -> {
+            if (status.progress != null) {
+                DownloadProgressIndicator(progress = status.progress)
+            }
+        }
+
+        else -> {}
+    }
 }
 
 @Composable
@@ -136,7 +218,7 @@ private fun AfterListItemAction(
     onPauseClick: (id: String) -> Unit,
     onResumeClick: (id: String) -> Unit,
     onRetryClick: (id: String) -> Unit,
-    onDeleteClick: (FileItem) -> Unit,
+    onDeleteClick: (FileItem, Boolean) -> Unit,
     onShareUrlClick: (FileItem) -> Unit,
     onShareFileClick: (FileItem) -> Unit,
     onRenameFileClick: (FileItem) -> Unit,
@@ -158,6 +240,7 @@ private fun AfterListItemAction(
                 )
             }
         }
+
         is FileItem.Status.Paused -> {
             IconButton(
                 onClick = { onResumeClick(fileItem.id) },
@@ -170,6 +253,7 @@ private fun AfterListItemAction(
                 )
             }
         }
+
         FileItem.Status.Cancelled -> {}
         FileItem.Status.Failed -> {
             IconButton(
@@ -203,7 +287,7 @@ private fun AfterListItemAction(
             menuItems =
                 getContextMenuItems(
                     status = fileItem.status,
-                    onDeleteClick = { onDeleteClick(fileItem) },
+                    onDeleteClick = { onDeleteClick(fileItem, false) },
                     onShareUrlClick = { onShareUrlClick(fileItem) },
                     onShareFileClick = { onShareFileClick(fileItem) },
                     onRenameFileClick = { onRenameFileClick(fileItem) },
@@ -274,6 +358,7 @@ private fun getContextMenuItems(
                     level = MenuItem.FixedItem.Level.Critical,
                 ),
             )
+
         else ->
             listOf(
                 MenuItem.TextItem(
@@ -583,12 +668,15 @@ private fun FileListItemPreview(
             isSelected = state.value.isSelected,
             fileItem = state.value.fileItem,
             areAfterListItemIconsVisible = state.value.areAfterListItemIconsVisible,
+            swipingEnabled = true,
             modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            onClick = {},
+            onLongClick = {},
             onPauseClick = {},
             onResumeClick = {},
             onRetryClick = {},
             onShareFileClick = {},
-            onDeleteClick = {},
+            onDeleteClick = { _, _ -> },
             onShareUrlClick = {},
             onRenameFileClick = {},
         )

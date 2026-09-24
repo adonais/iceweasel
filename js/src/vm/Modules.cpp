@@ -27,6 +27,7 @@
 #include "js/friend/StackLimits.h"      // js::AutoCheckRecursionLimit
 #include "js/RootingAPI.h"              // JS::MutableHandle
 #include "js/Value.h"                   // JS::Value
+#include "js/WasmModule.h"              // JS::WasmModule
 #include "vm/EnvironmentObject.h"       // js::ModuleEnvironmentObject
 #include "vm/JSAtomUtils.h"             // AtomizeString
 #include "vm/JSContext.h"               // CHECK_THREAD, JSContext
@@ -343,11 +344,28 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
 
-  wasm::BytecodeSource source(srcBuf.begin(), srcBuf.length());
-  RootedObject wasmModuleObject(cx);
-  if (!wasm::CompileForESM(cx, options, source, &wasmModuleObject)) {
+  SharedWasmCompileArgs compileArgs = BuildCompileArgsForESM(cx, options);
+  if (!compileArgs) {
     return nullptr;
   }
+
+  ESMCompileResult compileResult =
+      CompileForESM(*compileArgs, srcBuf.begin(), srcBuf.length());
+
+  RootedObject wasmModuleObject(cx);
+  if (!FinishCompileForESM(cx, *compileArgs, compileResult,
+                           &wasmModuleObject)) {
+    return nullptr;
+  }
+
+  return CreateWasmSourcePhaseModule(cx, wasmModuleObject);
+}
+
+JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
+    JSContext* cx, Handle<JSObject*> wasmModuleObject) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
 
   Rooted<ModuleObject*> moduleObject(cx, ModuleObject::create(cx));
   if (!moduleObject) {
@@ -727,6 +745,18 @@ static ModuleObject* GetImportedModule(
   return record->value();
 }
 
+// Export star default proposal:
+// https://tc39.es/proposal-export-star-default/
+//
+// When enabled, `export * from "mod"` may also provide mod's default export.
+static bool ExportStarDefaultEnabled() {
+#ifdef NIGHTLY_BUILD
+  return JS::Prefs::experimental_export_star_default();
+#else
+  return false;
+#endif
+}
+
 // https://tc39.es/ecma262/#sec-getexportednames
 // ES2023 16.2.1.6.2 GetExportedNames
 static bool ModuleGetExportedNames(
@@ -804,7 +834,13 @@ static bool ModuleGetExportedNames(
     // Step 7.c. For each element n of starNames, do:
     for (JSAtom* name : starNames) {
       // Step 7.c.i. If SameValue(n, "default") is false, then:
-      if (name != cx->names().default_) {
+
+      // Export star default proposal
+      // https://tc39.es/proposal-export-star-default/#sec-getexportednames
+      //
+      // This step is deleted, so "default" is no longer excluded here.
+      // (see ExportStarDefaultEnabled())
+      if (ExportStarDefaultEnabled() || name != cx->names().default_) {
         // Step 7.c.i.1. If n is not an element of exportedNames, then:
         if (!ContainsElement(exportedNames, name)) {
           // Step 7.c.i.1.a. Append n to exportedNames.
@@ -1019,7 +1055,14 @@ static bool CyclicModuleResolveExport(JSContext* cx,
   }
 
   // Step 7. If exportName is "default"), then:
-  if (exportName == cx->names().default_) {
+
+  // Export star default proposal
+  // https://tc39.es/proposal-export-star-default/#sec-resolveexport
+  //
+  // This entire step is deleted, so "default" falls through to the
+  // star-export search in steps below like any other name.
+  // (see ExportStarDefaultEnabled())
+  if (!ExportStarDefaultEnabled() && exportName == cx->names().default_) {
     // Step 7.a. Assert: A default export was not explicitly defined by this
     //           module.
     // Step 7.b. Return null.

@@ -294,7 +294,7 @@ bool wasm::ToValType(JSContext* cx, HandleValue v, ValType* out) {
     *out = ValType::F32;
   } else if (StringEqualsLiteral(typeLinearStr, "f64")) {
     *out = ValType::F64;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   } else if (SimdAvailable(cx) && StringEqualsLiteral(typeLinearStr, "v128")) {
     *out = ValType::V128;
 #endif

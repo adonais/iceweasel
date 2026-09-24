@@ -2177,6 +2177,11 @@ void PeerConnectionImpl::GetDefaultRtpExtensions(
         nsLiteralCString(webrtc::RtpExtension::kTransportSequenceNumberUri)};
     aRtpExtensions->AppendElement(std::move(transportSequenceNumber));
   }
+
+  RtpExtensionHeader videoOrientation = {
+      JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
+      nsLiteralCString(webrtc::RtpExtension::kVideoRotationUri)};
+  aRtpExtensions->AppendElement(std::move(videoOrientation));
 }
 
 /* static */
@@ -3089,12 +3094,17 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           // We do this to ensure the mediaPipelineFilter is ready to receive
           // PTs in our offer. This is mainly used for when bundle is involved
           // but for whatever reason mid or SSRC is not signaled.
+          // We also update the conduit here to support early media
+          // (bug 2019381): if this transceiver is bundled onto a transport
+          // that was already negotiated (and is thus live), we can start
+          // receiving before this transceiver itself has an answer.
           for (const auto& transceiverImpl : mTransceivers) {
             if ((transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Sendrecv) ||
                 (transceiverImpl->Direction() ==
                  RTCRtpTransceiverDirection::Recvonly)) {
               transceiverImpl->Receiver()->UpdateTransport();
+              transceiverImpl->Receiver()->UpdateConduit();
             }
           }
         }
@@ -4692,8 +4702,12 @@ void PeerConnectionImpl::GatherIfReady() {
     InitLocalAddrs();
   }
 
-  // If we had previously queued gathering or ICE start, unqueue them
-  mQueuedIceCtxOperations.clear();
+  // Unlike before bug 2019381, we don't clear mQueuedIceCtxOperations here:
+  // it can also hold an unrelated, still-pending StartIceChecks (eg; for a
+  // bundled transport that was already negotiated in an earlier round),
+  // which remains valid and must still run. A stale queued gather running
+  // alongside a fresh one is harmless -- EnsureIceGathering() is a no-op
+  // once gathering for the current round is already underway.
   nsCOMPtr<nsIRunnable> runnable(WrapRunnable(
       RefPtr<PeerConnectionImpl>(this), &PeerConnectionImpl::EnsureIceGathering,
       GetPrefDefaultAddressOnly(), GetPrefObfuscateHostAddresses()));

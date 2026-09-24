@@ -115,8 +115,8 @@ private:
 
 class DataFlowTrace {
  public:
-  void ReadCoverage(const std::string &DirPath);
-  bool Init(const std::string &DirPath, std::string *FocusFunction,
+  int ReadCoverage(const std::string &DirPath);
+  int Init(const std::string &DirPath, std::string *FocusFunction,
             std::vector<SizedFile> &CorporaFiles, Random &Rand);
   void Clear() { Traces.clear(); }
   const std::vector<uint8_t> *Get(const std::string &InputSha1) const {

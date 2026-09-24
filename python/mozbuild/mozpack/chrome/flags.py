@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import re
-from collections import OrderedDict
 
 from packaging.version import Version
 
@@ -213,7 +212,7 @@ class VersionFlag:
         return str(self) == other
 
 
-class Flags(OrderedDict):
+class Flags(dict):
     """
     Class to handle a set of flags definitions given on a single manifest
     entry.
@@ -241,7 +240,7 @@ class Flags(OrderedDict):
         Initialize a set of flags given in string form.
            flags = Flags('contentaccessible=yes', 'appversion>=3.5')
         """
-        OrderedDict.__init__(self)
+        dict.__init__(self)
         for f in flags:
             name = self.RE.split(f)
             name = name[0]

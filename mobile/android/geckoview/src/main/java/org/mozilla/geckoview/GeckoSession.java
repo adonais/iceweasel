@@ -168,6 +168,9 @@ public class GeckoSession {
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   private PageExtractionController.SessionPageExtractor mPageExtractor;
 
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private PdfViewerController.SessionEditor mPdfViewerEditor;
+
   /** {@code SessionMagnifier} handles magnifying glass. */
   /* package */ interface SessionMagnifier {
     /**
@@ -2773,6 +2776,20 @@ public class GeckoSession {
       mPdfFileSaver = new SessionPdfFileSaver(this);
     }
     return mPdfFileSaver;
+  }
+
+  /**
+   * Get the PDF viewer editor for this GeckoSession.
+   *
+   * @return The current PDF viewer editor session coordinator.
+   */
+  @AnyThread
+  @ExperimentalGeckoViewApi
+  public @NonNull PdfViewerController.SessionEditor getPdfViewerEditor() {
+    if (mPdfViewerEditor == null) {
+      mPdfViewerEditor = new PdfViewerController.SessionEditor(this);
+    }
+    return mPdfViewerEditor;
   }
 
   /** Represent the result of a save-pdf operation. */

@@ -5,10 +5,10 @@
 //! Resolved values. These are almost always computed values, but in some cases
 //! there are used values.
 
+use crate::ArcSlice;
 #[cfg(feature = "gecko")]
 use crate::device::Device;
 use crate::properties::{ComputedValues, LonghandId, PropertyId};
-use crate::ArcSlice;
 use app_units::Au;
 use servo_arc::Arc;
 use smallvec::SmallVec;

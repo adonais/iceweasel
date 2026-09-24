@@ -116,7 +116,7 @@ Resource.prototype = {
       headers.append("content-type", "text/plain");
     }
 
-    if (this._log.level <= Log.Level.Trace) {
+    if (this._log.traceEnabled) {
       for (const [k, v] of headers) {
         if (k == "authorization" || k == "x-client-state") {
           this._log.trace(`HTTP Header ${k}: ***** (suppressed)`);
@@ -241,7 +241,7 @@ Resource.prototype = {
     );
 
     // Additionally give the full response body when Trace logging.
-    if (this._log.level <= Log.Level.Trace) {
+    if (this._log.traceEnabled) {
       this._log.trace(`${method} body`, data);
     }
 

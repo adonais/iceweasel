@@ -408,6 +408,16 @@ jobs:
           include-push-tasks: true
       when: []
 
+    - name: perftest-applink-profiling
+      job:
+          type: decision-task
+          treeherder-symbol: perftest-applink-p
+          target-tasks-method: perftest-applink-profiling
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {hour: 6, minute: 00}
+
     - name: retrigger-perftests-autoland
       job:
           type: decision-task

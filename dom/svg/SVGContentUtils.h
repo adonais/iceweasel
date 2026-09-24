@@ -130,6 +130,12 @@ class SVGContentUtils {
                               const ComputedStyle* aComputedStyle,
                               const SVGContextPaint* aContextPaint);
 
+  /**
+   * Returns true if some aspect of the stroke depends on percentages.
+   */
+  static bool HasPercentageDependentStroke(
+      const ComputedStyle* aComputedStyle,
+      const SVGContextPaint* aContextPaint);
   /*
    * Get the number of CSS px (user units) per em (i.e. the em-height in user
    * units) for an nsIContent

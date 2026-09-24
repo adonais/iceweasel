@@ -13,7 +13,7 @@ def migrate(ctx):
         target,
         target,
         transforms_from(
-"""
+            """
 fxviewtabrow-send-to-mobile-enable-sync2  = {COPY_PATTERN(from_path, "fxviewtabrow-send-to-mobile-enable-sync.label")}
 fxviewtabrow-send-to-mobile-connect-phone2  = {COPY_PATTERN(from_path, "fxviewtabrow-send-to-mobile-connect-phone.label")}
 fxviewtabrow-send-to-mobile-device-missing2  = {COPY_PATTERN(from_path, "fxviewtabrow-send-to-mobile-device-missing.label")}

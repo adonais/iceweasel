@@ -921,10 +921,16 @@ pub enum DisplayListSection {
 ///
 /// Hence `AuOffset`: accumulated offsets are carried as whole app units and added
 /// to app-unit coordinates, never as f32 layout pixels. See bug 2059570.
+///
+/// Held as i64 rather than nscoord's i32: a single sticky frame's unconstrained
+/// sticky range edge is `nscoord_MIN / 2` app units, and nesting sticky frames
+/// accumulates that with one sign, so four levels exceed i32 (bug 2072044).
+/// Accumulated offsets that large are far past `MAX_EXACT_AU` and so carry no
+/// exactness to preserve; they only have to not overflow.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 struct AuOffset {
-    x: i32,
-    y: i32,
+    x: i64,
+    y: i64,
 }
 
 impl AuOffset {
@@ -994,7 +1000,20 @@ impl AuGrid {
         }
     }
 
-    fn add(&self, v: f32, off_au: i32, off_grid: &mut u32) -> f32 {
+    /// Shift one coordinate by a whole number of app units. An axis with no
+    /// offset is returned untouched: the round trip rounds a coordinate that is
+    /// not a whole app unit onto the grid, so running an unshifted axis through
+    /// it would make the stored value depend on whether the *other* axis was
+    /// scrolled. That difference is far below the quantized raster corners the
+    /// tile cache compares, but interning keys compare bit-exactly, so it would
+    /// invalidate every tile on every scroll offset (bug 2059620). A coordinate
+    /// that is off-grid on an axis that *is* shifted is still rounded, and
+    /// `off_grid_coords` counts it; embedders that intern the rect must keep
+    /// that counter at zero.
+    fn add(&self, v: f32, off_au: i64, off_grid: &mut u32) -> f32 {
+        if off_au == 0 {
+            return v;
+        }
         self.from_au(self.to_au(v, off_grid) + off_au as f64)
     }
 
@@ -1012,8 +1031,8 @@ impl AuGrid {
     /// Convert a vector Gecko supplied (a scroll offset) to whole app units.
     fn vec_to_au(&self, v: LayoutVector2D, off_grid: &mut u32) -> AuOffset {
         AuOffset {
-            x: self.to_au(v.x, off_grid) as i32,
-            y: self.to_au(v.y, off_grid) as i32,
+            x: self.to_au(v.x, off_grid) as i64,
+            y: self.to_au(v.y, off_grid) as i64,
         }
     }
 }
@@ -1716,8 +1735,9 @@ impl DisplayListBuilder {
     /// rounded-rect `ClipOut`. This replaces the scene builder's zero-blur fast
     /// path. Rects are left in the caller's layout space; each `define_*`/
     /// `push_rect` call applies the same scroll-offset normalization for
-    /// `spatial_id`, so they stay aligned. The inner ClipOut carries the spread
-    /// as its snap outset to keep the ring width even under motion (bug 2052033).
+    /// `spatial_id`, so they stay aligned. An inset shadow's ClipOut carries the
+    /// spread as its snap outset to keep the ring width even under motion
+    /// (bug 2052033); an outset shadow's does not -- see that arm.
     fn push_zero_blur_box_shadow(
         &mut self,
         common: &di::CommonItemProperties,
@@ -1778,6 +1798,15 @@ impl DisplayListBuilder {
                     return;
                 }
 
+                // Snap outset 0: unlike the inset arm below, this ClipOut is
+                // already `box_bounds`, so there is no source rect to recover
+                // and it must snap exactly like the element does. Anchoring it
+                // (snap(box_bounds.inflate(spread)) inset by the spread) shifts
+                // the edge off the element's own snapped position by up to a
+                // pixel whenever `spread * device_scale` is fractional, leaving
+                // a partial-coverage seam against anything the element paints
+                // in the same colour -- a border or background abutting the
+                // shadow (bug 2070481).
                 clips.push(self.define_clip_rounded_rect_impl(
                     spatial_id,
                     ComplexClipRegion {
@@ -1786,7 +1815,7 @@ impl DisplayListBuilder {
                         inset: LayoutSideOffsets::zero(),
                         mode: ClipMode::ClipOut,
                     },
-                    spread_radius,
+                    0.0,
                 ));
 
                 (shadow_rect, shadow_radius, shadow_inset)

@@ -158,10 +158,6 @@ know what you are doing.
 
 : Bitmask tracking which onboarding messages have already been shown.
 
-`browser.ipProtection.openedPanelWithLocation` (boolean, default: `false`)
-
-: Tracks whether the user has opened the panel with the egress location visible.
-
 `browser.ipProtection.userEnableCount` (integer, default: `0`)
 
 : Number of times the user has enabled the proxy (capped at 3, used for onboarding).

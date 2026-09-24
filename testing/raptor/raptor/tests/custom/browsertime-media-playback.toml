@@ -1,0 +1,79 @@
+# Media playback power benchmark, hardware-decode track.
+[DEFAULT]
+# Coarse because the reading includes the energy the browser spends just being
+# open, which playback is only a fraction of. Set before the suite had any trunk
+# history, so worth revisiting in either direction once it has some.
+alert_threshold = 5.0
+apps = "firefox, chrome"
+benchmark_webserver = true
+browser_cycles = 1
+custom_data = true
+gecko_profile_features = "stackwalk,processcpu,power"
+gecko_profile_interval = 1
+gecko_profile_threads = "GeckoMain,MediaDecoderStateMachine,MediaPDecoder"
+lower_is_better = true
+measure = "powerUsage_cpu_package, powerUsage_cpu_cores, powerUsage_gpu, presentedFps"
+# The one series the page produces is a frame rate, not energy. Power's own
+# direction is set per-channel by the support class.
+subtest_lower_is_better = false
+owner = "Media Team"
+# Reported as their median, so enough that a couple of disturbed windows cannot
+# move it.
+page_cycles = 15
+page_timeout = 60000
+subtest_unit = "uWh"
+# The workload is out-of-tree so other harnesses can drive the same page. Raptor
+# clones the revision named here and serves only that directory.
+repository = "https://github.com/mozilla/perf-automation"
+repository_revision = "7046a4bd167a082989802856aaa86b77e84e939a"
+repository_path = "benchmarks/media-playback"
+sparse_checkout = true
+support_class = "media_playback.py"
+test_script = "media_playback.js"
+type = "pageload"
+unit = "uWh"
+use_live_sites = false
+# Replaces the raptor profile's values rather than extending them, and is dropped
+# entirely for non-Firefox apps. That profile blocks autoplay outright, which
+# muting does not get past, and background-video suspend would otherwise fire
+# partway through a window and report the saving as real.
+preferences = [
+  "media.autoplay.default=0",
+  "media.autoplay.blocking_policy=0",
+  "media.block-autoplay-until-in-foreground=false",
+  "media.suspend-background-video.enabled=false",
+  "media.hardware-video-decoding.force-enabled=true",
+]
+
+["mp-1080p30-av1-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=av1_1080p30&driver=single&raptor=1"
+
+["mp-1080p30-h264-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=h264_1080p30&driver=single&raptor=1"
+
+["mp-1080p30-vp9-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=vp9_1080p30&driver=single&raptor=1"
+
+["mp-2160p30-av1-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=av1_2160p30&driver=single&raptor=1"
+
+["mp-2160p30-h264-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=h264_2160p30&driver=single&raptor=1"
+
+["mp-2160p30-vp9-hw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=vp9_2160p30&driver=single&raptor=1"
+
+["mp-idle"]
+test_url = "http://<host>:<port>/index.html?driver=idle&raptor=1"
+# No alert_on, and none intended: it is a baseline, and the noisiest series here
+# since it has no signal of its own to swamp the platform's variation. Nothing
+# plays, so no frame rate and no media thread.
+measure = "powerUsage_cpu_package, powerUsage_cpu_cores, powerUsage_gpu"
+subtest_lower_is_better = true
+gecko_profile_threads = "GeckoMain"

@@ -3521,6 +3521,29 @@ class MToFloat16 : public MToFPInstruction {
   ALLOW_CLONE(MToFloat16)
 };
 
+// Converts a uint32 to a float32.
+class MUnsignedToFloat32 : public MUnaryInstruction, public NoTypePolicy::Data {
+  explicit MUnsignedToFloat32(MDefinition* def)
+      : MUnaryInstruction(classOpcode, def) {
+    setResultType(MIRType::Float32);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(UnsignedToFloat32)
+  TRIVIAL_NEW_WRAPPERS
+
+  MDefinition* foldsTo(TempAllocator& alloc) override;
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool canProduceFloat32() const override { return true; }
+
+  ALLOW_CLONE(MUnsignedToFloat32)
+};
+
 // Converts an int32 value to intptr by sign-extending it.
 class MInt32ToIntPtr : public MUnaryInstruction,
                        public UnboxedInt32Policy<0>::Data {

@@ -47,6 +47,15 @@ _INFO = """\
 
 XPCSHELL_FUNCS = "add_task", "run_test", "run_next_test"
 
+# Injected in the Node.js sandbox used to extract metadata. Values returned by
+# stubbed calls must be destructurable and tolerate arbitrary property accesses,
+# since scripts commonly do `const { Foo } = ChromeUtils.importESModule(...)`
+# and then use `Foo` at the top level.
+STUB_RETURN_JS = """\
+globalThis.__perfdocsStubObject = () =>
+  new Proxy({}, { get: (t, p) => (typeof p === "symbol" ? undefined : {}) });
+"""
+
 
 class BadOptionTypeError(Exception):
     """Raised when an option defined in a test has an incorrect type."""
@@ -256,7 +265,7 @@ class ScriptInfo(defaultdict):
             dict: Parsed metadata including `__function_keys__` and `__metadata_name__`.
         """
         global_funcs, global_vars, member_calls = self._classify_globals()
-        stub_declarations = "\n".join(
+        stub_declarations = STUB_RETURN_JS + "\n".join(
             [f"globalThis.{name} = function(){{}};" for name in sorted(global_funcs)]
             + [
                 (
@@ -268,7 +277,9 @@ class ScriptInfo(defaultdict):
             ]
         )
         for obj, funcs in member_calls.items():
-            func_defs = ", ".join(f"{f}: () => true" for f in sorted(funcs))
+            func_defs = ", ".join(
+                f"{f}: () => globalThis.__perfdocsStubObject()" for f in sorted(funcs)
+            )
             stub_declarations += f"\nglobalThis.{obj} = {{ {func_defs} }};"
 
         metadata_names_json = json.dumps(METADATA_NAMES)

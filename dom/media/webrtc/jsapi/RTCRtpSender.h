@@ -173,7 +173,6 @@ class RTCRtpSender : public nsISupports,
   Sequence<RTCRtpEncodingParameters> ToSendEncodings(
       const std::vector<std::string>& aRids) const;
   void MaybeGetJsepRids();
-  void UpdateDtmfSender();
 
   void WarnAboutBadSetParameters(const nsCString& aError);
   nsCString GetEffectiveTLDPlus1() const;

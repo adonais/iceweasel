@@ -348,16 +348,26 @@ class GridActor extends Actor {
     super.destroy();
 
     this.containerEl = null;
-    this.gridFragments = null;
     this.walker = null;
   }
 
-  form() {
-    // Seralize the grid fragment data into JSON so protocol.js knows how to write
-    // and read the data.
-    const gridFragments = this.containerEl.getGridFragments();
-    this.gridFragments = getStringifiableFragments(gridFragments);
+  /**
+   * Returns the grid fragments for this grid container.
+   *
+   * Note that the first call to Element::getGridFragments() for a container
+   * forces a synchronous reflow. Calling this repeatedly can be extremely slow.
+   *
+   * @return {Array} The stringifiable grid fragments.
+   */
+  getFragments() {
+    if (isNodeDead(this.containerEl)) {
+      return [];
+    }
 
+    return getStringifiableFragments(this.containerEl.getGridFragments());
+  }
+
+  form() {
     // Record writing mode and text direction for use by the grid outline.
     const { direction, writingMode } = CssLogic.getComputedStyle(
       this.containerEl
@@ -366,7 +376,6 @@ class GridActor extends Actor {
     const form = {
       actor: this.actorID,
       direction,
-      gridFragments: this.gridFragments,
       writingMode,
     };
 

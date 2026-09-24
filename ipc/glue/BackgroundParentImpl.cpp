@@ -487,7 +487,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvCreateFileSystemManagerParent(
   // The inference process uses ChromeWorkers which have a system principal,
   // so system principals must be allowed there.
   EnumSet<dom::ValidatePrincipalOptions> options;
-  if (BackgroundParent::GetRemoteType(this) == INFERENCE_REMOTE_TYPE) {
+  if (BackgroundParent::GetRemoteType(this).IsInference()) {
     options += dom::ValidatePrincipalOptions::AllowSystemIfLoaded;
   }
   if (!BackgroundParent::ValidatePrincipalInfo(this, aPrincipalInfo, options)) {
@@ -660,7 +660,7 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPFileCreatorConstructor(
   if (!parent) {
     isFileRemoteType = true;
   } else {
-    isFileRemoteType = parent->GetRemoteType() == FILE_REMOTE_TYPE;
+    isFileRemoteType = parent->GetRemoteType().IsFile();
   }
 
   dom::FileCreatorParent* actor =

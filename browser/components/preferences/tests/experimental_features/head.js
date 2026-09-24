@@ -70,10 +70,7 @@ const DEFAULT_LABS_RECIPES = [
   }),
 
   NimbusTestUtils.factories.recipe("bucketing-false", {
-    bucketConfig: {
-      ...NimbusTestUtils.factories.recipe.bucketConfig,
-      count: 0,
-    },
+    bucketConfig: NimbusTestUtils.factories.bucketConfig({ count: 0 }),
     isRollout: true,
     targeting: "true",
     isFirefoxLabsOptIn: true,

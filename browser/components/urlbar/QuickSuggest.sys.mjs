@@ -36,11 +36,38 @@ const SUGGEST_TOU_TIMESTAMP = 1765800000000;
 const EN_LOCALES = ["en-CA", "en-GB", "en-US", "en-ZA"];
 
 /**
- * @typedef {[string[], boolean|number|Function]} RegionLocaleDefault
- *   The first element is an array of locales, e.g. `["en-US", "en-CA"]`. The
- *   second element is either the value of the preference or a function that
- *   should return the value of the preference.
+ * @typedef {[?string[], boolean|number|Function]} RegionLocaleDefault
+ *   A tuple. The first element is either null or an array of locales, e.g.,
+ *   `["en-US", "en-CA"]`. The second element is either the value of the pref or
+ *   a function that should return the value. If the first element is null, the
+ *   pref will be set for all locales; otherwise it will be set only for the
+ *   listed locales.
  */
+
+/**
+ * Boolean-valued `RegionLocaleDefault` records for EU expansion regions in 157
+ * (bug 2066294). Defined in one place here so they don't need to be repeated.
+ *
+ * @type {Record<string, RegionLocaleDefault>}
+ */
+const REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN = {
+  AT: [null, true],
+  BE: [null, true],
+  CH: [null, true],
+  CZ: [null, true],
+  DK: [null, true],
+  ES: [null, true],
+  FI: [null, true],
+  HU: [null, true],
+  IE: [null, true],
+  LU: [null, true],
+  NL: [null, true],
+  NO: [null, true],
+  PL: [null, true],
+  PT: [null, true],
+  SE: [null, true],
+  SK: [null, true],
+};
 
 /**
  * @typedef {object} SuggestPrefsRecord
@@ -77,11 +104,15 @@ const SUGGEST_PREFS = Object.freeze({
   // Please update `test_quicksuggest_defaultPrefs.js` when you change these.
   "quicksuggest.enabled": {
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de", ...EN_LOCALES], true],
       FR: [["fr", ...EN_LOCALES], true],
       GB: [EN_LOCALES, true],
       IT: [["it", ...EN_LOCALES], true],
       US: [EN_LOCALES, true],
+
+      // EU expansion in 157 (bug 2066294)
+      ...REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN,
     },
   },
   "quicksuggest.online.available": {
@@ -91,6 +122,7 @@ const SUGGEST_PREFS = Object.freeze({
   },
   "quicksuggest.settingsUi": {
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de"], SETTINGS_UI.OFFLINE_ONLY],
       FR: [["fr"], SETTINGS_UI.OFFLINE_ONLY],
       GB: [EN_LOCALES, SETTINGS_UI.OFFLINE_ONLY],
@@ -103,25 +135,43 @@ const SUGGEST_PREFS = Object.freeze({
             : SETTINGS_UI.OFFLINE_ONLY;
         },
       ],
+
+      // EU expansion in 157 (bug 2066294)
+      ...Object.fromEntries(
+        Object.entries(REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN).map(
+          ([region, localeDefault]) => [
+            region,
+            [localeDefault[0], SETTINGS_UI.OFFLINE_ONLY],
+          ]
+        )
+      ),
     },
   },
   "suggest.quicksuggest.all": {
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de"], true],
       FR: [["fr"], true],
       GB: [EN_LOCALES, true],
       IT: [["it"], true],
       US: [EN_LOCALES, true],
+
+      // EU expansion in 157 (bug 2066294)
+      ...REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN,
     },
   },
   "suggest.quicksuggest.sponsored": {
     nimbusVariableIfExposedInUi: "quickSuggestSponsoredEnabled",
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de"], true],
       FR: [["fr"], true],
       GB: [EN_LOCALES, true],
       IT: [["it"], true],
       US: [EN_LOCALES, true],
+
+      // EU expansion in 157 (bug 2066294)
+      ...REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN,
     },
   },
 
@@ -135,11 +185,15 @@ const SUGGEST_PREFS = Object.freeze({
   },
   "amp.featureGate": {
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de"], true],
       FR: [["fr"], true],
       GB: [EN_LOCALES, true],
       IT: [["it"], true],
       US: [EN_LOCALES, true],
+
+      // EU expansion in 157 (bug 2066294)
+      ...REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN,
     },
   },
   "flightStatus.featureGate": {
@@ -182,11 +236,15 @@ const SUGGEST_PREFS = Object.freeze({
   },
   "wikipedia.featureGate": {
     defaultValues: {
+      // US, GB, and EU 3 (DE, FR, IT)
       DE: [["de"], true],
       FR: [["fr"], true],
       GB: [EN_LOCALES, true],
       IT: [["it"], true],
       US: [EN_LOCALES, true],
+
+      // EU expansion in 157 (bug 2066294)
+      ...REGION_LOCALE_DEFAULTS_EU_157_BOOLEAN,
     },
   },
   "yelp.featureGate": {
@@ -674,7 +732,7 @@ class _QuickSuggest {
         .map(([prefName, { defaultValues }]) => {
           if (defaultValues?.hasOwnProperty(region)) {
             let [enablingLocales, prefValue] = defaultValues[region];
-            if (enablingLocales.includes(locale)) {
+            if (!enablingLocales || enablingLocales.includes(locale)) {
               if (typeof prefValue == "function") {
                 prefValue = prefValue();
               }

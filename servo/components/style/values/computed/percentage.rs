@@ -4,12 +4,12 @@
 
 //! Computed percentages.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::typed_om::{ToTyped, TypedValue};
 use crate::values::generics::{ClampToNonNegative, NonNegative};
 use crate::values::specified::percentage::ToPercentage;
-use crate::values::{reify_percentage, serialize_normalized_percentage, CSSFloat};
-use crate::Zero;
+use crate::values::{CSSFloat, reify_percentage, serialize_normalized_percentage};
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 use thin_vec::ThinVec;

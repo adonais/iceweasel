@@ -332,6 +332,17 @@ export class SmartFormFillController {
   }
 
   /**
+   * Cancels value generation for a form.
+   *
+   * @param {string} formId The stable form ID.
+   *
+   * @returns {void}
+   */
+  cancelAutofill(formId) {
+    this.#abortValueGenerationControllers.get(formId)?.abort();
+  }
+
+  /**
    * Generates values for a form.
    *
    * @param {string} formId

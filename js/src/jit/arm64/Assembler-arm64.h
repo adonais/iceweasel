@@ -53,7 +53,7 @@ struct ScratchFloat32Scope : public AutoFloatRegisterScope {
       : AutoFloatRegisterScope(masm, ScratchFloat32Reg_) {}
 };
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 static constexpr FloatRegister ReturnSimd128Reg = {FloatRegisters::v0,
                                                    FloatRegisters::Simd128};
 static constexpr FloatRegister ScratchSimd128Reg = {FloatRegisters::v31,

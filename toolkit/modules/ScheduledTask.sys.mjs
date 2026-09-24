@@ -7,6 +7,16 @@
  * If the computer goes to sleep, the task will be run as soon as possible
  * after the computer wakes again.
  */
+
+const lazy = {};
+
+ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
+  console.createInstance({
+    prefix: "ScheduledTask",
+    maxLogLevelPref: "app.update.compulsory_restart_log",
+  })
+);
+
 const topics = ["wake_notification", "sleep_notification"];
 
 export class ScheduledTask {
@@ -18,20 +28,31 @@ export class ScheduledTask {
    *  Function to execute at or after the specified time
    * @param {number} epochMilliseconds
    *  The time (in milliseconds since the Unix epoch) to execute the specified function
+   * @param {number} postWakeDeferralMilliseconds
+   *  (optional) If the process goes to sleep and then wakes up after the specified
+   *     epochMilliseconds, wait for the specified interval before executing the task
    */
-  constructor(callback, epochMilliseconds) {
+  constructor(callback, epochMilliseconds, postWakeDeferralMilliseconds = 0) {
     this.epochMilliseconds = epochMilliseconds;
     this.armed = false;
     this.timer = null;
     this.callback = callback;
+    this.postWakeDeferralMilliseconds = postWakeDeferralMilliseconds;
     this.promise = Promise.resolve();
+    this.observedTopics = [];
+    lazy.logConsole.debug(
+      `Created task to execute at ${epochMilliseconds} with ${postWakeDeferralMilliseconds} post-wake deferreal`
+    );
   }
 
   async _callbackHandler() {
     try {
+      lazy.logConsole.debug("_callbackHandler invoked");
       await this.callback();
+      lazy.logConsole.debug("callback succeeded");
       this.resolve();
     } catch (err) {
+      lazy.logConsole.debug("callback failed");
       this.reject(err);
     } finally {
       this._disableTask();
@@ -39,26 +60,29 @@ export class ScheduledTask {
   }
 
   _createTimer() {
-    const delay = this.epochMilliseconds - Date.now();
-    if (delay >= 0) {
-      const newTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      newTimer.initWithCallback(
-        () => {
-          this._callbackHandler();
-        },
-        delay,
-        Ci.nsITimer.TYPE_ONE_SHOT
-      );
-      return newTimer;
+    let delay = this.epochMilliseconds - Date.now();
+    if (delay < 0) {
+      // We're already past the scheduled time.
+      delay = this.postWakeDeferralMilliseconds;
+      this.postWakeDeferralMilliseconds = 0;
     }
-    ChromeUtils.idleDispatch(() => {
-      this._callbackHandler();
-    });
-    return null;
+    lazy.logConsole.debug(
+      `_createTimer: requested delay of ${delay}, calculated delay of ${delay} milliseconds`
+    );
+    const newTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    newTimer.initWithCallback(
+      () => {
+        this._callbackHandler();
+      },
+      delay,
+      Ci.nsITimer.TYPE_ONE_SHOT
+    );
+    return newTimer;
   }
 
   _destroyTimer() {
     if (this.timer) {
+      lazy.logConsole.debug("cancelling timer");
       this.timer.cancel();
       this.timer = null;
     }
@@ -66,41 +90,49 @@ export class ScheduledTask {
 
   // Callback needed for Services.obs.addObserver
   observe(_subject, topic, _data) {
-    switch (topic) {
-      case "sleep_notification":
-        // Going to sleep now.
-        // Apparently nsITimer (and anything that uses it directly) doesn't count milliseconds during
-        // sleep as part of the time. So the existing timer is no longer useful when going to sleep.
-        // Destroy it.
-        if (this.armed && this.timer) {
-          this._destroyTimer();
-        }
-        break;
-      case "wake_notification":
-        // We're back! Create a timer.
-        if (this.armed && !this.timer) {
-          this.timer = this._createTimer();
-        }
-        break;
+    lazy.logConsole.debug(`Received message on topic ${topic}`);
+    if (this.armed) {
+      switch (topic) {
+        case "sleep_notification":
+          // Going to sleep now.
+          // Apparently nsITimer (and anything that uses it directly) doesn't count milliseconds during
+          // sleep as part of the time. So the existing timer is no longer useful when going to sleep.
+          // Destroy it.
+          if (this.timer) {
+            this._destroyTimer();
+          }
+          break;
+        case "wake_notification":
+          // We're back! Create a timer.
+          if (!this.timer) {
+            this.timer = this._createTimer();
+          }
+          break;
+      }
     }
   }
 
   _enableObservers() {
     topics.forEach(topic => {
       Services.obs.addObserver(this, topic);
+      this.observedTopics.push(topic);
     });
   }
 
   _disableObservers() {
-    topics.forEach(topic => {
+    const iter = this.observedTopics.values();
+    this.observedTopics = [];
+    for (const topic of iter) {
       Services.obs.removeObserver(this, topic);
-    });
+    }
   }
 
   _disableTask() {
     if (this.armed) {
+      lazy.logConsole.debug(`Disabling task`);
       this._destroyTimer();
       this._disableObservers();
+      this.armed = false;
     }
   }
 
@@ -112,6 +144,7 @@ export class ScheduledTask {
    */
   arm() {
     if (!this.armed) {
+      lazy.logConsole.debug(`Arming task`);
       const { promise, resolve, reject } = Promise.withResolvers();
       this.promise = promise;
       this.resolve = resolve;
@@ -129,9 +162,9 @@ export class ScheduledTask {
    */
   disarm() {
     if (this.armed) {
+      lazy.logConsole.debug(`Disarming task`);
       this.resolve();
       this._disableTask();
-      this.armed = false;
     }
     return this; // Enable fluent chaining
   }

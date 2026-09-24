@@ -9,8 +9,8 @@
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["browser.search.separatePrivateDefault", false],
+      ["browser.search.separatePrivateDefault.featureGate", true],
+      ["browser.search.separatePrivateDefault.enabled", false],
     ],
   });
 
@@ -101,7 +101,7 @@ add_task(async function test_search_private_window_no_separate_default() {
 
 add_task(async function test_search_private_window() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.separatePrivateDefault", true]],
+    set: [["browser.search.separatePrivateDefault.enabled", true]],
   });
 
   let engine = SearchService.getEngineByName("MozSearchPrivate");

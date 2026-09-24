@@ -67,7 +67,7 @@ class nsFilePicker final : public nsBaseFilePicker {
   void ClearPortalState();
 #endif
 
-  void DoneCommon(ResultCode);
+  void DoneCommon(ResultCode, nsCOMPtr<nsIFilePickerShownCallback>);
 
   RefPtr<nsWindow> mParentWidget;
   nsCOMPtr<nsIFilePickerShownCallback> mCallback;

@@ -46,28 +46,6 @@ async function getCompatConfig() {
 }
 /* exported getCompatConfig */
 
-function getCurrentVersion() {
-  const { AppConstants } = ChromeUtils.importESModule(
-    "resource://gre/modules/AppConstants.sys.mjs"
-  );
-  return AppConstants.MOZ_APP_VERSION;
-}
-
-// When testing against the release channel close to a new release, Nightly
-// might already have been bumped while release is still lagging behind and
-// now has a gap of 3 versions against Nightly.
-function isReleaseVersionTooOld(compatConfig) {
-  if (compatConfig.runtime.channel !== "release") {
-    // Only relevant when testing release channel.
-    return false;
-  }
-
-  const getMajor = version => Number.parseInt(version.match(/\d+/)[0], 10);
-  return (
-    getMajor(getCurrentVersion()) === getMajor(compatConfig.runtime.version) + 3
-  );
-}
-
 /**
  * Register a test which only runs when a server has been provisioned. Without
  * one the task reports a single passing assertion and returns immediately.
@@ -92,25 +70,6 @@ function addCompatTask(taskFn) {
     info(
       `Testing against ${brandName} ${version} (${channel}) on ${config.host}`
     );
-
-    /**
-     * @backward-compat { version 154 }
-     * This was added during early 156 cycle. With Bug 2064221 we are extending
-     * the backward compatibility window to allow for a gap of 3 versions.
-     * Since the backward compatibility code for v154 was already removed, we
-     * should wait until the beginning of cycle 157 to remove this.
-     *
-     * When Firefox 154 is no longer on release, remove the if block below as
-     * well as the `isReleaseVersionTooOld` helper.
-     */
-    if (isReleaseVersionTooOld(config)) {
-      ok(
-        true,
-        `The release version (${version}) is too old to be tested against the current version (${getCurrentVersion()}). ` +
-          "This should only happen for a few days around release time"
-      );
-      return;
-    }
 
     await taskFn(config);
   });

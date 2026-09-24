@@ -995,33 +995,46 @@ export var PlacesUIUtils = {
   },
 
   getBestTitle: function PUIU_getBestTitle(aNode, aDoNotCutTitle) {
-    var title;
+    let title;
     if (!aNode.title && lazy.PlacesUtils.nodeIsURI(aNode)) {
       // if node title is empty, try to set the label using host and filename
-      // Services.io.newURI will throw if aNode.uri is not a valid URI
-      try {
-        var uri = Services.io.newURI(aNode.uri);
-        var host = uri.host;
-        var fileName = uri.QueryInterface(Ci.nsIURL).fileName;
-        // if fileName is empty, use path to distinguish labels
-        if (aDoNotCutTitle) {
-          title = host + uri.pathQueryRef;
-        } else {
-          title =
-            host +
-            (fileName
-              ? (host ? "/" + Services.locale.ellipsis + "/" : "") + fileName
-              : uri.pathQueryRef);
-        }
-      } catch (e) {
-        // Use (no title) for non-standard URIs (data:, javascript:, ...)
-        title = "";
-      }
+      title = PlacesUIUtils.getBestTitleForUri(aNode.uri, aDoNotCutTitle);
     } else {
       title = aNode.title;
     }
-
+    // Use (no title) for non-standard URIs (data:, javascript:, ...)
     return title || this.promptLocalization.formatValueSync("places-no-title");
+  },
+
+  /**
+   * Generates a title for a URI from its host and file name.
+   *
+   * @param {string} uri
+   *   The URI to generate a title for.
+   * @param {boolean} doNotCutTitle
+   *   Whether to include the full path, query, and fragment in the title.
+   * @returns {string}
+   *   The generated title, or an empty string if the URI is invalid.
+   */
+  getBestTitleForUri(uri, doNotCutTitle) {
+    // Services.io.newURI will throw if aNode.uri is not a valid URI
+    try {
+      let parsedURI = Services.io.newURI(uri);
+      let host = parsedURI.host;
+      let fileName = parsedURI.QueryInterface(Ci.nsIURL).fileName;
+      // if fileName is empty, use path to distinguish labels
+      if (doNotCutTitle) {
+        return host + parsedURI.pathQueryRef;
+      }
+      return (
+        host +
+        (fileName
+          ? (host ? "/" + Services.locale.ellipsis + "/" : "") + fileName
+          : parsedURI.pathQueryRef)
+      );
+    } catch (e) {
+      return "";
+    }
   },
 
   shouldShowTabsFromOtherComputersMenuitem() {

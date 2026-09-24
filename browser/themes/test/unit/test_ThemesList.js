@@ -22,6 +22,7 @@ AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 
 add_setup(async function setup() {
+  Services.fog.initializeFOG();
   AddonTestUtils.createAppInfo(
     "xpcshell@tests.mozilla.org",
     "XPCShell",
@@ -171,6 +172,7 @@ add_task(async function test_updateThemeState_unknownThemeId_logsError() {
 });
 
 add_task(async function test_updateThemeState_disable() {
+  Services.fog.testResetFOG();
   const THEME_ID = "nova-sun@mozilla.org";
   const xpi = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
@@ -195,9 +197,21 @@ add_task(async function test_updateThemeState_disable() {
   // any error.
   result = await manager.updateThemeState(THEME_ID, false);
   Assert.strictEqual(result, true, "returns true when addon is absent");
+
+  Assert.strictEqual(
+    Glean.themePicker.change.testGetValue(),
+    null,
+    "theme_picker.change is never recorded for disabling a theme"
+  );
 });
 
 add_task(async function test_updateThemeState_enable_alreadyInstalledTheme() {
+  Services.fog.testResetFOG();
+  Assert.strictEqual(
+    Glean.themePicker.change.testGetValue(),
+    null,
+    "theme_picker.change has no value before enabling"
+  );
   const THEME_ID = "nova-sun@mozilla.org";
   const xpi = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
@@ -215,7 +229,9 @@ add_task(async function test_updateThemeState_enable_alreadyInstalledTheme() {
   const manager = await getThemesList({
     installSource: TEST_INSTALL_SOURCE,
   });
-  const result = await manager.updateThemeState(THEME_ID, true);
+  const result = await manager.updateThemeState(THEME_ID, true, {
+    layout: "full",
+  });
   Assert.strictEqual(
     result,
     true,
@@ -224,11 +240,33 @@ add_task(async function test_updateThemeState_enable_alreadyInstalledTheme() {
 
   addon = await AddonManager.getAddonByID(THEME_ID);
   Assert.ok(addon.isActive, "Theme is active after enable");
+
+  const events = Glean.themePicker.change.testGetValue();
+  Assert.equal(
+    events?.length,
+    1,
+    "theme_picker.change is recorded exactly once for enabling an already-installed theme"
+  );
+  Assert.equal(events[0].extra.property, "theme", "property is theme");
+  Assert.equal(events[0].extra.theme_id, THEME_ID, "theme_id matches");
+  Assert.equal(
+    events[0].extra.source,
+    TEST_INSTALL_SOURCE,
+    "source matches installSource"
+  );
+  Assert.equal(events[0].extra.layout, "full", "layout matches");
+
   await addon.uninstall();
 });
 
 add_task(
   async function test_updateThemeState_enable_installViaAddonRepository() {
+    Services.fog.testResetFOG();
+    Assert.strictEqual(
+      Glean.themePicker.change.testGetValue(),
+      null,
+      "theme_picker.change has no value before enabling"
+    );
     const THEME_ID = "nova-sun@mozilla.org";
     const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
     const xpi = AddonTestUtils.createTempWebExtensionFile({
@@ -267,7 +305,9 @@ add_task(
     const manager = await getThemesList({
       installSource: TEST_INSTALL_SOURCE,
     });
-    const result = await manager.updateThemeState(THEME_ID, true);
+    const result = await manager.updateThemeState(THEME_ID, true, {
+      layout: "compact",
+    });
     Assert.strictEqual(
       result,
       true,
@@ -289,6 +329,22 @@ add_task(
       "FirefoxThemesList",
       "installTelemetryInfo.method is set to FirefoxThemesList"
     );
+
+    const events = Glean.themePicker.change.testGetValue();
+    Assert.equal(
+      events?.length,
+      1,
+      "theme_picker.change is recorded exactly once for a fresh install"
+    );
+    Assert.equal(events[0].extra.property, "theme", "property is theme");
+    Assert.equal(events[0].extra.theme_id, THEME_ID, "theme_id matches");
+    Assert.equal(
+      events[0].extra.source,
+      TEST_INSTALL_SOURCE,
+      "source matches installSource"
+    );
+    Assert.equal(events[0].extra.layout, "compact", "layout matches");
+
     await addon.uninstall();
     Services.prefs.clearUserPref("extensions.getAddons.get.url");
   }
@@ -440,7 +496,7 @@ add_task(async function test_updateThemeState_installListener() {
   const manager = await getThemesList({
     installSource: TEST_INSTALL_SOURCE,
   });
-  await manager.updateThemeState(THEME_ID, true, installListener);
+  await manager.updateThemeState(THEME_ID, true, { installListener });
 
   Assert.ok(
     firedEvents.includes("onDownloadStarted"),

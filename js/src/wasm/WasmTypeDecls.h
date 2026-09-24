@@ -56,11 +56,14 @@ class CodeBlock;
 class Decoder;
 class GeneratedSourceMap;
 class Instance;
-class Module;
 #ifdef ENABLE_WASM_COMPONENTS
 class Component;
 class ComponentInstance;
 #endif
+
+class Module;
+using MutableModule = RefPtr<Module>;
+using SharedModule = RefPtr<const Module>;
 
 class Code;
 using SharedCode = RefPtr<const Code>;

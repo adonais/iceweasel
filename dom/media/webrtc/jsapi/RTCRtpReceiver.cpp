@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -539,8 +540,7 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
 
               // Lastly, fill in video decoder stats
               local.mFramesDecoded.Construct(videoStats->frames_decoded);
-              local.mKeyFramesDecoded.Construct(
-                  videoStats->frame_counts.key_frames);
+              local.mKeyFramesDecoded.Construct(videoStats->key_frames_decoded);
 
               local.mFramesPerSecond.Construct(videoStats->decode_frame_rate);
               local.mFrameWidth.Construct(videoStats->width);
@@ -548,8 +548,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               // XXX: key_frames + delta_frames may undercount frames because
               // they were dropped in FrameBuffer::InsertFrame. (bug 1766553)
               local.mFramesReceived.Construct(
-                  videoStats->frame_counts.key_frames +
-                  videoStats->frame_counts.delta_frames);
+                  videoStats->received_frame_counts.key_frames +
+                  videoStats->received_frame_counts.delta_frames);
               local.mJitterBufferDelay.Construct(
                   videoStats->jitter_buffer_delay.seconds<double>());
               local.mJitterBufferTargetDelay.Construct(
@@ -753,13 +753,37 @@ void RTCRtpReceiver::UpdateTransport() {
       (mPc->GetSignalingState() == RTCSignalingState::Stable);
 
   auto const& details = GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails();
-  std::vector<webrtc::RtpExtension> extmaps;
+  std::map<std::string, webrtc::RtpExtension> extmapsByUri;
   if (GetJsepTransceiver().HasBundleLevel()) {
     if (details) {
       details->ForEachRTPHeaderExtension(
-          [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
-            extmaps.emplace_back(extmap.extensionname, extmap.entry);
+          [&extmapsByUri](const SdpExtmapAttributeList::Extmap& extmap) {
+            extmapsByUri.insert_or_assign(
+                extmap.extensionname.get(),
+                webrtc::RtpExtension(
+                    extmap.extensionname,
+                    webrtc::RtpHeaderExtensionId(extmap.entry)));
           });
+    }
+    if (!signalingStable) {
+      // Early media (bug 2019381): the negotiated details above only
+      // reflect the last completed offer/answer round, which can be stale
+      // during a pending local offer -- e.g. an extension the offer just
+      // (re)added wouldn't be recognized yet, since Negotiate() hasn't run
+      // for this round. Layer in whatever the pending offer itself
+      // declares, so the demux filter built below already knows about it.
+      for (const auto& extmap :
+           GetJsepTransceiver().mRecvTrack.GetEarlyRtpExtensions()) {
+        extmapsByUri.insert_or_assign(
+            extmap.extensionname.get(),
+            webrtc::RtpExtension(extmap.extensionname,
+                                 webrtc::RtpHeaderExtensionId(extmap.entry)));
+      }
+    }
+    std::vector<webrtc::RtpExtension> extmaps;
+    extmaps.reserve(extmapsByUri.size());
+    for (auto& [uri, extmap] : extmapsByUri) {
+      extmaps.push_back(extmap);
     }
 
     filter = MakeUnique<MediaPipelineFilter>(extmaps);
@@ -800,6 +824,44 @@ void RTCRtpReceiver::UpdateTransport() {
   }
 }
 
+bool RTCRtpReceiver::CanReceiveEarlyMedia() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!GetJsepTransceiver().mRecvTrack.GetReceptive()) {
+    // The local description we just applied isn't actually offering to
+    // receive right now ([[Receptive]] per WEBRTC-PC); defer entirely to
+    // IsReceiving(), which reflects the real negotiated outcome via
+    // mCurrentDirection. mTransceiver->Direction() is only the app's
+    // preferred direction and can disagree with what was actually applied.
+    return false;
+  }
+  if (mPc->GetSignalingState() != RTCSignalingState::Have_local_offer) {
+    // No pending, unanswered local offer right now to be tentative about.
+    return false;
+  }
+  if (!HasNegotiatedBundleOwner()) {
+    // Only a bundle with at least one negotiated member is actually live
+    // (has gone through ICE/DTLS); a fresh bundle cannot have received
+    // anything yet.
+    return false;
+  }
+  // Only tentative if our own recv-relevant offer actually changed this
+  // round; otherwise the real negotiated details -- still valid, and
+  // unaffected by an unrelated renegotiation elsewhere in the session --
+  // should keep being used instead.
+  return mPc->LocalOfferedRecvParamsChanged(GetMid());
+}
+
+bool RTCRtpReceiver::HasNegotiatedBundleOwner() {
+  MOZ_ASSERT(NS_IsMainThread());
+  // See JsepSessionImpl::SetLocalDescription() for how this is computed:
+  // it identifies whichever transceiver currently owns this mid's transport
+  // (the bundle tag, or this transceiver itself if unbundled) and checks
+  // whether *that* transceiver already had its own transport as of last
+  // round -- not just BundleLevel() (which JSEP can clear speculatively
+  // mid-round -- see EnsureHasOwnTransport()).
+  return GetJsepTransceiver().CanUseExistingTransport();
+}
+
 void RTCRtpReceiver::UpdateConduit() {
   if (mPipeline->mConduit->type() == MediaSessionConduit::VIDEO) {
     UpdateVideoConduit();
@@ -807,7 +869,7 @@ void RTCRtpReceiver::UpdateConduit() {
     UpdateAudioConduit();
   }
 
-  if ((mReceiving = mTransceiver->IsReceiving())) {
+  if ((mReceiving = mTransceiver->IsReceiving() || CanReceiveEarlyMedia())) {
     mHaveStartedReceiving = true;
   }
 }
@@ -846,8 +908,19 @@ void RTCRtpReceiver::UpdateVideoConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381); see CanReceiveEarlyMedia(). Once a real
+    // answer arrives, the negotiated-details branch below takes back over.
+    std::vector<VideoCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mVideoCodecs = configs;
+      mVideoRtpRtcpConfig =
+          Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
 
@@ -856,7 +929,8 @@ void RTCRtpReceiver::UpdateVideoConduit() {
       // @@NG read extmap from track
       details.ForEachRTPHeaderExtension(
           [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
-            extmaps.emplace_back(extmap.extensionname, extmap.entry);
+            extmaps.emplace_back(extmap.extensionname,
+                                 webrtc::RtpHeaderExtensionId(extmap.entry));
           });
       mLocalRtpExtensions = extmaps;
     }
@@ -904,8 +978,17 @@ void RTCRtpReceiver::UpdateAudioConduit() {
     }
   }
 
-  if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
-      GetJsepTransceiver().mRecvTrack.GetActive()) {
+  if (CanReceiveEarlyMedia()) {
+    // Early media (bug 2019381); see CanReceiveEarlyMedia(). Once a real
+    // answer arrives, the negotiated-details branch below takes back over.
+    std::vector<AudioCodecConfig> configs;
+    RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+        GetJsepTransceiver().mRecvTrack, &configs);
+    if (!configs.empty()) {
+      mAudioCodecs = configs;
+    }
+  } else if (GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails() &&
+             GetJsepTransceiver().mRecvTrack.GetActive()) {
     const auto& details(
         *GetJsepTransceiver().mRecvTrack.GetNegotiatedDetails());
     std::vector<AudioCodecConfig> configs;
@@ -927,7 +1010,8 @@ void RTCRtpReceiver::UpdateAudioConduit() {
       // @@NG read extmap from track
       details.ForEachRTPHeaderExtension(
           [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
-            extmaps.emplace_back(extmap.extensionname, extmap.entry);
+            extmaps.emplace_back(extmap.extensionname,
+                                 webrtc::RtpHeaderExtensionId(extmap.entry));
           });
       mLocalRtpExtensions = extmaps;
     }

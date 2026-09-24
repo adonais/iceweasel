@@ -61,6 +61,17 @@ nsGenericHTMLElement* HTMLLabelElement::GetControlForBindings() const {
   return static_cast<nsGenericHTMLElement*>(element);
 }
 
+nsChangeHint HTMLLabelElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
+  nsChangeHint retval =
+      nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
+  if (OwnerDoc()->ChromeRulesEnabled() &&
+      (aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::value)) {
+    retval |= nsChangeHint_ReconstructFrame;
+  }
+  return retval;
+}
+
 void HTMLLabelElement::Focus(const FocusOptions& aOptions,
                              const CallerType aCallerType,
                              ErrorResult& aError) {

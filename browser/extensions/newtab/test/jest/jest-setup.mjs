@@ -24,6 +24,25 @@ globalThis.matchMedia = () => ({
   removeEventListener: () => {},
 });
 
+// jsdom implements neither PointerEvent nor pointer capture. Tests need to be
+// able to create the event; capture does nothing here.
+if (!globalThis.PointerEvent) {
+  globalThis.PointerEvent = class PointerEvent extends globalThis.MouseEvent {
+    constructor(type, params = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 0;
+      this.pointerType = params.pointerType ?? "";
+      this.isPrimary = params.isPrimary ?? false;
+    }
+  };
+}
+
+if (!globalThis.Element.prototype.setPointerCapture) {
+  globalThis.Element.prototype.setPointerCapture = () => {};
+  globalThis.Element.prototype.releasePointerCapture = () => {};
+  globalThis.Element.prototype.hasPointerCapture = () => false;
+}
+
 if (globalThis.performance && !globalThis.performance.getEntriesByType) {
   Object.defineProperty(globalThis.performance, "getEntriesByType", {
     writable: true,

@@ -23,7 +23,6 @@ struct Resolution {
   }
 
   bool operator==(const Resolution& aOther) const = default;
-  bool operator!=(const Resolution& aOther) const = default;
 
   float mX = 1.0f;
   float mY = 1.0f;

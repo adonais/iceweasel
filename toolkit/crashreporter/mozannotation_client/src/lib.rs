@@ -53,7 +53,7 @@ impl Drop for Annotation {
             _ => {
                 // Nothing to do
             }
-        };
+        }
     }
 }
 
@@ -63,8 +63,8 @@ pub struct AnnotationTable {
 }
 
 impl AnnotationTable {
-    const fn new() -> AnnotationTable {
-        AnnotationTable {
+    const fn new() -> Self {
+        Self {
             data: Vec::new(),
             magic_number: ANNOTATION_TYPE,
         }
@@ -99,8 +99,9 @@ static MOZANNOTATIONS: AnnotationMutex = Mutex::new(AnnotationTable::new());
 static MOZANNOTATIONS: AnnotationMutex = Mutex::new(AnnotationTable::new());
 
 #[no_mangle]
+#[allow(clippy::no_mangle_with_rust_abi)]
 unsafe fn mozannotation_get() -> *const AnnotationMutex {
-    &MOZANNOTATIONS as _
+    std::ptr::from_ref(&MOZANNOTATIONS)
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

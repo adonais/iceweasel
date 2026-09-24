@@ -202,6 +202,29 @@ tasks:
             env:
                 MOZ_PERFHERDER_UPLOAD: /builds/worker/perfherder-data-apk-size.json
 
+    fenix-nightly-nobp:
+        description: 'Nightly Fenix build without a baseline profile'
+        dependencies:
+            build-fat-aar: build-fat-aar-android-geckoview-fat-aar/opt
+        include-nightly-version: true
+        source-project-name: "fenix"
+        run:
+            gradle-build-type: nightly
+            gradle-build-name: nightly
+            gradle-build: fenix
+            track-apk-size: true
+        run-on-projects: []
+        treeherder:
+            symbol: fenix-nightly-nobp(B)
+            platform: fenix-android-all/opt
+        worker:
+            artifacts:
+                - path: /builds/worker/perfherder-data-apk-size.json
+                  name: public/build/perfherder-data-apk-size.json
+                  type: file
+            env:
+                MOZ_PERFHERDER_UPLOAD: /builds/worker/perfherder-data-apk-size.json
+
     focus-beta:
         description: 'Beta focus build'
         attributes:

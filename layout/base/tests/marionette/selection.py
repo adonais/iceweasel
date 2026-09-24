@@ -102,7 +102,7 @@ class SelectionManager(object):
 
     ::
 
-        element = marionette.find_element(By.ID, 'input')
+        element = marionette.find_element(By.ID, "input")
         sel = SelectionManager(element)
         sel.move_caret_to_front()
 
@@ -146,9 +146,7 @@ class SelectionManager(object):
               for (let i = 0; i < {0}; ++i) {{
                   sel.modify("move", "{1}", "character");
               }}
-              """.format(
-                offset, "backward" if backward else "forward"
-            )
+              """.format(offset, "backward" if backward else "forward")
         )
 
         self.element.marionette.execute_script(

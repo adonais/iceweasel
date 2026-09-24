@@ -44,7 +44,7 @@ Use Ascending Order/Use Descending Order
   By default, descending order is used, and thus the specified class is shown in the top,
   and the base classes are shown below it.
 
-  Choosing the ascending order makes the all fields orderedby the field offset.
+  Choosing the ascending order makes the all fields ordered by the field offset.
 
 Columns
 

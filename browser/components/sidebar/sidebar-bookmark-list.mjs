@@ -27,6 +27,23 @@ const DRAG_HOVER_EXPAND_DELAY_MS = 1000;
 
 let activeDropList = null;
 
+/**
+ * A row in the sidebar bookmarks tree.
+ *
+ * @typedef {object} SidebarBookmarkItem
+ *
+ * @property {string} guid
+ * @property {string} title
+ * @property {string} [uri]
+ * @property {string} [url]
+ * @property {string} [icon]
+ * @property {number} type
+ * @property {SidebarBookmarkItem[]} [children]
+ * @property {boolean} [isPlaceContainer]
+ * @property {boolean} [isTagContainer]
+ * @property {boolean} [isTagsRoot]
+ */
+
 export class SidebarBookmarkList extends SidebarTabList {
   static properties = {
     ...SidebarTabList.properties,
@@ -109,6 +126,13 @@ export class SidebarBookmarkList extends SidebarTabList {
     }
   }
 
+  /**
+   * Calculates a bookmark item's height, including visible descendants.
+   *
+   * @param {SidebarBookmarkItem} item
+   * @param {number} defaultHeight
+   * @returns {number}
+   */
   #itemHeightGetter = (item, defaultHeight) => {
     if (!item.children || !this.expandedFolderGuids.has(item.guid)) {
       return defaultHeight;
@@ -126,6 +150,13 @@ export class SidebarBookmarkList extends SidebarTabList {
     folderLabelEl: ".bookmark-folder-label",
   };
 
+  /**
+   * Renders a bookmark item as a row, folder, or separator.
+   *
+   * @param {SidebarBookmarkItem} tabItem
+   * @param {number} i
+   * @returns {TemplateResult}
+   */
   itemTemplate = (tabItem, i) => {
     const tabIndex = this.treeView?.isActiveNode(this, tabItem.guid) ? 0 : -1;
     if (!tabItem.url && !tabItem.children) {
@@ -138,6 +169,7 @@ export class SidebarBookmarkList extends SidebarTabList {
         .guid=${tabItem.guid}
       ></div>`;
     }
+    const title = this.#getBestTitleForItem(tabItem);
     if (tabItem.children !== undefined) {
       let folderKind = null;
       if (tabItem.isTagsRoot) {
@@ -151,16 +183,16 @@ export class SidebarBookmarkList extends SidebarTabList {
         return html`<div
           class="bookmark-folder-label"
           role="listitem"
-          aria-label=${tabItem.title}
+          aria-label=${title}
           data-folder-kind=${ifDefined(folderKind)}
           tabindex=${tabIndex}
           draggable="true"
           data-guid=${tabItem.guid}
           @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
-          @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
+          @mouseenter=${e => this.#updateFolderTooltip(e, title)}
           .guid=${tabItem.guid}
         >
-          ${tabItem.title}
+          ${title}
         </div>`;
       }
       return html`
@@ -176,9 +208,9 @@ export class SidebarBookmarkList extends SidebarTabList {
             tabindex=${tabIndex}
             data-guid=${tabItem.guid}
             @auxclick=${e => this.#onFolderAuxClick(e, tabItem.guid)}
-            @mouseenter=${e => this.#updateFolderTooltip(e, tabItem.title)}
+            @mouseenter=${e => this.#updateFolderTooltip(e, title)}
           >
-            ${tabItem.title}
+            ${title}
           </summary>
           <div id="content">
             <sidebar-bookmark-list
@@ -220,12 +252,26 @@ export class SidebarBookmarkList extends SidebarTabList {
         .selected=${this.isTabItemSelected(tabItem)}
         .tabElement=${ifDefined(tabItem.tabElement)}
         tabindex=${tabIndex}
-        .title=${tabItem.title}
+        .title=${title}
         .url=${tabItem.url}
         @keydown=${e => e.currentTarget.primaryActionHandler(e)}
       ></sidebar-bookmark-row>
     `;
   };
+
+  /**
+   * Gets a display title for a bookmark item.
+   *
+   * @param {SidebarBookmarkItem} tabItem
+   * @returns {string}
+   */
+  #getBestTitleForItem(tabItem) {
+    return (
+      tabItem.title ||
+      lazy.PlacesUIUtils.getBestTitleForUri(tabItem.uri, true) ||
+      lazy.PlacesUIUtils.promptLocalization.formatValueSync("places-no-title")
+    );
+  }
 
   stylesheets() {
     return [

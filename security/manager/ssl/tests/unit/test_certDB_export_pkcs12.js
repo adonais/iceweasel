@@ -15,24 +15,15 @@ const PKCS12_FILE = "test_certDB_import/cert_from_windows.pfx";
 const CERT_COMMON_NAME = "test_cert_from_windows";
 const TEST_CERT_PASSWORD = "黒い";
 
-function findCertByCommonName(commonName) {
-  for (let cert of gCertDB.getCerts()) {
-    if (cert.commonName == commonName) {
-      return cert;
-    }
-  }
-  return null;
-}
-
-function run_test() {
+add_task(async function run_test() {
   // Import the certificate and key so we have something to export.
-  let cert = findCertByCommonName(CERT_COMMON_NAME);
+  let cert = await findCertByCommonName(CERT_COMMON_NAME);
   equal(cert, null, "cert should not be found before import");
   let certFile = do_get_file(PKCS12_FILE);
   ok(certFile, `${PKCS12_FILE} should exist`);
   let errorCode = gCertDB.importPKCS12File(certFile, TEST_CERT_PASSWORD);
   equal(errorCode, Ci.nsIX509CertDB.Success, "cert should be imported");
-  cert = findCertByCommonName(CERT_COMMON_NAME);
+  cert = await findCertByCommonName(CERT_COMMON_NAME);
   notEqual(cert, null, "cert should be found now");
 
   // Export the certificate and key.
@@ -52,4 +43,4 @@ function run_test() {
   // Unfortunately, since deleting a certificate currently doesn't actually do
   // anything until the platform is restarted, we can't confirm that we
   // successfully re-imported the certificate.
-}
+});

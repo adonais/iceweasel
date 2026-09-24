@@ -161,10 +161,6 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
   mParameters.mCodecs.Construct();
   UpdateParametersRtcp();
   mParameters.mHeaderExtensions.Construct();
-
-  if (mDtmf) {
-    mWatchManager.Watch(mTransmitting, &RTCRtpSender::UpdateDtmfSender);
-  }
 }
 
 #undef INIT_CANONICAL
@@ -1919,6 +1915,12 @@ void RTCRtpSender::SyncFromJsep(const JsepTransceiver& aJsepTransceiver) {
 }
 
 void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
+  if (!mTransceiver->GetPreferredCodecs().IsEmpty()) {
+    aJsepTransceiver.mSendTrack.PopulatePreferredCodecs(
+        mTransceiver->GetPreferredCodecs(),
+        mTransceiver->GetPreferredCodecsInUse());
+  }
+
   std::vector<std::string> streamIds;
   for (const auto& stream : mStreams) {
     nsString wideStreamId;
@@ -2228,7 +2230,8 @@ void RTCRtpSender::UpdateBaseConfig(BaseConfig* aConfig) {
       // @@NG read extmap from track
       details.ForEachRTPHeaderExtension(
           [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
-            extmaps.emplace_back(extmap.extensionname, extmap.entry);
+            extmaps.emplace_back(extmap.extensionname,
+                                 webrtc::RtpHeaderExtensionId(extmap.entry));
           });
       aConfig->mLocalRtpExtensions = std::move(extmaps);
     }
@@ -2297,18 +2300,6 @@ std::string RTCRtpSender::GetMid() const { return mTransceiver->GetMidAscii(); }
 
 JsepTransceiver& RTCRtpSender::GetJsepTransceiver() {
   return mTransceiver->GetJsepTransceiver();
-}
-
-void RTCRtpSender::UpdateDtmfSender() {
-  if (!mDtmf) {
-    return;
-  }
-
-  if (mTransmitting) {
-    return;
-  }
-
-  mDtmf->StopPlayout();
 }
 
 void RTCRtpSender::SetTransform(RTCRtpScriptTransform* aTransform,

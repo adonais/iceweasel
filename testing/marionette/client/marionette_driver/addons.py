@@ -16,7 +16,8 @@ class AddonInstallException(errors.MarionetteException):
 class Addons:
     """An API for installing and inspecting addons during Gecko
     runtime. This is a partially implemented wrapper around Gecko's
-    `AddonManager API`_.
+    `AddonManager API
+    <https://firefox-source-docs.mozilla.org/toolkit/mozapps/extensions/addon-manager/AddonManager.html>`_.
 
     For example::
 
@@ -24,8 +25,6 @@ class Addons:
 
         addons = Addons(marionette)
         addons.install("/path/to/extension.xpi")
-
-    .. _AddonManager API: https://developer.mozilla.org/en-US/Add-ons/Add-on_Manager
 
     """
 

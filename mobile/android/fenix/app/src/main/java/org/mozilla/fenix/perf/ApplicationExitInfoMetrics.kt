@@ -17,6 +17,7 @@ import androidx.core.content.edit
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.GleanMetrics.AppExitInfo
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getPreferenceKey
@@ -49,6 +50,8 @@ object ApplicationExitInfoMetrics {
     }
 
     @VisibleForTesting(otherwise = PRIVATE) internal const val PREFERENCE_NAME = "app_exit_info"
+
+    private val logger = Logger("ApplicationExitInfoMetrics")
 
     /**
      * Returns all historical process exits mapped to [ProcessExitRecord] for display purposes. Unlike
@@ -92,10 +95,20 @@ object ApplicationExitInfoMetrics {
         record(context, lastTimeHandled, historicalExitReasons)
     }
 
+    // Some OEM AMS implementations violate the platform contract and throw
+    // IllegalArgumentException from getHistoricalProcessExitReasons (bug 2072086). Return an
+    // empty list on failure — callers already treat empty as "no data".
+    @Suppress("TooGenericExceptionCaught")
     @RequiresApi(Build.VERSION_CODES.R)
     private fun getHistoricalProcessExits(context: Context): List<ApplicationExitInfo> {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val applicationExitInfoList = activityManager.getHistoricalProcessExitReasons(null, 0, 0)
+        val applicationExitInfoList =
+            try {
+                activityManager.getHistoricalProcessExitReasons(null, 0, 0)
+            } catch (e: RuntimeException) {
+                logger.warn("getHistoricalProcessExitReasons threw", e)
+                return emptyList()
+            }
         applicationExitInfoList.retainAll {
             shouldRetainApplicationExitInfo(it)
         }

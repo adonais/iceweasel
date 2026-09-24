@@ -492,6 +492,9 @@ browsertime-benchmark-speedometer3-mobile:
 
 browsertime-benchmark-motionmark-1-3:
     description: Raptor (browsertime) Motionmark 1.3 benchmark tests
+    fetches:
+        fetch:
+            - motionmark
     raptor:
         apps: [geckoview, fenix, chrome-m, cstm-car-m]
         subtests:
@@ -514,6 +517,9 @@ browsertime-benchmark-motionmark-1-3:
 
 browsertime-benchmark-jetstream3:
     description: Raptor (browsertime) jetstream 3 benchmark test
+    fetches:
+        fetch:
+            - pgo-extended-corpus
     raptor:
         # Bug 1954124 not quite ready for Fenix and GVE
         apps: [chrome-m, cstm-car-m, fenix]

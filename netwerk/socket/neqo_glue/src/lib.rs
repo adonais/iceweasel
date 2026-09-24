@@ -521,7 +521,6 @@ impl NeqoHttp3Conn {
             .max_table_size_encoder(max_table_size)
             .max_table_size_decoder(max_table_size)
             .max_blocked_streams(max_blocked_streams)
-            .max_concurrent_push_streams(0)
             .connection_parameters(params)
             .webtransport(webtransport)
             .connect(true)
@@ -539,26 +538,30 @@ impl NeqoHttp3Conn {
             return Err(NS_ERROR_INVALID_ARG);
         };
 
-        let mut additional_shares = usize::from(static_prefs::pref!(
-            "security.tls.client_hello.send_p256_keyshare"
-        ));
+        let mut additional_shares = 1;
+        let mut named_groups = Vec::with_capacity(6);
         if static_prefs::pref!("security.tls.enable_kyber")
             && static_prefs::pref!("network.http.http3.enable_kyber")
         {
-            // These operations are infallible when conn.state == State::Init.
-            conn.set_groups(&[
-                nss_rs::TLS_GRP_KEM_MLKEM768X25519,
-                nss_rs::TLS_GRP_EC_X25519,
-                nss_rs::TLS_GRP_EC_SECP256R1,
-                nss_rs::TLS_GRP_EC_SECP384R1,
-                nss_rs::TLS_GRP_EC_SECP521R1,
-            ])
-            .map_err(|_| NS_ERROR_UNEXPECTED)?;
+            named_groups.push(nss_rs::TLS_GRP_KEM_MLKEM768X25519);
             additional_shares += 1;
         }
+        named_groups.extend_from_slice(&[
+            nss_rs::TLS_GRP_EC_X25519,
+            nss_rs::TLS_GRP_EC_SECP256R1,
+            nss_rs::TLS_GRP_EC_SECP384R1,
+            nss_rs::TLS_GRP_EC_SECP521R1,
+        ]);
+        // ML-KEM-1024 goes last so that it is never offered as a key share, but can
+        // still be negotiated through a HelloRetryRequest.
+        if static_prefs::pref!("security.tls.enable_mlkem1024") {
+            named_groups.push(nss_rs::TLS_GRP_KEM_MLKEM1024);
+        }
+        // These operations are infallible when conn.state == State::Init.
+        conn.set_groups(&named_groups)
+            .map_err(|_| NS_ERROR_UNEXPECTED)?;
         // If additional_shares == 2, send mlkem768x25519, x25519, and p256.
-        // If additional_shares == 1, send {mlkem768x25519, x25519} or {x25519, p256}.
-        // If additional_shares == 0, send x25519.
+        // If additional_shares == 1, send x25519 and p256.
         conn.send_additional_key_shares(additional_shares)
             .map_err(|_| NS_ERROR_UNEXPECTED)?;
 
@@ -828,7 +831,7 @@ impl NeqoHttp3Conn {
             glean::http_3_slow_start_exited.get("not_exited").add(1);
         }
 
-        let cwnd_that_grew = stats.cc.cwnd.filter(|&c| c > MAX_INITIAL_CWND);
+        let cwnd_that_grew = (stats.cc.cwnd > MAX_INITIAL_CWND).then_some(stats.cc.cwnd);
         let growth_label = match (
             cwnd_that_grew,
             stats.cc.slow_start_exit.as_ref().map(|e| e.exit_cwnd),
@@ -1800,6 +1803,7 @@ impl From<TransportError> for CloseError {
             TransportError::NotAvailable => Self::TransportInternalErrorOther(28),
             TransportError::DisabledVersion => Self::TransportInternalErrorOther(29),
             TransportError::UnknownTransportParameter => Self::TransportInternalErrorOther(30),
+            TransportError::TooManyPtos => Self::TransportInternalErrorOther(31),
         }
     }
 }
@@ -1858,6 +1862,7 @@ const fn transport_error_to_glean_label(error: &TransportError) -> &'static str 
         TransportError::VersionNegotiation => "VersionNegotiation",
         TransportError::WrongRole => "WrongRole",
         TransportError::UnknownTransportParameter => "UnknownTransportParameter",
+        TransportError::TooManyPtos => "TooManyPtos",
     }
 }
 
@@ -2241,49 +2246,6 @@ pub extern "C" fn neqo_http3conn_event(
                 stream_id: stream_id.as_u64(),
                 error,
                 local,
-            },
-            Http3ClientEvent::PushPromise {
-                push_id,
-                request_stream_id,
-                headers,
-            } => {
-                let res = convert_h3_to_h1_headers(&headers, data);
-                if res != NS_OK {
-                    return res;
-                }
-                Http3Event::PushPromise {
-                    push_id: push_id.into(),
-                    request_stream_id: request_stream_id.as_u64(),
-                }
-            }
-            Http3ClientEvent::PushHeaderReady {
-                push_id,
-                headers,
-                fin,
-                interim,
-            } => {
-                if interim {
-                    Http3Event::NoEvent
-                } else {
-                    let res = convert_h3_to_h1_headers(&headers, data);
-                    if res != NS_OK {
-                        return res;
-                    }
-                    Http3Event::PushHeaderReady {
-                        push_id: push_id.into(),
-                        fin,
-                    }
-                }
-            }
-            Http3ClientEvent::PushDataReadable { push_id } => Http3Event::PushDataReadable {
-                push_id: push_id.into(),
-            },
-            Http3ClientEvent::PushCanceled { push_id } => Http3Event::PushCanceled {
-                push_id: push_id.into(),
-            },
-            Http3ClientEvent::PushReset { push_id, error } => Http3Event::PushReset {
-                push_id: push_id.into(),
-                error,
             },
             Http3ClientEvent::RequestsCreatable => Http3Event::RequestsCreatable,
             Http3ClientEvent::AuthenticationNeeded => Http3Event::AuthenticationNeeded,

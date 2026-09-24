@@ -10,7 +10,7 @@ use crate::selector_parser::SelectorImpl;
 use crate::shared_lock::{
     DeepCloneWithLock, Locked, SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard,
 };
-use crate::stylesheets::{style_or_page_rule_to_css, CssRules};
+use crate::stylesheets::{CssRules, style_or_page_rule_to_css};
 use cssparser::SourceLocation;
 #[cfg(feature = "gecko")]
 use malloc_size_of::{
@@ -48,7 +48,7 @@ impl DeepCloneWithLock for StyleRule {
                 let rules = rules.read_with(guard);
                 Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard)))
             }),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }

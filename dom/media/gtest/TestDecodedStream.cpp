@@ -18,11 +18,22 @@ using mozilla::media::TimeUnit;
 using testing::Test;
 
 namespace mozilla {
-// Short-hand for DispatchToCurrentThread with a function.
-#define DispatchFunction(f) \
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction(__func__, f))
-
 enum MediaType { Audio = 1, Video = 2, AudioVideo = Audio | Video };
+
+#define ENSURE_TAIL_DISPATCH(f)                                            \
+  do {                                                                     \
+    if (auto* t = AbstractThread::GetCurrent();                            \
+        t && !t->IsTailDispatcherAvailable()) {                            \
+      ASSERT_EQ(__func__, #f)                                              \
+          << "Must only use ENSURE_TAIL_DISPATCH on the current function"; \
+      MOZ_ALWAYS_SUCCEEDS(                                                 \
+          t->Dispatch(NS_NewRunnableFunction(__func__, [&] { f(); })));    \
+      NS_ProcessPendingEvents(nullptr);                                    \
+      return;                                                              \
+    }                                                                      \
+  } while (false)
+
+#define ENSURE_TEST_TAIL_DISPATCH() ENSURE_TAIL_DISPATCH(TestBody)
 
 template <MediaType Type>
 CopyableTArray<RefPtr<ProcessedMediaTrack>> CreateOutputTracks(
@@ -87,40 +98,47 @@ class TestDecodedStream : public Test {
 
   TestDecodedStream()
       : mMockCubeb(MakeRefPtr<MockCubeb>(MockCubeb::RunningMode::Manual)),
-        mGraph(MediaTrackGraphImpl::GetInstance(
-            MediaTrackGraph::SYSTEM_THREAD_DRIVER, /*Window ID*/ 1, kRate,
-            nullptr, GetMainThreadSerialEventTarget())),
-        mDummyTrack(new nsMainThreadPtrHolder<SharedDummyTrack>(
-            __func__, new SharedDummyTrack(
-                          mGraph->CreateSourceTrack(MediaSegment::AUDIO)))),
-        mOutputTracks(CreateOutputTracks<Type>(mGraph)),
         mCanonicalOutputPrincipal(
             AbstractThread::GetCurrent(), PRINCIPAL_HANDLE_NONE,
-            "TestDecodedStream::mCanonicalOutputPrincipal"),
-        mDecodedStream(MakeRefPtr<DecodedStream>(
-            AbstractThread::GetCurrent(), mDummyTrack, mOutputTracks,
-            &mCanonicalOutputPrincipal, /* aVolume = */ 1.0,
-            /* aPlaybackRate = */ 1.0,
-            /* aPreservesPitch = */ true,
-            /* aShouldConfigAudioOutput = */ false,
-            /* aDevice = */ nullptr, mAudioQueue, mVideoQueue)) {
+            "TestDecodedStream::mCanonicalOutputPrincipal") {
     MOZ_ASSERT(NS_IsMainThread());
   };
 
   void SetUp() override {
     MOZ_ASSERT(NS_IsMainThread());
+    ENSURE_TAIL_DISPATCH(SetUp);
+
     CubebUtils::ForceSetCubebContext(mMockCubeb->AsCubebContext());
+
+    mGraph = MediaTrackGraphImpl::GetInstance(
+        MediaTrackGraph::SYSTEM_THREAD_DRIVER, /*Window ID*/ 1, kRate, nullptr,
+        AbstractThread::MainThread());
+    mDummyTrack = new nsMainThreadPtrHolder<SharedDummyTrack>(
+        __func__,
+        new SharedDummyTrack(mGraph->CreateSourceTrack(MediaSegment::AUDIO)));
+    mOutputTracks = CreateOutputTracks<Type>(mGraph);
+    mDecodedStream = MakeRefPtr<DecodedStream>(
+        AbstractThread::GetCurrent(), mDummyTrack, mOutputTracks,
+        &mCanonicalOutputPrincipal, /* aVolume = */ 1.0,
+        /* aPlaybackRate = */ 1.0,
+        /* aPreservesPitch = */ true,
+        /* aShouldConfigAudioOutput = */ false,
+        /* aDevice = */ nullptr, mAudioQueue, mVideoQueue);
 
     for (const auto& track : mOutputTracks) {
       track->QueueSetAutoend(false);
     }
 
-    // Resume the dummy track because a suspended audio track will not use an
-    // AudioCallbackDriver.
+    // Resume the dummy track because a suspended audio track will not use
+    // an AudioCallbackDriver.
     mDummyTrack->mTrack->Resume();
 
     RefPtr fallbackListener = new OnFallbackListener(mDummyTrack->mTrack);
     mDummyTrack->mTrack->AddListener(fallbackListener);
+
+    // Dispatch a dummy task to ensure we trigger stable state.
+    MOZ_ALWAYS_SUCCEEDS(
+        NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, [] {})));
 
     mMockCubebStream = WaitFor(mMockCubeb->StreamInitEvent());
     while (mMockCubebStream->State().isNothing()) {
@@ -137,6 +155,8 @@ class TestDecodedStream : public Test {
 
   void TearDown() override {
     MOZ_ASSERT(NS_IsMainThread());
+    ENSURE_TAIL_DISPATCH(TearDown);
+
     // Destroy all tracks so they're removed from the graph.
     mDecodedStream->Shutdown();
     for (const auto& t : mOutputTracks) {
@@ -155,6 +175,9 @@ class TestDecodedStream : public Test {
     }
     ASSERT_EQ(keepProcessing, MockCubebStream::KeepProcessing::No);
 
+    // Dispatch a dummy task to ensure we trigger stable state.
+    MOZ_ALWAYS_SUCCEEDS(
+        NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, [] {})));
     // Process the final track removal and run the stable state runnable.
     NS_ProcessPendingEvents(nullptr);
     // Process the shutdown runnable.
@@ -171,7 +194,7 @@ class TestDecodedStream : public Test {
     // Graph should be shut down.
     ASSERT_TRUE(mGraph->OnGraphThreadOrNotRunning())
     << "Not on graph thread so graph must still be running!";
-    ASSERT_EQ(mGraph->LifecycleStateRef(),
+    ASSERT_EQ(mGraph->LifecycleState(),
               MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_THREAD_SHUTDOWN)
         << "The graph should be in its final state. Note it does not advance "
            "the state any further on thread shutdown.";
@@ -200,8 +223,13 @@ using TestDecodedStreamV = TestDecodedStream<Video>;
 using TestDecodedStreamAV = TestDecodedStream<AudioVideo>;
 
 TEST_F(TestDecodedStreamAV, StartStop) {
+  ENSURE_TEST_TAIL_DISPATCH();
+
   mDecodedStream->Start(TimeUnit::Zero(), CreateMediaInfo());
   mDecodedStream->SetPlaying(true);
   mDecodedStream->Stop();
 }
 }  // namespace mozilla
+
+#undef ENSURE_TEST_TAIL_DISPATCH
+#undef ENSURE_TAIL_DISPATCH

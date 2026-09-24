@@ -368,7 +368,10 @@ class TabListActionTest {
             )
 
         state =
-            BrowserStateReducer.reduce(state, TabListAction.RemoveTabAction(excludedTabIds = setOf("e"), tabId = "d"))
+            BrowserStateReducer.reduce(
+                state,
+                TabListAction.RemoveTabAction(excludedFallbackTabIds = setOf("e"), tabId = "d"),
+            )
         assertEquals("c", state.selectedTabId)
     }
 
@@ -390,7 +393,7 @@ class TabListActionTest {
         state =
             BrowserStateReducer.reduce(
                 state,
-                TabListAction.RemoveTabsAction(excludedTabIds = setOf("c", "e"), tabIds = listOf("d", "b")),
+                TabListAction.RemoveTabsAction(excludedFallbackTabIds = setOf("c", "e"), tabIds = listOf("d", "b")),
             )
         assertEquals("a", state.selectedTabId)
     }

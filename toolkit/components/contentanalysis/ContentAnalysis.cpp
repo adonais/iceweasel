@@ -3281,7 +3281,7 @@ ContentAnalysis::GetURIForDropEvent(dom::DragEvent* aEvent, nsIURI** aURI) {
   MOZ_ASSERT(widgetEvent);
   MOZ_ASSERT(widgetEvent->mClass == eDragEventClass &&
              widgetEvent->mMessage == eDrop);
-  auto* bp =
+  RefPtr<dom::BrowserParent> bp =
       dom::BrowserParent::GetBrowserParentFromLayersId(widgetEvent->mLayersId);
   NS_ENSURE_TRUE(bp, NS_ERROR_NOT_AVAILABLE);
   auto* bc = bp->GetBrowsingContext();

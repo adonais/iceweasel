@@ -6,10 +6,11 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.MockBrowserDataHelper.createBookmarkItem
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationEffect
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationFacts
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
@@ -18,10 +19,11 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "BookmarksPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "HomePage",
             to = pageName,
+            variant = "default",
             steps =
                 listOf(
                     NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
@@ -29,34 +31,49 @@ class BookmarksPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRu
                 ),
         )
 
-        NavigationRegistry.register(
+        builder.register(
+            from = "HomePage",
+            to = pageName,
+            variant = "with-searchable-bookmark",
+            effects = listOf(NavigationEffect.CreateBookmark("https://www.mozilla.org", "Mozilla")),
+            steps =
+                listOf(
+                    NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
+                    NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON),
+                ),
+            provides = setOf(NavigationFacts.BOOKMARKS_HAVE_ITEMS),
+        )
+
+        builder.register(
             from = "MainMenuPage",
             to = pageName,
             steps = listOf(NavigationStep.Click(MainMenuSelectors.BOOKMARKS_BUTTON)),
         )
 
-        NavigationRegistry.register(
+        builder.register(
             from = pageName,
             to = "BookmarkSearchPage",
-            steps =
-                listOf(
-                    /* The search button only renders when at least one bookmark exists, so we add
-                    one here as a navigation precondition. This adds a hidden "Mozilla" bookmark in any
-                    test navigating through this path — safe as long as no test searches for "moz", "org", etc. */
-                    NavigationStep.Action { createBookmarkItem("https://www.mozilla.org", "Mozilla", null) },
-                    NavigationStep.Click(BookmarksSelectors.SEARCH_BUTTON),
-                ),
+            steps = listOf(NavigationStep.Click(BookmarksSelectors.SEARCH_BUTTON)),
+            requires = setOf(NavigationFacts.BOOKMARKS_HAVE_ITEMS),
+        )
+
+        builder.register(
+            from = pageName,
+            to = "HomePage",
+            steps = listOf(NavigationStep.PressBack),
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): BookmarksPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): BookmarksPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return BookmarksSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = BookmarksSelectors
 
     fun createFolder(name: String): BookmarksPage {
         mozClick(BookmarksSelectors.ADD_FOLDER_BUTTON)

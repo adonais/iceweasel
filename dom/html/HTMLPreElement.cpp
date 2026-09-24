@@ -46,10 +46,9 @@ void HTMLPreElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLPreElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLPreElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   if (!mNodeInfo->Equals(nsGkAtoms::pre)) {
-    return nsGenericHTMLElement::IsAttributeMapped(aAttribute);
+    return nsGenericHTMLElement::IsNoNamespaceAttrMapped(aAttribute);
   }
 
   static const MappedAttributeEntry attributes[] = {

@@ -128,6 +128,7 @@ def run(
     save_query=False,
     stage_changes=False,
     dry_run=False,
+    write_task_config=False,
     message="{msg}",
     test_paths=None,
     test_tag=None,
@@ -149,7 +150,7 @@ def run(
         print(FZF_NOT_FOUND)
         return 1
 
-    push = not stage_changes and not dry_run
+    push = not stage_changes and not dry_run and not write_task_config
     check_working_directory(push)
 
     target_tasks_method = None
@@ -276,6 +277,7 @@ def run(
         try_task_config=try_task_config,
         stage_changes=stage_changes,
         dry_run=dry_run,
+        write_task_config=write_task_config,
         closed_tree=closed_tree,
         push_to_vcs=push_to_vcs,
     )

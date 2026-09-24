@@ -107,9 +107,10 @@ the text still asserts the content.
    Those surface as raw resource-ids with no prefix; match them with the raw-resid strategy
    (`UIAUTOMATOR_WITH_COMPOSE_TAG` matches the raw resourceId). (Do not assume the raw-resid strategy is
    dead in the MTE-5722 consolidation — web ids need it.)
-3. **Arrival / entry selectors must cover EVERY runtime state (B7 / C3).** `requiredForPage` must be an
+3. **Identity / entry selectors must cover EVERY runtime state (B7 / C3).** `IDENTIFIED` must use an
    element present in ALL states — a toolbar title, never an empty-list placeholder (RecentlyClosed's
-   arrival signal vanished once the list was populated). If an entry control's handle changes with state
+   identity signal vanished once the list was populated). Put state-specific readiness behind an
+   `appliesWhen` rule. If an entry control's handle changes with state
    (the trust-panel site-info button is `SITE_INFO_SECURE` / `_UNSECURE` / `_UNKNOWN` by page security),
    the nav edge must `ClickIfPresent` every variant. `effcheck` can't see this — verify by hand when you
    build or modify navigation.

@@ -124,6 +124,10 @@ export class BasePopup {
     this.browserLoadedDeferred.reject(new Error("Popup destroyed"));
     // Ignore unhandled rejections if the "attach" method is not called.
     this.browserLoaded.catch(() => {});
+    // Whoever is waiting to show this popup has to be able to resume and see
+    // that it is destroyed, even if the content never got as far as reporting
+    // its size.
+    this._resolveContentReady();
 
     BasePopup.instances.get(this.window).delete(this.extension);
 
@@ -523,6 +527,13 @@ export class PanelPopup extends BasePopup {
   }
 
   closePopup() {
+    if (this.viewNode.state == "closed") {
+      // The popup has not started opening, so there is no popupshown event
+      // coming and nothing will ever hide it: tear it down instead, and let
+      // whoever was about to show it notice that it is destroyed.
+      this.destroy();
+      return;
+    }
     promisePopupShown(this.viewNode).then(() => {
       // Make sure we're not already destroyed, or removed from the DOM.
       if (this.viewNode && this.viewNode.hidePopup) {
@@ -757,11 +768,21 @@ export class ViewPopup extends BasePopup {
 // Checks whether there is anything preventing a panel from being opened via
 // action.openPopup(), browserAction.openPopup() or pageAction.openPopup().
 export function isGloballyBlockingOpenPopup(window) {
+  // previewPanel is null until the tab hover preview implementation has been
+  // lazily loaded, which only happens once a preview is about to be shown.
+  let previewPanel = window.gBrowser.tabContainer.previewPanel;
+
   // Avoid covering existing menus and panels. We only need to check before
   // opening the extension popup, because any menus/panels that are opened
   // later will render on top of the extension popup.
   for (let elem of window.document.querySelectorAll("menupopup,panel")) {
     if (elem.state !== "closed" && elem.state !== "hiding") {
+      // Tab hover previews are tooltip-like panels tied to the pointer being
+      // over the tab strip, so they are not UI that the extension popup could
+      // be confused with or used to clickjack.
+      if (previewPanel?.isHoverPanel(elem)) {
+        continue;
+      }
       // State "open" or "showing" means that something else is already shown.
       return true;
     }

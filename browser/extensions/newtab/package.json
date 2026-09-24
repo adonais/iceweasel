@@ -14,7 +14,7 @@
     "redux": "5.0.1"
   },
   "devDependencies": {
-    "@babel/core": "7.23.5",
+    "@babel/core": "7.29.6",
     "@babel/preset-env": "7.23.5",
     "@babel/preset-react": "7.23.3",
     "@jsdevtools/coverage-istanbul-loader": "^3.0.5",
@@ -41,6 +41,7 @@
     "karma-webpack": "5.0.0",
     "lodash": "4.17.21",
     "meow": "14.1.0",
+    "minimizer-webpack-plugin": "5.6.1",
     "mocha": "9.2.2",
     "mock-raf": "1.0.1",
     "npm-run-all": "4.1.5",
@@ -51,7 +52,7 @@
     "sass": "1.43.4",
     "shelljs": "0.8.5",
     "sinon": "12.0.1",
-    "webpack": "5.89.0",
+    "webpack": "5.109.0",
     "webpack-cli": "4.9.1",
     "yamscripts": "0.1.0"
   },
@@ -97,7 +98,6 @@
     "watchmc:css": "npm run bundle:css -- --source-map --embed-sources --embed-source-map --load-path=content-src -w",
     "testmc": "npm-run-all testmc:*",
     "testmc:lint": "npm run lint",
-    "testmc:build": "npm run bundle:webpack",
     "testmc:jest": "jest",
     "testmc:jest:coverage": "jest --coverage",
     "testmc:unit": "karma start karma.mc.config.js",

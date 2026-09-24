@@ -915,6 +915,63 @@ class TabStorageMiddlewareTest {
     }
 
     @Test
+    fun `WHEN ungroup is confirmed THEN remove the tab group and its assignments but keep its tabs`() = runTest {
+        val browserStore = BrowserStore()
+        val removeTabsUseCase = TabsUseCases(store = browserStore).removeTabs
+
+        val firstTab = createTab("https://mozilla.org")
+        browserStore.dispatch(TabListAction.AddTabAction(firstTab))
+
+        val secondTab = createTab("https://example.com")
+        browserStore.dispatch(TabListAction.AddTabAction(secondTab))
+
+        val storedGroup =
+            TabGroup(
+                title = "Group 1",
+                theme = TabGroupTheme.Red.name,
+                lastModified = 0L,
+            )
+
+        val repository =
+            FakeTabGroupRepository(
+                initialTabGroupData =
+                    TabGroupData(
+                        tabGroups = listOf(storedGroup),
+                        tabGroupAssignments = mapOf(firstTab.id to storedGroup.id, secondTab.id to storedGroup.id),
+                    )
+            )
+        val store =
+            createStore(
+                tabGroupRepository = repository,
+                removeTabsUseCase = removeTabsUseCase,
+            )
+
+        val group =
+            TabsTrayItem.TabGroup(
+                id = storedGroup.id,
+                title = storedGroup.title,
+                theme = TabGroupTheme.Red,
+                tabs =
+                    mutableListOf(
+                        TabsTrayItem.Tab(firstTab),
+                        TabsTrayItem.Tab(secondTab),
+                    ),
+            )
+
+        assertEquals(listOf(storedGroup), repository.tabGroupDataFlow.first().tabGroups)
+        assertEquals(2, browserStore.state.tabs.size)
+
+        store.dispatch(TabGroupAction.UngroupConfirmed(group = group, dontAskAgain = false))
+
+        runCurrent()
+        advanceUntilIdle()
+
+        assertTrue(repository.tabGroupDataFlow.first().tabGroups.isEmpty())
+        assertTrue(repository.tabGroupDataFlow.first().tabGroupAssignments.isEmpty())
+        assertEquals(2, browserStore.state.tabs.size)
+    }
+
+    @Test
     fun `GIVEN multiple tab groups exist WHEN delete is confirmed THEN remove the correct tab group`() = runTest {
         val tabGroup1 =
             TabGroup(

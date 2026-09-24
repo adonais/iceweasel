@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_SpeechRecognitionAlternative_h
-#define mozilla_dom_SpeechRecognitionAlternative_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONALTERNATIVE_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONALTERNATIVE_H_
 
 #include "js/TypeDecls.h"
 #include "nsCycleCollectionParticipant.h"
@@ -42,4 +42,4 @@ class SpeechRecognitionAlternative final : public nsISupports,
 
 }  // namespace mozilla::dom
 
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHRECOGNITIONALTERNATIVE_H_

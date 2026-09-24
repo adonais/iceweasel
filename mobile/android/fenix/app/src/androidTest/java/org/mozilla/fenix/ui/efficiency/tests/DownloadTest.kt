@@ -18,9 +18,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
 
 class DownloadTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // Required for the download prompt: without it the Download button's click is treated as prompt
     // abuse and silently dropped -- the button resolves and the click reports success, but the dialog
     // stays open and no download starts. The legacy DownloadRobot.clickDownload toggles this around the
@@ -50,7 +47,7 @@ class DownloadTest : BaseTest() {
         // It has no other callers. SAVE_AS_PDF_LABEL matches on text, like the legacy robot did.
         on.shareOverlay.navigateToPage().mozClick(ShareOverlaySelectors.SAVE_AS_PDF_LABEL)
         on.downloads
-            .mozVerifyElementsByGroup("downloadDialog")
+            .mozVerifyElementsByGroup(DownloadsSelectors.Group.DOWNLOAD_DIALOG)
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
             .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR, timeout = 15_000)
             .mozClick(DownloadsSelectors.DOWNLOAD_SNACK_BAR_OPEN_BUTTON)
@@ -94,6 +91,6 @@ class DownloadTest : BaseTest() {
             .verifyNotificationDoesNotExist(NotificationSelectors.SYSTEM_NOTIFICATION(downloadFile))
             .closeNotificationTray()
 
-        on.downloads.navigateToPage().mozVerifyElementsByGroup("emptyDownloads")
+        on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
     }
 }

@@ -48,18 +48,13 @@ add_task(async function test_updatePing() {
   writeSuccessUpdateStatusFile();
   await reloadUpdateManagerData(false);
 
-  // Start monitoring the ping archive.
-  let archiveChecker = new TelemetryArchiveTesting.Checker();
-  await archiveChecker.promiseInit();
-
-  let updatePing;
-  let gleanPrevChannel;
   await GleanPings.update.testSubmission(
     reason => {
       Assert.equal("success", reason);
       Assert.equal(TEST_BUILDID, Glean.update.previousBuildId.testGetValue());
       Assert.equal(TEST_VERSION, Glean.update.previousVersion.testGetValue());
-      gleanPrevChannel = Glean.update.previousChannel.testGetValue();
+      // We don't know the previous channel, we just want to make sure it's set.
+      Assert.ok(!!Glean.update.previousChannel.testGetValue());
     },
     async () => {
       // Manually call the BrowserContentHandler: this automatically gets called
@@ -68,52 +63,8 @@ add_task(async function test_updatePing() {
       Cc["@mozilla.org/browser/clh;1"]
         .getService(Ci.nsIBrowserHandler)
         .getFirstWindowArgs();
-
-      // We cannot control when the ping will be generated/archived after we trigger
-      // an update, so let's make sure to have one before moving on with validation.
-      await TestUtils.waitForCondition(
-        async function () {
-          // Check that the ping made it into the Telemetry archive.
-          // The test data is defined in ../data/sharedUpdateXML.js
-          updatePing = await archiveChecker.promiseFindPing("update", [
-            [["payload", "reason"], "success"],
-            [["payload", "previousBuildId"], TEST_BUILDID],
-            [["payload", "previousVersion"], TEST_VERSION],
-          ]);
-          return !!updatePing;
-        },
-        "Make sure the ping is generated before trying to validate it.",
-        500,
-        100
-      );
-    }
-  );
-
-  ok(updatePing, "The 'update' ping must be correctly sent.");
-
-  // We have no easy way to simulate a previously applied update from toolkit/telemetry.
-  // Instead of moving this test to mozapps/update as well, just test that the
-  // "previousChannel" field is present and either a string or null.
-  ok(
-    "previousChannel" in updatePing.payload,
-    "The payload must contain the 'previousChannel' field"
-  );
-  const channelField = updatePing.payload.previousChannel;
-  if (channelField != null) {
-    Assert.equal(
-      typeof channelField,
-      "string",
-      "'previousChannel' must be a string, if available."
-    );
-    Assert.equal(channelField, gleanPrevChannel);
-  }
-
-  // Also make sure that the ping contains both a client id and an
-  // environment section.
-  ok("clientId" in updatePing, "The update ping must report a client id.");
-  ok(
-    "environment" in updatePing,
-    "The update ping must report the environment."
+    },
+    500 // The "update" ping is submitted asynchronously to not block startup.
   );
 });
 

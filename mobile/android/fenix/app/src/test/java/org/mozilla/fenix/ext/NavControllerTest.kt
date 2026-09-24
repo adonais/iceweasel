@@ -48,4 +48,10 @@ class NavControllerTest {
         verify { navController.currentDestination }
         verify { navController.navigate(navDirections, mockOptions) }
     }
+
+    @Test
+    fun `Nav does not navigate when the current destination does not match`() {
+        navController.nav(currentDestId + 1, navDirections)
+        verify(exactly = 0) { navController.navigate(navDirections, null) }
+    }
 }

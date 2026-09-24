@@ -287,7 +287,6 @@ bool gfxPlatformFontList::Initialize(gfxPlatformFontList* aList) {
   sPlatformFontList = aList;
   if (XRE_IsParentProcess() &&
       StaticPrefs::gfx_font_list_omt_enabled_AtStartup() &&
-      StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
       !gfxPlatform::InSafeMode()) {
     // We call nsRFPService::CalculateFontLocaleAllowlist so that it reads
     // intl.accept_languages while we are still on the main thread.
@@ -783,43 +782,41 @@ bool gfxPlatformFontList::InitFontList() {
 
   InitializeCodepointsWithNoFonts();
 
-  // Try to initialize the cross-process shared font list if enabled by prefs.
-  if (StaticPrefs::gfx_e10s_font_list_shared_AtStartup()) {
-    for (const auto& entry : mFontEntries.Values()) {
-      if (!entry) {
-        continue;
-      }
-      AutoWriteLock lock(entry->mLock);
-      entry->mShmemCharacterMap = nullptr;
-      entry->mShmemFace = nullptr;
-      entry->mFamilyName.Truncate();
+  // Try to initialize the cross-process shared font list.
+  for (const auto& entry : mFontEntries.Values()) {
+    if (!entry) {
+      continue;
     }
-    mFontEntries.Clear();
-    mShmemCharMaps.Clear();
-    bool oldSharedList = SharedFontList() != nullptr;
-    delete mSharedFontList.exchange(new fontlist::FontList(mFontlistInitCount));
-    InitSharedFontListForPlatform();
-    auto* newList = SharedFontList();
-    if (newList && newList->Initialized()) {
-      if (mLocalNameTable.Count()) {
-        newList->SetLocalNames(mLocalNameTable);
-        mLocalNameTable.Clear();
-      }
+    AutoWriteLock lock(entry->mLock);
+    entry->mShmemCharacterMap = nullptr;
+    entry->mShmemFace = nullptr;
+    entry->mFamilyName.Truncate();
+  }
+  mFontEntries.Clear();
+  mShmemCharMaps.Clear();
+  bool oldSharedList = SharedFontList() != nullptr;
+  delete mSharedFontList.exchange(new fontlist::FontList(mFontlistInitCount));
+  InitSharedFontListForPlatform();
+  auto* newList = SharedFontList();
+  if (newList && newList->Initialized()) {
+    if (mLocalNameTable.Count()) {
+      newList->SetLocalNames(mLocalNameTable);
+      mLocalNameTable.Clear();
+    }
+  } else {
+    // something went wrong, fall back to in-process list
+    gfxCriticalNote << "Failed to initialize shared font list, "
+                       "falling back to in-process list.";
+    delete mSharedFontList.exchange(nullptr);
+  }
+  if (oldSharedList && XRE_IsParentProcess()) {
+    // notify all children of the change
+    if (NS_IsMainThread()) {
+      dom::ContentParent::NotifyUpdatedFonts(true);
     } else {
-      // something went wrong, fall back to in-process list
-      gfxCriticalNote << "Failed to initialize shared font list, "
-                         "falling back to in-process list.";
-      delete mSharedFontList.exchange(nullptr);
-    }
-    if (oldSharedList && XRE_IsParentProcess()) {
-      // notify all children of the change
-      if (NS_IsMainThread()) {
-        dom::ContentParent::NotifyUpdatedFonts(true);
-      } else {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "NotifyUpdatedFonts callback",
-            [] { dom::ContentParent::NotifyUpdatedFonts(true); }));
-      }
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "NotifyUpdatedFonts callback",
+          [] { dom::ContentParent::NotifyUpdatedFonts(true); }));
     }
   }
 

@@ -7,6 +7,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 
 #include "nsChangeObserver.h"
@@ -15,6 +16,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+class nsAppMenuItemIcon;
 class nsMenuBarX;
 class nsMenuGroupOwnerX;
 class nsMenuX;
@@ -159,6 +161,8 @@ class nsMenuBarX : public nsMenuParentX,
   GeckoNSMenu* mNativeMenu;  // root menu, representing entire menu bar
   bool mNeedsRebuild;
   ApplicationMenuDelegate* mApplicationMenuDelegate;
+
+  nsTArray<mozilla::UniquePtr<nsAppMenuItemIcon>> mAppMenuIcons;
 };
 
 #endif  // nsMenuBarX_h_

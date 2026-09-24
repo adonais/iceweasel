@@ -150,8 +150,8 @@ TEST_F(StatsEndToEndTest, GetStats) {
         receive_stats_filled_["CodecStats"] |= stats.target_delay_ms != 0;
 
         receive_stats_filled_["FrameCounts"] |=
-            stats.frame_counts.key_frames != 0 ||
-            stats.frame_counts.delta_frames != 0;
+            stats.received_frame_counts.key_frames != 0 ||
+            stats.received_frame_counts.delta_frames != 0;
 
         receive_stats_filled_["JitterBufferDelay"] =
             stats.jitter_buffer_delay > TimeDelta::Zero();

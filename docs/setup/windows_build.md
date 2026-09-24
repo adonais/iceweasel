@@ -43,7 +43,7 @@ C:\path\to\python.ext ./mach build
 - **Memory:** 4GB RAM minimum, 8GB+ recommended.
 - **Disk Space:** At least 40GB of free disk space.
 - **Operating System:** Windows 10 or later. It is advisable to have Windows Update be fully
-  up-to-date. See {ref}`build_hosts` for more information.
+  up-to-date. See {ref}`build-hosts` for more information.
 
 ## Recommended (For Windows 11 Users)
 
@@ -103,7 +103,7 @@ to {ref}`follow some manual steps below <ensure-antivirus-exclusions>`.
 ### Choosing a build type
 
 If you aren't modifying the Firefox backend, then select one of the
-{ref}`Artifact Mode <understanding-artifact-builds>` options. If you are
+[Artifact Mode](/contributing/build/artifact_builds.md) options. If you are
 building Firefox for Android, you should also see the {ref}`GeckoView Contributor Guide <geckoview-contributor-guide>`.
 
 ### Ensure antivirus exclusions
@@ -165,7 +165,7 @@ send patches to Mozilla, update your source code locally, and more.
 :::{note}
 If you'd like to interact with Mach from a different command line environment
 than MozillaBuild, there's experimental support for it described
-{ref}`over here <using-mach-on-windows-outside-mozillabuild>`.
+[over here](/mach/windows-usage-outside-mozillabuild.md).
 :::
 
 ## Troubleshooting

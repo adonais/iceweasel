@@ -50,6 +50,7 @@
     <ID>ForbiddenSuppress:AnimatedProgressBar.kt$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:AppLinksInterceptor.kt$AppLinksInterceptor$@Suppress("CognitiveComplexMethod", "ReturnCount", "CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:AppLinksUseCases.kt$AppLinksUseCases.GetAppLinkRedirect$@Suppress("CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:AwesomeBar.kt$@Suppress("LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:BaseBrowserFragment.kt$BaseBrowserFragment$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:BrowserDisplayToolbar.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:BrowserFragment.kt$BrowserFragment$@Suppress("LongMethod")</ID>
@@ -69,6 +70,7 @@
     <ID>ForbiddenSuppress:CrashApplication.kt$GleanBuildInfo$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:CrashMiddleware.kt$CrashMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:CreditCardUtils.kt$CreditCardUtils$@Suppress("MagicNumber", "LargeClass")</ID>
+    <ID>ForbiddenSuppress:CurrentTabDetails.kt$@Suppress("LongMethod")</ID>
     <ID>ForbiddenSuppress:CustomPlacementPopup.kt$@Suppress("CyclomaticComplexMethod", "ReturnCount", "CognitiveComplexMethod")</ID>
     <ID>ForbiddenSuppress:Dispatchers.kt$Dispatchers$@Suppress("MagicNumber")</ID>
     <ID>ForbiddenSuppress:DownloadsDatabase.kt$Migrations$@Suppress("MaxLineLength", "MagicNumber")</ID>
@@ -230,11 +232,10 @@
     <ID>HardcodedPaddingUsage:StockSuggestion.kt$(end = 16.dp)</ID>
     <ID>HardcodedPaddingUsage:StockSuggestion.kt$(start = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:Suggestion.kt$(12.dp)</ID>
-    <ID>HardcodedPaddingUsage:Suggestion.kt$(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp)</ID>
+    <ID>HardcodedPaddingUsage:Suggestion.kt$(end = 10.dp)</ID>
     <ID>HardcodedPaddingUsage:Suggestion.kt$(start = 2.dp, end = 8.dp)</ID>
     <ID>HardcodedPaddingUsage:Suggestion.kt$(top = 22.dp, start = 14.dp)</ID>
     <ID>HardcodedPaddingUsage:Suggestion.kt$(top = 8.dp)</ID>
-    <ID>HardcodedPaddingUsage:SuggestionGroup.kt$( vertical = 12.dp, horizontal = 16.dp, )</ID>
     <ID>HardcodedPaddingUsage:SummarizingContent.kt$(top = 80.dp)</ID>
     <ID>HardcodedPaddingUsage:Tab.kt$(8.dp)</ID>
     <ID>HardcodedPaddingUsage:TabCounterButton.kt$(16.dp)</ID>

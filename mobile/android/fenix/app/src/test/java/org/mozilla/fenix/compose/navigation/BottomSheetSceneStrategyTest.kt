@@ -17,11 +17,11 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import mozilla.components.compose.base.theme.Theme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
 
 private const val ROOT = "Root"
 private const val FIRST_SHEET = "FirstSheet"

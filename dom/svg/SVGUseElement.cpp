@@ -650,10 +650,9 @@ SVGUseFrame* SVGUseElement::GetFrame() const {
 //----------------------------------------------------------------------
 // nsIContent methods
 
-NS_IMETHODIMP_(bool)
-SVGUseElement::IsAttributeMapped(const nsAtom* name) const {
+bool SVGUseElement::IsNoNamespaceAttrMapped(const nsAtom* name) const {
   return name == nsGkAtoms::x || name == nsGkAtoms::y ||
-         SVGUseElementBase::IsAttributeMapped(name);
+         SVGUseElementBase::IsNoNamespaceAttrMapped(name);
 }
 
 NonCustomCSSPropertyId SVGUseElement::GetCSSPropertyIdForAttrEnum(

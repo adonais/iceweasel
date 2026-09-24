@@ -486,6 +486,49 @@ add_task(async function test_avatar_colors_update_with_theme() {
           "Avatar stroke color should change when theme changes"
         );
       });
+
+      // Re-enable the default theme programmatically to verify colors are still set
+      let defaultTheme = await lazy.AddonManager.getAddonByID(DEFAULT_THEME_ID);
+      await defaultTheme.enable();
+
+      await TestUtils.waitForCondition(
+        () =>
+          SelectableProfileService.currentProfile.theme.themeId ===
+          DEFAULT_THEME_ID,
+        "Waiting for default theme to be set in profile"
+      );
+
+      // Verify avatar still has colors with default theme re-enabled
+      await SpecialPowers.spawn(browser, [], async () => {
+        let card =
+          content.document.querySelector("edit-profile-card").wrappedJSObject;
+
+        await ContentTaskUtils.waitForCondition(
+          () => card.headerAvatar.style.fill && card.headerAvatar.style.stroke,
+          "Waiting for avatar colors to be set"
+        );
+
+        let avatarFill = card.headerAvatar.style.fill;
+        let avatarStroke = card.headerAvatar.style.stroke;
+
+        Assert.ok(
+          avatarFill.startsWith("rgb"),
+          `Avatar fill should be a valid color value, got: ${avatarFill}`
+        );
+        Assert.ok(
+          avatarStroke.startsWith("rgb"),
+          `Avatar stroke should be a valid color value, got: ${avatarStroke}`
+        );
+      });
+
+      Assert.ok(
+        SelectableProfileService.currentProfile.theme.themeFg,
+        "Profile should have theme foreground color with default theme"
+      );
+      Assert.ok(
+        SelectableProfileService.currentProfile.theme.themeBg,
+        "Profile should have theme background color with default theme"
+      );
     }
   );
 

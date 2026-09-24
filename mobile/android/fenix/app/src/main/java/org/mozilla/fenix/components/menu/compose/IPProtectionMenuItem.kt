@@ -42,13 +42,13 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.modifier.debouncedClickable
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 private val MENU_ITEM_MIN_HEIGHT = 52.dp
 
@@ -113,12 +113,18 @@ private fun IPProtectionToggle(
     modifier: Modifier = Modifier,
 ) {
     val statusDescription = badgeText(state.status)
+    val role =
+        if (state.status == IPProtectionMenuStatus.AuthRequired) {
+            Role.Button
+        } else {
+            Role.Switch
+        }
 
     Row(
         modifier =
             modifier
                 .fillMaxHeight()
-                .debouncedClickable { onToggle() }
+                .debouncedClickable(role = role) { onToggle() }
                 .semantics {
                     stateDescription = statusDescription
                     liveRegion = LiveRegionMode.Polite

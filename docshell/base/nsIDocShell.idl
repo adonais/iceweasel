@@ -102,14 +102,6 @@ interface nsIDocShell : nsIDocShellTreeItem
   [noscript]void loadURI(in nsDocShellLoadStatePtr aLoadState, in boolean aSetNavigating);
 
   /**
-   * Do either a history.pushState() or history.replaceState() operation,
-   * depending on the value of aReplace.
-   */
-  [implicit_jscontext, can_run_script]
-  void addState(in jsval aData, in AString aTitle,
-                in AString aURL, in boolean aReplace);
-
-  /**
    * Reset state to a new content model within the current document and the document
    * viewer.  Called by the document before initiating an out of band document.write().
    */

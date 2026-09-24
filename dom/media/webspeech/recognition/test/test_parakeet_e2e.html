@@ -1,0 +1,180 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: parakeet end-to-end</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<div id="results">
+  <label>Reference (first 60s of speech):</label>
+  <div class="reference" id="ref-text">loading...</div>
+  <label>Recognized:</label>
+  <div class="recognized" id="rec-text">waiting...</div>
+</div>
+<pre id="test">
+<script>
+"use strict";
+
+// End-to-end quality test for local speech recognition via parakeet.
+//
+// This test is heavily instrumented: when it fails (especially on a new
+// platform) the log alone should tell you WHY. It checks, in order, that:
+//   - the on-device model is reachable (SpeechRecognition.available),
+//   - the AudioContext actually reaches "running" (not just created),
+//   - real audio is flowing into the captured MediaStreamTrack (FFT levels,
+//     not merely that a track object exists),
+//   - every recognition lifecycle event fires, with timestamps,
+// and prints a periodic status line plus a final summary.
+//
+// The captured track is a genuine 2-channel (stereo) signal, upmixed from the
+// mono source in the Web Audio graph, so the backend's multichannel->mono
+// downmixing path is exercised end-to-end.
+//
+// Requires (headless): XDG_RUNTIME_DIR + pipewire/pipewire-pulse/wireplumber
+// for audio, and python3 testing/tools/serve_model.py for the model hub.
+//
+// Run:
+//   XDG_RUNTIME_DIR=/run/user/$(id -u) ./mach mochitest --headless \
+//       dom/media/webspeech/recognition/test/test_parakeet_e2e.html
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+// How long to listen in milliseconds. Enough speech for the transcript
+// assertion below (>50 chars) with a wide margin; beyond that, a longer window
+// only adds runtime.
+const LISTEN_DURATION_MS = 15000;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for parakeet inference to complete");
+
+const T0 = performance.now();
+const ms = () => "+" + Math.round(performance.now() - T0) + "ms";
+function diag(msg) { info("[diag " + ms() + "] " + msg); }
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function parakeet_e2e_stereo_downmix() {
+  // Fetch reference transcript.
+  const refResp = await fetch(`http://localhost:${SERVER_PORT}/transcript.txt`);
+  const refText = refResp.ok ? await refResp.text() : "(reference unavailable)";
+  document.getElementById("ref-text").textContent = refText.slice(0, 800) + "...";
+  diag("reference transcript fetched (ok=" + refResp.ok + ")");
+
+  const installed = await ensureModelInstalled([LANG]);
+  diag(`model installed: ${installed}`);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  // 2. AudioContext must actually run. Created suspended; resume explicitly.
+  const ctx = await createResumedAudioContext();
+  diag(`AudioContext after resume(): state=${ctx.state} baseLatency=${ctx.baseLatency}`);
+
+  // Kick the context with a silent looping source.
+  const kickBuf = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  const kick = ctx.createBufferSource();
+  kick.buffer = kickBuf;
+  kick.loop = true;
+  kick.connect(ctx.destination);
+  kick.start(0);
+
+  // Same-origin support file (served by the mochitest server); only the model
+  // comes from the local model hub (serve_model.py) via modelHubRootUrl.
+  const audio = await loadTestAudio("kennedy-appolo.opus", a => {
+    a.id = "audioElement";
+    a.controls = true;
+  });
+  diag(`audio loaded: readyState=${audio.readyState} duration=${audio.duration.toFixed(2)}s ` +
+       `muted=${audio.muted} volume=${audio.volume} error=${audio.error ? audio.error.code : "none"}`);
+
+  const src = ctx.createMediaElementSource(audio);
+
+  // Upmix the mono source into a genuine 2-channel signal so the backend's
+  // multichannel->mono downmixing is exercised. Left carries the full signal,
+  // right an attenuated copy, so the two channels differ and the downmix is not
+  // a trivial passthrough.
+  const dst = ctx.createMediaStreamDestination();
+  dst.channelCount = 2;
+  const merger = ctx.createChannelMerger(2);
+  const gainL = ctx.createGain();
+  gainL.gain.value = 1.0;
+  const gainR = ctx.createGain();
+  gainR.gain.value = 0.5;
+  src.connect(gainL).connect(merger, 0, 0);
+  src.connect(gainR).connect(merger, 0, 1);
+  merger.connect(dst);
+  merger.connect(ctx.destination);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+  diag(`track: id=${track.id} readyState=${track.readyState} enabled=${track.enabled} muted=${track.muted}`);
+  try { diag("track settings (expect 2 channels): " + JSON.stringify(track.getSettings())); } catch (e) { diag("track.getSettings(): " + e); }
+
+  // Start playback from the beginning of speech.
+  audio.currentTime = 0;
+  await audio.play().then(() => diag("audio.play() resolved"),
+                          e => diag("audio.play() rejected: " + e));
+
+  // 3. Verify real audio is flowing into the captured track (the wayland/
+  //    headless failure mode is a silent track despite ctx="running").
+  //    Fails fast instead of hanging on the recognition events below.
+  const maxLevel = await waitForAudioFlowing(ctx, dst.stream);
+  diag(`audio is flowing into the track (peak FFT level ${maxLevel})`);
+  ok(true, "audio is flowing into the track");
+
+  // Kept alive for the periodic heartbeat below.
+  const analyser = new AudioStreamAnalyser(ctx, dst.stream);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  // 4. Log every lifecycle event with a timestamp.
+  const {
+    transcript,
+    finalCount,
+    interimCount,
+    audiostartFired,
+    soundstartFired,
+    speechstartFired,
+  } = await runSpeechRecognitionSession(sr, track, {
+    ctx,
+    audio,
+    analyser,
+    durationMs: LISTEN_DURATION_MS,
+    diag,
+  });
+
+  analyser.disconnect();
+  audio.pause();
+  await ctx.close();
+
+  diag("=== SUMMARY ===");
+  diag(`model installed: ${installed}`);
+  diag(`peak audio level seen: ${maxLevel} (0 == silent track)`);
+  diag(`events: audiostart=${audiostartFired} soundstart=${soundstartFired} speechstart=${speechstartFired}`);
+  diag(`results: ${finalCount} final, ${interimCount} interim`);
+  diag(`transcript (${transcript.length} chars): ${transcript}`);
+  diag("=== END ===");
+
+  isnot(transcript.trim(), "", "Got a non-empty transcript from the downmixed stereo track");
+  ok(transcript.length > 50, "Transcript has substantial content (>50 chars): " + transcript.length + " chars");
+});
+</script>
+</pre>
+</body>
+</html>

@@ -404,7 +404,7 @@ void TestScreenCastStreamProvider::OnStreamParamChanged(
     } else if (buffer_types & (1 << SPA_DATA_MemFd)) {
       sb << " MemFd\n";
     }
-    RTC_LOG(LS_INFO) << sb.str();
+    RTC_LOG(LS_INFO) << sb.Release();
   }
 
   uint8_t buffer[4096] = {};

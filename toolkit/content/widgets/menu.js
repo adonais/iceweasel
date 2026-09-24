@@ -212,6 +212,10 @@
       return frag;
     }
 
+    get needsEagerRender() {
+      return this.isMenulistChild || !this.isInHiddenMenupopup;
+    }
+
     get isMenulistChild() {
       return this.matches("menulist > menupopup > menuitem");
     }
@@ -273,17 +277,19 @@
     connectedCallback() {
       if (this.renderedOnce) {
         this._computeAccelTextFromKeyIfNeeded();
+        return;
       }
-      // Eagerly render if we are being inserted into a menulist (since we likely need to
-      // size it), or into an already-opened menupopup (since we are already visible).
-      // Checking isConnectedAndReady is an optimization that will let us quickly skip
-      // non-menulists that are being connected during parse.
-      if (
-        this.isMenulistChild ||
-        (this.isConnectedAndReady && !this.isInHiddenMenupopup)
-      ) {
-        this.render();
+
+      if (this.delayConnectedCallback()) {
+        return;
       }
+
+      // Wait until we are going to be visible or required for sizing a popup.
+      if (!this.needsEagerRender) {
+        return;
+      }
+
+      this.render();
     }
   }
 

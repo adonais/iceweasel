@@ -5,16 +5,14 @@
 //! Gamut mapping - Raytrace algorithm.
 //! <https://drafts.csswg.org/css-color-4/#gamut-mapping>
 
-use crate::color::{gamut::MIN_PRECISION, AbsoluteColor, ColorComponents, ColorSpace};
+use crate::color::{AbsoluteColor, ColorComponents, ColorSpace, gamut::MIN_PRECISION};
 
 impl AbsoluteColor {
     /// 13.2.5. The Ray Trace Gamut Mapping
     /// <https://drafts.csswg.org/css-color-4/#GMA-Raytrace>
     pub fn gamut_map_raytrace(&self, dest_color_space: ColorSpace) -> Self {
         macro_rules! in_range {
-            ($l:expr, $c:expr, $h:expr) => {{
-                $c >= $l && $c <= $h
-            }};
+            ($l:expr, $c:expr, $h:expr) => {{ $c >= $l && $c <= $h }};
         }
 
         const MIN_L: f32 = MIN_PRECISION;
@@ -174,10 +172,10 @@ impl AbsoluteColor {
         let bmax = [1.0, 1.0, 1.0];
 
         // 2. let `tfar` be `infinity` (or some very large number)
-        let mut tfar = std::f32::INFINITY;
+        let mut tfar = f32::INFINITY;
 
         // 3. let `tnear` be `-infinity` (or some very large, negative number)
-        let mut tnear = std::f32::NEG_INFINITY;
+        let mut tnear = f32::NEG_INFINITY;
 
         // 4. let `direction` be a 3-element array
         let mut direction = [0.0, 0.0, 0.0];

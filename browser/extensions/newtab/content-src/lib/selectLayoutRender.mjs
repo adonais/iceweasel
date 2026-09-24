@@ -143,6 +143,11 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     return { ...component, data };
   };
 
+  // Ads can only fill a position when both the user and Mozilla have sponsored
+  // content enabled, matching DiscoveryStreamFeed.showSponsoredStories.
+  const showSponsoredStories =
+    prefs.showSponsored && prefs["system.showSponsored"];
+
   // TODO update devtools to show placements
   const handleSpocs = (data = [], spocsPositions, spocsPlacement) => {
     let result = [...data];
@@ -166,6 +171,16 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
           filteredSpocs,
           placementName
         );
+      }
+
+      // These positions are ad-eligible even when no ad was available to fill
+      // them, so flag whichever card ended up in each one for telemetry.
+      if (showSponsoredStories) {
+        for (const { index } of spocsPositions) {
+          if (result[index]) {
+            result[index] = { ...result[index], is_ad_eligible_position: true };
+          }
+        }
       }
     }
     return result;

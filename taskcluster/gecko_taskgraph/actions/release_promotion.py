@@ -4,6 +4,7 @@
 
 
 import json
+import logging
 import os
 
 from mozilla_taskgraph.util.attributes import release_level
@@ -27,6 +28,8 @@ from gecko_taskgraph.util.taskgraph import (
     find_existing_tasks_from_previous_kinds,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def is_release_promotion_available(parameters):
     return parameters["project"] in RELEASE_PROMOTION_PROJECTS
@@ -38,6 +41,17 @@ def get_partner_config(partner_url_config, github_token):
         if url:
             partner_config[kind] = get_partner_config_by_url(url, kind, github_token)
     return partner_config
+
+
+def get_previous_partner_config(previous_graph_ids):
+    # The rightmost graph wins, as with the combined full task graphs below.
+    for graph_id in reversed(previous_graph_ids):
+        previous_parameters = get_artifact(graph_id, "public/parameters.yml")
+        partner_config = previous_parameters.get("release_partner_config")
+        if partner_config:
+            logger.info("Re-using the partner config resolved by %s", graph_id)
+            return partner_config
+    return None
 
 
 def get_flavors(graph_config, param):
@@ -340,15 +354,23 @@ def release_promotion_action(
         release_enable_partner_repack = True
         release_enable_partner_attribution = False
         release_enable_emefree = False
+        # An off-cycle respin starts here, and picking up partner config changes
+        # is the point of it, so resolve the config afresh rather than inherit.
+        # An off-cycle push or ship flavor (bug 1943594) must not join this
+        # branch: it has to inherit from the off-cycle promote, or it would ship
+        # a different partner set than was repacked.
+        reuse_partner_config = False
     elif release_promotion_flavor == "promote_firefox_partner_attribution":
         release_enable_partner_repack = False
         release_enable_partner_attribution = True
         release_enable_emefree = False
+        reuse_partner_config = False
     else:
         # for promotion or ship phases, we use the action input to turn the repacks/attribution off
         release_enable_partner_repack = input["release_enable_partner_repack"]
         release_enable_partner_attribution = input["release_enable_partner_attribution"]
         release_enable_emefree = input["release_enable_emefree"]
+        reuse_partner_config = True
 
     partner_url_config = get_partner_url_config(parameters, graph_config)
     if (
@@ -375,8 +397,11 @@ def release_promotion_action(
         release_enable_partner_attribution,
         release_enable_emefree,
     ]):
-        github_token = get_token(parameters)
-        partner_config = get_partner_config(partner_url_config, github_token)
+        if reuse_partner_config:
+            partner_config = get_previous_partner_config(previous_graph_ids)
+        if not partner_config:
+            github_token = get_token(parameters)
+            partner_config = get_partner_config(partner_url_config, github_token)
     if partner_config:
         parameters["release_partner_config"] = fix_partner_config(partner_config)
     parameters["release_partners"] = input.get("release_partners")

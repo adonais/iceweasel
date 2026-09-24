@@ -2,6 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1949491 - StackOverflow login
+ *
+ * Logging in or signing up goes through stackexchange.com, which needs its own
+ * first-party storage to carry the session across. Under dFPI that access is
+ * partitioned away and the flow fails. This shim intercepts clicks on the
+ * login and signup buttons and calls the Storage Access API on the site's
+ * behalf first.
+ */
+
 "use strict";
 
 console.warn(

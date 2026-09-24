@@ -19,74 +19,16 @@ using namespace mozilla::gl;
 
 namespace mozilla::layers {
 
-constinit static RefPtr<GLContext> sSnapshotContext;
-
 nsresult GLImage::ReadIntoBuffer(uint8_t* aData, int32_t aStride,
                                  const gfx::IntSize& aSize,
                                  gfx::SurfaceFormat aFormat) {
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main thread");
-
-  if (!sSnapshotContext) {
-    nsCString discardFailureId;
-    sSnapshotContext = GLContextProvider::CreateHeadless({}, &discardFailureId);
-    if (!sSnapshotContext) {
-      NS_WARNING("Failed to create snapshot GLContext");
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  sSnapshotContext->MakeCurrent();
-  ScopedTexture scopedTex(sSnapshotContext);
-  ScopedBindTexture boundTex(sSnapshotContext, scopedTex.Texture());
-
-  sSnapshotContext->fTexImage2D(LOCAL_GL_TEXTURE_2D, 0, LOCAL_GL_RGBA,
-                                aSize.width, aSize.height, 0, LOCAL_GL_RGBA,
-                                LOCAL_GL_UNSIGNED_BYTE, nullptr);
-
-  ScopedFramebufferForTexture autoFBForTex(sSnapshotContext,
-                                           scopedTex.Texture());
-  if (!autoFBForTex.IsComplete()) {
-    gfxCriticalError()
-        << "GetAsSourceSurface: ScopedFramebufferForTexture failed.";
-    return NS_ERROR_FAILURE;
-  }
-
-  const gl::OriginPos destOrigin = gl::OriginPos::TopLeft;
-  {
-    const ScopedBindFramebuffer bindFB(sSnapshotContext, autoFBForTex.FB());
-    if (!sSnapshotContext->BlitHelper()->BlitImageToFramebuffer(
-            this, gfx::IntRect(gfx::IntPoint(0, 0), aSize), destOrigin)) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  ScopedBindFramebuffer bind(sSnapshotContext, autoFBForTex.FB());
-  ReadPixelsIntoBuffer(sSnapshotContext, aData, aStride, aSize, aFormat);
-  return NS_OK;
+  MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 already_AddRefed<gfx::SourceSurface> GLImage::GetAsSourceSurface() {
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main thread");
-
-  gfx::IntSize size = GetSize();
-  auto format = gfx::SurfaceFormat::B8G8R8A8;
-  RefPtr<gfx::DataSourceSurface> dest =
-      gfx::Factory::CreateDataSourceSurface(size, format);
-  if (NS_WARN_IF(!dest)) {
-    return nullptr;
-  }
-
-  gfx::DataSourceSurface::ScopedMap map(dest, gfx::DataSourceSurface::WRITE);
-  if (NS_WARN_IF(!map.IsMapped())) {
-    return nullptr;
-  }
-
-  nsresult rv = ReadIntoBuffer(map.GetData(), map.GetStride(), size, format);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  return dest.forget();
+  MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+  return nullptr;
 }
 
 nsresult GLImage::BuildSurfaceDescriptorBuffer(

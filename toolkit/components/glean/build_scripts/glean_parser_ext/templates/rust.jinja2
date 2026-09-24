@@ -69,8 +69,8 @@ impl ExtraKeys for {{ obj.name|Camelize }}{{ suffix }} {
 
     fn into_ffi_extra(self) -> ::std::collections::HashMap<String, String> {
       let mut map = ::std::collections::HashMap::new();
-      {% for key, _ in obj|attr(name) %}
-      self.r#{{key|snake_case}}.and_then(|val| map.insert("{{key|snake_case}}".into(), val.to_string()));
+      {% for key, type in obj|attr(name) %}
+      self.r#{{key|snake_case}}.and_then(|val| map.insert("{{key|snake_case}}".into(), {{ "val" if type|extra_type_name == "String" else "val.to_string()" }}));
       {% endfor %}
       map
     }
@@ -96,13 +96,13 @@ impl From<u16> for {{ obj.name|Camelize }}Label {
         }
     }
 }
-impl Into<&'static str> for {{ obj.name|Camelize }}Label {
-    fn into(self) -> &'static str {
-        match self {
+impl From<{{ obj.name|Camelize }}Label> for &'static str {
+    fn from(value: {{ obj.name|Camelize }}Label) -> Self {
+        match value {
             {% for label in obj.ordered_labels %}
-            Self::E{{ label| Camelize }} => "{{label}}",
+            {{ obj.name|Camelize }}Label::E{{ label| Camelize }} => "{{label}}",
             {% endfor %}
-            Self::__Other__ => "__other__",
+            {{ obj.name|Camelize }}Label::__Other__ => "__other__",
         }
     }
 }
@@ -183,11 +183,17 @@ pub mod {{ category_name|snake_case }} {
             {% else %}
             {{ common_metric_data(obj)|indent(12) }};
             {% endif %}
-        let metric = {{ obj|ctor }}(BaseMetricId({{obj|metric_id}}), meta
+{#
+  Only event/object metrics need the instance bound to a name, so that their
+  allocation can be measured below. Binding it unconditionally would trip
+  clippy::let_and_return for every other metric.
+#}
+{% set measure_memory = obj.type == "event" or obj.type == "object" %}
+        {{ "let metric = " if measure_memory else "" }}{{ obj|ctor }}(BaseMetricId({{obj|metric_id}}), meta
         {%- for arg_name in extra_args if not obj.labeled and obj[arg_name] is defined and arg_name not in common_metric_data_args and arg_name != 'allowed_extra_keys' -%}
             , {{ obj[arg_name]|rust }}
         {%- endfor -%}
-        {{ ", " if obj.labeled or obj.dual_labeled else ")\n" }}
+        {{ ", " if obj.labeled or obj.dual_labeled else ")" }}
         {%- if obj.labeled -%}
         {%- if obj.labels -%}
         Some({{ obj.labels|rust }}))
@@ -197,8 +203,9 @@ pub mod {{ category_name|snake_case }} {
         {%- elif obj.dual_labeled -%}
         {{ "Some(" ~ obj.keys|rust ~ ")" if obj.keys else "None" }},
         {{ "Some(" ~ obj.categories|rust ~ ")" if obj.categories else "None" }})
-        {%- endif -%};
-        {% if obj.type == "event" or obj.type == "object" %}
+        {%- endif -%}
+        {{- ";" if measure_memory else "" }}
+        {% if measure_memory %}
         {#
           event/object metrics don't have a map.
           They don't allocate anymore after instantiation, so it's enough to measure once.
@@ -210,8 +217,8 @@ pub mod {{ category_name|snake_case }} {
                 super::count_memory_usage(metric.size_of(ops));
             });
         }
-        {% endif %}
         metric
+        {% endif %}
     });
     {% endif %}
 
@@ -250,23 +257,23 @@ pub(crate) mod __glean_metric_maps {
     fn fog_submetric_alloc_size(ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         let mut n = 0;
 
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map(|m| {
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_METRICS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
-        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map(|m| {
+        });
+        n += once_cell::sync::Lazy::get(&submetric_maps::LABELED_ENUMS_TO_IDS).map_or(0, |m| {
             let lock = m.read().unwrap();
             (*lock).size_of(ops)
-        }).unwrap_or(0);
+        });
 
         {% for typ, metrics in metric_by_type.items() %}
         {% if typ.0 in ('BOOLEAN_MAP', 'COUNTER_MAP', 'CUSTOM_DISTRIBUTION_MAP', 'MEMORY_DISTRIBUTION_MAP', 'QUANTITY_MAP', 'STRING_MAP', 'TIMING_DISTRIBUTION_MAP') %}
-            n += once_cell::sync::Lazy::get(&submetric_maps::{{typ.0}}).map(|m| {
+            n += once_cell::sync::Lazy::get(&submetric_maps::{{typ.0}}).map_or(0, |m| {
                 // The values are behind an `Arc`. We don't want to measure them.
                 // We only measure the enclosing size of the values.
                 let lock = m.read().unwrap();
                 malloc_size_of::MallocShallowSizeOf::shallow_size_of(&*lock, ops)
-            }).unwrap_or(0);
+            });
         {% endif %}
         {% endfor%}
         n
@@ -437,7 +444,7 @@ pub(crate) mod __glean_metric_maps {
            _ => panic!("No event for metric id {}", metric_id),
         };
 
-        return event.test_get_value(ping_name);
+        event.test_get_value(ping_name)
     }
 
     /// Check the provided event for errors.
@@ -516,7 +523,7 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no labeled_{{labeled_type}} by the given metric ID could be found.
     #[allow(unused_variables)]
     pub(crate) fn labeled_{{labeled_type}}_test_get(metric_id: u32, ping_name: &str) -> Option<HashMap<String, {{labeled_type|test_get_type}}>> {
-        let ping_name = if ping_name.len() == 0 {
+        let ping_name = if ping_name.is_empty() {
             None
         } else {
             Some(ping_name.to_string())

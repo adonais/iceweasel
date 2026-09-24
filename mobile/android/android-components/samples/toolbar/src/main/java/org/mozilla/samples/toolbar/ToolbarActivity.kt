@@ -22,9 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.coroutines.cancellation.CancellationException
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -426,7 +424,6 @@ class ToolbarActivity : AppCompatActivity() {
     }
 
     /** A toolbar that looks like the toolbar in Fenix in a custom tab. */
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     @Suppress("MagicNumber")
     fun setupFenixCustomTabToolbar() {
         showToolbar()
@@ -497,8 +494,8 @@ class ToolbarActivity : AppCompatActivity() {
             Toast.makeText(this, "Site security", Toast.LENGTH_SHORT).show()
         }
 
-        GlobalScope.launch(Dispatchers.Main) {
-            delay(2000)
+        lifecycleScope.launch {
+            delay(2000.milliseconds)
             binding.toolbar.title = "Mobile browsers for iOS and Android | Firefox"
         }
     }

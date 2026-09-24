@@ -169,13 +169,9 @@ add_task(async function test_paste_formatted() {
     getEditor().flags &= ~SpecialPowers.Ci.nsIEditor.eEditorReadonlyMask;
   })();
 
-  let noneditable = document.getElementById("noneditable");
-  selection.selectAllChildren(noneditable);
-  selection.collapseToStart();
-
-  function getPasteResult() {
+  function getPasteResult(element) {
     return new Promise(resolve => {
-      noneditable.addEventListener("paste", event => {
+      element.addEventListener("paste", event => {
         resolve({
           text: event.clipboardData.getData("text/plain"),
           html: event.clipboardData.getData("text/html"),
@@ -184,26 +180,35 @@ add_task(async function test_paste_formatted() {
     });
   }
 
-  // Normal paste into non-editable area
-  let pastePromise = getPasteResult();
-  doKey(noneditable, false);
-  is(noneditable.innerHTML, "Text", "paste into non-editable");
+  // Paste into input, textarea, editable, noneditable areas.
+  for (let fieldid of ["input", "textarea", "editable", "noneditable"]) {
+    const field = document.getElementById(fieldid);
+    if (fieldid.includes("editable")) {
+      selection.selectAllChildren(field);
+      selection.collapseToStart();
+    } else {
+      field.focus();
+    }
 
-  let result = await pastePromise;
-  is(result.text, expectedText, "paste text into non-editable");
-  is(result.html,
-     htmlPrefix + expectedHTML + htmlPostfix,
-     "paste html into non-editable");
+    // Normal paste
+    let pastePromise = getPasteResult(field);
+    doKey(field, false);
 
-  // Unformatted paste into non-editable area
-  pastePromise = getPasteResult();
-  doKey(noneditable, true);
-  is(noneditable.innerHTML, "Text", "paste unformatted into non-editable");
+    let result = await pastePromise;
+    is(result.text, expectedText, `paste text into ${field}`);
+    is(result.html,
+       htmlPrefix + expectedHTML + htmlPostfix,
+       `paste html into ${field}`);
 
-  result = await pastePromise;
-  is(result.text, expectedText, "paste unformatted text into non-editable");
-  // Formatted HTML text should not exist when pasting unformatted.
-  is(result.html, "", "paste unformatted html into non-editable");
+    // Unformatted paste
+    pastePromise = getPasteResult(field);
+    doKey(field, true);
+
+    result = await pastePromise;
+    is(result.text, expectedText, `paste unformatted text into ${field}`);
+    // Formatted HTML text should not exist when pasting unformatted.
+    is(result.html, "", `paste unformatted html into ${field}`);
+  }
 });
 
 function getEditor() {

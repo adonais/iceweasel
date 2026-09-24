@@ -34,6 +34,7 @@ dependencies {
     implementation libs.kotlinx.serialization.json
 
     testImplementation project(':components:support-test')
+    testImplementation project(':components:support-test-fakes')
     testImplementation project(':components:support-test-libstate')
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests

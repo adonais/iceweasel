@@ -55,6 +55,14 @@
       <label is="moz-label" shownaccesskey="t" class="test-changetext"
         ><span class="text">It has text</span></label
       >
+
+      <label
+        is="moz-label"
+        enable-center-crop=""
+        style="max-width: 15ch"
+        class="test-center-crop"
+        >This is more than 15 characters and will be cropped.</label
+      >
     </div>
     <script class="testbody" type="application/javascript">
       let labels = document.querySelectorAll("label[is='moz-label']");
@@ -90,18 +98,20 @@
           let accessKey =
             label.getAttribute("accesskey") ||
             label.getAttribute("shownaccesskey");
-          let wrapper = label.querySelector(".accesskey");
-          is(
-            wrapper.textContent,
-            accessKey,
-            "The accesskey character is wrapped."
-          );
+          if (accessKey) {
+            let wrapper = label.querySelector(".accesskey");
+            is(
+              wrapper.textContent,
+              accessKey,
+              "The accesskey character is wrapped."
+            );
 
-          let textDecoration = getComputedStyle(wrapper)["text-decoration"];
-          ok(
-            textDecoration.includes("underline"),
-            "The accesskey character is underlined."
-          );
+            let textDecoration = getComputedStyle(wrapper)["text-decoration"];
+            ok(
+              textDecoration.includes("underline"),
+              "The accesskey character is underlined."
+            );
+          }
         });
       });
 
@@ -314,6 +324,44 @@
         );
 
         label.remove();
+      });
+
+      add_task(async function testCenterCroppingSyntacticSugar() {
+        // The actual cropping behaviour is tested in the
+        // test_chrome_label_center_cropping test. This test merely tests the
+        // syntactic sugar for using center cropping.
+        const UNCROPPED_INITIAL_TEXT =
+          "This is more than 15 characters and will be cropped.";
+        let label = document.querySelector(".test-center-crop");
+        is(
+          label.getAttribute("crop"),
+          "center",
+          "Should have set crop attribute to center"
+        );
+        is(
+          label.getAttribute("value"),
+          UNCROPPED_INITIAL_TEXT,
+          "Value should have been set to uncropped text."
+        );
+        is(
+          label.textContent,
+          UNCROPPED_INITIAL_TEXT,
+          "textContent getter should be the uncropped text."
+        );
+
+        const UPDATED_LONG_TEXT =
+          "This is yet another very long string that we expect to be cropped when center cropping is enabled.";
+        label.textContent = UPDATED_LONG_TEXT;
+        is(
+          label.getAttribute("value"),
+          UPDATED_LONG_TEXT,
+          "Should have updated the value attribute with updated text."
+        );
+        is(
+          label.textContent,
+          UPDATED_LONG_TEXT,
+          "textContent getter should be the uncropped text."
+        );
       });
     </script>
   </body>

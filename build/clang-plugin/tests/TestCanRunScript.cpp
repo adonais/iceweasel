@@ -879,3 +879,33 @@ struct DisallowMozKnownLiveMemberNotFromKnownLive {
 void IncorrectlyUnmarkedEarlyDeclaration(); // expected-note {{The first declaration exists here}}
 
 MOZ_CAN_RUN_SCRIPT void IncorrectlyUnmarkedEarlyDeclaration() {}; // expected-error {{MOZ_CAN_RUN_SCRIPT must be put in front of the declaration, not the definition}}
+
+struct TestMethodAnnotation: public RefCountedBase {
+	MOZ_KNOWN_LIVE RefCountedBase* KnownLiveMethod() {
+		return mMember;
+	}
+	RefCountedBase* mMember = nullptr;
+};
+
+MOZ_CAN_RUN_SCRIPT void TestKnownLiveMethod(TestMethodAnnotation& aArg) {
+	TestMethodAnnotation* weak = new TestMethodAnnotation;
+	// MOZ_KNOWN_LIVE method call requires live `this` to be considered live.
+	test2(weak->KnownLiveMethod()); // expected-error {{arguments must all be strong refs or caller's parameters when calling a function marked as MOZ_CAN_RUN_SCRIPT (including the implicit object argument).  'weak->KnownLiveMethod()' is neither.}}
+	TestMethodAnnotation& ref = *weak;
+	test2(ref.KnownLiveMethod()); // expected-error {{arguments must all be strong refs or caller's parameters when calling a function marked as MOZ_CAN_RUN_SCRIPT (including the implicit object argument).  'ref.KnownLiveMethod()' is neither.}}
+
+	// MOZ_KNOWN_LIVE method call on known-live things is live.
+	RefPtr strong = new TestMethodAnnotation;
+	test2(MOZ_KnownLive(weak)->KnownLiveMethod());
+	test2(strong->KnownLiveMethod());
+	test2((*strong).KnownLiveMethod());
+	test2(aArg.KnownLiveMethod());
+}
+
+typedef RefCountedBase RefCountedTypedef;
+using RefCountedUsing = RefCountedBase;
+
+MOZ_CAN_RUN_SCRIPT void TestIndirectRefCounted() {
+	test2(new RefCountedTypedef); // expected-error {{arguments must all be strong refs or caller's parameters when calling a function marked as MOZ_CAN_RUN_SCRIPT (including the implicit object argument).  'new RefCountedTypedef' is neither.}}
+	test2(new RefCountedUsing); // expected-error {{arguments must all be strong refs or caller's parameters when calling a function marked as MOZ_CAN_RUN_SCRIPT (including the implicit object argument).  'new RefCountedUsing' is neither.}}
+}

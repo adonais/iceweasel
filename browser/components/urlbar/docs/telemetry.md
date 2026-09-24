@@ -594,6 +594,8 @@ Changelog
 
 ### urlbar.zeroprefix.abandonment
 
+NOTE: This telemetry is no longer collected. See changelog below.
+
 A uint recording the number of abandonments of the zero-prefix view.
 "Zero-prefix" means the search string was empty, so the zero-prefix view is
 the view that's shown when the user clicks in the urlbar before typing a
@@ -602,7 +604,17 @@ the user's top sites. "Abandonment" means the user opened the zero-prefix view
 but it was closed without the user picking a result inside it. This scalar was
 introduced in Firefox 110.0 in bug 1806765.
 
+Changelog
+: Firefox 157
+
+  : Legacy `urlbar.zeroprefix.abandonment` telemetry removed, and the Glean
+    metric replaced by `urlbar.zeroprefix2.abandonment`, a labeled counter
+    keyed by search access point, so it covers the search bar, New Tab's
+    search bar and the smartbar besides the address bar. (See bug 2066165)
+
 ### urlbar.zeroprefix.engagement
+
+NOTE: This telemetry is no longer collected. See changelog below.
 
 A uint recording the number of engagements in the zero-prefix view.
 "Zero-prefix" means the search string was empty, so the zero-prefix view is
@@ -611,7 +623,17 @@ search string. Often it's called the "top sites" view since normally it shows
 the user's top sites. "Engagement" means the user picked a result inside the
 view. This scalar was introduced in Firefox 110.0 in bug 1806765.
 
+Changelog
+: Firefox 157
+
+  : Legacy `urlbar.zeroprefix.engagement` telemetry removed, and the Glean
+    metric replaced by `urlbar.zeroprefix2.engagement`, a labeled counter
+    keyed by search access point, so it covers the search bar, New Tab's
+    search bar and the smartbar besides the address bar. (See bug 2066165)
+
 ### urlbar.zeroprefix.exposure
+
+NOTE: This telemetry is no longer collected. See changelog below.
 
 A uint recording the number of times the user was exposed to the zero-prefix
 view; that is, the number of times it was shown. "Zero-prefix" means the
@@ -619,6 +641,14 @@ search string was empty, so the zero-prefix view is the view that's shown when
 the user clicks in the urlbar before typing a search string. Often it's called
 the "top sites" view since normally it shows the user's top sites. This scalar
 was introduced in Firefox 110.0 in bug 1806765.
+
+Changelog
+: Firefox 157
+
+  : Legacy `urlbar.zeroprefix.exposure` telemetry removed, and the Glean
+    metric replaced by `urlbar.zeroprefix2.exposure`, a labeled counter
+    keyed by search access point, so it covers the search bar, New Tab's
+    search bar and the smartbar besides the address bar. (See bug 2066165)
 
 ### urlbar.quickaction.picked
 

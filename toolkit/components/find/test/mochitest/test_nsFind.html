@@ -9,6 +9,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1589786
 https://bugzilla.mozilla.org/show_bug.cgi?id=1611568
 https://bugzilla.mozilla.org/show_bug.cgi?id=1649187
 https://bugzilla.mozilla.org/show_bug.cgi?id=1699599
+https://bugzilla.mozilla.org/show_bug.cgi?id=2043324
 -->
 <head>
   <meta charset="UTF-8">
@@ -186,6 +187,26 @@ async function runTests() {
   function assertNotFound(node, value) {
     ok(!find(node, value), "\"" + value + "\" should not be found");
   }
+
+  const nacSearchStart = document.getElementById("nacSearchStart");
+  const nacSearchTarget = document.getElementById("nacSearchTarget");
+  const nacSearchRange = document.createRange();
+  nacSearchRange.setStart(
+    nacSearchStart.firstChild,
+    nacSearchStart.firstChild.length
+  );
+  nacSearchRange.setEnd(
+    nacSearchTarget.firstChild,
+    nacSearchTarget.firstChild.length
+  );
+  searchValue = "text after generated content";
+  retRange = rf.Find(
+    searchValue,
+    nacSearchRange,
+    nacSearchRange,
+    nacSearchRange
+  );
+  ok(retRange, `"${searchValue}" not found after native anonymous content`);
 
   var quotes = document.getElementById("quotes");
 
@@ -404,6 +425,7 @@ async function runTests() {
 #tabular { display: table; }
 #tabular div { display: table-row; }
 #tabular div div { display: table-cell; }
+#nacSearchContainer::before { content: "generated content"; display: block; }
 </style>
 </head>
 <body onload="runTests()">
@@ -462,6 +484,8 @@ async function runTests() {
 </div>
 <p id="nonspace">&#x2000D;&#x10000A;</p>
 <p id="space"> <br>&nbsp;</p>
+<p id="nacSearchStart">start</p>
+<div id="nacSearchContainer"><span id="nacSearchTarget">text after generated content</span></div>
 <select id="select-with-optgroup" multiple>
   <optgroup label="optgroup">
     <option>OptionInOptGroup</option>

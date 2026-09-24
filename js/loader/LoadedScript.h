@@ -382,7 +382,24 @@ class LoadedScript final : public nsISupports {
     MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
     const auto& buf = mSRIAndSerializedStencil;
     auto offset = mSerializedStencilOffset;
+    // A decode task holds the bytes while it runs, and a cancelled one drops
+    // them, so neither leaves the request to be processed further.
+    MOZ_DIAGNOSTIC_ASSERT(buf.length() >= offset);
     return TranscodeRange(buf.begin() + offset, buf.length() - offset);
+  }
+
+  // Hands the bytes to a decode task, which returns or drops them.
+  TranscodeBuffer TakeSRIAndSerializedStencil() {
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
+    return std::move(mSRIAndSerializedStencil);
+  }
+
+  void RestoreSRIAndSerializedStencil(TranscodeBuffer&& aBuffer) {
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
+    MOZ_ASSERT(mSRIAndSerializedStencil.empty());
+    mSRIAndSerializedStencil = std::move(aBuffer);
+    // A decoded stencil may borrow the buffer across the move.
+    MOZ_ASSERT(mSRIAndSerializedStencil.isStorageConsistent());
   }
 
   // ---- Methods shared between both consumers ----
@@ -570,6 +587,9 @@ class LoadedScript final : public nsISupports {
   //   * The SRI, padding, and the serialized Stencil, which is received
   //     from necko. The data is laid out according to ScriptBytecodeDataLayout
   //     or, if compression is enabled, ScriptBytecodeCompressedDataLayout.
+  //
+  // Empty while a decode task owns the bytes, and permanently if it is
+  // cancelled.
   TranscodeBuffer mSRIAndSerializedStencil;
 
   // Holds the stencil for the script, cached for the subsequent requests.
@@ -670,6 +690,12 @@ class LoadedScriptDelegate {
   }
   TranscodeRange SerializedStencil() const {
     return GetLoadedScript()->SerializedStencil();
+  }
+  TranscodeBuffer TakeSRIAndSerializedStencil() {
+    return GetLoadedScript()->TakeSRIAndSerializedStencil();
+  }
+  void RestoreSRIAndSerializedStencil(TranscodeBuffer&& aBuffer) {
+    GetLoadedScript()->RestoreSRIAndSerializedStencil(std::move(aBuffer));
   }
 
   size_t GetSRILength() const { return GetLoadedScript()->GetSRILength(); }

@@ -40,7 +40,14 @@ BACKGROUND_TABS = [
     "https://www.temu.com",
     "https://www.espn.com/nfl/game/_/gameId/401671793/chiefs-falcons",
 ]
+CROP_TOP, CROP_BOTTOM, CROP_LEFT, CROP_RIGHT = (
+    100,
+    440,
+    0,
+    20,
+)
 SUPPORTED_DEVICES = {"SM-A556E": "a55", "Pixel 6": "p6", "SM-S921B": "s24"}
+CRITICAL_METRICS = {("newssite_applink_startup", "SM-A55")}
 VALID_IMAGES_DIR = "testing/performance/mobile-startup/expected_startup_screenshots"
 ERROR_THRESHOLD = 8  # This is the lower bound for the high pass filter to remove noise
 MAX_STARTUP_TIME = 25000  # 25000ms = 25 seconds
@@ -248,10 +255,14 @@ class ImageAnalzer:
             raise Exception("Frame not read")
         # We crop out the top 100 pixels in each image as when we have --bug-report in the
         # screen-recording command it displays a timestamp which interferes with the image comparisons
-        # We crop out the bottom 100 pixels to remove the fading in of the OS navigation controls
+        # We crop out the bottom pixels to remove the fading in of the OS navigation
+        # controls, and the chrome-m command-line-flags popup
         # We crop out the right 20 pixels to remove the scroll bar as it interferes with startup accuracy
         if cropped:
-            return frame[100 : int(self.height) - 150, 0 : int(self.width) - 20]
+            return frame[
+                CROP_TOP : int(self.height) - CROP_BOTTOM,
+                CROP_LEFT : int(self.width) - CROP_RIGHT,
+            ]
         return frame
 
     def error(self, img1, img2):
@@ -355,6 +366,15 @@ class ImageAnalzer:
             self.cpu_data["org.mozilla.fenix:tab"]["time"] += [tab_processes_time]
         self.cpu_data["total"]["time"] += [total_time_seconds]
 
+    def alert_severity(self):
+        """Severity of the alerts produced by this test's main metric."""
+        if self.browser != PROD_FENIX:
+            return "normal"
+        for metric, model in CRITICAL_METRICS:
+            if metric == self.metric_name and model in self.device_model:
+                return "critical"
+        return "normal"
+
     def perfmetrics_cpu_data_ingesting(self):
         for process in self.cpu_data.keys():
             print(
@@ -377,7 +397,8 @@ class ImageAnalzer:
             filename += f"-{device}.png"
             validated_image = cv2.imread(str(pathlib.Path(VALID_IMAGES_DIR, filename)))
             cropped_image = validated_image[
-                100 : int(self.height) - 150, 0 : int(self.width) - 20
+                CROP_TOP : int(self.height) - CROP_BOTTOM,
+                CROP_LEFT : int(self.width) - CROP_RIGHT,
             ]
             cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
             diff = self.error(self.get_image(frame_to_check), cropped_image)
@@ -444,7 +465,9 @@ if __name__ == "__main__":
         + str(start_video_timestamp)
         + ', "name": "'
         + PERFHERDER_NAMES[test]
-        + '", "shouldAlert": true}'
+        + '", "shouldAlert": true, "alertSeverity": "'
+        + ImageObject.alert_severity()
+        + '"}'
     )
 
     print(

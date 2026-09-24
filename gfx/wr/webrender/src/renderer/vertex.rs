@@ -11,7 +11,7 @@ use std::{marker::PhantomData, mem, num::NonZeroUsize, ops};
 use api::units::*;
 use crate::{
     device::{
-        Device, Texture, TextureFilter, TextureUploader, UploadPBOPool, VBOId, VertexDescriptor,
+        Device, Texture, TextureFilter, TextureUploader, UploadBufferPool, VBOId, VertexDescriptor,
         VertexUsageHint, VAO,
     },
     frame_builder::Frame,
@@ -296,7 +296,7 @@ impl VertexDataTextures {
         }
     }
 
-    pub fn update(&mut self, device: &mut Device, pbo_pool: &mut UploadPBOPool, frame: &mut Frame) {
+    pub fn update(&mut self, device: &mut Device, pbo_pool: &mut UploadBufferPool, frame: &mut Frame) {
         let mut texture_uploader = device.upload_texture(pbo_pool);
         self.prim_header_f_texture.update(
             device,

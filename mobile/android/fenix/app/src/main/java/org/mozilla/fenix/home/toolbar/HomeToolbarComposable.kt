@@ -52,7 +52,6 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 // Speculative delay for putting the toolbar in edit mode after an initial voice search request.
@@ -109,21 +108,10 @@ internal class HomeToolbarComposable(
                 }
                 .value
         val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
-        val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }.value
         val isPrivateMode = browsingModeManager.mode.isPrivate
         val isUniversalEdgeToEdge = settings.enableUniversalEdgeToEdgeWallpapers
-        // With the universal edge-to-edge treatment on, the wallpaper is drawn edge-to-edge behind
-        // the toolbar for any non-default wallpaper, so keep the toolbar background transparent to
-        // let it show through. When off, only the dedicated edge-to-edge wallpaper is treated this
-        // way (gated by its own feature flag).
         val hasWallpaperBackground =
-            if (isUniversalEdgeToEdge) {
-                !isPrivateMode
-            } else {
-                !isPrivateMode &&
-                    settings.enableHomepageEdgeToEdgeBackgroundFeature &&
-                    currentWallpaperName == Wallpaper.EDGE_TO_EDGE
-            }
+            hasWallpaperBackground(appStore = appStore, settings = settings, isPrivateMode = isPrivateMode)
         // Tint the browser action icons outside the address bar (tab counter, menu) with the
         // wallpaper's text color. The page actions inside the address bar (e.g. voice search) keep
         // the default color so they stay legible on the address bar background. Universal only.
@@ -266,7 +254,7 @@ internal class HomeToolbarComposable(
     private fun handleTypedSearchRequest() {
         handleStartingSearch(directToSearchConfig)
 
-        if (directToSearchConfig.sessionId != null) {
+        if (directToSearchConfig.sessionId != null && !settings.showAddressBarInFocusMode) {
             browserStore.state.findTab(directToSearchConfig.sessionId)?.let {
                 toolbarStore.dispatch(
                     SearchQueryUpdated(

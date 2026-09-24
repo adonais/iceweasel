@@ -18,6 +18,12 @@ class CrashReporterInitArgs;
 
 namespace mozilla::ipc {
 
+#if defined(XP_DARWIN)
+typedef mozilla::UniqueMachSendRight ChildThreadId;
+#else
+typedef CrashReporter::ThreadId ChildThreadId;
+#endif  // defined(XP_DARWIN)
+
 // This is the newer replacement for CrashReporterParent. It is created in
 // response to a InitCrashReporter message on a top-level actor. When the
 // process terminates abnormally, the top-level should call GenerateCrashReport
@@ -74,7 +80,7 @@ class CrashReporterHost {
 #endif
 
     nsCOMPtr<nsIFile> targetDump;
-    if (!CrashReporter::CreateMinidumpsAndPair(childHandle, mThreadId,
+    if (!CrashReporter::CreateMinidumpsAndPair(childHandle, GetRawThreadId(),
                                                aPairName, mExtraAnnotations,
                                                getter_AddRefs(targetDump))) {
       return false;
@@ -107,8 +113,13 @@ class CrashReporterHost {
                           const nsString& aChildDumpID);
 
  private:
-  // Get the nsICrashService crash type to use for an impending crash.
-  int32_t GetCrashType();
+  CrashReporter::ThreadId GetRawThreadId() const {
+#if defined(XP_DARWIN)
+    return mThreadId.get();
+#else
+    return mThreadId;
+#endif  // defined(XP_DARWIN)
+  }
 
   static void RecordCrashWithTelemetry(GeckoProcessType aProcessType,
                                        int32_t aCrashType);
@@ -119,7 +130,7 @@ class CrashReporterHost {
  private:
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
-  CrashReporter::ThreadId mThreadId;
+  ChildThreadId mThreadId;
   time_t mStartTime;
   AnnotationTable mExtraAnnotations;
   nsString mDumpID;

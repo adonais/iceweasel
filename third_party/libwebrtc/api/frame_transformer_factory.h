@@ -15,11 +15,15 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
 #include "api/frame_transformer_interface.h"
 #include "api/payload_type.h"
+#include "api/units/timestamp.h"
+#include "api/video/video_codec_type.h"
+#include "api/video/video_frame_type.h"
 #include "rtc_base/system/rtc_export.h"
 
 // This file contains EXPERIMENTAL functions to create video frames from
@@ -46,6 +50,16 @@ CreateOutgoingAudioFrame(TransformableAudioFrameInterface::FrameType frame_type,
                          const std::string& codec_mime_type,
                          std::optional<uint16_t> sequence_number,
                          std::optional<uint8_t> audio_level_dbov);
+
+RTC_EXPORT std::unique_ptr<TransformableVideoFrameInterface>
+CreateOutgoingVideoFrame(VideoFrameType frame_type,
+                         PayloadType payload_type,
+                         uint32_t rtp_timestamp_without_offset,
+                         std::span<const uint8_t> payload_data,
+                         std::optional<int64_t> absolute_capture_timestamp_ms,
+                         const std::vector<uint32_t>& csrcs,
+                         VideoCodecType codec_type,
+                         std::optional<Timestamp> presentation_timestamp);
 }  // namespace webrtc
 
 #endif  // API_FRAME_TRANSFORMER_FACTORY_H_

@@ -37,15 +37,16 @@ missing, add the smallest general primitive/helper. → `guides/extending-basepa
 
 ## 4. Assertion gate — are the verifications expressible?
 
-Can you express each assertion with the `mozVerify*` family (often `mozVerifyElementsByGroup("...")`)? If not,
+Can you express each assertion with the `mozVerify*` family (often `mozVerifyElementsByGroup(SomeSelectors.Group.X)`)? If not,
 add a verify primitive. → `guides/extending-basepage.md`.
 
 ## 5. Static pre-flight (before you burn a device build)
 
 Sanity-check the code without compiling: do `R.string`/`R.id` resolve, does every page object have a real nav
-path, are there any inline selectors, do the `moz*` verbs exist, is the test-class boilerplate present
-(`private val mockWebServer get() = fenixTestRule.mockWebServer`, `TestAssetHelper` imports)? Fix everything
-first. _(Helper: `effcheck …` catches all of these.)_
+path, are there any inline selectors, do the `moz*` verbs exist, and are required `TestAssetHelper` imports
+present? If the test needs MockWebServer, use the protected `BaseTest.mockWebServer` and declare the matching
+execution requirement. A separately owned server is a documented legacy-parity exception, not normal test
+boilerplate. Fix everything first. _(Helper: `effcheck …` catches many of these.)_
 
 ## 6. Write, run, verify
 

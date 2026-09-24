@@ -183,9 +183,11 @@ def test_build_kwargs_with_address(build_kwargs_using, address):
 def test_build_kwargs_with_binary_or_address(
     expected_driver_args, build_kwargs_using, binary, address
 ):
-    built_kwargs = build_kwargs_using(
-        {"binary": binary, "address": address, "emulator": None}
-    )
+    built_kwargs = build_kwargs_using({
+        "binary": binary,
+        "address": address,
+        "emulator": None,
+    })
     if binary:
         expected_driver_args["bin"] = binary
         if address:

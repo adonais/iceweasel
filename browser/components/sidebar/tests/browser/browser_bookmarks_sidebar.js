@@ -107,6 +107,149 @@ async function addBookmarkViaContextMenu(triggerEl, url) {
   return PlacesUIUtils.lastBookmarkDialogDeferred.promise;
 }
 
+/**
+ * Opens a bookmarks folder and waits for its contents to render.
+ *
+ * @param {HTMLDetailsElement} folderDetails - The folder's details element.
+ */
+async function openFolder(folderDetails) {
+  if (!folderDetails.open) {
+    folderDetails.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      folderDetails,
+      { attributes: true },
+      () => folderDetails.open
+    );
+  }
+}
+
+/**
+ * Opens the Bookmarks Toolbar folder in the supplied list.
+ *
+ * @param {SidebarBookmarkList} tabList - The list containing the toolbar folder.
+ * @returns {HTMLDetailsElement} The opened toolbar folder.
+ */
+async function openToolbarFolder(tabList) {
+  const toolbarFolder = await findBookmarkItemByGuid(
+    tabList,
+    "folderEls",
+    PlacesUtils.bookmarks.toolbarGuid
+  );
+  await openFolder(toolbarFolder);
+  return toolbarFolder;
+}
+
+/**
+ * Finds a bookmark row, expanding its ancestor folders as needed.
+ *
+ * @param {SidebarBookmarkList} tabList - The sidebar's root bookmark list.
+ * @param {object} bookmark - The bookmark returned by Places insertion.
+ * @returns {SidebarBookmarkRow} The matching rendered bookmark row.
+ */
+async function getBookmarkRow(tabList, bookmark) {
+  const list = await getBookmarkList(tabList, bookmark.parentGuid);
+  return findBookmarkItemByGuid(list, "rowEls", bookmark.guid);
+}
+
+/**
+ * Finds a bookmark folder, expanding its ancestor folders as needed.
+ *
+ * @param {SidebarBookmarkList} tabList - The sidebar's root bookmark list.
+ * @param {object} folder - The folder returned by Places insertion.
+ * @returns {HTMLDetailsElement} The matching rendered folder.
+ */
+async function getBookmarkFolder(tabList, folder) {
+  const list = await getBookmarkList(tabList, folder.parentGuid);
+  return findBookmarkItemByGuid(list, "folderEls", folder.guid);
+}
+
+/**
+ * Opens a bookmark's ancestor folders and returns its containing list.
+ *
+ * @param {SidebarBookmarkList} tabList - The sidebar's root bookmark list.
+ * @param {string} parentGuid - The GUID of the containing Places folder.
+ * @returns {SidebarBookmarkList} The list containing the requested bookmark or folder.
+ */
+async function getBookmarkList(tabList, parentGuid) {
+  const path = [];
+  while (parentGuid !== PlacesUtils.bookmarks.rootGuid) {
+    path.unshift(parentGuid);
+    parentGuid = (await PlacesUtils.bookmarks.fetch(parentGuid)).parentGuid;
+  }
+
+  let list = tabList;
+  for (const guid of path) {
+    const folder = await findBookmarkItemByGuid(list, "folderEls", guid);
+    await openFolder(folder);
+    list = folder.querySelector("sidebar-bookmark-list");
+  }
+  return list;
+}
+
+/**
+ * Waits for a bookmark row or folder with a given GUID.
+ *
+ * @param {SidebarBookmarkList} list - The list to search.
+ * @param {string} query - The node list from `SidebarBookmarkList.queries`.
+ * @param {string} guid - The Places GUID to match.
+ * @returns {HTMLDetailsElement | SidebarBookmarkRow} The matching rendered element.
+ */
+async function findBookmarkItemByGuid(list, query, guid) {
+  return BrowserTestUtils.waitForMutationCondition(
+    list.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...list[query]].find(element => element.guid === guid)
+  );
+}
+
+/**
+ * Creates a Recently Bookmarked query and a Recent Tags query with one tag.
+ *
+ * @param {string} url - The URL used for the query result.
+ * @param {string} tag - The tag used for the tags-root query.
+ * @returns {object} The created bookmarks for use and cleanup.
+ */
+async function createSmartBookmarks(url, tag) {
+  // "Recently Bookmarked" style smart bookmark.
+  const recentBookmark = await addBookmark({ title: "Recent Page", url });
+  const recentSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recently Bookmarked",
+    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
+  });
+
+  // "Recent Tags" style smart bookmark with one bookmark tagged so the
+  // RESULTS_AS_TAGS_ROOT query yields a tag container.
+  await PlacesUtils.tagging.tagURI(Services.io.newURI(url), [tag]);
+  const tagsSmart = await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "Recent Tags",
+    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
+  });
+  return { recentBookmark, recentSmart, tagsSmart };
+}
+
+/**
+ * Removes the smart-bookmark fixture created by createSmartBookmarks().
+ *
+ * @param {object} smartBookmarks - The fixture returned by createSmartBookmarks().
+ * @param {object} smartBookmarks.recentBookmark - The regular tagged bookmark.
+ * @param {object} smartBookmarks.recentSmart - The Recently Bookmarked query.
+ * @param {object} smartBookmarks.tagsSmart - The Recent Tags query.
+ * @param {string} url - The URL to untag.
+ * @param {string} tag - The tag to remove.
+ */
+async function removeSmartBookmarks(
+  { recentBookmark, recentSmart, tagsSmart },
+  url,
+  tag
+) {
+  await PlacesUtils.tagging.untagURI(Services.io.newURI(url), [tag]);
+  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentSmart.guid);
+  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+}
+
 add_setup(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
   await SidebarTestUtils.waitForInitialized(window);
@@ -152,47 +295,33 @@ add_task(async function test_bookmarks_shows_toolbar_folder() {
   SidebarTestUtils.closePanel(window);
 });
 
-add_task(async function test_bookmarks_shows_bookmark_in_folder() {
-  const bookmark = await addBookmark({ title: "My Test Page" });
+async function testBookmarkTitleRendering(bookmarkInfo, title, message) {
+  const bookmark = await addBookmark(bookmarkInfo);
 
   const { component } = await showBookmarksSidebar();
-  const tabList = component.bookmarkList;
-
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  // Open the toolbar folder if not already open.
-  const details = tabList.folderEls[0];
-  if (!details.open) {
-    details.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      details,
-      { attributes: true },
-      () => details.open
-    );
-  }
-
-  const nestedList = details.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => nestedList.rowEls[0]
-  );
-
-  const rows = nestedList.rowEls;
-  Assert.greater(
-    rows.length,
-    0,
-    "Bookmark rows are rendered inside the folder."
-  );
-  const matchingRow = [...rows].find(r => r.title === "My Test Page");
-  ok(matchingRow, "The added bookmark is visible in the panel.");
+  const row = await getBookmarkRow(component.bookmarkList, bookmark);
+  Assert.equal(row.title, title, message);
 
   await PlacesUtils.bookmarks.remove(bookmark);
   SidebarTestUtils.closePanel(window);
+}
+
+add_task(async function test_bookmarks_shows_bookmark_in_folder() {
+  await testBookmarkTitleRendering(
+    { title: "My Test Page", url: "https://example.com" },
+    "My Test Page",
+    "If a bookmark has title set, use that title."
+  );
+  await testBookmarkTitleRendering(
+    { title: "", url: "https://example.com" },
+    "example.com/",
+    "If a bookmark has no title, generate one from its URI."
+  );
+  await testBookmarkTitleRendering(
+    { title: "", url: "about:robots" },
+    PlacesUIUtils.promptLocalization.formatValueSync("places-no-title"),
+    "If the URI is an about: page, use placeholder string."
+  );
 });
 
 add_task(async function test_bookmarks_search_filters_results() {
@@ -305,23 +434,8 @@ add_task(async function test_bookmarks_folder_expand_collapse() {
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const toolbarDetails = [...tabList.folderEls].find(d => d.open !== undefined);
+  const toolbarDetails = await openToolbarFolder(tabList);
   ok(toolbarDetails, "Toolbar folder details element found.");
-
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
@@ -393,21 +507,7 @@ add_task(async function test_bookmarks_context_menu_bookmark() {
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const toolbarDetails = tabList.folderEls[0];
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
+  const toolbarDetails = await openToolbarFolder(tabList);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
@@ -570,21 +670,7 @@ add_task(async function test_bookmarks_context_menu_folder() {
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const toolbarDetails = tabList.folderEls[0];
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
+  const toolbarDetails = await openToolbarFolder(tabList);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
@@ -635,21 +721,7 @@ add_task(
     const { component } = await showBookmarksSidebar();
     const tabList = component.bookmarkList;
 
-    await BrowserTestUtils.waitForMutationCondition(
-      tabList.shadowRoot,
-      { childList: true, subtree: true },
-      () => tabList.folderEls[0]
-    );
-
-    const toolbarDetails = tabList.folderEls[0];
-    if (!toolbarDetails.open) {
-      toolbarDetails.querySelector("summary").click();
-      await BrowserTestUtils.waitForMutationCondition(
-        toolbarDetails,
-        { attributes: true },
-        () => toolbarDetails.open
-      );
-    }
+    const toolbarDetails = await openToolbarFolder(tabList);
 
     const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
     await BrowserTestUtils.waitForMutationCondition(
@@ -691,15 +763,7 @@ add_task(async function test_add_folder_before_right_clicked_bookmark() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Beta")
-  );
-
-  const rowB = [...nestedList.rowEls].find(r => r.title === "Beta");
+  const rowB = await getBookmarkRow(tabList, bmB);
   const { index: indexB } = await PlacesUtils.bookmarks.fetch(bmB.guid);
 
   const newFolderGuid = await addFolderViaContextMenu(rowB.mainEl);
@@ -743,20 +807,7 @@ add_task(async function test_add_folder_into_right_clicked_folder() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.folderEls].some(
-        d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
-      )
-  );
-
-  const folderDetails = [...nestedList.folderEls].find(
-    d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
-  );
+  const folderDetails = await getBookmarkFolder(tabList, folder);
   const summary = folderDetails.querySelector("summary");
 
   const newFolderGuid = await addFolderViaContextMenu(summary);
@@ -787,15 +838,7 @@ add_task(async function test_add_bookmark_before_right_clicked_bookmark() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Beta")
-  );
-
-  const rowB = [...nestedList.rowEls].find(r => r.title === "Beta");
+  const rowB = await getBookmarkRow(tabList, bmB);
   const { index: indexB } = await PlacesUtils.bookmarks.fetch(bmB.guid);
 
   const newBookmarkGuid = await addBookmarkViaContextMenu(
@@ -840,20 +883,7 @@ add_task(async function test_add_bookmark_into_right_clicked_folder() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.folderEls].some(
-        d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
-      )
-  );
-
-  const folderDetails = [...nestedList.folderEls].find(
-    d => d.querySelector("summary")?.textContent.trim() === "Parent Folder"
-  );
+  const folderDetails = await getBookmarkFolder(tabList, folder);
   const summary = folderDetails.querySelector("summary");
 
   const newBookmarkGuid = await addBookmarkViaContextMenu(
@@ -878,19 +908,13 @@ add_task(async function test_add_bookmark_into_right_clicked_folder() {
 });
 
 add_task(async function test_bookmarks_copy_writes_all_flavors() {
-  await addBookmark({ title: "Copy Me", url: "https://example.com/copy" });
+  const bookmark = await addBookmark({
+    title: "Copy Me",
+    url: "https://example.com/copy",
+  });
 
   const { component } = await showBookmarksSidebar();
-  const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Copy Me")
-  );
-
-  const row = [...nestedList.rowEls].find(r => r.title === "Copy Me");
+  const row = await getBookmarkRow(component.bookmarkList, bookmark);
   await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-copy");
 
   for (const flavor of [
@@ -941,27 +965,10 @@ add_task(async function test_bookmarks_copy_paste_into_folder() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.rowEls].some(r => r.title === "Copy and Paste Me") &&
-      [...nestedList.folderEls].some(
-        d =>
-          d.querySelector("summary")?.textContent.trim() ===
-          "Paste Target Folder"
-      )
-  );
-
-  const row = [...nestedList.rowEls].find(r => r.title === "Copy and Paste Me");
+  const row = await getBookmarkRow(tabList, bm);
   await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-copy");
 
-  const folderDetails = [...nestedList.folderEls].find(
-    d =>
-      d.querySelector("summary")?.textContent.trim() === "Paste Target Folder"
-  );
+  const folderDetails = await getBookmarkFolder(tabList, folder);
   const summary = folderDetails.querySelector("summary");
   const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
 
@@ -1003,21 +1010,7 @@ add_task(async function test_bookmarks_cut_moves_after_paste() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.rowEls].some(r => r.title === "Cut Me") &&
-      [...nestedList.folderEls].some(
-        d =>
-          d.querySelector("summary")?.textContent.trim() ===
-          "Paste Target Folder"
-      )
-  );
-
-  const row = [...nestedList.rowEls].find(r => r.title === "Cut Me");
+  const row = await getBookmarkRow(tabList, bm);
   await activateContextMenuItem(row.mainEl, "sidebar-bookmarks-context-cut");
 
   ok(
@@ -1025,10 +1018,7 @@ add_task(async function test_bookmarks_cut_moves_after_paste() {
     "The bookmark still exists after being cut, before pasting."
   );
 
-  const folderDetails = [...nestedList.folderEls].find(
-    d =>
-      d.querySelector("summary")?.textContent.trim() === "Paste Target Folder"
-  );
+  const folderDetails = await getBookmarkFolder(tabList, folder);
   const summary = folderDetails.querySelector("summary");
   await activateContextMenuItem(summary, "sidebar-bookmarks-context-paste");
 
@@ -1050,35 +1040,12 @@ add_task(async function test_bookmarks_cut_moves_after_paste() {
 });
 
 add_task(async function test_bookmarks_delete_via_context_menu() {
-  await addBookmark({ title: "Delete Me" });
+  const bookmark = await addBookmark({ title: "Delete Me" });
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const toolbarDetails = tabList.folderEls[0];
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
-
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Delete Me")
-  );
-
-  const row = [...nestedList.rowEls].find(r => r.title === "Delete Me");
+  const row = await getBookmarkRow(tabList, bookmark);
 
   const contextMenu = SidebarController.currentContextMenu;
   const promiseRemoved =
@@ -1093,9 +1060,7 @@ add_task(async function test_bookmarks_delete_via_context_menu() {
   await BrowserTestUtils.waitForMutationCondition(
     tabList.shadowRoot,
     { childList: true, subtree: true },
-    () =>
-      !nestedList.isConnected ||
-      ![...nestedList.rowEls].some(r => r.title === "Delete Me")
+    () => !row.isConnected
   );
 
   SidebarTestUtils.closePanel(window);
@@ -1107,21 +1072,7 @@ add_task(async function test_bookmarks_empty_folder_shows_label() {
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  const toolbarDetails = tabList.folderEls[0];
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
+  const toolbarDetails = await openToolbarFolder(tabList);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
@@ -1151,24 +1102,6 @@ add_task(async function test_bookmarks_empty_folder_shows_label() {
   SidebarTestUtils.closePanel(window);
 });
 
-async function openToolbarFolder(tabList) {
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-  const toolbarDetails = tabList.folderEls[0];
-  if (!toolbarDetails.open) {
-    toolbarDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      toolbarDetails,
-      { attributes: true },
-      () => toolbarDetails.open
-    );
-  }
-  return toolbarDetails;
-}
-
 add_task(async function test_bookmarks_drag_reorders_items() {
   const bmA = await addBookmark({
     title: "Drag First",
@@ -1182,16 +1115,8 @@ add_task(async function test_bookmarks_drag_reorders_items() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Drag Second")
-  );
-
-  const rowA = [...nestedList.rowEls].find(r => r.title === "Drag First");
-  const rowB = [...nestedList.rowEls].find(r => r.title === "Drag Second");
+  const rowA = await getBookmarkRow(tabList, bmA);
+  const rowB = await getBookmarkRow(tabList, bmB);
   ok(rowA && rowB, "Both bookmark rows are visible.");
 
   let fetchA = await PlacesUtils.bookmarks.fetch(bmA.guid);
@@ -1238,29 +1163,10 @@ add_task(async function test_bookmarks_drag_into_folder() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.rowEls].some(r => r.title === "Drag To Folder") &&
-      [...nestedList.folderEls].some(
-        d =>
-          d.querySelector("summary")?.textContent.trim() ===
-          "Drop Target Folder"
-      )
-  );
-
-  const bookmarkRow = [...nestedList.rowEls].find(
-    r => r.title === "Drag To Folder"
-  );
-  const folderSummary = [...nestedList.folderEls]
-    .find(
-      d =>
-        d.querySelector("summary")?.textContent.trim() === "Drop Target Folder"
-    )
-    ?.querySelector("summary");
+  const bookmarkRow = await getBookmarkRow(tabList, bm);
+  const folderSummary = (
+    await getBookmarkFolder(tabList, folder)
+  ).querySelector("summary");
   ok(
     bookmarkRow && folderSummary,
     "Bookmark row and folder summary are found."
@@ -1304,27 +1210,8 @@ add_task(async function test_bookmarks_drag_hover_expands_folder() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.rowEls].some(r => r.title === "Hover Drag Source") &&
-      [...nestedList.folderEls].some(
-        d =>
-          d.querySelector("summary")?.textContent.trim() ===
-          "Hover Expand Folder"
-      )
-  );
-
-  const bookmarkRow = [...nestedList.rowEls].find(
-    r => r.title === "Hover Drag Source"
-  );
-  const folderDetails = [...nestedList.folderEls].find(
-    d =>
-      d.querySelector("summary")?.textContent.trim() === "Hover Expand Folder"
-  );
+  const bookmarkRow = await getBookmarkRow(tabList, bm);
+  const folderDetails = await getBookmarkFolder(tabList, folder);
   const folderSummary = folderDetails.querySelector("summary");
   ok(bookmarkRow && folderSummary, "Source row and target folder are found.");
   ok(!folderDetails.open, "Target folder starts collapsed.");
@@ -1379,26 +1266,9 @@ add_task(async function test_bookmarks_drag_url_to_panel() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () =>
-      [...nestedList.folderEls].some(
-        d =>
-          d.querySelector("summary")?.textContent.trim() ===
-          "URL Drop Target Folder"
-      )
-  );
-
-  const folderSummary = [...nestedList.folderEls]
-    .find(
-      d =>
-        d.querySelector("summary")?.textContent.trim() ===
-        "URL Drop Target Folder"
-    )
-    ?.querySelector("summary");
+  const folderSummary = (
+    await getBookmarkFolder(tabList, folder)
+  ).querySelector("summary");
   ok(folderSummary, "Drop target folder summary found.");
 
   const rectSummary = folderSummary.getBoundingClientRect();
@@ -1453,17 +1323,7 @@ add_task(async function test_bookmarks_drag_tab_to_panel() {
   const { component, contentWindow } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
 
-  const toolbarDetails = await openToolbarFolder(tabList);
-  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === "Tab Drop Target")
-  );
-
-  const targetRow = [...nestedList.rowEls].find(
-    r => r.title === "Tab Drop Target"
-  );
+  const targetRow = await getBookmarkRow(tabList, bm);
   ok(targetRow, "Drop target bookmark row found.");
 
   const rectRow = targetRow.getBoundingClientRect();
@@ -1501,28 +1361,10 @@ add_task(async function test_bookmarks_drag_tab_to_panel() {
 });
 
 add_task(async function test_bookmarks_smart_bookmark_renders_as_folder() {
-  // "Recently Bookmarked" style smart bookmark.
-  const recentBookmark = await addBookmark({
-    title: "Recent Page",
-    url: "https://example.com/recent-smart",
-  });
-  const recentSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recently Bookmarked",
-    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
-  });
-
-  // "Recent Tags" style smart bookmark with one bookmark tagged so the
-  // RESULTS_AS_TAGS_ROOT query yields a tag container.
-  await PlacesUtils.tagging.tagURI(
-    Services.io.newURI("https://example.com/recent-smart"),
-    ["regression-tag"]
-  );
-  const tagsSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recent Tags",
-    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
-  });
+  const url = "https://example.com/recent-smart";
+  const tag = "regression-tag";
+  const smartBookmarks = await createSmartBookmarks(url, tag);
+  const { recentSmart, tagsSmart } = smartBookmarks;
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
@@ -1559,14 +1401,7 @@ add_task(async function test_bookmarks_smart_bookmark_renders_as_folder() {
     "Recent Tags has the tags-root folder kind."
   );
 
-  if (!tagsFolder.open) {
-    tagsFolder.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      tagsFolder,
-      { attributes: true },
-      () => tagsFolder.open
-    );
-  }
+  await openFolder(tagsFolder);
 
   const tagsList = tagsFolder.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
@@ -1586,13 +1421,7 @@ add_task(async function test_bookmarks_smart_bookmark_renders_as_folder() {
     "Tag containers under Recent Tags are marked with the tag-container kind."
   );
 
-  await PlacesUtils.tagging.untagURI(
-    Services.io.newURI("https://example.com/recent-smart"),
-    ["regression-tag"]
-  );
-  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+  await removeSmartBookmarks(smartBookmarks, url, tag);
   SidebarController.hide();
 });
 
@@ -1649,13 +1478,11 @@ add_task(async function test_bookmarks_smart_bookmark_uses_bookmark_guid() {
   }
 
   const shortcutList = shortcutFolder.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
+  const innerRow = await BrowserTestUtils.waitForMutationCondition(
     shortcutList.shadowRoot,
     { childList: true, subtree: true },
-    () => [...shortcutList.rowEls].some(r => r.title === "Inner Page")
+    () => [...shortcutList.rowEls].find(row => row.title === "Inner Page")
   );
-
-  const innerRow = [...shortcutList.rowEls].find(r => r.title === "Inner Page");
   ok(innerRow, "The folder's bookmark is visible inside the shortcut.");
   Assert.equal(
     innerRow.guid,
@@ -1744,25 +1571,10 @@ add_task(async function test_bookmarks_folder_shortcut_uses_folder_icon() {
 });
 
 add_task(async function test_bookmarks_smart_bookmark_drag_disabled() {
-  const recentBookmark = await addBookmark({
-    title: "Recent Page",
-    url: "https://example.com/recent-smart-drag",
-  });
-  const recentSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recently Bookmarked",
-    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
-  });
-
-  await PlacesUtils.tagging.tagURI(
-    Services.io.newURI("https://example.com/recent-smart-drag"),
-    ["regression-tag-drag"]
-  );
-  const tagsSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recent Tags",
-    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
-  });
+  const url = "https://example.com/recent-smart-drag";
+  const tag = "regression-tag-drag";
+  const smartBookmarks = await createSmartBookmarks(url, tag);
+  const { recentSmart, tagsSmart } = smartBookmarks;
 
   // A regular bookmark used as the drag source for the drop-into attempts.
   const dragSource = await addBookmark({
@@ -1808,14 +1620,7 @@ add_task(async function test_bookmarks_smart_bookmark_drag_disabled() {
   const recentFolder = [...toolbarList.folderEls].find(
     d => d.guid === recentSmart.guid
   );
-  if (!recentFolder.open) {
-    recentFolder.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      recentFolder,
-      { attributes: true },
-      () => recentFolder.open
-    );
-  }
+  await openFolder(recentFolder);
   const recentList = recentFolder.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
     recentList.shadowRoot,
@@ -1856,14 +1661,7 @@ add_task(async function test_bookmarks_smart_bookmark_drag_disabled() {
   const tagsFolder = [...toolbarList.folderEls].find(
     d => d.guid === tagsSmart.guid
   );
-  if (!tagsFolder.open) {
-    tagsFolder.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      tagsFolder,
-      { attributes: true },
-      () => tagsFolder.open
-    );
-  }
+  await openFolder(tagsFolder);
   const tagsList = tagsFolder.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
     tagsList.shadowRoot,
@@ -1900,37 +1698,16 @@ add_task(async function test_bookmarks_smart_bookmark_drag_disabled() {
     "Bookmark is not moved into the Recent Tags query folder."
   );
 
-  await PlacesUtils.tagging.untagURI(
-    Services.io.newURI("https://example.com/recent-smart-drag"),
-    ["regression-tag-drag"]
-  );
+  await removeSmartBookmarks(smartBookmarks, url, tag);
   await PlacesUtils.bookmarks.remove(dragSource.guid);
-  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
   SidebarTestUtils.closePanel(window);
 });
 
 add_task(async function test_bookmarks_smart_bookmark_context_menu() {
-  const recentBookmark = await addBookmark({
-    title: "Recent Page",
-    url: "https://example.com/recent-smart-menu",
-  });
-  const recentSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recently Bookmarked",
-    url: "place:queryType=1&sort=12&maxResults=10&excludeQueries=1&excludeItemIfParentHasAnnotation=livemark%2FfeedURI",
-  });
-
-  await PlacesUtils.tagging.tagURI(
-    Services.io.newURI("https://example.com/recent-smart-menu"),
-    ["regression-tag-menu"]
-  );
-  const tagsSmart = await PlacesUtils.bookmarks.insert({
-    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
-    title: "Recent Tags",
-    url: `place:type=${Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT}&sort=1&maxResults=10`,
-  });
+  const url = "https://example.com/recent-smart-menu";
+  const tag = "regression-tag-menu";
+  const smartBookmarks = await createSmartBookmarks(url, tag);
+  const { recentSmart, tagsSmart } = smartBookmarks;
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
@@ -2044,14 +1821,7 @@ add_task(async function test_bookmarks_smart_bookmark_context_menu() {
   await hideMenu();
 
   info("Context menu on a tag container (a child tag under Recent Tags).");
-  if (!tagsFolder.open) {
-    tagsFolder.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      tagsFolder,
-      { attributes: true },
-      () => tagsFolder.open
-    );
-  }
+  await openFolder(tagsFolder);
   const tagsList = tagsFolder.querySelector("sidebar-bookmark-list");
   await BrowserTestUtils.waitForMutationCondition(
     tagsList.shadowRoot,
@@ -2081,13 +1851,7 @@ add_task(async function test_bookmarks_smart_bookmark_context_menu() {
   );
   await hideMenu();
 
-  await PlacesUtils.tagging.untagURI(
-    Services.io.newURI("https://example.com/recent-smart-menu"),
-    ["regression-tag-menu"]
-  );
-  await PlacesUtils.bookmarks.remove(tagsSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentSmart.guid);
-  await PlacesUtils.bookmarks.remove(recentBookmark.guid);
+  await removeSmartBookmarks(smartBookmarks, url, tag);
   SidebarController.hide();
 });
 
@@ -2109,31 +1873,10 @@ add_task(async function test_long_bookmark_title_is_truncated() {
 
   const { component } = await showBookmarksSidebar();
   const tabList = component.bookmarkList;
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.folderEls[0]
-  );
-
-  // Expand the top-level Bookmarks Toolbar folder so its rows render.
-  const topDetails = tabList.folderEls[0];
-  if (!topDetails.open) {
-    topDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      topDetails,
-      { attributes: true },
-      () => topDetails.open
-    );
-  }
-  const nestedList = topDetails.querySelector("sidebar-bookmark-list");
-  await BrowserTestUtils.waitForMutationCondition(
-    nestedList.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...nestedList.rowEls].some(r => r.title === longTitle)
-  );
+  const nestedList = await getBookmarkList(tabList, bookmark.parentGuid);
+  const row = await getBookmarkRow(tabList, bookmark);
   await nestedList.updateComplete;
 
-  const row = [...nestedList.rowEls].find(r => r.title === longTitle);
   const titleEl = row.shadowRoot.getElementById("fxview-tab-row-title");
   ok(titleEl, "Bookmark row exposes its inner title span.");
 

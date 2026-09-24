@@ -9,3 +9,8 @@ SCRIPT_PATH="testing/performance/mobile-startup/android_startup_cmff_cvns.py"
 
 # Run the Python script
 $PYTHON_PATH_SHELL_SCRIPT $SCRIPT_PATH $APP cold_view_nav_start
+TEST_STATUS=$?
+
+# Propagate the test status so the harness reports the script failure instead
+# of a missing metrics error.
+exit $TEST_STATUS

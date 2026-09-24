@@ -69,7 +69,7 @@ vendoring:
 
 # !!!BIG WARNING!!!
 #
-# Before enabling the Updatebot, please review the discussion in [1] and consult 
+# Before enabling the Updatebot, please review the discussion in [1] and consult
 # with the Updatebot maintainer (Tom Ritter) for compatibility.
 #
 # [1]: https://phabricator.services.mozilla.com/D255174#anchor-inline-1432377

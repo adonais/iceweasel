@@ -582,6 +582,152 @@ add_task(async function test_aboutwelcome_corner_image_layout_gating() {
 });
 
 /**
+ * Test that each allowlisted entrance animation lands as a class on the
+ * corner image
+ */
+add_task(async function test_aboutwelcome_corner_image_entrance_animations() {
+  const ANIMATION_TYPES = [
+    "none",
+    "fade",
+    "slide-block",
+    "slide-inline",
+    "slide-corner",
+    "zoom",
+  ];
+
+  for (const type of ANIMATION_TYPES) {
+    info(`Testing corner image entrance animation: ${type}`);
+    const screens = [
+      makeCornerImageScreen(`TEST_CORNER_IMAGE_ENTRANCE_${type}`, {
+        position: "bottom-left",
+        entrance_animation: { type },
+      }),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `renders the corner image with the ${type} entrance animation`,
+      // Expected selectors:
+      [`picture.corner-image.bottom-left.entrance-${type}`]
+    );
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that an entrance animation outside the allowlist, or omitted entirely,
+ * falls back to no animation
+ */
+add_task(async function test_aboutwelcome_corner_image_entrance_fallback() {
+  const FALLBACK_CASES = [
+    {
+      label: "an unsupported animation type",
+      cornerImage: { entrance_animation: { type: "backflip" } },
+    },
+    {
+      label: "an omitted animation type",
+      cornerImage: { entrance_animation: { delay: "0.3s" } },
+    },
+    { label: "an omitted entrance_animation", cornerImage: {} },
+  ];
+
+  for (const { label, cornerImage } of FALLBACK_CASES) {
+    info(`Testing corner image entrance fallback for ${label}`);
+    const screens = [
+      makeCornerImageScreen("TEST_CORNER_IMAGE_ENTRANCE_FALLBACK", cornerImage),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_screen_content(
+      browser,
+      `falls back to no entrance animation for ${label}`,
+      // Expected selectors:
+      ["picture.corner-image.entrance-none"],
+      // Unexpected selectors:
+      [
+        "picture.corner-image.entrance-backflip",
+        "picture.corner-image.entrance-undefined",
+      ]
+    );
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that the configured duration and delay reach the corner image, and that
+ * an unanimated corner image is left with no transition at all
+ */
+add_task(async function test_aboutwelcome_corner_image_entrance_timing() {
+  const TIMING_CASES = [
+    {
+      label: "a configured entrance animation",
+      cornerImage: {
+        entrance_animation: {
+          type: "slide-block",
+          duration: "0.4s",
+          delay: "0.2s",
+        },
+      },
+      expectedStyles: {
+        "transition-property": "opacity, translate, scale",
+        "transition-duration": "0.4s",
+        "transition-delay": "0.2s",
+      },
+    },
+    {
+      label: "no entrance animation",
+      cornerImage: {},
+      expectedStyles: { "transition-duration": "0s" },
+    },
+  ];
+
+  for (const { label, cornerImage, expectedStyles } of TIMING_CASES) {
+    info(`Testing corner image transition for ${label}`);
+    const screens = [
+      makeCornerImageScreen("TEST_CORNER_IMAGE_ENTRANCE_TIMING", {
+        position: "bottom-left",
+        ...cornerImage,
+      }),
+    ];
+    let browser = await openAboutWelcome(JSON.stringify(screens));
+
+    await test_element_styles(browser, "picture.corner-image", expectedStyles);
+
+    browser.closeBrowser();
+  }
+});
+
+/**
+ * Test that the entrance animation custom properties do not clobber a transform
+ * supplied through corner_image.style, which messages use to mirror an
+ * illustration
+ */
+add_task(async function test_aboutwelcome_corner_image_entrance_keeps_style() {
+  const screens = [
+    makeCornerImageScreen("TEST_CORNER_IMAGE_ENTRANCE_STYLE", {
+      position: "bottom-left",
+      entrance_animation: { type: "slide-block", distance: "80px" },
+      style: { transform: "rotateY(180deg)" },
+    }),
+  ];
+  let browser = await openAboutWelcome(JSON.stringify(screens));
+
+  await test_element_styles(
+    browser,
+    "picture.corner-image.entrance-slide-block",
+    // Expected styles:
+    {},
+    // Unexpected styles:
+    { transform: "none" }
+  );
+
+  browser.closeBrowser();
+});
+
+/**
  * Test that the top buttons get their own row inside the card in the
  * "center-large" layout, rather than being overlaid on the content
  */

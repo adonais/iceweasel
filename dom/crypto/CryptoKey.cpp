@@ -65,6 +65,14 @@ nsresult StringToUsage(const nsString& aUsage, CryptoKey::KeyUsage& aUsageOut) {
     aUsageOut = CryptoKey::WRAPKEY;
   } else if (aUsage.EqualsLiteral(WEBCRYPTO_KEY_USAGE_UNWRAPKEY)) {
     aUsageOut = CryptoKey::UNWRAPKEY;
+  } else if (aUsage.EqualsLiteral(WEBCRYPTO_KEY_USAGE_ENCAPSULATEKEY)) {
+    aUsageOut = CryptoKey::ENCAPSULATEKEY;
+  } else if (aUsage.EqualsLiteral(WEBCRYPTO_KEY_USAGE_ENCAPSULATEBITS)) {
+    aUsageOut = CryptoKey::ENCAPSULATEBITS;
+  } else if (aUsage.EqualsLiteral(WEBCRYPTO_KEY_USAGE_DECAPSULATEKEY)) {
+    aUsageOut = CryptoKey::DECAPSULATEKEY;
+  } else if (aUsage.EqualsLiteral(WEBCRYPTO_KEY_USAGE_DECAPSULATEBITS)) {
+    aUsageOut = CryptoKey::DECAPSULATEBITS;
   } else {
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
@@ -144,6 +152,9 @@ void CryptoKey::GetAlgorithm(JSContext* aCx,
     case KeyAlgorithmProxy::OKP:
       converted = ToJSValue(aCx, mAlgorithm.mEd, &val);
       break;
+    case KeyAlgorithmProxy::MLKEM:
+      converted = ToJSValue(aCx, mAlgorithm.mMlKem, &val);
+      break;
   }
   if (!converted) {
     aRv.NoteJSContextException(aCx);
@@ -185,6 +196,22 @@ void CryptoKey::GetUsages(nsTArray<nsString>& aRetVal) const {
   if (mAttributes & UNWRAPKEY) {
     aRetVal.AppendElement(
         NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_USAGE_UNWRAPKEY));
+  }
+  if (mAttributes & ENCAPSULATEKEY) {
+    aRetVal.AppendElement(
+        NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_USAGE_ENCAPSULATEKEY));
+  }
+  if (mAttributes & ENCAPSULATEBITS) {
+    aRetVal.AppendElement(
+        NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_USAGE_ENCAPSULATEBITS));
+  }
+  if (mAttributes & DECAPSULATEKEY) {
+    aRetVal.AppendElement(
+        NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_USAGE_DECAPSULATEKEY));
+  }
+  if (mAttributes & DECAPSULATEBITS) {
+    aRetVal.AppendElement(
+        NS_LITERAL_STRING_FROM_CSTRING(WEBCRYPTO_KEY_USAGE_DECAPSULATEBITS));
   }
 }
 
@@ -384,6 +411,9 @@ uint32_t CryptoKey::GetAllowedUsagesForAlgorithm(const nsString& aAlgorithm) {
              aAlgorithm.EqualsASCII(WEBCRYPTO_ALG_PBKDF2) ||
              aAlgorithm.EqualsASCII(WEBCRYPTO_ALG_X25519)) {
     allowedUsages = DERIVEBITS | DERIVEKEY;
+  } else if (IsMLKEMAlgorithm(aAlgorithm)) {
+    allowedUsages =
+        ENCAPSULATEBITS | ENCAPSULATEKEY | DECAPSULATEBITS | DECAPSULATEKEY;
   }
   return allowedUsages;
 }
@@ -1279,6 +1309,99 @@ UniqueSECKEYPublicKey CryptoKey::PublicOKPKeyFromRaw(
   return CreateECPublicKey(&rawItem, aNamedCurve);
 }
 
+UniqueSECKEYPublicKey CryptoKey::PublicMLKEMKeyFromRaw(
+    CryptoBuffer& aKeyData, const MLKEMParams& aMLKEMParams) {
+  if (aKeyData.Length() != aMLKEMParams.mPublicKeyLength) {
+    return nullptr;
+  }
+
+  if (!EnsureNSSInitializedChromeOrContent()) {
+    return nullptr;
+  }
+
+  UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+  if (!arena) {
+    return nullptr;
+  }
+
+  UniqueSECKEYPublicKey key(PORT_ArenaZNew(arena.get(), SECKEYPublicKey));
+  if (!key) {
+    return nullptr;
+  }
+
+  key->arena = arena.release();
+  key->keyType = kyberKey;
+  key->pkcs11Slot = nullptr;
+  key->pkcs11ID = CK_INVALID_HANDLE;
+  key->u.kyber.params = aMLKEMParams.mKyberParams;
+
+  if (!aKeyData.ToSECItem(key->arena, &key->u.kyber.publicValue)) {
+    return nullptr;
+  }
+
+  if (!PublicKeyValid(key.get())) {
+    return nullptr;
+  }
+
+  return key;
+}
+
+nsresult CryptoKey::PublicMLKEMKeyToRaw(SECKEYPublicKey* aPubKey,
+                                        CryptoBuffer& aRetVal) {
+  if (aPubKey->keyType != kyberKey) {
+    return NS_ERROR_DOM_OPERATION_ERR;
+  }
+
+  if (!aRetVal.Assign(&aPubKey->u.kyber.publicValue)) {
+    return NS_ERROR_DOM_OPERATION_ERR;
+  }
+  return NS_OK;
+}
+
+UniqueSECKEYPrivateKey CryptoKey::PrivateMLKEMKeyFromSeed(
+    const CryptoBuffer& aSeed, const MLKEMParams& aMLKEMParams) {
+  if (aSeed.Length() != KYBER_KEYPAIR_COIN_BYTES) {
+    return nullptr;
+  }
+
+  CK_OBJECT_CLASS privateKeyValue = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE mlKemValue = CKK_ML_KEM;
+  CK_BBOOL falseValue = CK_FALSE;
+  CK_ML_KEM_PARAMETER_SET_TYPE parameterSet = aMLKEMParams.mParameterSet;
+
+  // Softoken derives CKA_VALUE from the seed when it is not supplied.
+  CK_ATTRIBUTE keyTemplate[7] = {
+      {CKA_CLASS, &privateKeyValue, sizeof(privateKeyValue)},
+      {CKA_KEY_TYPE, &mlKemValue, sizeof(mlKemValue)},
+      {CKA_TOKEN, &falseValue, sizeof(falseValue)},
+      {CKA_SENSITIVE, &falseValue, sizeof(falseValue)},
+      {CKA_PRIVATE, &falseValue, sizeof(falseValue)},
+      {CKA_PARAMETER_SET, &parameterSet, sizeof(parameterSet)},
+      {CKA_SEED, (void*)aSeed.Elements(), (CK_ULONG)aSeed.Length()},
+  };
+
+  return PrivateKeyFromPrivateKeyTemplate(keyTemplate, std::size(keyTemplate));
+}
+
+nsresult CryptoKey::PrivateMLKEMKeyToSeed(SECKEYPrivateKey* aPrivKey,
+                                          CryptoBuffer& aRetVal) {
+  ScopedAutoSECItem seed;
+  if (PK11_ReadRawAttribute(PK11_TypePrivKey, aPrivKey, CKA_SEED, &seed) !=
+      SECSuccess) {
+    return NS_ERROR_DOM_OPERATION_ERR;
+  }
+
+  if (seed.len != KYBER_KEYPAIR_COIN_BYTES) {
+    return NS_ERROR_DOM_OPERATION_ERR;
+  }
+
+  if (!aRetVal.Assign(&seed)) {
+    return NS_ERROR_DOM_OPERATION_ERR;
+  }
+
+  return NS_OK;
+}
+
 bool PublicECKeyEncoded(SECKEYPublicKey* aPubKey) {
   if (!aPubKey) {
     return false;
@@ -1346,13 +1469,19 @@ bool CryptoKey::WriteStructuredClone(JSContext* aCX,
   // Write in five pieces
   // 1. Attributes
   // 2. Symmetric key as raw (if present)
-  // 3. Private key as pkcs8 (if present)
+  // 3. Private key as pkcs8, or as its seed for ML-KEM (if present)
   // 4. Public key as spki (if present)
   // 5. Algorithm in whatever form it chooses
   CryptoBuffer priv, pub;
 
   if (mPrivateKey) {
-    if (NS_FAILED(CryptoKey::PrivateKeyToPkcs8(mPrivateKey.get(), priv))) {
+    if (mPrivateKey->keyType == kyberKey) {
+      if (NS_FAILED(
+              CryptoKey::PrivateMLKEMKeyToSeed(mPrivateKey.get(), priv))) {
+        return false;
+      }
+    } else if (NS_FAILED(
+                   CryptoKey::PrivateKeyToPkcs8(mPrivateKey.get(), priv))) {
       return false;
     }
   }
@@ -1394,7 +1523,12 @@ already_AddRefed<CryptoKey> CryptoKey::ReadStructuredClone(
     return nullptr;
   }
   if (priv.Length() > 0) {
-    key->mPrivateKey = CryptoKey::PrivateKeyFromPkcs8(priv);
+    MLKEMParams mlKemParams;
+    if (GetMLKEMParams(key->mAlgorithm.mName, mlKemParams)) {
+      key->mPrivateKey = CryptoKey::PrivateMLKEMKeyFromSeed(priv, mlKemParams);
+    } else {
+      key->mPrivateKey = CryptoKey::PrivateKeyFromPkcs8(priv);
+    }
   }
   if (pub.Length() > 0) {
     key->mPublicKey = CryptoKey::PublicKeyFromSpki(pub);

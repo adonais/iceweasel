@@ -224,6 +224,7 @@ add_task(async function test_legacy_name_routing_and_subcategory_attr() {
     ["privacy-doh", "#privacy", "panePrivacy", "dnsOverHttps"],
     ["privacy-sitedata", "#privacy", "panePrivacy", "sitedata"],
     ["privacy-vpn", "#privacy", "panePrivacy", null],
+    ["privacy-vpnsiterules", "#vpnSiteRules", "paneVpnSiteRules", null],
     ["privacy-logins", "#passwordsAutofill", "panePasswordsAutofill", "logins"],
     ["privacy-permissions", "#permissionsData", "panePermissionsData", null],
     ["search-firefoxSuggest", "#search", "paneSearch", "locationBar"],

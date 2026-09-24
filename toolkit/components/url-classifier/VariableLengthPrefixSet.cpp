@@ -89,8 +89,8 @@ void UrlClassifierPrefixSetReporter::Register(VariableLengthPrefixSet* aSet,
   nsCString path = nsPrintfCString(
       "explicit/storage/prefix-set/%s",
       (!aName.IsEmpty() ? PromiseFlatCString(aName).get() : "?!"));
-  sPrefixSetReporter->mSets.AppendElement(
-      TrackedPrefixSet{ThreadSafeWeakPtr<VariableLengthPrefixSet>(aSet), path});
+  sPrefixSetReporter->mSets.AppendElement(TrackedPrefixSet{
+      ThreadSafeWeakPtr<VariableLengthPrefixSet>(aSet), std::move(path)});
 }
 
 /* static */

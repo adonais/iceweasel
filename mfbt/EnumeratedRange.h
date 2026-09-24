@@ -70,7 +70,6 @@ class EnumeratedIterator {
   /* Comparison operators */
 
   bool operator==(const EnumeratedIterator& aOther) const = default;
-  bool operator!=(const EnumeratedIterator& aOther) const = default;
   bool operator<(const EnumeratedIterator& aOther) const = default;
   bool operator<=(const EnumeratedIterator& aOther) const = default;
   bool operator>(const EnumeratedIterator& aOther) const = default;

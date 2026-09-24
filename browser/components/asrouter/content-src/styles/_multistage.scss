@@ -255,9 +255,13 @@ html {
   --screen-1-yellow-circle-background-color: var(--color-purple-60);
   --screen-2-yellow-circle-background-color: var(--color-pink-50);
   --message-bar-icon-color: light-dark(var(--color-blue-60), var(--color-blue-20));
-  // Dark value is #271C48 under Nova. The light value is a placeholder so the
-  // row stays readable in light mode; design has only specified the dark one.
-  --multi-select-card-background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+  // Per the design spec sheet the card is translucent white over the page
+  // backdrop in light mode, and --color-violet-80 in dark. The dark value is
+  // #271C48CC, that colour at 80% opacity; there is no Nova token for the
+  // alpha variant.
+  --multi-select-card-background-color: light-dark(color-mix(in srgb, var(--color-white) 30%, transparent), color-mix(in srgb, var(--color-violet-80) 80%, transparent));
+  // The spec sheet asks for the standard card border in both modes.
+  --multi-select-card-border-color: var(--card-border-color);
   // The notice reads as a lighter panel than the card row it belongs to: the
   // dark values sample as the card colour at 30% over the screen backdrop, with
   // a faint violet border. Light values are chosen to keep the same
@@ -278,6 +282,7 @@ html {
     --picker-checkbox-hover-color: SelectedItem;
     --picker-focus-ring-color: CanvasText;
     --multi-select-card-background-color: ButtonFace;
+    --multi-select-card-border-color: ButtonText;
     --multi-select-notice-background-color: ButtonFace;
     --multi-select-notice-border-color: ButtonText;
     --multi-select-notice-icon-color: ButtonText;
@@ -329,176 +334,6 @@ html {
     transform: rotateY(180deg);
   }
 
-  &:has([pos='split'][fullscreen]) {
-    min-height: 100vh;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-  }
-
-  &:has([pos='center-large'][fullscreen]) {
-    .section-main {
-      height: 90%;
-      width: 90%;
-      margin: auto;
-
-      .main-content {
-        box-shadow: none;
-        position: relative;
-        justify-content: center;
-        // Prevent the blurred "glow" on the child component
-        // from getting clipped and creating a sharp border
-        // at smaller screen sizes
-        overflow: visible;
-
-        > .secondary-buttons-top-container,
-        > .secondary-cta.top {
-          position: static;
-          align-self: flex-end;
-          padding-block: var(--space-large);
-          padding-inline-end: var(--space-xxlarge);
-        }
-
-        .secondary-buttons-top-container .secondary-cta.top {
-          padding-inline-end: 0;
-        }
-
-        @media not (prefers-contrast) {
-          background-color: transparent;
-        }
-
-        .main-content-inner {
-          position: relative;
-          width: 50%;
-          margin: auto;
-          // Size to content instead of stretching to fill .main-content, so the
-          // glow behind it hugs the rendered content's actual height instead of
-          // the full card.
-          flex-grow: 0;
-          justify-content: center;
-
-          @media (width <= 720px) {
-            width: 80%;
-          }
-
-          @media not (prefers-contrast) {
-            &::before {
-              content: '';
-              position: absolute;
-              inset-inline: -100px;
-              margin: auto;
-              z-index: -1;
-              width: calc(100% + 200px);
-              height: calc(100% + 120px);
-              border-radius: 50%;
-              background-color: var(--center-large-glow-color);
-              filter: blur(70px);
-              pointer-events: none;
-            }
-          }
-        }
-      }
-    }
-
-    .corner-image-container {
-      position: absolute;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-
-      @media (width <= 720px) {
-        display: none;
-      }
-
-      .brand-logo {
-        margin-block: 0;
-      }
-
-      .corner-image {
-        position: absolute;
-
-        &.bottom-left {
-          bottom: -10px;
-          left: 20px;
-        }
-
-        &.bottom-right {
-          bottom: -10px;
-          right: 20px;
-        }
-
-        &.top-left {
-          top: -10px;
-          left: 20px;
-        }
-
-        &.top-right {
-          top: -10px;
-          right: 20px;
-        }
-      }
-    }
-
-    &:has(theme-picker) {
-      .content-tile {
-        margin-inline: auto;
-      }
-    }
-  }
-
-  .section-main {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    width: $main-section-width;
-    flex-shrink: 0;
-  }
-
-  .section-main:not(.embedded-migration) {
-    position: relative;
-  }
-
-  .main-content {
-    background-color: var(--background-color-canvas);
-    // Fallback value can be removed after Nova has reached release
-    border-radius: var(--border-radius-xlarge, 16px);
-    box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 0;
-    transition: var(--transition);
-    z-index: 1;
-    box-sizing: border-box;
-
-    @media (prefers-contrast){
-      border: 1px solid var(--text-color)
-    }
-
-    &.no-steps {
-      padding-bottom: 48px;
-    }
-
-    .main-content-inner {
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-      justify-content: space-around;
-    }
-  }
-
-  // Handle conditional display of steps indicator
-  // Don't show when there's only one screen
-  .main-content .no-steps {
-    .main-content {
-      padding-bottom: 48px;
-    }
-
-    .steps {
-      display: none;
-    }
-  }
-
   @mixin arrow-icon-styles {
     .arrow-icon {
       -moz-context-properties: fill;
@@ -520,6 +355,7 @@ html {
 
   @mixin secondary-cta-styles {
     background-color: var(--button-background-color);
+    color: var(--button-text-color);
     border: var(--button-border);
     line-height: 12px;
     font-size: 0.72em;
@@ -557,6 +393,337 @@ html {
       @media (prefers-contrast) {
         text-decoration: none;
       }
+    }
+  }
+
+  &:has([pos='split'][fullscreen]) {
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &:has([pos='center-large'][fullscreen]) {
+    .section-main {
+      height: 90%;
+      width: 90%;
+      margin: auto;
+
+      .main-content {
+        box-shadow: none;
+        justify-content: center;
+        // Prevent the blurred "glow" on the child component
+        // from getting clipped and creating a sharp border
+        // at smaller screen sizes
+        overflow: visible;
+
+        > .secondary-buttons-top-container,
+        > .secondary-cta.top {
+          position: static;
+          align-self: flex-end;
+          padding-block: var(--space-large);
+          padding-inline-end: var(--space-xxlarge);
+        }
+
+        .secondary-buttons-top-container .secondary-cta.top {
+          padding-inline-end: 0;
+        }
+
+        @media not (prefers-contrast) {
+          background-color: transparent;
+        }
+
+        .main-content-inner {
+          width: 50%;
+          margin: auto;
+          // Size to content instead of stretching to fill .main-content, so the
+          // glow behind it hugs the rendered content's actual height instead of
+          // the full card.
+          flex-grow: 0;
+          justify-content: center;
+
+          @media (width <= 720px) {
+            width: 80%;
+          }
+
+          @media not (prefers-contrast) {
+            &::before {
+              content: '';
+              position: absolute;
+              inset-inline: -100px;
+              margin: auto;
+              z-index: -1;
+              width: calc(50% + 200px);
+              height: calc(50% + 120px);
+              border-radius: 50%;
+              background-color: var(--center-large-glow-color);
+              filter: blur(70px);
+              pointer-events: none;
+            }
+          }
+
+          .secondary-cta {
+            @include arrow-icon-styles;
+
+            .secondary {
+              @include secondary-cta-styles;
+
+              color: var(--button-text-color);
+              border: none;
+            }
+          }
+        }
+      }
+    }
+
+    .corner-image-container {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+
+      @media (width <= 720px) {
+        display: none;
+      }
+
+      .brand-logo {
+        margin-block: 0;
+      }
+
+      .corner-image {
+        position: absolute;
+
+        // The message sets --corner-image-entrance-* inline, which no media
+        // query could override, so the entrance rules read these instead. Under
+        // reduced motion they keep their no-op values and every entrance type
+        // collapses to a plain fade.
+        --entrance-distance: 0px;
+        --entrance-scale: 1;
+        --entrance-duration: var(--corner-image-entrance-duration, 0.6s);
+        --entrance-delay: var(--corner-image-entrance-delay, 0s);
+
+        @media (prefers-reduced-motion: no-preference) {
+          --entrance-distance: var(--corner-image-entrance-distance, 60px);
+          --entrance-scale: 0.85;
+        }
+
+        // Animate the longhands rather than 'transform', which a message can
+        // set inline through 'corner_image.style' to mirror an illustration.
+        &:not(.entrance-none) {
+          transition-property: opacity, translate, scale;
+          transition-duration: var(--entrance-duration);
+          transition-delay: var(--entrance-delay);
+        }
+
+        &.bottom-left {
+          --entrance-block: var(--entrance-distance);
+          --entrance-inline: calc(-1 * var(--entrance-distance));
+
+          bottom: -10px;
+          left: 20px;
+        }
+
+        &.bottom-right {
+          --entrance-block: var(--entrance-distance);
+          --entrance-inline: var(--entrance-distance);
+
+          bottom: -10px;
+          right: 20px;
+        }
+
+        &.top-left {
+          --entrance-block: calc(-1 * var(--entrance-distance));
+          --entrance-inline: calc(-1 * var(--entrance-distance));
+
+          top: -10px;
+          left: 20px;
+        }
+
+        &.top-right {
+          --entrance-block: calc(-1 * var(--entrance-distance));
+          --entrance-inline: var(--entrance-distance);
+
+          top: -10px;
+          right: 20px;
+        }
+      }
+    }
+
+    &:has(theme-picker) {
+      .content-tile {
+        margin-inline: auto;
+      }
+    }
+
+    &:has(migration-wizard) {
+      .welcome-text {
+        margin: 0.5em auto;
+        width: 60%;
+      }
+
+      .content-tile {
+        width: 60%;
+        align-self: center;
+      }
+    }
+
+    migration-wizard {
+      &::part(deck) {
+        width: 100%;
+      }
+
+      &::part(page-selection),
+      &::part(page-progress) {
+        align-items: center;
+      }
+
+      &::part(profile-selector) {
+        border-radius: var(--border-radius-medium);
+        border: 1px solid var(--card-border-color);
+        background: var(--multi-select-card-background-color);
+        width: -moz-available;
+      }
+
+      &::part(profile-name) {
+        text-transform: unset;
+      }
+
+      &::part(resource-selection-details) {
+        border-radius: var(--border-radius-medium);
+        border: 1px solid var(--card-border-color);
+        background: var(--multi-select-card-background-color);
+        width: -moz-available;
+        margin-block-start: var(--space-large);
+      }
+
+      &::part(resource-type-list) {
+        padding-block-end: var(--space-large);
+      }
+
+      &::part(buttons) {
+        width: 100%;
+        justify-content: center;
+        margin-top: var(--space-xxlarge);
+        // override the margin from -moz-button-group
+        margin-inline-start: calc(-1 * (var(--space-small)));
+      }
+
+      &::part(import-primary),
+      &::part(continue-primary) {
+        width: 100%
+      }
+    }
+
+    #content-tiles-container .content-tile.has-header button.tile-header.link-style {
+      margin-block-end: 6px;
+
+      &:focus-visible {
+        border-radius: var(--border-radius-small);
+      }
+    }
+  }
+
+  .section-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: $main-section-width;
+    flex-shrink: 0;
+  }
+
+  .section-main:not(.embedded-migration) {
+    position: relative;
+  }
+
+  .main-content {
+    background-color: var(--background-color-canvas);
+    // Fallback value can be removed after Nova has reached release
+    border-radius: var(--border-radius-xlarge, 16px);
+    box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 20%);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+    transition: var(--transition);
+    z-index: 1;
+    box-sizing: border-box;
+
+    @media (prefers-contrast) {
+      border: 1px solid var(--text-color)
+    }
+
+    &.no-steps {
+      padding-bottom: 48px;
+    }
+
+    .main-content-inner {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      justify-content: space-around;
+    }
+  }
+
+  // Handle conditional display of steps indicator
+  // Don't show when there's only one screen
+  .main-content .no-steps {
+    .main-content {
+      padding-bottom: 48px;
+    }
+
+    .steps {
+      display: none;
+    }
+  }
+
+  // Row layout shared by the card multi-select designs: the label, and an
+  // optional description beneath it, occupy the inline-start column, while the
+  // checkbox sits on the inline-end edge centred across both rows.
+  @mixin checkbox-end-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: var(--space-medium);
+    align-items: center;
+
+    input {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      margin: 0;
+      align-self: center;
+    }
+
+    label {
+      grid-area: 1 / 1;
+      margin: 0;
+      color: var(--text-color);
+    }
+
+    p {
+      grid-area: 2 / 1;
+      margin: var(--space-xxsmall) 0 0;
+      font-size: 13px;
+      font-weight: normal;
+
+      // The same deemphasized pair the rest of this stylesheet uses, which is
+      // also what design specified here. --text-color-deemphasized is
+      // currentColor at 69% and computes noticeably dimmer than the dark value.
+      @media not (prefers-contrast) {
+        color: light-dark(#5B5B66, #CFCFD8);
+      }
+    }
+  }
+
+  // The filled surface the card multi-select designs sit on, applied either to
+  // each item (`select-card`) or to the whole group (`grouped-card`).
+  @mixin multi-select-card-surface {
+    border-radius: var(--border-radius-medium);
+    background-color: var(--multi-select-card-background-color);
+    border: 1px solid var(--multi-select-card-border-color);
+
+    @media (forced-colors: active) {
+      background-color: ButtonFace;
+      border-color: ButtonText;
     }
   }
 
@@ -1201,6 +1368,7 @@ html {
 
               .indicator {
                 background-color: var(--button-background-color-primary);
+                color: var(--button-text-color-primary);
               }
             }
           }
@@ -2295,6 +2463,7 @@ html {
             /* stylelint-disable-next-line */
             border-radius: 8px 8px 0 0;
             background-color: var(--button-background-color-primary);
+            color: var(--button-text-color-primary);
             position: relative;
             right: unset;
             top: unset;
@@ -2540,10 +2709,10 @@ html {
       text-align: initial;
     }
 
-    // Full-width rows with the label on the inline-start edge and the checkbox
-    // on the inline-end edge. `row-reverse` flips them visually while leaving
-    // the input before its label in the DOM, so the label association and
-    // focus order are unchanged.
+    // Full-width rows, one card per item, with the label on the inline-start
+    // edge and the checkbox on the inline-end edge. The grid places them
+    // visually while leaving the input before its label in the DOM, so the
+    // label association and focus order are unchanged.
     // Not named "card": the design value becomes a class on the container, and
     // in-content/common.css — which the Spotlight loads — has a global `.card`
     // utility that would paint its own background, border and box-shadow here.
@@ -2557,28 +2726,27 @@ html {
       padding: 0;
 
       .checkbox-container.multi-select-item {
-        flex-direction: row-reverse;
-        justify-content: space-between;
-        align-items: center;
-        gap: var(--space-medium);
+        @include checkbox-end-grid;
+        @include multi-select-card-surface;
+
         padding: var(--space-xxlarge);
-        border-radius: var(--border-radius-medium);
-        background-color: var(--multi-select-card-background-color);
         font-size: 16px;
+      }
+    }
 
-        @media (forced-colors: active) {
-          border: 1px solid ButtonText;
-        }
+    // One card wrapping the whole group instead of one per item, for items
+    // that should read as a single unit.
+    &.grouped-card {
+      @include multi-select-card-surface;
 
-        label {
-          flex: 1 1 auto;
-          margin: 0;
-          color: var(--text-color);
-        }
+      align-items: stretch;
+      gap: var(--space-medium);
+      margin-block: 0;
+      margin-inline: 0;
+      padding: var(--space-xlarge);
 
-        > input {
-          margin: 0;
-        }
+      .checkbox-container.multi-select-item {
+        @include checkbox-end-grid;
       }
     }
 
@@ -2842,10 +3010,42 @@ html {
     }
   }
 
+  // The tiles container is inset from the content column, but the action
+  // buttons are not, so a full-width primary button overhangs the tiles it
+  // sits under. Put the buttons on the same inset when the screen has tiles.
+  // Buttons that size to their label are centred either way, so this only
+  // moves one that was already stretching the full column.
+  .main-content-inner:has(#content-tiles-container) .action-buttons {
+    margin-inline: 48px;
+
+    // The gutter that separates side-by-side buttons would push a lone
+    // full-width button back past the inset.
+    .primary:only-child {
+      margin-inline: 0;
+    }
+  }
+
   #content-tiles-container {
     --tiles-container-border-radius: var(--border-radius-medium);
 
     margin: var(--space-xlarge) 48px;
+
+    // The existing `.legal-paragraph` sizing is scoped to `pos=split` screens,
+    // so a `text` tile would otherwise fall back to the body size. Legal copy
+    // here is --font-size-small, and deliberately not deemphasized: it carries
+    // the terms the user is agreeing to, so it has to read at full strength.
+    .legal-paragraph {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-color);
+    }
+
+    // Shrinks the gap before the primary button when the last tile is a
+    // collapsed link-style header (a single line of text doesn't need the
+    // margin sized for a full card).
+    &:has(> .content-tile:last-child > button.tile-header.link-style[aria-expanded='false']) {
+      margin-block-end: 0;
+    }
 
     .content-tile {
       display: flex;
@@ -2872,6 +3072,11 @@ html {
                 border-top: none;
                 border-radius: 0 0 var(--tiles-container-border-radius) var(--tiles-container-border-radius);
               }
+
+              &.link-style + .tile-content {
+                border: none;
+                border-radius: 0;
+              }
             }
           }
         }
@@ -2893,6 +3098,10 @@ html {
           border-inline-end: 1px solid var(--border-color);
         }
 
+        &.link-style + .tile-content {
+          border-inline: none;
+        }
+
         .header-text-container {
           display: flex;
           flex-direction: column;
@@ -2900,6 +3109,35 @@ html {
           .header-title, .header-subtitle {
             font-weight: normal;
             line-height: 1.5;
+          }
+        }
+
+        &.link-style {
+          background: none;
+          border: none;
+          border-radius: 0;
+          padding: 0;
+          // Shrink to the label and centre it, so the focus ring hugs the text
+          // rather than spanning the content column.
+          width: fit-content;
+          margin: 0 auto;
+          // The shared tile-header rule insets the ring by 12px, which relies
+          // on that button's padding. With no padding it would land on top of
+          // the text instead.
+          outline-offset: var(--space-xxsmall);
+          color: var(--link-color);
+          text-decoration: underline;
+
+          &:hover {
+            color: var(--link-color-hover);
+          }
+
+          &:active {
+            color: var(--link-color-active);
+          }
+
+          .arrow-icon {
+            margin-inline-start: var(--space-xsmall);
           }
         }
       }
@@ -2990,6 +3228,22 @@ html {
           p {
             margin-block: 0.5em 0;
           }
+        }
+
+        &.select-card .checkbox-container.multi-select-item,
+        &.grouped-card .checkbox-container.multi-select-item {
+          label,
+          p {
+            grid-column: 1;
+          }
+        }
+
+        // The default multiselect is inset inside the tiles container. The card
+        // designs are the container's full width instead, so that they line up
+        // with the other tiles and with the action buttons below them.
+        // `grouped-card` keeps the padding as the card's own inner spacing.
+        &.select-card {
+          padding: 0;
         }
       }
     }
@@ -3291,6 +3545,7 @@ html {
         height: 100%;
         margin-inline: -1px;
         background-color: var(--button-background-color-primary);
+        color: var(--button-text-color-primary);
         border: 0;
         border-radius: 0;
         opacity: 1;
@@ -3645,6 +3900,32 @@ html {
           opacity: 0.2;
         }
       }
+
+      .corner-image {
+        &.entrance-fade {
+          opacity: 0;
+        }
+
+        &.entrance-slide-block {
+          opacity: 0;
+          translate: 0 var(--entrance-block);
+        }
+
+        &.entrance-slide-inline {
+          opacity: 0;
+          translate: var(--entrance-inline) 0;
+        }
+
+        &.entrance-slide-corner {
+          opacity: 0;
+          translate: var(--entrance-inline) var(--entrance-block);
+        }
+
+        &.entrance-zoom {
+          opacity: 0;
+          scale: var(--entrance-scale);
+        }
+      }
     }
   }
 
@@ -3809,6 +4090,18 @@ html {
         transition-delay: 0.4s;
       }
     }
+
+    // Fade an animated illustration back out, so that it does not sit at full
+    // opacity while the rest of the screen leaves and then pop as the DOM
+    // swaps. The entrance delay is dropped, since the whole out transition is
+    // bounded by TRANSITION_OUT_TIME. The :has() matches the specificity of the
+    // rule declaring the transition, which this needs to come after.
+    &:has([pos='center-large'][fullscreen]) {
+      .corner-image:not(.entrance-none) {
+        opacity: 0;
+        transition-delay: 0s;
+      }
+    }
   }
 
   .inline-image,
@@ -3828,6 +4121,7 @@ html {
 
     &::part(deck) {
       font-size: 0.83em;
+      align-items: center;
     }
   }
 

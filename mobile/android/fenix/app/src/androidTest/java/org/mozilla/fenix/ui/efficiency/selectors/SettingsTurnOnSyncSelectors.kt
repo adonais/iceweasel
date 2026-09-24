@@ -6,17 +6,25 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsTurnOnSyncSelectors {
+object SettingsTurnOnSyncSelectors : SelectorContainer {
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_sign_in),
+            description = "Sign in toolbar title",
+        )
 
     val USE_EMAIL_INSTEAD_BUTTON =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "signInEmailButton",
             description = "Use email instead button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val READY_TO_SCAN_BUTTON =
@@ -24,7 +32,7 @@ object SettingsTurnOnSyncSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "signInScanButton",
             description = "Ready to scan button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // The camera-permission dialog Fenix shows when pairing is attempted without the permission. Matched on
@@ -36,7 +44,6 @@ object SettingsTurnOnSyncSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
             value = getStringResource(R.string.camera_permissions_needed_negative_button_text),
             description = "Camera permission dialog Dismiss button",
-            groups = listOf(),
         )
 
     val PERMISSION_DIALOG_GO_TO_SETTINGS_BUTTON =
@@ -44,14 +51,5 @@ object SettingsTurnOnSyncSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
             value = getStringResource(R.string.camera_permissions_needed_positive_button_text),
             description = "Camera permission dialog Go to settings button",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            USE_EMAIL_INSTEAD_BUTTON,
-            READY_TO_SCAN_BUTTON,
-            PERMISSION_DIALOG_DISMISS_BUTTON,
-            PERMISSION_DIALOG_GO_TO_SETTINGS_BUTTON,
         )
 }

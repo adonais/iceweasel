@@ -9,7 +9,7 @@ use selectors::parser::{AncestorHashes, Selector};
 use servo_arc::Arc;
 use style::context::QuirksMode;
 use style::media_queries::{Device, MediaType};
-use style::properties::{longhands, Importance};
+use style::properties::{Importance, longhands};
 use style::properties::{PropertyDeclaration, PropertyDeclarationBlock};
 use style::selector_map::SelectorMap;
 use style::selector_parser::{SelectorImpl, SelectorParser};
@@ -205,10 +205,12 @@ fn test_insert() {
             .unwrap()[0]
             .source_order
     );
-    assert!(selector_map
-        .class_hash
-        .get(&Atom::from("intro"), QuirksMode::NoQuirks)
-        .is_none());
+    assert!(
+        selector_map
+            .class_hash
+            .get(&Atom::from("intro"), QuirksMode::NoQuirks)
+            .is_none()
+    );
 }
 
 fn mock_stylist() -> Stylist {

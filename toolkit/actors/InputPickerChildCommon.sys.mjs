@@ -140,6 +140,7 @@ export class InputPickerChildCommon extends JSWindowActorChild {
         this.sendAsyncMessage(`InputPicker:Open`, {
           rect: this.getBoundingContentRect(inputElement),
           dir: this.getComputedDirection(inputElement),
+          isDarkBackground: ChromeUtils.isDarkBackground(inputElement),
           type: inputElement.type,
           detail: openPickerDetail,
         });

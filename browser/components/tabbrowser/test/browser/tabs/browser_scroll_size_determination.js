@@ -106,3 +106,53 @@ add_task(async function test_horizontal_scroll() {
     await scrolling_works(false, density);
   }
 });
+
+/**
+ * The new tab button inside the arrowscrollbox is hidden while the tab strip
+ * overflows. If the periphery collapsed to zero as a result, the scrolled
+ * content would shrink back under the overflow threshold, show the button
+ * again, and oscillate. Check the periphery keeps a non-zero block size.
+ */
+add_task(async function test_periphery_keeps_height_while_overflowing() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", true],
+    ],
+  });
+
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  win.gUIDensity.update(win.gUIDensity.MODE_COMPACT);
+
+  await BrowserTestUtils.overflowTabs(null, win, {
+    overflowAtStart: false,
+    overflowTabFactor: 1.1,
+  });
+
+  await TestUtils.waitForCondition(() => {
+    return Array.from(win.gBrowser.tabs).every(tab => tab._fullyOpen);
+  });
+  await win.promiseDocumentFlushed(() => {});
+
+  let { tabContainer } = win.gBrowser;
+  Assert.ok(tabContainer.overflowing, "The tab strip is overflowing.");
+
+  let periphery = win.document.getElementById(
+    "tabbrowser-arrowscrollbox-periphery"
+  );
+  let inlineNewTabButton = win.document.getElementById("tabs-newtab-button");
+
+  Assert.equal(
+    win.getComputedStyle(inlineNewTabButton).display,
+    "none",
+    "The inline new tab button is hidden while overflowing."
+  );
+  Assert.greater(
+    periphery.getBoundingClientRect().height,
+    0,
+    "The periphery keeps a non-zero height."
+  );
+
+  await SpecialPowers.popPrefEnv();
+  await BrowserTestUtils.closeWindow(win);
+});

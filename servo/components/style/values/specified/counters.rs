@@ -6,12 +6,12 @@
 
 use crate::counter_style::CounterStyle;
 use crate::parser::{Parse, ParserContext};
+use crate::values::CustomIdent;
 use crate::values::generics::counters as generics;
 use crate::values::generics::counters::CounterPair;
-use crate::values::specified::image::Image;
 use crate::values::specified::Integer;
-use crate::values::CustomIdent;
-use cssparser::{match_ignore_ascii_case, Parser, Token};
+use crate::values::specified::image::Image;
+use cssparser::{Parser, Token, match_ignore_ascii_case};
 use selectors::parser::SelectorParseErrorKind;
 use style_traits::{ParseError, StyleParseErrorKind};
 
@@ -81,8 +81,8 @@ fn parse_counters(
     let mut counters = Vec::new();
     loop {
         let (name, is_reversed) = match input.next() {
-            Ok(&Token::Ident(ref ident)) => (CustomIdent::from_ident(ident, &["none"])?, false),
-            Ok(&Token::Function(ref name))
+            Ok(Token::Ident(ident)) => (CustomIdent::from_ident(ident, &["none"])?, false),
+            Ok(Token::Function(name))
                 if counter_type == CounterType::Reset && name.eq_ignore_ascii_case("reversed") =>
             {
                 input
@@ -96,17 +96,17 @@ fn parse_counters(
 
         let value = match input.try_parse(|input| Integer::parse(context, input)) {
             Ok(start) => {
-                if matches!(start.get(), Some(v) if v == i32::min_value()) {
+                if start.get() == Some(i32::MIN) {
                     // The spec says that values must be clamped to the valid range,
-                    // and we reserve i32::min_value() as an internal magic value.
+                    // and we reserve i32::MIN as an internal magic value.
                     // https://drafts.csswg.org/css-lists/#auto-numbering
-                    Integer::new(i32::min_value() + 1)
+                    Integer::new(i32::MIN + 1)
                 } else {
                     start
                 }
             },
             _ => Integer::new(if is_reversed {
-                i32::min_value()
+                i32::MIN
             } else {
                 counter_type.default_value()
             }),
@@ -164,11 +164,11 @@ impl Parse for Content {
         let mut items = thin_vec::ThinVec::new();
         let mut alt_start = None;
         loop {
-            if alt_start.is_none() {
-                if let Ok(image) = input.try_parse(|i| Image::parse_forbid_none(context, i)) {
-                    items.push(generics::ContentItem::Image(image));
-                    continue;
-                }
+            if alt_start.is_none()
+                && let Ok(image) = input.try_parse(|i| Image::parse_forbid_none(context, i))
+            {
+                items.push(generics::ContentItem::Image(image));
+                continue;
             }
             let Ok(t) = input.next() else { break };
             match *t {

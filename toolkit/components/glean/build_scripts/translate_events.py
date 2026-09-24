@@ -6,6 +6,8 @@
 Create a Legacy Telemetry event definition for the provided, named Glean event metric.
 """
 
+from __future__ import annotations
+
 import re
 import sys
 from collections.abc import Sequence

@@ -74,3 +74,31 @@ add_task(
     await gCUITestUtils.hideMainMenu();
   }
 );
+
+add_task(async function testNovaPromoLinkOpensForegroundTab() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["app.support.baseURL", "https://example.com/support/"]],
+  });
+
+  let helpView = await openHelpView();
+
+  let tabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    url => url.startsWith("https://example.com/support/switching-devices"),
+    false
+  );
+  helpView.querySelector("#appMenu-nova-switch-device-link").click();
+  let tab = await tabPromise;
+
+  Assert.equal(
+    gBrowser.selectedTab,
+    tab,
+    "The switching devices page should open in a foreground tab"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  if (PanelUI.panel.state == "open") {
+    await gCUITestUtils.hideMainMenu();
+  }
+  await SpecialPowers.popPrefEnv();
+});

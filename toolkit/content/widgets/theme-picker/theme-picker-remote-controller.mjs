@@ -35,6 +35,9 @@ export class ThemePickerRemoteController {
     this.host.addController(this);
 
     this.host.addEventListener("ThemePickerInitialState", this);
+    this.host.addEventListener("themepickershown", () =>
+      this.onThemePickerShown()
+    );
 
     this.host.addEventListener(
       "themechange",
@@ -47,6 +50,16 @@ export class ThemePickerRemoteController {
     }
   }
 
+  onThemePickerShown() {
+    this.dispatchActorEvent("ThemePickerShown", {
+      source:
+        this.installSource ||
+        this.host.getAttribute("installsource") ||
+        "unknown",
+      layout: this.host.layout || "unknown",
+    });
+  }
+
   hostDisconnected() {
     for (const eventType of WINDOW_EVENTS) {
       window.removeEventListener(eventType, this);
@@ -54,8 +67,9 @@ export class ThemePickerRemoteController {
   }
 
   hostConnected() {
+    this.installSource = this.host.getAttribute("installsource") || "unknown";
     this.dispatchActorEvent("ThemePickerGetInitialState", {
-      installSource: this.host.getAttribute("installsource") || "unknown",
+      installSource: this.installSource,
       showInCompactLayout: this.host.layout === "compact",
     });
   }
@@ -109,16 +123,22 @@ export class ThemePickerRemoteController {
       case "theme":
         this.dispatchActorEvent("ThemePickerUpdateTheme", {
           themeId: String(value),
+          installsource: this.installSource,
+          layout: this.host.layout,
         });
         break;
       case "appearance":
         this.dispatchActorEvent("ThemePickerUpdateAppearance", {
           appearance: value,
+          installsource: this.installSource,
+          layout: this.host.layout,
         });
         break;
       case "nativeTheme":
         this.dispatchActorEvent("ThemePickerUpdateNativeTheme", {
           nativeTheme: Boolean(value),
+          installsource: this.installSource,
+          layout: this.host.layout,
         });
         break;
     }

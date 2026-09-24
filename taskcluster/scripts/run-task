@@ -32,6 +32,7 @@ import shutil
 import socket
 import stat
 import subprocess
+import tempfile
 import threading
 import urllib.error
 import urllib.request
@@ -441,6 +442,32 @@ def configure_volume_posix(volume, user, group, running_as_root):
         set_dir_permissions(volume, user.pw_uid, group.gr_gid)
 
 
+def download_bundle(url):
+    """Download a bundle to a temporary file.
+
+    Returns the local path, or None on failure. Callers treat a missing bundle
+    as non-fatal: robustcheckout falls back to pulling from the remote.
+    """
+    fd, path = tempfile.mkstemp(prefix="checkout-", suffix=".bundle")
+    os.close(fd)
+    print_line(b"vcs", b"downloading bundle from %s\n" % url.encode("utf-8"))
+    try:
+        with urllib.request.urlopen(url, timeout=120) as resp, open(path, "wb") as fh:
+            shutil.copyfileobj(resp, fh)
+        return path
+    except (urllib.error.URLError, socket.timeout, OSError) as e:
+        print_line(
+            b"vcs",
+            b"failed to download bundle; falling back to pull: %s\n"
+            % str(e).encode("utf-8"),
+        )
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        return None
+
+
 def vcs_checkout(
     source_repo,
     dest,
@@ -450,6 +477,7 @@ def vcs_checkout(
     branch=None,
     fetch_hgfingerprint=False,
     sparse_profile=None,
+    bundle=None,
 ):
     # Specify method to checkout a revision. This defaults to revisions as
     # SHA-1 strings, but also supports symbolic revisions like `tip` via the
@@ -529,6 +557,24 @@ def vcs_checkout(
         args.extend(["--upstream", base_repo])
     if sparse_profile:
         args.extend(["--sparseprofile", sparse_profile])
+    # A bundle (e.g. a decision-task artifact, given as a URL or local path)
+    # lets robustcheckout obtain the wanted revision without an expensive pull
+    # from hg.mozilla.org. A missing or unusable bundle is non-fatal;
+    # robustcheckout falls back to pulling from the remote.
+    bundle_tempfile = None
+    if bundle:
+        if bundle.startswith(("http://", "https://")):
+            bundle_path = bundle_tempfile = download_bundle(bundle)
+        elif os.path.exists(bundle):
+            bundle_path = bundle
+        else:
+            bundle_path = None
+            print_line(
+                b"vcs",
+                b"bundle %s not found; skipping\n" % bundle.encode("utf-8"),
+            )
+        if bundle_path:
+            args.extend(["--bundle", bundle_path])
 
     dest = os.path.abspath(dest)
     args.extend(
@@ -541,6 +587,13 @@ def vcs_checkout(
     )
 
     res = run_and_prefix_output(b"vcs", args, extra_env={"PYTHONUNBUFFERED": "1"})
+
+    if bundle_tempfile:
+        try:
+            os.remove(bundle_tempfile)
+        except OSError:
+            pass
+
     if res:
         # Mitigation for bug 1539681: if for some reason the clone failed,
         # we just remove it, so that its possible incomplete state doesn't
@@ -722,12 +775,15 @@ def collect_vcs_options(args, project):
     head_repo = os.environ.get("%s_HEAD_REPOSITORY" % env_prefix)
     revision = os.environ.get("%s_HEAD_REV" % env_prefix)
     branch = os.environ.get("%s_HEAD_REF" % env_prefix)
+    bundle = os.environ.get("%s_HEAD_BUNDLE" % env_prefix)
 
     store_path = os.environ.get("HG_STORE_PATH")
 
     # Expand ~ in some paths.
     if checkout:
         checkout = os.path.expanduser(checkout)
+    if bundle and not bundle.startswith(("http://", "https://")):
+        bundle = os.path.expanduser(os.path.expandvars(bundle))
     if store_path:
         store_path = normalize_store_path(store_path)
 
@@ -752,6 +808,7 @@ def collect_vcs_options(args, project):
         "head-repo": head_repo,
         "revision": revision,
         "branch": branch,
+        "bundle": bundle,
     }
 
 
@@ -786,6 +843,7 @@ def vcs_checkout_from_args(args, project):
         fetch_hgfingerprint=args.fetch_hgfingerprint,
         branch=options["branch"],
         sparse_profile=options["sparse-profile"],
+        bundle=options["bundle"],
     )
 
 

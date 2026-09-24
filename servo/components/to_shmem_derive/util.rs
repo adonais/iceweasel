@@ -4,8 +4,8 @@
 
 use darling::{FromDeriveInput, FromField};
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, TokenStreamExt};
-use syn::{self, parse_quote, DeriveInput, Field, Ident, WherePredicate};
+use quote::{TokenStreamExt, quote};
+use syn::{self, DeriveInput, Field, Ident, WherePredicate, parse_quote};
 use synstructure::{self, BindStyle, BindingInfo, VariantInfo};
 
 pub(crate) fn parse_input_attrs<A>(input: &DeriveInput) -> A

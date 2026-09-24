@@ -6,16 +6,30 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object HomeSelectors {
+object HomeSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        TOP_SITES,
+        TOP_SITES_COMPOSE,
+        PRIVATE_BROWSING,
+        HOME_SCREEN,
+        CONTINUE,
+        RECENT_BOOKMARKS_SECTION,
+        PRIVATE_BROWSING_HOME_SCREEN,
+        TOP_SITE_ITEM,
+    }
+
     val TOP_SITES_LIST =
         Selector(
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "top_sites_list",
             description = "Top Sites List",
-            groups = listOf("topSites"),
+            groups = setOf(Group.TOP_SITES),
         )
 
     val TOP_SITES_LIST_COMPOSE =
@@ -23,7 +37,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = "top_sites_list",
             description = "Top Sites List",
-            groups = listOf("topSitesCompose"),
+            groups = setOf(Group.TOP_SITES_COMPOSE),
         )
 
     val HOMEPAGE_VIEW =
@@ -31,7 +45,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = "homepage.view",
             description = "Homepage view",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val MAIN_MENU_BUTTON =
@@ -39,7 +53,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.content_description_menu),
             description = "Three Dot Menu",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // Use UIAutomator when navigating from BrowserPage — avoids Compose sync hanging when GeckoView is active.
@@ -48,7 +62,6 @@ object HomeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
             value = getStringResource(R.string.content_description_menu),
             description = "Three Dot Menu",
-            groups = listOf(),
         )
 
     val PRIVATE_BROWSING_BUTTON =
@@ -56,7 +69,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = getStringResource(R.string.content_description_private_browsing),
             description = "Private browsing button",
-            groups = listOf("privateBrowsing"),
+            groups = setOf(Group.PRIVATE_BROWSING),
         )
 
     val HOME_WORDMARK_LOGO =
@@ -64,7 +77,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = "homepage.wordmark.logo",
             description = "the home screen wordmark logo",
-            groups = listOf("homeScreen"),
+            groups = setOf(Group.HOME_SCREEN),
         )
 
     val HOME_WORDMARK_TEXT =
@@ -72,7 +85,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = "homepage.wordmark.text",
             description = "the home screen wordmark text",
-            groups = listOf("homeScreen"),
+            groups = setOf(Group.HOME_SCREEN),
         )
 
     val COLLECTIONS_HEADER =
@@ -80,7 +93,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.collections_header),
             description = "the Collections header",
-            groups = listOf("homeScreen"),
+            groups = setOf(Group.HOME_SCREEN),
         )
 
     val TAB_COUNTER_ZERO =
@@ -88,7 +101,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
             value = "Non-private Tabs Open: 0. Tap to switch tabs.",
             description = "the tab counter showing zero open tabs",
-            groups = listOf("homeScreen"),
+            groups = setOf(Group.HOME_SCREEN),
         )
 
     val CONTINUE_SECTION =
@@ -96,7 +109,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.recent_tabs_header_2),
             description = "Continue section header",
-            groups = listOf("continue"),
+            groups = setOf(Group.CONTINUE),
         )
 
     val RECENT_BOOKMARKS_SECTION =
@@ -104,7 +117,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.home_bookmarks_title),
             description = "Bookmarks section header",
-            groups = listOf("recentBookmarksSection"),
+            groups = setOf(Group.RECENT_BOOKMARKS_SECTION),
         )
 
     val PRIVATE_BROWSING_INFO_CARD_TITLE =
@@ -112,7 +125,7 @@ object HomeSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.felt_privacy_desc_card_title),
             description = "Private browsing info card title",
-            groups = listOf("privateBrowsingHomeScreen"),
+            groups = setOf(Group.PRIVATE_BROWSING_HOME_SCREEN),
         )
 
     @Suppress("FunctionName")
@@ -122,7 +135,7 @@ object HomeSelectors {
             value = "top_sites_list.top_site_item",
             secondaryValue = topSiteTitle,
             description = "Top site item with title: $topSiteTitle",
-            groups = listOf("topSiteItem"),
+            groups = setOf(Group.TOP_SITE_ITEM),
         )
 
     // The legacy robot hardcodes the English literal "Recently visited"; this keys off the string resource
@@ -132,7 +145,6 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.history_metadata_header_2),
             description = "Recently visited section header",
-            groups = listOf(),
         )
 
     // A search group in the "Recently visited" section, titled with the search term. Exact text, because the
@@ -145,27 +157,5 @@ object HomeSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = searchTerm,
             description = "'$searchTerm' search group",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            TOP_SITES_LIST,
-            TOP_SITES_LIST_COMPOSE,
-            HOMEPAGE_VIEW,
-            MAIN_MENU_BUTTON,
-            MAIN_MENU_BUTTON_UIAUTOMATOR,
-            PRIVATE_BROWSING_BUTTON,
-            TOP_SITES_LIST,
-            HOME_WORDMARK_LOGO,
-            HOME_WORDMARK_TEXT,
-            COLLECTIONS_HEADER,
-            TAB_COUNTER_ZERO,
-            CONTINUE_SECTION,
-            RECENT_BOOKMARKS_SECTION,
-            PRIVATE_BROWSING_INFO_CARD_TITLE,
-            TOP_SITE_ITEM(),
-            RECENTLY_VISITED_HEADER,
-            RECENTLY_VISITED_SEARCH_GROUP(),
         )
 }

@@ -85,3 +85,45 @@ add_task(async function openDebuggerFromDialog() {
 
   await closeTabAndToolbox();
 });
+
+// The DisableDeveloperTools policy hides the "debug script" option from the
+// slow-script warning.
+add_task(async function debugScriptDisabledByPolicy() {
+  await pushPref("devtools.policy.disabled", true);
+
+  const tab = await addTab(EXAMPLE_URL + "doc-slow-script.html");
+
+  const alert = BrowserTestUtils.waitForGlobalNotificationBar(
+    window,
+    "process-hang"
+  );
+
+  // Would normally force the "debug script" button to show on all channels;
+  // the policy must suppress it regardless.
+  tab.linkedBrowser.browsingContext.watchedByDevTools = true;
+
+  info("Execute an infinite loop");
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
+    content.wrappedJSObject.infiniteLoop();
+  }).catch(() => {});
+
+  info("Wait for the slow script warning");
+  const notification = await alert;
+
+  const buttons = notification.buttonContainer.getElementsByTagName("button");
+  const labels = Array.from(buttons, button => button.getAttribute("label"));
+  const debugLabel = gNavigatorBundle.getString(
+    "processHang.button_debug.label"
+  );
+
+  // Only the "stop" button is left; the "debug script" button is not offered.
+  ok(
+    !labels.includes(debugLabel),
+    "The 'debug script' button is not offered while disabled by policy"
+  );
+
+  info("Stop the hung script to unblock cleanup");
+  buttons[0].click();
+
+  await removeTab(tab);
+});

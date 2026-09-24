@@ -2081,7 +2081,9 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                 reconstructTheActiveFormattingElements();
                                 if (TreeBuilder.NOT_FOUND_ON_STACK != findLastInScope("nobr")) {
                                     errFooSeenWhenFooOpen(name);
-                                    adoptionAgencyEndTag("nobr");
+                                    if (!adoptionAgencyEndTag("nobr")) {
+                                        anyOtherEndTagInBody("nobr");
+                                    }
                                     reconstructTheActiveFormattingElements();
                                 }
                                 appendToCurrentNodeAndPushFormattingElementMayFoster(
@@ -3695,30 +3697,8 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                             // else handle like any other tag
                             // CPPONLY: MOZ_FALLTHROUGH;
                         default:
-                            if (isCurrent(name)) {
-                                pop();
-                                break endtagloop;
-                            }
-
-                            eltPos = currentPtr;
-                            for (;;) {
-                                StackNode<T> node = stack[eltPos];
-                                if (node.ns == "http://www.w3.org/1999/xhtml" && node.name == name) {
-                                    generateImpliedEndTags();
-                                    if (errorHandler != null
-                                            && !isCurrent(name)) {
-                                        errUnclosedElements(eltPos, name);
-                                    }
-                                    while (currentPtr >= eltPos) {
-                                        pop();
-                                    }
-                                    break endtagloop;
-                                } else if (eltPos == 0 || node.isSpecial()) {
-                                    errStrayEndTag(name);
-                                    break endtagloop;
-                                }
-                                eltPos--;
-                            }
+                            anyOtherEndTagInBody(name);
+                            break endtagloop;
                     }
                     // CPPONLY: MOZ_FALLTHROUGH;
                 case IN_HEAD:
@@ -4434,6 +4414,36 @@ public abstract class TreeBuilder<T> implements TokenHandler,
     }
 
     /**
+     * The "any other end tag" entry of the "in body" insertion mode.
+     */
+    private void anyOtherEndTagInBody(@Local String name) throws SAXException {
+        if (isCurrent(name)) {
+            pop();
+            return;
+        }
+
+        int eltPos = currentPtr;
+        for (;;) {
+            StackNode<T> node = stack[eltPos];
+            if (node.ns == "http://www.w3.org/1999/xhtml" && node.name == name) {
+                generateImpliedEndTags();
+                if (errorHandler != null
+                        && !isCurrent(name)) {
+                    errUnclosedElements(eltPos, name);
+                }
+                while (currentPtr >= eltPos) {
+                    pop();
+                }
+                return;
+            } else if (eltPos == 0 || node.isSpecial()) {
+                errStrayEndTag(name);
+                return;
+            }
+            eltPos--;
+        }
+    }
+
+    /**
      * Adoption agency algorithm.
      *
      * @param name subject as described in the specified algorithm.
@@ -4587,17 +4597,29 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                 node.release(this); // release from list
                 node = newNode;
                 // } XXX AAA CHANGE
+                // When the sanitizer replaces the clone with its children,
+                // the spec does not move lastNode into it, so that lastNode
+                // keeps both its position and its identity, and redirects the
+                // content of the clone to the common ancestor instead.
+                // CPPONLY: if (!sanitizerRedirectsClone(node.node, insertionCommonAncestor)) {
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, nodeFromStackWithBlinkCompat(nodePos));
                 lastNode = node;
+                // CPPONLY: }
             }
             // If we insert into a foster parent, for simplicity, we insert
             // accoding to the spec without Blink's depth limit.
             if (commonAncestor.isFosterParenting()) {
                 fatal();
                 detachFromParent(lastNode.node);
-                insertIntoFosterParent(lastNode.node);
+                insertIntoFosterParent(lastNode.node
+                        // CPPONLY: , furthestBlock.node
+                        );
             } else {
+                // The content of a furthest block that the sanitizer replaced
+                // with its children follows the content it already has, so it
+                // goes wherever lastNode goes.
+                // CPPONLY: sanitizerRedirectFurthestBlock(furthestBlock.node, insertionCommonAncestor);
                 detachFromParent(lastNode.node);
                 appendElement(lastNode.node, insertionCommonAncestor);
             }
@@ -4945,16 +4967,20 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         return instance;
     }
 
-    private void insertIntoFosterParent(T child) throws SAXException {
+    private void insertIntoFosterParent(T child
+            // CPPONLY: , T furthestBlock
+            ) throws SAXException {
         int tablePos = findLastOrRoot(TreeBuilder.TABLE);
         int templatePos = findLastOrRoot(TreeBuilder.TEMPLATE);
 
         if (templatePos >= tablePos) {
+            // CPPONLY: sanitizerRedirectFurthestBlock(furthestBlock, stack[templatePos].node);
             appendElement(child, stack[templatePos].node);
             return;
         }
 
         StackNode<T> node = stack[tablePos];
+        // CPPONLY: sanitizerRedirectFurthestBlockToFosterParent(furthestBlock, node.node, stack[tablePos - 1].node);
         insertFosterParentedChild(child, node.node, stack[tablePos - 1].node);
     }
 
@@ -5283,6 +5309,10 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         // This method can't be called for custom elements
         T currentNode = nodeFromStackWithBlinkCompat(currentPtr);
         // All accesses to `attributes` must happen before `createElement`.
+        // The sanitizer runs on the token first, so that the attributes read
+        // below are the ones the template element ends up with.
+        boolean sanitizerDropsTemplate = false;
+        // CPPONLY: sanitizerDropsTemplate = sanitizerDropsTemplateToken(attributes);
         String shadowRootMode = null;
         boolean shadowRootIsClonable = false;
         boolean shadowRootIsSerializable = false;
@@ -5290,7 +5320,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         boolean shadowRootCustomElementRegistry = false;
         String shadowRootReferenceTarget = null;
         String shadowRootSlotAssignment = null;
-        if (isAllowDeclarativeShadowRoots()) {
+        if (isAllowDeclarativeShadowRoots() && !sanitizerDropsTemplate) {
             shadowRootMode = Portability.newStringFromString(attributes.getValue(AttributeName.SHADOWROOTMODE));
             if (shadowRootMode != null) {
                 shadowRootIsClonable = attributes.contains(AttributeName.SHADOWROOTCLONABLE);

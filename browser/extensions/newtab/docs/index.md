@@ -114,7 +114,7 @@ To run newtab specific tests that aren't covered by `mach lint` and
 
 ```shell
 ./mach npm run lint:stylelint --prefix=browser/extensions/newtab
-./mach npm run testmc:build --prefix=browser/extensions/newtab
+./mach npm run testmc:jest --prefix=browser/extensions/newtab
 ./mach npm run testmc:unit --prefix=browser/extensions/newtab
 ```
 

@@ -8126,57 +8126,73 @@ static CGFloat GetMenuCornerRadius() {
   return nsCocoaFeatures::OnTahoeOrLater() ? 12.0f : 6.0f;
 }
 
-// Returns an autoreleased NSImage.
-static NSImage* GetMenuMaskImage() {
-  const CGFloat radius = GetMenuCornerRadius();
-  const NSSize maskSize = {radius * 3.0f, radius * 3.0f};
+static CGFloat GetTooltipCornerRadius() {
+  return nsCocoaFeatures::OnGoldenGateOrLater() ? 5.0f : 0.0f;
+}
+
+// Returns an autoreleased NSImage that rounds the corners at aRadius.
+static NSImage* GetCornerMaskImage(CGFloat aRadius) {
+  const NSSize maskSize = {aRadius * 3.0f, aRadius * 3.0f};
   NSImage* maskImage = [NSImage imageWithSize:maskSize
-                                      flipped:FALSE
+                                      flipped:NO
                                drawingHandler:^BOOL(NSRect dstRect) {
                                  NSBezierPath* path = [NSBezierPath
                                      bezierPathWithRoundedRect:dstRect
-                                                       xRadius:radius
-                                                       yRadius:radius];
+                                                       xRadius:aRadius
+                                                       yRadius:aRadius];
                                  [NSColor.blackColor set];
                                  [path fill];
                                  return YES;
                                }];
-  maskImage.capInsets = NSEdgeInsetsMake(radius, radius, radius, radius);
+  maskImage.capInsets = NSEdgeInsetsMake(aRadius, aRadius, aRadius, aRadius);
   return maskImage;
+}
+
+// Returns a retained view. A radius of zero means square corners.
+static NSVisualEffectView* CreateVibrancyView(NSRect aFrame,
+                                              NSVisualEffectMaterial aMaterial,
+                                              CGFloat aCornerRadius) {
+  auto* view = [[NSVisualEffectView alloc] initWithFrame:aFrame];
+  view.material = aMaterial;
+  // Tooltip and menu windows are never key, so the effect has to be told to
+  // look active regardless of window state.
+  view.state = NSVisualEffectStateActive;
+  view.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+  if (aCornerRadius > 0.0f) {
+    view.maskImage = GetCornerMaskImage(aCornerRadius);
+  }
+  return view;
+}
+
+// Returns a retained view. The caller owns it.
+- (NSView*)newEffectViewWrapperForStyle:(WindowShadow)aStyle {
+  const NSRect frame = self.contentView.frame;
+  switch (aStyle) {
+    case WindowShadow::Menu:
+      if (@available(macOS 26.0, *)) {
+        // Menus use glass rather than vibrancy from macOS 26 on, and the glass
+        // view rounds its own corners.
+        auto* glass = [[NSGlassEffectView alloc] initWithFrame:frame];
+        glass.cornerRadius = GetMenuCornerRadius();
+        return glass;
+      }
+      return CreateVibrancyView(frame, NSVisualEffectMaterialMenu,
+                                GetMenuCornerRadius());
+
+    case WindowShadow::Tooltip:
+      return CreateVibrancyView(frame, NSVisualEffectMaterialToolTip,
+                                GetTooltipCornerRadius());
+
+    case WindowShadow::None:
+    case WindowShadow::Panel:
+      return [[NSView alloc] initWithFrame:frame];
+  }
 }
 
 // Add an effect view wrapper if needed so that the OS draws the appropriate
 // vibrancy effect and window border.
 - (void)setEffectViewWrapperForStyle:(WindowShadow)aStyle {
-  NSView* wrapper = [&]() -> NSView* {
-    if (@available(macOS 26.0, *)) {
-      if (aStyle == WindowShadow::Menu) {
-        // Menus on macOS 26 use glass instead of vibrancy.
-        auto* effectView =
-            [[NSGlassEffectView alloc] initWithFrame:self.contentView.frame];
-        effectView.cornerRadius = GetMenuCornerRadius();
-        return effectView;
-      }
-    }
-    if (aStyle == WindowShadow::Menu || aStyle == WindowShadow::Tooltip) {
-      const bool isMenu = aStyle == WindowShadow::Menu;
-      auto* effectView =
-          [[NSVisualEffectView alloc] initWithFrame:self.contentView.frame];
-      effectView.material =
-          isMenu ? NSVisualEffectMaterialMenu : NSVisualEffectMaterialToolTip;
-      // Tooltip and menu windows are never "key", so we need to tell the
-      // vibrancy effect to look active regardless of window state.
-      effectView.state = NSVisualEffectStateActive;
-      effectView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-      if (isMenu) {
-        // Turn on rounded corner masking.
-        effectView.maskImage = GetMenuMaskImage();
-      }
-      return effectView;
-    }
-    return [[NSView alloc] initWithFrame:self.contentView.frame];
-  }();
-
+  NSView* wrapper = [self newEffectViewWrapperForStyle:aStyle];
   wrapper.wantsLayer = YES;
   // Swap out our content view by the new view. Setting .contentView releases
   // the old view.

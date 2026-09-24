@@ -616,11 +616,9 @@ impl YamlWriter {
                     DisplayItem::SetFilterOps => {}
                     DisplayItem::SetFilterData => {}
                     DisplayItem::SetPoints => {}
-                    DisplayItem::PopAllShadows => {}
                     DisplayItem::RepeatingImage(..) => {}
                     DisplayItem::YuvImage(..) => {}
                     DisplayItem::BackdropFilter(..) => {}
-                    DisplayItem::PushShadow(..) => {}
                     DisplayItem::Gradient(..) => {}
                     DisplayItem::RadialGradient(..) => {}
                     DisplayItem::ConicGradient(..) => {}

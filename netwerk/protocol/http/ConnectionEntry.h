@@ -231,6 +231,10 @@ class ConnectionEntry : public SupportsWeakPtr {
   // active connections and unconnected half open connections.
   uint32_t TotalActiveConnections() const;
 
+  // An h3 connection in mActiveConns that can still serve transactions.
+  bool HasUsableH3Connection() const;
+
+  // HasUsableH3Connection(), or an h3 connection attempt still in flight.
   bool HasActiveH3Connection() const;
 
   bool RemoveTransFromPendingQ(nsHttpTransaction* aTrans);

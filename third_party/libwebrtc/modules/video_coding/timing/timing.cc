@@ -17,7 +17,7 @@
 #include <span>
 #include <utility>
 
-#include "api/field_trials_view.h"
+#include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -28,7 +28,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/synchronization/mutex.h"
-#include "system_wrappers/include/clock.h"
 #include "video/timing/default_video_jitter_timing.h"
 
 namespace webrtc {
@@ -79,21 +78,17 @@ bool VCMTiming::VideoDelayTimings::UseLowLatencyRendering() const {
          max_playout_delay <= kLowLatencyStreamMaxPlayoutDelayThreshold;
 }
 
-VCMTiming::VCMTiming(Clock* clock,
-                     const FieldTrialsView& field_trials,
-                     TimeDelta render_delay)
-    : VCMTiming(clock, field_trials, render_delay, nullptr) {}
+VCMTiming::VCMTiming(const Environment& env, TimeDelta render_delay)
+    : VCMTiming(env, render_delay, nullptr) {}
 
 VCMTiming::VCMTiming(
-    Clock* clock,
-    const FieldTrialsView& field_trials,
+    const Environment& env,
     TimeDelta render_delay,
     std::unique_ptr<VideoJitterTimingInterface> video_jitter_timing)
     : video_jitter_timing_(
           video_jitter_timing
               ? std::move(video_jitter_timing)
-              : std::make_unique<DefaultVideoJitterTiming>(clock,
-                                                           field_trials)),
+              : std::make_unique<DefaultVideoJitterTiming>(env)),
       decode_time_filter_(std::make_unique<DecodeTimePercentileFilter>()),
       timings_({.render_delay = render_delay}) {}
 

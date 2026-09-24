@@ -11,6 +11,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  handleBounceEventTrigger:
+    "moz-src:///browser/components/urlbar/UrlbarParentController.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "ReferrerInfo", () =>
@@ -156,6 +158,9 @@ function openInWindow(url, params, sourceWindow) {
   if (chromeless) {
     extraOptions.setPropertyAsBool("chromeless-window", true);
   }
+  if (params.aswebauth) {
+    extraOptions.setPropertyAsBool("aswebauth", true);
+  }
 
   var allowThirdPartyFixupSupports = Cc[
     "@mozilla.org/supports-PRBool;1"
@@ -184,19 +189,30 @@ function openInWindow(url, params, sourceWindow) {
   // Returns a promise that will be resolved when the new window's startup is finished.
   function waitForWindowStartup() {
     return new Promise(resolve => {
+      const removeObservers = () => {
+        Services.obs.removeObserver(
+          delayedStartupObserver,
+          "browser-delayed-startup-finished"
+        );
+        Services.obs.removeObserver(closedObserver, "domwindowclosed");
+      };
       const delayedStartupObserver = aSubject => {
         if (aSubject == win) {
-          Services.obs.removeObserver(
-            delayedStartupObserver,
-            "browser-delayed-startup-finished"
-          );
+          removeObservers();
           resolve();
+        }
+      };
+      // Delayed startup never fires if the window closes first.
+      const closedObserver = aSubject => {
+        if (aSubject == win) {
+          removeObservers();
         }
       };
       Services.obs.addObserver(
         delayedStartupObserver,
         "browser-delayed-startup-finished"
       );
+      Services.obs.addObserver(closedObserver, "domwindowclosed");
     });
   }
 
@@ -449,6 +465,10 @@ export const URILoadingHelper = {
    * @param {boolean} params.fromExternal
    *                  Indicates the load was started outside of the browser,
    *                  e.g. passed on the commandline or through OS mechanisms.
+   * @param {boolean} params.aswebauth
+   *                  Marks a new window as an ASWebAuthenticationSession auth
+   *                  window so that it is not tracked by session restore. Only
+   *                  used when where == "window" or "chromeless".
    * @param {Function} params.resolveOnNewTabCreated
    *                   This callback will be called when a new tab is created.
    * @param {Function} params.resolveOnContentBrowserCreated
@@ -655,11 +675,9 @@ export const URILoadingHelper = {
     // We avoid triggering for URL bar initiated loads since this gets called
     // right after a result is picked and the bounce event tracking is started.
     // We instead check for potential URL bar initiated bounce events directly
-    // in gURLBar.controller.engagementEvent.startTrackingBounceEvent().
+    // in the collector's startTrackingBounceEvent().
     if (!params.initiatedByURLBar && targetBrowser) {
-      w.gURLBar.controller.engagementEvent.handleBounceEventTrigger(
-        targetBrowser
-      );
+      lazy.handleBounceEventTrigger(targetBrowser);
     }
 
     if (

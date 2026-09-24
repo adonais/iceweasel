@@ -14,16 +14,25 @@ function run_test() {
   // encryption key (a runtime setBoolPref here would be too late).
   do_get_profile();
 
+  let testingInterface = Services.cache2.QueryInterface(Ci.nsICacheTesting);
+
+  // A truncated entry is handed to the consumer before its file has been
+  // opened, so metadata and data are normally written into memory first and
+  // the file catches up later. Block the I/O thread at the OPEN level to make
+  // that ordering deterministic instead of leaving it to how busy the machine
+  // is. Levels below OPEN still run, so the key load -- dispatched at
+  // OPEN_PRIORITY -- completes before this takes hold.
+  testingInterface.suspendCacheIOThread(3);
+
   asyncOpenCacheEntry(
     "http://encrypted/",
     "disk",
     Ci.nsICacheStorage.OPEN_TRUNCATE,
     null,
     new OpenCallback(NEW | WAITFORWRITE, META, DATA, function () {
+      testingInterface.resumeCacheIOThread();
       // Force pending metadata and data to disk before inspecting the files.
-      Services.cache2
-        .QueryInterface(Ci.nsICacheTesting)
-        .flush(makeFlushObserver(afterFlush));
+      testingInterface.flush(makeFlushObserver(afterFlush));
     })
   );
 

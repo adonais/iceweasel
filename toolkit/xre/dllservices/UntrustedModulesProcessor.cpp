@@ -5,6 +5,8 @@
 #include "UntrustedModulesProcessor.h"
 
 #include <windows.h>
+#include <aclapi.h>
+#include <psapi.h>
 
 #include "GMPPlatform.h"
 #include "GMPServiceParent.h"
@@ -12,6 +14,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/FileUtilsWin.h"
 #include "mozilla/Likely.h"
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/net/SocketProcessParent.h"
@@ -22,16 +25,174 @@
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "ModuleEvaluator.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsIObserverService.h"
 #include "nsTHashtable.h"
 #include "nsThreadUtils.h"
+#include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
 #include "private/prpriv.h"  // For PR_GetThreadID
 
 namespace mozilla {
+
+// NT paths are not bounded by MAX_PATH. This is the ceiling we are willing to
+// grow a path buffer to while resolving one.
+static const uint32_t kMaxNtPathLen = 0x8000;
+
+/**
+ * Returns true if aDosPath lives on a remote device.
+ */
+static bool IsRemoteFile(const nsAString& aDosPath) {
+  // A UNC path is always remote.
+  if (StringBeginsWith(aDosPath, u"\\\\"_ns)) {
+    return true;
+  }
+
+  if (aDosPath.Length() < 3 || aDosPath[1] != u':') {
+    // Some shape we do not recognise; do not guess.
+    return true;
+  }
+
+  // GetDriveTypeW also catches a drive letter mapped to a network share.
+  const wchar_t root[] = {static_cast<wchar_t>(aDosPath[0]), L':', L'\\',
+                          L'\0'};
+  UINT driveType = ::GetDriveTypeW(root);
+  return driveType == DRIVE_REMOTE || driveType == DRIVE_UNKNOWN ||
+         driveType == DRIVE_NO_ROOT_DIR;
+}
+
+/**
+ * Returns true if the file at aDosPath carries a mandatory integrity label
+ * below medium.  A file with no label ACE is medium by default, which is the
+ * most common case, and is accepted.
+ */
+static bool IsBelowMediumIntegrityFile(const nsAString& aDosPath) {
+  PACL sacl = nullptr;
+  PSECURITY_DESCRIPTOR rawSd = nullptr;
+  nsAutoString path(aDosPath);
+  if (::GetNamedSecurityInfoW(reinterpret_cast<wchar_t*>(path.BeginWriting()),
+                              SE_FILE_OBJECT, LABEL_SECURITY_INFORMATION,
+                              nullptr, nullptr, nullptr, &sacl,
+                              &rawSd) != ERROR_SUCCESS) {
+    // Treat errors as untrustworthy.
+    return true;
+  }
+
+  UniquePtr<void, LocalFreeDeleter> sd(rawSd);
+
+  if (!sacl) {
+    // No label: medium by default.
+    return false;
+  }
+
+  for (WORD i = 0; i < sacl->AceCount; ++i) {
+    VOID* rawAce = nullptr;
+    if (!::GetAce(sacl, i, &rawAce)) {
+      return true;
+    }
+
+    auto* header = static_cast<ACE_HEADER*>(rawAce);
+    if (header->AceType != SYSTEM_MANDATORY_LABEL_ACE_TYPE) {
+      continue;
+    }
+
+    auto* labelAce = static_cast<SYSTEM_MANDATORY_LABEL_ACE*>(rawAce);
+    auto* sid = reinterpret_cast<PSID>(&labelAce->SidStart);
+    PUCHAR subAuthorityCount = ::GetSidSubAuthorityCount(sid);
+    if (!subAuthorityCount || !*subAuthorityCount) {
+      return true;
+    }
+
+    DWORD* rid = ::GetSidSubAuthority(sid, *subAuthorityCount - 1);
+    if (!rid) {
+      return true;
+    }
+
+    return *rid < SECURITY_MANDATORY_MEDIUM_RID;
+  }
+
+  // A SACL with no label ACE is also medium by default.
+  return false;
+}
+
+bool ValidateAndResolveModuleSection(const ipc::FileDescriptor& aSection,
+                                     nsAString& aOutNtPath) {
+  aOutNtPath.Truncate();
+
+  if (!aSection.IsValid()) {
+    return false;
+  }
+
+  UniqueFileHandle section(aSection.ClonePlatformHandle());
+  if (!section) {
+    return false;
+  }
+
+  // Recover the backing file's path by mapping a view.
+  nsAutoString resolved;
+  {
+    PVOID view = ::MapViewOfFile(section.get(), FILE_MAP_READ, 0, 0, 0);
+    if (!view) {
+      return false;
+    }
+    auto unmapView = MakeScopeExit([&]() { ::UnmapViewOfFile(view); });
+
+    // A module is an IMAGE section.
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!::VirtualQuery(view, &mbi, sizeof(mbi)) || mbi.Type != MEM_IMAGE) {
+      return false;
+    }
+
+    // GetMappedFileNameW reports the NT device form
+    // (\Device\HarddiskVolumeN\...), which is what the child's loader observer
+    // records via NtQueryVirtualMemory(..., MemorySectionName) and what
+    // ModuleRecord expects, so the two are directly comparable.
+    for (uint32_t bufLen = MAX_PATH; bufLen <= kMaxNtPathLen; bufLen *= 2) {
+      nsAutoString buf;
+      if (!buf.SetLength(bufLen, fallible)) {
+        break;
+      }
+
+      DWORD charsWritten = ::GetMappedFileNameW(
+          ::GetCurrentProcess(), view,
+          reinterpret_cast<wchar_t*>(buf.BeginWriting()), bufLen);
+      if (!charsWritten) {
+        break;
+      }
+
+      if (charsWritten >= bufLen - 1) {
+        // May have been truncated; retry with more room.
+        continue;
+      }
+
+      buf.SetLength(charsWritten);
+      resolved = buf;
+      break;
+    }
+  }
+
+  if (resolved.IsEmpty()) {
+    return false;
+  }
+
+  // The remaining checks are about the file, so they need its DOS path.
+  nsAutoString dosPath;
+  if (!NtPathToDosPath(resolved, dosPath)) {
+    return false;
+  }
+
+  // Reject a file on a remote device, or one carrying a mandatory integrity
+  // label below medium.
+  if (IsRemoteFile(dosPath) || IsBelowMediumIntegrityFile(dosPath)) {
+    return false;
+  }
+
+  aOutNtPath = resolved;
+  return true;
+}
 
 class MOZ_RAII BackgroundPriorityRegion final {
  public:
@@ -379,7 +540,7 @@ RefPtr<UntrustedModulesPromise> UntrustedModulesProcessor::GetProcessedData() {
 }
 
 RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrust(
-    ModulePaths&& aModPaths, bool aRunAtNormalPriority) {
+    ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority) {
   MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
 
   if (!IsReadyForBackgroundProcessing()) {
@@ -388,9 +549,9 @@ RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrust(
   }
 
   RefPtr<UntrustedModulesProcessor> self(this);
-  auto run = [self = std::move(self), modPaths = std::move(aModPaths),
+  auto run = [self = std::move(self), modIdents = std::move(aModIdents),
               runNormal = aRunAtNormalPriority]() mutable {
-    return self->GetModulesTrustInternal(std::move(modPaths), runNormal);
+    return self->GetModulesTrustInternal(std::move(modIdents), runNormal);
   };
 
   if (aRunAtNormalPriority) {
@@ -557,6 +718,10 @@ RefPtr<ModuleRecord> UntrustedModulesProcessor::GetModuleRecord(
     const glue::EnhancedModuleLoadInfo& aModuleLoadInfo) {
   MOZ_ASSERT(!XRE_IsParentProcess());
 
+  // aModules is keyed by the path the parent derived with GetMappedFileNameW,
+  // while mSectionName comes from NtQueryVirtualMemory(..., MemorySectionName).
+  // Both name the same section's backing file in NT device form; if they ever
+  // diverged, every lookup here would miss and every module would look trusted.
   return aModules.Get(aModuleLoadInfo.mNtLoadInfo.mSectionName.AsString());
 }
 
@@ -733,14 +898,14 @@ void UntrustedModulesProcessor::ProcessModuleLoadQueue() {
 
 template <typename ActorT>
 static RefPtr<GetModulesTrustIpcPromise> SendGetModulesTrust(
-    ActorT* aActor, ModulePaths&& aModPaths, bool aRunAtNormalPriority) {
+    ActorT* aActor, ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority) {
   MOZ_ASSERT(NS_IsMainThread());
-  return aActor->SendGetModulesTrust(std::move(aModPaths),
+  return aActor->SendGetModulesTrust(std::move(aModIdents),
                                      aRunAtNormalPriority);
 }
 
 RefPtr<GetModulesTrustIpcPromise>
-UntrustedModulesProcessor::SendGetModulesTrust(ModulePaths&& aModules,
+UntrustedModulesProcessor::SendGetModulesTrust(ModuleIdentifiers&& aModules,
                                                Priority aPriority) {
   MOZ_ASSERT(NS_IsMainThread());
   bool runNormal = aPriority == Priority::Default;
@@ -808,9 +973,11 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
         NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
   }
 
-  nsTHashtable<nsStringCaseInsensitiveHashKey> moduleNtPathSet;
+  nsTHashtable<nsStringCaseInsensitiveHashKey> alreadyAdded;
+  ModuleIdentifiers moduleIdents;
+  uint32_t unverifiableLoads = 0;
 
-  // Build a set of modules to be processed by the parent
+  // Build the set of modules to be processed by the parent.
   for (UnprocessedModuleLoadInfoContainer* container : loadsToProcess) {
     glue::EnhancedModuleLoadInfo& entry = container->mInfo;
 
@@ -819,7 +986,28 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
           NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
-    moduleNtPathSet.PutEntry(entry.mNtLoadInfo.mSectionName.AsString());
+    if (!entry.mNtLoadInfo.mSectionHandle) {
+      // No section handle, so nothing the parent can verify.
+      if (entry.mNtLoadInfo.mSectionHandleUnavailable) {
+        ++unverifiableLoads;
+      }
+      continue;
+    }
+
+    nsDependentString sectionName(entry.mNtLoadInfo.mSectionName.AsString());
+    if (!alreadyAdded.EnsureInserted(sectionName)) {
+      continue;
+    }
+
+    ipc::FileDescriptor section(entry.mNtLoadInfo.mSectionHandle.get());
+    if (!section.IsValid()) {
+      // We had a handle but could not wrap it for IPC, which is the same kind
+      // of anomaly as failing to duplicate it.
+      ++unverifiableLoads;
+      continue;
+    }
+
+    moduleIdents.AppendElement(std::move(section));
   }
 
   if (!IsReadyForBackgroundProcessing()) {
@@ -827,13 +1015,12 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
         NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
   }
 
-  MOZ_ASSERT(!moduleNtPathSet.IsEmpty());
-  if (moduleNtPathSet.IsEmpty()) {
+  mProcessedModuleLoads.mUnverifiableLoads += unverifiableLoads;
+
+  if (moduleIdents.IsEmpty()) {
     // Nothing to process
     return GetModulesTrustPromise::CreateAndResolve(Nothing(), __func__);
   }
-
-  ModulePaths moduleNtPaths(std::move(moduleNtPathSet));
 
   if (!IsReadyForBackgroundProcessing()) {
     return GetModulesTrustPromise::CreateAndReject(
@@ -843,9 +1030,9 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
   RefPtr<UntrustedModulesProcessor> self(this);
 
   auto invoker = [self = std::move(self),
-                  moduleNtPaths = std::move(moduleNtPaths),
+                  moduleIdentifiers = std::move(moduleIdents),
                   priority = aPriority]() mutable {
-    return self->SendGetModulesTrust(std::move(moduleNtPaths), priority);
+    return self->SendGetModulesTrust(std::move(moduleIdentifiers), priority);
   };
 
   RefPtr<GetModulesTrustPromise::Private> p(
@@ -894,9 +1081,11 @@ void UntrustedModulesProcessor::CompleteProcessing(
   ModulesMap& modules = aModulesAndLoads.mModMapResult.ref().mModules;
   const uint32_t& trustTestFailures =
       aModulesAndLoads.mModMapResult.ref().mTrustTestFailures;
+  const uint32_t& rejectedSections =
+      aModulesAndLoads.mModMapResult.ref().mRejectedSections;
   UnprocessedModuleLoads& loads = aModulesAndLoads.mLoads;
 
-  if (modules.IsEmpty() && !trustTestFailures) {
+  if (modules.IsEmpty() && !trustTestFailures && !rejectedSections) {
     // No data, nothing to save.
     return;
   }
@@ -969,7 +1158,7 @@ void UntrustedModulesProcessor::CompleteProcessing(
   }
 
   if (processedStacks.empty() && processedEvents.isEmpty() &&
-      !sanitizationFailures && !trustTestFailures) {
+      !sanitizationFailures && !trustTestFailures && !rejectedSections) {
     // Nothing to save
     return;
   }
@@ -987,12 +1176,13 @@ void UntrustedModulesProcessor::CompleteProcessing(
 
   mProcessedModuleLoads.mSanitizationFailures += sanitizationFailures;
   mProcessedModuleLoads.mTrustTestFailures += trustTestFailures;
+  mProcessedModuleLoads.mRejectedSections += rejectedSections;
 }
 
 // The thread priority of this job should match the priority that the child
 // process is running with, as specified by |aRunAtNormalPriority|.
 RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
-    ModulePaths&& aModPaths, bool aRunAtNormalPriority) {
+    ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority) {
   MOZ_ASSERT(XRE_IsParentProcess());
   AssertRunningOnLazyIdleThread();
 
@@ -1002,18 +1192,18 @@ RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
   }
 
   if (aRunAtNormalPriority) {
-    return GetModulesTrustInternal(std::move(aModPaths));
+    return GetModulesTrustInternal(std::move(aModIdents));
   }
 
   BackgroundPriorityRegion bgRgn;
-  return GetModulesTrustInternal(std::move(aModPaths));
+  return GetModulesTrustInternal(std::move(aModIdents));
 }
 
-// For each module in |aModPaths|, evaluate its trustworthiness and only send
+// For each module in aModIdents, evaluate its trustworthiness and only send
 // ModuleRecords for untrusted modules back to the child process. We also save
 // XUL's ModuleRecord so that the child process may report XUL's load time.
 RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
-    ModulePaths&& aModPaths) {
+    ModuleIdentifiers&& aModIdents) {
   MOZ_ASSERT(XRE_IsParentProcess());
   AssertRunningOnLazyIdleThread();
 
@@ -1021,6 +1211,7 @@ RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
 
   ModulesMap& modMap = result.mModules;
   uint32_t& trustTestFailures = result.mTrustTestFailures;
+  uint32_t& rejectedSections = result.mRejectedSections;
 
   ModuleEvaluator modEval;
   MOZ_ASSERT(!!modEval);
@@ -1028,16 +1219,23 @@ RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
     return ModulesTrustPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  for (auto& resolvedNtPath :
-       aModPaths.mModuleNtPaths.as<ModulePaths::VecType>()) {
+  for (auto& section : aModIdents) {
     if (!IsReadyForBackgroundProcessing()) {
       return ModulesTrustPromise::CreateAndReject(
           NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
-    MOZ_ASSERT(!resolvedNtPath.IsEmpty());
-    if (resolvedNtPath.IsEmpty()) {
+    // The authoritative path, derived from the handle.
+    nsAutoString resolvedNtPath;
+    if (!ValidateAndResolveModuleSection(section, resolvedNtPath) ||
+        resolvedNtPath.IsEmpty()) {
+      ++rejectedSections;
       continue;
+    }
+
+    if (!IsReadyForBackgroundProcessing()) {
+      return ModulesTrustPromise::CreateAndReject(
+          NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
     RefPtr<ModuleRecord> module(GetOrAddModuleRecord(modEval, resolvedNtPath));

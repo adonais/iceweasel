@@ -209,9 +209,6 @@ class Module : public JS::WasmModule {
   WASM_DECLARE_FRIEND_SERIALIZE(Module);
 };
 
-using MutableModule = RefPtr<Module>;
-using SharedModule = RefPtr<const Module>;
-
 // JS API implementations:
 
 [[nodiscard]] bool GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId);

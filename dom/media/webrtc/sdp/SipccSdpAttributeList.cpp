@@ -4,8 +4,8 @@
 
 #include "sdp/SipccSdpAttributeList.h"
 
-#include <ostream>
-
+#include "Sdp.h"
+#include "SdpAttribute.h"
 #include "mozilla/Assertions.h"
 
 extern "C" {
@@ -16,69 +16,14 @@ namespace mozilla {
 
 using InternalResults = SdpParser::InternalResults;
 
-/* static */
-MOZ_GLIBCXX_CONSTINIT const std::string SipccSdpAttributeList::kEmptyString;
-
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList* sessionLevel)
-    : mSessionLevel(sessionLevel) {}
+    : SdpAttributeListImpl(sessionLevel) {}
 
 SipccSdpAttributeList::SipccSdpAttributeList(
     const SipccSdpAttributeList& aOrig,
     const SipccSdpAttributeList* sessionLevel)
-    : SipccSdpAttributeList(sessionLevel) {
-  for (size_t i = 0; i < kNumAttributeTypes; ++i) {
-    if (aOrig.mAttributes[i]) {
-      mAttributes[i] = aOrig.mAttributes[i]->Clone();
-    }
-  }
-}
-
-bool SipccSdpAttributeList::HasAttribute(const AttributeType type,
-                                         const bool sessionFallback) const {
-  return !!GetAttribute(type, sessionFallback);
-}
-
-const SdpAttribute* SipccSdpAttributeList::GetAttribute(
-    const AttributeType type, const bool sessionFallback) const {
-  const SdpAttribute* value = mAttributes[static_cast<size_t>(type)].get();
-  // Only do fallback when the attribute can appear at both the media and
-  // session level
-  if (!value && !AtSessionLevel() && sessionFallback &&
-      SdpAttribute::IsAllowedAtSessionLevel(type) &&
-      SdpAttribute::IsAllowedAtMediaLevel(type)) {
-    return mSessionLevel->GetAttribute(type, false);
-  }
-  return value;
-}
-
-void SipccSdpAttributeList::RemoveAttribute(const AttributeType type) {
-  mAttributes[static_cast<size_t>(type)] = nullptr;
-}
-
-void SipccSdpAttributeList::Clear() {
-  for (size_t i = 0; i < kNumAttributeTypes; ++i) {
-    RemoveAttribute(static_cast<AttributeType>(i));
-  }
-}
-
-uint32_t SipccSdpAttributeList::Count() const {
-  uint32_t count = 0;
-  for (auto& mAttribute : mAttributes) {
-    if (mAttribute) {
-      count++;
-    }
-  }
-  return count;
-}
-
-void SipccSdpAttributeList::SetAttribute(UniquePtr<SdpAttribute>&& attr) {
-  if (!IsAllowedHere(attr->GetType())) {
-    MOZ_ASSERT(false, "This type of attribute is not allowed here");
-    return;
-  }
-  mAttributes[attr->GetType()] = std::move(attr);
-}
+    : SdpAttributeListImpl(aOrig, sessionLevel) {}
 
 void SipccSdpAttributeList::LoadSimpleString(sdp_t* sdp, const uint16_t level,
                                              const sdp_attr_e attr,
@@ -1112,19 +1057,6 @@ bool SipccSdpAttributeList::Load(sdp_t* sdp, const uint16_t level,
   return true;
 }
 
-bool SipccSdpAttributeList::IsAllowedHere(
-    const SdpAttribute::AttributeType type) const {
-  if (AtSessionLevel() && !SdpAttribute::IsAllowedAtSessionLevel(type)) {
-    return false;
-  }
-
-  if (!AtSessionLevel() && !SdpAttribute::IsAllowedAtMediaLevel(type)) {
-    return false;
-  }
-
-  return true;
-}
-
 void SipccSdpAttributeList::WarnAboutMisplacedAttribute(
     const SdpAttribute::AttributeType type, const uint32_t lineNumber,
     InternalResults& results) {
@@ -1132,272 +1064,6 @@ void SipccSdpAttributeList::WarnAboutMisplacedAttribute(
                         (AtSessionLevel() ? " at session level. Ignoring."
                                           : " at media level. Ignoring.");
   results.AddParseError(lineNumber, warning);
-}
-
-const std::vector<std::string>& SipccSdpAttributeList::GetCandidate() const {
-  if (!HasAttribute(SdpAttribute::kCandidateAttribute)) {
-    MOZ_CRASH();
-  }
-
-  return static_cast<const SdpMultiStringAttribute*>(
-             GetAttribute(SdpAttribute::kCandidateAttribute))
-      ->mValues;
-}
-
-const SdpConnectionAttribute& SipccSdpAttributeList::GetConnection() const {
-  if (!HasAttribute(SdpAttribute::kConnectionAttribute)) {
-    MOZ_CRASH();
-  }
-
-  return *static_cast<const SdpConnectionAttribute*>(
-      GetAttribute(SdpAttribute::kConnectionAttribute));
-}
-
-SdpDirectionAttribute::Direction SipccSdpAttributeList::GetDirection() const {
-  if (!HasAttribute(SdpAttribute::kDirectionAttribute)) {
-    MOZ_CRASH();
-  }
-
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kDirectionAttribute);
-  return static_cast<const SdpDirectionAttribute*>(attr)->mValue;
-}
-
-const SdpDtlsMessageAttribute& SipccSdpAttributeList::GetDtlsMessage() const {
-  if (!HasAttribute(SdpAttribute::kDtlsMessageAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kDtlsMessageAttribute);
-  return *static_cast<const SdpDtlsMessageAttribute*>(attr);
-}
-
-const SdpExtmapAttributeList& SipccSdpAttributeList::GetExtmap() const {
-  if (!HasAttribute(SdpAttribute::kExtmapAttribute)) {
-    MOZ_CRASH();
-  }
-
-  return *static_cast<const SdpExtmapAttributeList*>(
-      GetAttribute(SdpAttribute::kExtmapAttribute));
-}
-
-const SdpFingerprintAttributeList& SipccSdpAttributeList::GetFingerprint()
-    const {
-  if (!HasAttribute(SdpAttribute::kFingerprintAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kFingerprintAttribute);
-  return *static_cast<const SdpFingerprintAttributeList*>(attr);
-}
-
-const SdpFmtpAttributeList& SipccSdpAttributeList::GetFmtp() const {
-  if (!HasAttribute(SdpAttribute::kFmtpAttribute)) {
-    MOZ_CRASH();
-  }
-
-  return *static_cast<const SdpFmtpAttributeList*>(
-      GetAttribute(SdpAttribute::kFmtpAttribute));
-}
-
-const SdpGroupAttributeList& SipccSdpAttributeList::GetGroup() const {
-  if (!HasAttribute(SdpAttribute::kGroupAttribute)) {
-    MOZ_CRASH();
-  }
-
-  return *static_cast<const SdpGroupAttributeList*>(
-      GetAttribute(SdpAttribute::kGroupAttribute));
-}
-
-const SdpOptionsAttribute& SipccSdpAttributeList::GetIceOptions() const {
-  if (!HasAttribute(SdpAttribute::kIceOptionsAttribute)) {
-    MOZ_CRASH();
-  }
-
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kIceOptionsAttribute);
-  return *static_cast<const SdpOptionsAttribute*>(attr);
-}
-
-const std::string& SipccSdpAttributeList::GetIcePwd() const {
-  if (!HasAttribute(SdpAttribute::kIcePwdAttribute)) {
-    return kEmptyString;
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kIcePwdAttribute);
-  return static_cast<const SdpStringAttribute*>(attr)->mValue;
-}
-
-const std::string& SipccSdpAttributeList::GetIceUfrag() const {
-  if (!HasAttribute(SdpAttribute::kIceUfragAttribute)) {
-    return kEmptyString;
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kIceUfragAttribute);
-  return static_cast<const SdpStringAttribute*>(attr)->mValue;
-}
-
-const std::string& SipccSdpAttributeList::GetIdentity() const {
-  if (!HasAttribute(SdpAttribute::kIdentityAttribute)) {
-    return kEmptyString;
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kIdentityAttribute);
-  return static_cast<const SdpStringAttribute*>(attr)->mValue;
-}
-
-const SdpImageattrAttributeList& SipccSdpAttributeList::GetImageattr() const {
-  if (!HasAttribute(SdpAttribute::kImageattrAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kImageattrAttribute);
-  return *static_cast<const SdpImageattrAttributeList*>(attr);
-}
-
-const SdpSimulcastAttribute& SipccSdpAttributeList::GetSimulcast() const {
-  if (!HasAttribute(SdpAttribute::kSimulcastAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSimulcastAttribute);
-  return *static_cast<const SdpSimulcastAttribute*>(attr);
-}
-
-const std::string& SipccSdpAttributeList::GetLabel() const {
-  if (!HasAttribute(SdpAttribute::kLabelAttribute)) {
-    return kEmptyString;
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kLabelAttribute);
-  return static_cast<const SdpStringAttribute*>(attr)->mValue;
-}
-
-uint32_t SipccSdpAttributeList::GetMaxptime() const {
-  if (!HasAttribute(SdpAttribute::kMaxptimeAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kMaxptimeAttribute);
-  return static_cast<const SdpNumberAttribute*>(attr)->mValue;
-}
-
-const std::string& SipccSdpAttributeList::GetMid() const {
-  if (!HasAttribute(SdpAttribute::kMidAttribute)) {
-    return kEmptyString;
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kMidAttribute);
-  return static_cast<const SdpStringAttribute*>(attr)->mValue;
-}
-
-const SdpMsidAttributeList& SipccSdpAttributeList::GetMsid() const {
-  if (!HasAttribute(SdpAttribute::kMsidAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kMsidAttribute);
-  return *static_cast<const SdpMsidAttributeList*>(attr);
-}
-
-const SdpMsidSemanticAttributeList& SipccSdpAttributeList::GetMsidSemantic()
-    const {
-  if (!HasAttribute(SdpAttribute::kMsidSemanticAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kMsidSemanticAttribute);
-  return *static_cast<const SdpMsidSemanticAttributeList*>(attr);
-}
-
-const SdpRidAttributeList& SipccSdpAttributeList::GetRid() const {
-  if (!HasAttribute(SdpAttribute::kRidAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kRidAttribute);
-  return *static_cast<const SdpRidAttributeList*>(attr);
-}
-
-uint32_t SipccSdpAttributeList::GetPtime() const {
-  if (!HasAttribute(SdpAttribute::kPtimeAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kPtimeAttribute);
-  return static_cast<const SdpNumberAttribute*>(attr)->mValue;
-}
-
-const SdpRtcpAttribute& SipccSdpAttributeList::GetRtcp() const {
-  if (!HasAttribute(SdpAttribute::kRtcpAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kRtcpAttribute);
-  return *static_cast<const SdpRtcpAttribute*>(attr);
-}
-
-const SdpRtcpFbAttributeList& SipccSdpAttributeList::GetRtcpFb() const {
-  if (!HasAttribute(SdpAttribute::kRtcpFbAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kRtcpFbAttribute);
-  return *static_cast<const SdpRtcpFbAttributeList*>(attr);
-}
-
-const SdpRemoteCandidatesAttribute& SipccSdpAttributeList::GetRemoteCandidates()
-    const {
-  MOZ_CRASH("Not yet implemented");
-}
-
-const SdpRtpmapAttributeList& SipccSdpAttributeList::GetRtpmap() const {
-  if (!HasAttribute(SdpAttribute::kRtpmapAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kRtpmapAttribute);
-  return *static_cast<const SdpRtpmapAttributeList*>(attr);
-}
-
-const SdpSctpmapAttributeList& SipccSdpAttributeList::GetSctpmap() const {
-  if (!HasAttribute(SdpAttribute::kSctpmapAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSctpmapAttribute);
-  return *static_cast<const SdpSctpmapAttributeList*>(attr);
-}
-
-uint32_t SipccSdpAttributeList::GetSctpPort() const {
-  if (!HasAttribute(SdpAttribute::kSctpPortAttribute)) {
-    MOZ_CRASH();
-  }
-
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSctpPortAttribute);
-  return static_cast<const SdpNumberAttribute*>(attr)->mValue;
-}
-
-uint32_t SipccSdpAttributeList::GetMaxMessageSize() const {
-  if (!HasAttribute(SdpAttribute::kMaxMessageSizeAttribute)) {
-    MOZ_CRASH();
-  }
-
-  const SdpAttribute* attr =
-      GetAttribute(SdpAttribute::kMaxMessageSizeAttribute);
-  return static_cast<const SdpNumberAttribute*>(attr)->mValue;
-}
-
-const SdpSetupAttribute& SipccSdpAttributeList::GetSetup() const {
-  if (!HasAttribute(SdpAttribute::kSetupAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSetupAttribute);
-  return *static_cast<const SdpSetupAttribute*>(attr);
-}
-
-const SdpSsrcAttributeList& SipccSdpAttributeList::GetSsrc() const {
-  if (!HasAttribute(SdpAttribute::kSsrcAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSsrcAttribute);
-  return *static_cast<const SdpSsrcAttributeList*>(attr);
-}
-
-const SdpSsrcGroupAttributeList& SipccSdpAttributeList::GetSsrcGroup() const {
-  if (!HasAttribute(SdpAttribute::kSsrcGroupAttribute)) {
-    MOZ_CRASH();
-  }
-  const SdpAttribute* attr = GetAttribute(SdpAttribute::kSsrcGroupAttribute);
-  return *static_cast<const SdpSsrcGroupAttributeList*>(attr);
-}
-
-void SipccSdpAttributeList::Serialize(std::ostream& os) const {
-  for (auto& mAttribute : mAttributes) {
-    if (mAttribute) {
-      os << *mAttribute;
-    }
-  }
 }
 
 }  // namespace mozilla

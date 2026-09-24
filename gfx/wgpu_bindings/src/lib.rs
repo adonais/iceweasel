@@ -2,7 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use wgc::id;
+use wgpu_core_remote_types::binding_model::{BindGroupDescriptor, BindGroupLayoutDescriptor};
+use wgpu_core_remote_types::encoders::{
+    CommandEncoderCommand, ComputePassEncoderCommand, RenderBundleEncoderCommand,
+    RenderBundleEncoderDescriptor, RenderPassEncoderCommand, TexelCopyTextureInfo,
+};
+use wgpu_core_remote_types::pipelines::{ComputePipelineDescriptor, RenderPipelineDescriptor};
+use wgpu_core_remote_types::{
+    BufferDescriptor, DeviceDescriptor, Label, PipelineLayoutDescriptor, QuerySetDescriptor,
+    RequestAdapterOptions, SamplerDescriptor, TextureDescriptor, TextureViewDescriptor, id,
+};
 
 pub mod client;
 pub mod command;
@@ -14,6 +23,8 @@ use std::marker::PhantomData;
 use std::{borrow::Cow, mem, slice};
 
 use nsstring::nsACString;
+
+use crate::error::GPUError;
 
 type RawString = *const std::os::raw::c_char;
 
@@ -136,7 +147,7 @@ pub struct AdapterInformation<S> {
 }
 
 #[repr(C)]
-pub struct TextureViewDescriptor<'a> {
+pub struct FfiTextureViewDescriptor<'a> {
     label: Option<&'a nsACString>,
     format: Option<&'a wgt::TextureFormat>,
     dimension: Option<&'a wgt::TextureViewDimension>,
@@ -242,39 +253,21 @@ const MAX_SWAPCHAIN_BUFFER_COUNT: usize = 10;
 pub(crate) enum Message<'a> {
     RequestAdapter {
         adapter_id: id::AdapterId,
-        power_preference: wgt::PowerPreference,
-        force_fallback_adapter: bool,
+        desc: RequestAdapterOptions,
     },
     RequestDevice {
         adapter_id: id::AdapterId,
         device_id: id::DeviceId,
         queue_id: id::QueueId,
-        desc: wgc::device::DeviceDescriptor<'a>,
+        desc: DeviceDescriptor<'a>,
     },
     Device(id::DeviceId, DeviceAction<'a>),
     Texture(id::DeviceId, id::TextureId, TextureAction<'a>),
-    RenderBundleEncoder(
-        id::DeviceId,
-        id::RenderBundleEncoderId,
-        RenderBundleEncoderCommand<'a>,
-    ),
-    CommandEncoder(
-        id::DeviceId,
-        id::CommandEncoderId,
-        CommandEncoderCommand<'a>,
-    ),
-    RenderPassEncoder(
-        id::DeviceId,
-        id::RenderPassEncoderId,
-        RenderPassEncoderCommand,
-    ),
-    ComputePassEncoder(
-        id::DeviceId,
-        id::ComputePassEncoderId,
-        ComputePassEncoderCommand,
-    ),
+    RenderBundleEncoder(id::RenderBundleEncoderId, RenderBundleEncoderCommand<'a>),
+    CommandEncoder(id::CommandEncoderId, CommandEncoderCommand<'a>),
+    RenderPassEncoder(id::RenderPassEncoderId, RenderPassEncoderCommand),
+    ComputePassEncoder(id::ComputePassEncoderId, ComputePassEncoderCommand),
     QueueWrite {
-        device_id: id::DeviceId,
         queue_id: id::QueueId,
         data_source: QueueWriteDataSource,
         action: QueueWriteAction,
@@ -301,7 +294,7 @@ pub(crate) enum Message<'a> {
     CreateSwapChain {
         device_id: id::DeviceId,
         queue_id: id::QueueId,
-        desc: wgt::TextureDescriptor<(), Cow<'a, [wgt::TextureFormat]>>,
+        desc: TextureDescriptor<'a>,
         format: SurfaceFormat,
         buffer_ids: [id::BufferId; MAX_SWAPCHAIN_BUFFER_COUNT],
         remote_texture_owner_id: RemoteTextureOwnerId,
@@ -354,56 +347,32 @@ pub(crate) enum Message<'a> {
 enum DeviceAction<'a> {
     CreateBuffer {
         buffer_id: id::BufferId,
-        desc: wgc::resource::BufferDescriptor<'a>,
+        desc: BufferDescriptor<'a>,
         shmem_handle_index: usize,
     },
-    CreateTexture(
-        id::TextureId,
-        wgc::resource::TextureDescriptor<'a>,
-        Option<SwapChainId>,
-    ),
+    CreateTexture(id::TextureId, TextureDescriptor<'a>, Option<SwapChainId>),
     CreateExternalTexture(
         id::ExternalTextureId,
-        crate::ExternalTextureDescriptor<wgc::Label<'a>>,
+        crate::ExternalTextureDescriptor<Label<'a>>,
     ),
-    CreateSampler(id::SamplerId, wgc::resource::SamplerDescriptor<'a>),
-    CreateBindGroupLayout(
-        id::BindGroupLayoutId,
-        wgc::binding_model::BindGroupLayoutDescriptor<'a>,
-    ),
-    CreateBindGroupLayoutError(id::BindGroupLayoutId, wgc::Label<'a>),
+    CreateSampler(id::SamplerId, SamplerDescriptor<'a>),
+    CreateBindGroupLayout(id::BindGroupLayoutId, BindGroupLayoutDescriptor<'a>),
+    CreateBindGroupLayoutError(id::BindGroupLayoutId, Label<'a>),
     RenderPipelineGetBindGroupLayout(id::RenderPipelineId, u32, id::BindGroupLayoutId),
     ComputePipelineGetBindGroupLayout(id::ComputePipelineId, u32, id::BindGroupLayoutId),
-    CreatePipelineLayout(
-        id::PipelineLayoutId,
-        wgc::binding_model::PipelineLayoutDescriptor<'a, id::BindGroupLayoutId>,
-    ),
-    CreateBindGroup(id::BindGroupId, wgc::binding_model::BindGroupDescriptor<'a>),
-    CreateShaderModule(id::ShaderModuleId, wgc::Label<'a>, Cow<'a, str>),
-    CreateComputePipeline(
-        id::ComputePipelineId,
-        wgc::pipeline::ComputePipelineDescriptor<'a>,
-        bool,
-    ),
-    CreateRenderPipeline(
-        id::RenderPipelineId,
-        wgc::pipeline::RenderPipelineDescriptor<'a>,
-        bool,
-    ),
-    CreateRenderBundleEncoder(
-        id::RenderBundleEncoderId,
-        wgc::command::RenderBundleEncoderDescriptor<'a>,
-    ),
-    CreateQuerySet(id::QuerySetId, wgc::resource::QuerySetDescriptor<'a>),
+    CreatePipelineLayout(id::PipelineLayoutId, PipelineLayoutDescriptor<'a>),
+    CreateBindGroup(id::BindGroupId, BindGroupDescriptor<'a>),
+    CreateShaderModule(id::ShaderModuleId, Label<'a>, Cow<'a, str>),
+    CreateComputePipeline(id::ComputePipelineId, ComputePipelineDescriptor<'a>, bool),
+    CreateRenderPipeline(id::RenderPipelineId, RenderPipelineDescriptor<'a>, bool),
+    CreateRenderBundleEncoder(id::RenderBundleEncoderId, RenderBundleEncoderDescriptor<'a>),
+    CreateQuerySet(id::QuerySetId, QuerySetDescriptor<'a>),
     CreateCommandEncoder(
         id::CommandEncoderId,
-        wgt::CommandEncoderDescriptor<wgc::Label<'a>>,
+        wgt::CommandEncoderDescriptor<Label<'a>>,
     ),
-    Error {
-        message: String,
-        r#type: wgt::error::ErrorType,
-    },
-    PushErrorScope(u8 /* dom::GPUErrorFilter */),
+    Error(GPUError<'a>),
+    PushErrorScope(FfiErrorFilter),
     PopErrorScope,
 }
 
@@ -414,7 +383,7 @@ enum QueueWriteAction {
         offset: wgt::BufferAddress,
     },
     Texture {
-        dst: wgt::TexelCopyTextureInfo<id::TextureId>,
+        dst: TexelCopyTextureInfo,
         layout: wgt::TexelCopyBufferLayout,
         size: wgt::Extent3d,
     },
@@ -422,7 +391,7 @@ enum QueueWriteAction {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 enum TextureAction<'a> {
-    CreateView(id::TextureViewId, wgc::resource::TextureViewDescriptor<'a>),
+    CreateView(id::TextureViewId, TextureViewDescriptor<'a>),
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -454,11 +423,7 @@ pub enum BufferMapResult<'a> {
 enum ServerMessage<'a> {
     RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
     RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
-    PopErrorScopeResponse(
-        id::DeviceId,
-        u8, /* PopErrorScopeResultType */
-        Cow<'a, str>,
-    ),
+    PopErrorScopeResponse(id::DeviceId, FfiPopErrorScopeResultType, Cow<'a, str>),
     CreateRenderPipelineResponse {
         pipeline_id: id::RenderPipelineId,
         error: Option<PipelineError>,
@@ -470,6 +435,8 @@ enum ServerMessage<'a> {
     CreateShaderModuleResponse(id::ShaderModuleId, Vec<ShaderModuleCompilationMessage>),
     BufferMapResponse(id::BufferId, BufferMapResult<'a>),
     QueueOnSubmittedWorkDoneResponse(id::QueueId),
+    UncapturedError(id::DeviceId, FfiErrorFilter, Cow<'a, str>),
+    DeviceLost(id::DeviceId, FfiDeviceLostReason, Cow<'a, str>),
 
     /// This message tells the client when we are done with swapchain readback buffers.
     /// Freeing a swapchain buffer too early may result in an ID resolution panic or
@@ -478,13 +445,13 @@ enum ServerMessage<'a> {
 }
 
 #[repr(C)]
-pub struct TexelCopyBufferLayout<'a> {
+pub struct FfiTexelCopyBufferLayout<'a> {
     pub offset: wgt::BufferAddress,
     pub bytes_per_row: Option<&'a u32>,
     pub rows_per_image: Option<&'a u32>,
 }
 
-impl<'a> TexelCopyBufferLayout<'a> {
+impl<'a> FfiTexelCopyBufferLayout<'a> {
     fn into_wgt(&self) -> wgt::TexelCopyBufferLayout {
         wgt::TexelCopyBufferLayout {
             offset: self.offset,
@@ -495,176 +462,59 @@ impl<'a> TexelCopyBufferLayout<'a> {
 }
 
 #[repr(C)]
+pub struct FfiTextureDescriptor<'a> {
+    label: Option<&'a nsACString>,
+    size: wgt::Extent3d,
+    mip_level_count: u32,
+    sample_count: u32,
+    dimension: wgt::TextureDimension,
+    format: wgt::TextureFormat,
+    usage: wgt::TextureUsages,
+    view_formats: FfiSlice<'a, wgt::TextureFormat>,
+}
+
+impl FfiTextureDescriptor<'_> {
+    fn to_wgpu(&self) -> TextureDescriptor<'_> {
+        let label = wgpu_string(self.label);
+        let view_formats = unsafe { self.view_formats.as_slice() }.to_vec();
+        TextureDescriptor {
+            label,
+            size: self.size,
+            mip_level_count: self.mip_level_count,
+            sample_count: self.sample_count,
+            dimension: self.dimension,
+            format: self.format,
+            usage: self.usage,
+            view_formats,
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum FfiErrorFilter {
+    Validation,
+    OutOfMemory,
+    Internal,
+}
+
+#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum FfiPopErrorScopeResultType {
+    NoError,
+    EmptyErrorScopeStack,
+    Validation,
+    OutOfMemory,
+    Internal,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum FfiDeviceLostReason {
+    Unknown,
+    Destroyed,
+}
+
+#[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct SwapChainId(pub u64);
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPURenderBundleEncoder`](https://www.w3.org/TR/webgpu/#gpurenderbundleencoder).
-enum RenderBundleEncoderCommand<'a> {
-    BindingCommand(BindingCommand),
-    RenderCommand(RenderCommand),
-    DebugCommand(DebugCommand),
-    Finish {
-        desc: wgc::command::RenderBundleDescriptor<'a>, // optional, defaults to {}
-        render_bundle_id: id::RenderBundleId,
-    },
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPUCommandEncoder`](https://www.w3.org/TR/webgpu/#gpucommandencoder).
-enum CommandEncoderCommand<'a> {
-    BeginRenderPass {
-        desc: wgc::command::RenderPassDescriptor<'a>,
-        render_pass_encoder_id: id::RenderPassEncoderId,
-    },
-    BeginComputePass {
-        desc: wgc::command::ComputePassDescriptor<'a>, // optional, defaults to {}
-        compute_pass_encoder_id: id::ComputePassEncoderId,
-    },
-    CopyBufferToBuffer {
-        source: id::BufferId,
-        source_offset: u64,
-        destination: id::BufferId,
-        destination_offset: u64,
-        size: Option<u64>,
-    },
-    CopyBufferToTexture {
-        source: wgt::TexelCopyBufferInfo<id::BufferId>,
-        destination: wgt::TexelCopyTextureInfo<id::TextureId>,
-        copy_size: wgt::Extent3d,
-    },
-    CopyTextureToBuffer {
-        source: wgt::TexelCopyTextureInfo<id::TextureId>,
-        destination: wgt::TexelCopyBufferInfo<id::BufferId>,
-        copy_size: wgt::Extent3d,
-    },
-    CopyTextureToTexture {
-        source: wgt::TexelCopyTextureInfo<id::TextureId>,
-        destination: wgt::TexelCopyTextureInfo<id::TextureId>,
-        copy_size: wgt::Extent3d,
-    },
-    ClearBuffer {
-        buffer: id::BufferId,
-        offset: u64, // optional, defaults to 0
-        size: Option<u64>,
-    },
-    ResolveQuerySet {
-        query_set: id::QuerySetId,
-        first_query: u32,
-        query_count: u32,
-        destination: id::BufferId,
-        destination_offset: u64,
-    },
-    DebugCommand(DebugCommand),
-    Finish {
-        desc: wgt::CommandBufferDescriptor<wgc::Label<'a>>,
-        command_buffer_id: id::CommandBufferId,
-    },
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPURenderPassEncoder`](https://www.w3.org/TR/webgpu/#gpurenderpassencoder).
-enum RenderPassEncoderCommand {
-    SetViewport {
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-        min_depth: f32,
-        max_depth: f32,
-    },
-    SetScissorRect {
-        x: u32,
-        y: u32,
-        width: u32,
-        height: u32,
-    },
-    SetBlendConstant(wgt::Color),
-    SetStencilReference(u32),
-    BeginOcclusionQuery(u32),
-    EndOcclusionQuery,
-    ExecuteBundles(Vec<id::RenderBundleId>),
-    BindingCommand(BindingCommand),
-    RenderCommand(RenderCommand),
-    DebugCommand(DebugCommand),
-    End,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPUComputePassEncoder`](https://www.w3.org/TR/webgpu/#gpucomputepassencoder).
-enum ComputePassEncoderCommand {
-    BindingCommand(BindingCommand),
-    SetPipeline(id::ComputePipelineId),
-    DispatchWorkgroups {
-        workgroup_count_x: u32,
-        workgroup_count_y: u32, // optional, defaults to 1
-        workgroup_count_z: u32, // optional, defaults to 1
-    },
-    DispatchWorkgroupsIndirect {
-        indirect_buffer: id::BufferId,
-        indirect_offset: u64,
-    },
-    DebugCommand(DebugCommand),
-    End,
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPUDebugCommandsMixin`](https://www.w3.org/TR/webgpu/#gpudebugcommandsmixin).
-enum DebugCommand {
-    PushDebugGroup(String),
-    PopDebugGroup,
-    InsertDebugMarker(String),
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPUBindingCommandsMixin`](https://www.w3.org/TR/webgpu/#gpubindingcommandsmixin).
-enum BindingCommand {
-    SetBindGroup {
-        index: u32,
-        bind_group: Option<id::BindGroupId>,
-        dynamic_offsets: Vec<u32>, // optional, defaults to []
-    },
-    SetImmediates {
-        range_offset: u32,
-        data: Vec<u8>,
-    },
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-/// Corresponds to [`GPURenderCommandsMixin`](https://www.w3.org/TR/webgpu/#gpurendercommandsmixin).
-enum RenderCommand {
-    SetPipeline(id::RenderPipelineId),
-    SetIndexBuffer {
-        buffer: id::BufferId,
-        index_format: wgt::IndexFormat,
-        offset: u64, // optional, defaults to 0
-        size: Option<u64>,
-    },
-    SetVertexBuffer {
-        slot: u32,
-        buffer: Option<id::BufferId>,
-        offset: u64, // optional, defaults to 0
-        size: Option<u64>,
-    },
-    Draw {
-        vertex_count: u32,
-        instance_count: u32, // optional, defaults to 1
-        first_vertex: u32,   // optional, defaults to 0
-        first_instance: u32, // optional, defaults to 0
-    },
-    DrawIndexed {
-        index_count: u32,
-        instance_count: u32, // optional, defaults to 1
-        first_index: u32,    // optional, defaults to 0
-        base_vertex: i32,    // optional, defaults to 0
-        first_instance: u32, // optional, defaults to 0
-    },
-    DrawIndirect {
-        indirect_buffer: id::BufferId,
-        indirect_offset: u64,
-    },
-    DrawIndexedIndirect {
-        indirect_buffer: id::BufferId,
-        indirect_offset: u64,
-    },
-}

@@ -100,14 +100,16 @@ void SyncModuleLoader::OnDynamicImportStarted(ModuleLoadRequest* aRequest) {
     MOZ_ASSERT(DynamicImportRequests().Contains(aRequest));
     MOZ_ASSERT(mLoadRequests.isEmpty());
 
-    nsresult rv = OnFetchComplete(aRequest, NS_OK);
-    if (NS_FAILED(rv)) {
+    OnFetchComplete(aRequest, NS_OK);
+    if (!aRequest->mModuleScript) {
+      // Failed to create the module script, e.g. OOM. OnFetchComplete has
+      // already rejected the dynamic import, so only the pending requests need
+      // cleaning up.
       mLoadRequests.CancelRequestsAndClear();
-      CancelDynamicImport(aRequest, rv);
       return;
     }
 
-    rv = ProcessRequests();
+    nsresult rv = ProcessRequests();
     if (NS_FAILED(rv)) {
       CancelDynamicImport(aRequest, rv);
       return;
@@ -242,10 +244,13 @@ nsresult SyncModuleLoader::ProcessRequests() {
   // Work list to drive module loader since this is all synchronous.
   while (!mLoadRequests.isEmpty()) {
     RefPtr<ScriptLoadRequest> request = mLoadRequests.StealFirst();
-    nsresult rv = OnFetchComplete(request->AsModuleRequest(), NS_OK);
-    if (NS_FAILED(rv)) {
+    ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+    OnFetchComplete(moduleRequest, NS_OK);
+    if (!moduleRequest->mModuleScript) {
+      // Failed to create the module script, e.g. OOM. A compilation error
+      // leaves a module script with a parse error, so it doesn't stop us here.
       mLoadRequests.CancelRequestsAndClear();
-      return rv;
+      return NS_ERROR_FAILURE;
     }
   }
 

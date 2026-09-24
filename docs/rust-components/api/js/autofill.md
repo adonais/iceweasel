@@ -27,6 +27,22 @@
     :members:
     :exclude-members: CreditCard
 ```
+```{js:autoclass} RustAutofill.sys.CreditCardBulkResultEntry
+    :members:
+    :exclude-members: CreditCardBulkResultEntry
+```
+```{js:autoclass} RustAutofill.sys.CreditCardBulkTombstoneResultEntry
+    :members:
+    :exclude-members: CreditCardBulkTombstoneResultEntry
+```
+```{js:autoclass} RustAutofill.sys.CreditCardMeta
+    :members:
+    :exclude-members: CreditCardMeta
+```
+```{js:autoclass} RustAutofill.sys.CreditCardTombstone
+    :members:
+    :exclude-members: CreditCardTombstone
+```
 ```{js:autoclass} RustAutofill.sys.CreditCardsDeletionMetrics
     :members:
     :exclude-members: CreditCardsDeletionMetrics
@@ -66,6 +82,10 @@
 ```{js:autoclass} RustAutofill.sys.UpdatableCreditCardFields
     :members:
     :exclude-members: UpdatableCreditCardFields
+```
+```{js:autoclass} RustAutofill.sys.UpdatableCreditCardFieldsWithMeta
+    :members:
+    :exclude-members: UpdatableCreditCardFieldsWithMeta
 ```
 ```{js:autoclass} RustAutofill.sys.UpdatablePassportFields
     :members:

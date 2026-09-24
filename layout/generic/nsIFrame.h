@@ -42,6 +42,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <utility>
 
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
@@ -4571,7 +4572,7 @@ class nsIFrame : public nsQueryFrame {
       MOZ_ASSERT(prop, "this property should only store non-null values");
       return prop;
     }
-    prop = new DataType{aParams...};
+    prop = new DataType{std::forward<Params>(aParams)...};
     NS_ADDREF(prop);
     AddProperty(aProperty, prop);
     return prop;
@@ -4593,10 +4594,10 @@ class nsIFrame : public nsQueryFrame {
     using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
     DataType* storedValue = GetProperty(aProperty, &found);
     if (!found) {
-      storedValue = new DataType{aParams...};
+      storedValue = new DataType{std::forward<Params>(aParams)...};
       AddProperty(aProperty, storedValue);
     } else {
-      *storedValue = DataType{aParams...};
+      *storedValue = DataType{std::forward<Params>(aParams)...};
     }
     return storedValue;
   }

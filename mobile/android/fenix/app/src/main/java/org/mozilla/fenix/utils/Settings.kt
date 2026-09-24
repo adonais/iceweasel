@@ -294,10 +294,6 @@ class Settings(
             default = false,
         )
 
-    /** Indicates whether or not the Firefox Japan Guide default site should be shown. */
-    val showFirefoxJpGuideDefaultSite: Boolean
-        get() = FxNimbus.features.firefoxJpGuideDefaultSite.value().enabled
-
     /** Indicates whether or not top sites should be shown on the home screen. */
     var showTopSitesFeature by
         booleanPreference(
@@ -2941,7 +2937,7 @@ class Settings(
     var importPasswordsFeatureFlagEnabled by
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_enable_import_passwords),
-            default = Config.channel.isDebug,
+            default = false,
         )
 
     /**
@@ -3256,6 +3252,13 @@ class Settings(
             default = { DefaultTabManagementFeatureHelper.tabGroupsOnboardingEnabled },
         )
 
+    /** Whether the Tab Groups strip is shown while the active tab is in a group. */
+    var tabGroupsStripEnabled by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_strip),
+            default = { DefaultTabManagementFeatureHelper.tabGroupsStripEnabled },
+        )
+
     /** Whether the Native Share Sheet feature is enabled. */
     var nativeShareSheetEnabled by
         booleanPreference(
@@ -3295,6 +3298,13 @@ class Settings(
         booleanPreference(
             key = appContext.getPreferenceKey(R.string.pref_key_show_voice_search_in_display_toolbar),
             default = { FxNimbus.features.voiceSearchInDisplayMode.value().enabled },
+        )
+
+    /** Whether the current URL should be shown separate from the addressbar when tapped. */
+    var showAddressBarInFocusMode by
+        booleanPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_toolbar_focus_mode),
+            default = { FxNimbus.features.addressbarFocusMode.value().enabled },
         )
 
     /** Whether Longfox is enabled. */

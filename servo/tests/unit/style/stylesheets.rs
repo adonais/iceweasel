@@ -8,7 +8,7 @@ use parking_lot::RwLock;
 use selectors::attr::*;
 use selectors::parser::*;
 use servo_arc::Arc;
-use servo_config::prefs::{PrefValue, PREFS};
+use servo_config::prefs::{PREFS, PrefValue};
 use servo_url::ServoUrl;
 use std::borrow::ToOwned;
 use std::cell::RefCell;

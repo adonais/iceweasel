@@ -10,6 +10,7 @@
 #include "GLTypes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -43,6 +44,9 @@ class AndroidImageConsumer final {
   void UpdateTexImage(const AndroidMediaCodecFrameId aFrameId);
 
   bool HasImage() { return !!mCurrentImage; }
+
+  mozilla::UniqueFileHandle CloneWriteFenceFd();
+  void SetReadFenceFd(UniqueFileHandle&& aFenceFd);
 
   GLuint GetGlTextureHandle() { return mTextureHandle; }
   gfx::SurfaceFormat GetFormat();

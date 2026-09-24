@@ -31,6 +31,8 @@ class PathBuilderSkia : public PathBuilder {
            float aEndAngle, bool aAntiClockwise = false) override;
   already_AddRefed<Path> Finish() override;
 
+  bool Reset(FillRule aFillRule) override;
+
   void AppendPath(const SkPath& aPath);
 
   BackendType GetBackendType() const override { return BackendType::SKIA; }

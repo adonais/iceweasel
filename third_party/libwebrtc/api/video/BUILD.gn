@@ -462,11 +462,11 @@ rtc_library("video_broadcaster") {
     "..:scoped_refptr",
     "..:sequence_checker",
     "..:video_track_source_constraints",
-    "../../media:video_source_base",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
     "../../rtc_base:macromagic",
     "../../rtc_base/synchronization:mutex",
+    "//third_party/abseil-cpp/absl/algorithm:container",
   ]
 }
 

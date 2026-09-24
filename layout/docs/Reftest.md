@@ -792,6 +792,8 @@ Test authors have ability to access the privilegd `nsIDOMWindowUtils` interface
 using `SpecialPowers.getDOMWindowUtils(window)`. The interface contains many
 interesting abilities, including event synthesization.
 
+(debugging-failures)=
+
 ## Debugging Failures
 
 The Reftest Analyzer has been created to make debugging reftests a bit easier.

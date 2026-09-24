@@ -3,17 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
-  --box-background: light-dark(#fff, rgb(35, 34, 43));
+  --box-background: light-dark(#fff, rgb(35 34 43));
 
-  --category-background-hover: rgba(12, 12, 13, 0.1);
-  --category-text: light-dark(rgba(12, 12, 13), var(--text-color));
+  --category-background-hover: rgb(12 12 13 / 0.1);
+  --category-text: light-dark(rgb(12 12 13), var(--text-color));
   --category-text-selected: var(--button-background-color-primary);
 
   --fieldpair-text-color: light-dark(var(--grey-50), var(--text-color));
 
   --sidebar-text-color: light-dark(var(--category-text), var(--text-color));
   --sidebar-selected-color: var(--category-text-selected);
-  --sidebar-background-hover: light-dark(var(--category-background-hover), rgb(92, 92, 106));
+  --sidebar-background-hover: light-dark(var(--category-background-hover), rgb(92 92 106));
 
   --card-separator-color: light-dark(var(--grey-20), var(--grey-50));
 

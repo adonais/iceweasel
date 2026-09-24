@@ -27,9 +27,7 @@ def inline(doc, doctype="html"):
   <body>
     {}
   </body>
-</html>""".format(
-                    doc
-                )
+</html>""".format(doc)
             )
         )
 

@@ -218,7 +218,11 @@ def run(cmd_args, config):
 
         for err in errors:
             err.update({
-                "hint": err.get("fix"),
+                "hint": (
+                    "This issue can be fixed automatically with --fix."
+                    if err.get("fix")
+                    else None
+                ),
                 "level": "error" if err["severity"] == 2 else "warning",
                 "lineno": err.get("line") or 0,
                 "path": obj["filePath"],

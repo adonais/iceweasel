@@ -240,7 +240,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     masm.bind(&notOsr);
     // Load the scope chain in R1.
     MOZ_ASSERT(R1.scratchReg() != reg_code);
-    masm.as_or(R1.scratchReg(), reg_chain, zero);
+    masm.ma_move(R1.scratchReg(), reg_chain);
   }
 
   // The call will push the return address and frame pointer on the stack, thus

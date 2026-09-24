@@ -35,7 +35,7 @@ void ComputePassEncoder::SetBindGroup(uint32_t aSlot,
     bindGroup = aBindGroup->GetId();
   }
   ffi::wgpu_client_compute_pass_encoder_set_bind_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aSlot, bindGroup,
+      GetClient(), GetId(), aSlot, bindGroup,
       {aDynamicOffsets, aDynamicOffsetsLength});
 }
 
@@ -62,38 +62,35 @@ void ComputePassEncoder::SetBindGroup(
 }
 
 void ComputePassEncoder::SetPipeline(const ComputePipeline& aPipeline) {
-  ffi::wgpu_client_compute_pass_encoder_set_pipeline(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), aPipeline.GetId());
+  ffi::wgpu_client_compute_pass_encoder_set_pipeline(GetClient(), GetId(),
+                                                     aPipeline.GetId());
 }
 
 void ComputePassEncoder::DispatchWorkgroups(uint32_t workgroupCountX,
                                             uint32_t workgroupCountY,
                                             uint32_t workgroupCountZ) {
   ffi::wgpu_client_compute_pass_encoder_dispatch_workgroups(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), workgroupCountX,
-      workgroupCountY, workgroupCountZ);
+      GetClient(), GetId(), workgroupCountX, workgroupCountY, workgroupCountZ);
 }
 
 void ComputePassEncoder::DispatchWorkgroupsIndirect(
     const Buffer& aIndirectBuffer, uint64_t aIndirectOffset) {
   ffi::wgpu_client_compute_pass_encoder_dispatch_workgroups_indirect(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(),
-      aIndirectBuffer.GetId(), aIndirectOffset);
+      GetClient(), GetId(), aIndirectBuffer.GetId(), aIndirectOffset);
 }
 
 void ComputePassEncoder::PushDebugGroup(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
-  ffi::wgpu_client_compute_pass_encoder_push_debug_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), utf8.get());
+  ffi::wgpu_client_compute_pass_encoder_push_debug_group(GetClient(), GetId(),
+                                                         utf8.get());
 }
 void ComputePassEncoder::PopDebugGroup() {
-  ffi::wgpu_client_compute_pass_encoder_pop_debug_group(
-      GetClient(), mParent->GetDevice()->GetId(), GetId());
+  ffi::wgpu_client_compute_pass_encoder_pop_debug_group(GetClient(), GetId());
 }
 void ComputePassEncoder::InsertDebugMarker(const nsAString& aString) {
   const NS_ConvertUTF16toUTF8 utf8(aString);
   ffi::wgpu_client_compute_pass_encoder_insert_debug_marker(
-      GetClient(), mParent->GetDevice()->GetId(), GetId(), utf8.get());
+      GetClient(), GetId(), utf8.get());
 }
 
 void ComputePassEncoder::End() {

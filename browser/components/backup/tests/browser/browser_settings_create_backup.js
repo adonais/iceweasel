@@ -4,6 +4,7 @@
 "use strict";
 
 let TEST_PROFILE_PATH;
+let gDefaultParentDir;
 const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";
 const BACKUP_DEFAULT_LOCATION_PREF = "browser.backup.location";
 
@@ -23,7 +24,24 @@ add_setup(async () => {
     ],
   });
 
+  // The default backup location comes from the machine's OneDrive or Documents
+  // folder. Point it somewhere we control so no task depends on what the
+  // machine has. docsDirFolderPath is stubbed per-task rather than here,
+  // because test_no_default_folder stubs it itself.
+  gDefaultParentDir = await IOUtils.getFile(
+    await IOUtils.createUniqueDirectory(
+      PathUtils.tempDir,
+      "testBackupDefaultParent"
+    )
+  );
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
+  getAndMaybeInitBackupService().resetDefaultParentInternalState();
+
   registerCleanupFunction(async () => {
+    sandbox.restore();
+    getAndMaybeInitBackupService().resetDefaultParentInternalState();
+    await IOUtils.remove(gDefaultParentDir.path, { recursive: true });
     // we'll make sure to clean this whole dir up after the test
     await IOUtils.remove(TEST_PROFILE_PATH, { recursive: true });
   });
@@ -79,6 +97,7 @@ add_task(async function test_no_default_folder() {
   });
 
   docStub.restore();
+  sandbox.stub(BackupService, "docsDirFolderPath").get(() => gDefaultParentDir);
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let settings = await waitForBackupSettings(browser);

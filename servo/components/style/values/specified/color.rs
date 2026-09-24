@@ -6,7 +6,7 @@
 
 use super::AllowQuirks;
 use crate::color::mix::ColorInterpolationMethod;
-use crate::color::{parsing, AbsoluteColor, ColorFunction, ColorMixItemList, ColorSpace};
+use crate::color::{AbsoluteColor, ColorFunction, ColorMixItemList, ColorSpace, parsing};
 use crate::derives::*;
 use crate::device::Device;
 use crate::parser::{Parse, ParserContext};
@@ -14,20 +14,20 @@ use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::computed::{
     Color as ComputedColor, Context, Percentage as ComputedPercentage, ToComputedValue,
 };
+use crate::values::generics::Optional;
 use crate::values::generics::color::{
     ColorMixFlags, GenericCaretColor, GenericColorMix, GenericColorMixItem, GenericColorOrAuto,
     GenericLightDark,
 };
-use crate::values::generics::Optional;
-use crate::values::specified::percentage::ToPercentage;
 use crate::values::specified::Percentage;
-use crate::values::{normalize, CustomIdent};
-use cssparser::{match_ignore_ascii_case, Parser, Token};
+use crate::values::specified::percentage::ToPercentage;
+use crate::values::{CustomIdent, normalize};
+use cssparser::{Parser, Token, match_ignore_ascii_case};
 use std::fmt::{self, Write};
 use std::io::Write as IoWrite;
 use style_traits::{
-    owned_slice::OwnedSlice, CssString, CssType, CssWriter, KeywordsCollectFn, ParseError,
-    SpecifiedValueInfo, StyleParseErrorKind, ToCss,
+    CssString, CssType, CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo,
+    StyleParseErrorKind, ToCss, owned_slice::OwnedSlice,
 };
 use thin_vec::ThinVec;
 
@@ -59,8 +59,7 @@ impl ColorMix {
                     .ok()
             };
 
-            let allow_multiple_items =
-                static_prefs::pref!("layout.css.color-mix-multi-color.enabled");
+            let allow_multiple_items = crate::pref!("layout.css.color-mix-multi-color.enabled");
 
             let mut items = ColorMixItemList::default();
 
@@ -887,7 +886,7 @@ impl Color {
             Color::ContrastColor(ref c) => {
                 let computed = c.to_computed_color(context)?;
                 if let Some(abs) = computed.as_absolute() {
-                    ComputedColor::Absolute(ComputedColor::resolve_contrast_color(&abs))
+                    ComputedColor::Absolute(ComputedColor::resolve_contrast_color(abs))
                 } else {
                     ComputedColor::ContrastColor(Box::new(computed))
                 }
@@ -915,7 +914,7 @@ impl ToComputedValue for Color {
 
     fn from_computed_value(computed: &ComputedColor) -> Self {
         match *computed {
-            ComputedColor::Absolute(ref color) => Self::from_absolute_color(color.clone()),
+            ComputedColor::Absolute(ref color) => Self::from_absolute_color(*color),
             ComputedColor::ColorFunction(ref color_function) => {
                 let color_function = color_function
                     .map_origin_color(|o| Ok(Self::from_computed_value(o)))
@@ -964,8 +963,7 @@ impl SpecifiedValueInfo for Color {
 
 /// Specified value for the "color" property, which resolves the `currentcolor`
 /// keyword to the parent color instead of self's color.
-#[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
-#[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub struct ColorPropertyValue(pub Color);
 
 impl ToComputedValue for ColorPropertyValue {
@@ -981,7 +979,7 @@ impl ToComputedValue for ColorPropertyValue {
 
     #[inline]
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        ColorPropertyValue(Color::from_absolute_color(*computed).into())
+        ColorPropertyValue(Color::from_absolute_color(*computed))
     }
 }
 

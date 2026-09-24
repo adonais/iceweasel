@@ -47,15 +47,26 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-grid-or-flex-container-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-flex-container-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-grid-or-flex-container-fix"
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-not-grid-or-flex-or-block-container-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-flex-or-block-container-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-not-grid-or-flex-or-block-container-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-grid-or-flex-or-block-container-fix"
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-not-grid-or-flex-container-or-multicol-container-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-flex-container-or-multicol-container-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-not-grid-or-flex-container-or-multicol-container-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path,
+                    "inactive-css-not-grid-or-flex-container-or-multicol-container-fix",
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-multicol-container-fix-1"),
@@ -66,16 +77,27 @@ def migrate(ctx):
                 value=STRIP_LEARN_MORE(path, "inactive-css-column-span-fix"),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path,
+                    "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix",
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-not-grid-or-absolutely-positioned-item-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-absolutely-positioned-item-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-not-grid-or-absolutely-positioned-item-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-grid-or-absolutely-positioned-item-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-absolutely-positioned-item-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-absolutely-positioned-item-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-absolutely-positioned-item-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-no-default-anchor-fix-1"),
@@ -83,7 +105,9 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-grid-or-flex-item-fix-4"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-grid-or-flex-item-fix-3"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-grid-or-flex-item-fix-3"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-grid-item-fix-3"),
@@ -103,23 +127,39 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-inline-or-tablecell-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-inline-or-tablecell-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-inline-or-tablecell-fix"
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-non-replaced-inline-or-table-row-or-row-group-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path,
+                    "inactive-css-non-replaced-inline-or-table-row-or-row-group-fix",
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-non-replaced-inline-or-table-column-or-column-group-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path,
+                    "inactive-css-non-replaced-inline-or-table-column-or-column-group-fix",
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-display-block-on-floated-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-display-block-on-floated-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-display-block-on-floated-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-only-non-grid-or-flex-item-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-only-non-grid-or-flex-item-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-only-non-grid-or-flex-item-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-block-fix-1"),
@@ -131,15 +171,21 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-block-flex-grid-container-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-block-flex-grid-container-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-block-flex-grid-container-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-floated-fix-1"),
                 value=STRIP_LEARN_MORE(path, "inactive-css-not-floated-fix"),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-position-property-on-unpositioned-box-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-position-property-on-unpositioned-box-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-position-property-on-unpositioned-box-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-position-property-on-unpositioned-box-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-only-replaced-elements-fix-1"),
@@ -147,7 +193,9 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-text-overflow-when-no-overflow-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-text-overflow-when-no-overflow-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-text-overflow-when-no-overflow-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-no-size-containment-fix-1"),
@@ -155,11 +203,18 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-for-internal-table-elements-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-for-internal-table-elements-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-not-for-internal-table-elements-fix"
+                ),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-not-for-internal-table-elements-except-table-cells-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-not-for-internal-table-elements-except-table-cells-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-not-for-internal-table-elements-except-table-cells-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path,
+                    "inactive-css-not-for-internal-table-elements-except-table-cells-fix",
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-table-fix-1"),
@@ -167,15 +222,21 @@ def migrate(ctx):
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-collapsed-table-borders-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-collapsed-table-borders-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-collapsed-table-borders-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-not-table-cell-fix-1"),
                 value=STRIP_LEARN_MORE(path, "inactive-css-not-table-cell-fix"),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-scroll-padding-when-not-scroll-container-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-scroll-padding-when-not-scroll-container-fix"),
+                id=FTL.Identifier(
+                    "inactive-scroll-padding-when-not-scroll-container-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-scroll-padding-when-not-scroll-container-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-border-image-fix-1"),
@@ -190,12 +251,18 @@ def migrate(ctx):
                 value=STRIP_LEARN_MORE(path, "inactive-css-ruby-element-fix"),
             ),
             FTL.Message(
-                id=FTL.Identifier("inactive-css-text-wrap-balance-lines-exceeded-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-text-wrap-balance-lines-exceeded-fix"),
+                id=FTL.Identifier(
+                    "inactive-css-text-wrap-balance-lines-exceeded-fix-1"
+                ),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-text-wrap-balance-lines-exceeded-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-text-wrap-balance-fragmented-fix-1"),
-                value=STRIP_LEARN_MORE(path, "inactive-css-text-wrap-balance-fragmented-fix"),
+                value=STRIP_LEARN_MORE(
+                    path, "inactive-css-text-wrap-balance-fragmented-fix"
+                ),
             ),
             FTL.Message(
                 id=FTL.Identifier("inactive-css-no-principal-box-fix-1"),

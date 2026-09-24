@@ -87,6 +87,16 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "nsNativeAppSupportCocoa.mm",
         "updaterfileutils_osx.mm",
     ]
+    if CONFIG["NIGHTLY_BUILD"]:
+        XPIDL_SOURCES += [
+            "nsIASWebAuthSessionRequest.idl",
+        ]
+        UNIFIED_SOURCES += [
+            "ASWebAuthSessionHandler.mm",
+        ]
+        OS_LIBS += [
+            "-framework AuthenticationServices",
+        ]
     DEFINES["PROXY_PRINTING"] = 1
     LOCAL_INCLUDES += [
         "../components/printingui",
@@ -251,6 +261,7 @@ LOCAL_INCLUDES += [
     "/js/xpconnect/loader",
     "/testing/gtest/mozilla",
     "/third_party/sqlite3/ext/",
+    "/toolkit/components/jsoncpp/include",
     "/toolkit/crashreporter",
     "/xpcom/build",
 ]

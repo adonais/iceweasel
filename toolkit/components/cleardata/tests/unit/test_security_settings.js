@@ -20,11 +20,10 @@ let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
 );
 
-// These are not actual server and client certs. The ClientAuthRememberService
-// does not care which certs we store decisions for, as long as they're valid.
-let [clientCert] = certDB.getCerts();
-
-function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
+function addSecurityInfo(
+  { host, topLevelBaseDomain, originAttributes = {} },
+  clientCert
+) {
   let attrs = getOAWithPartitionKey({ topLevelBaseDomain }, originAttributes);
 
   let uri = Services.io.newURI(`https://${host}`);
@@ -39,19 +38,32 @@ function addSecurityInfo({ host, topLevelBaseDomain, originAttributes = {} }) {
   );
 }
 
-function addTestSecurityInfo() {
+async function addTestSecurityInfo() {
+  // These are not actual server and client certs. The ClientAuthRememberService
+  // does not care which certs we store decisions for, as long as they're valid.
+  let [clientCert] = await certDB.getCerts();
+
   // First party
-  addSecurityInfo({ host: "example.net" });
-  addSecurityInfo({ host: "test.example.net" });
-  addSecurityInfo({ host: "example.org" });
+  addSecurityInfo({ host: "example.net" }, clientCert);
+  addSecurityInfo({ host: "test.example.net" }, clientCert);
+  addSecurityInfo({ host: "example.org" }, clientCert);
 
   // Third-party partitioned
-  addSecurityInfo({ host: "example.com", topLevelBaseDomain: "example.net" });
-  addSecurityInfo({ host: "example.net", topLevelBaseDomain: "example.org" });
-  addSecurityInfo({
-    host: "test.example.net",
-    topLevelBaseDomain: "example.org",
-  });
+  addSecurityInfo(
+    { host: "example.com", topLevelBaseDomain: "example.net" },
+    clientCert
+  );
+  addSecurityInfo(
+    { host: "example.net", topLevelBaseDomain: "example.org" },
+    clientCert
+  );
+  addSecurityInfo(
+    {
+      host: "test.example.net",
+      topLevelBaseDomain: "example.org",
+    },
+    clientCert
+  );
 
   // Ensure we have the correct state initially.
   testSecurityInfo({ host: "example.net" });
@@ -101,7 +113,7 @@ add_task(async function test_baseDomain() {
   gSSService.clearAll();
 
   // ---- hsts cleaner ----
-  addTestSecurityInfo();
+  await addTestSecurityInfo();
 
   // Clear hsts data of example.net including partitions.
   await new Promise(aResolve => {
@@ -147,7 +159,7 @@ add_task(async function test_baseDomain() {
   });
 
   // ---- client auth remember cleaner -----
-  addTestSecurityInfo();
+  await addTestSecurityInfo();
 
   // Clear security settings of example.net including partitions.
   await new Promise(aResolve => {
@@ -200,7 +212,7 @@ add_task(async function test_host() {
   gSSService.clearAll();
 
   // ---- HSTS cleaer ----
-  addTestSecurityInfo();
+  await addTestSecurityInfo();
 
   // Clear security settings of example.net without partitions.
   await new Promise(aResolve => {
@@ -243,7 +255,7 @@ add_task(async function test_host() {
 
   // --- clientAuthRemember cleaner ---
 
-  addTestSecurityInfo();
+  await addTestSecurityInfo();
 
   // Clear security settings of example.net without partitions.
   await new Promise(aResolve => {

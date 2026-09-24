@@ -8,7 +8,7 @@
 //! being non-zero if it is a non-calc value. See `tagged_numeric` for the
 //! shared implementation details.
 
-use super::{position::AnchorSide, Context, Length, Percentage, ToComputedValue};
+use super::{Context, Length, Percentage, ToComputedValue, position::AnchorSide};
 use crate::derives::*;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{AnchorPosOffsetResolutionParams, GeckoFontMetrics};
@@ -19,18 +19,18 @@ use crate::values::animated::{
 };
 use crate::values::computed::position::TryTacticAdjustment;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
+use crate::values::generics::Optional;
 use crate::values::generics::calc::GenericAnchorFunctionFallback;
 #[cfg(feature = "gecko")]
 use crate::values::generics::length::AnchorResolutionResult;
 use crate::values::generics::position::GenericAnchorSide;
-use crate::values::generics::Optional;
-use crate::values::generics::{calc, ClampToNonNegative, NonNegative};
+use crate::values::generics::{ClampToNonNegative, NonNegative, calc};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::length::{EqualsPercentage, FontBaseSize, LineHeightBase};
 use crate::values::specified::number::NoCalcNumber;
 use crate::values::specified::percentage::NoCalcPercentage;
 use crate::values::tagged_numeric::{self as tagged, NumericUnion};
-use crate::values::{specified, CSSFloat};
+use crate::values::{CSSFloat, specified};
 use crate::{Zero, ZeroNoPercent};
 use app_units::Au;
 use serde::{Deserialize, Serialize};
@@ -235,31 +235,27 @@ impl LengthPercentage {
         node.simplify_and_sort();
 
         match node {
-            CalcNode::Leaf(l) => {
-                return match l {
-                    ComputedLeaf::Length(l) => {
-                        Self::new_length(Length::new(clamping_mode.clamp(l.px())).finite())
-                    },
-                    ComputedLeaf::Percentage(p) => Self::new_percent(Percentage(
-                        clamping_mode.clamp(crate::values::normalize(p.get())),
-                    )),
-                    ComputedLeaf::Number(number) => {
-                        debug_assert!(
-                            false,
-                            "The final result of a <length-percentage> should never be a number"
-                        );
-                        Self::new_length(Length::new(number))
-                    },
-                    ComputedLeaf::Angle(..)
-                    | ComputedLeaf::Time(..)
-                    | ComputedLeaf::Resolution(..) => {
-                        debug_assert!(
-                            false,
-                            "The final result of a <length-percentage> should never be an angle, time, or resolution"
-                        );
-                        Self::zero()
-                    },
-                };
+            CalcNode::Leaf(l) => match l {
+                ComputedLeaf::Length(l) => {
+                    Self::new_length(Length::new(clamping_mode.clamp(l.px())).finite())
+                },
+                ComputedLeaf::Percentage(p) => Self::new_percent(Percentage(
+                    clamping_mode.clamp(crate::values::normalize(p.get())),
+                )),
+                ComputedLeaf::Number(number) => {
+                    debug_assert!(
+                        false,
+                        "The final result of a <length-percentage> should never be a number"
+                    );
+                    Self::new_length(Length::new(number))
+                },
+                ComputedLeaf::Angle(..) | ComputedLeaf::Time(..) | ComputedLeaf::Resolution(..) => {
+                    debug_assert!(
+                        false,
+                        "The final result of a <length-percentage> should never be an angle, time, or resolution"
+                    );
+                    Self::zero()
+                },
             },
             _ => Self::new_calc_unchecked(Box::new(CalcLengthPercentage {
                 clamping_mode,
@@ -324,7 +320,7 @@ impl LengthPercentage {
         match self.unpack() {
             Unpacked::Length(l) => l,
             Unpacked::Percentage(p) => (basis * p.0).normalized(),
-            Unpacked::Calc(ref c) => c.resolve(basis),
+            Unpacked::Calc(c) => c.resolve(basis),
         }
     }
 
@@ -349,7 +345,7 @@ impl LengthPercentage {
             Unpacked::Length(l) => Some(l),
             Unpacked::Percentage(..) | Unpacked::Calc(..) => {
                 debug_assert!(self.has_percentage());
-                return None;
+                None
             },
         }
     }
@@ -372,7 +368,7 @@ impl LengthPercentage {
         Some(match self.unpack() {
             Unpacked::Length(l) => Percentage(l.px() / basis.px()),
             Unpacked::Percentage(p) => p,
-            Unpacked::Calc(ref c) => Percentage(c.resolve(basis).px() / basis.px()),
+            Unpacked::Calc(c) => Percentage(c.resolve(basis).px() / basis.px()),
         })
     }
 
@@ -661,7 +657,9 @@ impl CalcLengthPercentage {
         {
             Length::new(self.clamping_mode.clamp(px.px())).normalized()
         } else {
-            unreachable!("resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number");
+            unreachable!(
+                "resolve_map should turn percentages to lengths, and parsing should ensure that we don't end up with a number"
+            );
         }
     }
 
@@ -675,7 +673,7 @@ impl CalcLengthPercentage {
         params: &AnchorPosOffsetResolutionParams,
     ) -> Result<(CalcNode, AllowedNumericType), ()> {
         use crate::values::{
-            computed::{length::resolve_anchor_size, AnchorFunction},
+            computed::{AnchorFunction, length::resolve_anchor_size},
             generics::{length::GenericAnchorSizeFunction, position::GenericAnchorFunction},
         };
 

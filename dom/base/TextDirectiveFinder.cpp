@@ -131,6 +131,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
   nsContentUtils::NodeIndexCache nodeIndexCache;
   RefPtr<nsFind> finder = new nsFind();
   finder->SetNodeIndexCache(&nodeIndexCache);
+  finder->SetSkipNativeAnonymousContent(true);
 
   // 2. While searchRange is not collapsed:
   while (!searchRange->Collapsed()) {

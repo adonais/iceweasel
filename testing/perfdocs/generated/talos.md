@@ -828,7 +828,49 @@ For the sample commands found below, note that the capitalization used is import
   - autoland
   - mozilla-release
   - mozilla-beta
+* - **talos-chrome**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+* - **talos-chrome-no-nv**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
 * - **talos-chrome-profiling**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-swr**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-linux2404-64/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **talos-chrome**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-no-nv**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-swr**
   - ❌
   - ❌
   - ❌
@@ -1796,7 +1838,17 @@ For the sample commands found below, note that the capitalization used is import
   - autoland
   - mozilla-release
   - mozilla-beta
+* - **talos-damp-inspector**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
 * - **talos-damp-other**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+* - **talos-damp-webconsole**
   - ✅
   - ✅
   - ❌
@@ -1813,7 +1865,17 @@ For the sample commands found below, note that the capitalization used is import
   - autoland
   - mozilla-release
   - mozilla-beta
+* - **talos-damp-inspector**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
 * - **talos-damp-other**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-damp-webconsole**
   - ❌
   - ❌
   - ❌
@@ -8845,7 +8907,49 @@ For the sample commands found below, note that the capitalization used is import
   - autoland
   - mozilla-release
   - mozilla-beta
+* - **talos-chrome**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+* - **talos-chrome-no-nv**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
 * - **talos-chrome-profiling**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-swr**
+  - ✅
+  - ✅
+  - ❌
+  - ❌
+:::
+
+
+:::{list-table} **test-linux2404-64/opt**
+:widths: 30 15 15 15 15
+:header-rows: 1
+
+* - **Test Name**
+  - mozilla-central
+  - autoland
+  - mozilla-release
+  - mozilla-beta
+* - **talos-chrome**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-no-nv**
+  - ❌
+  - ❌
+  - ❌
+  - ❌
+* - **talos-chrome-swr**
   - ❌
   - ❌
   - ❌

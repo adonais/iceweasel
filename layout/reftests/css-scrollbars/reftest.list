@@ -1,3 +1,40 @@
 == viewport-scrollbar-color-change.html viewport-scrollbar-color-change-ref.html
 == scrollbar-thin-overflow-change.html scrollbar-thin-overflow-change-ref.html
 test-pref(layout.css.scrollbar-width-thin.disabled,true) == scrollbar-width-thin.html scrollbar-width-auto.html
+# -moz-scrollbar-inset-{block,inline} are chrome-only, so these load over
+# chrome://.
+# Overlay scrollbars are forced off so the thumb is actually painted.
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-change.html chrome://reftest/content/css-scrollbars/scrollbar-inset-change-ref.html
+# An embedder's inset must reach the subdocument's viewport scrollbar. The !=
+# assertion fails if the forwarding does nothing, since the two iframes are
+# otherwise identical.
+pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-forward.html chrome://reftest/content/css-scrollbars/scrollbar-inset-forward-notref.html
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-forward-change.html chrome://reftest/content/css-scrollbars/scrollbar-inset-forward.html
+# The inset is physical, so full-zooming the subdocument must not change it. The
+# fuzz is the thumb snapping to device pixels at a different app-unit
+# granularity; a CSS-px inset would be out by ~600 pixels, not 40. Verified: the
+# same test at fullZoom 1.0 matches exactly.
+pref(ui.useOverlayScrollbars,0) fuzzy(0-255,0-40) == chrome://reftest/content/css-scrollbars/scrollbar-inset-zoom.html chrome://reftest/content/css-scrollbars/scrollbar-inset-forward.html
+# -moz-scrollbar-inset-inline must reach the horizontal scrollbar at all...
+pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-inline.html chrome://reftest/content/css-scrollbars/scrollbar-inset-inline-notref.html
+# ...and the logical start must resolve per writing mode, so an RTL inline-end
+# inset matches an LTR inline-start one. Needs the != above to mean something.
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-rtl.html chrome://reftest/content/css-scrollbars/scrollbar-inset-inline.html
+# An inset that holds the slider clear of the corner means GetBorderRadii no
+# longer has to square that corner off, so the ring matches a container with no
+# scrollbar at all. The cover hides the padding box, leaving only the ring.
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-radii.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-ref.html
+# The same, but applying the inset dynamically, so the corner has to go back to
+# being round after having been squared off.
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-change.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-ref.html
+# Without an inset the corner must still be squared off. This also catches the
+# == above passing for free if the scrollbar ever stops taking up layout space.
+pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-notref.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-ref.html
+# The corner GetBorderRadii spares must be picked per writing mode, so an RTL
+# inline-end inset spares the same physical corner as an LTR inline-start one.
+# Uses the inline axis because the block axis doesn't flip in RTL at all, and an
+# asymmetric inset because a symmetric one is its own mirror image.
+pref(ui.useOverlayScrollbars,0) == chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-rtl.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-inline.html
+# The two ends must be distinguishable for the == above to mean anything: swap
+# the inset and the opposite corner is spared instead.
+pref(ui.useOverlayScrollbars,0) != chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-inline-notref.html chrome://reftest/content/css-scrollbars/scrollbar-inset-radii-inline.html

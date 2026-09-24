@@ -912,6 +912,8 @@ class SVGFilterObserverList : public ISVGFilterObserverList {
   virtual void OnRenderingChange(Element* aObservingElement) = 0;
 
  protected:
+  SVGFilterObserverList(const SVGFilterObserverList& aOther)
+      : mObservers(aOther.mObservers.Clone()) {}
   virtual ~SVGFilterObserverList();
 
   void DetachObservers() {
@@ -985,7 +987,14 @@ class SVGFilterObserverListForCSSProp final : public SVGFilterObserverList {
                               GetFrameContentAsElement(aFilteredFrame),
                               aFilteredFrame) {}
 
+  ISVGFilterObserverList* Clone() const override {
+    return new SVGFilterObserverListForCSSProp(*this);
+  }
+
  protected:
+  SVGFilterObserverListForCSSProp(const SVGFilterObserverListForCSSProp& aOther)
+      : SVGFilterObserverList(aOther) {}
+
   void OnRenderingChange(Element* aObservingElement) override;
 };
 
@@ -1023,18 +1032,25 @@ class SVGFilterObserverListForCanvasContext final
       : SVGFilterObserverList(aFilters, aCanvasElement), mContext(aContext) {}
 
   void OnRenderingChange(Element* aObservingElement) override;
-  void Detach() override { mContext = nullptr; }
+  void SetIsActive(bool aActive) override { mActive = aActive; }
+  ISVGFilterObserverList* Clone() const override {
+    return new SVGFilterObserverListForCanvasContext(*this);
+  }
 
  private:
+  SVGFilterObserverListForCanvasContext(
+      const SVGFilterObserverListForCanvasContext& aOther)
+      : SVGFilterObserverList(aOther),
+        mContext(aOther.mContext),
+        mActive(aOther.mActive) {}
+
   CanvasRenderingContext2D* mContext;
+  bool mActive = true;
 };
 
 void SVGFilterObserverListForCanvasContext::OnRenderingChange(
     Element* aObservingElement) {
-  if (!mContext) {
-    NS_WARNING(
-        "GFX: This should never be called without a context, except during "
-        "cycle collection (when Detach has been called)");
+  if (!mActive) {
     return;
   }
   // Refresh the cached FilterDescription in mContext->CurrentState().filter.

@@ -19,20 +19,14 @@ import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 /**
- * Two tests that deliberately leak state into each other, so the reporting for a dirty start has something real to
- * display.
+ * Two tests that deliberately try to leak state into each other, proving the harness removes it at the boundary.
  *
  * Every genuine leak found so far has been a one-off nobody could reproduce on demand, which makes the reporting for it
  * the only part of the system that is never exercised. This produces one to order.
  *
- * The leak is real rather than simulated. Under `am instrument` --- which is how the fleet dispatches --- there is no
- * AndroidX Test Orchestrator and no `clearPackageData`, so the methods of one class share a process and share the app's
- * data directory. Gradle's `connectedDebugAndroidTest` DOES use the orchestrator, so the same two methods are isolated
- * there and the second one starts clean. That difference is the point: the pair passes either way and only the recorded
- * state differs, which is exactly the discrepancy the state ledger exists to make visible.
- *
- * History is the vehicle because BaseTest's per-test cleanup covers bookmarks, pinned sites, sessions, autofill,
- * logins, tabs and the launcher icon --- and not history.
+ * The attempted leak is real rather than simulated. Under `am instrument` --- which is how the fleet dispatches ---
+ * there is no AndroidX Test Orchestrator and no `clearPackageData`, so the methods share a process and app data. The
+ * first method creates both persisted and process-memory state; the second fails if the harness does not remove both.
  *
  * Deliberately in `tools` rather than `tests`: the sweep's suite is `ui.efficiency.tests`, so this stays out of every
  * ordinary run while remaining dispatchable by name.
@@ -65,24 +59,14 @@ class StateLeakDemoTest : BaseTest() {
                 DownloadAction.AddDownloadAction(DownloadState(url = url, fileName = "leaked-$i.txt"))
             )
         }
-        // This test CREATES the mess, so its own ledger entry should read: started clean, ended
-        // with three history entries and three downloads.
+        // Its ledger should read: start clean, end dirty, afterCleanup clean.
         assertTrue(runBlocking { history.getVisited().size } >= LEAKED_URLS.size)
     }
 
     @Test
-    fun step2StartsWithTheInheritedState() {
-        // Nothing is asserted about the inherited state on purpose. A failing test here would say
-        // the leak is a bug in this class, and it is not --- it is a property of running without
-        // the orchestrator, and the reporting is what is being demonstrated. The interesting
-        // output is the START sample, which the harness has already taken by the time this runs.
-        //
-        // Left clean afterwards so the demo does not become the thing it demonstrates.
-        runBlocking { history.deleteEverything() }
-        browserStore.state.downloads.keys.toList().forEach {
-            browserStore.dispatch(DownloadAction.RemoveDownloadAction(it))
-        }
+    fun step2StartsIsolated() {
         assertTrue(runBlocking { history.getVisited() }.isEmpty())
+        assertTrue(browserStore.state.downloads.isEmpty())
     }
 
     companion object {

@@ -7,7 +7,6 @@
 import errno
 import json
 import os
-import platform
 import shutil
 import site
 import socket
@@ -52,13 +51,6 @@ def pip_command(*, python_executable, subcommand=None, args=None, non_uv_args=No
             command.append(subcommand)
             python_root = Path(python_executable).parent.parent
             command.append(f"--python={python_root}")
-            # The fetched uv may not match the target interpreter's arch (e.g.
-            # an x86_64 uv running under Rosetta on an arm64 mac worker), which
-            # makes it resolve wrong-arch wheels. We run under the interpreter
-            # the venv is built from, so tell uv the target arch explicitly.
-            if subcommand == "install" and sys.platform == "darwin":
-                arch = "aarch64" if platform.machine() == "arm64" else "x86_64"
-                command.append(f"--python-platform={arch}-apple-darwin")
         full_command = command + (args or [])
     else:
         command = [python_executable, "-m", "pip"]

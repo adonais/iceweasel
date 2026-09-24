@@ -210,7 +210,9 @@ add_task(async function test_smartbar_click_on_suggestion_navigates() {
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
     );
-    const loadURLStub = sb.stub(smartbar.controller, "loadURL").returns({});
+    const loadURLStub = sb
+      .stub(smartbar.parentController, "loadURL")
+      .returns({});
     const firstSuggestion = smartbar.querySelector(".urlbarView-row");
 
     EventUtils.synthesizeMouseAtCenter(

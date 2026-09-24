@@ -169,6 +169,13 @@ async function withFormPage(overrides, callback) {
   try {
     await callback({ win, browser, actor });
   } finally {
+    const tabDialogBox = win.gBrowser.getTabDialogBox(browser);
+    tabDialogBox.abortAllDialogs();
+    await TestUtils.waitForCondition(
+      () => !tabDialogBox.getTabDialogManager()._dialogs.length,
+      "Waiting for the form review dialog to close"
+    );
+
     BrowserTestUtils.removeTab(tab);
     await BrowserTestUtils.closeWindow(win);
     sandbox.restore();
@@ -211,6 +218,63 @@ async function runRoundOnForm(browser, actor, selector = "#email") {
   await actor.triggerAutofill();
 }
 
+async function closeFormReview(win, browser) {
+  const tabDialogBox = win.gBrowser.getTabDialogBox(browser);
+  tabDialogBox.abortAllDialogs();
+  await TestUtils.waitForCondition(
+    () => !tabDialogBox.getTabDialogManager()._dialogs.length,
+    "Waiting for the form review dialog to close"
+  );
+}
+
+async function fillFormReview(win, browser) {
+  const dialogManager = win.gBrowser
+    .getTabDialogBox(browser)
+    .getTabDialogManager();
+  await TestUtils.waitForCondition(
+    () => dialogManager._dialogs.length,
+    "Waiting for the form review dialog"
+  );
+
+  const dialog = dialogManager._dialogs.at(-1);
+  await dialog._dialogReady;
+
+  const reviewBrowser = dialog._frame.contentWindow.document.querySelector(
+    "#form-review-browser"
+  );
+  const { x, y } = await SpecialPowers.spawn(reviewBrowser, [], async () => {
+    let review;
+    await ContentTaskUtils.waitForCondition(() => {
+      review = Cu.waiveXrays(
+        content.document.querySelector("ai-sff-form-review")
+      );
+      return review?.state === "review";
+    }, "Waiting for generated values to be ready for review");
+    await review.updateComplete;
+
+    const fields = review.renderRoot.querySelector(".form-review-fields");
+    fields.scrollTop = fields.scrollHeight;
+    fields.dispatchEvent(new content.Event("scroll"));
+    await review.updateComplete;
+
+    const button = review.renderRoot.querySelector(
+      'moz-button[data-l10n-id="ai-smart-form-fill-fill-form"]'
+    );
+    await ContentTaskUtils.waitForCondition(
+      () => !button.disabled,
+      "Waiting for Fill form to be enabled"
+    );
+
+    const rect = button.buttonEl.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+  });
+
+  await BrowserTestUtils.synthesizeMouseAtPoint(x, y, {}, reviewBrowser);
+}
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.smartwindow.smartformfill.enabled", true]],
@@ -218,8 +282,9 @@ add_setup(async function () {
 });
 
 add_task(async function test_one_classification_flow_per_form() {
-  await withFormPage({}, async ({ browser, actor }) => {
+  await withFormPage({}, async ({ win, browser, actor }) => {
     await runRoundOnForm(browser, actor, "#email");
+    await closeFormReview(win, browser);
     await runRoundOnForm(browser, actor, "#reason");
 
     const [contact, details] = recordedExtras("formFillClassifyRequest");
@@ -288,7 +353,7 @@ add_task(async function test_one_classification_flow_per_form() {
 });
 
 add_task(async function test_a_structure_change_starts_a_new_flow() {
-  await withFormPage({}, async ({ browser, actor }) => {
+  await withFormPage({}, async ({ win, browser, actor }) => {
     await runRoundOnForm(browser, actor);
 
     // That a changed form is asked about again is covered by
@@ -296,6 +361,7 @@ add_task(async function test_a_structure_change_starts_a_new_flow() {
     // here is that the second round stops sharing a flow with the first, so the
     // two attempts are not merged into one in the data.
     await addFieldToForm(browser);
+    await closeFormReview(win, browser);
     await runRoundOnForm(browser, actor);
 
     const [first, second] = recordedExtras("formFillClassifyRequest");
@@ -344,7 +410,7 @@ add_task(async function test_failed_classification_records_the_error() {
 });
 
 add_task(async function test_generation_records_a_decision_per_field() {
-  await withFormPage({}, async ({ browser, actor }) => {
+  await withFormPage({}, async ({ win, browser, actor }) => {
     await runRoundOnForm(browser, actor);
 
     const generateRequests = recordedExtras("formFillGenerateRequest");
@@ -384,9 +450,9 @@ add_task(async function test_generation_records_a_decision_per_field() {
       "The response is correlated with the request by flow id"
     );
 
-    // The page reports what it filled on its own message, so the decisions land
-    // after the autofill call has already returned.
-    //
+    await fillFormReview(win, browser);
+
+    // The page reports what it filled after the reviewed values are approved.
     // Recorded in the order the fields were sent, which is the order they
     // appear in the form.
     const [email, phone] = await waitForEvents("formFillField", 2);
@@ -633,13 +699,11 @@ add_task(async function test_a_value_below_the_threshold_is_not_filled() {
         "A value that does not reach the threshold is not filled"
       );
 
-      for (const field of await waitForEvents("formFillField", 2)) {
-        Assert.equal(
-          field.filled,
-          "false",
-          `A ${field.confidence} value is reported as not filled`
-        );
-      }
+      Assert.equal(
+        recordedExtras("formFillField").length,
+        0,
+        "No per-field fill events are recorded without a fill attempt"
+      );
     }
   );
 });
@@ -667,7 +731,7 @@ add_task(async function test_a_rejected_value_does_not_cost_the_round() {
         };
       },
     },
-    async ({ browser, actor }) => {
+    async ({ win, browser, actor }) => {
       await runRoundOnForm(browser, actor);
 
       const [response] = recordedExtras("formFillGenerateResponse");
@@ -676,6 +740,8 @@ add_task(async function test_a_rejected_value_does_not_cost_the_round() {
         "1",
         "The value that cleared the threshold was filled, the other was not"
       );
+
+      await fillFormReview(win, browser);
 
       const [email, phone] = await waitForEvents("formFillField", 2);
       Assert.equal(

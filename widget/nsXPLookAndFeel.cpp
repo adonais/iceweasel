@@ -963,8 +963,7 @@ static nsresult SystemColorUseDebuggingColor(LookAndFeel::ColorID aID,
 static nsresult GetPrefColor(const char* aPref, nscolor& aResult) {
   nsAutoCString colorStr;
   MOZ_TRY(Preferences::GetCString(aPref, colorStr));
-  if (!ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), colorStr,
-                                    &aResult)) {
+  if (!ServoCSSParser::ComputeColor(nullptr, colorStr, &aResult)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;

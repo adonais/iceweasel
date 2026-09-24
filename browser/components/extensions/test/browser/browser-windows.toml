@@ -47,6 +47,3 @@ https_first_disabled = true
 
 ["browser_ext_windows_update.js"]
 tags = "fullscreen"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1533982
-]

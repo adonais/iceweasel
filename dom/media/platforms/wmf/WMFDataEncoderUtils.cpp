@@ -44,7 +44,27 @@ static bool IsNotRealtimeOrHwRequired(const EncoderConfig& aConfig) {
          aConfig.mHardwarePreference == HardwarePreference::RequireHardware;
 }
 
-static bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
+bool CanUseWMFHwEncoder(const GUID& aSubtype) {
+  if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
+    return false;
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_H264)) {
+    return gfx::gfxVars::UseH264HwEncode();
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_VP90)) {
+    return gfx::gfxVars::UseVP9HwEncode();
+  }
+
+  if (IsEqualGUID(aSubtype, MFVideoFormat_VP80)) {
+    return gfx::gfxVars::UseVP8HwEncode();
+  }
+
+  return false;
+}
+
+bool CanUseWMFHwEncoder(const EncoderConfig& aConfig) {
   if (!gfx::gfxVars::IsInitialized() || !XRE_IsGPUProcess()) {
     return false;
   }

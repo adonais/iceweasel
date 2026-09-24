@@ -115,6 +115,15 @@ uiaAccessibleActionsPropertyId = uiaReg.RegisterProperty(
         )
     )
 )
+uiaIsWebContentRootPropertyId = uiaReg.RegisterProperty(
+    byref(
+        uiaCoreMod.UIAutomationPropertyInfo(
+            GUID("{C5FDC049-4EEC-4299-87BB-CA9FC718A681}"),
+            "IsWebContentRoot",
+            uiaCoreMod.UIAutomationType_Bool,
+        )
+    )
+)
 del uiaReg, uiaCoreMod
 
 _threadLocal = threading.local()

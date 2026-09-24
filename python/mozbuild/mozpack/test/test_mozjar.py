@@ -4,7 +4,6 @@
 
 import os
 import unittest
-from collections import OrderedDict
 from io import StringIO
 
 import mozunit
@@ -29,15 +28,15 @@ test_data_path = mozpath.join(test_data_path, "data")
 class TestJarStruct(unittest.TestCase):
     class Foo(JarStruct):
         MAGIC = 0x01020304
-        STRUCT = OrderedDict([
-            ("foo", "uint32"),
-            ("bar", "uint16"),
-            ("qux", "uint16"),
-            ("length", "uint16"),
-            ("length2", "uint16"),
-            ("string", "length"),
-            ("string2", "length2"),
-        ])
+        STRUCT = {
+            "foo": "uint32",
+            "bar": "uint16",
+            "qux": "uint16",
+            "length": "uint16",
+            "length2": "uint16",
+            "string": "length",
+            "string2": "length2",
+        }
 
     def test_jar_struct(self):
         foo = TestJarStruct.Foo()

@@ -30,6 +30,7 @@
 #include "ScopedGLHelpers.h"
 #include "gfxUtils.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/ToString.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -1070,33 +1071,8 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock& aParentWaylandSurfaceLock) {
         mRootLayer->VSyncCallbackHandler(aTime, aEmulated);
       });
 
-  if (mIsHDR) {
-    gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
-    gfx::TransferFunction transferFunction = gfx::TransferFunction::BT709;
-    mozilla::gfx::HDRMetadata hdrMetadata{};
-    if (auto* external = AsNativeLayerWaylandExternal()) {
-      if (RefPtr surface = external->GetSurface()) {
-        if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
-          yuvColorSpace = surfaceYUV->GetYUVColorSpace();
-          transferFunction = surfaceYUV->GetTransferFunction();
-          hdrMetadata = surfaceYUV->GetHDRMetadata();
-        }
-      }
-    }
-    mSurface->EnableColorManagementLocked(surfaceLock, yuvColorSpace,
-                                          transferFunction, hdrMetadata,
-                                          parentSurface->GetGdkWindow());
-  }
-
-  if (auto* external = AsNativeLayerWaylandExternal()) {
-    if (RefPtr surface = external->GetSurface()) {
-      if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
-        mSurface->SetColorRepresentationLocked(
-            surfaceLock, surfaceYUV->GetYUVColorSpace(),
-            surfaceYUV->IsFullRange(), surfaceYUV->GetWPChromaLocation());
-      }
-    }
-  }
+  // Color Management
+  SetColorProperties(surfaceLock, parentSurface);
 
   mNeedsMainThreadUpdate = MainThreadUpdate::Map;
   mState.mMutatedStackingOrder = true;
@@ -1104,6 +1080,85 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock& aParentWaylandSurfaceLock) {
   mState.mMutatedPlacement = true;
   mState.mIsRendered = false;
   return true;
+}
+
+void NativeLayerWayland::SetColorProperties(
+    const WaylandSurfaceLock& aSurfaceLock, WaylandSurface* aParentSurface) {
+  LOG("NativeLayerWayland::SetColorProperties()");
+
+  auto* external = AsNativeLayerWaylandExternal();
+  if (!external) {
+    LOG("NativeLayerWayland::SetColorProperties() - Not an external surface. "
+        "Quit");
+    return;
+  }
+
+  RefPtr surface = external->GetSurface();
+  if (!surface) {
+    LOG("NativeLayerWayland::SetColorProperties() - Can't get a surface. Quit");
+    return;
+  }
+
+  auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV();
+  if (!surfaceYUV) {
+    LOG("NativeLayerWayland::SetColorProperties() - Can't get a YUV surface. "
+        "Quit");
+    return;
+  }
+
+  gfx::YUVColorSpace surfaceColorSpace = surfaceYUV->GetYUVColorSpace();
+
+  // color representation
+  mSurface->SetColorRepresentationLocked(aSurfaceLock, surfaceColorSpace,
+                                         surfaceYUV->IsFullRange(),
+                                         surfaceYUV->GetWPChromaLocation());
+
+  // color management
+  gfx::TransferFunction surfaceTransferFunction =
+      surfaceYUV->GetTransferFunction();
+
+  if (!WaylandDisplayGet()->IsParametricSupported()) {
+    LOG("NativeLayerWayland::SetColorProperties() - Parametric not supported. "
+        "Quit");
+    return;
+  }
+
+  auto* colorManager = WaylandDisplayGet()->GetColorManager();
+
+  if (!colorManager) {
+    LOG("NativeLayerWayland::SetColorProperties() - Color management is "
+        "missing. Quit");
+    return;
+  }
+
+  auto* params = wp_color_manager_v1_create_parametric_creator(colorManager);
+
+  // Setting colorspace and Transfer function
+  if (!mSurface->SetPrimaries(params, surfaceColorSpace)) {
+    LOG("No primaries for color space %s. Quit",
+        mozilla::ToString(surfaceColorSpace).c_str());
+
+    wp_image_description_creator_params_v1_destroy(params);
+    return;
+  }
+
+  if (!mSurface->SetTransferFunction(params, surfaceTransferFunction)) {
+    LOG("Transfer function %s isn't supported. Quit",
+        mozilla::ToString(surfaceTransferFunction).c_str());
+
+    wp_image_description_creator_params_v1_destroy(params);
+    return;
+  }
+
+  if (surface->IsHDRSurface()) {
+    mSurface->SetHDRMetadata(params, surfaceTransferFunction,
+                             aParentSurface->GetGdkWindow(),
+                             surfaceYUV->GetHDRMetadata());
+  }
+
+  mSurface->SetColorManagementLocked(aSurfaceLock, colorManager, params);
+  // SetColorManagementLocked() consumes params
+  params = nullptr;
 }
 
 void NativeLayerWayland::SetFrameCallbackState(bool aState) {

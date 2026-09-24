@@ -8,6 +8,8 @@
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::dom::TElement;
 use crate::logical_geometry::PhysicalSide;
+#[cfg(feature = "gecko")]
+use crate::properties::LonghandId;
 use crate::properties::longhands::display::computed_value::T as Display;
 use crate::properties::longhands::float::computed_value::T as Float;
 use crate::properties::longhands::position::computed_value::T as Position;
@@ -16,8 +18,6 @@ use crate::properties::longhands::{
     contain::computed_value::T as Contain, container_type::computed_value::T as ContainerType,
     content_visibility::computed_value::T as ContentVisibility,
 };
-#[cfg(feature = "gecko")]
-use crate::properties::LonghandId;
 use crate::properties::{ComputedValues, LonghandIdSet, StyleBuilder};
 use crate::values::computed::position::{
     PositionTryFallbacksTryTactic, PositionTryFallbacksTryTacticKeyword, TryTacticAdjustment,
@@ -166,19 +166,15 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         use crate::properties::longhands::_moz_box_orient::computed_value::T as BoxOrient;
         use crate::values::specified::box_::{DisplayInside, DisplayOutside};
         let box_style = self.style.get_box();
-        if box_style.clone_line_clamp().is_none() {
-            return;
-        }
         let line_clamp = box_style.clone_line_clamp();
-        let disp = box_style.clone_display();
-        if disp.inside() != DisplayInside::WebkitBox && line_clamp.webkit_legacy
-            || disp.inside() == DisplayInside::WebkitBox
-                && self.style.get_xul().clone__moz_box_orient() != BoxOrient::Vertical
-        {
+        if line_clamp.is_none() {
             return;
         }
-        // Inline elements should not have line-clamp applied.
-        if disp.inside() == DisplayInside::Flow && disp.outside() == DisplayOutside::Inline {
+
+        let disp = box_style.clone_display();
+        if disp.inside() != DisplayInside::WebkitBox
+            || self.style.get_xul().clone__moz_box_orient() != BoxOrient::Vertical
+        {
             return;
         }
         let new_display = if disp.outside() == DisplayOutside::Block {
@@ -646,7 +642,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             // line break suppression flag while they shouldn't. However, it is
             // generally fine as far as they can't break the line inside them.
             Display::RubyBaseContainer | Display::RubyTextContainer
-                if element.map_or(true, |e| e.is_html_element()) =>
+                if element.is_none_or(|e| e.is_html_element()) =>
             {
                 false
             },
@@ -724,7 +720,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             return;
         }
 
-        let is_link_element = self.style.pseudo.is_none() && element.map_or(false, |e| e.is_link());
+        let is_link_element = self.style.pseudo.is_none() && element.is_some_and(|e| e.is_link());
 
         if !is_link_element {
             return;
@@ -791,9 +787,8 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
             if self.style.pseudo.is_some() {
                 return;
             }
-            let is_html_select_element = element.map_or(false, |e| {
-                e.is_html_element() && e.local_name() == &*atom!("select")
-            });
+            let is_html_select_element =
+                element.is_some_and(|e| e.is_html_element() && e.local_name() == &*atom!("select"));
             if !is_html_select_element {
                 return;
             }
@@ -819,7 +814,7 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
         use crate::values::computed::font::{FontFamily, FontSynthesis, FontSynthesisStyle};
         use crate::values::computed::text::{LetterSpacing, WordSpacing};
 
-        let is_legacy_marker = self.style.pseudo.map_or(false, |p| p.is_marker())
+        let is_legacy_marker = self.style.pseudo.is_some_and(|p| p.is_marker())
             && self.style.get_list().clone_list_style_type().is_bullet()
             && self.style.get_counters().clone_content() == Content::Normal;
         if !is_legacy_marker {
@@ -1035,18 +1030,17 @@ impl<'a, 'b: 'a> StyleAdjuster<'a, 'b> {
     ) where
         E: TElement,
     {
-        if cfg!(debug_assertions) {
-            if let Some(e) = element {
-                if let Some(p) = e.implemented_pseudo_element() {
-                    // It'd be nice to assert `self.style.pseudo == Some(&pseudo)`,
-                    // but we do resolve ::-moz-list pseudos on ::before / ::after
-                    // content, sigh.
-                    debug_assert!(
-                        self.style.pseudo.is_some(),
-                        "Someone really messed up (no pseudo style for {e:?}, {p:?})"
-                    );
-                }
-            }
+        if cfg!(debug_assertions)
+            && let Some(e) = element
+            && let Some(p) = e.implemented_pseudo_element()
+        {
+            // It'd be nice to assert `self.style.pseudo == Some(&pseudo)`,
+            // but we do resolve ::-moz-list pseudos on ::before / ::after
+            // content, sigh.
+            debug_assert!(
+                self.style.pseudo.is_some(),
+                "Someone really messed up (no pseudo style for {e:?}, {p:?})"
+            );
         }
         // FIXME(emilio): The apply_declarations callsite in Servo's
         // animation, and the font stuff for Gecko

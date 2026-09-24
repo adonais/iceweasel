@@ -377,8 +377,6 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
       case TryNoteKind::Loop:
         break;
 
-      // TryNoteKind::ForOfIterclose is handled internally by the try note
-      // iterator.
       default:
         MOZ_CRASH("Unexpected try note");
     }
@@ -575,8 +573,6 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
       case TryNoteKind::Loop:
         break;
 
-      // TryNoteKind::ForOfIterClose is handled internally by the try note
-      // iterator.
       default:
         MOZ_CRASH("Invalid try note");
     }
@@ -751,9 +747,6 @@ void HandleException(ResumeFromException* rfe) {
   }
 #endif
 
-  JitFrameIter iter(cx->activation()->asJit(),
-                    /* mustUnwindActivation = */ true);
-
   // Live wasm code on the stack is kept alive (in TraceJitActivation) by
   // marking the instance of every wasm::Frame found by WasmFrameIter.
   // However, we're going to pop frames while iterating which means that a GC
@@ -764,10 +757,11 @@ void HandleException(ResumeFromException* rfe) {
   // jump to the JIT's exception handling trampoline. However, we must keep the
   // throw stub alive itself which is owned by the innermost instance.
   Rooted<WasmInstanceObject*> keepAlive(cx);
-  if (iter.isWasm()) {
-    keepAlive = iter.asWasm().instance()->object();
+  if (activation->hasWasmExitFP() && !activation->isWasmTrapping()) {
+    keepAlive = activation->wasmExitInstance()->object();
   }
 
+  JitFrameIter iter(activation, /* mustUnwindActivation = */ true);
   CommonFrameLayout* prevJitFrame = nullptr;
   while (!iter.done()) {
     if (iter.isWasm()) {
@@ -1499,6 +1493,15 @@ void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
       uint8_t* nextPC = frames.resumePCinCurrentFrame();
       MOZ_ASSERT(nextPC != nullptr);
       wasm::WasmFrameIter& wasmFrameIter = frames.asWasm();
+
+      // At the start of a wasm segment, keep alive the instance owning the
+      // exit stub we entered wasm through. Forget it afterwards so we only
+      // trace it once per segment.
+      if (wasm::Instance* exitInstance = wasmFrameIter.exitInstance()) {
+        wasm::TraceInstanceEdge(trc, exitInstance,
+                                "WasmFrameIter exit instance");
+        wasmFrameIter.resetExitInstance();
+      }
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {
         highestByteVisitedInPrevWasmFrame = 0;

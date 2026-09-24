@@ -11,7 +11,7 @@ use crate::values::generics::background::BackgroundSize as GenericBackgroundSize
 use crate::values::specified::length::{
     NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto,
 };
-use cssparser::{match_ignore_ascii_case, Parser};
+use cssparser::{Parser, match_ignore_ascii_case};
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
 use style_traits::{CssString, CssWriter, ParseError, StyleParseErrorKind, ToCss};
@@ -162,8 +162,7 @@ impl Parse for BackgroundRepeat {
 }
 
 fn background_clip_border_area_enabled(context: &ParserContext) -> bool {
-    context.chrome_rules_enabled()
-        || static_prefs::pref!("layout.css.background-clip.border-area.enabled")
+    context.chrome_rules_enabled() || crate::pref!("layout.css.background-clip.border-area.enabled")
 }
 
 /// The specified value of the `background-clip` and `mask-clip` properties.

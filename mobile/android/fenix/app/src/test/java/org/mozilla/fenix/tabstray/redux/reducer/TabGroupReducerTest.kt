@@ -19,6 +19,7 @@ import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.CloseTabAn
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.EditTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.UngroupTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
@@ -209,6 +210,79 @@ class TabGroupReducerTest {
             )
 
         assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN ungroup is clicked THEN navigate to the ungroup confirmation dialog`() {
+        val group = createTabGroup()
+        val initialState = TabsTrayState()
+
+        val resultState =
+            TabGroupActionReducer.reduce(
+                state = initialState,
+                action = TabGroupAction.UngroupConfirmationRequested(group = group),
+            )
+
+        assertEquals(
+            initialState.backStack + UngroupTabGroupConfirmationDialog(group = group),
+            resultState.backStack,
+        )
+    }
+
+    @Test
+    fun `WHEN an ungroup is requested THEN the state is unchanged`() {
+        val initialState = TabsTrayState()
+
+        val resultState =
+            TabGroupActionReducer.reduce(
+                state = initialState,
+                action = TabGroupAction.UngroupRequested(group = createTabGroup()),
+            )
+
+        assertEquals(initialState, resultState)
+    }
+
+    @Test
+    fun `WHEN ungroup is confirmed THEN pop the confirmation dialog`() {
+        val group = createTabGroup()
+        val initialState =
+            TabsTrayState(
+                backStack =
+                    listOf(
+                        TabsTrayState().backStack.first(),
+                        UngroupTabGroupConfirmationDialog(group = group),
+                    )
+            )
+
+        val resultState =
+            TabGroupActionReducer.reduce(
+                state = initialState,
+                action = TabGroupAction.UngroupConfirmed(group = group, dontAskAgain = false),
+            )
+
+        assertEquals(TabsTrayState().backStack, resultState.backStack)
+    }
+
+    @Test
+    fun `WHEN ungroup is confirmed from expanded tab group THEN pop the confirmation dialog and expanded tab group`() {
+        val group = createTabGroup()
+        val initialState =
+            TabsTrayState(
+                backStack =
+                    listOf(
+                        TabsTrayState().backStack.first(),
+                        ExpandedTabGroup(group = group),
+                        UngroupTabGroupConfirmationDialog(group = group),
+                    )
+            )
+
+        val resultState =
+            TabGroupActionReducer.reduce(
+                state = initialState,
+                action = TabGroupAction.UngroupConfirmed(group = group, dontAskAgain = true),
+            )
+
+        assertEquals(TabsTrayState().backStack, resultState.backStack)
     }
 
     @Test

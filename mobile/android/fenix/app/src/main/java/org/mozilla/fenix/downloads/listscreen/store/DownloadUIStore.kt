@@ -62,6 +62,7 @@ private fun downloadStateReducer(
                 deletionSnackbarState = DownloadUIState.SnackbarState.UndoDeletion(action.items),
                 dialogState = DownloadUIState.DialogState.None,
                 mode = Mode.Normal,
+                unconfirmedDeletionIds = state.unconfirmedDeletionIds - action.items.map { it.id }.toSet(),
             )
 
         is DownloadUIAction.UndoPendingDeletionSet ->
@@ -106,16 +107,39 @@ private fun downloadStateReducer(
         is DownloadUIAction.PauseDownload -> state
         is DownloadUIAction.ResumeDownload -> state
         is DownloadUIAction.RetryDownload -> state
-        is DownloadUIAction.CancelDownload -> state
+        is DownloadUIAction.CancelDownload ->
+            state.copy(
+                unconfirmedDeletionIds = state.unconfirmedDeletionIds - action.downloadId,
+                pendingDeletionIds = state.pendingDeletionIds - action.downloadId,
+            )
         is DownloadUIAction.NavigationIconClicked -> state
         is DownloadUIAction.SettingsIconClicked -> state
 
         is DownloadUIAction.RequestDeleteMultiple -> state
-        is DownloadUIAction.RequestDelete -> state
+        is DownloadUIAction.RequestDelete ->
+            if (action.isSwipe) {
+                state.copy(unconfirmedDeletionIds = state.unconfirmedDeletionIds + action.item.id)
+            } else {
+                state
+            }
+
         is DownloadUIAction.ShowDeleteDialog ->
             state.copy(dialogState = DownloadUIState.DialogState.DeleteConfirmation(action.items))
 
-        is DownloadUIAction.DismissDeleteDialog -> state.copy(dialogState = DownloadUIState.DialogState.None)
+        is DownloadUIAction.DismissDeleteDialog -> {
+            val itemsToRestore =
+                when (val dialogState = state.dialogState) {
+                        is DownloadUIState.DialogState.DeleteConfirmation -> dialogState.items
+                        is DownloadUIState.DialogState.MultiSelectDeleteConfirmation -> dialogState.items
+                        else -> emptySet()
+                    }
+                    .map { it.id }
+                    .toSet()
+            state.copy(
+                dialogState = DownloadUIState.DialogState.None,
+                unconfirmedDeletionIds = state.unconfirmedDeletionIds - itemsToRestore,
+            )
+        }
 
         is DownloadUIAction.SearchBarDismissRequest ->
             state.copy(
@@ -128,6 +152,10 @@ private fun downloadStateReducer(
         is DownloadUIAction.ShowMultiSelectDeleteDialog ->
             state.copy(dialogState = DownloadUIState.DialogState.MultiSelectDeleteConfirmation(items = action.items))
 
-        is DownloadUIAction.ConfirmMultiSelectDelete -> state.copy(dialogState = DownloadUIState.DialogState.None)
+        is DownloadUIAction.ConfirmMultiSelectDelete ->
+            state.copy(
+                dialogState = DownloadUIState.DialogState.None,
+                unconfirmedDeletionIds = state.unconfirmedDeletionIds - action.items.map { it.id }.toSet(),
+            )
     }
 }

@@ -11,6 +11,7 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
+import org.mozilla.fenix.components.menu.middleware.getTabUrl
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.tabstray.ext.isNormalTabInactive
 import org.mozilla.fenix.utils.Settings
@@ -27,20 +28,22 @@ val maxActiveTime = TimeUnit.DAYS.toMillis(DEFAULT_ACTIVE_DAYS)
  *
  * @return A list of the last opened tab or an empty list.
  */
-fun BrowserState.asRecentTabs(): List<RecentTab> {
-    return lastOpenedNormalTab
-        ?.takeIf { it.content.url != ABOUT_HOME_URL }
-        ?.let {
-            mutableListOf(RecentTab.Tab(it))
-        } ?: mutableListOf()
-}
+fun BrowserState.asRecentTabs(): List<RecentTab> =
+    lastOpenedNormalTab?.let {
+        mutableListOf(RecentTab.Tab(it))
+    } ?: mutableListOf()
 
 /**
- * Get the selected normal tab or the last accessed normal tab if there is no selected tab or the selected tab is a
- * private one.
+ * Get the selected normal tab or the last accessed normal tab if there is no selected tab or if the selected tab is a
+ * private or homepage tab.
  */
 val BrowserState.lastOpenedNormalTab: TabSessionState?
-    get() = selectedNormalTab ?: normalTabs.maxByOrNull { it.lastAccess }
+    get() =
+        selectedNormalTab?.takeIf { !it.isHomepageTab }
+            ?: normalTabs.filterNot { it.isHomepageTab }.maxByOrNull { it.lastAccess }
+
+private val TabSessionState.isHomepageTab: Boolean
+    get() = getTabUrl() == ABOUT_HOME_URL
 
 /**
  * List of all inactive tabs based on [maxActiveTime]. The user may have disabled the feature so for user interactions
@@ -60,6 +63,21 @@ fun BrowserState.actualInactiveTabs(settings: Settings): List<TabSessionState> {
         emptyList()
     }
 }
+
+/**
+ * Splits all normal tabs into the active and inactive ones, based on [maxActiveTime]. All normal tabs are considered
+ * active if the user disabled the inactive tabs feature.
+ *
+ * @return The active normal tabs (first) and the inactive tabs (second).
+ */
+fun BrowserState.partitionNormalTabsByActiveTime(
+    settings: Settings
+): Pair<List<TabSessionState>, List<TabSessionState>> =
+    if (settings.inactiveTabsAreEnabled) {
+        normalTabs.partition { !it.isNormalTabInactive(maxActiveTime) }
+    } else {
+        normalTabs to emptyList()
+    }
 
 /**
  * Get if there's a browser history item to get back to or if the current URL is of a story from application's

@@ -19,13 +19,6 @@
   width: 20em;
 }
 
-/* Grow to fit the device list, up to twice the main view's width.
-   "!important" is necessary to override the inline max-width PanelMultiView
-   sets on subviews. */
-#share-panel-deviceView {
-  max-width: 40em !important;
-}
-
 #share-panel-copy-link {
   list-style-image: url("chrome://browser/content/sharing/copy-link.svg");
 }

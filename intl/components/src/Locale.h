@@ -309,8 +309,6 @@ class MOZ_STACK_CLASS Locale final {
 
     bool operator==(const SubtagIterator& aOther) const = default;
 
-    bool operator!=(const SubtagIterator& aOther) const = default;
-
     value_type operator*() const { return ToSpan(*mIter); }
   };
 

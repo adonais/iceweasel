@@ -37,35 +37,45 @@ mozilla-intent:
         path-prefix: "onnx-models/Mozilla/mobilebert-uncased-finetuned-LoRA-intent-classifier/main/"
         artifact-name: mobilebert-uncased-finetuned-LoRA-intent-classifier.tar.zst
 
+mozilla-smart-intent:
+    description: Smart Window intent model
+    fetch:
+        type: git
+        repo: https://huggingface.co/Mozilla/mobilebert-query-intent-detection
+        revision: ab6ab166c5edb83c9b4893c5c1395c9ee2a14d17
+        path-prefix: "onnx-models/mozilla/mobilebert-query-intent-detection/main/"
+        artifact-name: mobilebert-query-intent-detection.tar.zst
+
+# We are testing two model architectures for form autofill. The first
+# (below) is text classification
 mozilla-autofill:
     description: autofill model
     fetch:
         type: git
         repo: https://huggingface.co/Mozilla/tinybert-address-autofill
-        revision: 096fa0e7a0145950cf03d40119f5fe5c28ada102
-        path-prefix: "onnx-models/Mozilla/tinybert-address-autofill/main/"
+        # tag v0.2.5 -- sbsd5 checkpoint, reduce_range quantization (Bug 2064781)
+        revision: cd00055e7634d9ffb6ceb98a8027ee5a52b256b2
+        path-prefix: "onnx-models/mozilla/tinybert-address-autofill/v0.2.5/"
         artifact-name: tinybert-address-autofill.tar.zst
 
-# Triple-encoder autofill model (Approach 3): shared feature-extraction encoder.
-# Served under the v0.1.0 path used by FormAutofillML/production; the HF repo
-# currently only has a `main` branch (no v0.1.0 tag), so we pin its HEAD.
+# Triple-encoder autofill model - shared feature-extraction encoder and head
 mozilla-autofill-embed:
     description: autofill triple-encoder (feature-extraction) model
     fetch:
         type: git
         repo: https://huggingface.co/Mozilla/form-autofill-embed
-        revision: 81fc90166824c5707eae93dde3cf384142cc880d
-        path-prefix: "onnx-models/mozilla/form-autofill-embed/v0.1.0/"
+        # tag v0.3.1 -- sj546 encoder, reduce_range quantization (Bug 2064781)
+        revision: 23fcf285489245e6270fb99ad2373e6275c45597
+        path-prefix: "onnx-models/mozilla/form-autofill-embed/v0.3.1/"
         artifact-name: form-autofill-embed.tar.zst
 
-# Triple-encoder autofill model (Approach 3): fusion head.
 mozilla-autofill-head:
     description: autofill triple-encoder fusion head model
     fetch:
         type: git
         repo: https://huggingface.co/Mozilla/form-autofill-head
         revision: 33f69b42305bcfc0aff34514f84ef16c7f5d9522
-        path-prefix: "onnx-models/mozilla/form-autofill-head/v0.1.0/"
+        path-prefix: "onnx-models/mozilla/form-autofill-head/v0.3.1/"
         artifact-name: form-autofill-head.tar.zst
 
 mozilla-smart-tab-topic:
@@ -103,3 +113,13 @@ Qwen3-0.6B-GGUF:
         revision: 233b3855f89029f46416b3e8fe5970c79b2ad25d
         path-prefix: "onnx-models/unsloth/Qwen3-0.6B-GGUF/main/"
         artifact-name: Qwen3-0.6B-GGUF.tar.zst
+
+mozilla-query-intent:
+    description: Smart Window intent detection model
+    fetch:
+        type: git
+        repo: https://huggingface.co/Mozilla/mobilebert-query-intent-detection
+        revision: f37f03073eb286317abdcf1fc681548327f43281
+        # Lowercase, to match the model id the browser requests.
+        path-prefix: "onnx-models/mozilla/mobilebert-query-intent-detection/main/"
+        artifact-name: mobilebert-query-intent-detection.tar.zst

@@ -399,6 +399,7 @@ void ImageContainer::SetCurrentImageInternal(
     img->mRtpTimestamp = aImages[i].mRtpTimestamp;
     img->mFrameID = aImages[i].mFrameID;
     img->mProducerID = aImages[i].mProducerID;
+    img->mRotation = aImages[i].mRotation;
     for (const auto& oldImg : mCurrentImages) {
       if (oldImg.mFrameID == img->mFrameID &&
           oldImg.mProducerID == img->mProducerID) {
@@ -763,6 +764,23 @@ Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
 }
 
 // -
+
+std::ostream& operator<<(std::ostream& aOut, const PlanarYCbCrData& aData) {
+  aOut << "PlanarYCbCrData: {"
+       << "mYStride=" << aData.mYStride << ", mCbCrStride=" << aData.mCbCrStride
+       << ", mYSkip=" << aData.mYSkip << ", mCbSkip=" << aData.mCbSkip
+       << ", mCrSkip=" << aData.mCrSkip
+       << ", mPictureRect=" << aData.mPictureRect
+       << ", mColorDepth=" << aData.mColorDepth
+       << ", mYUVColorSpace=" << aData.mYUVColorSpace
+       << ", mColorPrimaries=" << aData.mColorPrimaries
+       << ", mTransferFunction=" << aData.mTransferFunction
+       << ", mColorRange=" << aData.mColorRange
+       << ", mChromaSubsampling=" << aData.mChromaSubsampling
+       << ", YPictureSize=" << aData.YDataSize()
+       << ", CbCrPictureSize=" << aData.CbCrDataSize() << "}";
+  return aOut;
+}
 
 PlanarYCbCrImage::PlanarYCbCrImage()
     : Image(nullptr, ImageFormat::PLANAR_YCBCR),

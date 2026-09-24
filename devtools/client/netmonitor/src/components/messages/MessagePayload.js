@@ -236,10 +236,49 @@ class MessagePayload extends Component {
         formattedDataTitle: "JSON",
       };
     }
+
+    // JSON Lines payload. Frames carry no content type, so this is only
+    // attempted once the payload turned out not to be a single JSON value.
+    const jsonlPayload = this.parseJsonl(payload);
+    if (jsonlPayload) {
+      return {
+        formattedData: jsonlPayload,
+        formattedDataTitle: "JSON Lines",
+      };
+    }
+
     return {
       formattedData: null,
       formattedDataTitle: "",
     };
+  }
+
+  /**
+   * Parses a payload holding several JSON values, one per line.
+   *
+   * Every non-blank line has to parse for the payload to be treated as JSON
+   * Lines, so that ordinary multi-line text isn't turned into a tree. parseJSON
+   * rejects primitives, which also keeps a payload such as "1\n2\n3" out.
+   *
+   * @param {string} payload
+   * @returns {Array|null} one entry per line, or null when the payload isn't
+   *                       JSON Lines
+   */
+  parseJsonl(payload) {
+    const lines = payload.split("\n").filter(line => line.trim());
+    if (lines.length < 2) {
+      return null;
+    }
+
+    const entries = [];
+    for (const line of lines) {
+      const { json } = parseJSON(line);
+      if (!json) {
+        return null;
+      }
+      entries.push(json);
+    }
+    return entries;
   }
 
   parseSocketIOPayload(payload) {

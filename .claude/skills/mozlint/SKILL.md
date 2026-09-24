@@ -51,7 +51,6 @@ See `docs/code-quality/lint/create.rst` for the full guide on creating a new lin
 - **prettier**: JavaScript/JSON/YAML formatting
 - **shellcheck**: Shell script linting
 - **yamllint**: YAML file linting
-- **rstcheck**: reStructuredText linting
 - **license**: License header checking
 
 ## Configuration Files

@@ -596,6 +596,10 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
     TODO: Add reference link to source docs here.
   */
   nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+      // No index can order the union of the moz_historyvisits and
+      // moz_places_metadata rows that visit_interaction samples, so that merge
+      // is sorted at run time, over a set bounded by numSampledVisits.
+      "/* do not warn (bug 2055967) */ "
       "WITH "
       "lambda (lambda) AS ( "
       "  SELECT ln(2) / :halfLifeDays "
@@ -638,8 +642,9 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  WHERE place_id = :pageId "
       // Ignore Downloads, Framed Links, and Reloads.
       "    AND vs.visit_type NOT IN (7, 8, 9) "
-      "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      // No limit is necessary here as visit_interaction keeps only
+      // numSampledVisits most recent rows, and a visit outside the most recent
+      // ones here could not survive that.
       "), "
       "virtual_visits AS ( "
       "  SELECT "
@@ -705,11 +710,11 @@ CalculateFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "                               AND t.visit_type IN (5,6) "
       "), "
       "bookmark (days, weight) AS ( "
-      "  SELECT dateAdded / 86400000000, :highWeight "
+      // Use max() to avoid materializing a btree for an ORDER BY 1 LIMIT 1.
+      "  SELECT max(dateAdded) / 86400000000, :highWeight "
       "  FROM moz_bookmarks "
       "  WHERE fk = :pageId "
-      "  ORDER BY dateAdded DESC "
-      "  LIMIT 1 "
+      "  HAVING count(*) > 0 "
       "), "
       "samples (days, weight) AS ( "
       "  SELECT * FROM bookmark WHERE (SELECT count(*) FROM visits) = 0 "
@@ -860,6 +865,10 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
     TODO: Add reference link to source docs here.
   */
   nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
+      // No index can order the union of the moz_historyvisits and
+      // moz_places_metadata rows that visit_interaction samples, so that merge
+      // is sorted at run time, over a set bounded by numSampledVisits.
+      "/* do not warn (bug 2055967) */ "
       "WITH "
       "lambda (lambda) AS ( "
       "  SELECT ln(2) / :halfLifeDays "
@@ -900,8 +909,9 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "    ) AS is_interesting "
       "  FROM moz_historyvisits vs "
       "  WHERE place_id = :pageId "
-      "  ORDER BY visit_date DESC "
-      "  LIMIT :numSampledVisits "
+      // No limit is necessary here as visit_interaction keeps only
+      // numSampledVisits most recent rows, and a visit outside the most recent
+      // ones here could not survive that.
       "), "
       "virtual_visits AS ( "
       "  SELECT "
@@ -966,11 +976,11 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "                               AND t.visit_type IN (5,6) "
       "), "
       "bookmark (days, weight) AS ( "
-      "  SELECT dateAdded / 86400000000, 100 "
+      // Use max() to avoid materializing a btree for an ORDER BY 1 LIMIT 1.
+      "  SELECT max(dateAdded) / 86400000000, 100 "
       "  FROM moz_bookmarks "
       "  WHERE fk = :pageId "
-      "  ORDER BY dateAdded DESC "
-      "  LIMIT 1 "
+      "  HAVING count(*) > 0 "
       "), "
       "samples (days, weight) AS ( "
       "  SELECT * FROM bookmark WHERE (SELECT count(*) FROM visits) = 0 "

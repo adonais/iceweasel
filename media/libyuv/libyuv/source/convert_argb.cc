@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <limits.h>
+#include <string.h>  // For memcpy.
 
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
@@ -5556,6 +5557,14 @@ int I420ToRGB24Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512BW;
+    }
+  }
+#endif
 #if defined(HAS_I422TORGB24ROW_AVX512VBMI)
   if (TestCpuFlag(kCpuHasAVX512VBMI)) {
     I422ToRGB24Row = I422ToRGB24Row_Any_AVX512VBMI;
@@ -5766,6 +5775,14 @@ int I422ToRGB24Matrix(const uint8_t* src_y,
     I422ToRGB24Row = I422ToRGB24Row_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I422ToRGB24Row = I422ToRGB24Row_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_AVX512BW)
+  if (TestCpuFlag(kCpuHasAVX512BW)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_AVX512BW;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToRGB24Row = I422ToRGB24Row_AVX512BW;
     }
   }
 #endif
@@ -6314,6 +6331,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
                        int width,
                        int height) {
   int y;
+  uint32_t dither4[4];
   void (*I422ToARGBRow)(const uint8_t* y_buf, const uint8_t* u_buf,
                         const uint8_t* v_buf, uint8_t* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
@@ -6334,6 +6352,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
   if (!dither4x4) {
     dither4x4 = kDither565_4x4;
   }
+  memcpy(dither4, dither4x4, 16);
 #if defined(HAS_I422TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
@@ -6450,9 +6469,7 @@ int I420ToRGB565Dither(const uint8_t* src_y,
       return 1;
     for (y = 0; y < height; ++y) {
       I422ToARGBRow(src_y, src_u, src_v, row_argb, &kYuvI601Constants, width);
-      ARGBToRGB565DitherRow(row_argb, dst_rgb565,
-                            *(const uint32_t*)(dither4x4 + ((y & 3) << 2)),
-                            width);
+      ARGBToRGB565DitherRow(row_argb, dst_rgb565, dither4[y & 3], width);
       dst_rgb565 += dst_stride_rgb565;
       src_y += src_stride_y;
       if (y & 1) {

@@ -44,4 +44,10 @@ run-if = [
 ]
 tags = "portal"
 
+["test_ext_native_messaging_proxy_real.js"]
+environment = ["GTK_USE_PORTAL=1"]
+run-if = [
+  "os == 'linux' && os_version == '26.04' && arch == 'x86_64'",
+]
+
 ["test_ext_native_messaging_unresponsive.js"]

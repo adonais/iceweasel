@@ -16,6 +16,7 @@
 #include <span>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
@@ -32,13 +33,28 @@
 #endif
 
 namespace webrtc {
+namespace {
+class EmptyRtpPacketizer : public RtpPacketizer {
+ public:
+  size_t NumPackets() const override { return 0; }
+  bool NextPacket(RtpPacketToSend* packet) override { return false; }
+};
+}  // namespace
 
-std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
+absl_nonnull std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     PacketizationFormat format,
     std::span<const uint8_t> payload,
     PayloadSizeLimits limits,
     // Codec-specific details.
     const RTPVideoHeader& rtp_video_header) {
+  if (payload.empty() ||
+      SafeGt(payload.size(), limits.max_payload_len * 0x7000)) {
+    // Do not support frames that are so large they need almost half of the RTP
+    // sequence number space. With MTU ~= 1.2KB that puts a limit of ~34MB on a
+    // single frame. Sending such large frames over RTP is likely impractical.
+    return std::make_unique<EmptyRtpPacketizer>();
+  }
+
   switch (format) {
     case PacketizationFormat::kRaw: {
       return std::make_unique<RtpPacketizerGeneric>(payload, limits);
@@ -86,13 +102,6 @@ std::vector<int> RtpPacketizer::SplitAboutEqually(
   RTC_DCHECK_GE(limits.last_packet_reduction_len, 0);
 
   std::vector<int> result;
-  if (payload_size == 0 ||
-      SafeGt(payload_size, limits.max_payload_len * 0x7000)) {
-    // Do not support frames that are so large they need almost half of the RTP
-    // sequence number space. With MTU ~= 1.2KB that puts a limit of ~34MB on a
-    // single frame. Sending such large frames over RTP is likely impractical.
-    return result;
-  }
   int payload_len = static_cast<int>(payload_size);
 
   if (limits.max_payload_len >=

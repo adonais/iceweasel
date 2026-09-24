@@ -13,6 +13,7 @@ import sys
 import jinja2
 from glean_parser import util
 from glean_parser.metrics import Rate
+from rust import rust_int
 from util import type_ids_and_categories
 
 from js import ID_BITS, PING_INDEX_BITS
@@ -135,7 +136,7 @@ def output_factory(objs, output_fd, options={}):
 
     template = util.get_jinja2_template(
         "jog_factory.jinja2",
-        filters=(("snake_case", util.snake_case),),
+        filters=(("snake_case", util.snake_case), ("rust_int", rust_int)),
     )
 
     output_fd.write(

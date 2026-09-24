@@ -20,6 +20,7 @@ async function run_test() {
   await setupUpdaterTest(FILE_PARTIAL_MAR, false, "test/../");
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   checkAppBundleModTime();
+  checkUpdateTelemetry();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getApplyDirFile);

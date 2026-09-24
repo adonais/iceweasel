@@ -414,7 +414,9 @@ def file_info_reviewers(command_context, paths, rev=None, fmt=None, offline=Fals
     recent_individuals, recent_groups = [], []
     if not have_herald and not mots_groups:
         recent_individuals, recent_groups = reviewers.recent_reviewers_for_files(
-            command_context, relpaths
+            command_context,
+            relpaths,
+            known_groups=reviewers.known_review_groups(rules_data, mots_config),
         )
 
     if fmt == "json":

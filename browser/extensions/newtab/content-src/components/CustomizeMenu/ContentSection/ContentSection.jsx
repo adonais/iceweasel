@@ -217,8 +217,7 @@ export class ContentSection extends React.PureComponent {
       setPref,
       mayHaveTopicSections,
       weatherDisplay,
-      exitEventFired,
-      onSubpanelToggle,
+      panelShowing,
       toggleSectionsMgmtPanel,
       showSectionsMgmtPanel,
       // @nova-cleanup(remove-conditional): Remove novaEnabled
@@ -226,6 +225,10 @@ export class ContentSection extends React.PureComponent {
       browserNovaEnabled,
       toggleThemesPanel,
       showThemesPanel,
+      showWallpapersPanel,
+      wallpapersPanelCategory,
+      openWallpapersPanel,
+      closeWallpapersPanel,
       wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
@@ -274,7 +277,6 @@ export class ContentSection extends React.PureComponent {
                 installsource="about:newtab"
               ></theme-picker>
               <ThemesManagementPanel
-                onSubpanelToggle={onSubpanelToggle}
                 togglePanel={toggleThemesPanel}
                 showPanel={showThemesPanel}
               />
@@ -298,8 +300,11 @@ export class ContentSection extends React.PureComponent {
                 <WallpaperCategories
                   setPref={setPref}
                   activeWallpaper={activeWallpaper}
-                  exitEventFired={exitEventFired}
-                  onSubpanelToggle={onSubpanelToggle}
+                  panelShowing={panelShowing}
+                  showPanel={showWallpapersPanel}
+                  activeCategory={wallpapersPanelCategory}
+                  openPanel={openWallpapersPanel}
+                  closePanel={closeWallpapersPanel}
                 />
               </div>
             </>
@@ -571,7 +576,6 @@ export class ContentSection extends React.PureComponent {
                             mayHaveWeatherForecast={mayHaveWeatherForecast}
                             weatherDisplay={weatherDisplay}
                             setPref={setPref}
-                            onSubpanelToggle={onSubpanelToggle}
                             togglePanel={toggleWidgetsManagementPanel}
                             showPanel={showWidgetsManagementPanel}
                           />
@@ -632,9 +636,7 @@ export class ContentSection extends React.PureComponent {
                           )}
                           {mayHaveTopicSections && (
                             <SectionsMgmtPanel
-                              exitEventFired={exitEventFired}
                               pocketEnabled={pocketEnabled}
-                              onSubpanelToggle={onSubpanelToggle}
                               togglePanel={toggleSectionsMgmtPanel}
                               showPanel={showSectionsMgmtPanel}
                               novaEnabled={novaEnabled}

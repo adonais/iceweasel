@@ -221,7 +221,14 @@ def get_platform(job):
             return f"{platform}-aarch64"
         return platform
     elif "macosx" in job["worker"]["os"]:
-        return "macosx64"
+        platform = "macosx64"
+        # Apple Silicon workers need the native arm64 python: the arm64 builders
+        # (b-osx-arm64) and the M-series test pools (e.g. t-osx-1500-m4), whose
+        # aliases carry an "-m<n>"/"-m-vms" suffix rather than "arm64".
+        worker_type = job["worker-type"]
+        if "arm64" in worker_type or "-m" in worker_type:
+            return f"{platform}-aarch64"
+        return platform
     else:
         raise ValueError(f"unexpected worker.os value {job['worker']['os']}")
 

@@ -58,6 +58,8 @@ class TrackingProtectionPolicyFactory(
                 strictSocialTrackingProtection = settings.blockTrackingContentInCustomTrackingProtection,
                 allowListBaselineTrackingProtection = getAllowBaselineTrackingProtection(),
                 allowListConvenienceTrackingProtection = getAllowConvenienceTrackingProtection(),
+                fingerprintingProtection = settings.blockSuspectedFingerprinters,
+                fingerprintingProtectionPrivateBrowsing = settings.blockSuspectedFingerprintersPrivateBrowsing,
             )
             .let {
                 if (settings.blockTrackingContentSelectionInCustomTrackingProtection == "private") {
@@ -138,5 +140,7 @@ internal fun TrackingProtectionPolicyForSessionTypes.applyTCPIfNeeded(): Trackin
         bounceTrackingProtectionMode = bounceTrackingProtectionMode,
         allowListBaselineTrackingProtection = allowListBaselineTrackingProtection,
         allowListConvenienceTrackingProtection = allowListConvenienceTrackingProtection,
+        fingerprintingProtection = fingerprintingProtection,
+        fingerprintingProtectionPrivateBrowsing = fingerprintingProtectionPrivateBrowsing,
     )
 }

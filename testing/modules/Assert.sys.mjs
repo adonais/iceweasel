@@ -209,9 +209,9 @@ Assert.prototype.setReporter = function (reporterFunc) {
  *
  * @param {boolean} failed
  *        Indicates if the assertion failed or not.
- * @param {*} actual
+ * @param {any} actual
  *        The result of evaluating the assertion.
- * @param {*} [expected]
+ * @param {any} [expected]
  *        Expected result from the test author.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -267,7 +267,7 @@ Assert.prototype.report = function (
  * To test strictly for the value true, use ``assert.strictEqual(true, guard,
  * message_opt);``.
  *
- * @param {*} value
+ * @param {any} value
  *        Test subject to be evaluated as truthy.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -290,9 +290,9 @@ Assert.prototype.ok = function (value, message) {
  * 5. The equality assertion tests shallow, coercive equality with ==.
  * ``assert.equal(actual, expected, message_opt);``
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as equivalent to ``expected``.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -308,9 +308,9 @@ Assert.prototype.equal = function equal(actual, expected, message) {
  * @example
  * assert.notEqual(actual, expected, message_opt);
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as NOT equivalent to ``expected``.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -328,9 +328,9 @@ Assert.prototype.notEqual = function notEqual(actual, expected, message) {
  * `JSON.stringify` is not designed to be used for this purpose; objects may
  * have ambiguous `toJSON()` implementations that would influence the test.
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as equivalent to ``expected``, including nested properties.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -350,10 +350,10 @@ Assert.prototype.deepEqual = function deepEqual(actual, expected, message) {
  * 8. The non-equivalence assertion tests for any deep inequality.
  * assert.notDeepEqual(actual, expected, message_opt);
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as NOT equivalent to ``expected``, including nested
  *        properties.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -377,9 +377,9 @@ Assert.prototype.notDeepEqual = function notDeepEqual(
  * 9. The strict equality assertion tests strict equality, as determined by ===.
  * ``assert.strictEqual(actual, expected, message_opt);``
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as strictly equivalent to ``expected``.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -392,9 +392,9 @@ Assert.prototype.strictEqual = function strictEqual(actual, expected, message) {
  * 10. The strict non-equality assertion tests for strict inequality, as
  * determined by !==. ``assert.notStrictEqual(actual, expected, message_opt);``
  *
- * @param {*} actual
+ * @param {any} actual
  *        Test subject to be evaluated as NOT strictly equivalent to ``expected``.
- * @param {*} expected
+ * @param {any} expected
  *        Test reference to evaluate against ``actual``.
  * @param {string} [message]
  *        Short explanation of the expected result.
@@ -576,10 +576,8 @@ function compareNumbers(expression, lhs, rhs, message, operator) {
     this.report(expression, lhs, rhs, message, operator);
     return;
   }
-  let lhsIsDate =
-    typeof lhs == "object" && lhs.constructor.name == "Date" && !isNaN(lhs);
-  let rhsIsDate =
-    typeof rhs == "object" && rhs.constructor.name == "Date" && !isNaN(rhs);
+  let lhsIsDate = lhs?.constructor?.name == "Date" && !isNaN(lhs);
+  let rhsIsDate = rhs?.constructor?.name == "Date" && !isNaN(rhs);
   if (lhsIsDate && rhsIsDate) {
     this.report(expression, lhs, rhs, message, operator);
     return;

@@ -309,7 +309,7 @@ void SendStatisticsProxy::UmaSamplesContainer::LogPsnrValues(
     ssb << ".S" << *spatial_id;
   }
   ssb << ".X";
-  std::string uma_name = ssb.str();
+  std::string uma_name = ssb.Release();
 
   std::optional<float> psnr_y =
       psnr_counters.psnr_y.Avg(kMinRequiredPsnrSamples);

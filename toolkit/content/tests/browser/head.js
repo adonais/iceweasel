@@ -147,32 +147,6 @@ function disable_non_test_mouse(disable) {
   utils.disableNonTestMouseEvents(disable);
 }
 
-function hover_icon(icon, tooltip) {
-  disable_non_test_mouse(true);
-
-  let popupShownPromise = BrowserTestUtils.waitForEvent(tooltip, "popupshown");
-  EventUtils.synthesizeMouse(icon, 1, 1, { type: "mouseover" });
-  EventUtils.synthesizeMouse(icon, 2, 2, { type: "mousemove" });
-  EventUtils.synthesizeMouse(icon, 3, 3, { type: "mousemove" });
-  EventUtils.synthesizeMouse(icon, 4, 4, { type: "mousemove" });
-  return popupShownPromise;
-}
-
-function leave_icon(icon) {
-  EventUtils.synthesizeMouse(icon, 0, 0, { type: "mouseout" });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-  EventUtils.synthesizeMouseAtCenter(document.documentElement, {
-    type: "mousemove",
-  });
-
-  disable_non_test_mouse(false);
-}
-
 /**
  * Used to listen events if you just need it once
  */

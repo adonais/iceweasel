@@ -9,5 +9,8 @@ ADD topsrcdir/taskcluster/scripts/misc/fetch-chromium.py /builds/worker/bin/fetc
 # %include taskcluster/scripts/misc/fetch-cft-chromedriver.py
 ADD topsrcdir/taskcluster/scripts/misc/fetch-cft-chromedriver.py /builds/worker/bin/fetch-cft-chromedriver.py
 
+# %include taskcluster/scripts/misc/fetch-crx3.py
+ADD topsrcdir/taskcluster/scripts/misc/fetch-crx3.py /builds/worker/bin/fetch-crx3.py
+
 # %include taskcluster/scripts/misc/fetch-onnxruntime-deps.sh
 ADD topsrcdir/taskcluster/scripts/misc/fetch-onnxruntime-deps.sh /builds/worker/bin/fetch-onnxruntime-deps.sh

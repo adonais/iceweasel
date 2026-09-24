@@ -274,36 +274,8 @@ void nsListControlFrame::Reflow(nsPresContext* aPresContext,
       !hadPendingInterrupt && aPresContext->HasPendingInterrupt();
 }
 
-static uint32_t CountOptionsAndOptgroups(nsIFrame* aFrame) {
-  uint32_t count = 0;
-  for (nsIFrame* child : aFrame->PrincipalChildList()) {
-    nsIContent* content = child->GetContent();
-    if (!content) {
-      continue;
-    }
-    if (content->IsHTMLElement(nsGkAtoms::option)) {
-      ++count;
-      continue;
-    }
-    if (RefPtr optgroup = HTMLOptGroupElement::FromNode(content)) {
-      nsAutoString label;
-      optgroup->GetLabel(label);
-      if (label.Length() > 0) {
-        ++count;
-      }
-      count += CountOptionsAndOptgroups(child);
-      continue;
-    }
-    if (content->IsElement()) {
-      // A wrapper element, which can contain options.
-      count += CountOptionsAndOptgroups(child);
-    }
-  }
-  return count;
-}
-
 uint32_t nsListControlFrame::GetNumberOfRows() {
-  return ::CountOptionsAndOptgroups(GetContentInsertionFrame());
+  return Select().CountRenderedRows();
 }
 
 //---------------------------------------------------------

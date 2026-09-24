@@ -20,10 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -32,7 +28,6 @@
 #include <ostream>
 #include <string>
 #include <string_view>
-#include <tuple>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
@@ -54,12 +49,15 @@
 #include "absl/log/log_entry.h"
 #include "absl/log/log_sink.h"
 #include "absl/log/log_sink_registry.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/internal/utf8.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/span.h"
+
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 extern "C" ABSL_ATTRIBUTE_WEAK void ABSL_INTERNAL_C_SYMBOL(
     AbslInternalOnFatalLogMessage)(const absl::LogEntry&) {

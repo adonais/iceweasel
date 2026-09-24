@@ -106,17 +106,8 @@ async function checkDialogContents(win, notBefore, notAfter) {
   });
 }
 
-function findCertByCommonName(commonName) {
-  for (let cert of certDB.getCerts()) {
-    if (cert.commonName == commonName) {
-      return cert;
-    }
-  }
-  return null;
-}
-
 add_setup(async function () {
-  cert = findCertByCommonName("Mochitest client");
+  cert = await findCertByCommonName("Mochitest client");
   isnot(cert, null, "Should be able to find the test client cert");
 });
 

@@ -14,6 +14,48 @@ const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
 
+function setPermissionRequestOptions(request, values) {
+  let options = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+  for (let value of values) {
+    let string = Cc["@mozilla.org/supports-string;1"].createInstance(
+      Ci.nsISupportsString
+    );
+    string.data = value;
+    options.appendElement(string);
+  }
+  let type = {
+    options,
+    QueryInterface: ChromeUtils.generateQI(["nsIContentPermissionType"]),
+  };
+  let types = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
+  types.appendElement(type);
+  request.types = types;
+}
+
+// Sends the "ml-model-download-progress" notification HWInferenceParent sends
+// while a model downloads, carrying the same property bag.
+function notifyModelDownloadProgress({
+  token,
+  progress = 0,
+  currentLoaded = 0,
+  totalLoaded = 0,
+  total = 0,
+  done = false,
+  ok = false,
+}) {
+  let props = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+    Ci.nsIWritablePropertyBag2
+  );
+  props.setPropertyAsAString("token", token);
+  props.setPropertyAsInt32("progress", progress);
+  props.setPropertyAsInt64("currentLoaded", currentLoaded);
+  props.setPropertyAsInt64("totalLoaded", totalLoaded);
+  props.setPropertyAsInt64("total", total);
+  props.setPropertyAsBool("done", done);
+  props.setPropertyAsBool("ok", ok);
+  Services.obs.notifyObservers(props, "ml-model-download-progress");
+}
+
 /**
  * Tests the PermissionPromptForRequest prototype to ensure that a prompt
  * can be displayed. Does not test permission handling.
@@ -22,7 +64,7 @@ add_task(async function test_permission_prompt_for_request() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com/",
+      url: "https://example.com/",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";
@@ -108,6 +150,361 @@ add_task(async function test_permission_prompt_for_request() {
   );
 });
 
+add_task(async function test_speech_recognition_model_download_progress() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.notification_enable_delay", 0]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com/",
+    },
+    async function (browser) {
+      const progressToken = "test-speech-model-download";
+      let request = makeMockPermissionRequest(browser);
+      setPermissionRequestOptions(request, ["123", progressToken]);
+      let elementAvailable = true;
+      Object.defineProperty(request, "element", {
+        configurable: true,
+        get() {
+          if (!elementAvailable) {
+            throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+          }
+          return browser;
+        },
+      });
+
+      let shownPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popupshown"
+      );
+      new PermissionUI.SpeechRecognitionModelDownloadPermissionPrompt(
+        request
+      ).prompt();
+      await shownPromise;
+
+      let popup = getPopupNotificationNode();
+      Assert.equal(
+        popup.id,
+        "speech-recognition-model-download-notification",
+        "the consent prompt is shown first"
+      );
+
+      await popup.button.updateComplete;
+      popup.button.click();
+
+      await TestUtils.waitForCondition(
+        () => request._allowed,
+        "Waiting for permission allow callback"
+      );
+      elementAvailable = false;
+
+      await TestUtils.waitForCondition(
+        () =>
+          PopupNotifications.panel.childNodes.length == 1 &&
+          PopupNotifications.panel.firstElementChild.id ==
+            "speech-recognition-model-download-progress-notification",
+        "Waiting for progress notification"
+      );
+
+      popup = getPopupNotificationNode();
+      let content = popup.querySelector(
+        "#speech-recognition-model-download-progress-content"
+      );
+      let progress = popup.querySelector(
+        "#speech-recognition-model-download-progress"
+      );
+      let status = popup.querySelector(
+        "#speech-recognition-model-download-progress-status"
+      );
+      let footer = popup.querySelector(".panel-footer");
+
+      Assert.ok(PopupNotifications.isPanelOpen, "progress doorhanger is open");
+      Assert.ok(!content.hidden, "progress content is shown");
+      Assert.ok(
+        popup.hasAttribute("mainactiondisabled"),
+        "the accept button is disabled while downloading"
+      );
+      let [cancelMessage] = new Localization(
+        ["browser/permissions.ftl"],
+        true
+      ).formatMessagesSync([
+        { id: "speech-recognition-model-download-cancel" },
+      ]);
+      Assert.equal(
+        popup.secondaryButton.label,
+        cancelMessage.attributes.find(attr => attr.name == "label").value,
+        "the secondary button is the Cancel button"
+      );
+
+      notifyModelDownloadProgress({
+        token: "other-token",
+        progress: 7,
+        totalLoaded: 7,
+        total: 100,
+      });
+      Assert.equal(progress.value, 0, "wrong token did not update progress");
+
+      notifyModelDownloadProgress({
+        token: progressToken,
+        progress: 42,
+        totalLoaded: 42,
+        total: 100,
+      });
+      await TestUtils.waitForCondition(
+        () => progress.value == 42,
+        "Waiting for progress update"
+      );
+      // Same shape as the downloads panel, see DownloadUtils.
+      Assert.stringContains(
+        status.textContent,
+        "42 of 100 bytes",
+        "the status includes the transfer progress"
+      );
+      Assert.stringContains(
+        status.textContent,
+        "/sec",
+        "the status includes the transfer rate"
+      );
+
+      notifyModelDownloadProgress({
+        token: progressToken,
+        progress: 100,
+        totalLoaded: 100,
+        total: 100,
+        done: true,
+        ok: true,
+      });
+
+      let [okMessage] = new Localization(
+        ["browser/permissions.ftl"],
+        true
+      ).formatMessagesSync([{ id: "speech-recognition-model-download-ok" }]);
+      let okLabel = okMessage.attributes.find(
+        attr => attr.name == "label"
+      ).value;
+      await TestUtils.waitForCondition(
+        () => popup.secondaryButton.label == okLabel,
+        "Waiting for the secondary button to become the OK button"
+      );
+
+      Assert.ok(
+        BrowserTestUtils.isVisible(footer),
+        "a completed download keeps a way to dismiss it"
+      );
+      Assert.ok(
+        BrowserTestUtils.isHidden(popup.button),
+        "there is nothing left to accept"
+      );
+      // A completed download also goes away by itself, after a few seconds.
+      let hiddenPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popuphidden"
+      );
+      await hiddenPromise;
+      Assert.ok(
+        !request._cancelled,
+        "accepted download notification removal should not cancel the request"
+      );
+      Assert.ok(
+        !PopupNotifications.getNotification(
+          "speech-recognition-model-download-progress",
+          browser
+        ),
+        "progress notification was removed after completion"
+      );
+
+      let secondRequest = makeMockPermissionRequest(browser);
+      setPermissionRequestOptions(secondRequest, ["123", "second-token"]);
+
+      shownPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popupshown"
+      );
+      new PermissionUI.SpeechRecognitionModelDownloadPermissionPrompt(
+        secondRequest
+      ).prompt();
+      await shownPromise;
+
+      popup = getPopupNotificationNode();
+      Assert.equal(
+        popup.id,
+        "speech-recognition-model-download-notification",
+        "the next consent prompt is separate from progress"
+      );
+
+      await popup.button.updateComplete;
+      popup.button.click();
+
+      await TestUtils.waitForCondition(
+        () =>
+          PopupNotifications.panel.childNodes.length == 1 &&
+          PopupNotifications.panel.firstElementChild.id ==
+            "speech-recognition-model-download-progress-notification",
+        "Waiting for second progress notification"
+      );
+
+      popup = getPopupNotificationNode();
+      content = popup.querySelector(
+        "#speech-recognition-model-download-progress-content"
+      );
+      progress = popup.querySelector(
+        "#speech-recognition-model-download-progress"
+      );
+      status = popup.querySelector(
+        "#speech-recognition-model-download-progress-status"
+      );
+      footer = popup.querySelector(".panel-footer");
+
+      Assert.ok(
+        !content.hidden,
+        "new progress notification shows progress content"
+      );
+      Assert.equal(progress.value, 0, "new progress value starts at 0");
+      Assert.equal(status.textContent, "", "new progress text starts empty");
+      Assert.ok(
+        popup.hasAttribute("model-download-in-progress"),
+        "new progress notification is marked in progress"
+      );
+      Assert.ok(
+        popup.hasAttribute("mainactiondisabled"),
+        "new progress notification primary button is disabled"
+      );
+      Assert.ok(
+        BrowserTestUtils.isVisible(footer),
+        "new progress notification actions are visible"
+      );
+
+      hiddenPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popuphidden"
+      );
+      PopupNotifications.getNotification(
+        "speech-recognition-model-download-progress",
+        browser
+      ).remove();
+      await hiddenPromise;
+    }
+  );
+});
+
+// A failed download is the one outcome that never goes away by itself, so it
+// has to keep a visible way to dismiss it and does not close when clicked out
+// of.
+add_task(async function test_speech_recognition_model_download_failure() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["security.notification_enable_delay", 0]],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com/",
+    },
+    async function (browser) {
+      const progressToken = "test-speech-model-download-failure";
+      let request = makeMockPermissionRequest(browser);
+      setPermissionRequestOptions(request, ["123", progressToken]);
+      let elementAvailable = true;
+      Object.defineProperty(request, "element", {
+        configurable: true,
+        get() {
+          if (!elementAvailable) {
+            throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+          }
+          return browser;
+        },
+      });
+
+      let shownPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popupshown"
+      );
+      new PermissionUI.SpeechRecognitionModelDownloadPermissionPrompt(
+        request
+      ).prompt();
+      await shownPromise;
+
+      let popup = getPopupNotificationNode();
+
+      await popup.button.updateComplete;
+      popup.button.click();
+      await TestUtils.waitForCondition(
+        () => request._allowed,
+        "Waiting for permission allow callback"
+      );
+      elementAvailable = false;
+
+      await TestUtils.waitForCondition(
+        () =>
+          PopupNotifications.panel.childNodes.length == 1 &&
+          PopupNotifications.panel.firstElementChild.id ==
+            "speech-recognition-model-download-progress-notification",
+        "Waiting for progress notification"
+      );
+
+      popup = getPopupNotificationNode();
+      let footer = popup.querySelector(".panel-footer");
+
+      notifyModelDownloadProgress({
+        token: progressToken,
+        progress: 40,
+        totalLoaded: 40,
+        total: 100,
+        done: true,
+        ok: false,
+      });
+
+      let [okMessage] = new Localization(
+        ["browser/permissions.ftl"],
+        true
+      ).formatMessagesSync([{ id: "speech-recognition-model-download-ok" }]);
+      let okLabel = okMessage.attributes.find(
+        attr => attr.name == "label"
+      ).value;
+      await TestUtils.waitForCondition(
+        () => popup.secondaryButton.label == okLabel,
+        "Waiting for the secondary button to become the OK button"
+      );
+
+      Assert.ok(
+        BrowserTestUtils.isVisible(footer),
+        "a failed download keeps a way to dismiss it"
+      );
+      Assert.ok(
+        BrowserTestUtils.isHidden(popup.button),
+        "there is nothing left to accept"
+      );
+      await TestUtils.waitForTick();
+      Assert.ok(
+        PopupNotifications.isPanelOpen,
+        "a failed download does not dismiss itself"
+      );
+
+      let hiddenPromise = BrowserTestUtils.waitForEvent(
+        PopupNotifications.panel,
+        "popuphidden"
+      );
+      await popup.secondaryButton.updateComplete;
+      popup.secondaryButton.click();
+      await hiddenPromise;
+
+      Assert.ok(
+        !PopupNotifications.getNotification(
+          "speech-recognition-model-download-progress",
+          browser
+        ),
+        "the OK button removes the failed download notification"
+      );
+      Assert.ok(
+        !request._cancelled,
+        "dismissing a failed download does not cancel the settled request"
+      );
+    }
+  );
+});
+
 /**
  * Tests that if the PermissionPrompt sets displayURI to false in popupOptions,
  * then there is no URI shown on the popupnotification.
@@ -116,7 +513,7 @@ add_task(async function test_permission_prompt_for_popupOptions() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com/",
+      url: "https://example.com/",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";
@@ -185,7 +582,7 @@ add_task(async function test_with_permission_key() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com",
+      url: "https://example.com",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";
@@ -399,7 +796,7 @@ add_task(async function test_on_before_show() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com",
+      url: "https://example.com",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";
@@ -469,7 +866,7 @@ add_task(async function test_no_request() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com",
+      url: "https://example.com",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";
@@ -595,7 +992,7 @@ add_task(async function test_window_swap() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "http://example.com",
+      url: "https://example.com",
     },
     async function (browser) {
       const kTestNotificationID = "test-notification";

@@ -535,6 +535,7 @@ HRESULT MFMediaSource::GetInputTrustAuthority(DWORD aStreamId, REFIID aRiid,
   }
 #ifdef MOZ_WMF_CDM
   if (!mCDMProxy) {
+    LOG("Refused an ITA for stream id={}, no CDM proxy", aStreamId);
     return MF_E_NOT_PROTECTED;
   }
 
@@ -542,12 +543,18 @@ HRESULT MFMediaSource::GetInputTrustAuthority(DWORD aStreamId, REFIID aRiid,
   // id or not.
   ComPtr<MFMediaEngineStream> stream = GetStreamByIndentifier(aStreamId);
   if (!stream) {
+    LOG("Refused an ITA for stream id={}, no such stream", aStreamId);
     return E_INVALIDARG;
   }
 
   if (!stream->IsEncrypted()) {
+    LOG("Refused an ITA for {} (id={}), stream is not encrypted",
+        stream->GetDescriptionName().get(), aStreamId);
     return MF_E_NOT_PROTECTED;
   }
+
+  LOG("Granting an ITA for {} (id={})", stream->GetDescriptionName().get(),
+      aStreamId);
 
   RETURN_IF_FAILED(
       mCDMProxy->GetInputTrustAuthority(aStreamId, nullptr, 0, aRiid, aITAOut));

@@ -22,7 +22,7 @@ kind-dependencies:
     - build-mac-notarization
     - repackage-signing
     - shippable-l10n
-    - shippable-l10n-signing
+    - l10n-signing
     - shippable-l10n-mac-signing
     - shippable-l10n-mac-notarization
     - repackage-signing-l10n

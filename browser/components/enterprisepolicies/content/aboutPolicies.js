@@ -9,6 +9,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
+  PolicyFailures: "resource://gre/modules/PoliciesHelpers.sys.mjs",
   schema: "resource:///modules/policies/schema.sys.mjs",
 });
 
@@ -30,6 +31,24 @@ function link(text) {
   let content = document.createTextNode(text);
   a.appendChild(content);
   column.appendChild(a);
+  return column;
+}
+
+/*
+ * Builds the policy name column, flagging the policy when one of its
+ * operations failed to apply.
+ */
+function policyNameCol(policyName, failures) {
+  let column = col(policyName);
+
+  if (policyName && failures[policyName]?.length) {
+    column.classList.add("policy-failure");
+    let marker = document.createElement("span");
+    marker.classList.add("policy-failure-marker");
+    document.l10n.setAttributes(marker, "policy-not-fully-applied");
+    column.appendChild(marker);
+  }
+
   return column;
 }
 
@@ -68,6 +87,7 @@ function generateActivePolicies(data) {
   let new_cont = document.getElementById("activeContent");
   new_cont.classList.add("active-policies");
 
+  let failures = PolicyFailures.getAll();
   let policy_count = 0;
 
   for (let policyName in data) {
@@ -79,7 +99,7 @@ function generateActivePolicies(data) {
         let isLastRow = count == data[policyName].length - 1;
         let row = document.createElement("tr");
         row.classList.add(color_class);
-        row.appendChild(col(isFirstRow ? policyName : ""));
+        row.appendChild(policyNameCol(isFirstRow ? policyName : "", failures));
         generatePolicy(
           data[policyName][count],
           row,
@@ -96,7 +116,7 @@ function generateActivePolicies(data) {
         let isLastRow = count == Object.keys(data[policyName]).length - 1;
         let row = document.createElement("tr");
         row.classList.add(color_class);
-        row.appendChild(col(isFirstRow ? policyName : ""));
+        row.appendChild(policyNameCol(isFirstRow ? policyName : "", failures));
         row.appendChild(col(obj));
         generatePolicy(
           data[policyName][obj],
@@ -110,7 +130,7 @@ function generateActivePolicies(data) {
       }
     } else {
       let row = document.createElement("tr");
-      row.appendChild(col(policyName));
+      row.appendChild(policyNameCol(policyName, failures));
       row.appendChild(col(JSON.stringify(data[policyName])));
       row.classList.add(color_class, "last_row");
       new_cont.appendChild(row);
@@ -263,12 +283,41 @@ function generateErrors() {
   new_cont.classList.add("errors");
 
   let flag = false;
+
+  function addRow(policyName, message) {
+    flag = true;
+    let row = document.createElement("tr");
+    row.appendChild(col(policyName));
+    row.appendChild(col(message));
+    new_cont.appendChild(row);
+  }
+
+  // The policy a message belongs to, for the messages the engine recorded a
+  // failure for. Everything recorded is also logged, so this names rows in
+  // the console pass below rather than adding rows of its own.
+  const policyByMessage = new Map();
+  const failures = PolicyFailures.getAll();
+  for (const policyName of Object.keys(failures)) {
+    for (const message of failures[policyName]) {
+      policyByMessage.set(message, policyName);
+    }
+  }
+
+  const listed = new Set();
   for (let err of consoleEvents) {
-    if (prefixes.includes(err.prefix)) {
-      flag = true;
-      let row = document.createElement("tr");
-      row.appendChild(col(err.arguments[0]));
-      new_cont.appendChild(row);
+    if (!prefixes.includes(err.prefix)) {
+      continue;
+    }
+    const message = err.arguments[0];
+    listed.add(message);
+    addRow(policyByMessage.get(message) ?? "", message);
+  }
+
+  // A recorded failure can be missing from the console when the log level is
+  // turned down, or once it ages out of the console's buffer.
+  for (const [message, policyName] of policyByMessage) {
+    if (!listed.has(message)) {
+      addRow(policyName, message);
     }
   }
   if (!flag) {

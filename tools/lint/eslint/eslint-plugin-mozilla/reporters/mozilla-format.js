@@ -8,53 +8,75 @@
  * mach itself.
  */
 
+/**
+ * @import { Reporter } from "@jest/reporters"
+ * @import { AggregatedResult, Test, TestCaseResult, TestContext } from "@jest/test-result"
+ */
+
 // This is a non-production file that needs to log.
 /* eslint-disable no-console */
 
 "use strict";
 
-var mocha = require("mocha");
 var path = require("path");
-module.exports = MozillaFormatter;
 
-function MozillaFormatter(runner) {
-  mocha.reporters.Base.call(this, runner);
-  var passes = 0;
-  var failures = [];
-
-  runner.on("start", () => {
+/**
+ * A reporter for Jest that outputs results in the format Treeherder expects.
+ *
+ * @implements {Reporter}
+ */
+class MozillaFormatter {
+  onRunStart() {
     console.log("SUITE-START | eslint-plugin-mozilla");
-  });
+  }
 
-  runner.on("pass", function (test) {
-    passes++;
-    let title = test.title.replace(/\n/g, "|");
-    console.log(`TEST-PASS | ${path.basename(test.file)} | ${title}`);
-  });
+  /**
+   * @param {Test} test
+   * @param {TestCaseResult} testCaseResult
+   */
+  onTestCaseResult(test, testCaseResult) {
+    let title = testCaseResult.fullName.replace(/\n/g, "|");
+    let fileName = path.basename(test.path);
 
-  runner.on("fail", function (test, err) {
-    failures.push(test);
-    // Replace any newlines in the title.
-    let title = test.title.replace(/\n/g, "|");
-    console.log(
-      `TEST-UNEXPECTED-FAIL | ${path.basename(test.file)} | ${title} | ${
-        err.message
-      }`
-    );
-    mocha.reporters.Base.list([test]);
-  });
+    if (testCaseResult.status == "passed") {
+      console.log(`TEST-PASS | ${fileName} | ${title}`);
+    } else if (testCaseResult.status == "failed") {
+      let message = testCaseResult.failureMessages[0]?.split("\n")[0];
+      console.log(`TEST-UNEXPECTED-FAIL | ${fileName} | ${title} | ${message}`);
+    }
+  }
 
-  runner.on("end", function () {
+  /**
+   * @param {Set<TestContext>} testContexts
+   * @param {AggregatedResult} results
+   */
+  onRunComplete(testContexts, results) {
     // Space the results out visually with an additional blank line.
     console.log("");
     console.log("INFO | Result summary:");
-    console.log(`INFO | Passed: ${passes}`);
-    console.log(`INFO | Failed: ${failures.length}`);
+    console.log(`INFO | Passed: ${results.numPassedTests}`);
+    console.log(`INFO | Failed: ${results.numFailedTests}`);
     console.log("SUITE-END");
     // Space the failures out visually with an additional blank line.
     console.log("");
     console.log("Failure summary:");
-    mocha.reporters.Base.list(failures);
-    process.exit(failures.length);
-  });
+
+    for (let result of results.testResults) {
+      if (result.numFailingTests) {
+        let fileName = path.basename(result.testFilePath);
+        for (let fileResult of result.testResults) {
+          if (fileResult.status == "failed") {
+            console.log("");
+            let title = fileResult.fullName.replace(/\n/g, "|");
+
+            console.log(
+              `TEST-UNEXPECTED-FAIL | ${fileName} | ${title} | ${fileResult.failureDetails[0]?.message}`
+            );
+          }
+        }
+      }
+    }
+  }
 }
+
+module.exports = MozillaFormatter;

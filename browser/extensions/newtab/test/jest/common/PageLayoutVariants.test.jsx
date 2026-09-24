@@ -11,6 +11,8 @@ import {
   isSideBySideAssigned,
   isSpacesActive,
   isSpacesAssigned,
+  isAutoMinimizeWidgetsAssigned,
+  resolveAutoMinimizeDelayMs,
   resolvePageLayoutVariant,
   resolvePopulatedSpaces,
   sideBySideBandClasses,
@@ -474,5 +476,54 @@ describe("isSpacesActive", () => {
 
   it("is false without Nova, whose stylesheet it depends on", () => {
     expect(isSpacesActive({ ...spaces, "nova.enabled": false })).toBe(false);
+  });
+});
+
+// @experiment(remove) { bug 2066527 }
+describe("auto-minimize widgets variant", () => {
+  const assigned = {
+    "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.AUTO_MINIMIZE_WIDGETS,
+  };
+
+  it("is assigned by pref and by trainhop", () => {
+    expect(isAutoMinimizeWidgetsAssigned(assigned)).toBe(true);
+    expect(
+      isAutoMinimizeWidgetsAssigned({
+        trainhopConfig: {
+          pageLayouts: {
+            variant: PAGE_LAYOUT_VARIANTS.AUTO_MINIMIZE_WIDGETS,
+          },
+        },
+      })
+    ).toBe(true);
+    expect(isAutoMinimizeWidgetsAssigned({})).toBe(false);
+  });
+
+  it("defaults the delay to 3s", () => {
+    expect(resolveAutoMinimizeDelayMs({})).toBe(3000);
+  });
+
+  it("prefers trainhop over the pref, and the pref over the default", () => {
+    expect(
+      resolveAutoMinimizeDelayMs({ "pageLayouts.autoMinimizeDelayMs": 750 })
+    ).toBe(750);
+    expect(
+      resolveAutoMinimizeDelayMs({
+        "pageLayouts.autoMinimizeDelayMs": 750,
+        trainhopConfig: { pageLayouts: { autoMinimizeDelayMs: 200 } },
+      })
+    ).toBe(200);
+  });
+
+  it("ignores non-numeric and negative values", () => {
+    expect(
+      resolveAutoMinimizeDelayMs({
+        "pageLayouts.autoMinimizeDelayMs": 750,
+        trainhopConfig: { pageLayouts: { autoMinimizeDelayMs: "200" } },
+      })
+    ).toBe(750);
+    expect(
+      resolveAutoMinimizeDelayMs({ "pageLayouts.autoMinimizeDelayMs": -1 })
+    ).toBe(3000);
   });
 });

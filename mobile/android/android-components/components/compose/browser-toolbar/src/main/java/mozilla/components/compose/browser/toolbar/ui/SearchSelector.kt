@@ -5,7 +5,6 @@
 package mozilla.components.compose.browser.toolbar.ui
 
 import android.graphics.drawable.Drawable
-import android.view.SoundEffectConstants
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.Image
@@ -91,7 +90,6 @@ fun SearchSelector(
                     this.testTag = SEARCH_SELECTOR
                 }
                 .clickable {
-                    view.playSoundEffect(SoundEffectConstants.CLICK)
                     showMenu = true
                     onClick?.let {
                         onInteraction(onClick)

@@ -597,6 +597,34 @@ class nsHtml5TreeOperation final {
                          mozilla::dom::FromParser aFromParser,
                          nsHtml5DocumentBuilder* aBuilder);
 
+  // The insertion variants below insert before aBefore, which has to be a
+  // child of aParent, or append when aBefore is null. Unlike Append() above
+  // they never run custom element reactions. Only sanitizing while parsing
+  // uses them, and that is limited to the parses that nsHtml5StringParser
+  // drives through the op-less builder, i.e. the fragment and document parses
+  // behind setHTML() and Document.parseHTML(), which run no custom element
+  // reactions in the first place.
+  static nsresult InsertBefore(nsIContent* aNode, nsIContent* aParent,
+                               nsIContent* aBefore,
+                               nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult InsertTextBefore(const char16_t* aBuffer, uint32_t aLength,
+                                   nsIContent* aParent, nsIContent* aBefore,
+                                   nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult InsertCommentBefore(nsIContent* aParent, char16_t* aBuffer,
+                                      int32_t aLength, nsIContent* aBefore,
+                                      nsHtml5DocumentBuilder* aBuilder);
+
+  // Undoes the form association that element creation gave aNode, for a node
+  // that ends up not being inserted after all.
+  static void AbortNodeInsertion(nsINode* aNode);
+
+  // "If it is not possible to insert element at the adjusted insertion
+  // location, abort these steps." Reports whether inserting aNode into
+  // aParent is possible, without touching either of them.
+  static bool CanInsert(nsIContent* aNode, nsIContent* aParent);
+
   static nsresult AppendToDocument(nsIContent* aNode,
                                    nsHtml5DocumentBuilder* aBuilder);
 
@@ -665,6 +693,11 @@ class nsHtml5TreeOperation final {
   static nsIContent* GetDocumentFragmentForTemplate(nsIContent* aNode);
   static void SetDocumentFragmentForTemplate(nsIContent* aNode,
                                              nsIContent* aDocumentFragment);
+
+  // The node that foster parented content is inserted into immediately before
+  // aTable, or nullptr when there is none, in which case the content is
+  // appended to the stack parent instead.
+  static nsIContent* GetFosterParentForInsertBefore(nsIContent* aTable);
 
   static nsIContent* GetFosterParent(nsIContent* aTable,
                                      nsIContent* aStackParent);

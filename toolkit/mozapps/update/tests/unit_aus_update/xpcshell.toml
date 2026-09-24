@@ -95,6 +95,7 @@ reason = "Feature is Firefox-specific and Windows-specific."
 skip-if = [
   "socketprocess_networking", # Bug 1759035
 ]
+requesttimeoutfactor = 3 # Staging runs the updater in a separate process.
 
 ["mixedUnsupported.js"]
 
@@ -114,6 +115,8 @@ skip-if = [
 skip-if = [
   "socketprocess_networking", # Bug 1759035
 ]
+
+["statusErrorCodeTelemetry.js"]
 
 ["test_blocked_metric_recorded_when_downloads_blocked_by_waf.js"]
 firefox-appdir = "browser"

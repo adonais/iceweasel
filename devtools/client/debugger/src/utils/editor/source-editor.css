@@ -4,12 +4,12 @@
 
 :root {
   --breakpoint-active-color: light-dark(
-    rgba(44, 187, 15, 0.2),
-    rgba(45, 210, 158, 0.5))
+    rgb(44 187 15 / 0.2),
+    rgb(45 210 158 / 0.5))
   ;
   --breakpoint-active-color-hover: light-dark(
-    rgba(44, 187, 15, 0.5),
-    rgba(0, 255, 175, 0.7)
+    rgb(44 187 15 / 0.5),
+    rgb(0 255 175 / 0.7)
   );
 
   /* use 30% opacity to allow showing text selection background */
@@ -47,7 +47,7 @@
 .CodeMirror .hit-count {
   display: inline-block;
   height: 12px;
-  border: solid rgba(0, 0, 0, 0.2);
+  border: solid rgb(0 0 0 / 0.2);
   border-width: 1px 1px 1px 0;
   border-radius: 0 3px 3px 0;
   padding: 0 3px;

@@ -654,9 +654,11 @@ function runTest() {
 
       animations[0].reverse();
 
-      // We should get no notifications.
+      // We should get a notification because we still play it per spec even for
+      // playbackRate == 0.
       assert_equals_records(observer.takeRecords(),
-        [], "records after calling reverse()");
+        [{ added: [], changed: animations, removed: []}],
+        "records after calling reverse()");
     }, "reverse_with_zero_playbackRate");
 
     // Test that reverse() on an Animation does *not* dispatch a changed

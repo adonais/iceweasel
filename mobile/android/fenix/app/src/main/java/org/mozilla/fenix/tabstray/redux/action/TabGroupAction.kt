@@ -67,6 +67,32 @@ sealed interface TabGroupAction : TabsTrayAction {
     data class DeleteConfirmed(val group: TabsTrayItem.TabGroup) : TabGroupAction, TabsStorageAction
 
     /**
+     * Fired when the user clicks ungroup on a Tab Group. Resolved into either [UngroupConfirmationRequested] or
+     * [UngroupConfirmed] depending on whether the confirmation dialog is being skipped.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be ungrouped.
+     */
+    data class UngroupRequested(val group: TabsTrayItem.TabGroup) : TabGroupAction, TabManagerUiStateStorageAction
+
+    /**
+     * Fired when the ungroup confirmation dialog should be shown for a Tab Group.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be ungrouped.
+     */
+    data class UngroupConfirmationRequested(val group: TabsTrayItem.TabGroup) : TabGroupAction
+
+    /**
+     * Fired when the user confirms they want to ungroup a Tab Group.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be ungrouped.
+     * @property dontAskAgain Whether the user asked to suppress this confirmation in the future.
+     */
+    data class UngroupConfirmed(
+        val group: TabsTrayItem.TabGroup,
+        val dontAskAgain: Boolean,
+    ) : TabGroupAction, TabManagerUiStateStorageAction, TabsStorageAction
+
+    /**
      * Invoked when the user changes the tab group theme.
      *
      * @property theme The theme of the tab group the user has selected.

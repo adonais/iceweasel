@@ -15,7 +15,10 @@ const DEFAULT_PROPS = {
   wallpapersEnabled: false,
   wallpapersUserEnabled: false,
   activeWallpaper: null,
-  exitEventFired: false,
+  showWallpapersPanel: false,
+  wallpapersPanelCategory: null,
+  openWallpapersPanel: sinon.stub(),
+  closeWallpapersPanel: sinon.stub(),
   enabledSections: {
     topSitesEnabled: true,
     pocketEnabled: true,
@@ -497,7 +500,6 @@ describe("ContentSection", () => {
       wallpapersEnabled: true,
       toggleWidgetsManagementPanel: sinon.stub(),
       showWidgetsManagementPanel: false,
-      onSubpanelToggle: sinon.stub(),
     };
 
     it("renders the wallpaper toggle", () => {

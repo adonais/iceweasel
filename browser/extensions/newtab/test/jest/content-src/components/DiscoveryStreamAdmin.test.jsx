@@ -665,14 +665,16 @@ describe("<ToggleStoryButton>", () => {
 });
 
 describe("<DiscoveryStreamAdminUI> Layouts", () => {
+  // Rendered order is alphabetical by displayed label, not declaration order.
   const VARIANTS = [
+    "auto-minimize-widgets",
     "nova-full-width",
     "side-by-side-content-lead",
-    "side-by-side-widgets-lead",
     "side-by-side-content-lead-five",
+    "side-by-side-widgets-lead",
     "side-by-side-widgets-lead-five",
-    "spaces-buttons-top",
     "spaces-buttons-bottom",
+    "spaces-buttons-top",
   ];
   // Everything isSideBySideActive gates on, so the status line stays quiet.
   const ACTIVE_PREFS = {

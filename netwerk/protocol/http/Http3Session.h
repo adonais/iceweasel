@@ -202,6 +202,14 @@ class Http3Session final : public Http3SessionBase,
                 uint32_t aProviderFlags, nsIInterfaceRequestor* callbacks,
                 nsIUDPSocket* socket, bool aIsTunnel = false);
 
+  // Re-key this session's connection info after
+  // nsHttpConnectionMgr::HandOffHttp3OnlyConnection has moved the owning
+  // connection out of an Http3Policy::Only entry. The session keeps its own
+  // clone, and connection-manager lookups made from here later on -- e.g.
+  // AllowToRetryDifferentIPFamilyForHttp3 from Shutdown, or GetServerCertHashes
+  // -- resolve an entry from its hash key, so it has to follow the connection.
+  void RekeyAfterHttp3OnlyHandOff(nsHttpConnectionInfo* aConnInfo);
+
   bool IsConnected() const { return mState == CONNECTED; }
   bool CanSendData() const {
     return (mState == CONNECTED) || (mState == ZERORTT);

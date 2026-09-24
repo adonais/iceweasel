@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 const oob = /index out of bounds/;
 const unaligned = /unaligned memory access/;
 const RuntimeError = WebAssembly.RuntimeError;

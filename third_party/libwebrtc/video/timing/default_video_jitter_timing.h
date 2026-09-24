@@ -16,11 +16,9 @@
 #include <span>
 
 #include "api/environment/environment.h"
-#include "api/field_trials_view.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/timing/video_jitter_timing_interface.h"
-#include "system_wrappers/include/clock.h"
 #include "video/timing/inter_frame_delay_variation_calculator.h"
 #include "video/timing/jitter_estimator.h"
 #include "video/timing/timestamp_extrapolator.h"
@@ -30,8 +28,6 @@ namespace webrtc {
 class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
  public:
   explicit DefaultVideoJitterTiming(const Environment& env);
-  // TODO(b/493549134): Remove once no longer used.
-  DefaultVideoJitterTiming(Clock* clock, const FieldTrialsView& field_trials);
   ~DefaultVideoJitterTiming() override;
 
   // Resets members to its initial state.
@@ -58,7 +54,7 @@ class DefaultVideoJitterTiming : public VideoJitterTimingInterface {
   void OnNetworkUpdate(const NetworkInfo& info) override;
 
  private:
-  Clock* const clock_;
+  const Environment env_;
   TimestampExtrapolator ts_extrapolator_;
   JitterEstimator jitter_estimator_;
   InterFrameDelayVariationCalculator ifdv_calculator_;

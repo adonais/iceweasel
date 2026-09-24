@@ -1521,12 +1521,12 @@ void TextureClient::GetSurfaceDescriptorRemoteDecoder(
     SurfaceDescriptorRemoteDecoder* const aOutDesc) {
   const auto handle = GetSerial();
 
-  RemoteDecoderVideoSubDescriptor subDesc = null_t();
   MOZ_RELEASE_ASSERT(mData);
-  mData->GetSubDescriptor(&subDesc);
+
+  auto videoType = mData->GetRemoteDecoderVideoType();
 
   *aOutDesc = SurfaceDescriptorRemoteDecoder(
-      handle, std::move(subDesc), Nothing(),
+      handle, videoType, Nothing(),
       SurfaceDescriptorRemoteDecoderId::GetNext());
 }
 

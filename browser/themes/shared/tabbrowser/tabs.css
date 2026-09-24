@@ -7,6 +7,11 @@
   --tab-group-suggestions-loading-animation-color-1: color-mix(in srgb, currentColor 5%, transparent);
   --tab-group-suggestions-loading-animation-color-2: color-mix(in srgb, currentColor 35%, transparent);
   --tab-min-height: 32px;
+  /* Size and padding shared by the close and audio buttons in .tab-content.
+     The padding keeps their 12px icons in a 12px content box. Pinned and
+     collapsed tabs show .tab-icon-overlay instead, sized separately. */
+  --tab-content-button-size: 20px;
+  --tab-content-button-padding: 4px;
   &[uidensity="compact"] {
     --tab-min-height: 28px;
     --tab-inline-padding: 6px;
@@ -27,6 +32,8 @@
     --tab-min-height: 36px;
     --tab-group-label-size: 24px;
     --tab-box-shadow-selected: var(--box-shadow-level-1);
+    --tab-content-button-size: 24px;
+    --tab-content-button-padding: var(--tab-close-button-padding);
     &[uidensity="compact"] {
       --tab-min-height: 29px;
     }
@@ -52,7 +59,7 @@
   --tab-collapsed-width: calc(var(--tab-collapsed-background-width) + 2 * var(--tab-inner-inline-margin));
   --tab-collapsed-split-pill-offset: 0px;
   --tab-pinned-min-width-expanded: calc(var(--tab-pinned-expanded-background-width) + 2 * var(--tab-pinned-margin-inline-expanded));
-  --tab-note-icon-end-margin: var(--dimension-4);
+  --tab-note-icon-end-margin: 4px;
   --tab-selected-color-scheme: var(--toolbar-color-scheme);
   &[lwt-tab-selected="light"] {
     --tab-selected-color-scheme: light;
@@ -60,15 +67,8 @@
   &[lwt-tab-selected="dark"] {
     --tab-selected-color-scheme: dark;
   }
-  @media (forced-colors) {
-    &:not([lwtheme]) {
-      --tab-outline-color: ButtonText;
-      --tab-hover-outline-color: SelectedItem;
-      --tab-selected-outline-color: SelectedItem;
-    }
-  }
   &[lwtheme] {
-    --tab-selected-outline-color: var(--lwt-tab-line-color, currentColor);
+    --tab-border-color-selected: var(--lwt-tab-line-color, currentColor);
   }
   --tab-dragover-transition: transform 200ms var(--animation-easing-function);
   --tab-dragover-outline-color: var(--focus-outline-color);
@@ -156,6 +156,21 @@
       --tab-inner-inline-margin: 7px;
     }
   }
+
+  /* Hold the collapsed strip at 50px in normal and compact density, so the
+    * scrollbar has room next to the tab backgrounds instead of being drawn
+    * over them. Touch density keeps its natural, wider strip. */
+  @media -moz-pref("browser.nova.enabled") {
+    /* 32px tab background + 2 * 9px. */
+    &:not([uidensity="touch"]) {
+      --tab-inner-inline-margin: 9px;
+    }
+
+    /* 28px tab background + 2 * 11px. */
+    &[uidensity="compact"] {
+      --tab-inner-inline-margin: 11px;
+    }
+  }
 }
 
 #tabbrowser-tabs {
@@ -206,7 +221,7 @@
     @media -moz-pref("browser.nova.enabled") {
       /* The hover highlight fills a full tab-height row and the tab group
        * label is inset within it. */
-      --tab-group-label-hover-inset: var(--dimension-2);
+      --tab-group-label-hover-inset: 2px;
       --tab-group-label-container-size: var(--tab-min-height);
       --tab-group-label-size: calc(var(--tab-group-label-container-size) - 2 * var(--tab-group-label-hover-inset));
     }
@@ -333,6 +348,7 @@ tab-split-view-wrapper[dragtarget] {
 }
 
 .tab-content {
+  color: var(--tab-text-color);
   position: relative;
   padding: 0 var(--tab-inline-padding);
 
@@ -340,12 +356,16 @@ tab-split-view-wrapper[dragtarget] {
     min-width: 0;
   }
 
+  .tabbrowser-tab:hover > .tab-stack > &:not([selected], [multiselected]) {
+    color: var(--tab-text-color-hover);
+  }
+
   :root:not([uidensity="compact"], [sidebar-expand-on-hover]) &[pinned] {
     padding: 0 calc((var(--tab-min-height) - var(--icon-size)) / 2);
   }
 
   &:is([selected], [multiselected]) {
-    color: var(--tab-selected-textcolor);
+    color: var(--tab-text-color-selected);
     color-scheme: var(--tab-selected-color-scheme);
   }
 }
@@ -684,16 +704,19 @@ tab-split-view-wrapper[dragtarget] {
       --audio-overlay-extra-background: transparent;
       background-color: var(--lwt-accent-color);
       -moz-context-properties: fill;
-      fill: var(--tab-selected-textcolor);
+      fill: currentColor;
       color-scheme: var(--tab-selected-color-scheme);
       border-radius: var(--border-radius-circle);
-
+      border: var(--border-width) solid var(--button-border-color);
       background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color));
+      color: var(--toolbox-text-color);
       &:-moz-window-inactive {
         background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color-inactive));
+        color: var(--toolbox-text-color-inactive);
       }
       &[selected] {
         background-image: image(var(--audio-overlay-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
+        color: var(--tab-text-color-selected);
       }
       &[selected]:-moz-window-inactive {
         background-image:
@@ -702,10 +725,31 @@ tab-split-view-wrapper[dragtarget] {
 
       &:hover {
         --audio-overlay-extra-background: var(--button-background-color-ghost-hover);
+
+        /* In forced colors mode, --audio-overlay-extra-background is opaque, so
+         * foreground needs to match. Same for the other media queries below */
+        /* stylelint-disable-next-line max-nesting-depth */
+        @media (forced-colors) {
+          color: var(--button-text-color-ghost-hover);
+        }
+
+        /* stylelint-disable-next-line max-nesting-depth */
+        @media -moz-pref("browser.nova.enabled") {
+          border-color: var(--button-border-color-hover);
+        }
       }
 
       &:hover:active {
         --audio-overlay-extra-background: var(--button-background-color-ghost-active);
+        /* stylelint-disable-next-line max-nesting-depth */
+        @media (forced-colors) {
+          color: var(--button-text-color-ghost-active);
+        }
+
+        /* stylelint-disable-next-line max-nesting-depth */
+        @media -moz-pref("browser.nova.enabled") {
+          border-color: var(--button-border-color-active);
+        }
       }
     }
   }
@@ -752,10 +796,12 @@ tab-split-view-wrapper[dragtarget] {
         --audio-overlay-extra-background: transparent;
         background-color: var(--lwt-accent-color);
         background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color));
+        color: var(--tab-text-color-selected);
+        fill: currentColor;
         -moz-context-properties: fill;
-        fill: var(--tab-selected-textcolor);
         color-scheme: var(--tab-selected-color-scheme);
         border-radius: var(--border-radius-circle);
+        border: var(--border-width) solid var(--button-background-color-ghost);
 
         &:-moz-window-inactive {
           background-image: image(var(--audio-overlay-extra-background)), image(var(--toolbox-background-color-inactive));
@@ -772,10 +818,31 @@ tab-split-view-wrapper[dragtarget] {
 
         &:hover {
           --audio-overlay-extra-background: var(--button-background-color-ghost-hover);
+          /* In forced colors mode, --audio-overlay-extra-background is opaque, so
+           * foreground needs to match it. Same for the other media queries below */
+          /* stylelint-disable-next-line max-nesting-depth */
+          @media (forced-colors) {
+            color: var(--button-background-color-ghost);
+          }
+
+          /* stylelint-disable-next-line max-nesting-depth */
+          @media -moz-pref("browser.nova.enabled") {
+            border-color: var(--button-border-color-hover);
+          }
         }
 
         &:hover:active {
           --audio-overlay-extra-background: var(--button-background-color-ghost-active);
+
+          /* stylelint-disable-next-line max-nesting-depth */
+          @media (forced-colors) {
+            color: var(--button-background-color-ghost-active);
+          }
+
+          /* stylelint-disable-next-line max-nesting-depth */
+          @media -moz-pref("browser.nova.enabled") {
+            border-color: var(--button-border-color-active);
+          }
         }
       }
     }
@@ -812,7 +879,7 @@ tab-split-view-wrapper[dragtarget] {
   /* FIXME: What's the point of the image(transparent)? */
   background-image: image(transparent), image(var(--toolbox-background-color));
   -moz-context-properties: fill;
-  fill: var(--tab-selected-textcolor);
+  fill: var(--tab-text-color-selected);
   color-scheme: var(--tab-selected-color-scheme);
   border-radius: var(--border-radius-circle);
 
@@ -860,9 +927,13 @@ tab-split-view-wrapper[dragtarget] {
   display: none;
   margin-inline-end: var(--tab-icon-end-margin);
   --icon-size: var(--icon-size-xsmall);
-  --button-size-icon-small: 24px;
-  --button-min-height-small: 24px;
-  --button-border-radius: var(--border-radius-small);
+  --button-size-icon-small: var(--tab-content-button-size);
+  --button-min-height-small: var(--tab-content-button-size);
+  --button-border-radius: var(--tab-border-radius);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    --button-border-radius: var(--border-radius-small);
+  }
 
   @media not -moz-pref("sidebar.visibility", "expand-on-hover") {
     /* We need these rules to apply at all times when the sidebar.visibility
@@ -921,15 +992,30 @@ tab-split-view-wrapper[dragtarget] {
 .tab-close-button {
   -moz-context-properties: fill, fill-opacity;
   margin-inline-end: calc(var(--tab-inline-padding) / -2);
-  width: 24px;
-  height: 24px;
+  width: var(--tab-content-button-size);
+  height: var(--tab-content-button-size);
   box-sizing: border-box;
-  padding: var(--tab-close-button-padding);
+  padding: var(--tab-content-button-padding);
   list-style-image: url(resource://content-accessible/close-12.svg);
+  background-color: var(--tab-close-button-background-color);
+  color: var(--tab-close-button-text-color);
+  outline-color: var(--tab-close-button-border-color);
 
   /* Adjust border radius by the distance to the tab. This is a hardcoded approximation
      because the exact distance is intentionally not always equal across all sides. */
   border-radius: calc(var(--tab-border-radius) - 3px);
+
+  &:hover {
+    background-color: var(--tab-close-button-background-color-hover);
+    color: var(--tab-close-button-text-color-hover);
+    outline-color: var(--tab-close-button-border-color-hover);
+  }
+
+  &:hover:active {
+    background-color: var(--tab-close-button-background-color-active);
+    color: var(--tab-close-button-text-color-active);
+    outline-color: var(--tab-close-button-border-color-active);
+  }
 
   #tabbrowser-tabs[orient="horizontal"] &[pinned],
   :root:not([sidebar-expand-on-hover]) #tabbrowser-tabs[orient="vertical"] &[pinned],
@@ -943,9 +1029,11 @@ tab-split-view-wrapper[dragtarget] {
  * the button has a visible outline shown */
 @media not (forced-colors) {
   #tabbrowser-tabs[orient="horizontal"] {
-    .tabbrowser-tab:not([labelendaligned], [tab-note], :hover) > .tab-stack > .tab-content > .tab-close-button {
-      padding-inline-start: 0;
-      width: 18px;
+    @media not -moz-pref("browser.nova.enabled") {
+      .tabbrowser-tab:not([labelendaligned], [tab-note], :hover) > .tab-stack > .tab-content > .tab-close-button {
+        padding-inline-start: 0;
+        width: 18px;
+      }
     }
 
     .tabbrowser-tab[visuallyselected]:not([labelendaligned]):hover,
@@ -956,20 +1044,24 @@ tab-split-view-wrapper[dragtarget] {
 }
 
 .tab-background {
+  /* The label takes its color from the sibling .tab-content. */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
+  background-color: var(--tab-background-color);
   border-radius: var(--tab-border-radius);
   margin-block: var(--tab-margin-block);
   min-height: var(--tab-min-height);
-  outline: var(--tab-outline);
+  outline: var(--tab-border);
+  outline-color: var(--tab-border-color);
   outline-offset: var(--tab-outline-offset);
 
   .tabbrowser-tab:hover > .tab-stack > &:not([selected], [multiselected]) {
     background-color: var(--tab-background-color-hover);
-    outline-color: var(--tab-hover-outline-color);
+    outline-color: var(--tab-border-color-hover);
   }
 
   &:is([selected], [multiselected]) {
     background-color: var(--tab-background-color-selected);
-    outline-color: var(--tab-selected-outline-color);
+    outline-color: var(--tab-border-color-selected);
     box-shadow: var(--tab-box-shadow-selected);
   }
 
@@ -1308,6 +1400,10 @@ tab-group > tab-split-view-wrapper {
 }
 
 #tabbrowser-tabs[orient="horizontal"] tab-split-view-wrapper {
+  /* Height value that allows us to match the height of a tab inside vs outside
+     a split view. */
+  --split-view-tab-height: calc(var(--tab-min-height) - 2 * var(--split-view-padding-block));
+
   margin-block: var(--tab-margin-block);
   margin-inline: 0;
   align-items: flex-end;
@@ -1353,6 +1449,16 @@ tab-group > tab-split-view-wrapper {
   .tabbrowser-tab {
     padding-inline: var(--split-view-tab-padding-inline);
 
+    .tab-background {
+      min-height: var(--split-view-tab-height);
+    }
+
+    /* With a relatively larger font, the label's line box can be taller than
+       --split-view-tab-height in compact mode. */
+    .tab-label-container {
+      height: var(--split-view-tab-height);
+    }
+
     tab-group & {
       overflow: visible;
     }
@@ -1396,6 +1502,8 @@ tab-group > tab-split-view-wrapper {
   }
 
   &[hasactivetab] {
+    /* The tabs inside the wrapper take their own colors. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
     background-color: var(--tab-background-color-hover);
 
     @media (forced-colors) {
@@ -1434,7 +1542,6 @@ tab-group > tab-split-view-wrapper {
 
     :root[uidensity="compact"] & {
       --tab-collapsed-background-width: 24px;
-      --tab-min-height: 24px;
     }
 
     .tab-background {
@@ -1530,12 +1637,12 @@ tab-group > tab-split-view-wrapper {
   }
 
   &:not([hasactivetab]) {
-    outline: var(--tab-outline);
+    outline: var(--tab-border);
     outline-offset: var(--tab-outline-offset);
 
     &:hover {
       background-color: var(--tab-background-color-hover);
-      outline-color: var(--tab-hover-outline-color);
+      outline-color: var(--tab-border-color-hover);
     }
 
     .tabbrowser-tab {
@@ -2531,6 +2638,15 @@ tab-group {
     /* A wheel notch, an arrow key and a scrollbar arrow button move rows. */
     -moz-line-scroll-amount: var(--tab-height-with-margin-padding);
   }
+
+  > #tabbrowser-arrowscrollbox-periphery {
+    /* Since tabs-newtab-button is inside tabbrowser-arrowscrollbox, hiding it when the tab strip overflows
+     * collapses the periphery to 0px height. That can put the tab strip back under the overflow threshold,
+     * thus showing the button again and oscillating between tabs-newtab-button and vertical-tabs-newtab-button.
+     * Set a small enough minimum height to stop the periphery from collapsing while keeping the content off the
+     * overflow threshold. */
+    min-height: 2px;
+  }
 }
 
 #tabbrowser-arrowscrollbox[orient="vertical"] > #tabbrowser-arrowscrollbox-periphery > #tabs-newtab-button,
@@ -2558,7 +2674,7 @@ tab-group {
 
   &:hover {
     background-color: var(--tab-background-color-hover);
-    outline-color: var(--tab-hover-outline-color);
+    outline-color: var(--tab-border-color-hover);
   }
 
   &:focus-visible {
@@ -2569,6 +2685,7 @@ tab-group {
   > .toolbarbutton-text {
     text-align: start;
     padding-inline-start: var(--tab-icon-end-margin);
+    color: var(--toolbarbutton-icon-fill);
   }
 }
 
@@ -2786,6 +2903,10 @@ tab-group {
   }
 
   &:not([expanded]) {
+    --tab-close-button-border-color: var(--button-border-color);
+    --tab-close-button-border-color-hover: var(--button-border-color-hover);
+    --tab-close-button-border-color-active: var(--button-border-color-active);
+
     .tabbrowser-tab[pinned] {
       width: var(--tab-collapsed-width);
     }
@@ -2804,7 +2925,6 @@ tab-group {
       height: 15px;
       padding: 3.5px;
       margin: 0;
-      fill: var(--tab-selected-textcolor);
       /* We want to make this look like the selected tab, but fully opaque. For that,
        * we build a stack of `--lwt-accent-color` (guaranteed opaque), then
        * `--toolbox-background-color`, then `--tab-background-color-selected`.
@@ -2816,11 +2936,12 @@ tab-group {
        * We also apply one extra color on top (--close-button-extra-background)
        * for hover / active feedback.
        */
-      --close-button-extra-background: transparent;
+      --close-button-extra-background: var(--tab-close-button-background-color);
       background-color: var(--lwt-accent-color);
       background-image: image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color));
       color-scheme: var(--tab-selected-color-scheme);
-      outline-color: var(--tab-selected-outline-color);
+      color: var(--tab-text-color-selected);
+      outline-color: var(--tab-close-button-border-color);
       box-shadow: var(--tab-box-shadow-selected);
       border-radius: var(--border-radius-circle);
       display: block;
@@ -2829,17 +2950,39 @@ tab-group {
       top: -3px;
       inset-inline-start: 2px;
 
+      /* In forced colors mode, --close-button-extra-background is opaque, so
+       * foreground needs to match it. Same for the other media queries below */
+      @media (forced-colors) {
+        color: var(--tab-close-button-text-color);
+      }
+
+      /* Nova: 16px button with a 12px icon box, matching .tab-icon-overlay. */
+      @media -moz-pref("browser.nova.enabled") {
+        width: var(--icon-size);
+        height: var(--icon-size);
+        padding: 2px;
+        box-shadow: var(--box-shadow-level-1);
+      }
+
       &:-moz-window-inactive {
         background-image:
           image(var(--close-button-extra-background)), image(var(--tab-background-color-selected)), image(var(--toolbox-background-color-inactive));
       }
 
       &:hover {
-        --close-button-extra-background: var(--button-background-color-ghost-hover);
+        --close-button-extra-background: var(--tab-close-button-background-color-hover);
+        outline-color: var(--tab-close-button-border-color-hover);
+        @media (forced-colors) {
+          color: var(--tab-close-button-text-color-hover);
+        }
       }
 
       &:hover:active {
-        --close-button-extra-background: var(--button-background-color-ghost-active);
+        --close-button-extra-background: var(--tab-close-button-background-color-active);
+        outline-color: var(--tab-close-button-border-color-active);
+        @media (forced-colors) {
+          color: var(--tab-close-button-text-color-active);
+        }
       }
 
       .tabbrowser-tab:hover & {
@@ -2871,12 +3014,25 @@ tab-group {
     .tabbrowser-tab {
       max-width: none;
 
+      .tab-content {
+        /* This 'contain' styling lets us have efficient reflows inside of the
+           tab, e.g. to hide/show the tab close icon. The drawback of doing
+           this is that this element won't automagically grow the tab to fit
+           the height of our contents (the tab label).  So, to preserve that
+           behavior, we use 'contain-intrinsic-block-size' to mock the label's
+           exact content-size (a single line of text with our hardcoded
+           tab-label line-height). */
+        contain: size layout;
+        line-height: var(--tab-label-line-height);
+        contain-intrinsic-block-size: 1lh;
+      }
+
       .tab-close-button {
         margin-inline-end: calc(var(--tab-close-button-padding) / -2);
       }
 
       &:not(:hover) .tab-close-button:not([selected]) {
-        display: none;
+        visibility: collapse;
       }
     }
   }
@@ -2904,8 +3060,8 @@ tab-group {
 #TabsToolbar #firefox-view-button[open] > .toolbarbutton-icon {
   background-color: var(--tab-background-color-selected);
   box-shadow: var(--tab-box-shadow-selected);
-  outline-color: var(--tab-selected-outline-color);
-  color: var(--tab-selected-textcolor);
+  outline-color: var(--tab-border-color-selected);
+  color: var(--tab-text-color-selected);
   color-scheme: var(--tab-selected-color-scheme);
 
   /* The below lines are required for dark, light, and
@@ -2972,10 +3128,12 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 /* All tabs button and menupopup */
 
 #alltabs-button {
-  list-style-image: url("chrome://browser/skin/tabs.svg");
+  list-style-image: url("chrome://browser/skin/search-tabs.svg");
 
-  #TabsToolbar & {
-    list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+  @media not (-moz-platform: linux) {
+    #TabsToolbar & {
+      list-style-image: url("chrome://global/skin/icons/arrow-down.svg");
+    }
   }
 
   #tabbrowser-tabs[hiddensoundplaying] ~ & > .toolbarbutton-badge-stack > .toolbarbutton-badge {
@@ -3033,7 +3191,7 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 
   &.grouped {
     /* Indent further by the size of a favicon and the favicon's padding-inline-start. */
-    margin-inline-start: calc(var(--panel-menuitem-margin-inline) + var(--icon-size) + var(--dimension-8));
+    margin-inline-start: calc(var(--panel-menuitem-margin-inline) + var(--icon-size) + var(--panel-menuitem-padding-inline));
   }
 
   &[selected] {
@@ -3169,8 +3327,8 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   /* Vertical expanded: reserve space so the note icon does not jump when the close shows.*/
   #tabbrowser-tabs[orient="vertical"][expanded] & {
     .tabbrowser-tab:not(:hover) & {
-      /* .tab-close-button is 24px wide with border-box sizing */
-      margin-inline-end: calc(var(--tab-note-icon-end-margin) + 24px - var(--tab-close-button-padding) / 2);
+      /* .tab-close-button is --tab-content-button-size wide with border-box sizing */
+      margin-inline-end: calc(var(--tab-note-icon-end-margin) + var(--tab-content-button-size) - var(--tab-content-button-padding) / 2);
     }
 
     .tabbrowser-tab:is([visuallyselected], :hover) & {

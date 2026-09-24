@@ -26,8 +26,8 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=410052
       var cellsArray =
       [
         [ true, true,  false, true],
-        [ true, false, true,  true],
-        [ true, false, false, true],
+        [ true, undefined, true,  true],
+        [ true, undefined, undefined, true],
         [ true, true,  true,  true],
         [ true, true,  true,  true],
       ];
@@ -39,7 +39,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=410052
       cellsArray =
       [
         [ false, false],
-        [ false, false],
+        [ undefined, undefined],
       ];
 
       testTableSelection("grid2", cellsArray);
@@ -83,7 +83,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=410052
     <div role="row">
       <span role="gridcell" aria-selected="true">cell1</span>
       <span role="gridcell" aria-selected="true">cell2</span>
-      <span role="gridcell">cell3</span>
+      <span role="gridcell" aria-selected="false">cell3</span>
       <span role="gridcell" aria-selected="true">cell4</span>
     </div>
     <div role="row">

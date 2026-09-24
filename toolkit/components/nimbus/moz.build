@@ -26,7 +26,10 @@ PYTHON_UNITTEST_MANIFESTS += [
     "test/python/python.toml",
 ]
 
-XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
+XPCSHELL_TESTS_MANIFESTS += [
+    "test/unit/shutdown/xpcshell.toml",
+    "test/unit/xpcshell.toml",
+]
 
 SPHINX_TREES["docs"] = "docs"
 

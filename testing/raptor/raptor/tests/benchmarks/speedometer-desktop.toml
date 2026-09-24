@@ -37,7 +37,10 @@ benchmark_port = 62764
 support_class = "speedometer3.py"
 test_script = "speedometer3.js"
 test_url = "http://<host>:<port>/index.html?raptor&tags=experimental"
+fetch_path = "Speedometer"
 repository = "https://github.com/mozilla/Speedometer"
+# Keep this revision in sync with the fetch used in benchmarks.yml by updating:
+# taskcluster/kinds/fetch/benchmarks.yml
 repository_revision = "89435e5dfb97cf793516449370f14b2176b4aed7"
 # Media-Streaming starts muted playback from a synthetic click without user
 # activation. Raptor's default Firefox autoplay policy rejects play(), which

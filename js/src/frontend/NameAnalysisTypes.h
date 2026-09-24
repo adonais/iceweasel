@@ -343,8 +343,6 @@ class NameLocation {
 
   bool operator==(const NameLocation& other) const = default;
 
-  bool operator!=(const NameLocation& other) const = default;
-
   Kind kind() const { return kind_; }
 
   uint16_t argumentSlot() const {

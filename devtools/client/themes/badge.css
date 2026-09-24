@@ -4,7 +4,7 @@
 
 :root {
   --badge-active-background-color: var(--blue-60);
-  --badge-active-border-color: light-dark(rgba(255, 255, 255, 0.7), #fff6);
+  --badge-active-border-color: light-dark(rgb(255 255 255 / 0.7), #fff6);
   --badge-background-color: light-dark(white, var(--grey-80));
   --badge-border-color: light-dark(#cacad1, var(--grey-50));
   --badge-color: light-dark(var(--grey-60), var(--grey-40));

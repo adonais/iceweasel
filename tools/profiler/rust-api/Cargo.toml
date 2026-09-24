@@ -15,5 +15,5 @@ smallvec = { version = "1.0", features = ["write"] }
 
 [build-dependencies]
 lazy_static = "1"
-bindgen = {version = "0.69", default-features = false}
+bindgen = {version = "0.73", default-features = false}
 mozbuild = "0.1"

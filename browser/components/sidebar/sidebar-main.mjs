@@ -682,16 +682,17 @@ export default class SidebarMain extends MozLitElement {
     // observing. In horizontal tabs mode we also clear the overflow panel
     // copies that were populated while in vertical tabs.
     this.shouldShowOverflowButton = isExpandOnHover ? !this.expanded : false;
-    const overflowList = isExpandOnHover
-      ? null
-      : document.getElementById("tools-overflow-list");
     for (const buttonEl of this.allButtons) {
       if (buttonEl.style.visibility === "hidden") {
         buttonEl.style.visibility = "visible";
       }
-      overflowList
-        ?.querySelector(`[view='${buttonEl.getAttribute("view")}']`)
-        ?.remove();
+    }
+    if (!isExpandOnHover) {
+      // The copies only mirror the buttons the observer hid, and nothing is
+      // hidden here, so all of them are stale. Matching them against the
+      // remaining buttons would keep the copy of a tool that was removed while
+      // overflowing.
+      document.getElementById("tools-overflow-list").replaceChildren();
     }
     this._toolsIntersectionObserver.disconnect();
     this._toolsResizeObserver.disconnect();

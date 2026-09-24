@@ -1,30 +1,23 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Jan 2025 15:39:00 -0600
-Subject: Bug 1935474 - disable ABSL_HAVE_THREAD_SANITIZER due to missing
- symbols (like __tsan_mutex_destroy). r?ng!
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sat, 29 Aug 2026 11:23:36 -0400
+Subject: Bug 2067508 - define O_NONBLOCK to 0 on platforms lacking it (mingw).
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a248ecb7e0fa939cc145e3ef62f57783411ec367
+Cherry-pick of google/cctz@361e53992abb; abseil has not imported it yet.
 ---
- abseil-cpp/absl/base/config.h | 2 ++
- 1 file changed, 2 insertions(+)
+ abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/abseil-cpp/absl/base/config.h b/abseil-cpp/absl/base/config.h
-index 4a35ff12dc7..b416381075a 100644
---- a/abseil-cpp/absl/base/config.h
-+++ b/abseil-cpp/absl/base/config.h
-@@ -637,6 +637,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- // ABSL_HAVE_THREAD_SANITIZER
- //
- // ThreadSanitizer (TSan) is a fast data race detector.
-+#if 0 // mozilla - builds fail missing tsan symbols like __tsan_mutex_destroy
- #ifdef ABSL_HAVE_THREAD_SANITIZER
- #error "ABSL_HAVE_THREAD_SANITIZER cannot be directly set."
- #elif defined(__SANITIZE_THREAD__)
-@@ -644,6 +645,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
- #elif ABSL_HAVE_FEATURE(thread_sanitizer)
- #define ABSL_HAVE_THREAD_SANITIZER 1
- #endif
+diff --git a/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc b/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc
+index 9abbde72d62..9d385b2772c 100644
+--- a/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc
++++ b/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc
+@@ -414,6 +414,9 @@ inline FilePtr FOpen(const char* path) {
+   // absolute path) would block indefinitely or read unbounded data.
+ #ifndef O_CLOEXEC
+ #define O_CLOEXEC 0
 +#endif
- 
- // ABSL_HAVE_ADDRESS_SANITIZER
- //
++#ifndef O_NONBLOCK
++#define O_NONBLOCK 0
+ #endif
+   const int fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+   if (fd >= 0) {

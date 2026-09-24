@@ -33,7 +33,7 @@ class nsFileChannel : public nsBaseChannel,
   nsresult Init();
 
   static nsresult DoNotifyFileChannelOpened(
-      const nsACString& aRemoteType,
+      const mozilla::dom::RemoteType& aRemoteType,
       const mozilla::net::FileChannelInfo& aFileChannelInfo);
 
  protected:

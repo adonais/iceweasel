@@ -2,29 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-using mozilla::layers::RGBDescriptor from "mozilla/layers/LayersSurfaces.h";
-using mozilla::layers::RemoteTextureId from "mozilla/layers/LayersTypes.h";
-using mozilla::layers::RemoteTextureOwnerId from "mozilla/layers/LayersTypes.h";
-using mozilla::layers::RemoteTextureTxnType from "mozilla/layers/LayersTypes.h";
-using mozilla::layers::RemoteTextureTxnId from "mozilla/layers/LayersTypes.h";
 using mozilla::webgpu::RawId from "mozilla/webgpu/WebGPUTypes.h";
-using mozilla::dom::GPUDeviceLostReason from "mozilla/dom/WebGPUBinding.h";
-using mozilla::dom::GPUErrorFilter from "mozilla/dom/WebGPUBinding.h";
-using mozilla::dom::GPURequestAdapterOptions from "mozilla/dom/WebGPUBinding.h";
-using mozilla::dom::GPUCommandBufferDescriptor from "mozilla/dom/WebGPUBinding.h";
-using mozilla::dom::GPUBufferDescriptor from "mozilla/dom/WebGPUBinding.h";
 using mozilla::webgpu::ExternalTextureSourceDescriptor from "mozilla/webgpu/WebGPUTypes.h";
-using mozilla::webgpu::PopErrorScopeResult from "mozilla/webgpu/WebGPUTypes.h";
-using mozilla::webgpu::WebGPUCompilationMessage from "mozilla/webgpu/WebGPUTypes.h";
 [MoveOnly] using mozilla::ipc::MutableSharedMemoryHandle from "mozilla/ipc/SharedMemoryHandle.h";
-using struct mozilla::void_t from "mozilla/ipc/IPCCore.h";
 
 include "mozilla/ipc/ByteBufUtils.h";
 include "mozilla/layers/LayersMessageUtils.h";
-include "mozilla/webgpu/WebGPUSerialize.h";
 include "mozilla/layers/WebRenderMessageUtils.h";
 include protocol PCanvasManager;
-include PWebGPUTypes;
 
 namespace mozilla {
 namespace webgpu {
@@ -54,8 +39,6 @@ parent:
 child:
   async ServerMessage(ByteBuf buf);
 
-  async UncapturedError(RawId aDeviceId, GPUErrorFilter type, nsCString message);
-  async DeviceLost(RawId aDeviceId, GPUDeviceLostReason reason, nsCString message);
   async __delete__();
 };
 

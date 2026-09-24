@@ -11,7 +11,7 @@ import sys
 
 import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument
-from mozfile import which
+from mozfile import json, which
 
 from mozbuild.util import cpu_count
 
@@ -23,7 +23,7 @@ from mozbuild.util import cpu_count
     virtualenv_name="ide",
 )
 @CommandArgument(
-    "ide", choices=["eclipse", "visualstudio", "vscode", "vscodium", "zed"]
+    "ide", choices=["eclipse", "sublime", "visualstudio", "vscode", "vscodium", "zed"]
 )
 @CommandArgument(
     "--no-interactive",
@@ -50,7 +50,8 @@ def run(command_context, ide, no_interactive, args):
         )
         return 1
 
-    if ide in {"vscode", "vscodium", "zed"}:
+    clangd_ides = {"sublime", "vscode", "vscodium", "zed"}
+    if ide in clangd_ides:
         result = subprocess.run(
             [sys.executable, "mach", "configure"],
             check=False,
@@ -86,7 +87,7 @@ def run(command_context, ide, no_interactive, args):
         backend = "CppEclipse"
     elif ide == "visualstudio":
         backend = "VisualStudio"
-    elif ide in {"vscode", "vscodium", "zed"}:
+    elif ide in clangd_ides:
         if not command_context.config_environment.is_artifact_build:
             backend = "Clangd"
 
@@ -103,6 +104,8 @@ def run(command_context, ide, no_interactive, args):
     if ide == "eclipse":
         eclipse_workspace_dir = get_eclipse_workspace_path(command_context)
         subprocess.check_call(["eclipse", "-data", eclipse_workspace_dir])
+    elif ide == "sublime":
+        return setup_sublime(command_context, interactive)
     elif ide == "visualstudio":
         visual_studio_workspace_dir = get_visualstudio_workspace_path(command_context)
         subprocess.call(["explorer.exe", visual_studio_workspace_dir])
@@ -124,6 +127,75 @@ def get_visualstudio_workspace_path(command_context):
     return os.path.normpath(
         os.path.join(command_context.topobjdir, "msvc", "mozilla.sln")
     )
+
+
+def setup_sublime(command_context, interactive):
+    # generate settings based on `vscode`.
+    vscode_settings = setup_clangd_rust_in_vscode(command_context)
+    sublime_settings = {
+        "folders": [
+            {
+                "path": ".",
+            },
+        ],
+        "settings": {
+            "LSP": {
+                # <https://github.com/sublimelsp/LSP-clangd/blob/190c5d30e62e86a3c9dd94a72c8e3f96a96eecf8/sublime-package.json>
+                "LSP-clangd": {
+                    "binary": "custom",
+                    "initialization_options": {
+                        "custom_command": [
+                            # populated below
+                        ],
+                        # populated below
+                    },
+                },
+                # <https://github.com/sublimelsp/LSP-rust-analyzer/blob/03300e283b885128cc5c384b8bc9c5a8a16bafe2/sublime-package.json>
+                "LSP-rust-analyzer": {
+                    "settings": {
+                        # populated below
+                    },
+                },
+            },
+        },
+    }
+
+    sublime_clangd_settings = sublime_settings["settings"]["LSP"]["LSP-clangd"]
+    sublime_rust_analyzer_settings = sublime_settings["settings"]["LSP"][
+        "LSP-rust-analyzer"
+    ]
+
+    # `clangd.path` and `clangd.arguments` are joined to form `custom_command`
+    sublime_clangd_settings["initialization_options"]["custom_command"].append(
+        vscode_settings["clangd.path"]
+    )
+    sublime_clangd_settings["initialization_options"]["custom_command"].extend(
+        vscode_settings["clangd.arguments"]
+    )
+
+    for key, value in vscode_settings.items():
+        if key in ["clangd.path", "clangd.arguments"]:
+            pass  # already handled above
+        elif key.startswith("clangd."):
+            sublime_clangd_settings["initialization_options"][key] = value
+        elif key.startswith("rust-analyzer."):
+            sublime_rust_analyzer_settings["settings"][key] = value
+        else:
+            print(f"warning: TODO: unknown key {key!r}", file=sys.stderr)
+
+    out_path = mozpath.join("firefox.sublime-project")
+    try:
+        with open(out_path, "x") as file:
+            # Sublime Text’s sublime-project format supports comments and trailing commas,
+            # so if we ever need to *read* a sublime-project file, we will need to use a
+            # different JSON impl
+            json.dump(sublime_settings, file, indent=2)
+            file.write("\n")
+    except FileExistsError:
+        print(f"fatal: refusing to overwrite file: {out_path!r}", file=sys.stderr)
+        return 1
+
+    print("done! now run: `subl firefox.sublime-project`", file=sys.stderr)
 
 
 def find_zed_cmd():

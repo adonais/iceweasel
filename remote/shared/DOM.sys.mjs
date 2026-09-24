@@ -7,7 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   atom: "chrome://remote/content/marionette/atom.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
-  PollPromise: "chrome://remote/content/marionette/sync.sys.mjs",
+  PollPromise: "chrome://remote/content/shared/Sync.sys.mjs",
 });
 
 const ORDERED_NODE_ITERATOR_TYPE = 5;

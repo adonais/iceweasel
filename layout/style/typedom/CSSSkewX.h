@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "mozilla/dom/DOMMatrixBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 template <class T>
@@ -53,6 +54,8 @@ class CSSSkewX final : public CSSTransformComponent {
   void SetAx(CSSNumericValue& aArg, ErrorResult& aRv);
 
   // end of CSSSkewX Web IDL declarations
+
+  already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;

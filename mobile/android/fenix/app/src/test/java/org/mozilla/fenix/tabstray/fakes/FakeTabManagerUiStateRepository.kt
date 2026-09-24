@@ -39,4 +39,10 @@ class FakeTabManagerUiStateRepository(initialPersistedUIState: PersistedUIState?
         uiStateFlow.emit(currentSnapshot.copy(hasViewedTabGroupsPage = true))
         return true
     }
+
+    override suspend fun setSkipUngroupConfirmation(): Boolean {
+        val currentSnapshot = uiStateFlow.value ?: PersistedUIState()
+        uiStateFlow.emit(currentSnapshot.copy(skipUngroupConfirmation = true))
+        return true
+    }
 }

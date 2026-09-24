@@ -6,6 +6,7 @@
 
 #include <comdef.h>
 
+#include "WMFDataEncoderUtils.h"
 #include "WMFUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -16,6 +17,7 @@
 #include "mozilla/mscom/COMWrappers.h"
 #include "mozilla/mscom/Utils.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -272,6 +274,8 @@ MFTEncoder::Factory::Factory(Provider aProvider,
 MFTEncoder::Factory::~Factory() { Shutdown(); }
 
 HRESULT MFTEncoder::Factory::Shutdown() {
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+
   HRESULT hr = S_OK;
   if (mActivate) {
     MFT_ENC_LOGE("Shutdown {} encoder {}",
@@ -379,8 +383,16 @@ static nsTArray<MFTEncoder::Factory> EnumEncoders(
 
 static void PopulateEncoderInfo(const GUID& aSubtype,
                                 nsTArray<MFTEncoder::Info>& aInfos) {
-  nsTArray<MFTEncoder::Factory> factories =
-      EnumEncoders(aSubtype, MFTEncoder::HWPreference::PreferHardware);
+  MFTEncoder::HWPreference hwPref;
+  if (!XRE_IsGPUProcess()) {
+    hwPref = MFTEncoder::HWPreference::SoftwareOnly;
+  } else if (CanUseWMFHwEncoder(aSubtype)) {
+    hwPref = MFTEncoder::HWPreference::HardwareOnly;
+  } else {
+    MFT_ENC_SLOGD("<ENC> none allowed\n");
+    return;
+  }
+  nsTArray<MFTEncoder::Factory> factories = EnumEncoders(aSubtype, hwPref);
   for (const auto& factory : factories) {
     MFTEncoder::Info info = {.mSubtype = aSubtype, .mName = factory.mName};
     aInfos.AppendElement(info);
@@ -420,6 +432,11 @@ nsTArray<MFTEncoder::Info> MFTEncoder::Enumerate() {
   PopulateEncoderInfo(MFVideoFormat_VP80, infos);
 
   return infos;
+}
+
+void MFTEncoder::ClearCache() {
+  StaticMutexAutoLock lock(sInfoMutex);
+  sInfos = nullptr;
 }
 
 nsTArray<MFTEncoder::Info>* MFTEncoder::Infos() {
@@ -545,7 +562,7 @@ MFTEncoder::Destroy() {
   mAsyncEventSource = nullptr;
   mEncoder = nullptr;
   mConfig = nullptr;
-  HRESULT hr = mFactory ? S_OK : mFactory->Shutdown();
+  HRESULT hr = mFactory ? mFactory->Shutdown() : S_OK;
   mFactory.reset();
   // TODO: If Factory::Shutdown() fails and the encoder is not reusable, set the
   // state to error.

@@ -18,7 +18,6 @@ namespace mozilla {
 namespace layers {
 
 class APZInputBridge;
-class KeyboardMap;
 struct ZoomTarget;
 
 enum AllowedTouchBehavior {
@@ -39,8 +38,6 @@ enum ZoomToRectBehavior : uint32_t {
   ZOOM_TO_FOCUSED_INPUT_ON_RESIZES_VISUAL = 1 << 4,
 };
 
-enum class BrowserGestureResponse : bool;
-
 class AsyncDragMetrics;
 struct APZHandledResult;
 
@@ -48,11 +45,6 @@ class IAPZCTreeManager {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
  public:
-  /**
-   * Set the keyboard shortcuts to use for translating keyboard events.
-   */
-  virtual void SetKeyboardMap(const KeyboardMap& aKeyboardMap) = 0;
-
   /**
    * Kicks an animation to zoom to a rect. This may be either a zoom out or zoom
    * in. The actual animation is done on the sampler thread after being set
@@ -96,8 +88,6 @@ class IAPZCTreeManager {
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) = 0;
 
-  virtual void SetDPI(float aDpiValue) = 0;
-
   /**
    * Sets allowed touch behavior values for current touch-session for specific
    * input block (determined by aInputBlock).
@@ -110,24 +100,8 @@ class IAPZCTreeManager {
   virtual void SetAllowedTouchBehavior(
       uint64_t aInputBlockId, const nsTArray<TouchBehaviorFlags>& aValues) = 0;
 
-  virtual void SetBrowserGestureResponse(uint64_t aInputBlockId,
-                                         BrowserGestureResponse aResponse) = 0;
-
   virtual void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                                   const AsyncDragMetrics& aDragMetrics) = 0;
-
-  virtual bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
-                               const ScreenPoint& aAnchorLocation) = 0;
-
-  virtual void StopAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
-
-  /**
-   * Function used to disable LongTap gestures.
-   *
-   * On slow running tests, drags and touch events can be misinterpreted
-   * as a long tap. This allows tests to disable long tap gesture detection.
-   */
-  virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
   /**
    * Notify APZ that the content process has just registered a non-passive

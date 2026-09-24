@@ -78,8 +78,6 @@ struct WinErrorState {
   }
 
   bool operator==(WinErrorState const& that) const = default;
-
-  bool operator!=(WinErrorState const& that) const = default;
 };
 
 #if defined(_M_AMD64)

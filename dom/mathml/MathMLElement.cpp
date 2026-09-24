@@ -142,7 +142,7 @@ static Element::MappedAttributeEntry sGlobalAttributes[] = {
     {nsGkAtoms::displaystyle},
     {nullptr}};
 
-bool MathMLElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool MathMLElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   MOZ_ASSERT(IsMathMLElement());
 
   static const MappedAttributeEntry* const globalMap[] = {sGlobalAttributes};
@@ -434,6 +434,7 @@ static constexpr uint8_t cmemmemi(const char (&needle)[N],
 
 void MathMLElement::MapGlobalMathMLAttributesInto(
     MappedDeclarationsBuilder& aBuilder) {
+  MapXmlLangAttrInto(aBuilder);
   // scriptlevel
   // https://w3c.github.io/mathml-core/#dfn-scriptlevel
   const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::scriptlevel);

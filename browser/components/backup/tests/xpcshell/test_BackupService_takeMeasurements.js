@@ -138,6 +138,17 @@ add_task(async function test_BackupService_location_on_device() {
   const DEFAULT_LOCATION = 1;
   const NON_DEFAULT_LOCATION = 2;
 
+  // Don't rely on the test machine actually having a OneDrive or a Documents
+  // folder - stand one up ourselves so the default location is well-defined.
+  let fakeDocsDirPath = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "BackupService-fake-docs-dir"
+  );
+  let fakeDocsDir = await IOUtils.getFile(fakeDocsDirPath);
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
+  sandbox.stub(BackupService, "docsDirFolderPath").get(() => fakeDocsDir);
+
   let bs = new BackupService();
   await bs.setParentDirPath(PathUtils.tempDir);
 
@@ -150,8 +161,6 @@ add_task(async function test_BackupService_location_on_device() {
   );
 
   Services.fog.testResetFOG();
-  // The default will be either the test machine's OneDrive folder, if present,
-  // or else the Docs folder.
   await bs.setParentDirPath(BackupService.DEFAULT_PARENT_DIR_PATH);
 
   await bs.takeMeasurements();
@@ -160,4 +169,41 @@ add_task(async function test_BackupService_location_on_device() {
     DEFAULT_LOCATION,
     "Scalar for location on device should indicate the default location"
   );
+
+  sandbox.restore();
+  await maybeRemovePath(fakeDocsDirPath);
+});
+
+/**
+ * Tests that measurements are still taken, and that no scalar is recorded for
+ * the location on device, when neither a OneDrive folder nor a Documents
+ * folder can be resolved.
+ */
+add_task(async function test_BackupService_no_default_location() {
+  Services.fog.testResetFOG();
+
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(BackupService, "oneDriveFolderPath").get(() => null);
+  sandbox.stub(BackupService, "docsDirFolderPath").get(() => null);
+  Assert.equal(
+    BackupService.DEFAULT_PARENT_DIR_PATH,
+    "",
+    "There should be no default parent directory path"
+  );
+
+  let bs = new BackupService();
+  await bs.takeMeasurements();
+
+  Assert.equal(
+    Glean.browserBackup.locationOnDevice.testGetValue(),
+    null,
+    "Scalar for location on device should not have been recorded"
+  );
+  Assert.greater(
+    Glean.browserBackup.profDDiskSpace.testGetValue(),
+    0,
+    "Measurements taken after the location on device should still have run"
+  );
+
+  sandbox.restore();
 });

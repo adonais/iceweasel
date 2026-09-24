@@ -11,7 +11,7 @@
 
 :root {
   --toolbar-row-height: 28px;
-  --rdm-box-shadow: 0 4px 4px 0 rgba(155, 155, 155, 0.26);
+  --rdm-box-shadow: 0 4px 4px 0 rgb(155 155 155 / 0.26);
   --viewport-active-color: #3b3b3b;
   --input-invalid-border-color: var(--red-60);
   --custom-device-button-hover: var(--grey-30);
@@ -19,7 +19,7 @@
 }
 
 :root.theme-dark {
-  --rdm-box-shadow: 0 4px 4px 0 rgba(105, 105, 105, 0.26);
+  --rdm-box-shadow: 0 4px 4px 0 rgb(105 105 105 / 0.26);
   --viewport-active-color: #fcfcfc;
   --input-invalid-border-color: var(--red-50);
   --custom-device-button-hover: var(--grey-70);
@@ -643,7 +643,7 @@ body,
 
 #device-add-button,
 #device-form button {
-  background-color: rgba(12, 12, 13, 0.1);
+  background-color: rgb(12 12 13 / 0.1);
   border: 1px solid var(--theme-splitter-color);
   border-radius: 2px;
   cursor: pointer;

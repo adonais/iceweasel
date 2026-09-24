@@ -61,7 +61,7 @@ gtest:
         by-test-platform:
             # DesktopLauncherDownloaderTest spins up `python -m http.server
             # --protocol`, which requires Python >= 3.11; the default fetched
-            # CI Python is 3.9. Only the Windows gtest runs that test.
+            # CI Python is 3.10. Only the Windows gtest runs that test.
             win.*: "3.11"
             android-hw.*: system
             # Fetched CI python is x86_64; under Rosetta it forces the universal

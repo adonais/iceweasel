@@ -17,6 +17,8 @@ class APZCPanningTester : public APZCBasicTester {
  protected:
   void DoPanTest(bool aShouldTriggerScroll, bool aShouldBeConsumed,
                  uint32_t aBehavior) {
+    apzc->DisableDefaultTouchBehaviors();
+
     if (aShouldTriggerScroll) {
       // Four repaint request for each pan.
       EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(8);
@@ -59,6 +61,7 @@ class APZCPanningTester : public APZCBasicTester {
   }
 
   void DoPanWithPreventDefaultTest() {
+    apzc->DisableDefaultTouchBehaviors();
     MakeApzcWaitForMainThread();
 
     int touchStart = 50;
@@ -166,9 +169,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   // First simulation: full data
 
   APZEventResult result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());
@@ -187,9 +187,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   // Second simulation: partial data
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());
@@ -204,9 +201,6 @@ TEST_F(APZCPanningTester, PanWithHistoricalTouchData) {
   // Third simulation: full data via historical data
 
   result = TouchDown(apzc, ScreenIntPoint(0, 50), mcc->Time());
-  if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-    SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-  }
 
   mcc->AdvanceByMillis(50);
   result = TouchMove(apzc, ScreenIntPoint(0, 45), mcc->Time());

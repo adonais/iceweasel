@@ -88,8 +88,8 @@ void HTMLSharedListElement::MapOLAttributesIntoRule(
   HTMLSharedListElement::MapAttributesIntoRule(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLSharedListElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLSharedListElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   if (mNodeInfo->Equals(nsGkAtoms::ul)) {
     static const MappedAttributeEntry attributes[] = {{nsGkAtoms::type},
                                                       {nullptr}};
@@ -116,7 +116,7 @@ HTMLSharedListElement::IsAttributeMapped(const nsAtom* aAttribute) const {
     return FindAttributeDependence(aAttribute, map);
   }
 
-  return nsGenericHTMLElement::IsAttributeMapped(aAttribute);
+  return nsGenericHTMLElement::IsNoNamespaceAttrMapped(aAttribute);
 }
 
 nsMapRuleToAttributesFunc HTMLSharedListElement::GetAttributeMappingFunction()

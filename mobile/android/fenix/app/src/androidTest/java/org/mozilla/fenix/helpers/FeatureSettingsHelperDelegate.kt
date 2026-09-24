@@ -49,6 +49,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
             nativeShareSheetEnabled = settings.nativeShareSheetEnabled,
             showVoiceSearchInDisplayToolbar = settings.showVoiceSearchInDisplayToolbar,
             isHomepageTrendingRecentSearchEnabled = settings.enableHomepageTrendingRecentSearch,
+            showAddressBarInFocusMode = settings.showAddressBarInFocusMode,
         )
 
     /** The current feature flags updated in tests. */
@@ -79,6 +80,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var showVoiceSearchInDisplayToolbar: Boolean by updatedFeatureFlags::showVoiceSearchInDisplayToolbar
     override var isHomepageTrendingRecentSearchEnabled: Boolean by
         updatedFeatureFlags::isHomepageTrendingRecentSearchEnabled
+    override var showAddressBarInFocusMode: Boolean by updatedFeatureFlags::showAddressBarInFocusMode
 
     override fun applyFlagUpdates() {
         Log.i(TAG, "applyFlagUpdates: Trying to apply the updated feature flags: $updatedFeatureFlags")
@@ -118,6 +120,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         settings.nativeShareSheetEnabled = featureFlags.nativeShareSheetEnabled
         settings.showVoiceSearchInDisplayToolbar = featureFlags.showVoiceSearchInDisplayToolbar
         settings.enableHomepageTrendingRecentSearch = featureFlags.isHomepageTrendingRecentSearchEnabled
+        settings.showAddressBarInFocusMode = featureFlags.showAddressBarInFocusMode
     }
 }
 
@@ -145,6 +148,7 @@ private data class FeatureFlags(
     var nativeShareSheetEnabled: Boolean,
     var showVoiceSearchInDisplayToolbar: Boolean,
     var isHomepageTrendingRecentSearchEnabled: Boolean,
+    var showAddressBarInFocusMode: Boolean,
 )
 
 internal fun getETPPolicy(settings: Settings): ETPPolicy {

@@ -35,13 +35,16 @@ add_task(async function test_recordEvent_sanitizes_and_buffers() {
     recommended_at: "1748877997039",
     received_rank: 0,
     event_source: "card",
-    layout_name: "card-layout",
+    // section_position is stripped from impression/click events.
+    section_position: "2",
+    card_column: "3",
+    is_ad_eligible_position: "true",
   };
 
   // These fields are expected to survive the sanitization.
   let expectedFields = {
     section: "business",
-    section_position: "2",
+    layout_name: "card-layout",
     position: "12",
     selected_topics: "",
     corpus_item_id: "7fc404a1-74ec-450b-8eef-4f52b45ec510",

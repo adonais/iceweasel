@@ -7,7 +7,7 @@
 use crate::context::{SharedStyleContext, StyleContext};
 use crate::dom::{TElement, TNode};
 use crate::gecko::wrapper::{GeckoElement, GeckoNode};
-use crate::traversal::{recalc_style_at, DomTraversal};
+use crate::traversal::{DomTraversal, recalc_style_at};
 
 /// This is the simple struct that Gecko uses to encapsulate a DOM traversal for
 /// styling.
@@ -18,7 +18,7 @@ pub struct RecalcStyleOnly<'a> {
 impl<'a> RecalcStyleOnly<'a> {
     /// Create a `RecalcStyleOnly` traversal from a `SharedStyleContext`.
     pub fn new(shared: SharedStyleContext<'a>) -> Self {
-        RecalcStyleOnly { shared: shared }
+        RecalcStyleOnly { shared }
     }
 }
 

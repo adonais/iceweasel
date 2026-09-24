@@ -8,15 +8,15 @@
 
 use cssparser::{BasicParseErrorKind, ParseError, ParseErrorKind, SourceLocation};
 use cssparser::{CowRcStr, ToCss};
-use selectors::parser::SelectorParseErrorKind;
 use selectors::SelectorList;
+use selectors::parser::SelectorParseErrorKind;
 use std::ffi::CStr;
 use std::fmt::Write;
 use std::ptr;
 use style::error_reporting::{ContextualParseError, ParseErrorReporter};
 use style::gecko_bindings::bindings;
 use style::gecko_bindings::structs::URLExtraData as RawUrlExtraData;
-use style::gecko_bindings::structs::{nsIURI, Loader, StyleSheet as DomStyleSheet};
+use style::gecko_bindings::structs::{Loader, StyleSheet as DomStyleSheet, nsIURI};
 use style::selector_parser::SelectorImpl;
 use style::stylesheets::UrlExtraData;
 use style_traits::{PropertySyntaxParseError, StyleParseErrorKind};

@@ -248,7 +248,12 @@ export class WebDriverBiDi {
 
     this.#running = true;
 
-    lazy.RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
+    // Only apply the recommended preferences when using WebDriver BiDi for
+    // regular browser automation. Dynamically starting the server for tooling
+    // or ai remote control should not modify the preferences of the profile.
+    if (this.#agent.isBrowserAutomationRunning) {
+      lazy.RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
+    }
 
     // Install a HTTP handler for direct WebDriver BiDi connection requests.
     this.#agent.server.registerPathHandler(

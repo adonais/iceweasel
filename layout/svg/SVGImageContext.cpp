@@ -101,13 +101,13 @@ void SVGImageContext::MaybeStoreContextPaint(SVGImageContext& aContext,
 
   if (NS_SUCCEEDED(aPaintContext->GetStrokeColor(value)) && !value.IsEmpty()) {
     nscolor color;
-    if (ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), value, &color)) {
+    if (ServoCSSParser::ComputeColor(nullptr, value, &color)) {
       stroke = Some(color);
     }
   }
   if (NS_SUCCEEDED(aPaintContext->GetFillColor(value)) && !value.IsEmpty()) {
     nscolor color;
-    if (ServoCSSParser::ComputeColor(nullptr, NS_RGB(0, 0, 0), value, &color)) {
+    if (ServoCSSParser::ComputeColor(nullptr, value, &color)) {
       fill = Some(color);
     }
   }

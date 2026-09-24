@@ -53,7 +53,7 @@ class HTMLObjectElement final : public nsGenericHTMLFormControlElement,
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
   void DestroyContent() override;
 
   // nsObjectLoadingContent

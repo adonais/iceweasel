@@ -52,8 +52,16 @@ about-sync-log-count =
        *[other] { $count } logs
     }
 
-about-sync-log-badge-success = Success
-about-sync-log-badge-error = Error
+# Heading of a log in the list, stating its outcome and when it was written.
+# Variables:
+#   $date (number) - Timestamp of when the log was written.
+about-sync-log-row-success =
+    .heading = Success — { DATETIME($date, dateStyle: "medium", timeStyle: "medium") }
+
+# Variables:
+#   $date (number) - Timestamp of when the log was written.
+about-sync-log-row-error =
+    .heading = Error — { DATETIME($date, dateStyle: "medium", timeStyle: "medium") }
 
 # Variables:
 #   $value (number) - The amount of data (e.g. "12.3").

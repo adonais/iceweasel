@@ -28,7 +28,6 @@
 #include "Utility.h"
 #include "ValidationError.h"
 #include "ipc/WebGPUChild.h"
-#include "js/ArrayBuffer.h"
 #include "js/Value.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
@@ -202,7 +201,7 @@ void Device::ExpireExternalTextures() {
 
 already_AddRefed<Sampler> Device::CreateSampler(
     const dom::GPUSamplerDescriptor& aDesc) {
-  ffi::WGPUSamplerDescriptor desc = {};
+  ffi::WGPUFfiSamplerDescriptor desc = {};
   webgpu::StringHelper label(aDesc.mLabel);
 
   desc.label = label.Get();
@@ -216,7 +215,7 @@ already_AddRefed<Sampler> Device::CreateSampler(
   desc.lod_max_clamp = aDesc.mLodMaxClamp;
   desc.max_anisotropy = aDesc.mMaxAnisotropy;
 
-  ffi::WGPUCompareFunction comparison = ffi::WGPUCompareFunction_Sentinel;
+  ffi::WGPUCompareFunction comparison;
   if (aDesc.mCompare.WasPassed()) {
     comparison = ConvertCompareFunction(aDesc.mCompare.Value());
     desc.compare = &comparison;
@@ -231,7 +230,7 @@ already_AddRefed<Sampler> Device::CreateSampler(
 
 already_AddRefed<CommandEncoder> Device::CreateCommandEncoder(
     const dom::GPUCommandEncoderDescriptor& aDesc) {
-  ffi::WGPUCommandEncoderDescriptor desc = {};
+  ffi::WGPUFfiCommandEncoderDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -246,13 +245,13 @@ already_AddRefed<CommandEncoder> Device::CreateCommandEncoder(
 
 already_AddRefed<RenderBundleEncoder> Device::CreateRenderBundleEncoder(
     const dom::GPURenderBundleEncoderDescriptor& aDesc) {
-  ffi::WGPURenderBundleEncoderDescriptor desc = {};
+  ffi::WGPUFfiRenderBundleEncoderDescriptor desc = {};
   desc.sample_count = aDesc.mSampleCount;
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
 
-  ffi::WGPUTextureFormat depthStencilFormat = {ffi::WGPUTextureFormat_Sentinel};
+  ffi::WGPUTextureFormat depthStencilFormat;
   if (aDesc.mDepthStencilFormat.WasPassed()) {
     depthStencilFormat =
         ConvertTextureFormat(aDesc.mDepthStencilFormat.Value());
@@ -351,10 +350,10 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
     optional.AppendElement(data);
   }
 
-  nsTArray<ffi::WGPUBindGroupLayoutEntry> entries(aDesc.mEntries.Length());
+  nsTArray<ffi::WGPUFfiBindGroupLayoutEntry> entries(aDesc.mEntries.Length());
   for (size_t i = 0; i < aDesc.mEntries.Length(); ++i) {
     const auto& entry = aDesc.mEntries[i];
-    ffi::WGPUBindGroupLayoutEntry e = {};
+    ffi::WGPUFfiBindGroupLayoutEntry e = {};
     e.binding = entry.mBinding;
     e.visibility = entry.mVisibility;
 
@@ -444,7 +443,7 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
     entries.AppendElement(e);
   }
 
-  ffi::WGPUBindGroupLayoutDescriptor desc = {};
+  ffi::WGPUFfiBindGroupLayoutDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -467,7 +466,7 @@ already_AddRefed<PipelineLayout> Device::CreatePipelineLayout(
     bindGroupLayouts.AppendElement(layout ? layout->GetId() : 0);
   }
 
-  ffi::WGPUPipelineLayoutDescriptor desc = {};
+  ffi::WGPUFfiPipelineLayoutDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -484,11 +483,11 @@ already_AddRefed<PipelineLayout> Device::CreatePipelineLayout(
 
 already_AddRefed<BindGroup> Device::CreateBindGroup(
     const dom::GPUBindGroupDescriptor& aDesc) {
-  nsTArray<ffi::WGPUBindGroupEntry> entries(aDesc.mEntries.Length());
+  nsTArray<ffi::WGPUFfiBindGroupEntry> entries(aDesc.mEntries.Length());
   CanvasContextArray canvasContexts;
   nsTArray<RefPtr<ExternalTexture>> externalTextures;
   for (const auto& entry : aDesc.mEntries) {
-    ffi::WGPUBindGroupEntry e = {};
+    ffi::WGPUFfiBindGroupEntry e = {};
     e.binding = entry.mBinding;
     auto setTextureViewBinding =
         [&e, &canvasContexts](const TextureView& texture_view) {
@@ -547,7 +546,7 @@ already_AddRefed<BindGroup> Device::CreateBindGroup(
     entries.AppendElement(e);
   }
 
-  ffi::WGPUBindGroupDescriptor desc = {};
+  ffi::WGPUFfiBindGroupDescriptor desc = {};
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -708,7 +707,7 @@ already_AddRefed<ShaderModule> Device::CreateShaderModule(
 RawId CreateComputePipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                 const dom::GPUComputePipelineDescriptor& aDesc,
                                 bool isAsync) {
-  ffi::WGPUComputePipelineDescriptor desc = {};
+  ffi::WGPUFfiComputePipelineDescriptor desc = {};
   nsCString entryPoint;
   nsTArray<nsCString> constantKeys;
   nsTArray<ffi::WGPUConstantEntry> constants;
@@ -755,16 +754,16 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                const dom::GPURenderPipelineDescriptor& aDesc,
                                bool isAsync) {
   // A bunch of stack locals that we can have pointers into
-  nsTArray<ffi::WGPUFfiOption_VertexBufferLayout> vertexBuffers;
+  nsTArray<ffi::WGPUFfiOption_FfiVertexBufferLayout> vertexBuffers;
   nsTArray<ffi::WGPUVertexAttribute> vertexAttributes;
-  ffi::WGPURenderPipelineDescriptor desc = {};
+  ffi::WGPUFfiRenderPipelineDescriptor desc = {};
   nsCString vsEntry, fsEntry;
   nsTArray<nsCString> vsConstantKeys, fsConstantKeys;
   nsTArray<ffi::WGPUConstantEntry> vsConstants, fsConstants;
   ffi::WGPUIndexFormat stripIndexFormat = ffi::WGPUIndexFormat_Uint16;
   ffi::WGPUFace cullFace = ffi::WGPUFace_Front;
-  ffi::WGPUVertexState vertexState = {};
-  ffi::WGPUFragmentState fragmentState = {};
+  ffi::WGPUFfiVertexState vertexState = {};
+  ffi::WGPUFfiFragmentState fragmentState = {};
   nsTArray<ffi::WGPUFfiOption_ColorTargetState> colorStates;
 
   webgpu::StringHelper label(aDesc.mLabel);
@@ -804,12 +803,12 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
     }
 
     for (const auto& vertex_desc : stage.mBuffers) {
-      ffi::WGPUFfiOption_VertexBufferLayout opt_vb_desc = {};
+      ffi::WGPUFfiOption_FfiVertexBufferLayout opt_vb_desc = {};
       if (vertex_desc.IsNull()) {
         opt_vb_desc.tag =
-            ffi::WGPUFfiOption_VertexBufferLayout_None_VertexBufferLayout;
+            ffi::WGPUFfiOption_FfiVertexBufferLayout_None_FfiVertexBufferLayout;
       } else {
-        ffi::WGPUVertexBufferLayout vb_desc = {};
+        ffi::WGPUFfiVertexBufferLayout vb_desc = {};
         const auto& vd = vertex_desc.Value();
         vb_desc.array_stride = vd.mArrayStride;
         vb_desc.step_mode = ffi::WGPUVertexStepMode(vd.mStepMode);
@@ -823,7 +822,7 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
           vertexAttributes.AppendElement(ad);
         }
         opt_vb_desc.tag =
-            ffi::WGPUFfiOption_VertexBufferLayout_Some_VertexBufferLayout;
+            ffi::WGPUFfiOption_FfiVertexBufferLayout_Some_FfiVertexBufferLayout;
         opt_vb_desc.some = vb_desc;
       }
       vertexBuffers.AppendElement(opt_vb_desc);
@@ -832,7 +831,7 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
     size_t numAttributes = 0;
     for (auto& vb_desc : vertexBuffers) {
       if (vb_desc.tag ==
-          ffi::WGPUFfiOption_VertexBufferLayout_Some_VertexBufferLayout) {
+          ffi::WGPUFfiOption_FfiVertexBufferLayout_Some_FfiVertexBufferLayout) {
         vb_desc.some.attributes.data =
             vertexAttributes.Elements() + numAttributes;
         numAttributes += vb_desc.some.attributes.length;
@@ -1033,7 +1032,19 @@ void Device::Destroy() {
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
-  ffi::wgpu_client_push_error_scope(GetClient(), GetId(), (uint8_t)aFilter);
+  ffi::WGPUFfiErrorFilter filter;
+  switch (aFilter) {
+    case dom::GPUErrorFilter::Validation:
+      filter = ffi::WGPUFfiErrorFilter_Validation;
+      break;
+    case dom::GPUErrorFilter::Out_of_memory:
+      filter = ffi::WGPUFfiErrorFilter_OutOfMemory;
+      break;
+    case dom::GPUErrorFilter::Internal:
+      filter = ffi::WGPUFfiErrorFilter_Internal;
+      break;
+  }
+  ffi::wgpu_client_push_error_scope(GetClient(), GetId(), filter);
 }
 
 already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {

@@ -648,3 +648,35 @@ add_task(async function test_label_shown() {
     Assert.ok(!onboardingLabelShown(window), "Onboarding label is not shown");
   });
 });
+
+add_task(async function test_query_context_supplied_without_query() {
+  let received = [];
+  let provider = new UrlbarTestUtils.TestProvider({
+    results: [],
+    onSearchSessionEnd: queryContext => received.push(queryContext),
+  });
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
+  registerCleanupFunction(() => providersManager.unregisterProvider(provider));
+
+  await BrowserTestUtils.withNewTab("about:blank", async browser => {
+    const url = "https://example.com/paste-and-go";
+    await SimpleTest.promiseClipboardChange(url, () =>
+      clipboardHelper.copyString(url)
+    );
+    // Paste & Go on a tab whose urlbar never ran a query: no session in
+    // progress and nothing cached, which is the state bug 1886140 reproduces.
+    gURLBar.controller.engagementEvent.discard();
+    gURLBar.parentController.clearLastQueryContextCache();
+
+    let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    await UrlbarTestUtils.activateContextMenuItem(window, "paste-and-go");
+    await loaded;
+  });
+
+  Assert.greater(received.length, 0, "onSearchSessionEnd ran");
+  Assert.ok(
+    received.every(context => !!context),
+    "Every onSearchSessionEnd got a query context"
+  );
+});

@@ -1,17 +1,22 @@
 # Authoring selectors
 
 A `Selector` is one way to find one element. They live in `selectors/<Screen>Selectors.kt` as an
-`object` of vals plus an `all` list. The test/harness never hard-codes matchers — it references
+`object` implementing `SelectorContainer`. The test/harness never hard-codes matchers — it references
 these, so a UI change is fixed in one place.
 
 ## Anatomy
 
 ```kotlin
+enum class Group : SelectorGroup {
+    CONTINUE_BUTTONS,
+}
+
 val CONTINUE_BUTTON = Selector(
     strategy = SelectorStrategy.COMPOSE_BY_TEXT,
     value = getStringResource(R.string.nova_onboarding_continue_button),
     description = "Onboarding Continue button",
-    groups = listOf("continueButton"),
+    groups = setOf(Group.CONTINUE_BUTTONS),
+    readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
 )
 ```
 
@@ -19,10 +24,20 @@ val CONTINUE_BUTTON = Selector(
 - **value** — the matcher input. Prefer stable inputs: `getStringResource(R.string.x)` for localized
   text, test tags, or resource ids — not hard-coded English (breaks under localization).
 - **description** — human-readable; shows up in logs.
-- **groups** — tags that let the harness fetch sets of selectors (below).
+- **groups** — typed, page-local assertion cohorts (below).
+- **readiness** — which page-readiness profiles require this selector.
+- **scrollDirection** — a typed scroll precondition, when the element is normally off-screen.
+- **lifecycle** — typed version metadata for selectors removed from the product.
+- **id / appearsAfter** — stable typed identities and result relationships used by generated interaction cases.
 
-End the file with `val all = listOf(...)` containing every selector — `mozGetSelectorsByGroup`
-filters this.
+Every selector declared as a `val` is discovered automatically and exposed through the container's inherited
+`all` property. Parameterized selector factory functions are intentionally excluded because they do not name a
+concrete element until called. The page object exposes the container as `selectorCatalog`; readiness and typed
+group verification use its discovered selectors.
+
+When two or more selectors in one group require scrolling, declare their on-screen traversal order once in
+`scrollTraversalOrder`. Non-scrolling group members are checked first. The container validates that the order
+contains every scrolling member, so a new scrolling selector cannot silently make group verification unstable.
 
 ## Choosing a strategy — priority order (important)
 
@@ -60,19 +75,26 @@ title node — so `COMPOSE_BY_TEXT` on the string resource is the right (and onl
 confirm what the composable actually exposes** — don't assume a tag exists, and don't reflexively
 copy the legacy robot's text matcher when a tag _does_ exist.
 
-## Groups (important)
+## Readiness and groups (important)
 
-Groups are how the harness works with sets of selectors:
+Readiness is separate from assertion grouping:
 
-- **`requiredForPage`** — the element(s) that prove you're on the screen. `navigateToPage()` polls
-  these to confirm arrival, so pick something always present and stable, or navigation will flake.
-- **`requiresScroll`** — element is off-screen until scrolled; the harness scrolls to it.
-- **Domain groups** (e.g. `"aboutFirefox"`, `"jumpBackIn"`) — let a test assert a whole section with
-  `mozVerifyElementsByGroup("...")` instead of listing each selector.
+- **`IDENTIFIED`** is the minimum stable evidence that distinguishes this page. The first anchor normally
+  uses `PageReadinessProfiles.IDENTITY_ANCHOR`, which includes all three profiles.
+- **`NAVIGATION_READY`** is checked before navigation may leave a visited page. Additional elements that
+  must settle after the identity anchor use `PageReadinessProfiles.READY_CONTENT`.
+- **`INTERACTIVE`** is checked for the destination and explicit waypoints. It normally includes the same
+  selectors as navigation readiness and may be strengthened independently.
+- **Domain groups** are nested enums in the selector catalog. A test verifies one with
+  `mozVerifyElementsByGroup(SettingsSelectors.Group.GENERAL_SETTINGS_SECTION)`.
+
+Do not encode behavior or metadata in a group name. Use `scrollDirection`, `lifecycle`, `id`, and
+`appearsAfter` for those concepts. For state-dependent readiness, add a named `PageReadinessRule` to the
+page object with an `appliesWhen` predicate and an `AllOf` or `AnyOf` condition.
 
 ## Gotchas
 
-- Every selector must be in `all`, or `mozGetSelectorsByGroup` won't see it.
-- Don't over-scope `requiredForPage` to a volatile element (e.g. dynamic list content); use a stable
-  title/container.
+- Declare concrete catalog entries as `val`s. Use functions only for selectors whose values require runtime input.
+- Identity evidence must exist in every runtime state. Put state-specific evidence behind a readiness rule
+  instead of making it unconditional.
 - Reuse a shared selector (like a common Continue button) rather than duplicating it per card/screen.

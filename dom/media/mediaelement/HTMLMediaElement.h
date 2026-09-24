@@ -408,12 +408,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void GetEMEInfo(dom::EMEDebugInfo& aInfo);
 
-  // Update the visual size of the media. Called from the decoder on the
-  // main thread when/if the size changes.
-  virtual void UpdateMediaSize(const nsIntSize& aSize);
+  // Update the visual size and rotation of the media. Called from the
+  // decoder on the main thread when/if either changes.
+  virtual void UpdateMediaSize(const nsIntSize& aSize, VideoRotation aRotation);
 
   void Invalidate(ImageSizeChanged aImageSizeChanged,
                   const Maybe<nsIntSize>& aNewIntrinsicSize,
+                  const Maybe<VideoRotation>& aNewRotation,
                   ForceInvalidate aForceInvalidate) override;
 
   // Returns the CanPlayStatus indicating if we can handle the
@@ -1724,8 +1725,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mAttachingMediaKey = false;
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
 
-  // Stores the time at the start of the current 'played' range.
-  double mCurrentPlayRangeStart = 1.0;
+  // Stores the time at the start of the current 'played' range, if any.
+  Maybe<double> mCurrentPlayRangeStart;
 
   // True if loadeddata has been fired.
   bool mLoadedDataFired = false;
@@ -1767,6 +1768,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // True if this element is suspended because the document is inactive or the
   // inactive docshell is not allowing media to play.
   bool mSuspendedByInactiveDocOrDocshell = false;
+
+#if defined(MOZ_WIDGET_ANDROID)
+  // Android-only state for the temporary background media playback probe (bug
+  // 2066141): true once we have recorded telemetry for the current background
+  // episode. Reset when the document becomes visible again.
+  bool mRecordedBackgroundAudioPlayback = false;
+#endif
 
   // True if we're running the "load()" method.
   bool mIsRunningLoadMethod = false;

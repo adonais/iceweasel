@@ -5,6 +5,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import time
 from collections import defaultdict
@@ -40,6 +41,22 @@ logger = logging.getLogger(__name__)
 
 ARTIFACTS_DIR = os.environ.get("MOZ_UPLOAD_DIR", "artifacts")
 GIT_BACKING_REPO = "https://github.com/mozilla-releng/git-backing"
+
+# Age, in days, of the oldest changesets assumed to already be present in a
+# downstream task's store (i.e. served by the CDN clone bundle). The source
+# bundle artifact carries everything newer, so this must comfortably exceed the
+# CDN clone bundle regeneration interval. A larger value only grows a still-small
+# artifact; if the base is missing, robustcheckout falls back to a remote pull.
+SOURCE_BUNDLE_MAX_AGE_DAYS = 2
+
+# Number of most-recent changesets (by revision number) over which to evaluate
+# the age predicate when computing the bundle base. Reading each changeset's
+# date decompresses its changelog entry, so restricting the scan to a recent
+# window keeps bundle generation ~O(window) instead of O(history) (~34s ->
+# ~3s on mozilla-unified). Must comfortably exceed the changesets landed in
+# SOURCE_BUNDLE_MAX_AGE_DAYS; if too small it only causes some receivers to fall
+# back to a remote pull, never breakage.
+SOURCE_BUNDLE_RECENT_REVS = 20000
 
 # For each project, this gives a set of parameters specific to the project.
 # See `taskcluster/docs/parameters.rst` for information on parameters.
@@ -272,6 +289,8 @@ def taskgraph_decision(options, parameters):
     for target, dest in to_copy.items():
         shutil.copy2(target, dest)
 
+    write_source_bundle(tgg.parameters["head_rev"], tgg.parameters["repository_type"])
+
     # actually create the graph
     create_tasks(
         tgg.graph_config,
@@ -422,6 +441,13 @@ def get_decision_parameters(graph_config, options):
         "DONTBUILD" in commit_message and options["tasks_for"] == "hg-push"
     )
 
+    # "SHIPPING" is set in the commit message by Lando when a release manager
+    # lands an uplift they intend to ship, and raises the priority of the tasks
+    # on the beta and ESR branches. See `task-priority` in `taskcluster/config.yml`.
+    parameters["shipping"] = (
+        "SHIPPING" in commit_message and options["tasks_for"] == "hg-push"
+    )
+
     # Determine if this should be a backstop push.
     parameters["backstop"] = is_backstop(parameters)
 
@@ -521,6 +547,63 @@ def set_decision_indexes(decision_task_id, params, graph_config):
 
     for index_path in index_paths:
         insert_index(index_path.format(**subs), decision_task_id)
+
+
+def write_source_bundle(head_rev, repository_type):
+    """Write a Mercurial bundle of recent changesets as a public artifact.
+
+    Downstream build and source-test tasks can apply this bundle to obtain the
+    head revision without an expensive ``getbundle`` against hg.mozilla.org. The
+    bundle only covers changesets newer than ``SOURCE_BUNDLE_MAX_AGE_DAYS``,
+    which is the delta a task would otherwise pull on top of the CDN clone
+    bundle.
+
+    Only produced for Mercurial checkouts; git checkouts are served elsewhere.
+    """
+    if repository_type != "hg":
+        logger.info("source checkout is not Mercurial; skipping source bundle")
+        return
+
+    if not os.path.isdir(ARTIFACTS_DIR):
+        os.mkdir(ARTIFACTS_DIR)
+
+    path = os.path.join(ARTIFACTS_DIR, "checkout.bundle")
+    # Assume downstream stores already hold every public changeset older than
+    # SOURCE_BUNDLE_MAX_AGE_DAYS (served by the CDN clone bundle); bundle only
+    # what is newer, up to the head revision. `not date('-N')` matches changesets
+    # older than N days; drafts (e.g. try commits) are excluded from the base so
+    # they are always carried. The date predicate is confined to the last
+    # SOURCE_BUNDLE_RECENT_REVS changesets (older ones are always older than the
+    # window) to avoid decompressing every changelog entry in history.
+    base = (
+        f"ancestors({head_rev}) and public() and not "
+        f"(last(all(), {SOURCE_BUNDLE_RECENT_REVS}) "
+        f"and date('-{SOURCE_BUNDLE_MAX_AGE_DAYS}'))"
+    )
+    logger.info(f"writing source bundle artifact `{path}`")
+    try:
+        subprocess.run(
+            [
+                "hg",
+                "--cwd",
+                GECKO,
+                "bundle",
+                "--type",
+                "gzip-v2",
+                "--rev",
+                head_rev,
+                "--base",
+                base,
+                path,
+            ],
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as e:
+        # A missing bundle is non-fatal: downstream tasks fall back to pulling
+        # from the remote. Don't fail the decision task over it.
+        logger.warning(f"failed to write source bundle artifact: {e}")
+        if os.path.exists(path):
+            os.remove(path)
 
 
 def write_artifact(filename, data):

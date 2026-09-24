@@ -12,9 +12,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.FindInPageSelectors
 
 class FindInPageTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080130
     @SmokeTest
     @Test

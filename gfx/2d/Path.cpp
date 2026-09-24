@@ -312,7 +312,7 @@ static inline void FindInflectionApproximationRange(
   *aMax = aT + tf * (1 - aT);
 }
 
-/* Find the inflection points of a bezier curve. Will return false if the
+/* Find the inflection points of a bezier curve. Will set *count to 0 if the
  * curve is degenerate in such a way that it is best approximated by a straight
  * line.
  *
@@ -454,16 +454,20 @@ void FlattenBezier(const BezierControlPoints& aControlPoints, PathSink* aSink,
     return;
   }
 
-  double t1min = t1, t1max = t1, t2min = t2, t2max = t2;
+  double t1min = t1, t1max = t1, t2min, t2max;
+  if (count > 1) {
+    t2min = t2max = t2;
+  }
 
   BezierControlPoints remainingCP = aControlPoints;
 
-  // For both inflection points, calulate the range where they can be linearly
+  // For both inflection points, calculate the range where they can be linearly
   // approximated if they are positioned within [0,1]
   if (count > 0 && t1 >= 0 && t1 < 1.0) {
     FindInflectionApproximationRange(aControlPoints, &t1min, &t1max, t1,
                                      aTolerance);
   }
+
   if (count > 1 && t2 >= 0 && t2 < 1.0) {
     FindInflectionApproximationRange(aControlPoints, &t2min, &t2max, t2,
                                      aTolerance);

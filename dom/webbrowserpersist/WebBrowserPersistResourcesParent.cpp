@@ -55,10 +55,15 @@ mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitResource(
 
 mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitDocument(
     NotNull<PWebBrowserPersistDocumentParent*> aSubDocument) {
+  auto* subDocument =
+      static_cast<WebBrowserPersistDocumentParent*>(aSubDocument.get());
+  if (!subDocument->IsUnclaimedStartState()) {
+    return IPC_FAIL(this, "invalid subdocument actor state");
+  }
+
   // Don't expose the subdocument to the visitor until it's ready
   // (until the actor isn't in START state).
-  static_cast<WebBrowserPersistDocumentParent*>(aSubDocument.get())
-      ->SetOnReady(this);
+  subDocument->SetOnReady(this);
   return IPC_OK();
 }
 

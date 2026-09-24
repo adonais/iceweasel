@@ -161,7 +161,7 @@ namespace InspectorUtils {
 
   // Given a "CSS expression" (e.g. `calc(12vw + 25%)`), return a list of string that represent
   // the steps from it to the computed value
-  sequence<DOMString> getComputationSteps(DOMString expression,
+  sequence<UTF8String> getComputationSteps(DOMString expression,
                                           Element element,
                                           optional [LegacyNullToEmptyString] DOMString pseudo = "");
 };

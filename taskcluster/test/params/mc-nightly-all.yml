@@ -911,8 +911,6 @@ existing_tasks:
   startup-test-win32: Z592KbylRYecXSOIQDxkLw
   startup-test-win64: L4r1MdBuRd2YA5WfMxrIRw
   startup-test-win64-aarch64: QqTy3jqnRte0k2UAia9pdQ
-  static-analysis-autotest-linux64-st-autotest/debug: fzeZ4YbWQCa8lGFhlmVTgQ
-  static-analysis-autotest-win64-st-autotest/debug: e9asnXbpRQCfYlv4kKieMw
   test-android-em-14-x86_64-shippable-lite/opt-geckoview-cppunittest-1proc: fgpVIcEVQmSfyl5siOQRfg
   test-android-em-14-x86_64-shippable-lite/opt-geckoview-crashtest-nofis: HVx8-_3uTQCKYLEY7W002A
   test-android-em-14-x86_64-shippable-lite/opt-geckoview-gtest-1proc: HR0cfR2pTQObOrd4t_rG3Q

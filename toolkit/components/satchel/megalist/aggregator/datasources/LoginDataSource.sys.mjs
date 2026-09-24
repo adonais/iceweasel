@@ -13,7 +13,8 @@ const AUTH_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
+  LoginBreaches:
+    "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
 });

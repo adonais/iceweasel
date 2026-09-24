@@ -38,9 +38,13 @@ class TestGetAccessibilityPropertiesForAccessibilityNode(MarionetteTestCase):
 
     def test_can_get_accessibility_properties(self):
         id = self.listbox_acc_props["children"][0]
-        acc_props = self.marionette.get_accessibility_properties_for_accessibility_node(id)
+        acc_props = self.marionette.get_accessibility_properties_for_accessibility_node(
+            id
+        )
         self.assertEqual(acc_props["role"], "option")
 
     def test_get_accessibility_properties_no_such_node(self):
-        acc_props = self.marionette.get_accessibility_properties_for_accessibility_node("nonexistent")
+        acc_props = self.marionette.get_accessibility_properties_for_accessibility_node(
+            "nonexistent"
+        )
         self.assertEqual(acc_props, None)

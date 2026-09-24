@@ -31,9 +31,7 @@ struct Foo {
   Foo(uint64_t aA, uint32_t aB) : mA{aA}, mB{aB} {}
   Foo(const Foo& aOther) = default;
 
-  bool operator==(const Foo& aOther) const {
-    return mA == aOther.mA && mB == aOther.mB;
-  }
+  bool operator==(const Foo& aOther) const = default;
 };
 
 TEST(UniqueOrNonOwningPtrTest, NonOwningStruct)

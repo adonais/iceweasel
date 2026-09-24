@@ -22,8 +22,8 @@ void CheckParser(const nsAString& aInput, bool aExpectedResults,
   nsCOMPtr<nsIPrincipal> principal =
       mozilla::BasePrincipal::CreateContentPrincipal(URL_SELF);
   nsTArray<Feature> parsedFeatures;
-  ASSERT_TRUE(FeaturePolicyParser::ParseString(aInput, nullptr, principal,
-                                               principal, parsedFeatures) ==
+  ASSERT_TRUE(FeaturePolicyParser::ParsePolicyFromAttribute(
+                  aInput, nullptr, principal, principal, parsedFeatures) ==
               aExpectedResults);
   ASSERT_TRUE(parsedFeatures.Length() == aExpectedFeatures);
 

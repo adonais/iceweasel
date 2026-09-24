@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_P256_H
 #define __Hacl_P256_H
 
@@ -36,6 +37,7 @@ extern "C" {
 
 #include "Hacl_Krmllib.h"
 #include "lib_intrinsics.h"
+
 
 /*******************************************************************************
 
@@ -75,11 +77,13 @@ Create an ECDSA signature WITHOUT hashing first.
 */
 bool
 Hacl_P256_ecdsa_sign_p256_without_hash(
-    uint8_t *signature,
-    uint32_t msg_len,
-    uint8_t *msg,
-    uint8_t *private_key,
-    uint8_t *nonce);
+  uint8_t *signature,
+  uint32_t msg_len,
+  uint8_t *msg,
+  uint8_t *private_key,
+  uint8_t *nonce
+);
+
 
 /**********************/
 /* ECDSA verification */
@@ -103,11 +107,13 @@ Verify an ECDSA signature WITHOUT hashing first.
 */
 bool
 Hacl_P256_ecdsa_verif_without_hash(
-    uint32_t msg_len,
-    uint8_t *msg,
-    uint8_t *public_key,
-    uint8_t *signature_r,
-    uint8_t *signature_s);
+  uint32_t msg_len,
+  uint8_t *msg,
+  uint8_t *public_key,
+  uint8_t *signature_r,
+  uint8_t *signature_s
+);
+
 
 /******************/
 /* Key validation */
@@ -153,6 +159,7 @@ bool Hacl_P256_validate_private_key(uint8_t *private_key);
 
 *******************************************************************************/
 
+
 /**
 Convert a public key from uncompressed to its raw form.
 
@@ -196,6 +203,7 @@ Convert a public key from raw to its compressed form.
   The function DOESN'T check whether (x, y) is a valid point.
 */
 void Hacl_P256_raw_to_compressed(uint8_t *pk_raw, uint8_t *pk);
+
 
 /******************/
 /* ECDH agreement */

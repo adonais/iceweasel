@@ -60,21 +60,31 @@ class TestMarionette(MarionetteTestCase):
 
     @run_if_manage_instance("Only runnable if Marionette manages the instance")
     def test_exit_code_for_marionette_server_failure(self):
-        second_marionette = Marionette(host=self.marionette.host, port=self.marionette.port)
+        second_marionette = Marionette(
+            host=self.marionette.host, port=self.marionette.port
+        )
         first_gecko_log = self.marionette.instance.gecko_log
-        gecko_log = first_gecko_log if first_gecko_log == "-" else os.path.dirname(first_gecko_log)
+        gecko_log = (
+            first_gecko_log
+            if first_gecko_log == "-"
+            else os.path.dirname(first_gecko_log)
+        )
         second_marionette.instance = GeckoInstance.create(
-            None, host=second_marionette.host,
+            None,
+            host=second_marionette.host,
             port=second_marionette.port,
             bin=self.marionette.bin,
-            gecko_log=gecko_log)
+            gecko_log=gecko_log,
+        )
 
         self.addCleanup(second_marionette.instance.close, clean=True)
 
         with self.assertRaises(OSError):
             second_marionette.start_binary(second_marionette.startup_timeout)
 
-        exit_code = second_marionette.instance.runner.wait(second_marionette.DEFAULT_SHUTDOWN_TIMEOUT)
+        exit_code = second_marionette.instance.runner.wait(
+            second_marionette.DEFAULT_SHUTDOWN_TIMEOUT
+        )
         self.assertEqual(exit_code, EXIT_CODE_NOT_AVAILABLE)
 
     def test_single_active_session(self):

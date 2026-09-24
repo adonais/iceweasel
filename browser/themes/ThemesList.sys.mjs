@@ -283,12 +283,16 @@ class ThemesList {
    *
    * @param {string} themeId - The addon ID of the theme to toggle.
    * @param {boolean} enabled - Whether to enable or disable the theme.
-   * @param {AddonInstallListener} [installListener] - Optional listener forwarded to
+   * @param {object} [options]
+   * @param {string} [options.layout] - The layout mode of the picker that made
+   *   the selection, recorded on `theme_picker.change`. When absent, the call
+   *   logs an error and records `"unknown"`.
+   * @param {AddonInstallListener} [options.installListener] - Optional listener forwarded to
    *   {@link AddonInstall#addListener} when a download and install is required.
    * @returns {Promise<boolean>} `true` if the request completed successfully, `false` if it
    *   failed or the given `themeId` is not managed by this instance.
    */
-  async updateThemeState(themeId, enabled, installListener) {
+  async updateThemeState(themeId, enabled, { layout, installListener } = {}) {
     if (!this.hasThemeId(themeId)) {
       console.error(
         "ThemesList.updateThemeState can only update themes managed by it"
@@ -303,8 +307,22 @@ class ThemesList {
         await addon?.disable();
         return true;
       }
+
+      if (!layout) {
+        console.error(
+          'ThemesList.updateThemeState called without a layout, so theme_picker.change records "unknown"'
+        );
+      }
+      const eventExtras = {
+        source: this.#installSource,
+        layout: layout ?? "unknown",
+        property: "theme",
+        theme_id: themeId,
+      };
+
       if (addon) {
         await addon.enable();
+        Glean.themePicker.change.record(eventExtras);
         return true;
       }
 
@@ -329,6 +347,7 @@ class ThemesList {
       }
       const theme = await install.install();
       await theme.enable();
+      Glean.themePicker.change.record(eventExtras);
       return true;
     } catch (err) {
       console.error(

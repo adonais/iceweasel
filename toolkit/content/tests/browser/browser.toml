@@ -183,9 +183,8 @@ skip-if = [
 ["browser_findbar_hiddenframes.js"]
 
 ["browser_findbar_marks.js"]
-skip-if = [
-  "os == 'win' && opt && standalone", # Bug 2028650
-]
+
+["browser_input_picker_color_scheme.js"]
 
 ["browser_isSynthetic.js"]
 

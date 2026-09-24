@@ -1114,62 +1114,6 @@ TEST_F(VideoSendStreamImplTest, PriorityBitrateConfigInactiveByDefault) {
   vss_impl->Stop();
 }
 
-TEST_F(VideoSendStreamImplTest, PriorityBitrateConfigAffectsAV1) {
-  auto field_trials =
-      SetFieldTrial("WebRTC-AV1-OverridePriorityBitrate", "bitrate:20000");
-  config_.rtp.payload_name = "AV1";
-  auto vss_impl =
-      CreateVideoSendStreamImpl(TestVideoEncoderConfig(), &field_trials);
-  EXPECT_CALL(
-      bitrate_allocator_,
-      AddObserver(
-          vss_impl.get(),
-          Field(&MediaStreamAllocationConfig::priority_bitrate_bps, 20000)));
-  vss_impl->Start();
-  EXPECT_CALL(bitrate_allocator_, RemoveObserver(vss_impl.get())).Times(1);
-  vss_impl->Stop();
-}
-
-TEST_F(VideoSendStreamImplTest,
-       PriorityBitrateConfigSurvivesConfigurationChange) {
-  VideoStream qvga_stream;
-  qvga_stream.width = 320;
-  qvga_stream.height = 180;
-  qvga_stream.max_framerate = 30;
-  qvga_stream.min_bitrate_bps = 30000;
-  qvga_stream.target_bitrate_bps = 150000;
-  qvga_stream.max_bitrate_bps = 200000;
-  qvga_stream.max_qp = 56;
-  qvga_stream.bitrate_priority = 1;
-
-  int min_transmit_bitrate_bps = 30000;
-
-  auto field_trials =
-      SetFieldTrial("WebRTC-AV1-OverridePriorityBitrate", "bitrate:20000");
-  config_.rtp.payload_name = "AV1";
-  auto vss_impl =
-      CreateVideoSendStreamImpl(TestVideoEncoderConfig(), &field_trials);
-  EXPECT_CALL(
-      bitrate_allocator_,
-      AddObserver(
-          vss_impl.get(),
-          Field(&MediaStreamAllocationConfig::priority_bitrate_bps, 20000)))
-      .Times(2);
-  vss_impl->Start();
-
-  encoder_queue_->PostTask([&] {
-    static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
-        ->OnEncoderConfigurationChanged(
-            std::vector<VideoStream>{qvga_stream}, false,
-            VideoEncoderConfig::ContentType::kRealtimeVideo,
-            min_transmit_bitrate_bps);
-  });
-  time_controller_.AdvanceTime(TimeDelta::Zero());
-
-  EXPECT_CALL(bitrate_allocator_, RemoveObserver(vss_impl.get())).Times(1);
-  vss_impl->Stop();
-}
-
 TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
   const bool kSuspend = false;
   config_.suspend_below_min_bitrate = kSuspend;

@@ -32,7 +32,7 @@ interface nsIURLQueryStrippingListObserver : nsISupports
    *        An Array of stringified strip rules.
    *        A stringified rule has the form of:
    *        "'queryParams': ['param1', 'param2', ...],
-   *         'origins': ['www.site.com', 'www.site.de', ...],
+   *         'hosts': ['www.site.com', 'www.site.de', ...],
    *         'schemelessSites': ['site2.com', ...]"
    */
   [implicit_jscontext]

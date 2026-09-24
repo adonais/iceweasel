@@ -203,7 +203,7 @@ class RTC_EXPORT PortAllocatorSession {
 
   uint32_t flags() const { return flags_; }
   void set_flags(uint32_t flags) { flags_ = flags; }
-  std::string content_name() const { return content_name_; }
+  const std::string& content_name() const { return content_name_; }
   int component() const { return component_; }
   const std::string& ice_ufrag() const { return ice_ufrag_; }
   const std::string& ice_pwd() const { return ice_pwd_; }

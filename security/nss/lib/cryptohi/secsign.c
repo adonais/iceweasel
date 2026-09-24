@@ -21,9 +21,8 @@ struct SGNContextStr {
     SECOidTag signalg;
     SECOidTag hashalg;
     CK_MECHANISM_TYPE mech;
-    void *hashcx;
     /* if we are using explicitly hashing, this value will be non-null */
-    const SECHashObject *hashobj;
+    PK11Context *hashcx;
     /* if we are using the combined mechanism, this value will be non-null */
     PK11Context *signcx;
     SECKEYPrivateKey *key;
@@ -121,7 +120,7 @@ SGN_DestroyContext(SGNContext *cx, PRBool freeit)
 {
     if (cx) {
         if (cx->hashcx != NULL) {
-            (*cx->hashobj->destroy)(cx->hashcx, PR_TRUE);
+            PK11_DestroyContext(cx->hashcx, PR_TRUE);
             cx->hashcx = NULL;
         }
         if (cx->signcx != NULL) {
@@ -160,11 +159,11 @@ SGN_Begin(SGNContext *cx)
     PK11Context *signcx = NULL;
 
     if (cx->hashcx != NULL) {
-        (*cx->hashobj->destroy)(cx->hashcx, PR_TRUE);
+        PK11_DestroyContext(cx->hashcx, PR_TRUE);
         cx->hashcx = NULL;
     }
     if (cx->signcx != NULL) {
-        (void)PK11_DestroyContext(cx->signcx, PR_TRUE);
+        PK11_DestroyContext(cx->signcx, PR_TRUE);
         cx->signcx = NULL;
     }
     /* if we can get a combined context, we'll use that */
@@ -174,15 +173,15 @@ SGN_Begin(SGNContext *cx)
         return SECSuccess;
     }
 
-    cx->hashobj = HASH_GetHashObjectByOidTag(cx->hashalg);
-    if (!cx->hashobj)
+    cx->hashcx = PK11_CreateDigestContext(cx->hashalg);
+    if (cx->hashcx == NULL)
         return SECFailure; /* error code is already set */
 
-    cx->hashcx = (*cx->hashobj->create)();
-    if (cx->hashcx == NULL)
-        return SECFailure;
-
-    (*cx->hashobj->begin)(cx->hashcx);
+    if (PK11_DigestBegin(cx->hashcx) != SECSuccess) {
+        PK11_DestroyContext(cx->hashcx, PR_TRUE);
+        cx->hashcx = NULL;
+        return SECFailure; /* error code is already set */
+    }
     return SECSuccess;
 }
 
@@ -196,8 +195,7 @@ SGN_Update(SGNContext *cx, const unsigned char *input, unsigned int inputLen)
         }
         return PK11_DigestOp(cx->signcx, input, inputLen);
     }
-    (*cx->hashobj->update)(cx->hashcx, input, inputLen);
-    return SECSuccess;
+    return PK11_DigestOp(cx->hashcx, input, inputLen);
 }
 
 /* XXX Old template; want to expunge it eventually. */
@@ -273,7 +271,8 @@ SECStatus
 SGN_End(SGNContext *cx, SECItem *result)
 {
     unsigned char digest[HASH_LENGTH_MAX];
-    unsigned part1;
+    unsigned int part1 = 0;
+    unsigned int expectedLen;
     SECStatus rv;
     SECItem digder, sigitem;
     PLArenaPool *arena = 0;
@@ -305,7 +304,16 @@ SGN_End(SGNContext *cx, SECItem *result)
         return sgn_PKCS11ToX509Sig(cx, result);
     }
     /* Finish up digest function */
-    (*cx->hashobj->end)(cx->hashcx, digest, &part1, sizeof(digest));
+    rv = PK11_DigestFinal(cx->hashcx, digest, &part1, sizeof(digest));
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+    expectedLen = HASH_ResultLenByOidTag(cx->hashalg);
+    if (expectedLen == 0 || part1 != expectedLen) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        rv = SECFailure;
+        goto loser;
+    }
 
     if (privKey->keyType == rsaKey &&
         cx->signalg != SEC_OID_PKCS1_RSA_PSS_SIGNATURE) {

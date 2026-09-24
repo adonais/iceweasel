@@ -12,6 +12,7 @@ option(
     help="Enable the DMG Install Helper for debugging",
 )
 
+
 @depends("--enable-dmg-install-helper-debug", when=target_is_osx)
 def debug_dmg_install_helper(enabled):
     if enabled:
@@ -19,6 +20,7 @@ def debug_dmg_install_helper(enabled):
 
 
 set_config("DMG_INSTALL_HELPER_DEBUG", debug_dmg_install_helper)
+
 
 # Updater
 # ==============================================================
@@ -115,19 +117,28 @@ def requirements_string(exec_id, relaxed):
     else:
         return mac_prod_requirements_string(exec_id)
 
+
 @depends("--enable-mac-elevated-updates-with-generic-certs", when=target_is_osx)
 @imports(_from="xml.sax.saxutils", _import="escape")
 def generate_smprivilegedexec_requirements(relaxed):
     requirements = ""
-    smprivilegedexecutables_list = ["org.mozilla.dmgInstallHelper", "org.mozilla.updater"]
+    smprivilegedexecutables_list = [
+        "org.mozilla.dmgInstallHelper",
+        "org.mozilla.updater",
+    ]
 
     for executable in smprivilegedexecutables_list:
         requirements += f"<key>{escape(executable)}</key>"
-        requirements += f"<string>{escape(requirements_string(executable, relaxed))}</string>"
+        requirements += (
+            f"<string>{escape(requirements_string(executable, relaxed))}</string>"
+        )
 
     return requirements
 
-set_config("MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS", generate_smprivilegedexec_requirements)
+
+set_config(
+    "MOZ_SMPRIVILEGEDEXECUTABLES_REQUIREMENTS", generate_smprivilegedexec_requirements
+)
 
 # MAR channel ID configuration
 # ==============================================================
@@ -287,6 +298,7 @@ option(
     when=notification_server_default,
     help="Disable building the notification server",
 )
+
 
 @depends("--enable-notification-server", when=notification_server_default)
 def notification_server_flag(enabled):

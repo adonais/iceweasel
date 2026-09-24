@@ -1421,6 +1421,21 @@ static nsCString CopyStrippingTrailingDot(const nsACString& aDomain) {
   return nsCString(aDomain);
 }
 
+// A single trailing dot is normalized away; more than one is rejected since
+// only one would be stripped, leaving an empty trailing segment.
+static bool DomainEndsWithMultipleDots(const nsACString& aDomain) {
+  return StringEndsWith(aDomain, ".."_ns);
+}
+
+static bool DomainEndsWithMultipleDots(const char* const* aDomains) {
+  for (const char* const* p = aDomains; *p; ++p) {
+    if (DomainEndsWithMultipleDots(nsDependentCString(*p))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // The fire-time payload of a pref-change callback: the function and its
 // closure. Shared base of the trie's refcounted CallbackNode and the mirror
 // list's inline entries (see MirrorCallbackList), so the notify, sweep and
@@ -3484,30 +3499,37 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
       mozilla::UniquePtr<PrefCallback> existing;
       mObservers.Remove(&weakKey, &existing);
       if (existing) {
-        Preferences::UnregisterCallback(NotifyObserver, prefName,
-                                        existing.get(),
-                                        /* aPrefixMatch */ true);
+        nsresult rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
+                                                      existing.get(),
+                                                      /* aPrefixMatch */ true);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          // The trie still points at the weak PrefCallback; keep it alive and
+          // leave the weak registration in place.
+          mObservers.InsertOrUpdate(&weakKey, std::move(existing));
+          return rv;
+        }
       }
     }
   }
 
+  nsresult rv = NS_OK;
   mObservers.WithEntryHandle(pCallback.get(), [&](auto&& p) {
     if (p) {
       NS_WARNING(
           nsPrintfCString("Ignoring duplicate observer: %s", prefName.get())
               .get());
     } else {
-      // We must pass a fully qualified preference name to the callback
-      // aDomain == nullptr is the only possible failure, and we trapped it with
-      // NS_ENSURE_ARG above.
-      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
-                                    /* aPrefixMatch */ true);
-
-      p.Insert(std::move(pCallback));
+      // We must pass a fully qualified preference name to the callback.
+      rv = Preferences::RegisterCallback(NotifyObserver, prefName,
+                                         pCallback.get(),
+                                         /* aPrefixMatch */ true);
+      if (NS_SUCCEEDED(rv)) {
+        p.Insert(std::move(pCallback));
+      }
     }
   });
 
-  return NS_OK;
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -3529,8 +3551,9 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
   }
 
   // Remove the relevant PrefCallback from mObservers and get an owning pointer
-  // to it. Unregister the callback first, and then let the owning pointer go
-  // out of scope and destroy the callback.
+  // to it. If unregistering the trie callback fails (e.g. because mObservers
+  // and the trie have drifted out of sync), the CallbackNode in the trie still
+  // holds Data() == this PrefCallback, so put it back.
   const nsCString& prefName = GetPrefName(aDomain);
   PrefCallback key(prefName, aObserver, this);
   mozilla::UniquePtr<PrefCallback> pCallback;
@@ -3551,6 +3574,10 @@ nsPrefBranch::RemoveObserverImpl(const nsACString& aDomain,
     rv = Preferences::UnregisterCallback(NotifyObserver, prefName,
                                          pCallback.get(),
                                          /* aPrefixMatch */ true);
+    if (NS_FAILED(rv)) {
+      PrefCallback* raw = pCallback.get();
+      mObservers.InsertOrUpdate(raw, std::move(pCallback));
+    }
   }
 
   return rv;
@@ -5257,13 +5284,12 @@ void Preferences::SetPreference(const dom::Pref& aDomPref) {
 /* static */
 void Preferences::GetPreference(dom::Pref* aDomPref,
                                 const GeckoProcessType aDestinationProcessType,
-                                const nsACString& aDestinationRemoteType) {
+                                const dom::RemoteType& aDestinationRemoteType) {
   MOZ_ASSERT(XRE_IsParentProcess());
   bool destIsWebContent =
       aDestinationProcessType == GeckoProcessType_Content &&
-      (StringBeginsWith(aDestinationRemoteType, WEB_REMOTE_TYPE) ||
-       StringBeginsWith(aDestinationRemoteType, PREALLOC_REMOTE_TYPE) ||
-       StringBeginsWith(aDestinationRemoteType, PRIVILEGEDMOZILLA_REMOTE_TYPE));
+      (aDestinationRemoteType.IsWeb() || aDestinationRemoteType.IsPrealloc() ||
+       aDestinationRemoteType.IsPrivilegedMozilla());
 
   Pref* pref = pref_HashTableLookup(aDomPref->name().get());
   if (pref && pref->HasAdvisablySizedValues()) {
@@ -5588,16 +5614,30 @@ nsresult PreferencesImpl::WritePrefFile(
       }
     }
 
-    // Backups target a different file with a filtered pref set and must settle
-    // their promise, so they can't share the single-slot sPendingWriteData
-    // coalescing. Dispatch a standalone write instead.
-    if (aPromiseHolder) {
-      MOZ_ASSERT(aSaveMethod == SaveMethod::Asynchronous,
+    if (mCurrentFile) {
+      rv = mCurrentFile->Equals(aFile, &writingToCurrent);
+      if (NS_FAILED(rv)) {
+        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
+      }
+    }
+
+    bool async = aSaveMethod == SaveMethod::Asynchronous;
+
+    // The sPendingWriteData coalescing below only works when every writer
+    // targets the same file with an equivalent snapshot, which is only true of
+    // writes to mCurrentFile.
+    if (!writingToCurrent) {
+      MOZ_ASSERT(!aPromiseHolder || async,
                  "Backup writes are always asynchronous");
       PreferencesWriter::sPendingWriteCount++;
-      rv = mAsyncTarget->Dispatch(
-          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder)),
-          nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+      RefPtr<nsIRunnable> runnable =
+          new PWRunnable(aFile, std::move(prefs), std::move(aPromiseHolder));
+      if (async) {
+        rv = mAsyncTarget->Dispatch(runnable,
+                                    nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK);
+      } else {
+        rv = SyncRunnable::DispatchToThread(mAsyncTarget, runnable, true);
+      }
       if (NS_FAILED(rv)) {
         PreferencesWriter::sPendingWriteCount--;
         // The PWRunnable rejected the holder in its destructor.
@@ -5606,28 +5646,10 @@ nsresult PreferencesImpl::WritePrefFile(
       return NS_OK;
     }
 
-    if (mCurrentFile) {
-      rv = mCurrentFile->Equals(aFile, &writingToCurrent);
-      if (NS_FAILED(rv)) {
-        REJECT_IF_PROMISE_HOLDER_EXISTS(rv);
-      }
-    }
-
     // Put the newly constructed preference data into sPendingWriteData
-    // for the next request to pick up
+    // for the next request to pick up. Any data already in the slot is a
+    // superseded snapshot of mCurrentFile, so dropping it is fine.
     prefs.reset(PreferencesWriter::sPendingWriteData.exchange(prefs.release()));
-    if (prefs && !writingToCurrent) {
-      MOZ_ASSERT(!aPromiseHolder,
-                 "Shouldn't be able to enter here if aPromiseHolder is set");
-      // There was a previous request writing to the default location that
-      // hasn't been processed. It will do the work of eventually writing this
-      // latest batch of data to disk.
-      return NS_OK;
-    }
-
-    // There were no previous requests. Dispatch one since sPendingWriteData has
-    // the up to date information.
-    bool async = aSaveMethod == SaveMethod::Asynchronous;
 
     // Increment sPendingWriteCount, even though it's redundant to track this
     // in the case of a sync runnable; it just makes it easier to simply
@@ -5945,6 +5967,7 @@ nsresult PreferencesImpl::RegisterCallbackImpl(PrefChangedFunc aCallback,
                                                bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   NS_ENSURE_TRUE(Preferences::InitStaticMembers(), NS_ERROR_NOT_AVAILABLE);
 
   RefPtr<CallbackNode> node =
@@ -5974,6 +5997,7 @@ nsresult PreferencesImpl::UnregisterCallbackImpl(PrefChangedFunc aCallback,
                                                  bool aIsPrefix) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCallback);
+  NS_ENSURE_FALSE(DomainEndsWithMultipleDots(aPrefNode), NS_ERROR_INVALID_ARG);
   if (Preferences::sShutdown) {
     MOZ_ASSERT(!Preferences::sPreferences);
     return NS_OK;
@@ -7295,7 +7319,6 @@ static const PrefListEntry sDynamicPrefOverrideList[]{
     PREF_LIST_ENTRY("media.peerconnection.nat_simulator.redirect_targets"),
     PREF_LIST_ENTRY("media.peerconnection.nat_simulator.network_delay_ms"),
     PREF_LIST_ENTRY("media.video_loopback_dev"),
-    PREF_LIST_ENTRY("media.webspeech.service.endpoint"),
     PREF_LIST_ENTRY("network.protocol-handler.external."),
     PREF_LIST_ENTRY("network.security.ports.banned"),
     PREF_LIST_ENTRY("nimbus.syncdatastore."),

@@ -18,8 +18,8 @@ var tabPreviews = {
   /**
    * Get the stored thumbnail URL for a given page URL and wait up to 1s for it
    * to load. If the browser is discarded and there is no stored thumbnail, the
-   * image URL will fail to load and this method will return null after 1s.
-   * Callers should handle this case by doing nothing or using a fallback image.
+   * image URL will fail to load and this method will return null. Callers
+   * should handle this case by doing nothing or using a fallback image.
    *
    * @param {string} uri The page URL.
    * @returns {Promise<Image|null>}
@@ -27,24 +27,24 @@ var tabPreviews = {
   loadImage: async function tabPreviews_loadImage(uri) {
     let img = new Image();
     img.src = PageThumbs.getThumbnailURL(uri);
-    if (img.complete && img.naturalWidth) {
-      return img;
+    if (img.complete) {
+      return img.naturalWidth ? img : null;
     }
     return new Promise(resolve => {
       const controller = new AbortController();
-      img.addEventListener(
-        "load",
-        () => {
-          clearTimeout(timeout);
-          controller.abort();
-          resolve(img);
-        },
-        { signal: controller.signal }
-      );
-      const timeout = setTimeout(() => {
+      let timeout;
+      const finish = value => {
+        clearTimeout(timeout);
         controller.abort();
-        resolve(null);
-      }, 1000);
+        resolve(value);
+      };
+      timeout = setTimeout(() => finish(null), 1000);
+      img.addEventListener("load", () => finish(img), {
+        signal: controller.signal,
+      });
+      img.addEventListener("error", () => finish(null), {
+        signal: controller.signal,
+      });
     });
   },
 
@@ -375,64 +375,54 @@ var ctrlTab = {
       return;
     }
 
+    let tabChanged = aPreview._tab != aTab;
     aPreview._tab = aTab;
 
-    if (aTab) {
-      let canvas = aPreview._canvas;
-      let canvasWidth = this.canvasWidth;
-      let canvasHeight = this.canvasHeight;
-      let existingPreview = canvas.firstChild;
-      if (!existingPreview) {
-        let placeholder = document.createElement("img");
-        placeholder.className = "ctrlTab-placeholder";
-        placeholder.setAttribute("width", canvasWidth);
-        placeholder.setAttribute("height", canvasHeight);
-        placeholder.setAttribute("alt", "");
-        canvas.appendChild(placeholder);
-        existingPreview = placeholder;
-      }
-      tabPreviews
-        .get(aTab)
-        .then(img => {
-          switch (aPreview._tab) {
-            case aTab:
-              if (img) {
-                img.style.width = canvasWidth + "px";
-                img.style.height = canvasHeight + "px";
-                canvas.replaceChild(img, existingPreview);
-              }
-              break;
-            case null:
-              // The preview panel is not open, so don't render anything.
-              this._clearCanvas(canvas);
-              break;
-            // If the tab exists but it has changed since updatePreview was
-            // called, the preview will likely be handled by a later
-            // updatePreview call, e.g. on TabAttrModified.
-          }
-        })
-        .catch(error => console.error(error));
-
-      aPreview._label.setAttribute("value", aTab.label);
-      aPreview.setAttribute("tooltiptext", aTab.label);
-      if (aTab.image) {
-        aPreview._favicon.setAttribute("src", aTab.image);
-      } else {
-        aPreview._favicon.removeAttribute("src");
-      }
-      aPreview.hidden = false;
-    } else {
-      this._clearCanvas(aPreview._canvas);
+    if (!aTab) {
+      aPreview._canvas.replaceChildren();
       aPreview.hidden = true;
       aPreview._label.removeAttribute("value");
       aPreview.removeAttribute("tooltiptext");
       aPreview._favicon.removeAttribute("src");
+      return;
     }
+
+    if (tabChanged) {
+      // Drop the previous tab's thumbnail right away, so that the preview
+      // doesn't keep showing it if the new tab has no thumbnail to offer. The
+      // placeholder is invisible and only keeps the canvas box at full size.
+      aPreview._canvas.replaceChildren(this._makePlaceholder());
+    }
+
+    tabPreviews
+      .get(aTab)
+      .then(img => {
+        if (aPreview._tab != aTab || !img) {
+          return;
+        }
+        img.style.width = this.canvasWidth + "px";
+        img.style.height = this.canvasHeight + "px";
+        aPreview._canvas.replaceChildren(img);
+      })
+      .catch(error => console.error(error));
+
+    aPreview._label.setAttribute("value", aTab.label);
+    aPreview.setAttribute("tooltiptext", aTab.label);
+    if (aTab.image) {
+      aPreview._favicon.setAttribute("src", aTab.image);
+    } else {
+      aPreview._favicon.removeAttribute("src");
+    }
+    aPreview.hidden = false;
   },
 
-  // Remove previous preview images from the canvas box.
-  _clearCanvas(canvas) {
-    canvas.replaceChildren();
+  _makePlaceholder() {
+    let placeholder = document.createElement("img");
+    placeholder.className = "ctrlTab-placeholder";
+    placeholder.setAttribute("width", this.canvasWidth);
+    placeholder.setAttribute("height", this.canvasHeight);
+    placeholder.setAttribute("alt", "");
+    return placeholder;
   },
 
   advanceFocus: function ctrlTab_advanceFocus(aForward) {

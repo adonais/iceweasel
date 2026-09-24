@@ -17,7 +17,7 @@ Clicking the triangle icon at the left end expands/collapses the navigation pane
 :width: 193px
 ```
 
-If the window width is less than 1024px, the panle is collapsed by default also in the source listing.
+If the window width is less than 1024px, the panel is collapsed by default also in the source listing.
 This behavior can be configured in the [settings page](https://searchfox.org/firefox-main/pages/settings.html).
 
 ## Header
@@ -60,7 +60,7 @@ File a bug in ...
 
 : Open the Bugzilla new bug page for the associated Bugzilla component.
 
-  This item is shown whwn the current file/directory has an associated Bugzilla component.
+  This item is shown when the current file/directory has an associated Bugzilla component.
 
 ## Revision control
 
@@ -95,7 +95,7 @@ Go to latest version
 
 : Opens the revision-agnostic URL of the current file.
 
-  This item is shown when opning a revision-specific URL, where the revision is not the latest revision.
+  This item is shown when opening a revision-specific URL, where the revision is not the latest revision.
 
 Git log
 
@@ -241,7 +241,7 @@ This item has associated shortcut key {kbd}`\\`, and hitting the {kbd}`\\` key a
 
 ## Other Tools
 
-This section shows links to externsion tools.
+This section shows links to external tools.
 
 HG Web
 

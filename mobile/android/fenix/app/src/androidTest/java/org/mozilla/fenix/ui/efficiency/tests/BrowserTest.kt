@@ -21,6 +21,6 @@ class BrowserTest : BaseTest() {
         on.browserPage.navigateToPage("mozilla.com")
 
         // Then: the browser screen elements should load
-        on.browserPage.mozVerifyElementsByGroup("requiredForPage")
+        on.browserPage.mozVerifyReadiness()
     }
 }

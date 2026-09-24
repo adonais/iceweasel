@@ -1038,7 +1038,7 @@ PeerConnectionWrapper.prototype = {
     // an old id (ie; the rollback tests cause the same stream to be added
     // twice)
     element.srcObject = new MediaStream([track]);
-    element.play();
+    element.play().catch(() => {});
   },
 
   addSendStream(stream) {

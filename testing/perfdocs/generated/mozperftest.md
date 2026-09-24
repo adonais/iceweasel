@@ -183,6 +183,29 @@ perftest_browser_xhtml_dom.js
 **Measures the size of the DOM**
 
 
+## browser/components/aiwindow/ui/test/browser_perf
+
+Performance tests for Smart Window on Firefox Desktop
+
+browser_smartwindow_perf.js
+===========================
+
+:owner: GenAI Team
+:name: browser_smartwindow_perf.js
+:Default options:
+
+::
+
+ --perfherder
+ --perfherder-metrics name:ttft-overhead,unit:ms,shouldAlert:True
+ --verbose
+ --manifest perftest.toml
+ --manifest-flavor browser-chrome
+ --try-platform linux, mac, win
+
+**User-perceived responsiveness of Smart Window across window states and profile sizes**
+
+
 ## browser/components/translations/tests/browser
 
 Performance tests for Translations models on Firefox Desktop
@@ -504,6 +527,7 @@ test_trr_bench.js
 ::
 
  --perfherder
+ --perfherder-metrics name:average,unit:ms,shouldAlert:True,lowerIsBetter:True
 
 **Benchmark for TRR (Trusted Recursive Resolver) DNS lookup performance under various load conditions.**
 
@@ -622,24 +646,6 @@ This mozperftest gets webpagetest to run pageload tests on Firefox against the 5
 ## toolkit/components/ml/tests/browser
 
 Performance tests running through Mochitest for ML Models
-
-browser_ml_security_perf.js
-===========================
-
-:owner: GenAI Team
-:name: ML Security Orchestrator Performance Tests
-:Default options:
-
-::
-
- --perfherder
- --perfherder-metrics name:latency,unit:ms,shouldAlert:False
- --verbose
- --manifest perftest.toml
- --manifest-flavor browser-chrome
- --try-platform linux, mac, win
-
-**Template test for latency for ML Security Orchestrator**
 
 browser_ml_semantic_history_search_perf.js
 ==========================================

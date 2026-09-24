@@ -561,7 +561,6 @@ class JS_PUBLIC_API Base {
   // in this comparison. But it seems unlikely to cause problems in
   // practice.
   bool operator==(const Base& rhs) const = default;
-  bool operator!=(const Base& rhs) const = default;
 
   // An identifier for this node, guaranteed to be stable and unique for as
   // long as this ubi::Node's referent is alive and at the same address.

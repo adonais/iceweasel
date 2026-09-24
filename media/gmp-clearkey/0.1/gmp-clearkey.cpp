@@ -45,7 +45,9 @@ extern "C" {
 CDM_API
 void INITIALIZE_CDM_MODULE() {}
 
+#ifdef MOZILLA_OFFICIAL
 static bool sCanReadHostVerificationFiles = false;
+#endif
 
 CDM_API
 void* CreateCdmInstance(int cdm_interface_version, const char* key_system,
@@ -164,7 +166,9 @@ bool VerifyCdmHost_0(const cdm::HostFile* aHostFiles, uint32_t aNumFiles) {
       ClosePlatformFile(hostFile.sig_file);
     }
   }
+#ifdef MOZILLA_OFFICIAL
   sCanReadHostVerificationFiles = rv;
+#endif
   return rv;
 }
 

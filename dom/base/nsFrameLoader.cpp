@@ -168,7 +168,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mOwnerContent(aOwner),
       mPendingSwitchID(0),
       mChildID(0),
-      mRemoteType(NOT_REMOTE_TYPE),
+      mRemoteType(RemoteType::NotRemote()),
       mInitialized(false),
       mDepthTooGreat(false),
       mIsTopLevelContent(false),
@@ -418,24 +418,30 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
   }
 
   bool isRemoteFrame = InitialLoadIsRemote(aOwner);
-  RefPtr<nsFrameLoader> fl =
-      new nsFrameLoader(aOwner, context, isRemoteFrame, aNetworkCreated);
-  fl->mOpenWindowInfo = aOpenWindowInfo;
 
   // If this is a toplevel initial remote frame, we're looking at a browser
   // loaded in the parent process. Pull the remote type attribute off of the
   // <browser> element to determine which remote type it should be loaded in, or
   // use a shared web remote type if we can't tell.
+  RemoteType remoteType;
   if (isRemoteFrame) {
     MOZ_ASSERT(XRE_IsParentProcess());
-    nsAutoString remoteType;
-    if (aOwner->GetAttr(nsGkAtoms::RemoteType, remoteType) &&
-        !remoteType.IsEmpty()) {
-      CopyUTF16toUTF8(remoteType, fl->mRemoteType);
+    nsAutoString remoteTypeAttr;
+    if (aOwner->GetAttr(nsGkAtoms::RemoteType, remoteTypeAttr) &&
+        !remoteTypeAttr.IsEmpty()) {
+      remoteType = RemoteType::Parse(NS_ConvertUTF16toUTF8(remoteTypeAttr));
+      NS_ENSURE_TRUE(remoteType, nullptr);
     } else {
-      fl->mRemoteType = SharedWebRemoteType(context->OriginAttributesRef());
+      remoteType = RemoteType::SharedWeb(context->OriginAttributesRef());
     }
+  } else {
+    remoteType = RemoteType::NotRemote();
   }
+
+  RefPtr<nsFrameLoader> fl =
+      new nsFrameLoader(aOwner, context, isRemoteFrame, aNetworkCreated);
+  fl->mOpenWindowInfo = aOpenWindowInfo;
+  fl->mRemoteType = remoteType;
   return fl.forget();
 }
 
@@ -541,7 +547,7 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc,
   }
 }
 
-void nsFrameLoader::ConfigRemoteProcess(const nsACString& aRemoteType,
+void nsFrameLoader::ConfigRemoteProcess(const RemoteType& aRemoteType,
                                         ContentParent* aContentParent) {
   MOZ_DIAGNOSTIC_ASSERT(IsRemoteFrame(), "Must be a remote frame");
   MOZ_DIAGNOSTIC_ASSERT(!mRemoteBrowser, "Must not have a browser yet");
@@ -1104,8 +1110,11 @@ bool nsFrameLoader::ShowRemoteFrame(nsSubDocumentFrame* aFrame) {
     baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
     nsSizeMode sizeMode =
         mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
-    const auto size =
-        hasSize ? aFrame->GetSubdocumentSize() : LayoutDeviceIntSize();
+    const auto size = aFrame
+                          ? aFrame->GetSubdocumentSize()
+                          : LayoutDeviceIntSize::Round(
+                                CSSSize::FromAppUnits(kFallbackIntrinsicSize) *
+                                widget->GetDefaultScale());
     OwnerShowInfo info(size, GetScrollbarPreference(mOwnerContent), sizeMode);
     if (!mRemoteBrowser->Show(info)) {
       return false;
@@ -2687,11 +2696,11 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   RefPtr<BrowserParent> nextRemoteBrowser =
       mOpenWindowInfo ? mOpenWindowInfo->GetNextRemoteBrowser() : nullptr;
   if (nextRemoteBrowser) {
-    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
-    if (nextRemoteBrowser->GetOwnerElement()) {
-      MOZ_ASSERT_UNREACHABLE("Shouldn't have an owner element before");
+    if (nextRemoteBrowser->IsEmbedded()) {
+      MOZ_ASSERT_UNREACHABLE("Shouldn't have an embedder before");
       return false;
     }
+    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
     nextRemoteBrowser->SetOwnerElement(ownerElement);
   } else {
     RefPtr<ContentParent> contentParent;
@@ -2719,11 +2728,13 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   // Grab the reference to the actor
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
 
-  MOZ_ASSERT(browserParent->CanSend(), "BrowserParent cannot send?");
-
   // We no longer need the remoteType attribute on the frame element.
   // The remoteType can be queried by asking the message manager instead.
   ownerElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, false);
+
+  if (NS_WARN_IF(!browserParent->CanSend())) {
+    return false;
+  }
 
   // Now that browserParent is set, we can initialize graphics
   browserParent->InitRendering();

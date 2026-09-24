@@ -118,8 +118,8 @@ void HTMLMarqueeElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapBGColorInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLMarqueeElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLMarqueeElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {
       sImageMarginSizeAttributeMap, sBackgroundColorAttributeMap,
       sCommonAttributeMap};

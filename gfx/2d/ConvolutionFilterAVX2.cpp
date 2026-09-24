@@ -4,25 +4,46 @@
 
 #include <immintrin.h>
 
+#include <cstdint>
+#include <cstring>
+
 #include "SkConvolver.h"
 #include "mozilla/Attributes.h"
 
 namespace skia {
 
+// Load one pixel (4 bytes) and zero-extend each channel into a 32-bit lane:
+// [ch0, ch1, ch2, ch3].
+static MOZ_ALWAYS_INLINE __m128i LoadPixelU32(const unsigned char* pixel) {
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 12
+  // GCC has no usable _mm_loadu_si32 before 12: it is absent in 10.x, and
+  // 11.1/11.2 define it as _mm_set_epi32(*(int*)P, 0, 0, 0), which does an
+  // aligned int load and lands the value in the high lane instead of the low
+  // one (PR99754, fixed by r12-7640 and on the 11 branch after 11.2). We still
+  // support GCC 10.1, so open-code the load here. Once that floor reaches 12,
+  // delete this branch and keep only the #else.
+  int32_t bytes;
+  memcpy(&bytes, pixel, sizeof(bytes));
+  return _mm_cvtepu8_epi32(_mm_cvtsi32_si128(bytes));
+#else
+  return _mm_cvtepu8_epi32(_mm_loadu_si32(pixel));
+#endif
+}
+
 static MOZ_ALWAYS_INLINE void AccumRemainder(
     const unsigned char* pixelsLeft,
     const SkConvolutionFilter1D::ConvolutionFixed* filterValues, __m128i& accum,
     int r) {
-  int remainder[4] = {0};
+  __m128i t = _mm_setzero_si128();
   for (int i = 0; i < r; i++) {
-    SkConvolutionFilter1D::ConvolutionFixed coeff = filterValues[i];
-    remainder[0] += coeff * pixelsLeft[i * 4 + 0];
-    remainder[1] += coeff * pixelsLeft[i * 4 + 1];
-    remainder[2] += coeff * pixelsLeft[i * 4 + 2];
-    remainder[3] += coeff * pixelsLeft[i * 4 + 3];
+    // Widening the four channels to 32-bit lanes leaves each lane holding
+    // [0, channel] as 16-bit halves, so madd's odd term is always zero and the
+    // lane result is exactly coeff * channel, as in the scalar form. Splatting
+    // the coefficient at 16-bit width lets the load fold into the broadcast.
+    __m128i px = LoadPixelU32(pixelsLeft + i * 4);
+    __m128i coeff = _mm_set1_epi16(filterValues[i]);
+    t = _mm_add_epi32(t, _mm_madd_epi16(coeff, px));
   }
-  __m128i t =
-      _mm_setr_epi32(remainder[0], remainder[1], remainder[2], remainder[3]);
   accum = _mm_add_epi32(accum, t);
 }
 

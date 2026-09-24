@@ -19,28 +19,56 @@
       "value": {
         "light": "{color.blue.60}",
         "dark": "{color.blue.20}",
-        "prefersContrast": "{icon.color.@base}"
+        "prefersContrast": "{icon.color.@base}",
+        "nova": {
+          "comment": "Use prefersContrast over forcedColors",
+          "value": {
+            "light": "{color.violet.50}",
+            "dark": "{color.violet.20}"
+          }
+        }
       }
     },
     "success": {
       "value": {
         "light": "{color.green.60}",
         "dark": "{color.green.20}",
-        "prefersContrast": "{icon.color.@base}"
+        "prefersContrast": "{icon.color.@base}",
+        "nova": {
+          "comment": "Use prefersContrast over forcedColors",
+          "value": {
+            "light": "{color.green.50}",
+            "dark": "{color.green.20}"
+          }
+        }
       }
     },
     "warning": {
       "value": {
         "light": "{color.yellow.60}",
         "dark": "{color.yellow.20}",
-        "prefersContrast": "{icon.color.@base}"
+        "prefersContrast": "{icon.color.@base}",
+        "nova": {
+          "comment": "Use prefersContrast over forcedColors",
+          "value": {
+            "light": "{color.yellow.50}",
+            "dark": "{color.yellow.20}"
+          }
+        }
       }
     },
     "critical": {
       "value": {
         "light": "{color.red.60}",
         "dark": "{color.red.20}",
-        "prefersContrast": "{icon.color.@base}"
+        "prefersContrast": "{icon.color.@base}",
+        "nova": {
+          "comment": "Use prefersContrast over forcedColors",
+          "value": {
+            "light": "{color.red.50}",
+            "dark": "{color.red.20}"
+          }
+        }
       }
     }
   },
@@ -49,19 +77,19 @@
       "value": "{icon.size.small}"
     },
     "xsmall": {
-      "value": "{dimension.12}"
+      "value": "12px"
     },
     "small": {
-      "value": "{dimension.16}"
+      "value": "16px"
     },
     "medium": {
-      "value": "{dimension.20}"
+      "value": "20px"
     },
     "large": {
-      "value": "{dimension.24}"
+      "value": "24px"
     },
     "xlarge": {
-      "value": "{dimension.32}"
+      "value": "32px"
     },
     "xxlarge": {
       "value": "{size.item.xlarge}"

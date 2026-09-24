@@ -5,10 +5,17 @@
 #include <type_traits>
 
 #include "H264.h"
+#include "ImageContainer.h"
+#include "MP4Demuxer.h"
+#include "MockMediaResource.h"
 #include "PDMFactory.h"
+#include "VideoUtils.h"
 #include "gfxPlatform.h"
 #include "gtest/gtest.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/SharedThreadPool.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gtest/ScopedPrefSetter.h"
 #include "mozilla/gtest/WaitFor.h"
 
 using namespace mozilla;
@@ -105,6 +112,119 @@ void CheckAndroid(VideoInfo& aVideoInfo, MDD::PropertyName aProperty) {
   }
 }
 #endif
+
+static RefPtr<VideoData> DecodeFirstAV1FrameViaFFVPX(
+    const char* aFileName, gfx::ColorSpace2 aConfigPrimaries,
+    gfx::TransferFunction aConfigTransfer) {
+  RefPtr<MockMediaResource> resource = new MockMediaResource(aFileName);
+  if (NS_FAILED(resource->Open())) {
+    ADD_FAILURE() << "Failed to open " << aFileName;
+    return nullptr;
+  }
+
+  RefPtr<MP4Demuxer> demuxer = new MP4Demuxer(resource);
+  RefPtr<TaskQueue> taskQueue = TaskQueue::Create(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), "TestMediaDataDecoder");
+  auto shutdownTaskQueue = MakeScopeExit([&] {
+    taskQueue->BeginShutdown();
+    taskQueue->AwaitShutdownAndIdle();
+  });
+
+  WaitForResolve(
+      InvokeAsync(taskQueue, __func__, [demuxer] { return demuxer->Init(); }));
+  RefPtr<MediaTrackDemuxer> track =
+      demuxer->GetTrackDemuxer(TrackInfo::kVideoTrack, 0);
+  UniquePtr<TrackInfo> trackInfo = track ? track->GetInfo() : nullptr;
+  if (!trackInfo || !trackInfo->GetAsVideoInfo()) {
+    ADD_FAILURE() << "Missing video track";
+    return nullptr;
+  }
+  VideoInfo* videoInfo = trackInfo->GetAsVideoInfo();
+  videoInfo->mColorPrimaries = Some(aConfigPrimaries);
+  videoInfo->mTransferFunction = Some(aConfigTransfer);
+
+  auto samples = WaitFor(InvokeAsync(taskQueue, __func__,
+                                     [track] { return track->GetSamples(1); }));
+  if (samples.isErr() || samples.inspect()->GetSamples().IsEmpty()) {
+    ADD_FAILURE() << "Failed to demux an AV1 sample";
+    return nullptr;
+  }
+
+  ScopedPrefSetter decoderPrefs({
+      {"media.gpu-process-decoder", false},
+      {"media.rdd-process.enabled", false},
+      {"media.utility-process.enabled", false},
+      {"media.prefer-non-ffvpx", false},
+  });
+  RefPtr<PDMFactory> factory = MakeRefPtr<PDMFactory>();
+
+  RefPtr<layers::ImageContainer> imageContainer =
+      MakeRefPtr<layers::ImageContainer>(
+          layers::ImageUsageType::VideoFrameContainer,
+          layers::ImageContainer::ASYNCHRONOUS);
+  auto created = WaitFor(factory->CreateDecoder(CreateDecoderParams{
+      *videoInfo, imageContainer.get(),
+      CreateDecoderParams::WrapperSet({/* No wrapper */})}));
+  if (created.isErr()) {
+    ADD_FAILURE() << "Failed to create ffvpx AV1 decoder";
+    return nullptr;
+  }
+  RefPtr<MDD> decoder = created.unwrap();
+  if (!decoder->GetDescriptionName().EqualsLiteral("ffvpx video decoder")) {
+    ADD_FAILURE() << "Expected the bundled FFmpeg decoder";
+    return nullptr;
+  }
+  auto shutdownDecoder =
+      MakeScopeExit([&] { WaitForResolve(decoder->Shutdown()); });
+
+  auto init = WaitFor(decoder->Init());
+  if (init.isErr()) {
+    ADD_FAILURE() << "Failed to initialize ffvpx AV1 decoder";
+    return nullptr;
+  }
+
+  auto decoded =
+      WaitFor(decoder->Decode(samples.inspect()->GetSamples()[0].get()));
+  if (decoded.isErr() || decoded.inspect().IsEmpty()) {
+    ADD_FAILURE() << "Failed to decode an AV1 frame";
+    return nullptr;
+  }
+  return do_AddRef(decoded.inspect()[0]->As<VideoData>());
+}
+
+static const layers::PlanarYCbCrData* GetPlanarData(VideoData* aVideo) {
+  if (!aVideo || !aVideo->mImage || !aVideo->mImage->AsPlanarYCbCrImage()) {
+    return nullptr;
+  }
+  return aVideo->mImage->AsPlanarYCbCrImage()->GetData();
+}
+
+TEST(MediaDataDecoder, FFmpegFrameColorMetadataOverridesConfig)
+{
+  constexpr gfx::ColorSpace2 kFixtureColorPrimaries = gfx::ColorSpace2::BT2020;
+  constexpr gfx::TransferFunction kFixtureTransferFunction =
+      gfx::TransferFunction::PQ;
+  RefPtr<VideoData> video = DecodeFirstAV1FrameViaFFVPX(
+      "av1-color-metadata.mp4", gfx::ColorSpace2::BT709,
+      gfx::TransferFunction::BT709);
+  const layers::PlanarYCbCrData* data = GetPlanarData(video);
+  ASSERT_TRUE(data);
+  EXPECT_EQ(data->mColorPrimaries, kFixtureColorPrimaries);
+  EXPECT_EQ(data->mTransferFunction, kFixtureTransferFunction);
+}
+
+TEST(MediaDataDecoder, FFmpegFrameColorMetadataFallsBackToConfig)
+{
+  constexpr gfx::ColorSpace2 kConfigColorPrimaries = gfx::ColorSpace2::BT2020;
+  constexpr gfx::TransferFunction kConfigTransferFunction =
+      gfx::TransferFunction::PQ;
+  RefPtr<VideoData> video = DecodeFirstAV1FrameViaFFVPX(
+      "av1.mp4", kConfigColorPrimaries, kConfigTransferFunction);
+  const layers::PlanarYCbCrData* data = GetPlanarData(video);
+  ASSERT_TRUE(data);
+  EXPECT_EQ(data->mColorPrimaries, kConfigColorPrimaries);
+  EXPECT_EQ(data->mTransferFunction, kConfigTransferFunction);
+}
 
 #ifdef MOZ_APPLEMEDIA
 void CheckApple(VideoInfo& aVideoInfo, MDD::PropertyName aProperty) {

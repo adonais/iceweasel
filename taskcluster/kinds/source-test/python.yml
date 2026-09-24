@@ -225,6 +225,8 @@ mozlint:
                     - win64-node
                     - win64-rust
                     - win64-mozcheck
+        fetch:
+            - pnpm
         clang-tidy:
             - artifact: clang-tidy.tar.zst
               dest: clang-tools
@@ -394,7 +396,7 @@ update-packaging:
 
 mozbuild:
     matrix:
-        python: ['3.9', '3.11']
+        python: ['3.10', '3.11']
     description: mozbuild unit tests (python{matrix[python]})
     platform:
         - linux2404-64/opt

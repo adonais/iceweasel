@@ -126,6 +126,43 @@ add_task(function test_fromWire_skips_payload_validation() {
   );
 });
 
+add_task(function test_fromWire_resolves_to_live_result() {
+  /**
+   * Stands in for a Rust suggestion's UniFFI class, whose prototype structured
+   * clone drops although dismissal checks for it with instanceof.
+   */
+  class Suggestion {}
+
+  let live = makeUrlResult();
+  live.id = 7;
+  live.payload.suggestionObject = new Suggestion();
+
+  let wire = structuredClone(live.toWire());
+  wire.rowIndex = 2;
+  Assert.ok(
+    !(wire.payload.suggestionObject instanceof Suggestion),
+    "the clone dropped the suggestion's class"
+  );
+
+  let restored = UrlbarResult.fromWire(wire, [makeSearchResult(), live]);
+  Assert.strictEqual(restored, live, "the live result with the same id");
+  Assert.ok(
+    restored.payload.suggestionObject instanceof Suggestion,
+    "the live payload data the wire dropped is intact"
+  );
+  Assert.equal(restored.rowIndex, 2, "the wire's rowIndex carried over");
+
+  let other = makeSearchResult();
+  other.id = 8;
+  let unresolved = UrlbarResult.fromWire(wire, [other]);
+  Assert.notStrictEqual(
+    unresolved,
+    live,
+    "no result with the id: reconstructed instead"
+  );
+  Assert.equal(unresolved.id, 7, "the reconstruction keeps the wire's id");
+});
+
 add_task(function test_queryContext_roundtrip() {
   let context = createContext("foo bar", { providers: ["test"] });
   let heuristic = makeUrlResult({ heuristic: true });
@@ -140,7 +177,7 @@ add_task(function test_queryContext_roundtrip() {
     heuristicResult: context.heuristicResult.toWire(),
   });
   Object.setPrototypeOf(wire, UrlbarQueryContext.prototype);
-  wire.results = wire.results.map(UrlbarResult.fromWire);
+  wire.results = wire.results.map(r => UrlbarResult.fromWire(r));
   wire.heuristicResult = UrlbarResult.fromWire(wire.heuristicResult);
 
   Assert.equal(wire.searchString, "foo bar", "searchString preserved");

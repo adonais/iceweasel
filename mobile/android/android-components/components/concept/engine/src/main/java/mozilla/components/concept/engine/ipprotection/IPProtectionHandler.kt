@@ -42,8 +42,13 @@ interface IPProtectionHandler {
     /** Request for the current [ServiceState]. */
     fun getState(onResult: (ServiceState) -> Unit)
 
-    /** Requests an update for the list of countries available in the proxy server-list. */
-    fun updateCountryList()
+    /**
+     * Requests an update for the list of countries available in the proxy server-list.
+     *
+     * @param onResult Invoked once the update request resolves. Receives `null` on success or the [Throwable] that
+     *   caused the failure.
+     */
+    fun updateCountryList(onResult: (Throwable?) -> Unit = {})
 
     /** Initializes the proxy state machine. */
     fun init()

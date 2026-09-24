@@ -185,19 +185,20 @@ bool JitHintsMap::addMonomorphicInlineLocation(JSScript* script,
   return hint->addMonomorphicInlineOffset(offset);
 }
 
-bool JitHintsMap::hasMonomorphicInlineHintAtOffset(JSScript* script,
-                                                   uint32_t offset) {
+mozilla::Span<const uint32_t> JitHintsMap::getMonomorphicInlineOffsets(
+    JSScript* script) const {
   ScriptKey key = getScriptKey(script);
   if (!key) {
-    return false;
+    return {};
   }
 
   auto p = ionHintMap_.lookup(key);
   if (p) {
-    return p->value()->hasMonomorphicInlineOffset(offset);
+    const auto& offsets = p->value()->monomorphicInlineOffsets;
+    return mozilla::Span(offsets.begin(), offsets.length());
   }
 
-  return false;
+  return {};
 }
 
 bool JitHintsMap::shouldTransitionMegamorphic(JSScript* script,

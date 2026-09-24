@@ -2,7 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React, { useContext, useEffect, useLayoutEffect, useRef } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useDispatch, useSelector, batch } from "react-redux";
 import { BaseContext } from "content-src/lib/BaseContext";
 // Bug 2034542: these per-widget imports can be removed once the non-Nova render
@@ -27,22 +33,26 @@ import {
   getHideAllTargets,
 } from "common/WidgetsRegistry.mjs";
 import {
+  isAutoMinimizeWidgetsAssigned,
   isSideBySideActive,
   isSpaceOverridden,
   isSpacesActive,
+  resolveAutoMinimizeDelayMs,
   SPACE_IDS,
 } from "common/PageLayoutVariants.mjs";
 import { WIDGET_ROW_COMPONENTS } from "./WidgetsComponentRegistry.jsx";
 import { WidgetWrapper } from "./WidgetWrapper";
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
 import { useWidgetDnD } from "./useWidgetDnD.jsx";
-import { useReorderFlip } from "content-src/lib/useReorderFlip.jsx";
+import { usePageVisible } from "./usePageVisible.jsx";
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
   CHANGE_SIZE_ALL: "change_size_all",
   CHANGE_ROW_VISIBILITY: "change_row_visibility",
   FEEDBACK: "feedback",
+  // @experiment(remove) { bug 2066527 }
+  AUTO_MINIMIZE: "auto_minimize",
 };
 
 const PREF_NOVA_ENABLED = "nova.enabled";
@@ -51,6 +61,8 @@ const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 const PREF_WIDGETS_ROW_EXPANDED = "widgets.row.expanded";
+// @experiment(remove) { bug 2066527 }
+const PREF_WIDGETS_AUTO_MINIMIZE_OVERRIDE = "widgets.autoMinimize.userOverride";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
 const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL =
@@ -140,6 +152,19 @@ function Widgets() {
   // A space is a full page of its own, so there is nothing to be conservative
   // about: widgets always show expanded and the row toggle is hidden.
   const rowExpanded = spacesActive || !!prefs[PREF_WIDGETS_ROW_EXPANDED];
+  // @experiment(remove) { bug 2066527 }
+  const autoMinimizeAssigned =
+    novaEnabled && !spacesActive && isAutoMinimizeWidgetsAssigned(prefs);
+  // Active until the user expands or collapses the section by hand; that
+  // choice persists and returns the header button to its size toggle.
+  const autoMinimizeActive =
+    autoMinimizeAssigned && !prefs[PREF_WIDGETS_AUTO_MINIMIZE_OVERRIDE];
+  const [autoCollapsed, setAutoCollapsed] = useState(false);
+  // Derived, so turning the variant off (DS Admin, a trainhop change) can't
+  // leave the row stuck title-only with no control that reopens it.
+  const sectionCollapsed = autoMinimizeActive && autoCollapsed;
+  const autoMinimizeDelayMs = resolveAutoMinimizeDelayMs(prefs);
+  const isPageVisible = usePageVisible();
   const nimbusMaximizedTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled =
@@ -159,7 +184,10 @@ function Widgets() {
   // The row toggle resizes every widget at once, which a one-card-wide column has
   // no room for; that slot gets an add button instead. Per-widget "Change size"
   // still applies -- size is a row span, so medium and large are both one card wide.
-  const showWidgetsSizeToggle = !addButtonInHeader && widgetsMayBeMaximized;
+  // @experiment(remove-conditional) { bug 2066527 }
+  // Drop the autoMinimizeAssigned clause.
+  const showWidgetsSizeToggle =
+    !addButtonInHeader && (widgetsMayBeMaximized || autoMinimizeAssigned);
 
   // The experiment can show the Widgets space to someone who had the master
   // toggle off, and the panel must not then be empty.
@@ -261,33 +289,13 @@ function Widgets() {
 
   const {
     effectiveOrder,
-    draggedId,
-    previewOrder,
-    previewOrderMap,
-    handleDragStart,
-    handleDragOver,
-    handleDrop,
-    handleDragEnd,
-    handleMouseDown,
+    containerRef: widgetsContainerRef,
+    getItemProps,
   } = useWidgetDnD({
     widgetOrder,
     prefs,
     dispatch,
-  });
-
-  // Drives the FLIP reorder animation off the actual visual id sequence: the
-  // live preview order while dragging, otherwise the committed order. Keying
-  // off the sequence keeps the key stable across the drop/dragend re-renders so
-  // the last move's animation isn't cancelled. The dragged tile is excluded so
-  // it tracks the cursor instantly instead of being flung by its own (largest)
-  // inverse transform.
-  const flipKey = (previewOrder || effectiveOrder).join(",");
-  const widgetsContainerRef = useReorderFlip({
-    orderKey: flipKey,
-    resetKey: draggedId,
     enabled: novaEnabled,
-    childSelector: "[data-widget-id]",
-    skipSelector: ".is-dragging",
   });
 
   const anyWidgetInRow =
@@ -320,15 +328,22 @@ function Widgets() {
   const prevTimerEnabledRef = useRef(timerEnabled);
 
   const rowToggleFromHeightRef = useRef(null);
+  // @experiment(remove) { bug 2066527 }
+  // The collapse target is CSS-driven (height: 0). Measuring it after the
+  // attribute lands flushes layout at zero and the transition then never
+  // starts, so the collapse passes its target here instead.
+  const rowToggleToHeightRef = useRef(null);
 
   useLayoutEffect(() => {
     const fromHeight = rowToggleFromHeightRef.current;
+    const knownToHeight = rowToggleToHeightRef.current;
     rowToggleFromHeightRef.current = null;
+    rowToggleToHeightRef.current = null;
     const container = widgetsContainerRef.current;
     if (fromHeight === null || !container) {
       return undefined;
     }
-    const toHeight = container.getBoundingClientRect().height;
+    const toHeight = knownToHeight ?? container.getBoundingClientRect().height;
     if (fromHeight === toHeight) {
       return undefined;
     }
@@ -363,9 +378,54 @@ function Widgets() {
       ROW_TOGGLE_HEIGHT_ANIMATION_FALLBACK_MS
     );
     return finishRowHeightAnimation;
-    // widgetsContainerRef is a stable ref from useReorderFlip; listed to satisfy
+    // widgetsContainerRef is a stable ref from useWidgetDnD; listed to satisfy
     // exhaustive-deps, its identity never changes so only rowExpanded reruns this.
-  }, [rowExpanded, widgetsContainerRef]);
+  }, [rowExpanded, sectionCollapsed, widgetsContainerRef]);
+
+  // @experiment(remove) { bug 2066527 }
+  // Gated on isPageVisible because new tabs are preloaded and render while
+  // hidden, so a mount-time timer would spend itself before the user looked.
+  useEffect(() => {
+    if (
+      !autoMinimizeActive ||
+      autoCollapsed ||
+      !isPageVisible ||
+      globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    ) {
+      return undefined;
+    }
+    const timer = globalThis.setTimeout(() => {
+      const container = widgetsContainerRef.current;
+      // Collapsing sends the container inert, which would drop the caret out
+      // of whatever the user is using. Focus in the row is engagement anyway.
+      if (container?.contains(globalThis.document?.activeElement)) {
+        return;
+      }
+      rowToggleFromHeightRef.current =
+        container?.getBoundingClientRect().height ?? null;
+      rowToggleToHeightRef.current = 0;
+      setAutoCollapsed(true);
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_CONTAINER_ACTION,
+          data: {
+            action_type: CONTAINER_ACTION_TYPES.AUTO_MINIMIZE,
+            action_value: "collapse_section",
+            widget_size: widgetSize,
+          },
+        })
+      );
+    }, autoMinimizeDelayMs);
+    return () => globalThis.clearTimeout(timer);
+  }, [
+    autoMinimizeActive,
+    autoCollapsed,
+    autoMinimizeDelayMs,
+    isPageVisible,
+    dispatch,
+    widgetSize,
+    widgetsContainerRef,
+  ]);
 
   // Reset timer when it becomes disabled
   useEffect(() => {
@@ -501,7 +561,6 @@ function Widgets() {
   function handleManageWidgetsClick(e) {
     e.preventDefault();
     openWidgetsPanel();
-    dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
   }
 
   function toggleRowExpanded() {
@@ -531,6 +590,40 @@ function Widgets() {
   function handleToggleRowExpandedClick(e) {
     e.preventDefault();
     toggleRowExpanded();
+  }
+
+  // @experiment(remove) { bug 2066527 }
+  // Expanding by hand ends the experiment for this profile: the timer stops
+  // running and the header button goes back to toggling widget size.
+  function expandAutoMinimizedSection() {
+    rowToggleFromHeightRef.current =
+      widgetsContainerRef.current?.getBoundingClientRect().height ?? null;
+    setAutoCollapsed(false);
+    batch(() => {
+      dispatch(ac.SetPref(PREF_WIDGETS_AUTO_MINIMIZE_OVERRIDE, true));
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_CONTAINER_ACTION,
+          data: {
+            action_type: CONTAINER_ACTION_TYPES.AUTO_MINIMIZE,
+            action_value: "expand_section",
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+  }
+
+  function handleExpandAutoMinimizedClick(e) {
+    e.preventDefault();
+    expandAutoMinimizedSection();
+  }
+
+  function handleExpandAutoMinimizedKeyDown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      expandAutoMinimizedSection();
+    }
   }
 
   function handleFeedbackClick(e) {
@@ -571,6 +664,15 @@ function Widgets() {
       return <h1 data-l10n-id="newtab-widget-section-title"></h1>;
     }
 
+    const sizeToggleL10nId = isMaximized
+      ? "newtab-widget-section-minimize"
+      : "newtab-widget-section-maximize";
+    // @experiment(remove-conditional) { bug 2066527 }
+    // Drop the autoMinimizeActive branches here and on the handlers below.
+    const headerToggleL10nId = autoMinimizeActive
+      ? "newtab-widget-section-show-widgets"
+      : sizeToggleL10nId;
+
     return (
       <div className="widgets-title-heading">
         <h1 data-l10n-id="newtab-widget-section-title"></h1>
@@ -579,14 +681,18 @@ function Widgets() {
             id="toggle-widgets-size-button"
             className={`widgets-expand-button${isMaximized ? " is-maximized" : ""}`}
             size="small"
-            data-l10n-id={
-              isMaximized
-                ? "newtab-widget-section-minimize"
-                : "newtab-widget-section-maximize"
-            }
+            data-l10n-id={headerToggleL10nId}
             iconsrc="chrome://global/skin/icons/arrow-down.svg"
-            onClick={handleToggleMaximizeClick}
-            onKeyDown={handleToggleMaximizeKeyDown}
+            onClick={
+              autoMinimizeActive
+                ? handleExpandAutoMinimizedClick
+                : handleToggleMaximizeClick
+            }
+            onKeyDown={
+              autoMinimizeActive
+                ? handleExpandAutoMinimizedKeyDown
+                : handleToggleMaximizeKeyDown
+            }
           />
         ) : null}
         {addButtonInHeader ? (
@@ -736,6 +842,8 @@ function Widgets() {
           ref={widgetsContainerRef}
           className={`widgets-container${isMaximized ? " is-maximized" : ""}`}
           data-row-collapsed={isCollapsed ? "" : undefined}
+          data-section-collapsed={sectionCollapsed ? "" : undefined}
+          inert={sectionCollapsed}
         >
           {effectiveOrder.map(id => {
             if (novaEnabled) {
@@ -774,28 +882,16 @@ function Widgets() {
               const wrapperClassName = [
                 size && `${size}-widget`,
                 "widget-draggable",
-                draggedId === id && "is-dragging",
               ]
                 .filter(Boolean)
                 .join(" ");
-              const dragProps = {
-                style: previewOrderMap
-                  ? { order: previewOrderMap[id] }
-                  : undefined,
-                draggable: true,
-                onDragStart: e => handleDragStart(e, id),
-                onDragOverCapture: handleDragOver,
-                onDrop: handleDrop,
-                onDragEnd: handleDragEnd,
-                onMouseDown: handleMouseDown,
-              };
               return (
                 <WidgetWrapper
                   key={id}
                   className={wrapperClassName}
                   data-widget-id={id}
                   {...hiddenAttrs}
-                  {...dragProps}
+                  {...getItemProps(id)}
                 >
                   {/* Contain a crash to this widget's cell so one failing
                       widget can't tear down the whole widgets section. */}

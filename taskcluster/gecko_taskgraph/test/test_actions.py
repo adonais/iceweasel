@@ -796,6 +796,65 @@ def test_side_by_side(mocker, responses, run_action, get_artifact):
     assert "perftest-linux-side-by-side" in to_run
 
 
+DECISION_PARAMETERS = {
+    "base_repository": "http://hg.example.com",
+    "head_repository": "http://hg.example.com",
+    "head_rev": "abcdef",
+    "project": "try",
+    "level": "1",
+    "pushlog_id": "100",
+    "release_product": "firefox",
+    "release_type": "nightly",
+}
+
+
+PARTNER_DECISION_PARAMETERS = DECISION_PARAMETERS | {"release_type": "release"}
+
+# Only en-US: fix_partner_config() intersects locales with l10n-changesets.json,
+# whose contents vary by branch and get trimmed altogether by `mach try release`.
+# en-US is the one locale it always appends.
+PARTNER_CONFIG = {
+    "release-partner-repack": {
+        "acme": {"acme-001": {"locales": ["en-US"], "platforms": ["win64-shippable"]}}
+    }
+}
+
+
+def mock_artifact(responses, task_id, name, **kwargs):
+    responses.get(
+        f"{ROOT_URL}/api/queue/v1/task/{task_id}/artifacts/public%2F{name}",
+        status=303,
+        json={"url": f"{ROOT_URL}/artifacts/{task_id}-{name}"},
+    )
+    responses.get(f"{ROOT_URL}/artifacts/{task_id}-{name}", status=200, **kwargs)
+
+
+def mock_parameters_artifact(responses, task_id, parameters):
+    mock_artifact(
+        responses,
+        task_id,
+        "parameters.yml",
+        body=yaml.dump(parameters),
+        content_type="application/x-yaml",
+    )
+
+
+def mock_full_task_graph_artifact(responses, task_id, graph=None):
+    mock_artifact(responses, task_id, "full-task-graph.json", json=graph or {})
+
+
+def mock_empty_task_group(responses, action_task_id):
+    responses.get(
+        f"{ROOT_URL}/api/queue/v1/task-group/{action_task_id}/list",
+        status=200,
+        json={
+            "tasks": [
+                {"status": {"taskId": action_task_id, "state": "running"}},
+            ]
+        },
+    )
+
+
 def test_release_promotion(
     mocker, monkeypatch, responses, run_action, parameters, graph_config
 ):
@@ -810,46 +869,9 @@ def test_release_promotion(
         json={"taskId": "decision-task-id"},
     )
 
-    responses.get(
-        f"{ROOT_URL}/api/queue/v1/task/decision-task-id/artifacts/public%2Fparameters.yml",
-        status=303,
-        json={"url": f"{ROOT_URL}/artifacts/decision-parameters.yml"},
-    )
-    responses.get(
-        f"{ROOT_URL}/artifacts/decision-parameters.yml",
-        status=200,
-        body=yaml.dump({
-            "base_repository": "http://hg.example.com",
-            "head_repository": "http://hg.example.com",
-            "head_rev": "abcdef",
-            "project": "try",
-            "level": "1",
-            "pushlog_id": "100",
-            "release_product": "firefox",
-            "release_type": "nightly",
-        }),
-        content_type="application/x-yaml",
-    )
-    responses.get(
-        f"{ROOT_URL}/api/queue/v1/task/decision-task-id/artifacts/public%2Ffull-task-graph.json",
-        status=303,
-        json={"url": f"{ROOT_URL}/artifacts/full-task-graph.json"},
-    )
-    responses.get(
-        f"{ROOT_URL}/artifacts/full-task-graph.json",
-        status=200,
-        json={},
-    )
-
-    responses.get(
-        f"{ROOT_URL}/api/queue/v1/task-group/{action_task_id}/list",
-        status=200,
-        json={
-            "tasks": [
-                {"status": {"taskId": action_task_id, "state": "running"}},
-            ]
-        },
-    )
+    mock_parameters_artifact(responses, "decision-task-id", DECISION_PARAMETERS)
+    mock_full_task_graph_artifact(responses, "decision-task-id")
+    mock_empty_task_group(responses, action_task_id)
 
     mocker.patch(
         "gecko_taskgraph.actions.release_promotion.find_existing_tasks_from_previous_kinds",
@@ -877,6 +899,116 @@ def test_release_promotion(
     args, kwargs = m.call_args
     assert args[0] == {"root": graph_config.root_dir}
     assert kwargs["parameters"]["target_tasks_method"] == "promote_desktop"
+
+
+def run_partner_release_promotion(
+    mocker,
+    monkeypatch,
+    responses,
+    run_action,
+    flavor,
+    previous_graph_ids,
+    previous_parameters,
+):
+    taskgraph_decision = mocker.patch(
+        "gecko_taskgraph.actions.release_promotion.taskgraph_decision"
+    )
+    mocker.patch("gecko_taskgraph.actions.release_promotion.get_token")
+    get_partner_config = mocker.patch(
+        "gecko_taskgraph.actions.release_promotion.get_partner_config",
+        return_value=PARTNER_CONFIG,
+    )
+    mocker.patch(
+        "gecko_taskgraph.actions.release_promotion.find_existing_tasks_from_previous_kinds",
+        return_value={},
+    )
+
+    action_task_id = "action-task-id"
+    monkeypatch.setenv("TASK_ID", action_task_id)
+    mock_empty_task_group(responses, action_task_id)
+
+    for graph_id in previous_graph_ids:
+        mock_full_task_graph_artifact(responses, graph_id)
+    # Only the graphs the action is expected to read: `responses` fails the test
+    # on both an unregistered request and a registered one that never fires.
+    for graph_id, extra_parameters in previous_parameters.items():
+        mock_parameters_artifact(
+            responses, graph_id, PARTNER_DECISION_PARAMETERS | extra_parameters
+        )
+
+    run_action(
+        "release-promotion",
+        params={"project": "try", "level": "1"},
+        input={
+            "release_promotion_flavor": flavor,
+            "build_number": 1,
+            "version": "",
+            "partial_updates": {},
+            "previous_graph_ids": previous_graph_ids,
+            "release_enable_partner_repack": True,
+            "release_enable_partner_attribution": False,
+            "release_enable_emefree": False,
+        },
+    )
+
+    taskgraph_decision.assert_called_once()
+    _, kwargs = taskgraph_decision.call_args
+    return get_partner_config, kwargs["parameters"]
+
+
+def test_release_promotion_reuses_previous_partner_config(
+    mocker, monkeypatch, responses, run_action, parameters
+):
+    get_partner_config, decision_parameters = run_partner_release_promotion(
+        mocker,
+        monkeypatch,
+        responses,
+        run_action,
+        flavor="push_firefox",
+        previous_graph_ids=["decision-task-id", "promote-task-id"],
+        previous_parameters={
+            "decision-task-id": {},
+            "promote-task-id": {"release_partner_config": PARTNER_CONFIG},
+        },
+    )
+
+    get_partner_config.assert_not_called()
+    assert decision_parameters["release_partner_config"] == PARTNER_CONFIG
+
+
+def test_release_promotion_looks_up_partner_config_without_a_previous_one(
+    mocker, monkeypatch, responses, run_action, parameters
+):
+    get_partner_config, decision_parameters = run_partner_release_promotion(
+        mocker,
+        monkeypatch,
+        responses,
+        run_action,
+        flavor="promote_firefox",
+        previous_graph_ids=["decision-task-id"],
+        previous_parameters={"decision-task-id": {}},
+    )
+
+    get_partner_config.assert_called_once()
+    assert decision_parameters["release_partner_config"] == PARTNER_CONFIG
+
+
+def test_release_promotion_partner_repack_flavor_refreshes_partner_config(
+    mocker, monkeypatch, responses, run_action, parameters
+):
+    # No mock for the promote graph's parameters.yml: this flavor must not read
+    # it, and `responses` refuses any request it does not recognise.
+    get_partner_config, _ = run_partner_release_promotion(
+        mocker,
+        monkeypatch,
+        responses,
+        run_action,
+        flavor="promote_firefox_partner_repack",
+        previous_graph_ids=["decision-task-id", "promote-task-id"],
+        previous_parameters={"decision-task-id": {}},
+    )
+
+    get_partner_config.assert_called_once()
 
 
 def test_backfill_standard(mocker, run_action):

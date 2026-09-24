@@ -4,7 +4,7 @@
 
 :root {
   /* 580px - max width for chat content and smartbar */
-  --smartwindow-content-max-width: calc(var(--size-layout-xlarge) + var(--dimension-80));
+  --smartwindow-content-max-width: calc(var(--size-layout-xlarge) + 80px);
   --smartwindow-brand-accent: light-dark(var(--color-violet-90), var(--color-violet-20));
   --smartwindow-prompt-button-background-color: light-dark(var(--color-white), var(--color-gray-80));
   --smartwindow-text-color-accent-deemphasized: light-dark(var(--color-violet-60), var(--color-violet-30));
@@ -17,10 +17,10 @@
   --smartwindow-ghost-button-background: light-dark(var(--color-white), var(--color-purple-100));
   --smartwindow-ghost-button-background-hover: light-dark(var(--color-violet-20), var(--smartwindow-ghost-button-fill-dark));
   --smartwindow-ghost-button-background-active: light-dark(var(--color-violet-30), var(--smartwindow-ghost-button-fill-dark));
-  --smartwindow-ghost-button-text: light-dark(var(--color-violet-90), var(--button-text-color));
+  --smartwindow-text-color: light-dark(var(--color-violet-90), var(--button-text-color));
   /* Nova uses the light violet token rather than moz-button's default text. */
   @media -moz-pref("browser.nova.enabled") {
-    --smartwindow-ghost-button-text: light-dark(var(--color-violet-90), var(--color-violet-0));
+    --smartwindow-text-color: light-dark(var(--color-violet-90), var(--color-violet-0));
   }
 
   /* Override box-shadow-level-2 with custom colors */

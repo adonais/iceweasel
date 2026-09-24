@@ -1,0 +1,17 @@
+---
+# == reference for outset-abutting-fill-snap.yaml. See that file.
+#
+# The shadow rect snapped to the device grid, solid: (80, 10)-(141, 71). The
+# element fill lands strictly inside it, so with the ClipOut snapping the same
+# way the element does there is no join left to see.
+root:
+  items:
+    - type: stacking-context
+      bounds: [0, 0, 250, 100]
+      items:
+        - type: rect
+          bounds: [0, 0, 250, 100]
+          color: [255, 255, 255]
+        - type: rect
+          bounds: [80, 10, 61, 61]
+          color: [0, 0, 0]

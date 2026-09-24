@@ -198,6 +198,20 @@ void SVGAElement::GetLinkTargetImpl(nsAString& aTarget) {
   }
 }
 
+bool SVGAElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                                 const nsAString& aValue,
+                                 nsIPrincipal* aMaybeScriptedPrincipal,
+                                 nsAttrValue& aResult) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aAttribute == nsGkAtoms::referrerpolicy) {
+      return ParseReferrerAttribute(aValue, aResult);
+    }
+  }
+
+  return SVGAElementBase::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                         aMaybeScriptedPrincipal, aResult);
+}
+
 void SVGAElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                const nsAttrValue* aValue,
                                const nsAttrValue* aOldValue,

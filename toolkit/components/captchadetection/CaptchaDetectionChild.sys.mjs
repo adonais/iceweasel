@@ -177,12 +177,14 @@ class GoogleRecaptchaV2Handler extends CaptchaHandler {
 class CFTurnstileHandler extends CaptchaHandler {
   #observingShadowRoot;
   #mutationObserver;
+  #reportedResult;
 
   static type = "cf-turnstile";
 
   constructor(actor, event) {
     super(actor, event);
     this.#observingShadowRoot = false;
+    this.#reportedResult = false;
     if (this.actor.document.body?.openOrClosedShadowRoot) {
       this.#observeShadowRoot(this.actor.document.body.openOrClosedShadowRoot);
       return;
@@ -233,44 +235,53 @@ class CFTurnstileHandler extends CaptchaHandler {
     }
     this.#observingShadowRoot = true;
 
-    this.#mutationObserver = new this.actor.contentWindow.MutationObserver(
-      (_mutations, observer) => {
-        const fail = shadowRoot.getElementById("fail");
-        const success = shadowRoot.getElementById("success");
-        if (!fail || !success) {
-          return;
-        }
-
-        if (fail.style.display !== "none") {
-          lazy.console.debug("Captcha failed");
-          this.updateState({
-            type: CFTurnstileHandler.type,
-            result: "Failed",
-          });
-          observer.disconnect();
-          return;
-        }
-
-        if (success.style.display !== "none") {
-          lazy.console.debug("Captcha succeeded");
-          this.updateState({
-            type: CFTurnstileHandler.type,
-            result: "Succeeded",
-          });
-          observer.disconnect();
-        }
-      }
-    ).observe(shadowRoot, {
+    this.#mutationObserver = new this.actor.contentWindow.MutationObserver(() =>
+      this.#checkResult(shadowRoot)
+    );
+    this.#mutationObserver.observe(shadowRoot, {
       childList: true,
       subtree: true,
       attributes: true,
       attributeFilter: ["style"],
     });
+
+    // A MutationObserver only reports mutations made after observe(), so the
+    // result may already be showing by the time we get here. Check once now.
+    this.#checkResult(shadowRoot);
+  }
+
+  #checkResult(shadowRoot) {
+    if (this.#reportedResult) {
+      return;
+    }
+
+    const fail = shadowRoot.getElementById("fail");
+    const success = shadowRoot.getElementById("success");
+    if (!fail || !success) {
+      return;
+    }
+
+    let result;
+    if (fail.style.display !== "none") {
+      result = "Failed";
+    } else if (success.style.display !== "none") {
+      result = "Succeeded";
+    } else {
+      return;
+    }
+
+    lazy.console.debug(`Captcha ${result}`);
+    this.#reportedResult = true;
+    this.#mutationObserver.disconnect();
+    this.updateState({
+      type: CFTurnstileHandler.type,
+      result,
+    });
   }
 
   onActorDestroy() {
     super.onActorDestroy();
-    this.#mutationObserver.disconnect();
+    this.#mutationObserver?.disconnect();
   }
 }
 

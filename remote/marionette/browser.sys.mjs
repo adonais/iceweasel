@@ -8,8 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
-  MessageManagerDestroyedPromise:
-    "chrome://remote/content/marionette/sync.sys.mjs",
+  MessageManagerDestroyedPromise: "chrome://remote/content/shared/Sync.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   windowManager: "chrome://remote/content/shared/WindowManager.sys.mjs",

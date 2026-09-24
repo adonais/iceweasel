@@ -9,11 +9,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.base.crash.CrashReporting
@@ -48,9 +47,11 @@ internal const val PREF_FXA_SCOPE = "fxa_push_scope"
  * @param context The application Android context.
  * @param accountManager The FxaAccountManager.
  * @param pushFeature The [AutoPushFeature] if that is setup for observing push events.
+ * @param applicationScope The [CoroutineScope] used to launch long-running asynchronous operations, such as account
+ *   registration, device constellation updates, and processing push events, ensuring they continue even if the UI
+ *   changes.
  * @param crashReporter Instance of `CrashReporting` to record unexpected caught exceptions.
- * @param coroutineScope The scope in which IO work within the feature should be performed on.
- * @param uiContext The context on which UI-related operations should be performed. Defaults to [Dispatchers.Main].
+ * @param ioDispatcher The dispatcher used for IO work within the feature.
  * @param owner the lifecycle owner for the observer. Defaults to [ProcessLifecycleOwner].
  * @param autoPause whether to stop notifying the observer during onPause lifecycle events. Defaults to false so that
  *   observers are always notified.
@@ -59,9 +60,9 @@ class FxaPushSupportFeature(
     private val context: Context,
     private val accountManager: FxaAccountManager,
     private val pushFeature: AutoPushFeature,
+    private val applicationScope: CoroutineScope,
     private val crashReporter: CrashReporting? = null,
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-    private val uiContext: CoroutineContext = Dispatchers.Main,
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val owner: LifecycleOwner = ProcessLifecycleOwner.get(),
     private val autoPause: Boolean = false,
 ) {
@@ -72,29 +73,39 @@ class FxaPushSupportFeature(
      * This scope is randomly generated and unique to the app install. (why this uuid? Note it is *not* reset on
      * logout!)
      */
-    private val pushScope = PushScopeProperty(context, coroutineScope)
+    private val pushScope = PushScopeProperty(context, ioDispatcher)
+
+    private var initializeJob: Job? = null
 
     /** Initialize the support feature to launch the appropriate observers. */
-    fun initialize() = coroutineScope.launch {
-        val scopeValue = pushScope.value()
+    fun initialize() {
+        synchronized(this) {
+            if (initializeJob?.isActive == true) return
 
-        val autoPushObserver = AutoPushObserver(accountManager, pushFeature, scopeValue, uiContext)
+            initializeJob = applicationScope.launch {
+                val scopeValue = pushScope.value()
 
-        val accountObserver =
-            AccountObserver(
-                context,
-                pushFeature,
-                scopeValue,
-                crashReporter,
-                owner,
-                uiContext,
-                autoPause,
-            )
+                val autoPushObserver =
+                    AutoPushObserver(
+                        accountManager,
+                        pushFeature,
+                        scopeValue,
+                        applicationScope,
+                    )
+                val accountObserver =
+                    AccountObserver(
+                        context,
+                        pushFeature,
+                        scopeValue,
+                        crashReporter,
+                        owner,
+                        applicationScope,
+                        autoPause,
+                    )
 
-        coroutineScope.launch(uiContext) {
-            accountManager.register(accountObserver)
-
-            pushFeature.register(autoPushObserver, owner, autoPause)
+                accountManager.register(accountObserver)
+                pushFeature.register(autoPushObserver, owner, autoPause)
+            }
         }
     }
 
@@ -113,14 +124,13 @@ internal class AccountObserver(
     private val fxaPushScope: String,
     private val crashReporter: CrashReporting?,
     private val lifecycleOwner: LifecycleOwner,
-    private val uiContext: CoroutineContext = Dispatchers.Main,
-    private val autoPause: Boolean,
+    private val applicationScope: CoroutineScope,
+    private val autoPause: Boolean = false,
 ) : SyncAccountObserver {
 
     private val logger = Logger(AccountObserver::class.java.simpleName)
     private val verificationDelegate = VerificationDelegate(context, push.config.disableRateLimit)
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
         val constellationObserver =
             ConstellationObserver(
@@ -130,13 +140,14 @@ internal class AccountObserver(
                 account = account,
                 verifier = verificationDelegate,
                 crashReporter = crashReporter,
+                applicationScope = applicationScope,
             )
 
         // NB: can we just expose registerDeviceObserver on account manager?
         // registration could happen after onDevicesUpdate has been called, without having to tie this
         // into the account "auth lifecycle".
         // See https://github.com/mozilla-mobile/android-components/issues/8766
-        GlobalScope.launch(uiContext) {
+        applicationScope.launch {
             account.deviceConstellation().registerDeviceObserver(constellationObserver, lifecycleOwner, autoPause)
             account.deviceConstellation().refreshDevices()
         }
@@ -160,9 +171,9 @@ internal fun pushSubscribe(
     push: AutoPushFeature,
     account: OAuthAccount,
     scope: String,
-    uiContext: CoroutineContext,
     crashReporter: CrashReporting?,
     logContext: String,
+    applicationScope: CoroutineScope,
 ) {
     val logger = Logger("FxaPushSupportFeature")
     val currentDevice = account.deviceConstellation().state()?.currentDevice
@@ -185,7 +196,7 @@ internal fun pushSubscribe(
             // subscription matches, just to ensure `subscriptionExpired` is reset.
             if (currentDevice.subscriptionExpired || currentDevice.subscription?.endpoint != subscription.endpoint) {
                 logger.info("Updating account with new subscription info.")
-                CoroutineScope(uiContext).launch {
+                applicationScope.launch {
                     account.deviceConstellation().setDevicePushSubscription(subscription.into())
                 }
             }
@@ -204,7 +215,7 @@ internal class ConstellationObserver(
     private val account: OAuthAccount,
     private val verifier: VerificationDelegate = VerificationDelegate(context),
     private val crashReporter: CrashReporting?,
-    private val uiContext: CoroutineContext = Dispatchers.Main,
+    private val applicationScope: CoroutineScope,
 ) : DeviceConstellationObserver {
 
     private val logger = Logger(ConstellationObserver::class.java.simpleName)
@@ -235,7 +246,7 @@ internal class ConstellationObserver(
         // And unconditionally subscribe - if our local DB already has a subscription it will
         // be returned without hitting the server. If some other problem meant our subscription
         // was dropped or never made, it will hit the server and deliver a new end-point.
-        pushSubscribe(push, account, scope, uiContext, crashReporter, "onDevicesUpdate")
+        pushSubscribe(push, account, scope, crashReporter, "onDevicesUpdate", applicationScope)
     }
 }
 
@@ -244,7 +255,7 @@ internal class AutoPushObserver(
     private val accountManager: FxaAccountManager,
     private val pushFeature: AutoPushFeature,
     private val fxaPushScope: String,
-    private val uiContext: CoroutineContext,
+    private val applicationScope: CoroutineScope,
 ) : AutoPushFeature.Observer {
     private val logger = Logger(AutoPushObserver::class.java.simpleName)
 
@@ -259,7 +270,7 @@ internal class AutoPushObserver(
         val rawEvent = message ?: return
 
         accountManager.withConstellationIfExists {
-            CoroutineScope(uiContext).launch {
+            applicationScope.launch {
                 processRawEvent(String(rawEvent))
             }
         }
@@ -277,7 +288,7 @@ internal class AutoPushObserver(
             logger.info("We don't have any account to pass the push subscription to.")
             return
         }
-        pushSubscribe(pushFeature, account, fxaPushScope, uiContext, null, "onSubscriptionChanged")
+        pushSubscribe(pushFeature, account, fxaPushScope, null, "onSubscriptionChanged", applicationScope)
     }
 }
 

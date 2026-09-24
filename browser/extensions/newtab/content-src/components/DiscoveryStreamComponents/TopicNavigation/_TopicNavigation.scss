@@ -1,0 +1,53 @@
+.nova-enabled {
+  .topic-navigation {
+    --topic-navigation-gap: var(--space-medium);
+
+    grid-column: 1 / -1;
+    display: flex;
+    column-gap: var(--topic-navigation-gap);
+    margin-block: var(--space-xlarge) calc(var(--space-small) * -1);
+  }
+
+  // Lay out every topic as hidden first so its width can be read.
+  .topic-navigation.is-measuring {
+    visibility: hidden;
+
+    // Hide overflow to prevent a horizontal scrollbar from appearing.
+    .topic-navigation-list {
+      overflow: hidden;
+    }
+  }
+
+  .topic-navigation-list {
+    display: flex;
+    column-gap: var(--topic-navigation-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      flex-shrink: 0;
+    }
+  }
+
+  .topic-navigation-overflow {
+    flex-shrink: 0;
+  }
+
+  // Override the default button background to differentiate the topic buttons.
+  @media (forced-colors: none) {
+    .topic-navigation moz-button {
+      --button-background-color-muted: light-dark(
+        var(--color-violet-desaturated-10),
+        var(--color-violet-desaturated-60)
+      );
+    }
+  }
+
+  @media (height > 700px) {
+    // Accounts for the search overlay, which would otherwise cover the heading.
+    .ds-section .section-title {
+      scroll-margin-block-start: calc(#{$search-height-new} + 3 * var(--space-xlarge));
+    }
+  }
+}

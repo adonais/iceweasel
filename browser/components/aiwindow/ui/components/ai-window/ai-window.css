@@ -164,6 +164,13 @@ smartwindow-prompts {
   width: 100%;
 }
 
+/* Match the smartbar/fullpage-header content column so the pill row lines
+ * up with the input above it, and so overflow (for scrolling) triggers at
+ * a consistent width instead of depending on the window's own width. */
+:host([mode="fullpage"]) smartwindow-prompts {
+  max-width: var(--smartwindow-content-max-width);
+}
+
 .chat-header {
   box-sizing: border-box;
   justify-content: flex-end;
@@ -199,7 +206,7 @@ moz-button.close-sidebar-button {
     --button-background-color-ghost: var(--smartwindow-ghost-button-background);
     --button-background-color-ghost-hover: var(--smartwindow-ghost-button-background-hover);
     --button-background-color-ghost-active: var(--smartwindow-ghost-button-background-active);
-    --button-text-color-ghost: var(--smartwindow-ghost-button-text);
+    --button-text-color-ghost: var(--smartwindow-text-color);
 
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));
@@ -227,6 +234,7 @@ moz-button.close-sidebar-button {
       background:
         image(var(--button-background-color-ghost)) padding-box,
         var(--nova-border-gradient) border-box;
+      color: var(--button-text-color-ghost);
     }
 
     &:is(:hover, :active)::part(button) {

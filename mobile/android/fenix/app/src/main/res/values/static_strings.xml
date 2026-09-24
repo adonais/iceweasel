@@ -125,6 +125,8 @@
     <string name="preferences_debug_settings_use_minimal_bottom_toolbar_while_entering_text" translatable="false">Use a minimal bottom toolbar while entering text in a website</string>
     <!-- Label for the option of using new scroll data for animating the dynamic toolbar -->
     <string name="preferences_debug_settings_use_scroll_data_for_dynamic_toolbar" translatable="false">Animate dynamic toolbars based on website scroll data</string>
+    <!-- Label for the option to show the toolbar in focus mode when clicked -->
+    <string name="preferences_debug_settings_show_toolbar_in_focus_mode" translatable="false">Enable focus mode</string>
     <!-- Label for toggling Remote Crash Pull -->
     <string name="preferences_crash_pull_never_show_again" translatable="false">Never show Crash Pull</string>
     <!-- Label for enabling the Debug Drawer -->
@@ -151,8 +153,6 @@
     <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
     <!-- Label for enabling Homepage Customization -->
     <string name="preferences_debug_settings_homepage_customization" translatable="false">Enable Homepage Customization</string>
-    <!-- Label for enabling trending and recent searches on the Homepage Search -->
-    <string name="preferences_debug_settings_homepage_trending_recent_search" translatable="false">Enable Trending and Recent Search on Homepage</string>
 
     <!-- Search Optimization Secret Settings -->
     <string name="preferences_debug_settings_search_optimization" translatable="false">Search Optimization Feature</string>
@@ -182,6 +182,7 @@
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
     <string name="preferences_tab_groups_live_reorder" translatable="false">Enable Live Reorder for Drag and Drop</string>
     <string name="preferences_tab_groups_onboarding" translatable="false">Enable Tab Groups Onboarding</string>
+    <string name="preferences_tab_groups_strip" translatable="false">Enable Tab Groups Strip</string>
 
     <!-- Label for toggling the Tab Manager opening animation -->
     <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
@@ -268,6 +269,23 @@
     <string name="debug_drawer_play_referrer" translatable="false">Play install referrer</string>
     <string name="debug_drawer_referral" translatable="false">Install referral</string>
     <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
+
+    <!-- Debug drawer IP protection location tools -->
+    <string name="debug_drawer_ip_protection_location_tools_title" translatable="false">IP Protection Location Tools</string>
+    <string name="debug_drawer_ip_protection_location_tools_description" translatable="false">Edit the proxy country list. Every change is applied immediately, as if the engine had pushed it.</string>
+    <string name="debug_drawer_ip_protection_selected_location" translatable="false">Selected location</string>
+    <string name="debug_drawer_ip_protection_recommended" translatable="false">Recommended</string>
+    <string name="debug_drawer_ip_protection_country_list" translatable="false">Country list</string>
+    <string name="debug_drawer_ip_protection_hide_country" translatable="false">Hide</string>
+    <string name="debug_drawer_ip_protection_show_country" translatable="false">Show</string>
+    <string name="debug_drawer_ip_protection_empty_country_list" translatable="false">No countries yet. The list is fetched once IP protection is ready.</string>
+    <string name="debug_drawer_ip_protection_uninitialized" translatable="false">IP protection has not initialized yet. Open a tab and wait for the service to warm up.</string>
+    <string name="debug_drawer_ip_protection_unavailable" translatable="false">IP protection is not available here. Check the Nimbus configuration and the region.</string>
+    <string name="debug_drawer_ip_protection_signed_out" translatable="false">Sign in to your Mozilla account to use IP protection.</string>
+    <string name="debug_drawer_ip_protection_opted_out" translatable="false">IP protection is opted out.</string>
+
+  <!-- Debug drawer Listen to Page tools -->
+  <string name="debug_drawer_listen_to_page_tools_title">Listen to Page Tools</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->

@@ -514,6 +514,13 @@ void ProfilerChild::JoinGatherProfileThread() {
 
 void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
   mDestroyed = true;
+  if (mAwaitNextChunkManagerUpdateResolver) {
+    // The reply can't be sent anymore (IPC rejects the parent's request);
+    // consuming the resolver just avoids the dropped-resolver warning.
+    std::move(mAwaitNextChunkManagerUpdateResolver)(
+        ProfilerParent::MakeFinalUpdate());
+    mAwaitNextChunkManagerUpdateResolver = nullptr;
+  }
   // Join the profile gathering thread in case it's not exited yet to prevent
   // any leaks during shutdown.
   JoinGatherProfileThread();
@@ -522,6 +529,11 @@ void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
 void ProfilerChild::Destroy() {
   ClearPendingUpdate();
   if (!mDestroyed) {
+    // Resolve the parent's pending update request while the channel is open;
+    // Close() would drop the reply. Not ResetChunkManager(), which would
+    // dereference mChunkManager during shutdown.
+    ProcessChunkManagerUpdate(
+        ProfileBufferControlledChunkManager::Update(nullptr));
     Close();
   }
 }

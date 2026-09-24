@@ -118,7 +118,8 @@ class MediaEngineFakeVideoSource : public MediaEngineSource {
     mGeneratedImageListener.DisconnectIfExists();
   }
 
-  void OnGeneratedImage(RefPtr<layers::Image> aImage, TimeStamp aTime);
+  void OnGeneratedImage(RefPtr<layers::Image> aImage, TimeStamp aTime,
+                        VideoRotation aRotation);
 
   // Owning thread only.
   RefPtr<FakeVideoSource> mCapturer;
@@ -355,11 +356,13 @@ nsresult MediaEngineFakeVideoSource::Reconfigure(
 }
 
 void MediaEngineFakeVideoSource::OnGeneratedImage(RefPtr<layers::Image> aImage,
-                                                  TimeStamp aTime) {
+                                                  TimeStamp aTime,
+                                                  VideoRotation aRotation) {
   VideoSegment segment;
-  segment.AppendFrame(aImage.forget(),
-                      gfx::IntSize(mOpts.mWidth, mOpts.mHeight),
-                      mPrincipalHandle, /*aForceBlack=*/false, aTime);
+  segment.AppendFrame(
+      aImage.forget(), gfx::IntSize(mOpts.mWidth, mOpts.mHeight),
+      mPrincipalHandle, /*aForceBlack=*/false, aTime,
+      media::TimeUnit::Invalid(), media::TimeUnit::Invalid(), aRotation);
   mTrack->AppendData(&segment);
 }
 

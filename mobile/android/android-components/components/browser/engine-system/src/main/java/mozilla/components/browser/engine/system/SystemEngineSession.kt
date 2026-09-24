@@ -414,6 +414,15 @@ class SystemEngineSession(
         throw UnsupportedOperationException("Checking for PDF viewer is not available in this engine")
     }
 
+    /** See [EngineSession.addSignatureToPdf] */
+    override fun addSignatureToPdf(
+        text: String,
+        onResult: () -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        throw UnsupportedOperationException("Adding a signature to a PDF is not available in this engine")
+    }
+
     /** See [EngineSession.sendGleanBrokenSiteReport] */
     override fun sendGleanBrokenSiteReport(
         details: JSONObject?,

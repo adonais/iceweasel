@@ -22,6 +22,8 @@ due to the JSONSchema validation library used by Experimenter not fully
 supporting self-references and bundled schema.
 """
 
+from __future__ import annotations
+
 import sys
 from argparse import ArgumentParser
 from itertools import chain

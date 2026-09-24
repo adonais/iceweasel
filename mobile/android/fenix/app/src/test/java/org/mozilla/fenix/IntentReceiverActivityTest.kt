@@ -8,6 +8,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
 import androidx.core.net.toUri
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtraWithKey
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -20,6 +23,9 @@ import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.intent.processing.IntentProcessor
 import mozilla.components.support.test.robolectric.testContext
+import org.hamcrest.CoreMatchers.allOf
+import org.hamcrest.CoreMatchers.not
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -34,6 +40,7 @@ import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
+import org.mozilla.fenix.home.intent.StartSearchIntentProcessor
 import org.mozilla.fenix.shortcut.NewTabShortcutIntentProcessor
 import org.mozilla.fenix.shortcut.PasswordManagerIntentProcessor
 import org.mozilla.fenix.utils.Settings
@@ -55,6 +62,7 @@ class IntentReceiverActivityTest {
         intentProcessors = mockk()
 
         every { settings.openLinksInAPrivateTab } returns false
+        every { settings.enableHomepageAsNewTab } returns false
         every { intentProcessors.intentProcessor } returns mockIntentProcessor()
         every { intentProcessors.privateIntentProcessor } returns mockIntentProcessor()
         every { intentProcessors.customTabIntentProcessor } returns mockIntentProcessor()
@@ -107,25 +115,69 @@ class IntentReceiverActivityTest {
     }
 
     @Test
-    fun `process intent with action OPEN_PRIVATE_TAB`() = runTest {
-        val intent = Intent()
-        intent.action = NewTabShortcutIntentProcessor.ACTION_OPEN_PRIVATE_TAB
-        assertNull(Events.openedLink.testGetValue())
+    fun `GIVEN homepage as new tab is disabled THEN process intent with action OPEN_PRIVATE_TAB and open to search`() =
+        runTest {
+            every { settings.enableHomepageAsNewTab } returns false
 
-        coEvery { intentProcessors.intentProcessor.process(intent) } returns false
-        coEvery { intentProcessors.customTabIntentProcessor.process(intent) } returns false
-        val activity = Robolectric.buildActivity(IntentReceiverActivity::class.java, intent).get()
-        attachMocks(activity)
-        activity.processIntent(intent)
+            val intent = Intent()
+            intent.action = NewTabShortcutIntentProcessor.ACTION_OPEN_PRIVATE_TAB
+            assertNull(Events.openedLink.testGetValue())
 
-        val shadow = shadowOf(activity)
-        val actualIntent = shadow.peekNextStartedActivity()
+            coEvery { intentProcessors.intentProcessor.process(intent) } returns false
+            coEvery { intentProcessors.customTabIntentProcessor.process(intent) } returns false
+            val activity = Robolectric.buildActivity(IntentReceiverActivity::class.java, intent).get()
+            attachMocks(activity)
+            activity.processIntent(intent)
 
-        assertNotNull(Events.openedLink.testGetValue())
-        assertEquals(HomeActivity::class.java.name, actualIntent.component?.className)
-        assertEquals(true, actualIntent.getBooleanExtra(HomeActivity.PRIVATE_BROWSING_MODE, false))
-        assertEquals(false, actualIntent.getBooleanExtra(HomeActivity.OPEN_TO_BROWSER, true))
-    }
+            val shadow = shadowOf(activity)
+            val actualIntent = shadow.peekNextStartedActivity()
+
+            assertNotNull(Events.openedLink.testGetValue())
+            assertThat(
+                actualIntent,
+                allOf(
+                    hasComponent(HomeActivity::class.java.name),
+                    hasExtra(
+                        HomeActivity.OPEN_TO_SEARCH,
+                        StartSearchIntentProcessor.STATIC_SHORTCUT_NEW_PRIVATE_TAB,
+                    ),
+                    hasExtra(HomeActivity.PRIVATE_BROWSING_MODE, true),
+                    hasExtra(HomeActivity.OPEN_TO_BROWSER, false),
+                    not(hasExtraWithKey(HomeActivity.OPEN_TO_HOME)),
+                ),
+            )
+        }
+
+    @Test
+    fun `GIVEN homepage as new tab is enabled THEN process intent with action OPEN_PRIVATE_TAB and open to home`() =
+        runTest {
+            every { settings.enableHomepageAsNewTab } returns true
+
+            val intent = Intent()
+            intent.action = NewTabShortcutIntentProcessor.ACTION_OPEN_PRIVATE_TAB
+            assertNull(Events.openedLink.testGetValue())
+
+            coEvery { intentProcessors.intentProcessor.process(intent) } returns false
+            coEvery { intentProcessors.customTabIntentProcessor.process(intent) } returns false
+            val activity = Robolectric.buildActivity(IntentReceiverActivity::class.java, intent).get()
+            attachMocks(activity)
+            activity.processIntent(intent)
+
+            val shadow = shadowOf(activity)
+            val actualIntent = shadow.peekNextStartedActivity()
+
+            assertNotNull(Events.openedLink.testGetValue())
+            assertThat(
+                actualIntent,
+                allOf(
+                    hasComponent(HomeActivity::class.java.name),
+                    hasExtra(HomeActivity.OPEN_TO_HOME, true),
+                    hasExtra(HomeActivity.PRIVATE_BROWSING_MODE, true),
+                    hasExtra(HomeActivity.OPEN_TO_BROWSER, false),
+                    not(hasExtraWithKey(HomeActivity.OPEN_TO_SEARCH)),
+                ),
+            )
+        }
 
     @Test
     fun `process intent with action OPEN_TAB`() = runTest {

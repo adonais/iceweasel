@@ -77,7 +77,7 @@ add_task(async function () {
   getCMEditor(monitor).focus();
   synthesizeKeyShortcut("CmdOrCtrl+F");
   const searchInput = await waitFor(() =>
-    document.querySelector(".cm-editor .cm-search input.cm-textfield")
+    document.querySelector(".search-field input")
   );
   Assert.equal(
     searchInput.ownerDocument.activeElement,

@@ -93,7 +93,8 @@ bool gfxAndroidPlatform::IsFontAPIDisabled(bool aDontCheckPref) {
   return (sManufacturer.EqualsLiteral("OPPO") ||
           sManufacturer.EqualsLiteral("realme") ||
           sManufacturer.EqualsLiteral("OnePlus") ||
-          sManufacturer.EqualsLiteral("HONOR"));
+          sManufacturer.EqualsLiteral("HONOR") ||
+          sManufacturer.EqualsLiteral("HUAWEI"));
 }
 
 // static

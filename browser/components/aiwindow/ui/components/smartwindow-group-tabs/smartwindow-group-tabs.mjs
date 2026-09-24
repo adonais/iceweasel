@@ -137,22 +137,17 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
     this.#emitPreview(event, detail, "focus");
   }
 
-  #onRowKeyDown(event, detail = null) {
+  #onRowKeyDown(event, detail) {
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
       event.preventDefault();
-
-      if (detail) {
-        this.#emit("preview-enter", { ...detail, anchor: event.currentTarget });
-      } else {
-        this.#emit("view-tab-groups", { anchor: event.currentTarget });
-      }
+      this.#emit("preview-enter", { ...detail, anchor: event.currentTarget });
     }
   }
 
   #suggestionRow(suggestion) {
     return html`<button
       type="button"
-      class="swgt-row swgt-suggestion"
+      class="swgt-row swgt-flyout-row swgt-suggestion"
       aria-expanded="false"
       data-l10n-id="smartwindow-group-tabs-suggestion"
       data-l10n-args=${JSON.stringify({
@@ -172,7 +167,11 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
   }
 
   #recentRow(entry) {
-    return html`<div class="swgt-recent-row">
+    return html`<button
+      type="button"
+      class="swgt-row swgt-recent-row"
+      @click=${() => this.#emit("select-group", { id: entry.id })}
+    >
       <img
         class="swgt-group-icon"
         src=${GROUP_ICON_URL}
@@ -184,7 +183,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
         })}
       />
       <span class="swgt-row-label">${entry.label}</span>
-    </div>`;
+    </button>`;
   }
 
   render() {
@@ -259,11 +258,19 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
             ${this.tabGroups
               ? html`<button
                   type="button"
-                  class="swgt-row swgt-view-tab-groups"
+                  class="swgt-row swgt-flyout-row swgt-view-tab-groups"
                   aria-expanded="false"
+                  @mouseenter=${e =>
+                    this.#emitPreview(e, { groups: true }, "hover")}
+                  @focus=${e => this.#onRowFocus(e, { groups: true })}
+                  @mouseleave=${() => this.#emit("preview-end")}
+                  @blur=${() => this.#emit("preview-end")}
+                  @keydown=${e => this.#onRowKeyDown(e, { groups: true })}
                   @click=${e =>
-                    this.#emit("view-tab-groups", { anchor: e.currentTarget })}
-                  @keydown=${e => this.#onRowKeyDown(e)}
+                    this.#emit("preview-enter", {
+                      groups: true,
+                      anchor: e.currentTarget,
+                    })}
                 >
                   <span
                     class="swgt-row-label"
@@ -274,7 +281,7 @@ export class SmartwindowGroupTabsCard extends MozLitElement {
             ${this.duplicates
               ? html`<button
                   type="button"
-                  class="swgt-row swgt-close-duplicates"
+                  class="swgt-row swgt-flyout-row swgt-close-duplicates"
                   aria-expanded="false"
                   data-l10n-id="smartwindow-group-tabs-close-duplicates"
                   data-l10n-args=${JSON.stringify({

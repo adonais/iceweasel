@@ -6,15 +6,15 @@
 
 use style_traits::owned_slice::OwnedSlice;
 
-use crate::color::mix::ColorInterpolationMethod;
 use crate::color::AbsoluteColor;
+use crate::color::mix::ColorInterpolationMethod;
 use crate::values::animated::{Animate, Procedure, ToAnimatedZero};
 use crate::values::computed::Percentage;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
+use crate::values::generics::Optional;
 use crate::values::generics::color::{
     ColorMixFlags, GenericColor, GenericColorMix, GenericColorMixItem,
 };
-use crate::values::generics::Optional;
 
 impl Animate for AbsoluteColor {
     #[inline]

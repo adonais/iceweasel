@@ -1000,7 +1000,8 @@
  * Should be constinit per C++20 standard, but we sometimes link with an older
  * libstdc++
  */
-#    if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20230707)
+#    if defined(__GLIBCXX__) && (__cpp_lib_constexpr_string < 201907L || \
+                                 __cpp_lib_constexpr_vector < 201907L)
 #      define MOZ_GLIBCXX_CONSTINIT MOZ_RUNINIT
 #    else
 #      define MOZ_GLIBCXX_CONSTINIT constinit

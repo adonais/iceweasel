@@ -148,14 +148,6 @@ ProbeControllerConfig::ProbeControllerConfig(
 
   // Specialized keys overriding subsets of WebRTC-Bwe-ProbingConfiguration
   ParseFieldTrial(
-      {&first_exponential_probe_scale, &second_exponential_probe_scale},
-      key_value_config->Lookup("WebRTC-Bwe-InitialProbing"));
-  ParseFieldTrial({&further_exponential_probe_scale, &further_probe_threshold},
-                  key_value_config->Lookup("WebRTC-Bwe-ExponentialProbing"));
-  ParseFieldTrial(
-      {&alr_probing_interval, &alr_probe_scale, &loss_limited_probe_scale},
-      key_value_config->Lookup("WebRTC-Bwe-AlrProbing"));
-  ParseFieldTrial(
       {&first_allocation_probe_scale, &second_allocation_probe_scale,
        &allocation_probe_limit_by_current_scale},
       key_value_config->Lookup("WebRTC-Bwe-AllocationProbing"));

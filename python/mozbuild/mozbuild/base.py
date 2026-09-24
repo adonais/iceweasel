@@ -1056,17 +1056,19 @@ class MachCommandBase(MozbuildObject):
 
         # Keep a per-command log in logs/{command}/, and track the latest command
         # in latest-command. Don't do that for mach invocations from scripts
-        # (especially not the ones done by the build system itself).
+        # (especially not the ones done by the build system itself). Agents pipe
+        # stdout, and bug 2009215 quiets their output, so always log for them.
         try:
             fileno = getattr(sys.stdout, "fileno", lambda: None)()
         except io.UnsupportedOperation:
             fileno = None
         handler = getattr(context, "handler", None)
-        if fileno and os.isatty(fileno) and not no_auto_log and handler:
+        use_text_log = is_running_under_coding_agent()
+        interactive = bool(fileno) and os.isatty(fileno)
+        if (use_text_log or interactive) and not no_auto_log and handler:
             command_name = handler.name
             subdir = os.path.join("logs", command_name)
             self._ensure_state_subdir_exists(subdir)
-            use_text_log = is_running_under_coding_agent()
             suffix = ".log" if use_text_log else ".json"
             self.logfile = self._get_state_filename(
                 construct_log_filename(command_name, suffix=suffix), subdir=subdir

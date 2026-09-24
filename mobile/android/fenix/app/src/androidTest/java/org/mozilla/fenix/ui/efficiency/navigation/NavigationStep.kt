@@ -12,7 +12,7 @@ sealed class NavigationStep {
 
     data class LongClick(val selector: Selector) : NavigationStep()
 
-    data class ClickIfPresent(val selector: Selector) : NavigationStep()
+    data class ClickIfPresent(val selector: Selector, val timeout: Long = 3_000) : NavigationStep()
 
     data class Swipe(val selector: Selector, val direction: SwipeDirection = SwipeDirection.UP) : NavigationStep()
 
@@ -21,7 +21,7 @@ sealed class NavigationStep {
     // who passed a real action expecting it to run.
     object OpenNotificationsTray : NavigationStep()
 
-    data class Action(val action: () -> Unit) : NavigationStep()
+    data class LaunchCustomTab(val url: String) : NavigationStep()
 
     data class EnterText(val selector: Selector) : NavigationStep()
 

@@ -14,8 +14,9 @@
 
 // To prevent compiler memory exhaustion (OOM / Killed signal terminates
 // cc1plus) during parallel builds with GCC, the test suite instantiations have
-// been split into two separate compilation units: any_invocable_test_inst1.cc
-// and any_invocable_test_inst2.cc. The test definitions remain here in this
+// been split into four separate compilation units: any_invocable_test_inst1.cc,
+// any_invocable_test_inst2.cc, any_invocable_test_inst3.cc, and
+// any_invocable_test_inst4.cc. The test definitions remain here in this
 // header.
 
 // SKIP_ABSL_INLINE_NAMESPACE_CHECK
@@ -58,15 +59,14 @@ struct Wrapper {
 // This will cause a recursive trait instantiation if the SFINAE checks are
 // not ordered correctly for constructibility.
 static_assert(std::is_constructible_v<Wrapper<absl::AnyInvocable<void()>>,
-                                      Wrapper<absl::AnyInvocable<void()>>>,
-              "");
+                                      Wrapper<absl::AnyInvocable<void()>>>);
 
 // A metafunction that takes the cv and l-value reference qualifiers that were
 // associated with a function type (here passed via qualifiers of an object
 // type), and .
 template <class Qualifiers, class This>
 struct QualifiersForThisImpl {
-  static_assert(std::is_object_v<This>, "");
+  static_assert(std::is_object_v<This>);
   using type =
       std::conditional_t<std::is_const_v<Qualifiers>, const This, This>&;
 };
@@ -77,7 +77,7 @@ struct QualifiersForThisImpl<Qualifiers&, This>
 
 template <class Qualifiers, class This>
 struct QualifiersForThisImpl<Qualifiers&&, This> {
-  static_assert(std::is_object_v<This>, "");
+  static_assert(std::is_object_v<This>);
   using type =
       std::conditional_t<std::is_const_v<Qualifiers>, const This, This>&&;
 };
@@ -420,7 +420,7 @@ using IsMemberSwappable = IsMemberSwappableImpl<T>;
 
 template <class T>
 using IsNothrowMemberSwappable =
-    std::integral_constant<bool, IsMemberSwappableImpl<T>::kIsNothrow>;
+    std::bool_constant<IsMemberSwappableImpl<T>::kIsNothrow>;
 
 template <class T>
 class AnyInvTestBasic : public ::testing::Test {};
@@ -1010,7 +1010,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapEmptyLhsEmptyRhs) {
     EXPECT_FALSE(static_cast<bool>(other));
 
     EXPECT_TRUE(
-        absl::type_traits_internal::IsNothrowSwappable<AnyInvType>::value);
+        std::is_nothrow_swappable_v<AnyInvType>);
   }
 
   // Member swap
@@ -1045,7 +1045,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapEmptyLhsNonemptyRhs) {
     EXPECT_EQ(29, TypeParam::ToThisParam(fun)(7, 8, 9).value);
 
     EXPECT_TRUE(
-        absl::type_traits_internal::IsNothrowSwappable<AnyInvType>::value);
+        std::is_nothrow_swappable_v<AnyInvType>);
   }
 
   // Member swap
@@ -1082,7 +1082,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsEmptyRhs) {
     EXPECT_EQ(29, TypeParam::ToThisParam(other)(7, 8, 9).value);
 
     EXPECT_TRUE(
-        absl::type_traits_internal::IsNothrowSwappable<AnyInvType>::value);
+        std::is_nothrow_swappable_v<AnyInvType>);
   }
 
   // Member swap
@@ -1120,7 +1120,7 @@ TYPED_TEST_P(AnyInvTestCombinatoric, SwapNonemptyLhsNonemptyRhs) {
     EXPECT_EQ(29, TypeParam::ToThisParam(other)(7, 8, 9).value);
 
     EXPECT_TRUE(
-        absl::type_traits_internal::IsNothrowSwappable<AnyInvType>::value);
+        std::is_nothrow_swappable_v<AnyInvType>);
   }
 
   // Member swap
@@ -1279,8 +1279,8 @@ TYPED_TEST_P(AnyInvTestNonRvalue, NonMoveableResultType) {
     Result(Result&&) = delete;
   };
 
-  static_assert(!std::is_move_constructible_v<Result>, "");
-  static_assert(!std::is_copy_constructible_v<Result>, "");
+  static_assert(!std::is_move_constructible_v<Result>);
+  static_assert(!std::is_copy_constructible_v<Result>);
 
   // Assumption check: it should nevertheless be possible to use functors that
   // return a Result struct according to the language rules.
@@ -1357,8 +1357,8 @@ TYPED_TEST_P(AnyInvTestRvalue, NonMoveableResultType) {
     Result(Result&&) = delete;
   };
 
-  static_assert(!std::is_move_constructible_v<Result>, "");
-  static_assert(!std::is_copy_constructible_v<Result>, "");
+  static_assert(!std::is_move_constructible_v<Result>);
+  static_assert(!std::is_copy_constructible_v<Result>);
 
   // Assumption check: it should nevertheless be possible to use functors that
   // return a Result struct according to the language rules.
@@ -1589,9 +1589,8 @@ REGISTER_TYPED_TEST_SUITE_P(AnyInvTestRvalue,
 
 // Minimal SFINAE testing for platforms where we can't run the tests, but we can
 // build binaries for.
-static_assert(std::is_convertible_v<void (*)(), absl::AnyInvocable<void() &&>>,
-              "");
-static_assert(!std::is_convertible_v<void*, absl::AnyInvocable<void() &&>>, "");
+static_assert(std::is_convertible_v<void (*)(), absl::AnyInvocable<void() &&>>);
+static_assert(!std::is_convertible_v<void*, absl::AnyInvocable<void() &&>>);
 
 }  // namespace absl_any_invocable_test
 

@@ -12,7 +12,7 @@
 
 .pinned-tabs moz-button.selected::part(button) {
   @media -moz-pref("browser.nova.enabled") {
-    outline: 1px solid var(--tab-selected-outline-color);
+    outline: 1px solid var(--tab-border-color-selected);
     outline-offset: -1px;
 
     @media (not (prefers-contrast)) {
@@ -21,13 +21,14 @@
       background:
         var(--tab-border-color-accent) border-box border-area,
         var(--tab-background-color-selected) padding-box;
+      color: var(--tab-text-color-selected);
     }
   }
 }
 
 .pinned-tabs moz-button.selected.inactive::part(button) {
   @media -moz-pref("browser.nova.enabled") {
-    outline-color: color-mix(in srgb, var(--tab-selected-outline-color) 60%, transparent);
+    outline-color: color-mix(in srgb, var(--tab-border-color-selected) 60%, transparent);
     --tab-border-color-accent: linear-gradient(
       96deg,
       color-mix(in srgb, var(--color-violet-30) 60%, transparent) 20.68%,

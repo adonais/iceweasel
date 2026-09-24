@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { useDispatch, useSelector } from "react-redux";
+import { formatRelativeTime } from "content-src/lib/utils";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   getNotificationIdsForUrl,
@@ -15,62 +16,23 @@ import React from "react";
 // listing it is visual noise. Hand-curated; grown as needed.
 const ICON_SUPPRESS_ORIGINS = new Set(["https://apnews.com"]);
 
-// Biggest units first, so the loop returns the coarsest one that fits.
-// Anything under a minute falls through to the "just now" string.
-const RELATIVE_TIME_UNITS = [
-  ["year", 365 * 24 * 60 * 60 * 1000],
-  ["month", 30 * 24 * 60 * 60 * 1000],
-  ["week", 7 * 24 * 60 * 60 * 1000],
-  ["day", 24 * 60 * 60 * 1000],
-  ["hour", 60 * 60 * 1000],
-  ["minute", 60 * 1000],
-];
-
-/**
- * Picks the largest relative-time unit that fits ("2 hours ago", "5 days ago").
- * Returns null when the delta is under a minute, so the caller can show
- * "just now" instead.
- *
- * @param {number} timestamp ms epoch the notification was posted.
- * @param {string} [locale] BCP-47 locale; falls back to the runtime default.
- * @param {number} now ms epoch to measure against.
- * @returns {?string}
- */
-function formatRelativeTime(timestamp, locale, now) {
-  const delta = timestamp - now;
-  const abs = Math.abs(delta);
-  for (const [unit, ms] of RELATIVE_TIME_UNITS) {
-    if (abs >= ms) {
-      return new Intl.RelativeTimeFormat(locale || undefined, {
-        numeric: "auto",
-      }).format(Math.round(delta / ms), unit);
-    }
-  }
-  return null;
-}
-
 function NotificationTime({ timestamp, locale, now }) {
   if (!timestamp) {
     return null;
   }
-  const relative = formatRelativeTime(timestamp, locale, now);
-  const dateTime = new Date(timestamp).toISOString();
-  // A null relative string means it's under a minute, so show "just now".
-  if (relative === null) {
-    return (
-      <time
-        className="top-sites-hover-card-notification-time"
-        dateTime={dateTime}
-        data-l10n-id="newtab-topsites-hover-card-just-now"
-      />
-    );
-  }
+  const { text, l10nId } = formatRelativeTime(
+    timestamp,
+    locale,
+    now,
+    "newtab-topsites-hover-card-just-now"
+  );
   return (
     <time
       className="top-sites-hover-card-notification-time"
-      dateTime={dateTime}
+      dateTime={new Date(timestamp).toISOString()}
+      data-l10n-id={l10nId}
     >
-      {relative}
+      {text}
     </time>
   );
 }
@@ -184,7 +146,6 @@ function CardWebNotifications({ link }) {
 
   const openSettings = () => {
     dispatch({ type: at.SHOW_PERSONALIZE });
-    dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
   };
 
   const activate = notification =>

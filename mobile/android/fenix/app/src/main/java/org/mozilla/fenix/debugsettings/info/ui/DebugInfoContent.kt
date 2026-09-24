@@ -25,6 +25,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.badge.StatusBadge
 import mozilla.components.compose.base.button.OutlinedButton
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.info.DebugInfoItem
@@ -32,8 +34,6 @@ import org.mozilla.fenix.debugsettings.info.DebugInfoSection
 import org.mozilla.fenix.debugsettings.info.DebugInfoValue
 import org.mozilla.fenix.debugsettings.info.displayText
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 @Composable
 internal fun DebugInfoContent(

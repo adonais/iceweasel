@@ -451,6 +451,20 @@ class PlatformDecoderModule {
   using CreateDecoderPromise = MozPromise<RefPtr<MediaDataDecoder>, MediaResult,
                                           /* IsExclusive = */ true>;
 
+  using SupportsDecoderPromise =
+      MozPromise<media::DecodeSupportSet, nsresult, /* IsExclusive = */ true>;
+
+  // Asynchronous variant of Supports(). The default simply resolves with the
+  // synchronous result; modules that proxy to a remote process override this
+  // to first wait until that process has reported its codec support, so the
+  // answer reflects accurate hardware capabilities rather than a conservative
+  // guess. Must be called off the main thread.
+  virtual RefPtr<SupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const {
+    return SupportsDecoderPromise::CreateAndResolve(Supports(aParams, nullptr),
+                                                    __func__);
+  }
+
  protected:
   PlatformDecoderModule() = default;
   virtual ~PlatformDecoderModule() = default;

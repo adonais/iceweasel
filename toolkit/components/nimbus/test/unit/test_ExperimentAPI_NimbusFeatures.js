@@ -1,9 +1,5 @@
 "use strict";
 
-const { JsonSchema } = ChromeUtils.importESModule(
-  "resource://gre/modules/JsonSchema.sys.mjs"
-);
-
 ChromeUtils.defineLazyGetter(this, "fetchSchema", () => {
   return fetch(
     "resource://testing-common/nimbus/schemas/NimbusEnrollment.schema.json",
@@ -13,25 +9,23 @@ ChromeUtils.defineLazyGetter(this, "fetchSchema", () => {
   ).then(rsp => rsp.json());
 });
 
-const MATCHING_ROLLOUT = Object.freeze(
-  NimbusTestUtils.factories.rollout("matching-rollout", {
-    branch: {
-      slug: "slug",
-      ratio: 1,
-      features: [
-        {
-          featureId: "aboutwelcome",
-          value: { enabled: false },
-        },
-      ],
-    },
-  })
-);
-const MATCHING_ROLLOUT_RECIPE = Object.freeze(
-  NimbusTestUtils.factories.recipe(MATCHING_ROLLOUT.slug, {
-    branches: [MATCHING_ROLLOUT.branch],
+const MATCHING_ROLLOUT_RECIPE = NimbusTestUtils.factories.recipe(
+  "matching-rollout",
+  {
+    branches: [
+      {
+        slug: "slug",
+        ratio: 1,
+        features: [
+          {
+            featureId: "aboutwelcome",
+            value: { enabled: false },
+          },
+        ],
+      },
+    ],
     isRollout: true,
-  })
+  }
 );
 
 const AW_FAKE_MANIFEST = {
@@ -67,17 +61,6 @@ add_setup(() => {
   NimbusTestUtils.addTestFeatures(TEST_FEATURE);
 });
 
-add_task(async function validSchema() {
-  const validator = new JsonSchema.Validator(await fetchSchema, {
-    shortCircuit: false,
-  });
-
-  {
-    const result = validator.validate(MATCHING_ROLLOUT);
-    Assert.ok(result.valid, JSON.stringify(result.errors, undefined, 2));
-  }
-});
-
 add_task(async function readyCallAfterStore_with_remote_value() {
   const { manager, cleanup } = await NimbusTestUtils.setupTest();
   const feature = new ExperimentFeature("aboutwelcome");
@@ -88,7 +71,7 @@ add_task(async function readyCallAfterStore_with_remote_value() {
 
   Assert.ok(!feature.getVariable("enabled"), "Loads value from store");
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  manager.unenroll(MATCHING_ROLLOUT_RECIPE.slug);
 
   await cleanup();
 });
@@ -101,14 +84,18 @@ add_task(async function has_sync_value_before_ready() {
   Assert.equal(
     feature.getVariable("remoteValue"),
     undefined,
-    "Feature is true by default"
+    "value undefined by default"
+  );
+
+  const enrollment = NimbusTestUtils.factories.enrollment(
+    MATCHING_ROLLOUT_RECIPE
   );
 
   Services.prefs.setStringPref(
     "nimbus.syncdefaultsstore.aboutwelcome",
     JSON.stringify({
-      ...MATCHING_ROLLOUT,
-      branch: { feature: MATCHING_ROLLOUT.branch.features[0] },
+      ...enrollment,
+      branch: { feature: enrollment.branch.features[0] },
     })
   );
 
@@ -140,7 +127,7 @@ add_task(async function update_remote_defaults_onUpdate() {
   Assert.equal(stub.callCount, 1, "Called once for remote configs");
   Assert.equal(stub.firstCall.args[1], "rollout-updated", "Correct reason");
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  manager.unenroll(MATCHING_ROLLOUT_RECIPE.slug);
 
   await cleanup();
 });
@@ -160,7 +147,7 @@ add_task(async function update_remote_defaults_readyPromise() {
     "Update called after enrollment processed."
   );
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  manager.unenroll(MATCHING_ROLLOUT_RECIPE.slug);
 
   await cleanup();
 });
@@ -182,7 +169,7 @@ add_task(async function update_remote_defaults_enabled() {
     "Feature is disabled by remote configuration"
   );
 
-  manager.unenroll(MATCHING_ROLLOUT.slug);
+  manager.unenroll(MATCHING_ROLLOUT_RECIPE.slug);
   await cleanup();
 });
 

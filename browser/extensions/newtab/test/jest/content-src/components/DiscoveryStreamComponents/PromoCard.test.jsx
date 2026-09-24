@@ -45,18 +45,12 @@ describe("<PromoCard>", () => {
 
     fireEvent.click(container.querySelector(".promo-card-cta"));
 
-    expect(dispatch).toHaveBeenCalledTimes(3);
+    expect(dispatch).toHaveBeenCalledTimes(2);
     expect(dispatch.mock.calls[0][0]).toMatchObject({
       type: at.PROMO_CARD_CLICK,
     });
     expect(dispatch.mock.calls[1][0]).toMatchObject({
       type: at.SHOW_PERSONALIZE,
-    });
-    expect(dispatch.mock.calls[2][0]).toMatchObject({
-      type: at.TELEMETRY_USER_EVENT,
-      data: {
-        event: "SHOW_PERSONALIZE",
-      },
     });
   });
 });

@@ -128,6 +128,9 @@ tools_init()
   cp ${QADIR}/tools/pbmac1-invalid-bad-salt.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/pbmac1-invalid-no-length.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/corrupted_cert_bag.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-kem-512-seed.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-kem-512-priv.p12 ${TOOLSDIR}/data
+  cp ${QADIR}/tools/openssl-ml-kem-512-both.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/openssl-ml-kem-768-seed.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/openssl-ml-kem-768-priv.p12 ${TOOLSDIR}/data
   cp ${QADIR}/tools/openssl-ml-kem-768-both.p12 ${TOOLSDIR}/data
@@ -572,7 +575,7 @@ tools_p12_import_rsa_pss_private_key()
 tools_p12_ml_kem_import()
 {
   echo "$SCRIPTNAME: Testing ml-kem compatibility with pkcs12 --------------"
-  for i in 768 1024
+  for i in 512 768 1024
   do
     for j in 'seed' 'priv' 'both'
     do

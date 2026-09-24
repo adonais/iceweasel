@@ -335,9 +335,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
     // Create downscaled image buffers.
     if (i > 0) {
       downscaled_buffers_[i - 1] = I420Buffer::Create(
-          configurations_[i].width, configurations_[i].height,
-          configurations_[i].width, configurations_[i].width / 2,
-          configurations_[i].width / 2);
+          configurations_[i].width, configurations_[i].height);
     }
 
     // Codec_settings uses kbits/second; encoder uses bits/second.

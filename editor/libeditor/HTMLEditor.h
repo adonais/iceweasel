@@ -260,27 +260,6 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult GetBackgroundColorState(bool* aMixed,
                                                       nsAString& aOutColor);
 
-  /**
-   * PasteNoFormattingAsAction() pastes content in clipboard without any style
-   * information.
-   *
-   * @param aClipboardType      nsIClipboard::kGlobalClipboard or
-   *                            nsIClipboard::kSelectionClipboard.
-   * @param aDispatchPasteEvent Yes if this should dispatch ePaste event
-   *                            before pasting.  Otherwise, No.
-   * @param aDataTransfer       The object containing the data to use for the
-   *                            paste operation. May be nullptr, in which case
-   *                            this will just get the data from the clipboard.
-   * @param aPrincipal          Set subject principal if it may be called by
-   *                            JS.  If set to nullptr, will be treated as
-   *                            called by system.
-   */
-  MOZ_CAN_RUN_SCRIPT nsresult
-  PasteNoFormattingAsAction(nsIClipboard::ClipboardType aClipboardType,
-                            DispatchPasteEvent aDispatchPasteEvent,
-                            DataTransfer* aDataTransfer = nullptr,
-                            nsIPrincipal* aPrincipal = nullptr);
-
   bool CanPasteTransferable(nsITransferable* aTransferable) final;
 
   MOZ_CAN_RUN_SCRIPT nsresult
@@ -3036,12 +3015,7 @@ class HTMLEditor final : public EditorBase,
     MOZ_CAN_RUN_SCRIPT void Update(HTMLEditor& aHTMLEditor,
                                    Selection& aSelection);
 
-    bool operator==(const CellIndexes& aOther) const {
-      return mRow == aOther.mRow && mColumn == aOther.mColumn;
-    }
-    bool operator!=(const CellIndexes& aOther) const {
-      return mRow != aOther.mRow || mColumn != aOther.mColumn;
-    }
+    bool operator==(const CellIndexes& aOther) const = default;
 
     [[nodiscard]] bool isErr() const { return mRow < 0 || mColumn < 0; }
 
@@ -3301,6 +3275,9 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   HandlePasteTransferable(AutoEditActionDataSetter& aEditActionData,
                           nsITransferable& aTransferable) final;
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandlePasteNoFormatting(
+      AutoEditActionDataSetter& aEditActionData,
+      nsIClipboard::ClipboardType aClipboardType, DataTransfer* aDataTransfer);
 
   /**
    * PasteInternal() pasts text with replacing selected content.

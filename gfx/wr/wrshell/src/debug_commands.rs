@@ -5,7 +5,7 @@
 use crate::command::{Command, CommandList, CommandDescriptor};
 use crate::command::{CommandContext, CommandOutput};
 use webrender_api::DebugFlags;
-use webrender_api::debugger::{DebuggerTextureContent, RenderDocReply};
+use webrender_api::debugger::{DebuggerTextureContent, RenderDocReply, SceneDebugNode, SceneDebugTree};
 
 // Implementation of a basic set of debug commands to demonstrate functionality
 
@@ -16,6 +16,7 @@ pub fn register(cmd_list: &mut CommandList) {
     cmd_list.register_command(Box::new(CaptureRenderDocCommand));
     cmd_list.register_command(Box::new(ToggleProfilerCommand));
     cmd_list.register_command(Box::new(GetSpatialTreeCommand));
+    cmd_list.register_command(Box::new(GetSceneCommand));
     cmd_list.register_command(Box::new(GetCompositeConfigCommand));
     cmd_list.register_command(Box::new(GetCompositeViewCommand));
     cmd_list.register_command(Box::new(GetTexturesCommand { kind: None }));
@@ -30,6 +31,7 @@ struct GenerateFrameCommand;
 struct CaptureRenderDocCommand;
 struct ToggleProfilerCommand;
 struct GetSpatialTreeCommand;
+struct GetSceneCommand;
 struct GetCompositeConfigCommand;
 struct GetCompositeViewCommand;
 struct GetTexturesCommand { kind: Option<&'static str> }
@@ -174,6 +176,79 @@ impl Command for GetSpatialTreeCommand {
                     content: output.expect("empty response"),
                 }
             }
+            Err(err) => {
+                CommandOutput::Err(err)
+            }
+        }
+    }
+}
+
+impl Command for GetSceneCommand {
+    fn descriptor(&self) -> CommandDescriptor {
+        CommandDescriptor {
+            name: "get-scene",
+            help: "Print the picture / primitive tree of the current built scene",
+            ..Default::default()
+        }
+    }
+
+    fn run(
+        &mut self,
+        ctx: &mut CommandContext,
+    ) -> CommandOutput {
+        fn write_node(node: &SceneDebugNode, depth: usize, out: &mut String) {
+            for _ in 0..depth {
+                out.push_str("  ");
+            }
+            match node.prim_index {
+                Some(index) => out.push_str(&format!("[{}] ", index)),
+                None => {}
+            }
+            out.push_str(&node.kind);
+            if !node.detail.is_empty() {
+                out.push_str(&format!(" {}", node.detail));
+            }
+            if let Some(color) = node.color {
+                out.push_str(&format!(
+                    " rgba({:.3}, {:.3}, {:.3}, {:.3})",
+                    color.r, color.g, color.b, color.a,
+                ));
+            }
+            if !node.draw_state.is_empty() {
+                out.push_str(&format!(" ({})", node.draw_state));
+            }
+            out.push_str(&format!(
+                " spatial_node={} rect={:?}\n",
+                node.spatial_node_index,
+                node.local_rect,
+            ));
+            for child in &node.children {
+                write_node(child, depth + 1, out);
+            }
+        }
+
+        match ctx.net.get_with_query(
+            "query",
+            &[("type", "scene")],
+        ) {
+            Ok(Some(body)) => match serde_json::from_str::<SceneDebugTree>(&body) {
+                Ok(tree) => {
+                    let mut content = format!(
+                        "Scene generation {}, {} primitives\n",
+                        tree.scene_generation,
+                        tree.prim_count,
+                    );
+                    for root in &tree.roots {
+                        write_node(root, 0, &mut content);
+                    }
+                    CommandOutput::TextDocument {
+                        title: "Scene".to_string(),
+                        content,
+                    }
+                }
+                Err(err) => CommandOutput::Err(format!("malformed reply from WR: {err}")),
+            },
+            Ok(None) => CommandOutput::Err("empty response from WR".into()),
             Err(err) => {
                 CommandOutput::Err(err)
             }

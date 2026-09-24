@@ -67,7 +67,7 @@ add_task(async function test_search_tail() {
 async function doTest({ context, expected }) {
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
-  let controller = UrlbarTestUtils.newMockController({
+  let controller = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate: context.isPrivate,
       getSearchSource() {

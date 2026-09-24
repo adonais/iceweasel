@@ -117,7 +117,7 @@ internal object TabListReducer {
                                     tabs = updatedTabList,
                                     isPrivate = tabToRemove.content.private,
                                     previousIndex = previousIndex,
-                                    excludedTabIds = action.excludedTabIds,
+                                    excludedTabIds = action.excludedFallbackTabIds,
                                 )
                             }
                             else -> {
@@ -156,7 +156,7 @@ internal object TabListReducer {
                                 updatedTabList,
                                 removedSelectedTab.content.private,
                                 previousIndex,
-                                action.excludedTabIds,
+                                action.excludedFallbackTabIds,
                             )
                         } else {
                             // The selected tab is not affected and can stay the same

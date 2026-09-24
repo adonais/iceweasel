@@ -607,7 +607,7 @@ float nsIWidget::GetDPI() {
 
 void nsIWidget::NotifyAPZOfDPIChange() {
   if (mAPZC) {
-    mAPZC->SetDPI(GetDPI());
+    mAPZC->InputBridge()->SetDPI(GetDPI());
   }
 }
 
@@ -1043,11 +1043,11 @@ void nsIWidget::ConfigureAPZCTreeManager() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mAPZC);
 
-  mAPZC->SetDPI(GetDPI());
+  mAPZC->InputBridge()->SetDPI(GetDPI());
 
   if (StaticPrefs::apz_keyboard_enabled_AtStartup()) {
     KeyboardMap map = RootWindowGlobalKeyListener::CollectKeyboardShortcuts();
-    mAPZC->SetKeyboardMap(map);
+    mAPZC->InputBridge()->SetKeyboardMap(map);
   }
 
   ContentReceivedInputBlockCallback callback(
@@ -2102,17 +2102,17 @@ void nsIWidget::StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) {
   mAPZC->StartScrollbarDrag(guid, aDragMetrics);
 }
 
-bool nsIWidget::StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+void nsIWidget::StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
                                      const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsParentProcess() && AsyncPanZoomEnabled());
 
-  return mAPZC->StartAutoscroll(aGuid, aAnchorLocation);
+  mAPZC->InputBridge()->StartAutoscroll(aGuid, aAnchorLocation);
 }
 
 void nsIWidget::StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) {
   MOZ_ASSERT(XRE_IsParentProcess() && AsyncPanZoomEnabled());
 
-  mAPZC->StopAutoscroll(aGuid);
+  mAPZC->InputBridge()->StopAutoscroll(aGuid);
 }
 
 LayersId nsIWidget::GetRootLayerTreeId() {
@@ -2276,8 +2276,8 @@ void nsIWidget::ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {
       }
     } else if (mAPZC) {
       // If the event wasn't start swipe, we need to notify it to APZ.
-      mAPZC->SetBrowserGestureResponse(aInputBlockId,
-                                       BrowserGestureResponse::NotConsumed);
+      mAPZC->InputBridge()->SetBrowserGestureResponse(
+          aInputBlockId, BrowserGestureResponse::NotConsumed);
     }
     mSwipeEventQueue = nullptr;
   }
@@ -2308,8 +2308,8 @@ void nsIWidget::TrackScrollEventAsSwipe(
   } else {
     // Now SwipeTracker has started consuming pan events, notify it to APZ so
     // that APZ can discard queued events.
-    mAPZC->SetBrowserGestureResponse(aInputBlockId,
-                                     BrowserGestureResponse::Consumed);
+    mAPZC->InputBridge()->SetBrowserGestureResponse(
+        aInputBlockId, BrowserGestureResponse::Consumed);
   }
 }
 
@@ -2376,8 +2376,8 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
       // Inform that the browser gesture didn't use the pan event (pan-start
       // precisely), so that APZ can now start using the event for
       // scrolling/overscrolling.
-      mAPZC->SetBrowserGestureResponse(aApzResult.mInputBlockId,
-                                       BrowserGestureResponse::NotConsumed);
+      mAPZC->InputBridge()->SetBrowserGestureResponse(
+          aApzResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
     }
   }
 

@@ -52,7 +52,12 @@ class IPProtectionInfoPrompter(
     private fun processStateForSnackbar(state: IPProtectionState) {
         if (state.eligibilityStatus == EligibilityStatus.Eligible && state.proxyStatus == Authorized.DataLimitReached) {
             Vpn.bandwidthLimitError.record()
-            appStore.dispatch(AppAction.IPProtectionSnackbarAction.DataLimitReached(errorMessages.dataLimitReached))
+            appStore.dispatch(
+                action =
+                    AppAction.IPProtectionSnackbarAction.ShowActionSettingsSnackbar(
+                        title = errorMessages.dataLimitReached
+                    )
+            )
         }
     }
 }

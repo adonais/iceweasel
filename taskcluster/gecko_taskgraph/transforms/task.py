@@ -386,9 +386,11 @@ def get_treeherder_link(config) -> str:
 
 
 @functools.cache
-def get_default_priority(graph_config, project):
+def get_default_priority(graph_config, project, shipping):
     return evaluate_keyed_by(
-        graph_config["task-priority"], "Graph Config", {"project": project}
+        graph_config["task-priority"],
+        "Graph Config",
+        {"project": project, "shipping": str(shipping).lower()},
     )
 
 
@@ -2567,7 +2569,9 @@ def build_task(config, tasks):
 
         if "priority" not in task:
             task["priority"] = get_default_priority(
-                config.graph_config, config.params["project"]
+                config.graph_config,
+                config.params["project"],
+                config.params["shipping"],
             )
 
         tags = task.get("tags", {})

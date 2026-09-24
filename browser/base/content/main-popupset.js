@@ -17,6 +17,11 @@ document.addEventListener(
     // `data-tab-group-id`, e.g. its label or icon.
     let getContextTabGroupId = popup =>
       popup.triggerNode?.closest("[data-tab-group-id]")?.dataset.tabGroupId;
+    // A panel that keeps its own list of groups up to date opts out.
+    let dismissTabGroupPanel = popup =>
+      popup.triggerNode
+        ?.closest("panel:not([keepopenongroupdelete])")
+        ?.hidePopup();
     // eslint-disable-next-line complexity
     mainPopupSet.addEventListener("command", event => {
       switch (event.target.id) {
@@ -231,7 +236,7 @@ document.addEventListener(
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             // Unlike the other actions in this menu, deleting the group
             // doesn't dismiss the containing panel on its own.
-            popup.triggerNode?.closest("panel")?.hidePopup();
+            dismissTabGroupPanel(popup);
             // Tabs need to be removed by their owning `Tabbrowser` or else
             // there are errors.
             tabGroup.documentGlobal.gBrowser.removeTabGroup(tabGroup, {
@@ -270,7 +275,7 @@ document.addEventListener(
           {
             let popup = event.target.parentElement;
             let tabGroupId = getContextTabGroupId(popup);
-            popup.triggerNode?.closest("panel")?.hidePopup();
+            dismissTabGroupPanel(popup);
             SessionStore.forgetSavedTabGroup(tabGroupId);
           }
           break;

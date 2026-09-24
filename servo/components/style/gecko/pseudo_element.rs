@@ -9,16 +9,16 @@
 //! need to update the checked-in files for Servo.
 
 use crate::gecko_bindings::structs::PseudoStyleType;
+use crate::pref;
 use crate::properties::longhands::display::computed_value::T as Display;
 use crate::properties::{ComputedValues, PropertyFlags};
 use crate::selector_parser::PseudoElementCascadeType;
 use crate::str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
 use crate::string_cache::Atom;
-use crate::values::serialize_atom_identifier;
 use crate::values::AtomIdent;
+use crate::values::serialize_atom_identifier;
 use cssparser::{Parser, ToCss};
 use selectors::parser::PseudoElement as PseudoElementTrait;
-use static_prefs::pref;
 use std::fmt;
 use style_traits::ParseError;
 
@@ -63,6 +63,9 @@ bitflags! {
         const IS_WRAPPER_ANON_BOX = 1 << 13;
         /// Whether we parse as an element-backed pseudo-element.
         const PARSES_AS_ELEMENT_BACKED = 1 << 14;
+        /// Whether we take an argument. Such pseudo-elements share an `index()` with the other
+        /// pseudo-elements of the same kind, so they can't be told apart by it alone.
+        const HAS_ARGUMENT = 1 << 15;
     }
 }
 
@@ -99,6 +102,10 @@ pub enum Target {
 pub struct PtNameAndClassSelector(thin_vec::ThinVec<Atom>);
 
 impl PtNameAndClassSelector {
+    /// The atom we use to represent the universal type. This can't be a valid name (and note that * can
+    /// be a valid name because of escapes).
+    const UNIVERSAL_NAME: Atom = atom!("");
+
     /// Constructs a new one from a name.
     pub fn from_name(name: Atom) -> Self {
         Self(thin_vec::thin_vec![name])
@@ -138,7 +145,7 @@ impl PtNameAndClassSelector {
             if matches!(target, Target::Selector)
                 && input.try_parse(|i| i.expect_delim('*')).is_ok()
             {
-                Ok(atom!("*"))
+                Ok(Self::UNIVERSAL_NAME)
             } else {
                 CustomIdent::parse(input, &[]).map(|c| c.0)
             }
@@ -180,9 +187,9 @@ impl PtNameAndClassSelector {
             return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
         }
 
-        // Use the universal symbol as the first element to present the part of
+        // Use the universal selector as the first element to present the part of
         // `<pt-name-selector>` because they are equivalent (and the serialization is the same).
-        let mut result = thin_vec::thin_vec![name.unwrap_or(atom!("*"))];
+        let mut result = thin_vec::thin_vec![name.unwrap_or(Self::UNIVERSAL_NAME)];
         result.append(&mut classes);
 
         Ok(Self(result))
@@ -195,8 +202,7 @@ impl ToCss for PtNameAndClassSelector {
         W: fmt::Write,
     {
         let name = self.name();
-        if name == &atom!("*") {
-            // serialize_atom_identifier() may serialize "*" as "\*", so we handle it separately.
+        if *name == Self::UNIVERSAL_NAME {
             dest.write_char('*')?;
         } else {
             serialize_atom_identifier(name, dest)?;
@@ -319,6 +325,12 @@ impl PseudoElement {
         self.flags().intersects(PseudoStyleTypeFlags::IS_EAGER)
     }
 
+    /// Whether this pseudo-element takes an argument.
+    #[inline]
+    pub fn has_argument(&self) -> bool {
+        self.flags().intersects(PseudoStyleTypeFlags::HAS_ARGUMENT)
+    }
+
     /// Gets the canonical index of this eagerly-cascaded pseudo-element.
     #[inline]
     pub fn eager_index(&self) -> usize {
@@ -439,8 +451,8 @@ impl PseudoElement {
                 // The specificity of a named view transition pseudo-element selector with a `*`
                 // argument and with an empty <pt-class-selector> is zero.
                 // https://drafts.csswg.org/css-view-transitions-2/#pseudo-element-class-additions
-                (name_and_class.name() != &atom!("*") || !name_and_class.classes().is_empty())
-                    as u32
+                (name_and_class.name() != &PtNameAndClassSelector::UNIVERSAL_NAME
+                    || !name_and_class.classes().is_empty()) as u32
             },
             _ => 1,
         }
@@ -535,7 +547,7 @@ impl PseudoElement {
     pub fn parse_ignore_enabled_state(input: &mut Parser) -> Result<Self, ParseError> {
         use crate::gecko::selector_parser;
         use cssparser::Token;
-        use selectors::parser::{is_css2_pseudo_element, SelectorParseErrorKind};
+        use selectors::parser::{SelectorParseErrorKind, is_css2_pseudo_element};
         use style_traits::StyleParseErrorKind;
 
         // The pseudo-element string should start with ':'.
@@ -545,10 +557,10 @@ impl PseudoElement {
         if !matches!(next, Token::Colon) {
             // Parse a CSS2 pseudo-element.
             let name = match next {
-                Token::Ident(name) if is_css2_pseudo_element(&name) => name,
+                Token::Ident(name) if is_css2_pseudo_element(name) => name,
                 _ => return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
             };
-            return PseudoElement::from_slice(&name).ok_or(ParseError::custom(
+            return PseudoElement::from_slice(name).ok_or(ParseError::custom(
                 SelectorParseErrorKind::UnsupportedPseudoClassOrElement,
             ));
         }
@@ -572,7 +584,7 @@ impl PseudoElement {
                     )
                 })
             },
-            _ => return Err(ParseError::unexpected_token()),
+            _ => Err(ParseError::unexpected_token()),
         }
     }
 
@@ -599,7 +611,7 @@ impl PseudoElement {
                 // check it first.
                 // https://drafts.csswg.org/css-view-transitions-1/#named-view-transition-pseudo
                 let s_name = s_name_class.name();
-                if s_name != name.name() && s_name != &atom!("*") {
+                if s_name != name.name() && s_name != &PtNameAndClassSelector::UNIVERSAL_NAME {
                     return false;
                 }
 

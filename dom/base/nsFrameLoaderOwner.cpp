@@ -250,14 +250,18 @@ void nsFrameLoaderOwner::UpdateFocusAndMouseEnterStateAfterFrameLoaderChange(
 
 void nsFrameLoaderOwner::ChangeRemoteness(
     const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
-  bool isRemote = !aOptions.mRemoteType.IsEmpty();
+  RemoteType remoteType = RemoteType::Parse(aOptions.mRemoteType);
+  if (!remoteType) {
+    rv.ThrowTypeError("Invalid RemoteType");
+    return;
+  }
 
   MOZ_RELEASE_ASSERT(mFrameLoader, "Expecting to have mFrameLoader here.");
   std::function<void()> frameLoaderInit = [&] {
     MOZ_RELEASE_ASSERT(mFrameLoader,
                        "Expecting still to have mFrameLoader here.");
-    if (isRemote) {
-      mFrameLoader->ConfigRemoteProcess(aOptions.mRemoteType, nullptr);
+    if (!remoteType.IsNotRemote()) {
+      mFrameLoader->ConfigRemoteProcess(remoteType, nullptr);
     }
 
     if (aOptions.mPendingSwitchID.WasPassed()) {
@@ -269,10 +273,11 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   };
 
   auto shouldPreserve = ShouldPreserveBrowsingContext(
-      isRemote, /* replaceBrowsingContext */ false);
+      !remoteType.IsNotRemote(), /* replaceBrowsingContext */ false);
   NavigationIsolationOptions options;
   ChangeRemotenessCommon(shouldPreserve, options,
-                         aOptions.mSwitchingInProgressLoad, isRemote,
+                         aOptions.mSwitchingInProgressLoad,
+                         !remoteType.IsNotRemote(),
                          /* group */ nullptr, frameLoaderInit, rv);
 }
 

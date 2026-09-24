@@ -108,6 +108,40 @@ linux64-rust-1.95-dev:
             - linux64-clang-toolchain
             - linux64-toolchain-sysroot
 
+linux64-rust-android-1.95-dev:
+    description: "build rust from source"
+    worker-type: b-linux-docker-large-amd
+    treeherder:
+        symbol: TL(rust-android-dev)
+    worker:
+        env:
+            # Work around https://github.com/rust-lang/rust/issues/105967
+            RUSTFLAGS_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
+            RUSTFLAGS_NOT_BOOTSTRAP: '-Clink-arg=-Wl,--undefined-version'
+    run:
+        arguments: [
+            '--patch', 'rust-vendor-std.patch',
+            '--patch', 'Zprofile.patch',
+            '--channel', 'dev',
+            '--host', 'x86_64-unknown-linux-gnu',
+            '--target', 'x86_64-unknown-linux-gnu',
+            '--target', 'x86_64-linux-android',
+        ]
+        resources:
+            - build/build-rust/rust-vendor-std.patch
+            - build/build-rust/Zprofile.patch
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-rust-android-dev
+    fetches:
+        fetch:
+            - rust-1.95.0
+        toolchain:
+            - android-ndk-linux
+            - linux64-clang-toolchain
+            - linux64-toolchain-sysroot
+
 win64-rust-1.95-dev:
     description: "build rust from source"
     worker-type: b-win2022

@@ -18,7 +18,6 @@ RUN dpkg --add-architecture i386 \
     build-essential \
     ca-certificates \
     clang-10 \
-    clang-format-10 \
     curl \
     g++-multilib \
     g++-8-multilib \
@@ -44,9 +43,6 @@ RUN dpkg --add-architecture i386 \
     g++-11-multilib \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get autoremove -y && apt-get clean -y
-
-RUN update-alternatives --install /usr/bin/clang-format \
-    clang-format $(which clang-format-10) 10
 
 ENV SHELL /bin/bash
 ENV USER worker

@@ -11,7 +11,6 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"  // For RemoteTypePrefix
 #include "mozilla/FileUtils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/GfxMessageUtils.h"  // For ParamTraits<GeckoProcessType>
@@ -290,10 +289,10 @@ void nsHangDetails::Submit() {
           case GeckoProcessType_Content: {
             auto cc = dom::ContentChild::GetSingleton();
             if (cc) {
-              // Use the prefix so we don't get URIs from Fission isolated
+              // Use the kind so we don't get URIs from Fission isolated
               // processes.
-              hangDetails->mDetails.remoteType().Assign(
-                  dom::RemoteTypePrefix(cc->GetRemoteType()));
+              hangDetails->mDetails.remoteType() =
+                  cc->GetRemoteType().StringifyKind();
               (void)cc->SendBHRThreadHang(hangDetails->mDetails);
             }
             break;

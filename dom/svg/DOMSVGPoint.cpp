@@ -67,12 +67,21 @@ float DOMSVGPoint::X() {
   if (mIsAnimValItem && IsInList()) {
     Element()->FlushAnimations();  // May make IsInList() == false
   }
+  if (mIsTranslatePoint && SVGSVGElement::FromNode(Element())->IsInner()) {
+    // currentTranslate values return zero on inner svg elements
+    return 0.f;
+  }
   return InternalItem().X();
 }
 
 void DOMSVGPoint::SetX(float aX, ErrorResult& aRv) {
   if (mIsAnimValItem) {
     aRv.ThrowNoModificationAllowedError("Animated values cannot be set");
+    return;
+  }
+  if (mIsTranslatePoint && SVGSVGElement::FromNode(Element())->IsInner()) {
+    aRv.ThrowNoModificationAllowedError(
+        "currentTranslate values cannot be set on inner svg elements");
     return;
   }
 
@@ -92,6 +101,10 @@ float DOMSVGPoint::Y() {
   if (mIsAnimValItem && IsInList()) {
     Element()->FlushAnimations();  // May make IsInList() == false
   }
+  if (mIsTranslatePoint && SVGSVGElement::FromNode(Element())->IsInner()) {
+    // currentTranslate values return zero on inner svg elements
+    return 0.f;
+  }
   return InternalItem().Y();
 }
 
@@ -100,6 +113,12 @@ void DOMSVGPoint::SetY(float aY, ErrorResult& aRv) {
     aRv.ThrowNoModificationAllowedError("Animated values cannot be set");
     return;
   }
+  if (mIsTranslatePoint && SVGSVGElement::FromNode(Element())->IsInner()) {
+    aRv.ThrowNoModificationAllowedError(
+        "currentTranslate values cannot be set on inner svg elements");
+    return;
+  }
+
   auto& val = InternalItem();
 
   if (val.Y() == aY) {

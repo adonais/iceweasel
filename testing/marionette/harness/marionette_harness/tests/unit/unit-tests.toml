@@ -148,6 +148,11 @@ skip-if = [
   "!manage_instance",
 ]
 
+["test_recommended_prefs.py"]
+skip-if = [
+  "!manage_instance",
+]
+
 ["test_reftest.py"]
 skip-if = [
   "os == 'mac'", # bug 1674411

@@ -1,0 +1,12 @@
+<!DOCTYPE HTML>
+<title>Test for privacy restrictions on :visited (Bug 2070311)</title>
+<style>
+.item { border: 10px solid black; display: inline-block; }
+a { color: tomato; display: inline-block; }
+</style>
+<!--
+  The two children match the same rules (so the second one can use the reset
+  properties cached from the first one), but have different local names, so
+  they can't share style.
+-->
+<a href="visited-page.html"><div class="item">item</div><section class="item">item</section></a>

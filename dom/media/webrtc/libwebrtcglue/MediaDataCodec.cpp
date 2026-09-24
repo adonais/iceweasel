@@ -68,8 +68,9 @@ static inline nsDependentCString MimeTypeFor(
       return nsDependentCString("video/vp9");
     case webrtc::VideoCodecType::kVideoCodecH264:
       return nsDependentCString("video/avc");
-    case webrtc::VideoCodecType::kVideoCodecGeneric:
     case webrtc::VideoCodecType::kVideoCodecAV1:
+      return nsDependentCString("video/av1");
+    case webrtc::VideoCodecType::kVideoCodecGeneric:
     case webrtc::VideoCodecType::kVideoCodecH265:
       break;
   }

@@ -26,6 +26,7 @@ KNOWN_PERFHERDER_PROPS = set([
     "lowerIsBetter",
     "shouldAlert",
     "alertThreshold",
+    "alertSeverity",
 ])
 KNOWN_SUITE_PROPS = set(
     set(["results", "transformer", "transformer-options", "extraOptions", "framework"])

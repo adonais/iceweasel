@@ -69,6 +69,11 @@ const ContentPermissionIntegration = {
       case "local-network": {
         return new lazy.PermissionUI.LocalNetworkPermissionPrompt(request);
       }
+      case "speech-recognition-model-download": {
+        return new lazy.PermissionUI.SpeechRecognitionModelDownloadPermissionPrompt(
+          request
+        );
+      }
     }
     return undefined;
   },

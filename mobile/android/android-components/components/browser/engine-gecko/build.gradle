@@ -17,7 +17,6 @@ buildscript {
 plugins {
     id 'com.android.library'
     alias(libs.plugins.dependency.analysis)
-    alias(libs.plugins.python.envs.plugin)
     id 'org.mozilla.nimbus-gradle-plugin'
 }
 

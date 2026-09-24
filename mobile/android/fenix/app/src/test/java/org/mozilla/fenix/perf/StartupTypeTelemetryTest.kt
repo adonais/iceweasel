@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.ktx.kotlin.crossProduct
 import mozilla.components.support.test.robolectric.testContext
@@ -43,6 +44,7 @@ class StartupTypeTelemetryTest {
     @get:Rule val gleanTestRule = FenixGleanTestRule(testContext)
 
     private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     private lateinit var telemetry: StartupTypeTelemetry
     private lateinit var callbacks: StartupTypeTelemetry.StartupTypeLifecycleObserver
@@ -54,7 +56,7 @@ class StartupTypeTelemetryTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        telemetry = spyk(StartupTypeTelemetry(stateProvider, pathProvider))
+        telemetry = spyk(StartupTypeTelemetry(stateProvider, pathProvider, testScope))
         callbacks = telemetry.getTestCallbacks()
     }
 
@@ -78,7 +80,7 @@ class StartupTypeTelemetryTest {
                 every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns state
                 every { pathProvider.startupPathForActivity } returns path
 
-                telemetry.record(testDispatcher)
+                telemetry.record(dispatcher = testDispatcher)
                 testDispatcher.scheduler.advanceUntilIdle()
             }
 
@@ -98,7 +100,7 @@ class StartupTypeTelemetryTest {
             every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns StartupState.COLD
             every { pathProvider.startupPathForActivity } returns StartupPath.MAIN
 
-            telemetry.record(testDispatcher)
+            telemetry.record(dispatcher = testDispatcher)
             testDispatcher.scheduler.advanceUntilIdle()
 
             assertEquals(1, PerfStartup.startupType["cold_main"].testGetValue())
@@ -107,33 +109,33 @@ class StartupTypeTelemetryTest {
     @Test
     fun `GIVEN the activity is launched WHEN onResume is called THEN we record the telemetry`() {
         launchApp()
-        verify(exactly = 1) { telemetry.record(any()) }
+        verify(exactly = 1) { telemetry.record() }
     }
 
     @Test
     fun `GIVEN the activity is launched WHEN the activity is paused and resumed THEN record is not called`() {
         // This part of the test duplicates another test but it's needed to initialize the state of this test.
         launchApp()
-        verify(exactly = 1) { telemetry.record(any()) }
+        verify(exactly = 1) { telemetry.record() }
 
         callbacks.onPause(mockk())
         callbacks.onResume(mockk())
 
-        verify(exactly = 1) { telemetry.record(any()) } // i.e. this shouldn't be called again.
+        verify(exactly = 1) { telemetry.record() } // i.e. this shouldn't be called again.
     }
 
     @Test
     fun `GIVEN the activity is launched WHEN the activity is stopped and resumed THEN record is called again`() {
         // This part of the test duplicates another test but it's needed to initialize the state of this test.
         launchApp()
-        verify(exactly = 1) { telemetry.record(any()) }
+        verify(exactly = 1) { telemetry.record() }
 
         callbacks.onPause(mockk())
         callbacks.onStop(mockk())
         callbacks.onStart(mockk())
         callbacks.onResume(mockk())
 
-        verify(exactly = 2) { telemetry.record(any()) } // i.e. this should be called again.
+        verify(exactly = 2) { telemetry.record() } // i.e. this should be called again.
     }
 
     private fun launchApp() {

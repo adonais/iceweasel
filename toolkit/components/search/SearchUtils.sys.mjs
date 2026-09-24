@@ -26,8 +26,6 @@ const BinaryInputStream = Components.Constructor(
   "setInputStream"
 );
 
-const BROWSER_SEARCH_PREF = "browser.search.";
-
 /**
  * Load listener
  *
@@ -148,8 +146,6 @@ export class SearchEngineInstallError extends Error {
 }
 
 export var SearchUtils = {
-  BROWSER_SEARCH_PREF,
-
   /**
    * This is the Remote Settings key that we use to get the ignore lists for
    * engines.
@@ -688,7 +684,7 @@ export var SearchUtils = {
 XPCOMUtils.defineLazyPreferenceGetter(
   SearchUtils,
   "loggingEnabled",
-  BROWSER_SEARCH_PREF + "log",
+  "browser.search.log",
   false
 );
 

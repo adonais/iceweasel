@@ -353,9 +353,6 @@ support-files = ["file_stripping.html"]
 ["browser_urlQueryStringStripping_allowList.js"]
 support-files = ["file_stripping.html"]
 
-["browser_urlQueryStringStripping_nimbus.js"]
-support-files = ["file_stripping.html"]
-
 ["browser_urlQueryStringStripping_pbmode.js"]
 support-files = ["file_stripping.html"]
 

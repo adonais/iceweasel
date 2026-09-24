@@ -4,6 +4,7 @@ CLI interface to markdown-it-py
 
 Parse one or more markdown files, convert each to HTML, and print to stdout.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -13,13 +14,15 @@ import sys
 from markdown_it import __version__
 from markdown_it.main import MarkdownIt
 
-version_str = "markdown-it-py [version {}]".format(__version__)
+version_str = f"markdown-it-py [version {__version__}]"
 
 
 def main(args: Sequence[str] | None = None) -> int:
     namespace = parse_args(args)
     if namespace.filenames:
         convert(namespace.filenames)
+    elif namespace.stdin:
+        convert_stdin()
     else:
         interactive()
     return 0
@@ -30,12 +33,24 @@ def convert(filenames: Iterable[str]) -> None:
         convert_file(filename)
 
 
+def convert_stdin() -> None:
+    """
+    Parse a Markdown file and dump the output to stdout.
+    """
+    try:
+        rendered = MarkdownIt().render(sys.stdin.read())
+        print(rendered, end="")
+    except OSError:
+        sys.stderr.write("Cannot parse Markdown from the standard input.\n")
+        sys.exit(1)
+
+
 def convert_file(filename: str) -> None:
     """
     Parse a Markdown file and dump the output to stdout.
     """
     try:
-        with open(filename, "r", encoding="utf8", errors="ignore") as fin:
+        with open(filename, encoding="utf8", errors="ignore") as fin:
             rendered = MarkdownIt().render(fin.read())
             print(rendered, end="")
     except OSError:
@@ -94,13 +109,16 @@ Batch:
     )
     parser.add_argument("-v", "--version", action="version", version=version_str)
     parser.add_argument(
+        "--stdin", action="store_true", help="read Markdown from standard input"
+    )
+    parser.add_argument(
         "filenames", nargs="*", help="specify an optional list of files to convert"
     )
     return parser.parse_args(args)
 
 
 def print_heading() -> None:
-    print("{} (interactive)".format(version_str))
+    print(f"{version_str} (interactive)")
     print("Type Ctrl-D to complete input, or Ctrl-C to exit.")
 
 

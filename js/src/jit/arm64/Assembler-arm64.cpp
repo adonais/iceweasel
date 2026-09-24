@@ -54,7 +54,7 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       floatRegIndex_++;
       break;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128:
       if (floatRegIndex_ == NumFloatArgRegs) {
         stackOffset_ = AlignBytes(stackOffset_, SimdMemoryAlignment);

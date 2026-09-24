@@ -87,10 +87,10 @@ static DashState GetStrokeDashData(
       return DashState::ContinuousStroke;
     }
     const FallibleTArray<Float>& dashSrc = aContextPaint->GetStrokeDashArray();
-    dashArrayLength = dashSrc.Length();
-    if (dashArrayLength <= 0) {
+    if (dashSrc.IsEmpty()) {
       return DashState::ContinuousStroke;
     }
+    dashArrayLength = dashSrc.Length();
     Float* dashPattern = aStrokeOptions->InitDashPattern(dashArrayLength);
     if (!dashPattern) {
       return DashState::ContinuousStroke;
@@ -104,8 +104,7 @@ static DashState GetStrokeDashData(
     }
   } else {
     const auto dasharray = aStyleSVG->mStrokeDasharray.AsValues().AsSpan();
-    dashArrayLength = dasharray.Length();
-    if (dashArrayLength <= 0) {
+    if (dasharray.IsEmpty()) {
       return DashState::ContinuousStroke;
     }
     if (auto* shapeElement = SVGGeometryElement::FromNode(aElement)) {
@@ -115,6 +114,7 @@ static DashState GetStrokeDashData(
         return DashState::ContinuousStroke;
       }
     }
+    dashArrayLength = dasharray.Length();
     Float* dashPattern = aStrokeOptions->InitDashPattern(dashArrayLength);
     if (!dashPattern) {
       return DashState::ContinuousStroke;
@@ -275,6 +275,44 @@ Float SVGContentUtils::GetStrokeWidth(const SVGElement* aElement,
   }
 
   return res;
+}
+
+bool SVGContentUtils::HasPercentageDependentStroke(
+    const ComputedStyle* aComputedStyle, const SVGContextPaint* aContextPaint) {
+  const nsStyleSVG* styleSVG = aComputedStyle->StyleSVG();
+  if (!styleSVG->HasStroke()) {
+    return false;
+  }
+
+  if (styleSVG->mStrokeWidth.IsContextValue()) {
+    if (!aContextPaint || aContextPaint->GetStrokeWidth() <= 0.f) {
+      return false;
+    }
+  } else {
+    auto& lp = styleSVG->mStrokeWidth.AsLengthPercentage();
+    if (lp.IsDefinitelyZero()) {
+      return false;
+    }
+    if (lp.HasPercent()) {
+      return true;
+    }
+  }
+
+  if (!styleSVG->mStrokeDasharray.IsContextValue()) {
+    for (const auto& dash : styleSVG->mStrokeDasharray.AsValues().AsSpan()) {
+      if (!dash.IsDefinitelyZero() && dash.HasPercent()) {
+        return true;
+      }
+    }
+  }
+  if (!styleSVG->mStrokeDashoffset.IsContextValue()) {
+    auto& lp = styleSVG->mStrokeDashoffset.AsLengthPercentage();
+    if (!lp.IsDefinitelyZero() && lp.HasPercent()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 float SVGContentUtils::GetFontSize(const Element* aElement) {

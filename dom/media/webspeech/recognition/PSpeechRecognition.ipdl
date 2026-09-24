@@ -1,0 +1,72 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
+using mozilla::hwinference::ModelInstallResult from "mozilla/hwinference/HWInferenceTypes.h";
+
+namespace mozilla {
+namespace hwinference {
+
+// This protocol handles speech recognition operations in the HWInference
+// utility process.  Each instance represents a single speech recognition
+// session. As things stand, only a single speech recognition session can be
+// initialized (and performing recognition).
+// PSpeechRecognition can also be instantiated just to call IsModelAvailable,
+// IsModelInstalled or InstallModels, which can happen concurrently to a
+// recognition. Content only asks: it never supplies a progress token nor any
+// "approved" signal. The utility relays install requests to the trusted parent
+// over PHWInference, attaching the requesting content-process id, and the parent
+// decides consent and performs the download (see nsIMLModelResolver).
+//
+// The parent endpoint is sent directly over PContent and bound on the utility
+// process' main thread. The child endpoint is bound on the content process'
+// dedicated "SpeechIPC" thread. Being toplevel, a session ends by the content
+// process closing the channel rather than by a destructor message.
+[ParentProc=Utility, ChildProc=Content]
+async protocol PSpeechRecognition
+{
+parent: // HWInference
+  // Check if speech recognition models are available (cached or downloadable)
+  // for the given languages, used for the "downloadable" Available() result.
+  async IsModelAvailable(nsCString[] languages) returns (bool available);
+  // Whether the models are already downloaded to the local cache, used for the
+  // "available" Available() result.
+  async IsModelInstalled(nsCString[] languages) returns (bool installed);
+  // Ask the parent to install the models for the given languages.
+  // innerWindowId is the id of the requesting document's window, forwarded
+  // (with the trusted content id the utility attaches) so the parent can look
+  // it up, verify ownership, and prompt on that tab. Resolves Installed once
+  // every model is installed, Denied if the download was refused, Failed
+  // otherwise.
+  async InstallModels(nsCString[] languages, uint64_t innerWindowId) returns (ModelInstallResult result);
+  // Initialize the speech recognition session with a language and a list of
+  // biasing phrases. Resolves with an empty string on success, otherwise with
+  // the Web Speech error token describing the failure (e.g.
+  // "concurrent-session" when another session is active, "network" when the
+  // model could not be retrieved or the engine failed to start).
+  async Init(nsCString engineId, nsCString language, nsString[] phrases) returns (nsCString error);
+  // Send audio data for speech recognition (always 16kHz mono f32 samples).
+  // captureEndTime is when the last sample in audioData was captured.
+  async ProcessAudioData(float[] audioData, TimeStamp captureEndTime);
+  // Stop the speech recognition session.
+  // https://webaudio.github.io/web-speech-api/#dom-speechrecognition-stop
+  // "The speech service must attempt to return a recognition result (or a
+  // nomatch) based on the audio that it has already collected for this
+  // recognition." This therefore resolves only once the engine has flushed its
+  // end-of-stream tail and sent every result that flush produced.
+  // anyFinalResult is false when the session finalized nothing at all, which
+  // is what makes the content process fire "nomatch" before "end".
+  async Stop() returns (bool anyFinalResult);
+
+child: // Content process
+  // Speech recognition results
+  async OnRecognitionResult(nsCString transcript, bool isFinal, float confidence, TimeStamp eventTime);
+  async OnRecognitionError(nsCString error);
+  // Speech detection events (true = speech started, false = speech ended)
+  async OnSpeechChange(bool speechDetected, TimeStamp eventTime);
+};
+
+} // namespace hwinference
+} // namespace mozilla

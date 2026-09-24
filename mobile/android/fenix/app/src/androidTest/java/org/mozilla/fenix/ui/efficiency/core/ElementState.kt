@@ -38,10 +38,11 @@ object ElementState {
         DISPLAYED,
     }
 
-    fun probe(element: Any, trait: Trait): Boolean = runCatching {
-        when (element) {
+    fun probe(element: UiElement, trait: Trait): Boolean = runCatching {
+        val raw = element.backend()
+        when (raw) {
             is ViewInteraction -> {
-                element.check(
+                raw.check(
                     matches(
                         when (trait) {
                             Trait.ENABLED -> isEnabled()
@@ -55,36 +56,30 @@ object ElementState {
             }
             is UiObject ->
                 when (trait) {
-                    Trait.ENABLED -> element.isEnabled
-                    Trait.SELECTED -> element.isSelected
-                    Trait.CHECKED -> element.isChecked
-                    Trait.DISPLAYED -> element.exists()
+                    Trait.ENABLED -> raw.isEnabled
+                    Trait.SELECTED -> raw.isSelected
+                    Trait.CHECKED -> raw.isChecked
+                    Trait.DISPLAYED -> raw.exists()
                 }
             is UiObject2 ->
                 when (trait) {
-                    Trait.ENABLED -> element.isEnabled
-                    Trait.SELECTED -> element.isSelected
-                    Trait.CHECKED -> element.isChecked
-                    // UiAutomator2 only hands back an object it already found on screen.
-                    Trait.DISPLAYED -> true
+                    Trait.ENABLED -> raw.isEnabled
+                    Trait.SELECTED -> raw.isSelected
+                    Trait.CHECKED -> raw.isChecked
+                    Trait.DISPLAYED -> element.isDisplayed()
                 }
             is SemanticsNodeInteraction -> {
                 when (trait) {
-                    Trait.ENABLED -> element.assertIsEnabled()
-                    Trait.SELECTED -> element.assertIsSelected()
-                    Trait.CHECKED -> element.assertIsOn()
+                    Trait.ENABLED -> raw.assertIsEnabled()
+                    Trait.SELECTED -> raw.assertIsSelected()
+                    Trait.CHECKED -> raw.assertIsOn()
                     Trait.DISPLAYED -> {
-                        element.assertExists()
-                        element.assertIsDisplayed()
+                        raw.assertExists()
+                        raw.assertIsDisplayed()
                     }
                 }
                 true
             }
-            is UiElement ->
-                when (trait) {
-                    Trait.DISPLAYED -> element.isDisplayed()
-                    else -> element.exists()
-                }
             else -> false
         }
     }
@@ -95,13 +90,14 @@ object ElementState {
      * semantics at all", so `!isEnabled` is not the same claim as `isNotEnabled` - which is exactly the trap
      * mozClickWhenEnabled fell into.
      */
-    fun isNot(element: Any, trait: Trait): Boolean = runCatching {
-        when (element) {
+    fun isNot(element: UiElement, trait: Trait): Boolean = runCatching {
+        val raw = element.backend()
+        when (raw) {
             is SemanticsNodeInteraction -> {
                 when (trait) {
-                    Trait.ENABLED -> element.assertIsNotEnabled()
-                    Trait.SELECTED -> element.assertIsNotSelected()
-                    Trait.CHECKED -> element.assertIsOff()
+                    Trait.ENABLED -> raw.assertIsNotEnabled()
+                    Trait.SELECTED -> raw.assertIsNotSelected()
+                    Trait.CHECKED -> raw.assertIsOff()
                     Trait.DISPLAYED -> return !probe(element, trait)
                 }
                 true
@@ -109,7 +105,7 @@ object ElementState {
             is ViewInteraction ->
                 when (trait) {
                     Trait.CHECKED -> {
-                        element.check(matches(isNotChecked()))
+                        raw.check(matches(isNotChecked()))
                         true
                     }
                     else -> !probe(element, trait)
@@ -126,14 +122,16 @@ object ElementState {
      * leaves the caller with something it cannot tap. The other backends have no equivalent notion, so they fall back
      * to presence.
      */
-    fun isClickablyVisible(element: Any, percent: Int): Boolean =
-        if (element is ViewInteraction) {
-            runCatching {
-                    element.check(matches(isDisplayingAtLeast(percent)))
-                    true
-                }
-                .getOrDefault(false)
-        } else {
-            probe(element, Trait.DISPLAYED)
+    fun isClickablyVisible(element: UiElement, percent: Int): Boolean =
+        element.backend().let { raw ->
+            if (raw is ViewInteraction) {
+                runCatching {
+                        raw.check(matches(isDisplayingAtLeast(percent)))
+                        true
+                    }
+                    .getOrDefault(false)
+            } else {
+                probe(element, Trait.DISPLAYED)
+            }
         }
 }

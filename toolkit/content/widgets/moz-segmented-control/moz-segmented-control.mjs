@@ -47,6 +47,10 @@ export class MozSegmentedControl extends SelectControlBaseElement {
     return this.deck ? "tab" : super.getChildRole();
   }
 
+  getGroupRole() {
+    return this.deck ? "tablist" : super.getGroupRole();
+  }
+
   willUpdate(changedProperties) {
     super.willUpdate(changedProperties);
     if (changedProperties.has("deck")) {
@@ -124,20 +128,30 @@ export class MozSegmentedControlItem extends SelectControlItemMixin(MozButton) {
     super.willUpdate(changedProperties);
     if (changedProperties.has("checked")) {
       this.type = this.checked ? "primary" : "ghost";
-      this.setAttribute("aria-checked", this.checked ? "true" : "false");
+      this.ariaChecked = this.checked ? "true" : "false";
     }
     if (changedProperties.has("itemTabIndex")) {
       this.setAttribute("tabindex", this.itemTabIndex);
     }
-    if (changedProperties.has("role")) {
-      this.setAttribute("role", this.role);
+  }
+
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    if (changedProperties.has("role") && this.buttonEl) {
+      this.buttonEl.setAttribute("role", this.role);
     }
   }
 
   handleClick(event) {
     event.stopPropagation();
-    super.handleClick();
+    if (this.isDisabled) {
+      return;
+    }
     this.focus();
+    if (this.checked) {
+      return;
+    }
+    super.handleClick();
 
     // Manually dispatch events since we're not using an input.
     this.dispatchEvent(

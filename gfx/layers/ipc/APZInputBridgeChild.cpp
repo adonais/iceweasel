@@ -4,15 +4,19 @@
 
 #include "mozilla/layers/APZInputBridgeChild.h"
 
-#include "InputData.h"                  // for InputData, etc
+#include "InputData.h"  // for InputData, etc
+#include "mozilla/Assertions.h"
 #include "mozilla/dom/BrowserParent.h"  // for BrowserParent
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/DoubleTapToZoom.h"  // for DoubleTapToZoomMetrics
 #include "mozilla/layers/GeckoContentController.h"  // for GeckoContentController
+#include "mozilla/layers/KeyboardMap.h"             // for KeyboardMap
 #include "mozilla/layers/RemoteCompositorSession.h"  // for RemoteCompositorSession
 #include "mozilla/layers/SynchronousTask.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/jni/Utils.h"  // for DispatchToGeckoPriorityQueue
 #endif
@@ -195,9 +199,8 @@ void APZInputBridgeChild::HandleTapOnMainThread(
     const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
   if (mCompositorSession &&
       mCompositorSession->RootLayerTreeId() == aGuid.mLayersId &&
-      mCompositorSession->GetContentController()) {
-    RefPtr<GeckoContentController> controller =
-        mCompositorSession->GetContentController();
+      GetContentController()) {
+    RefPtr<GeckoContentController> controller = GetContentController();
     controller->HandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId,
                           aDoubleTapToZoomMetrics);
     return;
@@ -259,6 +262,76 @@ mozilla::ipc::IPCResult APZInputBridgeChild::RecvCallInputBlockCallback(
   return IPC_OK();
 }
 
+// Note mCompositorSession is currently used by the main thread.
+void APZInputBridgeChild::NotifyPinchGestureOnMainThread(
+    const PinchGestureType& aType, const LayoutDevicePoint& aFocusPoint,
+    const LayoutDeviceCoord& aSpanChange, const Modifiers& aModifiers) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCompositorSession && mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyPinchGesture(aType, aFocusPoint, aSpanChange,
+                                           aModifiers,
+                                           mCompositorSession->GetWidget());
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvNotifyPinchGesture(
+    const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
+    const LayoutDevicePoint& aFocusPoint, const LayoutDeviceCoord& aSpanChange,
+    const Modifiers& aModifiers) {
+  // We want to handle it in this process regardless of what the target guid
+  // of the pinch is. This may change in the future.
+  if (NS_IsMainThread()) {
+    NotifyPinchGestureOnMainThread(aType, aFocusPoint, aSpanChange, aModifiers);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableMethod<PinchGestureType, LayoutDevicePoint,
+                          LayoutDeviceCoord, Modifiers>(
+            "layers::APZInputBridgeChild::NotifyPinchGestureOnMainThread", this,
+            &APZInputBridgeChild::NotifyPinchGestureOnMainThread, aType,
+            aFocusPoint, aSpanChange, aModifiers));
+  }
+  return IPC_OK();
+}
+
+// Note APZCCallbackHelper::CancelAutoscroll() must be called on the main
+// thread.
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvCancelAutoscroll(
+    const ScrollableLayerGuid::ViewID& aScrollId) {
+  if (NS_IsMainThread()) {
+    APZCCallbackHelper::CancelAutoscroll(aScrollId);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableFunction("layers::APZCCallbackHelper::CancelAutoscroll",
+                            &APZCCallbackHelper::CancelAutoscroll, aScrollId));
+  }
+  return IPC_OK();
+}
+
+// Note APZCCallbackHelper::NotifyScaleGestureComplete() must be called on the
+// main thread.
+void APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread(float aScale) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mCompositorSession && mCompositorSession->GetWidget()) {
+    APZCCallbackHelper::NotifyScaleGestureComplete(
+        mCompositorSession->GetWidget(), aScale);
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvNotifyScaleGestureComplete(
+    const ScrollableLayerGuid::ViewID& aScrollId, float aScale) {
+  if (NS_IsMainThread()) {
+    NotifyScaleGestureCompleteOnMainThread(aScale);
+  } else {
+    NS_DispatchToMainThread(NewRunnableMethod<float>(
+        "layers::APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread",
+        this, &APZInputBridgeChild::NotifyScaleGestureCompleteOnMainThread,
+        aScale));
+  }
+  return IPC_OK();
+}
+
 void APZInputBridgeChild::ProcessUnhandledEvent(
     LayoutDeviceIntPoint* aRefPoint, ScrollableLayerGuid* aOutTargetGuid,
     uint64_t* aOutFocusSequenceNumber, LayersId* aOutLayersId) {
@@ -276,6 +349,217 @@ void APZInputBridgeChild::UpdateWheelTransaction(
   APZThreadUtils::AssertOnControllerThread();
 
   SendUpdateWheelTransaction(aRefPoint, aEventMessage, aTargetGuid);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::SetKeyboardMap(const KeyboardMap& aKeyboardMap) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(NewRunnableMethod<KeyboardMap>(
+        "layers::APZInputBridgeChild::SetKeyboardMap", this,
+        &APZInputBridgeChild::SetKeyboardMap, aKeyboardMap));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendSetKeyboardMap(aKeyboardMap);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::SetDPI(float aDpiValue) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(
+        NewRunnableMethod<float>("layers::APZInputBridgeChild::SetDPI", this,
+                                 &APZInputBridgeChild::SetDPI, aDpiValue));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendSetDPI(aDpiValue);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::SetBrowserGestureResponse(
+    uint64_t aInputBlockId, BrowserGestureResponse aResponse) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(
+        NewRunnableMethod<uint64_t, BrowserGestureResponse>(
+            "layers::APZInputBridgeChild::SetBrowserGestureResponse", this,
+            &APZInputBridgeChild::SetBrowserGestureResponse, aInputBlockId,
+            aResponse));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendSetBrowserGestureResponse(aInputBlockId, aResponse);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::StartAutoscroll(const ScrollableLayerGuid& aGuid,
+                                          const ScreenPoint& aAnchorLocation) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(
+        NewRunnableMethod<ScrollableLayerGuid, ScreenPoint>(
+            "layers::APZInputBridgeChild::StartAutoscroll", this,
+            &APZInputBridgeChild::StartAutoscroll, aGuid, aAnchorLocation));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendStartAutoscroll(aGuid, aAnchorLocation);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::StopAutoscroll(const ScrollableLayerGuid& aGuid) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(
+        NewRunnableMethod<ScrollableLayerGuid>(
+            "layers::APZInputBridgeChild::StopAutoscroll", this,
+            &APZInputBridgeChild::StopAutoscroll, aGuid));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendStopAutoscroll(aGuid);
+}
+
+// This actor is bound to the controller thread (see
+// APZInputBridgeChild::Open()), so they must hop to it before sending.
+void APZInputBridgeChild::SetLongTapEnabled(bool aTapGestureEnabled) {
+  if (!APZThreadUtils::IsControllerThread()) {
+    APZThreadUtils::RunOnControllerThread(NewRunnableMethod<bool>(
+        "layers::APZInputBridgeChild::SetLongTapEnabled", this,
+        &APZInputBridgeChild::SetLongTapEnabled, aTapGestureEnabled));
+    return;
+  }
+
+  if (!mIsOpen) {
+    return;
+  }
+
+  SendSetLongTapEnabled(aTapGestureEnabled);
+}
+
+// Note mCompositorSession is currently used by the main thread.
+GeckoContentController* APZInputBridgeChild::GetContentController() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mCompositorSession) {
+    return nullptr;
+  }
+  return mCompositorSession->GetContentController();
+}
+
+void APZInputBridgeChild::NotifyLayerTransformsOnMainThread(
+    nsTArray<MatrixMessage>&& aTransforms) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (RefPtr<GeckoContentController> controller = GetContentController()) {
+    controller->NotifyLayerTransforms(std::move(aTransforms));
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvLayerTransforms(
+    nsTArray<MatrixMessage>&& aTransforms) {
+  if (NS_IsMainThread()) {
+    NotifyLayerTransformsOnMainThread(std::move(aTransforms));
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableMethod<StoreCopyPassByRRef<nsTArray<MatrixMessage>>>(
+            "layers::APZInputBridgeChild::NotifyLayerTransformsOnMainThread",
+            this, &APZInputBridgeChild::NotifyLayerTransformsOnMainThread,
+            std::move(aTransforms)));
+  }
+  return IPC_OK();
+}
+
+void APZInputBridgeChild::UpdateOverscrollVelocityOnMainThread(
+    const ScrollableLayerGuid& aGuid, float aX, float aY, bool aIsRootContent) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (RefPtr<GeckoContentController> controller = GetContentController()) {
+    controller->UpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvUpdateOverscrollVelocity(
+    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+    const bool& aIsRootContent) {
+  if (NS_IsMainThread()) {
+    UpdateOverscrollVelocityOnMainThread(aGuid, aX, aY, aIsRootContent);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableMethod<ScrollableLayerGuid, float, float, bool>(
+            "layers::APZInputBridgeChild::UpdateOverscrollVelocityOnMainThread",
+            this, &APZInputBridgeChild::UpdateOverscrollVelocityOnMainThread,
+            aGuid, aX, aY, aIsRootContent));
+  }
+  return IPC_OK();
+}
+
+void APZInputBridgeChild::UpdateOverscrollOffsetOnMainThread(
+    const ScrollableLayerGuid& aGuid, float aX, float aY, bool aIsRootContent) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (RefPtr<GeckoContentController> controller = GetContentController()) {
+    controller->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvUpdateOverscrollOffset(
+    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+    const bool& aIsRootContent) {
+  if (NS_IsMainThread()) {
+    UpdateOverscrollOffsetOnMainThread(aGuid, aX, aY, aIsRootContent);
+  } else {
+    NS_DispatchToMainThread(
+        NewRunnableMethod<ScrollableLayerGuid, float, float, bool>(
+            "layers::APZInputBridgeChild::UpdateOverscrollOffsetOnMainThread",
+            this, &APZInputBridgeChild::UpdateOverscrollOffsetOnMainThread,
+            aGuid, aX, aY, aIsRootContent));
+  }
+  return IPC_OK();
+}
+
+void APZInputBridgeChild::HideDynamicToolbarOnMainThread() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (RefPtr<GeckoContentController> controller = GetContentController()) {
+    // Only the RemoteContentController implementation uses the
+    // ScrollableLayerGuid parameter, and the controller here is never a
+    // RemoteContentController, so it's fine to invent a value here.
+    controller->HideDynamicToolbar(ScrollableLayerGuid{});
+  }
+}
+
+mozilla::ipc::IPCResult APZInputBridgeChild::RecvHideDynamicToolbar() {
+  if (NS_IsMainThread()) {
+    HideDynamicToolbarOnMainThread();
+  } else {
+    NS_DispatchToMainThread(NewRunnableMethod(
+        "layers::APZInputBridgeChild::HideDynamicToolbarOnMainThread", this,
+        &APZInputBridgeChild::HideDynamicToolbarOnMainThread));
+  }
+  return IPC_OK();
 }
 
 }  // namespace layers

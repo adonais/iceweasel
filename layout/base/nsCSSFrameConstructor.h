@@ -1504,7 +1504,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   static const FrameConstructionData* FindXULTagData(const Element&,
                                                      ComputedStyle&);
   // XUL data-finding helper functions and structures
-  static const FrameConstructionData* FindXULLabelOrDescriptionData(
+  static const FrameConstructionData* FindLabelOrDescriptionData(
       const Element&, ComputedStyle&);
 
   /**

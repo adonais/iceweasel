@@ -4,16 +4,23 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object TabHistorySelectors {
+object TabHistorySelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        TAB_HISTORY_ITEMS
+    }
+
     val TAB_HISTORY_LIST =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "tabHistoryRecyclerView",
             description = "Tab history list",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     // UIAutomator twin of TAB_HISTORY_LIST, for reaching the sheet from a custom tab. Espresso resolves
@@ -26,7 +33,6 @@ object TabHistorySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "tabHistoryRecyclerView",
             description = "Tab history list (UIAutomator)",
-            groups = listOf(),
         )
 
     fun TAB_HISTORY_ITEM(url: String = "") =
@@ -34,13 +40,6 @@ object TabHistorySelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = url,
             description = "Tab history item with URL: $url",
-            groups = listOf("tabHistoryItems"),
-        )
-
-    val all =
-        listOf(
-            TAB_HISTORY_LIST,
-            TAB_HISTORY_LIST_UIAUTOMATOR,
-            TAB_HISTORY_ITEM(),
+            groups = setOf(Group.TAB_HISTORY_ITEMS),
         )
 }

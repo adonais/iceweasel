@@ -77,8 +77,8 @@ void HTMLTableColElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTableColElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTableColElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {{nsGkAtoms::width},
                                                     {nsGkAtoms::align},
                                                     {nsGkAtoms::valign},

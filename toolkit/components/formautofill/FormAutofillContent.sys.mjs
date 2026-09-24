@@ -60,6 +60,12 @@ export var FormAutofillContent = {
     }
   },
 
+  repopulatePopup() {
+    formFillController.QueryInterface(Ci.nsIAutoCompleteInput);
+    formFillController.controller.resetInternalState();
+    this.showPopup();
+  },
+
   handleEvent(evt) {
     switch (evt.type) {
       case "change": {

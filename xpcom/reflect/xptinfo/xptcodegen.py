@@ -7,7 +7,6 @@
 
 import functools
 import json
-from collections import OrderedDict
 
 import buildconfig
 from perfecthash import PerfectHash
@@ -208,7 +207,7 @@ def link_to_cpp(interfaces, fd, header_fd):
     consts = []
     domobjects = []
     domobject_cache = {}
-    strings = OrderedDict()
+    strings = {}
 
     def lower_uuid(uuid):
         return (
@@ -242,7 +241,7 @@ def link_to_cpp(interfaces, fd, header_fd):
             # We've already seen this string.
             return strings[s]
         elif len(strings):
-            # Get the last string we inserted (should be O(1) on OrderedDict).
+            # Get the last string we inserted (should be O(1) on dict).
             last_s = next(reversed(strings))
             strings[s] = strings[last_s] + len(last_s) + 1
         else:

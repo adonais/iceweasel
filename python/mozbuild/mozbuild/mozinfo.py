@@ -100,6 +100,7 @@ def build_dict(config, env=os.environ):
     )
     d["automation"] = substs.get("MOZ_AUTOMATION") == "1"
     d["dbus_enabled"] = bool(substs.get("MOZ_ENABLE_DBUS"))
+    d["enterprise"] = substs.get("MOZ_ENTERPRISE") == "1"
 
     d["opt"] = not d["debug"] and not d["asan"] and not d["tsan"] and not d["ccov"]
 

@@ -23,7 +23,5 @@ abstract class BaseReachabilityShardTest(private val case: ReachabilityCase) : B
 
         val pageObj: BasePage = case.page(on)
         pageObj.navigateToPage()
-
-        // Add optional page-specific assertions later if needed.
     }
 }

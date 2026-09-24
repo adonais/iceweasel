@@ -27,6 +27,24 @@ add_task(async function test_recover_empty_database() {
     "Should have reset the profile created state."
   );
 
+  let missingEvents = Glean.profiles.currentMissing.testGetValue();
+  Assert.equal(
+    missingEvents.length,
+    1,
+    "Should have recorded a profiles.current_missing event"
+  );
+  Assert.equal(
+    missingEvents[0].extra.profile_count,
+    "0",
+    "profiles.current_missing should report 0 profiles"
+  );
+
+  Assert.equal(
+    Glean.profiles.active.testGetValue(),
+    false,
+    "profiles.active should be false after reset"
+  );
+
   Assert.ok(!toolkitProfile.storeID, "Should have cleared the store ID");
   Assert.ok(
     !SelectableProfileService.currentProfile,

@@ -49,6 +49,9 @@ with Files('js/qrcode/**'):
 with Files('khronos/**'):
     BUG_COMPONENT = ('Core', 'Graphics')
 
+with Files('node/**'):
+    BUG_COMPONENT = ('Firefox Build System', 'General')
+
 with Files('rust/**'):
     BUG_COMPONENT = ('Firefox Build System', 'General')
 

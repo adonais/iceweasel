@@ -16,8 +16,7 @@ interface SpeechGrammarList {
     constructor();
 
     readonly attribute unsigned long length;
-    [Throws]
-    getter SpeechGrammar item(unsigned long index);
+    getter SpeechGrammar? item(unsigned long index);
     [Throws]
     undefined addFromURI(DOMString src, optional float weight);
     [Throws]

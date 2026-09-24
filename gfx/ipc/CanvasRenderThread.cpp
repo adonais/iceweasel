@@ -23,7 +23,7 @@ bool NS_IsInCanvasThreadOrWorker() {
 namespace mozilla::gfx {
 
 static StaticRefPtr<CanvasRenderThread> sCanvasRenderThread;
-static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
+[[maybe_unused]] static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 #ifdef DEBUG
 static bool sCanvasRenderThreadEverStarted = false;
 #endif

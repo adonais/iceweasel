@@ -278,6 +278,7 @@ td:first-of-type {
   height: 50px;
   width: 100px;
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border: var(--table-border-inner);
   border-radius: var(--border-radius-small);
 }

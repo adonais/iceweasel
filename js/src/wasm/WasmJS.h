@@ -100,11 +100,6 @@ struct ImportValues;
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
 
-[[nodiscard]] bool CompileForESM(JSContext* cx,
-                                 const JS::ReadOnlyCompileOptions& options,
-                                 const BytecodeSource& source,
-                                 MutableHandleObject moduleObj);
-
 }  // namespace wasm
 
 // The class of WebAssembly.Module. Each WasmModuleObject owns a

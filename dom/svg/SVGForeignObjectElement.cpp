@@ -91,10 +91,10 @@ bool SVGForeignObjectElement::HasValidDimensions() const {
 //----------------------------------------------------------------------
 // nsIContent methods
 
-NS_IMETHODIMP_(bool)
-SVGForeignObjectElement::IsAttributeMapped(const nsAtom* name) const {
+bool SVGForeignObjectElement::IsNoNamespaceAttrMapped(
+    const nsAtom* name) const {
   return IsInLengthInfo(name, sLengthInfo) ||
-         SVGGraphicsElement::IsAttributeMapped(name);
+         SVGGraphicsElement::IsNoNamespaceAttrMapped(name);
 }
 
 //----------------------------------------------------------------------

@@ -10,6 +10,8 @@ import {
   classMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
 
+/** @import { TemplateResult } from "chrome://global/content/vendor/lit.all.mjs" */
+
 /**
  * Helper for our replacement of @query. Used with `static queries` property.
  *
@@ -442,6 +444,16 @@ export class MozBaseInputElement extends MozLitElement {
     return nothing;
   }
 
+  /**
+   * Template for optional required indicator, rendered next to label.
+   * Subclasses that support required state should override this.
+   *
+   * @returns {TemplateResult | string}
+   */
+  requiredIndicatorTemplate() {
+    return "";
+  }
+
   render() {
     return html`
       <link
@@ -487,7 +499,7 @@ export class MozBaseInputElement extends MozLitElement {
       labelEl = html`<span class="text" .textContent=${this.label}></span>`;
     }
     return html`<span class="text-container"
-      >${this.iconTemplate()}${labelEl}</span
+      >${this.iconTemplate()}${labelEl}${this.requiredIndicatorTemplate()}</span
     >`;
   }
 

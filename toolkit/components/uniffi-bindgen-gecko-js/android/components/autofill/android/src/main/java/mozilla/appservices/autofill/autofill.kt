@@ -669,9 +669,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_autofill_checksum_method_store_add_credit_card(
     ): Short
+    external fun uniffi_autofill_checksum_method_store_add_credit_card_with_meta(
+    ): Short
     external fun uniffi_autofill_checksum_method_store_add_many_address_tombstones(
     ): Short
     external fun uniffi_autofill_checksum_method_store_add_many_addresses_with_meta(
+    ): Short
+    external fun uniffi_autofill_checksum_method_store_add_many_credit_card_tombstones(
+    ): Short
+    external fun uniffi_autofill_checksum_method_store_add_many_credit_cards_with_meta(
     ): Short
     external fun uniffi_autofill_checksum_method_store_add_passport(
     ): Short
@@ -686,6 +692,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_autofill_checksum_method_store_delete_address(
     ): Short
     external fun uniffi_autofill_checksum_method_store_delete_all_addresses(
+    ): Short
+    external fun uniffi_autofill_checksum_method_store_delete_all_credit_cards(
     ): Short
     external fun uniffi_autofill_checksum_method_store_delete_credit_card(
     ): Short
@@ -724,6 +732,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_autofill_checksum_method_store_update_address_with_meta(
     ): Short
     external fun uniffi_autofill_checksum_method_store_update_credit_card(
+    ): Short
+    external fun uniffi_autofill_checksum_method_store_update_credit_card_with_meta(
     ): Short
     external fun uniffi_autofill_checksum_method_store_update_passport(
     ): Short
@@ -785,9 +795,15 @@ external fun uniffi_autofill_fn_method_store_add_address_with_meta(`ptr`: Long,`
 ): RustBuffer.ByValue
 external fun uniffi_autofill_fn_method_store_add_credit_card(`ptr`: Long,`cc`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
+external fun uniffi_autofill_fn_method_store_add_credit_card_with_meta(`ptr`: Long,`entryWithMeta`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
 external fun uniffi_autofill_fn_method_store_add_many_address_tombstones(`ptr`: Long,`tombstones`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_autofill_fn_method_store_add_many_addresses_with_meta(`ptr`: Long,`entriesWithMeta`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_autofill_fn_method_store_add_many_credit_card_tombstones(`ptr`: Long,`tombstones`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): RustBuffer.ByValue
+external fun uniffi_autofill_fn_method_store_add_many_credit_cards_with_meta(`ptr`: Long,`entriesWithMeta`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
 external fun uniffi_autofill_fn_method_store_add_passport(`ptr`: Long,`p`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): RustBuffer.ByValue
@@ -802,6 +818,8 @@ external fun uniffi_autofill_fn_method_store_count_all_passports(`ptr`: Long,uni
 external fun uniffi_autofill_fn_method_store_delete_address(`ptr`: Long,`guid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
 external fun uniffi_autofill_fn_method_store_delete_all_addresses(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_autofill_fn_method_store_delete_all_credit_cards(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_autofill_fn_method_store_delete_credit_card(`ptr`: Long,`guid`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Byte
@@ -840,6 +858,8 @@ external fun uniffi_autofill_fn_method_store_update_address(`ptr`: Long,`guid`: 
 external fun uniffi_autofill_fn_method_store_update_address_with_meta(`ptr`: Long,`entryWithMeta`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_autofill_fn_method_store_update_credit_card(`ptr`: Long,`guid`: RustBuffer.ByValue,`cc`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+): Unit
+external fun uniffi_autofill_fn_method_store_update_credit_card_with_meta(`ptr`: Long,`entryWithMeta`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
 external fun uniffi_autofill_fn_method_store_update_passport(`ptr`: Long,`guid`: RustBuffer.ByValue,`p`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
 ): Unit
@@ -1767,9 +1787,15 @@ public interface StoreInterface {
     
     fun `addCreditCard`(`cc`: UpdatableCreditCardFields): CreditCard
     
+    fun `addCreditCardWithMeta`(`entryWithMeta`: UpdatableCreditCardFieldsWithMeta): CreditCard
+    
     fun `addManyAddressTombstones`(`tombstones`: List<AddressTombstone>): List<AddressBulkTombstoneResultEntry>
     
     fun `addManyAddressesWithMeta`(`entriesWithMeta`: List<UpdatableAddressFieldsWithMeta>): List<AddressBulkResultEntry>
+    
+    fun `addManyCreditCardTombstones`(`tombstones`: List<CreditCardTombstone>): List<CreditCardBulkTombstoneResultEntry>
+    
+    fun `addManyCreditCardsWithMeta`(`entriesWithMeta`: List<UpdatableCreditCardFieldsWithMeta>): List<CreditCardBulkResultEntry>
     
     fun `addPassport`(`p`: UpdatablePassportFields): Passport
     
@@ -1790,8 +1816,23 @@ public interface StoreInterface {
     
     /**
      * Removes every address and every address tombstone.
+     *
+     * A migration primitive: it leaves the sync mirror intact and produces no
+     * tombstones, so the deletions are never uploaded and a synced profile gets
+     * the records back on the next sync. Use `delete_address` to delete on the
+     * user's behalf.
      */
     fun `deleteAllAddresses`()
+    
+    /**
+     * Removes every credit card and every credit card tombstone.
+     *
+     * A migration primitive: it leaves the sync mirror intact and produces no
+     * tombstones, so the deletions are never uploaded and a synced profile gets
+     * the records back on the next sync. Use `delete_credit_card` to delete on the
+     * user's behalf.
+     */
+    fun `deleteAllCreditCards`()
     
     fun `deleteCreditCard`(`guid`: kotlin.String): kotlin.Boolean
     
@@ -1844,6 +1885,8 @@ public interface StoreInterface {
     fun `updateAddressWithMeta`(`entryWithMeta`: UpdatableAddressFieldsWithMeta)
     
     fun `updateCreditCard`(`guid`: kotlin.String, `cc`: UpdatableCreditCardFields)
+    
+    fun `updateCreditCardWithMeta`(`entryWithMeta`: UpdatableCreditCardFieldsWithMeta)
     
     fun `updatePassport`(`guid`: kotlin.String, `p`: UpdatablePassportFields)
     
@@ -1997,6 +2040,20 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     
 
     
+    @Throws(AutofillApiException::class)override fun `addCreditCardWithMeta`(`entryWithMeta`: UpdatableCreditCardFieldsWithMeta): CreditCard {
+            return FfiConverterTypeCreditCard.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_add_credit_card_with_meta(
+        it,
+        FfiConverterTypeUpdatableCreditCardFieldsWithMeta.lower(`entryWithMeta`),_status)
+}
+    }
+    )
+    }
+    
+
+    
     @Throws(AutofillApiException::class)override fun `addManyAddressTombstones`(`tombstones`: List<AddressTombstone>): List<AddressBulkTombstoneResultEntry> {
             return FfiConverterSequenceTypeAddressBulkTombstoneResultEntry.lift(
     callWithHandle {
@@ -2018,6 +2075,34 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     UniffiLib.uniffi_autofill_fn_method_store_add_many_addresses_with_meta(
         it,
         FfiConverterSequenceTypeUpdatableAddressFieldsWithMeta.lower(`entriesWithMeta`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `addManyCreditCardTombstones`(`tombstones`: List<CreditCardTombstone>): List<CreditCardBulkTombstoneResultEntry> {
+            return FfiConverterSequenceTypeCreditCardBulkTombstoneResultEntry.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_add_many_credit_card_tombstones(
+        it,
+        FfiConverterSequenceTypeCreditCardTombstone.lower(`tombstones`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `addManyCreditCardsWithMeta`(`entriesWithMeta`: List<UpdatableCreditCardFieldsWithMeta>): List<CreditCardBulkResultEntry> {
+            return FfiConverterSequenceTypeCreditCardBulkResultEntry.lift(
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_add_many_credit_cards_with_meta(
+        it,
+        FfiConverterSequenceTypeUpdatableCreditCardFieldsWithMeta.lower(`entriesWithMeta`),_status)
 }
     }
     )
@@ -2115,12 +2200,38 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     
     /**
      * Removes every address and every address tombstone.
+     *
+     * A migration primitive: it leaves the sync mirror intact and produces no
+     * tombstones, so the deletions are never uploaded and a synced profile gets
+     * the records back on the next sync. Use `delete_address` to delete on the
+     * user's behalf.
      */
     @Throws(AutofillApiException::class)override fun `deleteAllAddresses`()
         = 
     callWithHandle {
     uniffiRustCallWithError(AutofillApiException) { _status ->
     UniffiLib.uniffi_autofill_fn_method_store_delete_all_addresses(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Removes every credit card and every credit card tombstone.
+     *
+     * A migration primitive: it leaves the sync mirror intact and produces no
+     * tombstones, so the deletions are never uploaded and a synced profile gets
+     * the records back on the next sync. Use `delete_credit_card` to delete on the
+     * user's behalf.
+     */
+    @Throws(AutofillApiException::class)override fun `deleteAllCreditCards`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_delete_all_credit_cards(
         it,
         _status)
 }
@@ -2391,6 +2502,19 @@ open class Store: Disposable, AutoCloseable, StoreInterface
     UniffiLib.uniffi_autofill_fn_method_store_update_credit_card(
         it,
         FfiConverterString.lower(`guid`),FfiConverterTypeUpdatableCreditCardFields.lower(`cc`),_status)
+}
+    }
+    
+    
+
+    
+    @Throws(AutofillApiException::class)override fun `updateCreditCardWithMeta`(`entryWithMeta`: UpdatableCreditCardFieldsWithMeta)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(AutofillApiException) { _status ->
+    UniffiLib.uniffi_autofill_fn_method_store_update_credit_card_with_meta(
+        it,
+        FfiConverterTypeUpdatableCreditCardFieldsWithMeta.lower(`entryWithMeta`),_status)
 }
     }
     
@@ -2749,6 +2873,113 @@ public object FfiConverterTypeCreditCard: FfiConverterRustBuffer<CreditCard> {
 
 
 /**
+ * Metadata fields managed internally by the library: the guid, timestamps and
+ * local sync state. These are automatically set on `add_credit_card` and
+ * updated on operations like `touch` and `update_credit_card`. Not included in
+ * `UpdatableCreditCardFields`; use `add_credit_card_with_meta` when importing
+ * records that already have metadata.
+ */
+data class CreditCardMeta (
+    var `guid`: kotlin.String
+    , 
+    var `timeCreated`: kotlin.Long
+    , 
+    var `timeLastUsed`: kotlin.Long?
+    , 
+    var `timeLastModified`: kotlin.Long
+    , 
+    var `timesUsed`: kotlin.Long
+    , 
+    var `syncChangeCounter`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardMeta: FfiConverterRustBuffer<CreditCardMeta> {
+    override fun read(buf: ByteBuffer): CreditCardMeta {
+        return CreditCardMeta(
+            FfiConverterString.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: CreditCardMeta) = (
+            FfiConverterString.allocationSize(value.`guid`) +
+            FfiConverterLong.allocationSize(value.`timeCreated`) +
+            FfiConverterOptionalLong.allocationSize(value.`timeLastUsed`) +
+            FfiConverterLong.allocationSize(value.`timeLastModified`) +
+            FfiConverterLong.allocationSize(value.`timesUsed`) +
+            FfiConverterLong.allocationSize(value.`syncChangeCounter`)
+    )
+
+    override fun write(value: CreditCardMeta, buf: ByteBuffer) {
+            FfiConverterString.write(value.`guid`, buf)
+            FfiConverterLong.write(value.`timeCreated`, buf)
+            FfiConverterOptionalLong.write(value.`timeLastUsed`, buf)
+            FfiConverterLong.write(value.`timeLastModified`, buf)
+            FfiConverterLong.write(value.`timesUsed`, buf)
+            FfiConverterLong.write(value.`syncChangeCounter`, buf)
+    }
+}
+
+
+
+/**
+ * A tombstone for a record deleted locally but not yet uploaded, supplied to
+ * `add_many_credit_card_tombstones` when migrating from another store.
+ */
+data class CreditCardTombstone (
+    var `guid`: kotlin.String
+    , 
+    var `timeDeleted`: kotlin.Long
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardTombstone: FfiConverterRustBuffer<CreditCardTombstone> {
+    override fun read(buf: ByteBuffer): CreditCardTombstone {
+        return CreditCardTombstone(
+            FfiConverterString.read(buf),
+            FfiConverterLong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: CreditCardTombstone) = (
+            FfiConverterString.allocationSize(value.`guid`) +
+            FfiConverterLong.allocationSize(value.`timeDeleted`)
+    )
+
+    override fun write(value: CreditCardTombstone, buf: ByteBuffer) {
+            FfiConverterString.write(value.`guid`, buf)
+            FfiConverterLong.write(value.`timeDeleted`, buf)
+    }
+}
+
+
+
+/**
  * Metrics tracking scrubbing of credit cards that cannot be decrypted, see
  */
 data class CreditCardsDeletionMetrics (
@@ -3064,6 +3295,48 @@ public object FfiConverterTypeUpdatableCreditCardFields: FfiConverterRustBuffer<
             FfiConverterLong.write(value.`ccExpMonth`, buf)
             FfiConverterLong.write(value.`ccExpYear`, buf)
             FfiConverterString.write(value.`ccType`, buf)
+    }
+}
+
+
+
+/**
+ * A credit card together with its metadata, passed to `add_credit_card_with_meta`
+ * and `update_credit_card_with_meta` when importing a record from another store.
+ */
+data class UpdatableCreditCardFieldsWithMeta (
+    var `fields`: UpdatableCreditCardFields
+    , 
+    var `meta`: CreditCardMeta
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeUpdatableCreditCardFieldsWithMeta: FfiConverterRustBuffer<UpdatableCreditCardFieldsWithMeta> {
+    override fun read(buf: ByteBuffer): UpdatableCreditCardFieldsWithMeta {
+        return UpdatableCreditCardFieldsWithMeta(
+            FfiConverterTypeUpdatableCreditCardFields.read(buf),
+            FfiConverterTypeCreditCardMeta.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: UpdatableCreditCardFieldsWithMeta) = (
+            FfiConverterTypeUpdatableCreditCardFields.allocationSize(value.`fields`) +
+            FfiConverterTypeCreditCardMeta.allocationSize(value.`meta`)
+    )
+
+    override fun write(value: UpdatableCreditCardFieldsWithMeta, buf: ByteBuffer) {
+            FfiConverterTypeUpdatableCreditCardFields.write(value.`fields`, buf)
+            FfiConverterTypeCreditCardMeta.write(value.`meta`, buf)
     }
 }
 
@@ -3457,6 +3730,178 @@ public object FfiConverterTypeAutofillApiError : FfiConverterRustBuffer<Autofill
 
 
 
+/**
+ * A bulk insert result entry, returned per input record by `add_many_credit_cards_with_meta`
+ */
+sealed class CreditCardBulkResultEntry {
+    
+    data class Success(
+        val `creditCard`: mozilla.appservices.autofill.CreditCard) : CreditCardBulkResultEntry()
+        
+    {
+        
+
+        companion object
+    }
+    
+    data class Error(
+        val `message`: kotlin.String) : CreditCardBulkResultEntry()
+        
+    {
+        
+
+        companion object
+    }
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardBulkResultEntry : FfiConverterRustBuffer<CreditCardBulkResultEntry>{
+    override fun read(buf: ByteBuffer): CreditCardBulkResultEntry {
+        return when(buf.getInt()) {
+            1 -> CreditCardBulkResultEntry.Success(
+                FfiConverterTypeCreditCard.read(buf),
+                )
+            2 -> CreditCardBulkResultEntry.Error(
+                FfiConverterString.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: CreditCardBulkResultEntry) = when(value) {
+        is CreditCardBulkResultEntry.Success -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterTypeCreditCard.allocationSize(value.`creditCard`)
+            )
+        }
+        is CreditCardBulkResultEntry.Error -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`message`)
+            )
+        }
+    }
+
+    override fun write(value: CreditCardBulkResultEntry, buf: ByteBuffer) {
+        when(value) {
+            is CreditCardBulkResultEntry.Success -> {
+                buf.putInt(1)
+                FfiConverterTypeCreditCard.write(value.`creditCard`, buf)
+                Unit
+            }
+            is CreditCardBulkResultEntry.Error -> {
+                buf.putInt(2)
+                FfiConverterString.write(value.`message`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * Per-record result of `add_many_credit_card_tombstones`.
+ */
+sealed class CreditCardBulkTombstoneResultEntry {
+    
+    data class Success(
+        val `guid`: kotlin.String) : CreditCardBulkTombstoneResultEntry()
+        
+    {
+        
+
+        companion object
+    }
+    
+    data class Error(
+        val `message`: kotlin.String) : CreditCardBulkTombstoneResultEntry()
+        
+    {
+        
+
+        companion object
+    }
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreditCardBulkTombstoneResultEntry : FfiConverterRustBuffer<CreditCardBulkTombstoneResultEntry>{
+    override fun read(buf: ByteBuffer): CreditCardBulkTombstoneResultEntry {
+        return when(buf.getInt()) {
+            1 -> CreditCardBulkTombstoneResultEntry.Success(
+                FfiConverterString.read(buf),
+                )
+            2 -> CreditCardBulkTombstoneResultEntry.Error(
+                FfiConverterString.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: CreditCardBulkTombstoneResultEntry) = when(value) {
+        is CreditCardBulkTombstoneResultEntry.Success -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`guid`)
+            )
+        }
+        is CreditCardBulkTombstoneResultEntry.Error -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`message`)
+            )
+        }
+    }
+
+    override fun write(value: CreditCardBulkTombstoneResultEntry, buf: ByteBuffer) {
+        when(value) {
+            is CreditCardBulkTombstoneResultEntry.Success -> {
+                buf.putInt(1)
+                FfiConverterString.write(value.`guid`, buf)
+                Unit
+            }
+            is CreditCardBulkTombstoneResultEntry.Error -> {
+                buf.putInt(2)
+                FfiConverterString.write(value.`message`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
 
 /**
  * @suppress
@@ -3637,6 +4082,34 @@ public object FfiConverterSequenceTypeCreditCard: FfiConverterRustBuffer<List<Cr
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeCreditCardTombstone: FfiConverterRustBuffer<List<CreditCardTombstone>> {
+    override fun read(buf: ByteBuffer): List<CreditCardTombstone> {
+        val len = buf.getInt()
+        return List<CreditCardTombstone>(len) {
+            FfiConverterTypeCreditCardTombstone.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<CreditCardTombstone>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeCreditCardTombstone.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<CreditCardTombstone>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeCreditCardTombstone.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypePassport: FfiConverterRustBuffer<List<Passport>> {
     override fun read(buf: ByteBuffer): List<Passport> {
         val len = buf.getInt()
@@ -3693,6 +4166,34 @@ public object FfiConverterSequenceTypeUpdatableAddressFieldsWithMeta: FfiConvert
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeUpdatableCreditCardFieldsWithMeta: FfiConverterRustBuffer<List<UpdatableCreditCardFieldsWithMeta>> {
+    override fun read(buf: ByteBuffer): List<UpdatableCreditCardFieldsWithMeta> {
+        val len = buf.getInt()
+        return List<UpdatableCreditCardFieldsWithMeta>(len) {
+            FfiConverterTypeUpdatableCreditCardFieldsWithMeta.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<UpdatableCreditCardFieldsWithMeta>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeUpdatableCreditCardFieldsWithMeta.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<UpdatableCreditCardFieldsWithMeta>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeUpdatableCreditCardFieldsWithMeta.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeAddressBulkResultEntry: FfiConverterRustBuffer<List<AddressBulkResultEntry>> {
     override fun read(buf: ByteBuffer): List<AddressBulkResultEntry> {
         val len = buf.getInt()
@@ -3739,6 +4240,62 @@ public object FfiConverterSequenceTypeAddressBulkTombstoneResultEntry: FfiConver
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeAddressBulkTombstoneResultEntry.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeCreditCardBulkResultEntry: FfiConverterRustBuffer<List<CreditCardBulkResultEntry>> {
+    override fun read(buf: ByteBuffer): List<CreditCardBulkResultEntry> {
+        val len = buf.getInt()
+        return List<CreditCardBulkResultEntry>(len) {
+            FfiConverterTypeCreditCardBulkResultEntry.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<CreditCardBulkResultEntry>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeCreditCardBulkResultEntry.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<CreditCardBulkResultEntry>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeCreditCardBulkResultEntry.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeCreditCardBulkTombstoneResultEntry: FfiConverterRustBuffer<List<CreditCardBulkTombstoneResultEntry>> {
+    override fun read(buf: ByteBuffer): List<CreditCardBulkTombstoneResultEntry> {
+        val len = buf.getInt()
+        return List<CreditCardBulkTombstoneResultEntry>(len) {
+            FfiConverterTypeCreditCardBulkTombstoneResultEntry.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<CreditCardBulkTombstoneResultEntry>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeCreditCardBulkTombstoneResultEntry.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<CreditCardBulkTombstoneResultEntry>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeCreditCardBulkTombstoneResultEntry.write(it, buf)
         }
     }
 }

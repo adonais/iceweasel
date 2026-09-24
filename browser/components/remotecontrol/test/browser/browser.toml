@@ -1,0 +1,10 @@
+[DEFAULT]
+prefs = ["remote.experimental.dynamicstart.enabled=true"]
+support-files = ["head.js"]
+skip-if = [
+  "!nightly_build"
+]
+
+["browser_banner.js"]
+
+["browser_panel.js"]

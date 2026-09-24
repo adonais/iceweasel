@@ -5,6 +5,7 @@ Generates HTML from parsed token stream. Each instance has independent
 copy of rules. Those can be rewritten with ease. Also, you can add new
 rules if you create plugin and adds new token types.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -21,8 +22,7 @@ class RendererProtocol(Protocol):
 
     def render(
         self, tokens: Sequence[Token], options: OptionsDict, env: EnvType
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
 
 class RendererHTML(RendererProtocol):
@@ -155,7 +155,7 @@ class RendererHTML(RendererProtocol):
             if token.nesting == 1 and (idx + 1 < len(tokens)):
                 nextToken = tokens[idx + 1]
 
-                if nextToken.type == "inline" or nextToken.hidden:  # noqa: SIM114
+                if nextToken.type == "inline" or nextToken.hidden:
                     # Block-level tag containing an inline tag.
                     #
                     needLf = False
@@ -208,6 +208,26 @@ class RendererHTML(RendererProtocol):
         return result
 
     ###################################################
+
+    def list_item_open(
+        self,
+        tokens: Sequence[Token],
+        idx: int,
+        options: OptionsDict,
+        env: EnvType,
+    ) -> str:
+        token = tokens[idx]
+        result = self.renderToken(tokens, idx, options, env)
+        if token.meta and "checked" in token.meta:
+            checked_attr = ' checked=""' if token.meta["checked"] else ""
+            disabled_attr = (
+                "" if options.get("tasklists_editable", False) else ' disabled=""'
+            )
+            result += (
+                '<input class="task-list-item-checkbox"'
+                f'{disabled_attr} type="checkbox"{checked_attr}> '
+            )
+        return result
 
     def code_inline(
         self, tokens: Sequence[Token], idx: int, options: OptionsDict, env: EnvType

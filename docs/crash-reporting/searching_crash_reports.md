@@ -2,8 +2,8 @@
 # A guide to searching crash reports
 
 :::{note}
-Please read the {ref}`documentation about individual crash
-reports <understanding-crash-reports>` before reading
+Please read the [documentation about individual crash
+reports](/contributing/debugging/understanding_crash_reports.md) before reading
 this page.
 :::
 

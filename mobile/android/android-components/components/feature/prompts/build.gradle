@@ -57,6 +57,7 @@ dependencies {
     androidTestImplementation project(':components:support-android-test')
     androidTestImplementation libs.androidx.test.core
     androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.kotlinx.coroutines.test
 
     androidTestRuntimeOnly libs.okhttp
 }

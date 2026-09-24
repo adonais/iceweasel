@@ -493,26 +493,20 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   }
 
   /**
-   * Given the layers id for a content process, get the APZCTreeManagerParent
-   * for the corresponding *root* layers id. That is, the APZCTreeManagerParent,
-   * if one is found, will always be connected to the parent process rather
-   * than a content process. Note that unless the compositor process is
-   * separated this is expected to return null, because if the compositor is
-   * living in the gecko parent process then there is no APZCTreeManagerParent
-   * for the parent process.
-   */
-  static RefPtr<APZCTreeManagerParent> GetApzcTreeManagerParentForRoot(
-      LayersId aContentLayersId);
-  /**
-   * Same as the GetApzcTreeManagerParentForRoot function, but returns
-   * the GeckoContentController for the parent process.
+   * Given the layers id for a content process, get the GeckoContentController
+   * for the corresponding *root* layers id. That is, the
+   * GeckoContentController, if one is found, will always be connected to the
+   * parent process rather than a content process. Note that unless the
+   * compositor process is separated this is expected to return null, because if
+   * the compositor is living in the gecko parent process then there is no
+   * GeckoContentController for the parent process.
    */
   static GeckoContentController* GetGeckoContentControllerForRoot(
       LayersId aContentLayersId);
 
   /**
-   * Same as the GetApzcTreeManagerParentForRoot function, but returns
-   * the APZInputBridge for the parent process.
+   * Same as the GetGeckoContentControllerForRoot function, but returns
+   * the APZInputBridge.
    */
   static RefPtr<APZInputBridgeParent> GetApzInputBridgeParentForRoot(
       LayersId aContentLayersId);

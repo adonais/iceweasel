@@ -28,6 +28,17 @@ add_setup(async function common_initialize() {
   }
 });
 
+// Notifications ignored by listenForTestNotification because their tab was gone.
+let gNotificationsFromClosedTabs = [];
+
+registerCleanupFunction(function cleanup_checkNotificationsFromClosedTabs() {
+  Assert.deepEqual(
+    gNotificationsFromClosedTabs,
+    [],
+    "No test notification arrived from a browsing context whose tab is gone"
+  );
+});
+
 registerCleanupFunction(
   async function cleanup_removeAllLoginsAndResetRecipes() {
     await SpecialPowers.popPrefEnv();
@@ -782,6 +793,10 @@ async function openPasswordContextMenu(
 
   await contextMenuShownPromise;
 
+  // The password manager items are appended after the menu is already shown, so
+  // wait for them rather than racing the lookup they need.
+  await doc.defaultView.gContextMenu?.passwordItemsReady;
+
   if (assertCallback) {
     let shouldContinue = await assertCallback();
     if (!shouldContinue) {
@@ -811,6 +826,9 @@ async function openPasswordContextMenu(
  * typically be used when waiting for the FormProcessed message for a page
  * that has subframes to ensure all have been handled.
  *
+ * Notifications from a browsing context whose tab is gone never resolve the
+ * promise; they are reported by cleanup_checkNotificationsFromClosedTabs.
+ *
  * Returns a promise that will passed additional data specific to the message.
  */
 function listenForTestNotification(expectedMessage, count = 1) {
@@ -827,6 +845,17 @@ function listenForTestNotification(expectedMessage, count = 1) {
     LoginManagerParent.setListenerForTests((msg, data) => {
       let idx = expectedMessages.indexOf(msg);
       if (idx == -1) {
+        return;
+      }
+
+      // The tab this came from is gone, so this cannot be the page the caller is
+      // waiting on and resolving here would let it proceed before its own page has
+      // been processed. Usually an earlier task navigated to a page with a login form
+      // and returned without waiting for the FormProcessed it caused.
+      if (!data.browsingContext.top.embedderElement) {
+        let stale = `${msg} from ${data.browsingContext.currentURI?.spec}`;
+        info(`Ignoring a notification from a closed tab: ${stale}`);
+        gNotificationsFromClosedTabs.push(stale);
         return;
       }
 

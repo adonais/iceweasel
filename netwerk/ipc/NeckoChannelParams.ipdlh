@@ -47,6 +47,7 @@ using mozilla::dom::UserNavigationInvolvement from "mozilla/dom/UserNavigationIn
 using mozilla::RFPTargetSet from "nsRFPService.h";
 using PropertiesFile from "nsContentUtils.h";
 [RefCounted] using mozilla::dom::ParentProcessChannelHandle from "mozilla/dom/ParentProcessChannelHandle.h";
+using struct mozilla::dom::RemoteType from "mozilla/dom/RemoteType.h";
 
 namespace mozilla {
 namespace net {
@@ -124,7 +125,7 @@ struct LoadInfoArgs
   PrincipalInfo?              principalToInheritInfo;
   PrincipalInfo?              topLevelPrincipalInfo;
   URIParams?                  resultPrincipalURI;
-  nsCString                   triggeringRemoteType;
+  RemoteType                  triggeringRemoteType;
   nsID                        sandboxedNullPrincipalID;
   uint32_t                    securityFlags;
   uint32_t                    sandboxFlags;
@@ -207,7 +208,6 @@ struct LoadInfoArgs
   RequestMode?                requestMode;
   bool                        isFromProcessingFrameAttributes;
   bool                        isMediaRequest;
-  bool                        isFromObjectOrEmbed;
   CookieJarSettingsArgs       cookieJarSettings;
   uint32_t                    requestBlockingReason;
   PolicyContainerArgs?        policyContainerToInherit;
@@ -472,13 +472,12 @@ struct HttpConnectionInfoCloneArgs
   uint8_t trrMode;
   bool isIPv4Disabled;
   bool isIPv6Disabled;
-  bool isHttp3Disabled;
+  uint8_t http3Policy;
   nsCString topWindowOrigin;
   bool isHttp3;
   bool webTransport;
   uint64_t webTransportId;
   bool hasIPHintAddress;
-  bool http3Only;
   nsCString echConfig;
   bool happyEyeballsEnabled;
   ProxyInfoCloneArgs[] proxyInfo;

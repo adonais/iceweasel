@@ -67,6 +67,10 @@ export class ThemePickerChild extends JSWindowActorChild {
     const target = event.composedTarget;
 
     switch (event.type) {
+      case "ThemePickerShown":
+        Glean.themePicker.shown.record(event.detail);
+        break;
+
       case "ThemePickerGetInitialState": {
         const result = await this.sendQuery(
           "ThemePicker:GetInitialState",

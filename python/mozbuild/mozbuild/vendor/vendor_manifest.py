@@ -494,6 +494,7 @@ class VendorManifest(MozbuildObject):
                         tmptarfile.write(tarinput.read())
                 else:
                     req = requests.get(url, stream=True)
+                    req.raise_for_status()
                     for data in req.iter_content(4096):
                         tmptarfile.write(data)
                 tmptarfile.seek(0)

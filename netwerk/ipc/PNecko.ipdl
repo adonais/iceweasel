@@ -160,6 +160,10 @@ parent:
    */
   async GetMozNewTabWallpaperStream(nullable nsIURI uri, LoadInfoArgs loadInfo) returns (RemoteStreamInfo? info);
 
+#ifdef MOZ_THUNDERBIRD
+  async GetMailMessageStream(nullable nsIURI uri, LoadInfoArgs loadInfo) returns (RemoteStreamInfo? info);
+#endif
+
 child:
   async SpeculativeConnectRequest();
 

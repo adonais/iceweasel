@@ -53,19 +53,27 @@ export class CustomKeysParent extends JSWindowActorParent {
     };
 
     const keys = {};
+    const toolsCat = topWin.document.getElementById("tools-menu").label;
     // Gather as many keys as we can from the menu bar menus.
     const mainMenuBar = topWin.document.getElementById("main-menubar");
     for (const item of mainMenuBar.querySelectorAll("menuitem[key]")) {
       const menu = item.closest("menu");
-      if (menu.id == "historyUndoMenu" || menu.id == "historyUndoWindowMenu") {
+      if (
+        menu?.id == "historyUndoMenu" ||
+        menu?.id == "historyUndoWindowMenu"
+      ) {
         // The reopen last tab/window commands have the label of the actual
         // tab/window they will reopen. We handle those specially later.
         continue;
       }
-      if (!keys[menu.label]) {
-        keys[menu.label] = {};
+      // Items which aren't inside a menu (like the ones used to build the
+      // macOS application menu) are listed under the "tools" category for now,
+      // to match their location in other platforms.
+      const category = menu ? menu.label : toolsCat;
+      if (!keys[category]) {
+        keys[category] = {};
       }
-      add(keys[menu.label], item.getAttribute("key"), item.label);
+      add(keys[category], item.getAttribute("key"), item.label);
     }
 
     // Add some shortcuts that aren't available in menus.
@@ -114,7 +122,6 @@ export class CustomKeysParent extends JSWindowActorParent {
     );
     add(cat, "key_findPrevious", "customkeys-edit-find-previous");
     add(cat, "key_findPrevious2", "customkeys-edit-find-previous");
-    const toolsCat = topWin.document.getElementById("tools-menu").label;
     cat = keys[toolsCat];
     add(cat, "key_screenshot", "customkeys-tools-screenshot");
     const browserToolsCat =

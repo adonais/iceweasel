@@ -11,6 +11,7 @@ import java.util.concurrent.TimeoutException
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.selector.selectedTab
@@ -36,7 +37,7 @@ class FullRestoreTest {
     fun loadAndRestore() {
         val engine = createEngine()
 
-        run {
+        runTest {
             // -------------------------------------------------------------------------------------
             // Set up
             // -------------------------------------------------------------------------------------
@@ -58,16 +59,16 @@ class FullRestoreTest {
             // Save state
             // -------------------------------------------------------------------------------------
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             storage.save(store.state)
         }
 
-        run {
+        runTest {
             // -------------------------------------------------------------------------------------
             // Restore into new classes
             // -------------------------------------------------------------------------------------
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
 
             val newStore = createStore(engine)
             val newUseCases = TabsUseCases(newStore)

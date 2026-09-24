@@ -160,7 +160,13 @@ class Geckodriver:
     def kill(self):
         if self.has_active_session:
             self.session.end()
-        self._kill()
+        if self.proc:
+            self.proc.kill()
+        self.port = None
+        if self.reader_thread is not None:
+            self.reader_thread.join()
+        if self.proc:
+            self.proc.wait()
 
     def start(self):
         self.command = (
@@ -223,7 +229,7 @@ class Geckodriver:
     async def stop(self):
         if self.has_active_session:
             await self.delete_session()
-        self._kill()
+        self.kill()
 
     def new_session(self, capabilities=None):
         requested_capabilities = deepcopy(self.default_capabilities)
@@ -256,15 +262,6 @@ class Geckodriver:
             await self.session.bidi_session.end()
 
         self.session.end()
-
-    def _kill(self):
-        if self.proc:
-            self.proc.kill()
-        self.port = None
-        if self.reader_thread is not None:
-            self.reader_thread.join()
-        if self.proc:
-            self.proc.wait()
 
 
 def clear_pref(session, pref):

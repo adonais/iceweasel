@@ -15,6 +15,16 @@ def enum(variants):
     return '"' + '"|"'.join(sorted(variants)) + '"'
 
 
+# The webidl signature of GleanEvent.record takes strings and WebIDL stringifies
+# whatever it is handed, so each declared type is a union with string. The keys
+# are the extra key types metrics.schema.yaml allows.
+EXTRA_TYPES = {
+    "string": "string",
+    "boolean": "string|boolean",
+    "quantity": "string|number",
+}
+
+
 def metric(obj):
     if obj.type.startswith("labeled_"):
         labels = enum(obj.labels) if obj.labels else "string"
@@ -24,9 +34,10 @@ def metric(obj):
         if not obj.allowed_extra_keys:
             return "GleanEventNoExtras"
 
-        # Though we know the types of the event extras, the webidl signature
-        # of GleanEvent.record requires us to treat them all as strings.
-        props = [f"{key}?: string" for key in obj.allowed_extra_keys]
+        props = [
+            f"{key}?: {EXTRA_TYPES[extra_type]}"
+            for (key, extra_type) in obj.allowed_extra_keys_with_types
+        ]
         return f"GleanEventWithExtras<{{ {', '.join(props)} }}>"
 
     return "Glean" + util.Camelize(obj.type)

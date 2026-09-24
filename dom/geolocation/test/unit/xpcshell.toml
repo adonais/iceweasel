@@ -10,7 +10,11 @@
 
 ["test_geolocation_provider.js"]
 
+["test_geolocation_provider_shutdown.js"]
+
 ["test_geolocation_provider_timeout.js"]
+
+["test_geolocation_provider_url.js"]
 
 ["test_geolocation_reset_accuracy.js"]
 skip-if = [

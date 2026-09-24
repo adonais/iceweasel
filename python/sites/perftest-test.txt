@@ -1,4 +1,4 @@
-requires-python:>=3.9
+requires-python:>=3.10
 pypi:coverage==5.1
 pypi:pytest-asyncio==1.2.0
 pypi:pytest==8.4.2

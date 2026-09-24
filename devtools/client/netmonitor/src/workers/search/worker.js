@@ -4,12 +4,14 @@
 
 "use strict";
 
+/* import-globals-from ../../utils/build-query.js */
 /* import-globals-from search.js */
 /* import-globals-from ../../../../shared/worker-utils.js */
 importScripts(
+  "resource://devtools/client/netmonitor/src/utils/build-query.js",
   "resource://devtools/client/netmonitor/src/workers/search/search.js",
   "resource://devtools/client/shared/worker-utils.js"
 );
 
 // Implementation of search worker (runs in worker scope).
-self.onmessage = workerHandler({ searchInResource });
+self.onmessage = workerHandler({ getMatches, searchInResource });

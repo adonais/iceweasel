@@ -2,13 +2,16 @@
 name: perftest
 description: >
   Run Firefox performance tests locally or in CI. Use when the user asks how to run a
-  perf test, wants to reproduce a performance alert or regression locally, needs the
-  mach invocation for Raptor, Talos, MozPerftest, AWSY, or browsertime, wants to push
-  perf tests to try, or mentions `mach try perf`, `mach perftest`, `mach raptor`,
-  `mach talos-test`, an alert summary ID, PerfCompare, or Compare View. Covers picking
-  the right harness, finding a test's name, and the local-vs-CI tradeoff.
-  Not for analyzing an existing Firefox profile (use profiler-analysis) or for
-  SpiderMonkey/JS engine benchmarking (use js-perf-investigation).
+  perf test, needs the mach invocation for Raptor, Talos, MozPerftest, AWSY, or
+  browsertime, wants to push perf tests to try, wants to run the tests belonging to an
+  alert summary (`mach try perf --alert <id>`), or mentions `mach try perf`,
+  `mach perftest`, `mach raptor`, or `mach talos-test`. Covers picking the right
+  harness, finding a test's name, and the local-vs-CI tradeoff.
+  Not for triaging or root-causing a Perfherder regression bug — confirming whether a
+  regression is real, identifying the culprit patch, interpreting a PerfCompare result,
+  or deciding backout vs fix-forward (use perf-regression-triage). Not for analyzing an
+  existing Firefox profile (use profiler-analysis) or SpiderMonkey/JS engine
+  benchmarking (use js-perf-investigation).
 allowed-tools:
   - Bash(./mach perftest --help:*)
   - Bash(./mach raptor --help:*)

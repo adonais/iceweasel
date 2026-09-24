@@ -28,17 +28,10 @@ constexpr nsLiteralCString kHighValueHasSavedLoginPermission =
 constexpr nsLiteralCString kHighValueIsLoggedInPermission =
     "highValueIsLoggedIn"_ns;
 
-/**
- * Given a specific set of BrowsingContext origin attributes, get a shared "web"
- * process which should be used for loading shared content.
- */
-nsCString SharedWebRemoteType(const OriginAttributes& aAttrs,
-                              bool aDisableJit = false);
-
 // NavigationIsolationOptions is passed through the methods to store the state
 // of the possible process and/or browsing context change.
 struct NavigationIsolationOptions {
-  nsCString mRemoteType;
+  RemoteType mRemoteType;
   bool mReplaceBrowsingContext = false;
   uint64_t mSpecificGroupId = 0;
   bool mShouldCrossOriginIsolate = false;
@@ -61,15 +54,15 @@ struct NavigationIsolationOptions {
 Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     CanonicalBrowsingContext* aTopBC, WindowGlobalParent* aParentWindow,
     nsIURI* aChannelCreationURI, nsIChannel* aChannel,
-    const nsACString& aCurrentRemoteType, bool aHasCOOPMismatch,
+    const RemoteType& aCurrentRemoteType, bool aHasCOOPMismatch,
     bool aForNewTab, uint32_t aLoadStateLoadType,
     const Maybe<uint64_t>& aChannelId,
-    const Maybe<nsCString>& aRemoteTypeOverride);
+    const Maybe<RemoteType>& aRemoteTypeOverride);
 
 // WorkerIsolationOptions is passed back to the RemoteWorkerManager to store the
 // destination process information for remote worker loads.
 struct WorkerIsolationOptions {
-  nsCString mRemoteType;
+  RemoteType mRemoteType;
 };
 
 /**
@@ -80,7 +73,7 @@ struct WorkerIsolationOptions {
  */
 Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
     nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
-    const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
+    const RemoteType& aCurrentRemoteType, bool aUseRemoteSubframes);
 
 /**
  * Given a URI being loaded, and some relevant context, predict what remote type
@@ -92,9 +85,9 @@ Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
  * frontend JS, and should not be used as part of navigation. The remote types
  * selected by this method are not used to enforce security invariants.
  */
-Result<nsCString, nsresult> PredictRemoteTypeForURI(
+Result<RemoteType, nsresult> PredictRemoteTypeForURI(
     nsIURI* aURI, const OriginAttributes& aOriginAttributes,
-    const nsACString& aPreferredRemoteType, bool aUseRemoteSubframes);
+    const RemoteType& aPreferredRemoteType, bool aUseRemoteSubframes);
 
 /**
  * Adds a `highValue` permission to the permissions database, and make loads of
@@ -169,7 +162,7 @@ enum class ValidatePrincipalOptions {
  * assertions, and should NOT be used for process isolation decisions.
  */
 bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
-    nsIPrincipal* aPrincipal, const nsACString& aRemoteType,
+    nsIPrincipal* aPrincipal, const RemoteType& aRemoteType,
     const EnumSet<ValidatePrincipalOptions>& aOptions,
     FunctionRef<bool(nsIPrincipal*)> aIsPrincipalLoaded = nullptr);
 

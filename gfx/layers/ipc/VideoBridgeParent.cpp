@@ -259,6 +259,11 @@ already_AddRefed<PTextureParent> VideoBridgeParent::AllocPTextureParent(
     return nullptr;
   }
 
+  if (aFlags & TextureFlags::REMOTE_TEXTURE) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected to be called!");
+    return nullptr;
+  }
+
   MonitorAutoLock lock(mMonitor);
   mTextureMap.insert(
       {aSerial, {TextureHost::AsTextureHost(parent), aContentId}});

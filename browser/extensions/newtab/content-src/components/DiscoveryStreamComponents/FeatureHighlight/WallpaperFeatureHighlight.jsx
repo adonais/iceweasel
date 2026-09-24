@@ -4,7 +4,7 @@
 
 import React, { useCallback } from "react";
 import { useSelector } from "react-redux";
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { actionTypes as at } from "common/Actions.mjs";
 import { WALLPAPER_CATEGORIES } from "content-src/lib/constants.mjs";
 import { FeatureHighlight } from "./FeatureHighlight";
 
@@ -51,7 +51,6 @@ export function WallpaperFeatureHighlight({
         type: at.SHOW_PERSONALIZE,
         data: { wallpaperCategory: category },
       });
-      dispatch(ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
       handleClick(elementId);
       onDismiss();
     },

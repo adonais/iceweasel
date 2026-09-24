@@ -8,6 +8,8 @@ Produce skeleton Performance Data Review Requests.
 This was mostly copies from glean_parser, and should be kept in sync.
 """
 
+from __future__ import annotations
+
 import re
 from collections.abc import Sequence
 from pathlib import Path

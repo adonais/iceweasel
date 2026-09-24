@@ -8,24 +8,38 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorTestTags
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsAutofillSelectors {
+object SettingsAutofillSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        AUTOFILL_SETTINGS,
+        ADD_ADDRESS,
+        MANAGE_ADDRESSES,
+        ADDRESS_FORM,
+        DELETE_ADDRESS,
+        ADD_CREDIT_CARD,
+        MANAGE_CREDIT_CARDS,
+        EDIT_CREDIT_CARD,
+        CREDIT_CARD_FORM,
+    }
+
     val SETTINGS_AUTOFILL_TITLE =
-        Selector(
-            strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-            value = "Autofill",
-            description = "The Autofill Settings title",
-            groups = listOf("requiredForPage"),
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_autofill),
+            description = "Autofill toolbar title",
         )
 
     val AUTOFILL_ADDRESSES_TOGGLE =
         Selector(
-            strategy = SelectorStrategy.ESPRESSO_BY_ID,
-            value = "autofill_addresses_toggle",
-            description = "Autofill Addresses Toggle",
-            groups = listOf("autofillSettings"),
+            strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+            value = getStringResource(R.string.preferences_addresses_save_and_autofill_addresses_2),
+            description = "Save and fill addresses option",
+            groups = setOf(Group.AUTOFILL_SETTINGS),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // "Add address" entry point on the Autofill settings screen (and inside Manage addresses).
@@ -34,7 +48,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.preferences_addresses_add_address),
             description = "The 'Add address' button",
-            groups = listOf("addAddress"),
+            groups = setOf(Group.ADD_ADDRESS),
         )
 
     // Post-save anchor: after saving an address the screen returns to the Autofill list, which shows
@@ -44,7 +58,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.preferences_addresses_manage_addresses),
             description = "The 'Manage addresses' button",
-            groups = listOf("manageAddresses"),
+            groups = setOf(Group.MANAGE_ADDRESSES),
         )
 
     // --- Add/Edit address form fields (Compose; keyed off EditAddressTestTag in main source) ---
@@ -54,7 +68,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.NAME_FIELD,
             description = "Address form: Name field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_STREET_FIELD =
@@ -62,7 +76,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.STREET_ADDRESS_FIELD,
             description = "Address form: Street address field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_CITY_FIELD =
@@ -70,7 +84,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.ADDRESS_LEVEL2_FIELD,
             description = "Address form: City field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_STATE_DROPDOWN =
@@ -78,7 +92,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.ADDRESS_LEVEL1_FIELD,
             description = "Address form: State/sub-region dropdown",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_ZIP_FIELD =
@@ -86,7 +100,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.POSTAL_CODE_FIELD,
             description = "Address form: Zip code field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_COUNTRY_DROPDOWN =
@@ -94,7 +108,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.COUNTRY_FIELD,
             description = "Address form: Country dropdown",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_PHONE_FIELD =
@@ -102,7 +116,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.TEL_FIELD,
             description = "Address form: Phone field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_EMAIL_FIELD =
@@ -110,7 +124,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.EMAIL_FIELD,
             description = "Address form: Email field",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val ADDRESS_SAVE_BUTTON =
@@ -118,7 +132,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.SAVE_BUTTON,
             description = "Address form: Save button",
-            groups = listOf("addressForm"),
+            groups = setOf(Group.ADDRESS_FORM),
         )
 
     val DELETE_ADDRESS_TOOLBAR_BUTTON =
@@ -126,7 +140,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.TOPBAR_DELETE_BUTTON,
             description = "Edit address screen: toolbar delete button",
-            groups = listOf("deleteAddress"),
+            groups = setOf(Group.DELETE_ADDRESS),
         )
 
     val CANCEL_DELETE_ADDRESS_BUTTON =
@@ -134,7 +148,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.DIALOG_CANCEL_BUTTON,
             description = "Delete address dialog: Cancel button",
-            groups = listOf("deleteAddress"),
+            groups = setOf(Group.DELETE_ADDRESS),
         )
 
     val CONFIRM_DELETE_ADDRESS_BUTTON =
@@ -142,7 +156,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = EditAddressTestTag.DIALOG_DELETE_BUTTON,
             description = "Delete address dialog: Delete (confirm) button",
-            groups = listOf("deleteAddress"),
+            groups = setOf(Group.DELETE_ADDRESS),
         )
 
     @Suppress("FunctionName")
@@ -151,7 +165,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = name,
             description = "Saved address row: $name",
-            groups = listOf("manageAddresses"),
+            groups = setOf(Group.MANAGE_ADDRESSES),
         )
 
     // --- Credit cards ---
@@ -161,7 +175,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.preferences_credit_cards_add_credit_card_2),
             description = "The 'Add card' button",
-            groups = listOf("addCreditCard"),
+            groups = setOf(Group.ADD_CREDIT_CARD),
         )
 
     // Post-save anchor, mirroring MANAGE_ADDRESSES_BUTTON: saving returns to the Autofill list, which
@@ -171,7 +185,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.preferences_credit_cards_manage_saved_cards_2),
             description = "The 'Manage cards' button",
-            groups = listOf("manageCreditCards"),
+            groups = setOf(Group.MANAGE_CREDIT_CARDS),
         )
 
     // "Later" on the system prompt offering to secure saved cards behind a device lock. It is a
@@ -182,7 +196,6 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RAW_RES_ID,
             value = "android:id/button2",
             description = "The 'Later' button on the secure-your-cards prompt",
-            groups = listOf(),
         )
 
     // A saved card row in Manage cards, matched on the card-type logo — the number itself is masked.
@@ -191,7 +204,6 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "credit_card_logo",
             description = "A saved credit card row",
-            groups = listOf(),
         )
 
     val EDIT_CREDIT_CARD_TOOLBAR_TITLE =
@@ -199,7 +211,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TEXT,
             value = getStringResource(R.string.credit_cards_edit_card),
             description = "The 'Edit card' toolbar title",
-            groups = listOf("editCreditCard"),
+            groups = setOf(Group.EDIT_CREDIT_CARD),
         )
 
     // --- Add/Edit card form (Compose; keyed off CreditCardEditorTestTags in main source) ---
@@ -209,7 +221,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.CARD_NUMBER_FIELD,
             description = "Card form: Card number field",
-            groups = listOf("creditCardForm"),
+            groups = setOf(Group.CREDIT_CARD_FORM),
         )
 
     val CREDIT_CARD_NAME_FIELD =
@@ -217,7 +229,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.NAME_ON_CARD_FIELD,
             description = "Card form: Name on card field",
-            groups = listOf("creditCardForm"),
+            groups = setOf(Group.CREDIT_CARD_FORM),
         )
 
     val CREDIT_CARD_SAVE_BUTTON =
@@ -225,7 +237,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.SAVE_BUTTON,
             description = "Card form: Save button",
-            groups = listOf("creditCardForm"),
+            groups = setOf(Group.CREDIT_CARD_FORM),
         )
 
     // Delete lives in the editor's body, distinct from the toolbar delete action.
@@ -234,7 +246,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.DELETE_BUTTON,
             description = "Card form: Delete card button",
-            groups = listOf("editCreditCard"),
+            groups = setOf(Group.EDIT_CREDIT_CARD),
         )
 
     // The delete action in the editor's top app bar, distinct from the body DELETE_CREDIT_CARD_MENU_BUTTON.
@@ -243,7 +255,7 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON,
             description = "Edit card screen: toolbar delete button",
-            groups = listOf("editCreditCard"),
+            groups = setOf(Group.EDIT_CREDIT_CARD),
         )
 
     val DELETE_CREDIT_CARD_DIALOG_CANCEL_BUTTON =
@@ -251,7 +263,6 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.DELETE_DIALOG_CANCEL_BUTTON,
             description = "Delete card dialog: Cancel button",
-            groups = listOf(),
         )
 
     val DELETE_CREDIT_CARD_DIALOG_DELETE_BUTTON =
@@ -259,38 +270,5 @@ object SettingsAutofillSelectors {
             strategy = SelectorStrategy.COMPOSE_BY_TAG,
             value = CreditCardEditorTestTags.DELETE_DIALOG_DELETE_BUTTON,
             description = "Delete card dialog: Delete button",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            SETTINGS_AUTOFILL_TITLE,
-            AUTOFILL_ADDRESSES_TOGGLE,
-            ADD_ADDRESS_BUTTON,
-            MANAGE_ADDRESSES_BUTTON,
-            ADDRESS_NAME_FIELD,
-            ADDRESS_STREET_FIELD,
-            ADDRESS_CITY_FIELD,
-            ADDRESS_STATE_DROPDOWN,
-            ADDRESS_ZIP_FIELD,
-            ADDRESS_COUNTRY_DROPDOWN,
-            ADDRESS_PHONE_FIELD,
-            ADDRESS_EMAIL_FIELD,
-            ADDRESS_SAVE_BUTTON,
-            DELETE_ADDRESS_TOOLBAR_BUTTON,
-            CANCEL_DELETE_ADDRESS_BUTTON,
-            CONFIRM_DELETE_ADDRESS_BUTTON,
-            ADD_CREDIT_CARD_BUTTON,
-            MANAGE_SAVED_CREDIT_CARDS_BUTTON,
-            SECURED_CREDIT_CARDS_LATER_BUTTON,
-            SAVED_CREDIT_CARD,
-            EDIT_CREDIT_CARD_TOOLBAR_TITLE,
-            CREDIT_CARD_NUMBER_FIELD,
-            CREDIT_CARD_NAME_FIELD,
-            CREDIT_CARD_SAVE_BUTTON,
-            DELETE_CREDIT_CARD_MENU_BUTTON,
-            DELETE_CREDIT_CARD_TOOLBAR_BUTTON,
-            DELETE_CREDIT_CARD_DIALOG_CANCEL_BUTTON,
-            DELETE_CREDIT_CARD_DIALOG_DELETE_BUTTON,
         )
 }

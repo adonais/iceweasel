@@ -229,6 +229,20 @@ TEST_SUITES = {
             "test-verify($|.*(-1|[^0-9])$)",
         ],
     },
+    "mochitest-speech-recognition": {
+        "aliases": ("msr", "speech-recognition"),
+        "build_flavor": "mochitest",
+        "mach_command": "mochitest",
+        "kwargs": {
+            "flavor": "plain",
+            "subsuite": "speech-recognition",
+            "test_paths": None,
+        },
+        "task_regex": [
+            "mochitest-speech-recognition($|.*(-1|[^0-9])$)",
+            "test-verify($|.*(-1|[^0-9])$)",
+        ],
+    },
     "mochitest-browser-media": {
         "aliases": ("bmda", "browser-mda"),
         "build_flavor": "browser-chrome",
@@ -543,6 +557,7 @@ _test_subsuites = {
     ("marionette", "unittest"): "marionette-unittest",
     ("mochitest", "gpu"): "mochitest-plain-gpu",
     ("mochitest", "media"): "mochitest-media",
+    ("mochitest", "speech-recognition"): "mochitest-speech-recognition",
     ("mochitest", "webgl1-core"): "mochitest-webgl1-core",
     ("mochitest", "webgl1-ext"): "mochitest-webgl1-ext",
     ("mochitest", "webgl2-core"): "mochitest-webgl2-core",

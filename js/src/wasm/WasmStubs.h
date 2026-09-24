@@ -85,7 +85,7 @@ class ABIResult {
   static constexpr size_t StackSizeOfFloat = sizeof(double);
 #endif
   static constexpr size_t StackSizeOfDouble = sizeof(double);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   static constexpr size_t StackSizeOfV128 = sizeof(V128);
 #endif
 

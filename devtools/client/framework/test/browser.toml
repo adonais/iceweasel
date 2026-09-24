@@ -348,6 +348,8 @@ fail-if = [
 
 ["browser_toolbox_watchedByDevTools.js"]
 
+["browser_toolbox_window_closed_during_startup.js"]
+
 ["browser_toolbox_window_global_debugging.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1950845

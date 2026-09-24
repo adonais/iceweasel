@@ -46,6 +46,20 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
   }
 
   /**
+   * @see UrlbarInputBaseTestUtils.promiseSearchComplete
+   *
+   * The waiver taken on the element doesn't survive the await that resolves the
+   * context, and an Xray over the results' class instances reads every property
+   * as undefined, so the callers looking for a result find none.
+   *
+   * @param {ChromeWindow} win
+   * @returns {Promise<UrlbarQueryContext>}
+   */
+  async promiseSearchComplete(win) {
+    return Cu.waiveXrays(await super.promiseSearchComplete(win));
+  }
+
+  /**
    * The window holding the element, for the duration of a {@link run} task.
    *
    * @type {Window}
@@ -77,13 +91,23 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
   }
 
   /**
+   * The Fluent id and arguments the bar's placeholder comes from.
+   *
+   * @param {ChromeWindow} win
+   * @returns {L10nIdArgs}
+   */
+  getPlaceholderL10n(win) {
+    return win.document.l10n.getAttributes(this.getUrlbar(win).inputField);
+  }
+
+  /**
    * What the bar is showing, in one round trip. `viewOpen` is the state the
-   * view keeps, `viewVisible` whether it is painted; the element stays in the
-   * top layer between queries, so the two can disagree.
+   * view keeps and `viewVisible` whether it is painted, so the two can
+   * disagree. `popoverOpen` is whether the view is in the top layer.
    *
    * @param {ChromeWindow} win
    * @returns {{focused: boolean, value: string, viewOpen: boolean,
-   *   viewVisible: boolean}}
+   *   viewVisible: boolean, popoverOpen: boolean}}
    */
   getState(win) {
     let bar = this.getUrlbar(win);
@@ -92,6 +116,7 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
       value: bar.value,
       viewOpen: bar.view.isOpen,
       viewVisible: bar.view.panel.checkVisibility(),
+      popoverOpen: bar.panel.matches(":popover-open"),
     };
   }
 
@@ -104,9 +129,45 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
    * @param {ChromeWindow} win
    * @param {object} options
    *   As that method takes them, minus `window`.
+   * @param {boolean} [expectUnloadableIcons]
+   *   Skips the row icon check, for a query whose icons are meant not to load.
    */
-  async search(win, options) {
+  async search(win, options, expectUnloadableIcons) {
     await this.promiseAutocompleteResultPopup({ ...options, window: win });
+    if (!expectUnloadableIcons) {
+      await this.#assertRowIconsLoad(win);
+    }
+  }
+
+  /**
+   * Asserts that the icon of every visible row loads. An icon URL that only
+   * resolves in the process that created it, a blob URL above all, leaves the
+   * row blank here while every other assertion a test makes still passes.
+   *
+   * @param {ChromeWindow} win
+   */
+  async #assertRowIconsLoad(win) {
+    let icons = [
+      ...this.getUrlbar(win).querySelectorAll(
+        ".urlbarView-row:not([hidden]) img.urlbarView-favicon"
+      ),
+    ];
+    await Promise.all(
+      icons
+        .filter(icon => !icon.complete)
+        .map(
+          icon =>
+            new Promise(resolve => {
+              icon.addEventListener("load", resolve, { once: true });
+              icon.addEventListener("error", resolve, { once: true });
+            })
+        )
+    );
+    this.Assert.deepEqual(
+      icons.filter(icon => !icon.naturalWidth).map(icon => icon.src),
+      [],
+      "Every visible row's icon loaded"
+    );
   }
 
   /**
@@ -147,6 +208,19 @@ class NewtabContentTestUtils extends UrlbarInputBaseTestUtils {
         },
       });
     });
+  }
+
+  /**
+   * @see UrlbarInputBaseTestUtils.getUrlAndPostData
+   *
+   * The search service is a parent-process service, and post data is a stream
+   * no structured clone carries, so `NewtabSearchbarTestUtils` resolves both
+   * from the wire-form result on its side.
+   *
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
+   */
+  getUrlAndPostData() {
+    return { url: null, postData: null };
   }
 
   /**

@@ -625,8 +625,9 @@ void CallTest::CreateVideoStreams() {
   CreateVideoSendStreams();
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
-        video_receive_configs_[i].Copy()));
+        std::move(video_receive_configs_[i])));
   }
+  video_receive_configs_.clear();
 }
 
 void CallTest::CreateVideoSendStreams() {
@@ -676,9 +677,10 @@ void CallTest::CreateAudioStreams() {
   RTC_DCHECK(audio_receive_streams_.empty());
   audio_send_stream_ = sender_call_->CreateAudioSendStream(audio_send_config_);
   for (size_t i = 0; i < audio_receive_configs_.size(); ++i) {
-    audio_receive_streams_.push_back(
-        receiver_call_->CreateAudioReceiveStream(audio_receive_configs_[i]));
+    audio_receive_streams_.push_back(receiver_call_->CreateAudioReceiveStream(
+        std::move(audio_receive_configs_[i])));
   }
+  audio_receive_configs_.clear();
 }
 
 void CallTest::CreateFlexfecStreams() {

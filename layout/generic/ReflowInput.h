@@ -234,6 +234,11 @@ struct ReflowInput : public SizeComputationInput {
   // This takes on an arbitrary value the first time a block is reflowed
   nscoord mBlockDelta = 0;
 
+  // Distance from top of the line clamp root block to the top of this block.
+  // Necessary due to BStart() and GetRect() not being initialised before
+  // reflow.
+  nscoord mBOffsetToLineClampRoot = 0;
+
   // Physical accessors for the private fields. They are needed for
   // compatibility with not-yet-updated code. New code should use the accessors
   // for logical coordinates, unless the code really works on physical
@@ -564,6 +569,9 @@ struct ReflowInput : public SizeComputationInput {
     // https://drafts.csswg.org/css-inline-3/#text-box-trim
     bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
     bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
+
+    // True if the block is a line-clamp container or a descendant thereof
+    bool mIsInLineClampContainer : 1;
   };
   Flags mFlags;
 

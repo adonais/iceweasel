@@ -24,7 +24,9 @@ static char* sPopupAllowedEvents;
 
 static PopupBlocker::PopupControlState sPopupControlState =
     PopupBlocker::openAbused;
+#ifdef DEBUG
 static uint32_t sPopupStatePusherCount = 0;
+#endif
 
 static TimeStamp sLastAllowedExternalProtocolIFrameTimeStamp;
 
@@ -129,12 +131,18 @@ uint32_t PopupBlocker::GetPopupPermission(nsIPrincipal* aPrincipal) {
 }
 
 /* static */
-void PopupBlocker::PopupStatePusherCreated() { ++sPopupStatePusherCount; }
+void PopupBlocker::PopupStatePusherCreated() {
+#ifdef DEBUG
+  ++sPopupStatePusherCount;
+#endif
+}
 
 /* static */
 void PopupBlocker::PopupStatePusherDestroyed() {
+#ifdef DEBUG
   MOZ_ASSERT(sPopupStatePusherCount);
   --sPopupStatePusherCount;
+#endif
 }
 
 // static

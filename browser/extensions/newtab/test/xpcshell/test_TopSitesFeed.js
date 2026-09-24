@@ -1280,6 +1280,131 @@ add_task(async function test_refresh_handles_indexedDB_errors() {
   sandbox.restore();
 });
 
+add_task(async function test_adEligiblePositions() {
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+
+  let nimbusVariables = { topSitesContileEnabled: true };
+  sandbox
+    .stub(NimbusFeatures.pocketNewtab, "getVariable")
+    .callsFake(name => nimbusVariables[name]);
+  sandbox
+    .stub(NimbusFeatures.newtab, "getVariable")
+    .callsFake(name => nimbusVariables[name]);
+
+  info("No position is ad-eligible while sponsored top sites are off");
+  Assert.deepEqual(feed._adEligiblePositions(), []);
+
+  feed.store.state.Prefs.values[SHOW_SPONSORED_PREF] = true;
+
+  info("No position is ad-eligible while Contile is disabled");
+  nimbusVariables.topSitesContileEnabled = false;
+  Assert.deepEqual(feed._adEligiblePositions(), []);
+  nimbusVariables.topSitesContileEnabled = true;
+
+  info("Contile fills the first two positions by default");
+  Assert.deepEqual(feed._adEligiblePositions(), [1, 2]);
+
+  info("The Nimbus variable is 0-based and replaces the default");
+  nimbusVariables.contileTopsitesPositions = "0,2,3";
+  Assert.deepEqual(feed._adEligiblePositions(), [1, 3, 4]);
+
+  info("Positions past the display maximum can never be filled");
+  nimbusVariables.topSitesMaxSponsored = 2;
+  Assert.deepEqual(feed._adEligiblePositions(), [1, 3]);
+
+  info("SOV allocations replace the Contile positions once SOV is ready");
+  sandbox
+    .stub(feed._contile, "sov")
+    .get(() => ({ name: "SOV-20230518215316" }));
+  feed.store.state.TopSites.sov = {
+    ready: true,
+    positions: [
+      { position: 1, assignedPartner: "amp" },
+      { position: 2, assignedPartner: "amp" },
+      { position: 3, assignedPartner: "frec-boost" },
+    ],
+  };
+  Assert.deepEqual(feed._adEligiblePositions(), [1, 2]);
+
+  info("Contile positions are used until SOV is ready");
+  feed.store.state.TopSites.sov.ready = false;
+  Assert.deepEqual(feed._adEligiblePositions(), [1, 3]);
+
+  sandbox.restore();
+});
+
+add_task(
+  async function test_getLinksWithDefaults_flags_ad_eligible_positions() {
+    info(
+      "getLinksWithDefaults should flag whichever tile lands in an " +
+        "ad-eligible position"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let feed = getTopSitesFeedForTest(sandbox);
+    sandbox.stub(feed, "_adEligiblePositions").returns([1, 3]);
+    // getLinksWithDefaults writes to the link objects it is handed, so keep
+    // the shared FAKE_LINKS clean for the tasks that deep-compare against it.
+    gGetTopSitesStub.resolves(FAKE_LINKS.map(link => ({ ...link })));
+
+    let result = await feed.getLinksWithDefaults();
+
+    Assert.ok(
+      result[0].is_ad_eligible_position,
+      "1-based position 1 should be flagged"
+    );
+    Assert.ok(
+      result[2].is_ad_eligible_position,
+      "1-based position 3 should be flagged"
+    );
+    Assert.equal(
+      result[1].is_ad_eligible_position,
+      undefined,
+      "A position no ad may fill should not be flagged"
+    );
+
+    gGetTopSitesStub.resolves(FAKE_LINKS);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_getLinksWithDefaults_clears_stale_ad_eligible_flag() {
+    info(
+      "getLinksWithDefaults should clear the flag from a tile that moved out " +
+        "of an ad-eligible position"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let feed = getTopSitesFeedForTest(sandbox);
+    // Default tiles are the reused ones: getLinksWithDefaults puts the
+    // DEFAULT_TOP_SITES entry itself into the row, not a copy, so a flag
+    // written onto one outlives the refresh.
+    feed.refreshDefaults("https://default.com");
+    gGetTopSitesStub.resolves([]);
+    sandbox.stub(feed, "_adEligiblePositions").returns([1]);
+
+    let result = await feed.getLinksWithDefaults();
+    Assert.ok(
+      result[0].is_ad_eligible_position,
+      "Should be flagged while sitting in position 1"
+    );
+
+    feed._adEligiblePositions.returns([2]);
+    result = await feed.getLinksWithDefaults();
+    Assert.equal(
+      result[0].is_ad_eligible_position,
+      undefined,
+      "Should not still be flagged once position 1 is not eligible"
+    );
+
+    gGetTopSitesStub.resolves(FAKE_LINKS);
+    feed.refreshDefaults(null);
+    sandbox.restore();
+  }
+);
+
 add_task(async function test_allocatePositions() {
   let sandbox = sinon.createSandbox();
 

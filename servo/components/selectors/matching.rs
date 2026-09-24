@@ -6,7 +6,7 @@ use crate::attr::{
     AttrSelectorOperation, AttrSelectorWithOptionalNamespace, CaseSensitivity, NamespaceConstraint,
     ParsedAttrSelectorOperation, ParsedCaseSensitivity,
 };
-use crate::bloom::{BloomFilter, BLOOM_HASH_MASK};
+use crate::bloom::{BLOOM_HASH_MASK, BloomFilter};
 use crate::kleene_value::KleeneValue;
 use crate::parser::{
     AncestorHashes, Combinator, Component, LocalName, MatchesFeaturelessHost, NthSelectorData,
@@ -122,7 +122,7 @@ struct LocalMatchingContext<'a, 'b: 'a, Impl: SelectorImpl> {
 #[inline(always)]
 pub fn matches_selector_list<E>(
     selector_list: &SelectorList<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
 ) -> bool
 where
@@ -151,14 +151,13 @@ pub fn selector_may_match(hashes: &AncestorHashes, bf: &BloomFilter) -> bool {
     // because we usually don't.
     //
     // To be clear: this is all extremely hot.
-    for i in 0..3 {
-        let packed = hashes.packed_hashes[i];
-        if packed == 0 {
+    for packed in &hashes.packed_hashes {
+        if *packed == 0 {
             // No more hashes left - unable to fast-reject.
             return true;
         }
 
-        if !bf.might_contain_hash(packed & BLOOM_HASH_MASK) {
+        if !bf.might_contain_hash(*packed & BLOOM_HASH_MASK) {
             // Hooray! We fast-rejected on this hash.
             return false;
         }
@@ -261,7 +260,7 @@ pub fn matches_selector<E>(
     selector: &Selector<E::Impl>,
     offset: usize,
     hashes: Option<&AncestorHashes>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
 ) -> bool
 where
@@ -285,19 +284,18 @@ pub fn matches_selector_kleene<E>(
     selector: &Selector<E::Impl>,
     offset: usize,
     hashes: Option<&AncestorHashes>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
 ) -> KleeneValue
 where
     E: Element,
 {
     // Use the bloom filter to fast-reject.
-    if let Some(hashes) = hashes {
-        if let Some(filter) = context.bloom_filter {
-            if !selector_may_match(hashes, filter) {
-                return KleeneValue::False;
-            }
-        }
+    if let Some(hashes) = hashes
+        && let Some(filter) = context.bloom_filter
+        && !selector_may_match(hashes, filter)
+    {
+        return KleeneValue::False;
     }
     matches_complex_selector(
         selector.iter_from(offset),
@@ -325,7 +323,7 @@ pub enum CompoundSelectorMatchingResult {
 
 fn complex_selector_early_reject_by_local_name<E: Element>(
     list: &SelectorList<E::Impl>,
-    element: &E,
+    element: E,
 ) -> bool {
     list.slice()
         .iter()
@@ -337,7 +335,7 @@ fn complex_selector_early_reject_by_local_name<E: Element>(
 pub fn early_reject_by_local_name<E: Element>(
     selector: &Selector<E::Impl>,
     from_offset: usize,
-    element: &E,
+    element: E,
 ) -> bool {
     let iter = selector.iter_from(from_offset);
     for component in iter {
@@ -365,7 +363,7 @@ pub fn matches_compound_selector_from<E>(
     selector: &Selector<E::Impl>,
     mut from_offset: usize,
     context: &mut MatchingContext<E::Impl>,
-    element: &E,
+    element: E,
 ) -> CompoundSelectorMatchingResult
 where
     E: Element,
@@ -442,9 +440,9 @@ where
 
 /// Matches a complex selector.
 #[inline(always)]
-fn matches_complex_selector<E>(
+pub fn matches_complex_selector<E>(
     mut iter: SelectorIter<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> KleeneValue
@@ -453,14 +451,17 @@ where
 {
     // If this is the special pseudo-element mode, consume the ::pseudo-element
     // before proceeding, since the caller has already handled that part.
-    if context.matching_mode() == MatchingMode::ForStatelessPseudoElement && !context.is_nested() {
+    if context.matching_mode() == MatchingMode::ForStatelessPseudoElement
+        && !context.is_nested()
+        && rightmost == SubjectOrPseudoElement::Yes
+    {
         // Consume the pseudo.
         match *iter.next().unwrap() {
             Component::PseudoElement(ref pseudo) => {
-                if let Some(ref f) = context.pseudo_element_matching_fn {
-                    if !f(pseudo) {
-                        return KleeneValue::False;
-                    }
+                if let Some(ref f) = context.pseudo_element_matching_fn
+                    && !f(pseudo)
+                {
+                    return KleeneValue::False;
                 }
             },
             ref other => {
@@ -483,20 +484,13 @@ where
         debug_assert_eq!(next_sequence, Combinator::PseudoElement);
     }
 
-    matches_complex_selector_internal(
-        iter,
-        element,
-        context,
-        rightmost,
-        SubjectOrPseudoElement::Yes,
-    )
-    .into()
+    matches_complex_selector_internal(iter, element, context, rightmost).into()
 }
 
 /// Matches each selector of a list as a complex selector
 fn matches_complex_selector_list<E: Element>(
     list: &[Selector<E::Impl>],
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> KleeneValue {
@@ -507,7 +501,7 @@ fn matches_complex_selector_list<E: Element>(
 
 fn matches_relative_selector<E: Element>(
     relative_selector: &RelativeSelector<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> bool {
@@ -526,17 +520,13 @@ fn matches_relative_selector<E: Element>(
                     ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_ANCESTOR,
                 );
             }
-            let mut matched = matches_complex_selector(
-                relative_selector.selector.iter(),
-                &el,
-                context,
-                rightmost,
-            )
-            .to_bool(true);
+            let mut matched =
+                matches_complex_selector(relative_selector.selector.iter(), el, context, rightmost)
+                    .to_bool(true);
             if !matched && relative_selector.match_hint.is_subtree() {
                 matched = matches_relative_selector_subtree(
                     &relative_selector.selector,
-                    &el,
+                    el,
                     context,
                     rightmost,
                 );
@@ -575,12 +565,12 @@ fn matches_relative_selector<E: Element>(
             let matched = if relative_selector.match_hint.is_subtree() {
                 matches_relative_selector_subtree(
                     &relative_selector.selector,
-                    &el,
+                    el,
                     context,
                     rightmost,
                 )
             } else {
-                matches_complex_selector(relative_selector.selector.iter(), &el, context, rightmost)
+                matches_complex_selector(relative_selector.selector.iter(), el, context, rightmost)
                     .to_bool(true)
             };
             if matched {
@@ -592,12 +582,12 @@ fn matches_relative_selector<E: Element>(
             next_element = el.next_sibling_element();
         }
     }
-    return false;
+    false
 }
 
 fn relative_selector_match_early<E: Element>(
     selector: &RelativeSelector<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
 ) -> Option<bool> {
     // See if we can return a cached result.
@@ -627,7 +617,7 @@ fn relative_selector_match_early<E: Element>(
 
 fn match_relative_selectors<E: Element>(
     selectors: &[RelativeSelector<E::Impl>],
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> KleeneValue {
@@ -659,7 +649,7 @@ fn match_relative_selectors<E: Element>(
 /// Matches a relative selector in a list of relative selectors.
 fn do_match_relative_selectors<E: Element>(
     selectors: &[RelativeSelector<E::Impl>],
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> bool {
@@ -706,7 +696,7 @@ fn do_match_relative_selectors<E: Element>(
 
 fn matches_relative_selector_subtree<E: Element>(
     selector: &Selector<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> bool {
@@ -718,11 +708,11 @@ fn matches_relative_selector_subtree<E: Element>(
                 ElementSelectorFlags::RELATIVE_SELECTOR_SEARCH_DIRECTION_ANCESTOR,
             );
         }
-        if matches_complex_selector(selector.iter(), &el, context, rightmost).to_bool(true) {
+        if matches_complex_selector(selector.iter(), el, context, rightmost).to_bool(true) {
             return true;
         }
 
-        if matches_relative_selector_subtree(selector, &el, context, rightmost) {
+        if matches_relative_selector_subtree(selector, el, context, rightmost) {
             return true;
         }
 
@@ -760,13 +750,14 @@ fn hover_and_active_quirk_applies<Impl: SelectorImpl>(
     })
 }
 
+/// Whether we're matching either the subject, or the pseudo-element.
 #[derive(Clone, Copy, PartialEq)]
-enum SubjectOrPseudoElement {
+pub enum SubjectOrPseudoElement {
     Yes,
     No,
 }
 
-fn host_for_part<E>(element: &E, context: &MatchingContext<E::Impl>) -> Option<E>
+fn host_for_part<E>(element: E, context: &MatchingContext<E::Impl>) -> Option<E>
 where
     E: Element,
 {
@@ -784,13 +775,15 @@ where
     }
 }
 
-fn assigned_slot<E>(element: &E, context: &MatchingContext<E::Impl>) -> Option<E>
+fn assigned_slot<E>(element: E, context: &MatchingContext<E::Impl>) -> Option<E>
 where
     E: Element,
 {
-    debug_assert!(element
-        .assigned_slot()
-        .map_or(true, |s| s.is_html_slot_element()));
+    debug_assert!(
+        element
+            .assigned_slot()
+            .is_none_or(|s| s.is_html_slot_element())
+    );
     let scope = context.current_host?;
     let mut current_slot = element.assigned_slot()?;
     while current_slot.containing_shadow_host().unwrap().opaque() != scope {
@@ -816,7 +809,7 @@ impl<E> NextElement<E> {
 
 #[inline(always)]
 fn next_element_for_combinator<E>(
-    element: &E,
+    element: E,
     combinator: Combinator,
     context: &MatchingContext<E::Impl>,
 ) -> NextElement<E>
@@ -849,10 +842,9 @@ where
 
 fn matches_complex_selector_internal<E>(
     mut selector_iter: SelectorIter<E::Impl>,
-    element: &E,
+    mut element: E,
     context: &mut MatchingContext<E::Impl>,
     mut rightmost: SubjectOrPseudoElement,
-    mut first_subject_compound: SubjectOrPseudoElement,
 ) -> SelectorMatchingResult
 where
     E: Element,
@@ -896,7 +888,6 @@ where
 
     if !is_pseudo_combinator {
         rightmost = SubjectOrPseudoElement::No;
-        first_subject_compound = SubjectOrPseudoElement::No;
     }
 
     // Stop matching :visited as soon as we find a link, or a combinator for
@@ -913,7 +904,6 @@ where
         SelectorMatchingResult::NotMatchedGlobally
     };
 
-    let mut element = element.clone();
     loop {
         if element.is_link() {
             visited_handling = VisitedHandlingMode::AllLinksUnvisited;
@@ -922,7 +912,7 @@ where
         let NextElement {
             next_element,
             featureless,
-        } = next_element_for_combinator(&element, combinator, &context);
+        } = next_element_for_combinator(element, combinator, context);
         element = match next_element {
             None => return candidate_not_found,
             Some(e) => e,
@@ -932,10 +922,9 @@ where
             context.with_featureless(featureless, |context| {
                 matches_complex_selector_internal(
                     selector_iter.clone(),
-                    &element,
+                    element,
                     context,
                     rightmost,
-                    first_subject_compound,
                 )
             })
         });
@@ -953,7 +942,7 @@ where
                 return result;
             },
             SelectorMatchingResult::Unknown | SelectorMatchingResult::NotMatchedGlobally => {
-                return result
+                return result;
             },
             _ => {},
         }
@@ -1002,7 +991,7 @@ where
 }
 
 #[inline]
-fn matches_local_name<E>(element: &E, local_name: &LocalName<E::Impl>) -> bool
+fn matches_local_name<E>(element: E, local_name: &LocalName<E::Impl>) -> bool
 where
     E: Element,
 {
@@ -1011,7 +1000,7 @@ where
 }
 
 fn matches_part<E>(
-    element: &E,
+    element: E,
     parts: &[<E::Impl as SelectorImpl>::Identifier],
     context: &mut MatchingContext<E::Impl>,
 ) -> bool
@@ -1057,7 +1046,7 @@ where
 }
 
 fn matches_host<E>(
-    element: &E,
+    element: E,
     selector: Option<&Selector<E::Impl>>,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
@@ -1083,7 +1072,7 @@ where
 }
 
 fn matches_slotted<E>(
-    element: &E,
+    element: E,
     selector: &Selector<E::Impl>,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
@@ -1099,7 +1088,7 @@ where
 }
 
 fn matches_rare_attribute_selector<E>(
-    element: &E,
+    element: E,
     attr_sel: &AttrSelectorWithOptionalNamespace<E::Impl>,
 ) -> bool
 where
@@ -1148,7 +1137,7 @@ pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(
             Component::PseudoElement(..) => {},
             // We allow logical pseudo-classes, but we'll fail matching of the inner selectors if
             // necessary.
-            Component::Is(ref l) | Component::Where(ref l) => {
+            Component::Is(l) | Component::Where(l) => {
                 let mut any_yes = false;
                 let mut any_no = false;
                 for selector in l.slice() {
@@ -1173,7 +1162,7 @@ pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(
                     matches = MatchesFeaturelessHost::Yes;
                 }
             },
-            Component::Negation(ref l) => {
+            Component::Negation(l) => {
                 // For now preserving behavior, see
                 // https://github.com/w3c/csswg-drafts/issues/10179 for existing resolutions that
                 // tweak this behavior.
@@ -1196,7 +1185,7 @@ pub(crate) fn compound_matches_featureless_host<Impl: SelectorImpl>(
 #[inline]
 fn matches_compound_selector<E>(
     selector_iter: &mut SelectorIter<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     rightmost: SubjectOrPseudoElement,
 ) -> KleeneValue
@@ -1229,7 +1218,7 @@ where
 /// Determines whether the given element matches the given single selector.
 fn matches_simple_selector<E>(
     selector: &Component<E::Impl>,
-    element: &E,
+    element: E,
     context: &mut LocalMatchingContext<E::Impl>,
 ) -> KleeneValue
 where
@@ -1266,31 +1255,30 @@ where
         Component::AttributeOther(ref attr_sel) => {
             matches_rare_attribute_selector(element, attr_sel)
         },
-        Component::Part(ref parts) => matches_part(element, parts, &mut context.shared),
+        Component::Part(ref parts) => matches_part(element, parts, context.shared),
         Component::Slotted(ref selector) => {
-            return matches_slotted(element, selector, &mut context.shared, rightmost);
+            return matches_slotted(element, selector, context.shared, rightmost);
         },
         Component::PseudoElement(ref pseudo) => {
             element.match_pseudo_element(pseudo, context.shared)
         },
         Component::ExplicitUniversalType | Component::ExplicitAnyNamespace => true,
         Component::Namespace(_, ref url) | Component::DefaultNamespace(ref url) => {
-            element.has_namespace(&url.borrow())
+            element.has_namespace(url.borrow())
         },
         Component::ExplicitNoNamespace => {
             let ns = crate::parser::namespace_empty_string::<E::Impl>();
-            element.has_namespace(&ns.borrow())
+            element.has_namespace(ns.borrow())
         },
         Component::NonTSPseudoClass(ref pc) => {
-            if let Some(ref iter) = context.quirks_data {
-                if pc.is_active_or_hover()
-                    && !element.is_link()
-                    && hover_and_active_quirk_applies(iter, context.shared, context.rightmost)
-                {
-                    return KleeneValue::False;
-                }
+            if let Some(ref iter) = context.quirks_data
+                && pc.is_active_or_hover()
+                && !element.is_link()
+                && hover_and_active_quirk_applies(iter, context.shared, context.rightmost)
+            {
+                return KleeneValue::False;
             }
-            element.match_non_ts_pseudo_class(pc, &mut context.shared)
+            element.match_non_ts_pseudo_class(pc, context.shared)
         },
         Component::Root => element.is_root(),
         Component::Empty => {
@@ -1300,7 +1288,7 @@ where
             element.is_empty()
         },
         Component::Host(ref selector) => {
-            return matches_host(element, selector.as_ref(), &mut context.shared, rightmost);
+            return matches_host(element, selector.as_ref(), context.shared, rightmost);
         },
         Component::ParentSelector => match context.shared.scope_element {
             Some(ref scope_element) => element.opaque() == *scope_element,
@@ -1333,17 +1321,17 @@ where
                     nth_of_data.selectors(),
                     rightmost,
                 )
-            })
+            });
         },
         Component::Is(ref list) | Component::Where(ref list) => {
             return context.shared.nest(|context| {
                 matches_complex_selector_list(list.slice(), element, context, rightmost)
-            })
+            });
         },
         Component::Negation(ref list) => {
             return context.shared.nest_for_negation(|context| {
                 !matches_complex_selector_list(list.slice(), element, context, rightmost)
-            })
+            });
         },
         Component::Has(ref relative_selectors) => {
             return match_relative_selectors(
@@ -1359,7 +1347,7 @@ where
         Component::RelativeSelectorAnchor => {
             let anchor = context.shared.relative_selector_anchor();
             // We may match inner relative selectors, in which case we want to always match.
-            anchor.map_or(true, |a| a == element.opaque())
+            anchor.is_none_or(|a| a == element.opaque())
         },
         Component::Invalid(..) => false,
     })
@@ -1367,7 +1355,7 @@ where
 
 #[inline(always)]
 pub fn select_name<'a, E: Element, T: PartialEq>(
-    element: &E,
+    element: E,
     local_name: &'a T,
     local_name_lower: &'a T,
 ) -> &'a T {
@@ -1379,9 +1367,9 @@ pub fn select_name<'a, E: Element, T: PartialEq>(
 }
 
 #[inline(always)]
-pub fn to_unconditional_case_sensitivity<'a, E: Element>(
+pub fn to_unconditional_case_sensitivity<E: Element>(
     parsed: ParsedCaseSensitivity,
-    element: &E,
+    element: E,
 ) -> CaseSensitivity {
     match parsed {
         ParsedCaseSensitivity::CaseSensitive | ParsedCaseSensitivity::ExplicitCaseSensitive => {
@@ -1399,7 +1387,7 @@ pub fn to_unconditional_case_sensitivity<'a, E: Element>(
 }
 
 fn matches_generic_nth_child<E>(
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     nth_data: &NthSelectorData,
     selectors: &[Selector<E::Impl>],
@@ -1528,7 +1516,7 @@ where
 
 #[inline]
 fn nth_child_index<E>(
-    element: &E,
+    element: E,
     context: &mut MatchingContext<E::Impl>,
     selectors: &[Selector<E::Impl>],
     is_of_type: bool,
@@ -1552,13 +1540,13 @@ where
             .is_empty()
     {
         let mut index: i32 = 1;
-        let mut curr = element.clone();
+        let mut curr = element;
         while let Some(e) = curr.prev_sibling_element() {
             curr = e;
             let matches = if is_of_type {
                 element.is_same_type(&curr)
             } else if !selectors.is_empty() {
-                matches_complex_selector_list(selectors, &curr, context, rightmost).to_bool(true)
+                matches_complex_selector_list(selectors, curr, context, rightmost).to_bool(true)
             } else {
                 true
             };
@@ -1576,7 +1564,7 @@ where
     }
 
     let mut index: i32 = 1;
-    let mut curr = element.clone();
+    let mut curr = element;
     let next = |e: E| {
         if is_from_end {
             e.next_sibling_element()
@@ -1589,7 +1577,7 @@ where
         let matches = if is_of_type {
             element.is_same_type(&curr)
         } else if !selectors.is_empty() {
-            matches_complex_selector_list(selectors, &curr, context, rightmost).to_bool(true)
+            matches_complex_selector_list(selectors, curr, context, rightmost).to_bool(true)
         } else {
             true
         };
@@ -1599,13 +1587,13 @@ where
         // If we're computing indices from the left, check each element in the
         // cache. We handle the indices-from-the-right case at the top of this
         // function.
-        if !is_from_end && check_cache {
-            if let Some(i) = context
+        if !is_from_end
+            && check_cache
+            && let Some(i) = context
                 .nth_index_cache(is_of_type, is_from_end, selectors)
                 .lookup(curr.opaque())
-            {
-                return i + index;
-            }
+        {
+            return i + index;
         }
         index += 1;
     }

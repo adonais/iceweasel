@@ -851,6 +851,24 @@ class Shims {
     url: dstUrl,
     tabId,
   }) {
+    try {
+      const tab = await browser.tabs.get(tabId);
+      const currentTabUrlOrigin = new URL(tab.url).origin;
+      const dstOrigin = new URL(dstUrl).origin;
+      if (
+        currentTabUrlOrigin &&
+        dstOrigin &&
+        currentTabUrlOrigin == dstOrigin
+      ) {
+        debugLog(
+          `Already at dst page ${dstUrl}. Not running storage access shim`
+        );
+        return;
+      }
+    } catch (err) {
+      console.error(`Error getting active tab: ${err}`);
+    }
+
     debugLog("Detected redirect", { srcUrl, dstUrl, tabId });
 
     // Check if a shim needs to request storage access for this redirect. This
@@ -1154,6 +1172,11 @@ class Shims {
 
     const { frameId, originUrl, requestId, tabId, type, url } = details;
 
+    // For sub_frame requests frameId identifies the frame being navigated,
+    // not the one holding it, so shim scripts have to be injected into the
+    // parent frame instead.
+    const shimFrameId = type === "sub_frame" ? details.parentFrameId : frameId;
+
     // Ignore requests unrelated to tabs
     if (tabId < 0) {
       return undefined;
@@ -1254,7 +1277,7 @@ class Shims {
         try {
           await browser.tabs.executeScript(tabId, {
             file: `/lib/smartblock_embeds_helper.js`,
-            frameId,
+            frameId: shimFrameId,
             runAt: "document_start",
           });
         } catch (_) {}
@@ -1264,7 +1287,7 @@ class Shims {
         try {
           await browser.tabs.executeScript(tabId, {
             file: `/shims/${runFirst}`,
-            frameId,
+            frameId: shimFrameId,
             runAt: "document_start",
           });
           shimToApply.setActiveOnTab(tabId);

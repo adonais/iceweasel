@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that AI Controls block on-device speech recognition</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script type="text/javascript">
+"use strict";
+
+SimpleTest.waitForExplicitFinish();
+
+const LANGS = ["en-US"];
+
+async function withControl(state, fn, globalState = "available") {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ai.control.speechRecognition", state],
+      ["browser.ai.control.default", globalState],
+    ],
+  });
+  await fn();
+  await SpecialPowers.popPrefEnv();
+}
+
+async function run() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ai.control.default", "available"],
+    ],
+  });
+
+  // Blocked via AI Controls: every entry point must refuse before touching the
+  // backend.
+  await withControl("blocked", async () => {
+    // Document::WarnOnceAbout fires for the first blocked entry point in this
+    // document and stays quiet afterwards, so this is the only call that can
+    // be checked for the console warning.
+    const warned = new Promise(resolve =>
+      SimpleTest.monitorConsole(resolve, [{ errorMessage: /AI Controls/ }]));
+    const availability = await SpeechRecognition.available({
+      processLocally: true,
+      langs: LANGS,
+    });
+    SimpleTest.endMonitorConsole();
+    await warned;
+    is(availability, "unavailable",
+       "available() reports unavailable when blocked by AI Controls");
+
+    // Blocked means there is nothing to install, reported the same way
+    // available() reports it, rather than as a distinct rejection that would
+    // make the AI Controls state observable.
+    const installed = await SpeechRecognition.install({
+      processLocally: true,
+      langs: LANGS,
+    });
+    is(installed, false, "install() resolves false when blocked by AI Controls");
+
+    const sr = new SpeechRecognition();
+    let threw = null;
+    try {
+      sr.start();
+    } catch (err) {
+      threw = err;
+    }
+    ok(threw, "start() throws when blocked");
+    is(threw?.name, "NotAllowedError", "start() throws NotAllowedError");
+    ok(/AI settings/.test(threw?.message ?? ""),
+       "start() throw cites the AI settings gate");
+  });
+
+  // Not blocked: the gate lets the call through to the next check. Without
+  // transient user activation install() still rejects, but for a different
+  // reason -- proving the AI Controls gate is not what stopped it.
+  await withControl("available", async () => {
+    await SpeechRecognition.install({ processLocally: true, langs: LANGS }).then(
+      () => ok(false, "install() should still reject without activation"),
+      err => {
+        is(err.name, "NotAllowedError", "install() rejects with NotAllowedError");
+        ok(/transient user activation/.test(err.message),
+           "install() is stopped by activation, not the AI Controls gate");
+      }
+    );
+  });
+
+  // The feature pref left at "default" resolves through the global AI Controls
+  // state, so users who blocked AI enhancements before this feature shipped
+  // get it blocked.
+  await withControl("default", async () => {
+    const availability = await SpeechRecognition.available({
+      processLocally: true,
+      langs: LANGS,
+    });
+    is(availability, "unavailable",
+       "available() inherits the blocked global AI Controls state");
+
+    const sr = new SpeechRecognition();
+    let threw = null;
+    try {
+      sr.start();
+    } catch (err) {
+      threw = err;
+    }
+    is(threw?.name, "NotAllowedError",
+       "start() inherits the blocked global AI Controls state");
+  }, "blocked");
+
+  // Same pref value, available globally: the gate lets the call through.
+  await withControl("default", async () => {
+    await SpeechRecognition.install({ processLocally: true, langs: LANGS }).then(
+      () => ok(false, "install() should still reject without activation"),
+      err => {
+        ok(/transient user activation/.test(err.message),
+           "install() inherits the available global AI Controls state");
+      }
+    );
+  }, "available");
+
+  SimpleTest.finish();
+}
+
+run();
+</script>
+</pre>
+</body>
+</html>

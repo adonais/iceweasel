@@ -30,3 +30,7 @@ vendoring:
     - LibrarySandbox.md
     - README.md
     - build-wasiclang.sh
+
+  patches:
+    - crash-reporting-messages.patch
+    - clock-id-macros.patch

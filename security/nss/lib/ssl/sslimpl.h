@@ -131,7 +131,7 @@ typedef enum { SSLAppOpRead = 0,
 #define DTLS_RETRANSMIT_FINISHED_MS 30000
 
 /* default number of entries in namedGroupPreferences */
-#define SSL_NAMED_GROUP_COUNT 36
+#define SSL_NAMED_GROUP_COUNT 35
 
 /* The maximum DH and RSA bit-length supported. */
 #define SSL_MAX_DH_KEY_BITS 8192
@@ -1000,7 +1000,7 @@ typedef struct SessionTicketStr {
 ** This is "ci", as in "ss->sec.ci".
 **
 ** Protection:  All the variables in here are protected by
-** firstHandshakeLock AND ssl3HandshakeLock
+** firstHandshakeLock AND ssl3HandshakeLock, except where noted per field.
 */
 struct sslConnectInfoStr {
     /* outgoing handshakes appended to this. */
@@ -1009,6 +1009,12 @@ struct sslConnectInfoStr {
     PRIPv6Addr peer;
     unsigned short port;
 
+    /* Assign only with ssl_SetSocketSID and clear only with
+     * ssl_TakeSocketSID; both swap and release under the session cache lock.
+     * A thread holding neither handshake lock -- an application calling
+     * SSL_GetChannelInfo, say -- must read this with ssl_ReferenceSocketSID,
+     * because the peer can replace the session at any time by renegotiating
+     * or by sending a new session ticket. */
     sslSessionID *sid;
 };
 
@@ -1328,6 +1334,9 @@ extern sslSessionID *ssl_LookupSID(PRTime now, const PRIPv6Addr *addr,
 extern void ssl_FreeSID(sslSessionID *sid);
 extern void ssl_DestroySID(sslSessionID *sid, PRBool freeIt);
 extern sslSessionID *ssl_ReferenceSID(sslSessionID *sid);
+extern void ssl_SetSocketSID(sslSocket *ss, sslSessionID *sid);
+extern sslSessionID *ssl_TakeSocketSID(sslSocket *ss);
+extern sslSessionID *ssl_ReferenceSocketSID(sslSocket *ss);
 
 extern int ssl3_SendApplicationData(sslSocket *ss, const PRUint8 *in,
                                     int len, int flags);

@@ -1,11 +1,11 @@
 [versions]
 # AGP
-android-gradle-plugin = "9.2.1" # Keep lint version in sync
-android-lint = "32.2.1"
+android-gradle-plugin = "9.4.0" # Keep lint version in sync
+android-lint = "32.4.0"
 
 # Kotlin
 coroutines = "1.11.0"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 serialization = "1.11.0"
 
 # AndroidX
@@ -37,8 +37,8 @@ fragment = "1.9.0"
 lifecycle = "2.11.0"
 media = "1.7.1"
 media3 = "1.11.0"
-navigation = "2.9.8"
-navigation3 = "1.1.6"
+navigation = "2.10.0"
+navigation3 = "1.1.7"
 paging = "3.5.1"
 palette = "1.0.0"
 preference = "1.2.1"
@@ -48,7 +48,7 @@ room = "2.8.4"
 savedstate = "1.5.0"
 startup = "1.2.0"
 swiperefreshlayout = "1.2.0"
-transition = "1.7.0"
+transition = "1.7.1"
 viewpager2 = "1.1.0"
 window = "1.5.1"
 work = "2.11.2"
@@ -66,7 +66,7 @@ play-review = "2.0.2"
 play-services-ads-id = "18.3.0"
 play-services-base = "18.10.1"
 play-services-fido = "21.3.1"
-protobuf = "4.36.0"
+protobuf = "4.36.1"
 
 # Gradle plugins
 dependency-analysis = "3.19.1"
@@ -75,7 +75,7 @@ kaml = "0.104.0"
 protobuf-plugin = "0.10.0"
 python-envs-plugin = "0.0.31"
 semanticdb-javac = "0.12.0"
-semanticdb-kotlinc = "0.10.0"
+semanticdb-kotlinc = "0.11.0"
 tomlj = "1.1.1"
 
 # Linters
@@ -83,7 +83,7 @@ androidx-lint = "1.0.0"
 detekt = "1.23.8"
 google-java-format = "1.28.0"
 ktfmt = "0.64"
-spotless = "8.10.0"
+spotless = "8.10.2"
 
 # Mozilla
 glean = "68.0.1"
@@ -108,14 +108,14 @@ robolectric = "4.16.1"
 adjust = "5.8.0"
 androidsvg = "1.4"
 disklrucache = "2.0.2"
-jetbrains-markdown = "0.7.9"
+jetbrains-markdown = "0.7.12"
 jna = "5.19.1"
 json = "20260814"
 jsoup = "1.23.2"
 lottie = "6.7.1"
 okhttp = "5.5.0"
-okio = "3.18.1"
-sentry = "8.53.0"
+okio = "3.18.2"
+sentry = "8.55.0"
 zxing = "3.5.4"
 
 [libraries]
@@ -327,5 +327,6 @@ kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 protobuf-plugin = { id = "com.google.protobuf", version.ref = "protobuf-plugin" }
+# Only the vendored app-services component builds still apply this.
 python-envs-plugin = { id = "com.jetbrains.python.envs", version.ref = "python-envs-plugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

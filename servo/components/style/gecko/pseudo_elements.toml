@@ -79,6 +79,7 @@ argument = "AtomIdent"
 is_element_backed = true
 [checkmark]
 pref = "dom.select.customizable_select.enabled"
+is_flex_or_grid_item = true
 is_tree_abiding = true
 
 # HTML5 Forms pseudo elements

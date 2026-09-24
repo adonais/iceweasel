@@ -19,6 +19,7 @@
 #include "nsNativeCharsetUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SharedLibrary.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 
 #include "nsAuthGSSAPI.h"
@@ -52,8 +53,6 @@ static gss_OID_desc gss_c_nt_hostbased_service = {
     10, (void*)"\x2a\x86\x48\x86\xf7\x12\x01\x02\x01\x04"};
 
 static const char kNegotiateAuthGssLib[] = "network.negotiate-auth.gsslib";
-static const char kNegotiateAuthNativeImp[] =
-    "network.negotiate-auth.using-native-gsslib";
 
 static struct GSSFunction {
   const char* str;
@@ -69,7 +68,6 @@ static struct GSSFunction {
                 {"gss_wrap", nullptr},
                 {"gss_unwrap", nullptr}};
 
-static bool gssNativeImp = true;
 static PRLibrary* gssLibrary = nullptr;
 
 #define gss_display_status_ptr ((gss_display_status_type) * gssFuncs[0].func)
@@ -100,13 +98,11 @@ static nsresult gssInit() {
   nsAutoCString libPath;
   Preferences::GetCString(kNegotiateAuthGssLib, libPath);
 #endif
-  gssNativeImp = Preferences::GetBool(kNegotiateAuthNativeImp);
 
   PRLibrary* lib = nullptr;
 
   if (!libPath.IsEmpty()) {
     LOG(("Attempting to load user specified library [%s]\n", libPath.get()));
-    gssNativeImp = false;
 #ifdef XP_WIN
     lib = LoadLibraryWithFlags(libPathU.get());
 #else
@@ -199,8 +195,10 @@ static nsresult gssInit() {
     }
   }
 #ifdef XP_MACOSX
-  if (gssNativeImp && !(KLCacheHasValidTicketsPtr = PR_FindFunctionSymbol(
-                            lib, "KLCacheHasValidTickets"))) {
+  if (libPath.IsEmpty() &&
+      StaticPrefs::network_negotiate_auth_using_native_gsslib() &&
+      !(KLCacheHasValidTicketsPtr =
+            PR_FindFunctionSymbol(lib, "KLCacheHasValidTickets"))) {
     LOG(("Fail to load KLCacheHasValidTickets function from gssapi library\n"));
     PR_UnloadLibrary(lib);
     return NS_ERROR_FAILURE;
@@ -413,7 +411,7 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
                        mServiceName.Find("smtp@") || mServiceName.Find("ldap@");
 
   if (!doingMailTask &&
-      (gssNativeImp &&
+      (KLCacheHasValidTicketsPtr &&
        (KLCacheHasValidTickets_ptr(nullptr, kerberosVersion_V5, &found, nullptr,
                                    nullptr) != klNoErr ||
         !found))) {

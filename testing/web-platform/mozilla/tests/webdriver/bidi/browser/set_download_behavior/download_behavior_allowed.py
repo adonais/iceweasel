@@ -36,12 +36,12 @@ async def test_unique_filename(
     on_download_end = wait_for_event(DOWNLOAD_END)
 
     # Trigger download to populate default download folder.
-    result = await bidi_session.browsing_context.locate_nodes(
+    nodes = await bidi_session.browsing_context.locate_nodes(
         context=new_tab["context"], locator={"type": "css", "value": "#download_link"}
     )
 
     await bidi_session.script.call_function(
-        arguments=[result["nodes"][0]],
+        arguments=[nodes[0]],
         function_declaration="(link) => link.click()",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,
@@ -61,7 +61,7 @@ async def test_unique_filename(
 
     # Trigger the download.
     await bidi_session.script.call_function(
-        arguments=[result["nodes"][0]],
+        arguments=[nodes[0]],
         function_declaration="(link) => link.click()",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,
@@ -81,7 +81,7 @@ async def test_unique_filename(
     on_download_will_begin = wait_for_event(DOWNLOAD_WILL_BEGIN)
 
     await bidi_session.script.call_function(
-        arguments=[result["nodes"][0]],
+        arguments=[nodes[0]],
         function_declaration="(link) => link.click()",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,
@@ -126,12 +126,12 @@ async def test_download_focus(
     on_download_end = wait_for_event(DOWNLOAD_END)
 
     # Trigger download to populate default download folder.
-    result = await bidi_session.browsing_context.locate_nodes(
+    nodes = await bidi_session.browsing_context.locate_nodes(
         context=new_tab["context"], locator={"type": "css", "value": "#download_link"}
     )
 
     await bidi_session.script.call_function(
-        arguments=[result["nodes"][0]],
+        arguments=[nodes[0]],
         function_declaration="(link) => link.click()",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,

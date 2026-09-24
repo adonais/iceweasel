@@ -192,16 +192,10 @@ ARCHIVE_FILES = {
             "source": buildconfig.topobjdir,
             "base": "dist/bin",
             "patterns": [
-                "%s%s" % (f, buildconfig.substs["BIN_SUFFIX"])
-                for f in TEST_HARNESS_BINS
+                f"{f}{buildconfig.substs['BIN_SUFFIX']}" for f in TEST_HARNESS_BINS
             ]
             + [
-                "%s%s%s"
-                % (
-                    buildconfig.substs["DLL_PREFIX"],
-                    f,
-                    buildconfig.substs["DLL_SUFFIX"],
-                )
+                f"{buildconfig.substs['DLL_PREFIX']}{f}{buildconfig.substs['DLL_SUFFIX']}"
                 for f in TEST_HARNESS_DLLS
             ],
             "dest": "bin",
@@ -358,6 +352,11 @@ ARCHIVE_FILES = {
             "source": buildconfig.topsrcdir,
             "base": "testing/mozbase/mozsystemmonitor",
             "pattern": "mozsystemmonitor/**",
+        },
+        {
+            "source": buildconfig.topsrcdir,
+            "base": "third_party/python/pyyaml/lib",
+            "pattern": "yaml/**",
         },
         {
             "source": buildconfig.topsrcdir,
@@ -636,7 +635,7 @@ ARCHIVE_FILES = {
         {
             "source": buildconfig.topobjdir,
             "base": "dist/bin",
-            "pattern": "http3server%s" % buildconfig.substs["BIN_SUFFIX"],
+            "pattern": f"http3server{buildconfig.substs['BIN_SUFFIX']}",
             "dest": "xpcshell/http3server",
         },
         {
@@ -708,16 +707,10 @@ ARCHIVE_FILES = {
             "source": buildconfig.topobjdir,
             "base": "dist/bin",
             "patterns": [
-                "%s%s" % (f, buildconfig.substs["BIN_SUFFIX"])
-                for f in TEST_HARNESS_BINS
+                f"{f}{buildconfig.substs['BIN_SUFFIX']}" for f in TEST_HARNESS_BINS
             ]
             + [
-                "%s%s%s"
-                % (
-                    buildconfig.substs["DLL_PREFIX"],
-                    f,
-                    buildconfig.substs["DLL_SUFFIX"],
-                )
+                f"{buildconfig.substs['DLL_PREFIX']}{f}{buildconfig.substs['DLL_SUFFIX']}"
                 for f in TRAIN_HOP_DLLS
             ],
             "dest": "bin",
@@ -782,8 +775,8 @@ for k, v in ARCHIVE_FILES.items():
         itertools.chain(*(e.get("ignore", []) for e in ARCHIVE_FILES["common"]))
     )
 
-    if not any(p.startswith("%s/" % k) for p in ignores):
-        raise Exception('"common" ignore list probably should contain %s' % k)
+    if not any(p.startswith(f"{k}/") for p in ignores):
+        raise Exception(f'"common" ignore list probably should contain {k}')
 
 
 def find_generated_harness_files():
@@ -860,9 +853,8 @@ def find_files(archive):
         finder = FileFinder(os.path.join(source, base), **common_kwargs)
 
         for pattern in patterns:
-            for p, f in finder.find(pattern):
-                if dest:
-                    p = mozpath.join(dest, p)
+            for raw_p, f in finder.find(pattern):
+                p = mozpath.join(dest, raw_p) if dest else raw_p
                 yield p, f
 
 
@@ -873,22 +865,22 @@ def find_manifest_dirs(topsrcdir, manifests):
     """
     dirs = set()
 
-    for p in manifests:
-        p = os.path.join(topsrcdir, p)
+    for manifest_path in manifests:
+        abs_manifest_path = os.path.join(topsrcdir, manifest_path)
 
-        if p.endswith(".ini") or p.endswith(".toml"):
+        if abs_manifest_path.endswith(".ini") or abs_manifest_path.endswith(".toml"):
             test_manifest = TestManifest()
-            test_manifest.read(p)
+            test_manifest.read(abs_manifest_path)
             dirs |= set([os.path.dirname(m) for m in test_manifest.manifests()])
 
-        elif p.endswith(".list"):
+        elif abs_manifest_path.endswith(".list"):
             m = ReftestManifest()
-            m.load(p)
+            m.load(abs_manifest_path)
             dirs |= m.dirs
 
         else:
             raise Exception(
-                f'"{os.path.splitext(p)[1]}" is not a supported manifest format.'
+                f'"{os.path.splitext(abs_manifest_path)[1]}" is not a supported manifest format.'
             )
 
     dirs = {mozpath.normpath(d[len(topsrcdir) :]).lstrip("/") for d in dirs}
@@ -946,14 +938,13 @@ def main(argv):
                     )
                     file_count += 1
         else:
-            raise Exception("unhandled file extension: %s" % out_file)
+            raise Exception(f"unhandled file extension: {out_file}")
 
     duration = time.monotonic() - t_start
     zip_size = os.path.getsize(args.outputfile)
     basename = os.path.basename(args.outputfile)
     print(
-        "Wrote %d files in %d bytes to %s in %.2fs"
-        % (file_count, zip_size, basename, duration)
+        f"Wrote {file_count} files in {zip_size} bytes to {basename} in {duration:.2f}s"
     )
 
 

@@ -101,6 +101,65 @@ describe("<ConfirmDialog>", () => {
       );
     });
   });
+  describe("accessible associations", () => {
+    it("names the dialog after the first line and describes it with the second", () => {
+      Object.assign(ConfirmDialogProps.data, {
+        body_string_id: ["foo", "bar"],
+      });
+      ({ container } = render(
+        <ConfirmDialog dispatch={dispatch} {...ConfirmDialogProps} />
+      ));
+
+      const dialog = container.querySelector("dialog");
+      const msgs = container.querySelectorAll(".modal-message p");
+      expect(dialog).toHaveAttribute(
+        "aria-labelledby",
+        "confirmation-dialog-title"
+      );
+      expect(dialog).toHaveAttribute(
+        "aria-describedby",
+        "confirmation-dialog-description"
+      );
+      expect(msgs[0]).toHaveAttribute("id", "confirmation-dialog-title");
+      expect(msgs[1]).toHaveAttribute("id", "confirmation-dialog-description");
+    });
+
+    it("leaves the description off when there is only one line", () => {
+      Object.assign(ConfirmDialogProps.data, { body_string_id: ["foo"] });
+      ({ container } = render(
+        <ConfirmDialog dispatch={dispatch} {...ConfirmDialogProps} />
+      ));
+
+      expect(container.querySelector("dialog")).not.toHaveAttribute(
+        "aria-describedby"
+      );
+    });
+  });
+
+  describe("primary button type", () => {
+    it("stays destructive for callers that do not ask for one", () => {
+      expect(
+        container.querySelector("moz-button[type='destructive']")
+      ).toBeInTheDocument();
+    });
+
+    it("uses the type the caller asks for", () => {
+      Object.assign(ConfirmDialogProps.data, {
+        confirm_button_type: "primary",
+      });
+      ({ container } = render(
+        <ConfirmDialog dispatch={dispatch} {...ConfirmDialogProps} />
+      ));
+
+      expect(
+        container.querySelector("moz-button[type='primary']")
+      ).toBeInTheDocument();
+      expect(
+        container.querySelector("moz-button[type='destructive']")
+      ).not.toBeInTheDocument();
+    });
+  });
+
   describe("click events", () => {
     it("should emit AlsoToMain DIALOG_CANCEL when you click the overlay", () => {
       const dialog = container.querySelector("dialog");

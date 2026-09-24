@@ -20,7 +20,7 @@ import {
   MODE,
 } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 import { Rep } from "resource://devtools/client/shared/components/reps/reps/rep.mjs";
-import { JsonlLineError } from "resource://devtools/client/jsonview/jsonl-utils.mjs";
+import { JsonlLineError } from "resource://devtools/client/shared/jsonl-utils.mjs";
 
 const TreeView = createFactory(TreeViewClass);
 const { JsonToolbar } = createFactories(JsonToolbarClass);
@@ -167,7 +167,7 @@ class JsonPanel extends Component {
       return null;
     }
 
-    if (member.value instanceof JsonlLineError) {
+    if (JsonlLineError.isInstance(member.value)) {
       return div(
         { className: "jsonlLineError" },
         `${member.value.message}: ${member.value.raw}`

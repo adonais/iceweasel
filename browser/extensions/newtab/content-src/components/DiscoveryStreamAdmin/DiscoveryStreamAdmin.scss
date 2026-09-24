@@ -33,6 +33,7 @@
   border: 0;
   border-radius: var(--border-radius-small);
   background-color: var(--button-background-color, rgba(21, 20, 26, 7%));
+  color: var(--button-text-color);
   box-shadow: 0 0.8px 1.6px 0 rgba(58, 57, 68, 20%);
   padding: calc(5 * var(--space-xxsmall));
   display: flex;

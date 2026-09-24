@@ -19,8 +19,8 @@ Vendored from upstream libcrux:
 
 - Repository: https://github.com/cryspen/libcrux
 - Commit: `87eda899b207aa8fecbdf7a6ecfa5f70a9b2c68c` (`main`)
-- Source path: `combined_extraction/c/` (portable variant only; the `*_avx2.*`,
-  `intrinsics/`, and ML-KEM-512 files are intentionally not vendored)
+- Source path: `combined_extraction/c/` (portable variant only; the `*_avx2.*`
+  and `intrinsics/` files are intentionally not vendored)
 
 Generated with the following toolchain revisions (from the file headers):
 
@@ -38,8 +38,8 @@ portable `combined_extraction/c/` files here verbatim, and update this file.
 
 ## Contents
 
-- ML-KEM: `libcrux_mlkem{768,1024}{,_portable}.{c,h}`, `libcrux_mlkem_core.*`,
-  `libcrux_mlkem_portable.*`
+- ML-KEM: `libcrux_mlkem{512,768,1024}{,_portable}.{c,h}`,
+  `libcrux_mlkem_core.*`, `libcrux_mlkem_portable.*`
 - ML-DSA: `libcrux_mldsa{44,65,87}_portable.{c,h}`, `libcrux_mldsa_core.*`,
   `libcrux_mldsa_portable.*`
 - Shared: `libcrux_sha3_portable.*`, `combined_core.*`, `libcrux_ct_ops.*`,

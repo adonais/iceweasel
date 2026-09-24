@@ -2,6 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1926551 - Artstation Google login
+ *
+ * Artstation signs users in through accounts.google.com, which needs access to
+ * its own first-party storage to complete the flow. Under dFPI that access is
+ * partitioned away and login silently fails. This shim intercepts clicks on the
+ * Google login button and calls the Storage Access API on the site's behalf
+ * before letting the click through.
+ */
+
 "use strict";
 
 console.warn(

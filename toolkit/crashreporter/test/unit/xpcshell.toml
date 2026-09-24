@@ -75,6 +75,12 @@ run-if = [
 ]
 reason = "Test covering Linux-specific SignalOrigin annotation"
 
+["test_crash_sigsys.js"]
+run-if = [
+  "os == 'mac'",
+]
+reason = "Test covering macOS-specific signal handling"
+
 ["test_crash_purevirtual.js"]
 
 ["test_crash_rust_panic.js"]

@@ -1881,8 +1881,9 @@ bool nsAttrValue::ParseColor(const nsAString& aString) {
     return SetColorValue(NS_RGBA(0, 0, 0, 0), aString);
   } else {
     const NS_ConvertUTF16toUTF8 colorNameU8(colorStr);
-    if (Servo_ColorNameToRgb(&colorNameU8, &color)) {
-      return SetColorValue(color, aString);
+    StyleAbsoluteColor result;
+    if (Servo_ColorNameToRgb(&colorNameU8, &result)) {
+      return SetColorValue(result.ToColor(), aString);
     }
   }
 

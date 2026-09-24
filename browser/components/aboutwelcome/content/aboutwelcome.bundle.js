@@ -1288,6 +1288,8 @@ __webpack_require__.r(__webpack_exports__);
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
+const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
+const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -1741,6 +1743,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   renderCornerImage() {
     const cornerImage = this.props.content.corner_image;
     const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const entranceAnimation = cornerImage.entrance_animation ?? {};
+    const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "corner-image-container"
     }, this.renderPicture({
@@ -1752,8 +1756,15 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
       marginInline: cornerImage.marginInline,
-      style: cornerImage.style,
-      className: `corner-image ${position}`
+      style: {
+        // Read indirectly by _multistage.scss, so reduced motion can
+        // override them. Undefined values fall through to its defaults.
+        "--corner-image-entrance-distance": entranceAnimation.distance,
+        "--corner-image-entrance-duration": entranceAnimation.duration,
+        "--corner-image-entrance-delay": entranceAnimation.delay,
+        ...cornerImage.style
+      },
+      className: `corner-image ${position} entrance-${entranceType}`
     }));
   }
   renderLanguageSwitcher() {
@@ -2192,7 +2203,7 @@ const buttonPropTypes = prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___defa
 });
 const screenContentShape = {
   // The layout position of the screen.
-  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "split", "callout"]),
+  position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["center", "center-large", "split", "callout"]),
   // If true, the screens are displayed in fullscreen.
   fullscreen: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().bool),
   // If true, the progress bar will be shown. Defaults to true.
@@ -2301,6 +2312,48 @@ const screenContentShape = {
     width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     // The CSS style overriding the height property.
     height: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+  }),
+  // An optional object representing an illustration anchored to a corner of the
+  // screen. Only rendered for screens with 'position' set to 'center-large' and
+  // 'fullscreen' set to true, which are the only ones that style it.
+  corner_image: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+    // The image URL.
+    imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The dark mode image URL.
+    darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The reduced motion image URL.
+    reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The dark mode reduced motion image URL.
+    darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The corner the illustration is anchored to. Defaults to 'bottom-right'.
+    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    // The CSS style overriding the width property.
+    width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The CSS style overriding the height property.
+    height: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The CSS style overriding the marginBlock property.
+    marginBlock: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // The CSS style overriding the marginInline property.
+    marginInline: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+    // CSS overrides applied to the illustration container. Avoid 'translate'
+    // and 'scale' when using 'entrance_animation', which animates those two
+    // properties and would be overridden by them. 'transform' is unaffected.
+    style: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object),
+    // How the illustration animates in each time the screen is entered. The
+    // direction is derived from 'position', so a 'bottom-left' illustration
+    // rises and a 'top-left' one descends. Every type degrades to an
+    // opacity-only fade for users who prefer reduced motion.
+    entrance_animation: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      // The animation to run. Defaults to 'none'.
+      type: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]),
+      // The CSS length the illustration travels, for the 'slide-*' types.
+      distance: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      // The CSS time the animation takes.
+      duration: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      // The CSS time to wait before starting, for staggering the illustration
+      // against the screen's other content.
+      delay: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    })
   }),
   // The text for the headline.
   title: localizableThingPropTypes,
@@ -4687,10 +4740,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _PinnableSitesList__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(31);
 /* harmony import */ var _ContentToggle__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(32);
 /* harmony import */ var _TextBoxTile__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(33);
+/* harmony import */ var _LinkParagraph__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(14);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -4881,7 +4936,7 @@ const ContentTiles = props => {
       className: `content-tile ${header ? "has-header" : ""}`,
       style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_13__.MultiStageUtils.getTileStyle(tile, TILE_STYLES)
     }, header?.title && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", _extends({
-      className: "tile-header secondary",
+      className: `tile-header secondary${header.linkStyle ? " link-style" : ""}`,
       onClick: () => toggleTile(index, tile)
     }, tileHeaderProps, {
       style: _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_13__.MultiStageUtils.getValidStyle(header.style, HEADER_STYLES)
@@ -4954,7 +5009,8 @@ const ContentTiles = props => {
         tiles: tile
       }
     }), tile.type === "theme-picker" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedThemePicker__WEBPACK_IMPORTED_MODULE_8__.EmbeddedThemePicker, {
-      handleAction: props.handleAction
+      handleAction: props.handleAction,
+      installSource: tile.data?.installSource
     }), tile.type === "action_checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_10__.ActionChecklist, {
       content: content,
       message_id: props.messageId,
@@ -4997,6 +5053,9 @@ const ContentTiles = props => {
         tiles: tile
       },
       contentToggled: props.contentToggleChecked
+    }), tile.type === "text" && tile.text && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LinkParagraph__WEBPACK_IMPORTED_MODULE_18__.LinkParagraph, {
+      text_content: tile,
+      handleAction: props.handleAction
     })) : null);
   };
   const renderContentTiles = () => {
@@ -5991,7 +6050,7 @@ const EmbeddedMigrationWizard = ({
     "force-show-import-all": options?.force_show_import_all || "false",
     "auto-request-state": "",
     ref: ref,
-    "option-expander-title-string": options?.option_expander_title_string || "",
+    "option-expander-title-string": options?.option_expander_title_string,
     "hide-option-expander-subtitle": options?.hide_option_expander_subtitle || false,
     "data-import-complete-success-string": options?.data_import_complete_success_string || "",
     "selection-header-string": options?.selection_header_string || "",
@@ -6026,8 +6085,24 @@ __webpack_require__.r(__webpack_exports__);
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-const EmbeddedThemePicker = () => {
-  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("theme-picker", null);
+const EmbeddedThemePicker = ({
+  installSource
+}) => {
+  const themePickerRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (installSource !== "about:welcome") {
+      return;
+    }
+    // The widget may not be upgraded from a plain element yet when this
+    // mounts, so wait for its class definition before calling `shown()`.
+    customElements.whenDefined("theme-picker").then(() => {
+      themePickerRef.current?.shown();
+    });
+  }, [installSource]);
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("theme-picker", {
+    ref: themePickerRef,
+    installsource: installSource
+  });
 };
 
 /***/ }),

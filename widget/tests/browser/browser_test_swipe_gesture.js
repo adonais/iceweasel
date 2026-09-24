@@ -750,6 +750,7 @@ add_task(async () => {
   await SpecialPowers.popPrefEnv();
 });
 
+// overscroll-behavior: contain doesn't allow swipe-to-nav.
 add_task(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -829,6 +830,109 @@ add_task(async () => {
 
   // Make sure any navigation didn't happen.
   is(tab.linkedBrowser.currentURI.spec, URL_ROOT + "helper_swipe_gesture.html");
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});
+
+// overscroll-behavior: chain allows swipe-to-nav.
+add_task(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.right", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-velocity-contribution", 0.5],
+      ["apz.overscroll.enabled", true],
+      ["apz.test.logging_enabled", true],
+    ],
+  });
+
+  const firstPage = "about:about";
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    firstPage,
+    true /* waitForLoad */
+  );
+
+  const URL_ROOT = getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content/",
+    "http://mochi.test:8888/"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    tab.linkedBrowser,
+    URL_ROOT + "helper_swipe_gesture.html"
+  );
+  await BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    URL_ROOT + "helper_swipe_gesture.html"
+  );
+
+  // Make sure we can go back to the previous page.
+  ok(gBrowser.webNavigation.canGoBack);
+
+  const overscrollBehaviorX = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [],
+    async () => {
+      // Set `overscroll-behavior-x: chain` and flush it.
+      content.document.documentElement.style.overscrollBehaviorX = "chain";
+      content.document.documentElement.getBoundingClientRect();
+      await content.wrappedJSObject.promiseApzFlushedRepaints();
+      return content.window.getComputedStyle(content.document.documentElement)
+        .overscrollBehaviorX;
+    }
+  );
+
+  // Without this the rest of the task would also pass with `chain` falling back
+  // to `auto`, since the two behave the same here. So check the value.
+  is(overscrollBehaviorX, "chain");
+
+  // Start a pan gesture but keep touching.
+  await panLeftToRightBegin(tab.linkedBrowser, 100, 100, 2);
+
+  // Flush APZ pending requests to make sure the pan gesture has been processed.
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await content.wrappedJSObject.promiseApzFlushedRepaints();
+  });
+
+  const isOverscrolled = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [],
+    () => {
+      const scrollId = SpecialPowers.DOMWindowUtils.getViewId(
+        content.document.scrollingElement
+      );
+      const data = SpecialPowers.DOMWindowUtils.getCompositorAPZTestData();
+      return data.additionalData.some(entry => {
+        return (
+          entry.key == scrollId &&
+          entry.value.split(",").includes("overscrolled")
+        );
+      });
+    }
+  );
+
+  // And `chain` disallows the local overscroll effect.
+  ok(!isOverscrolled, "The root scroller should not have overscrolled");
+
+  // Finish the pan gesture, which completes the swipe.
+  const navigationPromise = BrowserTestUtils.browserLoaded(
+    tab.linkedBrowser,
+    false /* includeSubFrames */,
+    firstPage
+  );
+  await panLeftToRightUpdate(tab.linkedBrowser, 100, 100, 2);
+  await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 2);
+  await navigationPromise;
+
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    firstPage,
+    "The swipe should trigger history navigation"
+  );
 
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();

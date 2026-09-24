@@ -39,10 +39,12 @@ async function testSimpleReload() {
 
   const har = await reloadAndCopyAllAsHar({ tab, monitor, toolbox });
 
+  const appName = Services.appinfo.name;
+
   // Check out HAR log
   isnot(har.log, null, "The HAR log must exist");
-  is(har.log.creator.name, "Firefox", "The creator field must be set");
-  is(har.log.browser.name, "Firefox", "The browser field must be set");
+  is(har.log.creator.name, appName, "The creator field must be set");
+  is(har.log.browser.name, appName, "The browser field must be set");
   is(har.log.pages.length, 1, "There must be one page");
   is(har.log.entries.length, 1, "There must be one request");
 

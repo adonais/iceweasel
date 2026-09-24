@@ -1703,6 +1703,15 @@ nsresult CacheStorageService::AddStorageEntry(
               continue;
             }
 
+            // A candidate is stored under a different URL than the one being
+            // opened, so it can only ever be reused as it is.  Taking one that
+            // would have to be replaced below would doom another URL's
+            // representation and remove entryKey - which is ours, not the
+            // candidate's - from the table, leaving the doomed entry behind.
+            if (MOZ_UNLIKELY(!aWriteToDisk) && candidate->IsUsingDisk()) {
+              continue;
+            }
+
             nsAutoCString nvsVal;
             candidate->GetMetaDataElement("no-vary-search",
                                           getter_Copies(nvsVal));
@@ -1746,6 +1755,10 @@ nsresult CacheStorageService::AddStorageEntry(
 
     // If truncate is demanded, delete and doom the current entry
     if (entryExists && replace) {
+      // Everything below keys off entryKey, so it must be the key entry is
+      // actually stored under.  The No-Vary-Search lookup never hands out an
+      // entry that can reach this point.
+      MOZ_ASSERT(!nvsMatched, "replacing a No-Vary-Search candidate");
       entries->Remove(entryKey);
 
       LOG(("  dooming entry %p for %s because of OPEN_TRUNCATE", entry.get(),

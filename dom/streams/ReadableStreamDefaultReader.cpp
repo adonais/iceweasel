@@ -274,8 +274,7 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(ErrorResult& aRv) {
 namespace streams_abstract {
 
 // https://streams.spec.whatwg.org/#readable-stream-reader-generic-release
-void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
-                                        ErrorResult& aRv) {
+void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader) {
   // Step 1. Let stream be reader.[[stream]].
   RefPtr<ReadableStream> stream = aReader->GetStream();
 
@@ -293,8 +292,9 @@ void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
   } else {
     // Step 5. Otherwise, set reader.[[closedPromise]] to a promise rejected
     // with a TypeError exception.
-    RefPtr<Promise> promise = Promise::CreateRejectedWithTypeError(
-        aReader->GetParentObject(), "Lock Released"_ns, aRv);
+    RefPtr<Promise> promise =
+        Promise::CreateInfallible(aReader->GetParentObject());
+    promise->MaybeRejectWithTypeError("Lock Released"_ns);
     aReader->SetClosedPromise(promise.forget());
   }
 
@@ -338,10 +338,7 @@ void ReadableStreamDefaultReaderRelease(JSContext* aCx,
                                         ReadableStreamDefaultReader* aReader,
                                         ErrorResult& aRv) {
   // Step 1. Perform ! ReadableStreamReaderGenericRelease(reader).
-  ReadableStreamReaderGenericRelease(aReader, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  ReadableStreamReaderGenericRelease(aReader);
 
   // Step 2. Let e be a new TypeError exception.
   ErrorResult rv;

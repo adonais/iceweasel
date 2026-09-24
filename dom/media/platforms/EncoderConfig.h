@@ -44,11 +44,6 @@ enum class ScalabilityMode { None, L1T2, L1T3 };
 
 enum class HardwarePreference { None, RequireHardware, RequireSoftware };
 
-const char* YUVColorSpaceToString(const gfx::YUVColorSpace& aYUVColorSpace);
-const char* ColorSpace2ToString(const gfx::ColorSpace2& aColorSpace2);
-const char* TransferFunctionToString(
-    const gfx::TransferFunction& aTransferFunction);
-
 enum class H264BitStreamFormat { AVC, ANNEXB };
 
 struct H264Specific final {

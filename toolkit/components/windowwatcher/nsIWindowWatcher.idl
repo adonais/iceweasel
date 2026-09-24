@@ -65,7 +65,7 @@ interface nsIWindowWatcher : nsISupports {
             via nsIObserverService if the window did not already exist.
   */
   mozIDOMWindowProxy openWindow(in mozIDOMWindowProxy aParent, in ACString aUrl,
-                                in ACString aName, in ACString aFeatures,
+                                in AString aName, in ACString aFeatures,
                                 in nsISupports aArguments);
 
   /** Clients of this service can register themselves to be notified

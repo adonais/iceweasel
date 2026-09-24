@@ -18,11 +18,12 @@ class MozTextLabel extends HTMLLabelElement {
   #lastFormattedAccessKey = null;
   #lastFormattedText = null;
   #observer = null;
+  #centerCropEnabled = false;
 
   // Default to underlining accesskeys for Windows and Linux.
   static #underlineAccesskey = !navigator.platform.includes("Mac");
   static get observedAttributes() {
-    return ["accesskey", "shownaccesskey"];
+    return ["accesskey", "shownaccesskey", "enable-center-crop"];
   }
 
   static stylesheetUrl = "chrome://global/content/elements/moz-label.css";
@@ -114,18 +115,40 @@ class MozTextLabel extends HTMLLabelElement {
   }
 
   set textContent(val) {
+    if (this.#centerCropEnabled) {
+      this.setAttribute("value", val);
+      return;
+    }
+
     super.textContent = val;
     this.#lastFormattedAccessKey = null;
     this.formatAccessKey();
   }
 
   get textContent() {
+    if (this.#centerCropEnabled) {
+      return this.getAttribute("value");
+    }
+
     return super.textContent;
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     if (oldValue == newValue) {
       return;
+    }
+
+    if (attrName == "enable-center-crop") {
+      if (newValue === null) {
+        this.removeAttribute("crop");
+        this.#centerCropEnabled = false;
+      } else {
+        if (!this.hasAttribute("value")) {
+          this.setAttribute("value", this.textContent || "");
+        }
+        this.setAttribute("crop", "center");
+        this.#centerCropEnabled = true;
+      }
     }
 
     // Note that this is only happening when "accesskey" attribute changes.

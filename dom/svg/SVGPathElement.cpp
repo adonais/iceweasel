@@ -199,9 +199,9 @@ bool SVGPathElement::HasValidDimensions() const {
 //----------------------------------------------------------------------
 // nsIContent methods
 
-NS_IMETHODIMP_(bool)
-SVGPathElement::IsAttributeMapped(const nsAtom* name) const {
-  return name == nsGkAtoms::d || SVGPathElementBase::IsAttributeMapped(name);
+bool SVGPathElement::IsNoNamespaceAttrMapped(const nsAtom* name) const {
+  return name == nsGkAtoms::d ||
+         SVGPathElementBase::IsNoNamespaceAttrMapped(name);
 }
 
 already_AddRefed<Path> SVGPathElement::GetOrBuildPathForMeasuring() {

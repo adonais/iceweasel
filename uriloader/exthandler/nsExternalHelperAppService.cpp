@@ -2442,10 +2442,10 @@ nsresult nsExternalAppHandler::CreateTransfer() {
         mDownloadClassification, referrerInfo, !mDialogShowing,
         mBrowsingContext, mHandleInternally, nullptr);
   } else {
-    rv = transfer->Init(mSourceUrl, nullptr, target, u""_ns, mMimeInfo,
-                        mTimeDownloadStarted, mTempFile, this,
-                        channel && NS_UsePrivateBrowsing(channel),
-                        mDownloadClassification, referrerInfo, !mDialogShowing);
+    rv = transfer->Init(
+        mSourceUrl, nullptr, target, u""_ns, mMimeInfo, mTimeDownloadStarted,
+        mTempFile, this, channel && NS_UsePrivateBrowsing(channel),
+        mDownloadClassification, referrerInfo, !mDialogShowing, nullptr);
   }
   mDialogShowing = false;
 
@@ -2539,7 +2539,7 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
     rv = transfer->Init(mSourceUrl, nullptr, pseudoTarget, u""_ns, mMimeInfo,
                         mTimeDownloadStarted, mTempFile, this,
                         channel && NS_UsePrivateBrowsing(channel),
-                        mDownloadClassification, referrerInfo, true);
+                        mDownloadClassification, referrerInfo, true, nullptr);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 

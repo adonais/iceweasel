@@ -97,6 +97,7 @@ NS_IMETHODIMP FileQuotaStreamWithWrite<FileStreamBase>::Write(
     }
   }
 
+  QM_SCOPED_CONTEXT("FileStreamWriteFailure"_ns);
   QM_TRY(MOZ_TO_RESULT(FileStreamBase::Write(aBuf, aCount, _retval)));
 
   return NS_OK;

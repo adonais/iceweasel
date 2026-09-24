@@ -431,4 +431,10 @@ skip-if = [
 
 ["browser_windowStateContainer.js"]
 
+["browser_window_position_precision.js"]
+skip-if = [
+  # Wayland does not let clients position their own windows.
+  "os == 'linux' && display == 'wayland'",
+]
+
 ["browser_wireframe_basic.js"]

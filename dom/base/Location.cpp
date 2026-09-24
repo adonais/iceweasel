@@ -595,9 +595,7 @@ void Location::Reload(JSContext* aCx, bool aForceget,
                               ? CallerType::System
                               : CallerType::NonSystem;
 
-  nsresult rv = bc->CheckNavigationRateLimit(callerType);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
+  if (!bc->CheckNavigationRateLimit(callerType)) {
     return;
   }
 
@@ -612,8 +610,8 @@ void Location::Reload(JSContext* aCx, bool aForceget,
       callerType == CallerType::System ? UserNavigationInvolvement::BrowserUI
                                        : UserNavigationInvolvement::None;
 
-  rv = docShell->ReloadNavigable(Some(WrapNotNull(aCx)), reloadFlags, nullptr,
-                                 userInvolvement);
+  nsresult rv = docShell->ReloadNavigable(Some(WrapNotNull(aCx)), reloadFlags,
+                                          nullptr, userInvolvement);
   if (NS_FAILED(rv) && rv != NS_BINDING_ABORTED) {
     // NS_BINDING_ABORTED is returned when we attempt to reload a POST result
     // and the user says no at the "do you want to reload?" prompt.  Don't

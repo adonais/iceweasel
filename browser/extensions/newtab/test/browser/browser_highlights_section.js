@@ -26,7 +26,6 @@ add_setup(async function () {
         "browser.newtabpage.activity-stream.discoverystream.endpoints",
         "https://example.com",
       ],
-      ["test.wait300msAfterTabSwitch", true],
     ],
   });
 

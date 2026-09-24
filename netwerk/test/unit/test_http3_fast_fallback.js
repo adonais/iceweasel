@@ -4,8 +4,12 @@
 
 "use strict";
 
-var { setTimeout } = ChromeUtils.importESModule(
+var { setTimeout, clearTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
+);
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
 );
 
 let h2Port;
@@ -67,6 +71,10 @@ add_setup(async function setup() {
     );
     Services.prefs.clearUserPref(
       "network.dns.https_rr.check_record_with_cname"
+    );
+    Services.prefs.clearUserPref("network.http.happy_eyeballs_enabled");
+    Services.prefs.clearUserPref(
+      "network.http.max-persistent-connections-per-server"
     );
     if (trrServer) {
       await trrServer.stop();
@@ -936,3 +944,221 @@ add_task(async function testFastfallbackToTheSameRecord1() {
   let internal = req.QueryInterface(Ci.nsIHttpChannelInternal);
   Assert.equal(internal.remotePort, h2Port);
 });
+
+// Resolves on onStopRequest whatever the status is, so that a transaction
+// stuck behind a dead HTTP/3 connection can be reported by the test itself
+// instead of hanging the whole run.
+function openChannelAndWaitForStop(chan) {
+  return new Promise(resolve => {
+    chan.asyncOpen({
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIStreamListener",
+        "nsIRequestObserver",
+      ]),
+      onStartRequest() {},
+      onDataAvailable(request, stream, offset, count) {
+        read_stream(stream, count);
+      },
+      onStopRequest(request, status) {
+        resolve({ request, status });
+      },
+    });
+  });
+}
+
+// When DoSpeculativeConnectionInternal() cannot create the backup socket for
+// an HTTPS RR fast fallback, it logs and returns, dropping the
+// FallbackTransaction's result callback. Nothing re-arms the timer, so the
+// transaction never gets OnBackupConnectionReady() and sits on the HTTP/3
+// connection entry until the QUIC connection times out, with every later
+// request to the same origin queued behind it, even though the origin is
+// reachable over h2.
+//
+// This is reached when several fast fallbacks race and the fallback connection
+// entry hits max-persistent-connections-per-server. Over loopback a backup
+// connection normally completes before the next fast fallback timer fires, so
+// the entry never fills up. The fallback target is therefore pointed at a TCP
+// proxy that sits on the connection for a while before forwarding it to the h2
+// server, which holds the first backup connections open while the remaining
+// fast fallback timers fire. Delaying DNS instead would not work: it also
+// delays the other transactions' fast fallback timers by the same amount, so
+// they never overlap.
+add_task(
+  { skip_if: () => AppConstants.platform == "android" },
+  async function testH3FastFallbackAtConnectionLimit() {
+    const kNumTransactions = 6;
+    const kMaxPersistConns = 2;
+    // Comfortably longer than the spread between the fast fallback timers.
+    const kConnectDelayMs = 2000;
+    const kTimeoutMs = 10000;
+
+    Services.obs.notifyObservers(null, "net:cancel-all-connections");
+    Services.obs.notifyObservers(null, "network:reset-http3-excluded-list");
+    Services.dns.clearCache(true);
+
+    Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", true);
+    Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", true);
+    Services.prefs.setBoolPref("network.dns.echconfig.enabled", false);
+    Services.prefs.setBoolPref("network.http.http3.enable", true);
+
+    Services.prefs.setIntPref("network.trr.mode", 3);
+    Services.prefs.setCharPref(
+      "network.trr.uri",
+      `https://foo.example.com:${trrServer.port()}/dns-query`
+    );
+
+    Services.prefs.setIntPref(
+      "network.dns.httpssvc.http3_fast_fallback_timeout",
+      10
+    );
+    Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
+    Services.prefs.clearUserPref(
+      "network.http.http3.parallel_fallback_conn_limit"
+    );
+    Services.prefs.clearUserPref("network.http.http3.backup_timer_delay");
+    // Happy Eyeballs supersedes nsHttpTransaction's fast fallback timer, which
+    // is the path under test here (and the one release builds still use).
+    Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
+    // Only a couple of backup connections fit before the entry is full.
+    Services.prefs.setIntPref(
+      "network.http.max-persistent-connections-per-server",
+      kMaxPersistConns
+    );
+
+    // Accepts a connection, waits, then splices it to the h2 server. TLS is not
+    // terminated here, so the client still sees the real server's certificate.
+    let slowPort = await trrServer.execute(`
+    (() => {
+      const net = require("net");
+      global.slowConnectProxy = net.createServer(client => {
+        client.on("error", () => {});
+        setTimeout(() => {
+          let upstream = net.connect(${h2Port}, "127.0.0.1", () => {
+            client.pipe(upstream);
+            upstream.pipe(client);
+          });
+          upstream.on("error", () => client.destroy());
+        }, ${kConnectDelayMs});
+      });
+      return new Promise(resolve => {
+        global.slowConnectProxy.listen(0, "127.0.0.1", () =>
+          resolve(global.slowConnectProxy.address().port)
+        );
+      });
+    })()
+  `);
+
+    await trrServer.registerDoHAnswers("test.fallback_limit.org", "HTTPS", {
+      answers: [
+        {
+          name: "test.fallback_limit.org",
+          ttl: 55,
+          type: "HTTPS",
+          flush: false,
+          data: {
+            priority: 1,
+            name: "test.fallback_limit1.org",
+            values: [
+              { key: "alpn", value: "h3" },
+              { key: "no-default-alpn" },
+              { key: "port", value: h3Port },
+            ],
+          },
+        },
+        {
+          name: "test.fallback_limit.org",
+          ttl: 55,
+          type: "HTTPS",
+          flush: false,
+          data: {
+            priority: 2,
+            name: "test.fallback_limit2.org",
+            values: [
+              { key: "alpn", value: "h2" },
+              { key: "port", value: slowPort },
+            ],
+          },
+        },
+      ],
+    });
+
+    await trrServer.registerDoHAnswers("test.fallback_limit1.org", "A", {
+      answers: [
+        {
+          name: "test.fallback_limit1.org",
+          ttl: 55,
+          type: "A",
+          flush: false,
+          data: "127.0.0.1",
+        },
+      ],
+    });
+
+    await trrServer.registerDoHAnswers("test.fallback_limit2.org", "A", {
+      answers: [
+        {
+          name: "test.fallback_limit2.org",
+          ttl: 55,
+          type: "A",
+          flush: false,
+          data: "127.0.0.1",
+        },
+      ],
+    });
+
+    certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+      true
+    );
+
+    let channels = [];
+    let promises = [];
+    for (let i = 0; i < kNumTransactions; ++i) {
+      // Distinct URLs: requests for one URL contend on a single cache entry and
+      // would run one at a time, which is the opposite of what this test needs.
+      let chan = makeChan(
+        `https://test.fallback_limit.org/server-timing?i=${i}`
+      );
+      channels.push(chan);
+      promises.push(openChannelAndWaitForStop(chan));
+    }
+
+    let timedOut = false;
+    let timer;
+    await Promise.race([
+      Promise.all(promises),
+      new Promise(resolve => {
+        // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+        timer = setTimeout(() => {
+          timedOut = true;
+          resolve();
+        }, kTimeoutMs);
+      }),
+    ]);
+    clearTimeout(timer);
+
+    if (timedOut) {
+      // Unblock the stuck transactions so the rest of the run can shut down.
+      channels.forEach(chan => chan.cancel(Cr.NS_BINDING_ABORTED));
+    }
+
+    let results = await Promise.all(promises);
+    certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+      false
+    );
+    await trrServer.execute(`global.slowConnectProxy.close(); "closed"`);
+
+    // Assert only once everything above has run: a failing assertion throws and
+    // would otherwise leave the channels open for the rest of the run.
+    Assert.ok(
+      !timedOut,
+      `all ${kNumTransactions} transactions fell back to h2 within ${kTimeoutMs}ms`
+    );
+
+    results.forEach(({ request, status }) => {
+      Assert.equal(status, Cr.NS_OK);
+      Assert.equal(request.protocolVersion, "h2");
+      let internal = request.QueryInterface(Ci.nsIHttpChannelInternal);
+      Assert.equal(internal.remotePort, slowPort);
+    });
+  }
+);

@@ -6,6 +6,7 @@ const { ModelHubProvider } = ChromeUtils.importESModule(
   "resource://gre/modules/addons/ModelHubProvider.sys.mjs"
 );
 ChromeUtils.defineESModuleGetters(this, {
+  FEATURES: "chrome://global/content/ml/EngineProcess.sys.mjs",
   addonIdToEngineId: "chrome://global/content/ml/Utils.sys.mjs",
   engineIdToAddonId: "chrome://global/content/ml/Utils.sys.mjs",
   isAddonEngineId: "chrome://global/content/ml/Utils.sys.mjs",
@@ -88,6 +89,9 @@ add_task(
       },
     ];
     const mockListFilesResult = {
+      // No display info is registered for these, so the wrappers fall back to
+      // deriving their name and homepage from the model string.
+      files: [{ path: "model.onnx" }, { path: "config.json" }],
       metadata: {
         totalSize: 2048,
         lastUsed: new Date("2023-10-01T12:00:00Z"),
@@ -120,6 +124,7 @@ add_task(
       .resolves(mockListFilesResult)
       .onSecondCall()
       .resolves({
+        files: mockListFilesResult.files,
         metadata: {
           ...mockListFilesResult.metadata,
           // Setting engineIds to undefined to confirm that it is
@@ -375,6 +380,7 @@ add_task(
     ];
 
     const mockListFilesResult = {
+      files: [{ path: "model.onnx" }],
       metadata: {
         totalSize: 2048,
         lastUsed: new Date("2023-10-01T12:00:00Z"),
@@ -396,6 +402,7 @@ add_task(
       .resolves(mockListFilesResult)
       .onSecondCall()
       .resolves({
+        files: mockListFilesResult.files,
         metadata: {
           ...mockListFilesResult.metadata,
           // Setting engineIds to undefined to confirm that it is
@@ -427,6 +434,58 @@ add_task(
       modelWrappers.length,
       0,
       "Got the expected number of model AddonWrapper instances after refresh"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  {
+    pref_set: [[LOCAL_MODEL_MANAGEMENT_ENABLED_PREF, true]],
+  },
+  async function test_modelhub_provider_file_display_info() {
+    let sandbox = sinon.createSandbox();
+    ModelHubProvider.clearAddonCache();
+
+    // Speech recognition registers display info for its model files, keyed by
+    // file name. Drive the lookup off the registry itself rather than repeating
+    // its contents here.
+    const { default: displayInfoByFile } = ChromeUtils.importESModule(
+      "resource://gre/modules/SpeechRecognitionModelDisplayInfo.sys.mjs"
+    );
+    const [fileName, displayInfo] = Object.entries(displayInfoByFile)[0];
+
+    const mockModel = {
+      name: "model-hub.mozilla.org/mudler/parakeet-cpp-gguf",
+      revision: "mockRevision",
+      engineIds: [],
+    };
+
+    sandbox.stub(ModelHubProvider.modelHub, "listModels").resolves([mockModel]);
+    sandbox.stub(ModelHubProvider.modelHub, "listFiles").resolves({
+      files: [{ path: fileName }],
+      metadata: {
+        totalSize: 2048,
+        lastUsed: new Date("2023-10-01T12:00:00Z"),
+        updateDate: 0,
+        engineIds: [FEATURES["speech-recognition"].engineId],
+      },
+    });
+    sandbox.stub(ModelHubProvider.modelHub, "getOwnerIcon").resolves(null);
+
+    const [modelWrapper] = await AddonManager.getAddonsByTypes(["mlmodel"]);
+    Assert.ok(modelWrapper, "Got a model AddonWrapper instance");
+
+    Assert.equal(
+      modelWrapper.name,
+      displayInfo.name,
+      "Expect the name to come from the registered display info"
+    );
+    Assert.equal(
+      modelWrapper.modelHomepageURL,
+      displayInfo.hfUrl,
+      "Expect the homepage URL to come from the registered display info"
     );
 
     sandbox.restore();

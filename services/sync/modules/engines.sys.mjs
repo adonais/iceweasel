@@ -1644,7 +1644,7 @@ SyncEngine.prototype = {
    *         Truthy if incoming record should be applied. False if not.
    */
   async _reconcile(item) {
-    if (this._log.level <= Log.Level.Trace) {
+    if (this._log.traceEnabled) {
       this._log.trace("Incoming: " + item);
     }
 
@@ -1881,7 +1881,7 @@ SyncEngine.prototype = {
           return;
         }
 
-        if (failed.length && this._log.level <= Log.Level.Debug) {
+        if (failed.length && this._log.debugEnabled) {
           this._log.debug(
             "Records that will be uploaded again because " +
               "the server couldn't store them: " +
@@ -1933,7 +1933,7 @@ SyncEngine.prototype = {
         let ok = false;
         try {
           out = await this._createRecord(id);
-          if (this._log.level <= Log.Level.Trace) {
+          if (this._log.traceEnabled) {
             this._log.trace("Outgoing: " + out);
           }
           await out.encrypt(

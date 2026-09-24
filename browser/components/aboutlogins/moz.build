@@ -7,12 +7,12 @@ JAR_MANIFESTS += ["jar.mn"]
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "about:logins")
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "ChangePasswordURLs.sys.mjs",
     "LoginBreaches.sys.mjs",
 ]
 
-FINAL_TARGET_FILES.actors += [
+MOZ_SRC_FILES += [
     "AboutLoginsChild.sys.mjs",
     "AboutLoginsParent.sys.mjs",
 ]

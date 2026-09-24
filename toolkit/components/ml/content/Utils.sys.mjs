@@ -1087,6 +1087,38 @@ export function featureEngineIdToFluentId(engineId) {
 }
 
 /**
+ * Looks up display info (a human-readable name and a homepage URL) for one
+ * of a downloaded model's files, from the feature registered for one of
+ * engineIds. Features register their file display info via
+ * FEATURES[...].fileDisplayInfoModule, a module whose default export maps
+ * file name to {name, hfUrl}.
+ *
+ * @param {Array<string>} [engineIds] A model with no recorded engineIds has no
+ *   feature to look up, and gets no display info.
+ * @param {Array<string>} files
+ * @returns {Promise<{name: string, hfUrl: string}|null>}
+ */
+export async function fileDisplayInfoForEngineIds(engineIds, files) {
+  for (const config of Object.values(lazy.FEATURES)) {
+    if (
+      !config.fileDisplayInfoModule ||
+      !engineIds?.includes(config.engineId)
+    ) {
+      continue;
+    }
+    const { default: info } = await ChromeUtils.importESModule(
+      config.fileDisplayInfoModule
+    );
+    for (const file of files) {
+      if (info[file]) {
+        return info[file];
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Generates a random uuid to use where Services.uuid is not available,
  * for instance pipelines
  *

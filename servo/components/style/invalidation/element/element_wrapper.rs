@@ -6,8 +6,9 @@
 //! against a past state of the element.
 
 use crate::dom::TElement;
-use crate::selector_parser::{AttrValue, NonTSPseudoClass, PseudoElement, SelectorImpl};
-use crate::selector_parser::{Snapshot, SnapshotMap};
+use crate::selector_parser::{
+    AttrValue, NonTSPseudoClass, PseudoElement, SelectorImpl, Snapshot, SnapshotMap,
+};
 use crate::values::AtomIdent;
 use crate::{CaseSensitivityExt, LocalName, Namespace, WeakAtom};
 use dom::ElementState;
@@ -88,47 +89,66 @@ pub trait ElementSnapshot: Sized {
     fn lang_attr(&self) -> Option<AttrValue>;
 }
 
+/// A snapshot map plus a small lookup cache, shared by all the `ElementWrapper`s created during
+/// a given invalidation.
+pub struct Snapshots<'a> {
+    map: &'a SnapshotMap,
+    // A simple cache of the last looked-up snapshot, since it's not uncommon when e.g. matching a
+    // compound, to do subsequent lookups on the same element.
+    last_snapshot: Cell<Option<(OpaqueElement, &'a Snapshot)>>,
+}
+
+impl<'a> Snapshots<'a> {
+    /// Creates a new `Snapshots` with an empty cache.
+    pub fn new(map: &'a SnapshotMap) -> Self {
+        Self {
+            map,
+            last_snapshot: Cell::new(None),
+        }
+    }
+}
+
 /// A simple wrapper over an element and a snapshot, that allows us to
 /// selector-match against a past state of the element.
-#[derive(Clone)]
-pub struct ElementWrapper<'a, E>
+#[derive(Clone, Copy)]
+pub struct ElementWrapper<'a, 'b, E>
 where
     E: TElement,
 {
     element: E,
-    cached_snapshot: Cell<Option<&'a Snapshot>>,
-    snapshot_map: &'a SnapshotMap,
+    snapshots: &'a Snapshots<'b>,
 }
 
-impl<'a, E> ElementWrapper<'a, E>
+impl<'a, 'b, E> ElementWrapper<'a, 'b, E>
 where
     E: TElement,
 {
     /// Trivially constructs an `ElementWrapper`.
-    pub fn new(el: E, snapshot_map: &'a SnapshotMap) -> Self {
-        ElementWrapper {
+    pub fn new(el: E, snapshots: &'a Snapshots<'b>) -> Self {
+        Self {
             element: el,
-            cached_snapshot: Cell::new(None),
-            snapshot_map: snapshot_map,
+            snapshots,
         }
     }
 
     /// Gets the snapshot associated with this element, if any.
-    pub fn snapshot(&self) -> Option<&'a Snapshot> {
+    pub fn snapshot(&self) -> Option<&'b Snapshot> {
         if !self.element.has_snapshot() {
             return None;
         }
 
-        if let Some(s) = self.cached_snapshot.get() {
+        let opaque = self.element.opaque();
+        if let Some((e, s)) = self.snapshots.last_snapshot.get()
+            && e == opaque
+        {
             return Some(s);
         }
 
-        let snapshot = self.snapshot_map.get(&self.element);
+        let snapshot = self.snapshots.map.get(&self.element);
         debug_assert!(snapshot.is_some(), "has_snapshot lied!");
-
-        self.cached_snapshot.set(snapshot);
-
-        snapshot
+        let snapshot = snapshot?;
+        self.snapshots.last_snapshot.set(Some((opaque, snapshot)));
+        Some(snapshot)
     }
 
     /// Returns the states that have changed since the element was snapshotted.
@@ -148,7 +168,7 @@ where
     /// attribute from this element's snapshot or the closest ancestor
     /// element snapshot with the attribute specified.
     fn get_lang(&self) -> Option<AttrValue> {
-        let mut current = self.clone();
+        let mut current = *self;
         loop {
             let lang = match self.snapshot() {
                 Some(snapshot) if snapshot.has_attrs() => snapshot.lang_attr(),
@@ -162,7 +182,7 @@ where
     }
 }
 
-impl<'a, E> fmt::Debug for ElementWrapper<'a, E>
+impl<E> fmt::Debug for ElementWrapper<'_, '_, E>
 where
     E: TElement,
 {
@@ -172,7 +192,7 @@ where
     }
 }
 
-impl<'a, E> Element for ElementWrapper<'a, E>
+impl<E> Element for ElementWrapper<'_, '_, E>
 where
     E: TElement,
 {
@@ -200,19 +220,19 @@ where
 
             #[cfg(feature = "gecko")]
             NonTSPseudoClass::MozTableBorderNonzero => {
-                if let Some(snapshot) = self.snapshot() {
-                    if snapshot.has_other_pseudo_class_state() {
-                        return snapshot.mIsTableBorderNonzero();
-                    }
+                if let Some(snapshot) = self.snapshot()
+                    && snapshot.has_other_pseudo_class_state()
+                {
+                    return snapshot.mIsTableBorderNonzero();
                 }
             },
 
             #[cfg(feature = "gecko")]
             NonTSPseudoClass::MozSelectListBox => {
-                if let Some(snapshot) = self.snapshot() {
-                    if snapshot.has_other_pseudo_class_state() {
-                        return snapshot.mIsSelectListBox();
-                    }
+                if let Some(snapshot) = self.snapshot()
+                    && snapshot.has_other_pseudo_class_state()
+                {
+                    return snapshot.mIsSelectListBox();
                 }
             },
 
@@ -292,7 +312,7 @@ where
 
     fn parent_element(&self) -> Option<Self> {
         let parent = self.element.parent_element()?;
-        Some(Self::new(parent, self.snapshot_map))
+        Some(Self::new(parent, self.snapshots))
     }
 
     fn parent_node_is_shadow_root(&self) -> bool {
@@ -301,22 +321,22 @@ where
 
     fn containing_shadow_host(&self) -> Option<Self> {
         let host = self.element.containing_shadow_host()?;
-        Some(Self::new(host, self.snapshot_map))
+        Some(Self::new(host, self.snapshots))
     }
 
     fn prev_sibling_element(&self) -> Option<Self> {
         let sibling = self.element.prev_sibling_element()?;
-        Some(Self::new(sibling, self.snapshot_map))
+        Some(Self::new(sibling, self.snapshots))
     }
 
     fn next_sibling_element(&self) -> Option<Self> {
         let sibling = self.element.next_sibling_element()?;
-        Some(Self::new(sibling, self.snapshot_map))
+        Some(Self::new(sibling, self.snapshots))
     }
 
     fn first_element_child(&self) -> Option<Self> {
         let child = self.element.first_element_child()?;
-        Some(Self::new(child, self.snapshot_map))
+        Some(Self::new(child, self.snapshots))
     }
 
     #[inline]
@@ -368,7 +388,7 @@ where
         match self.snapshot() {
             Some(snapshot) if snapshot.has_attrs() => snapshot
                 .id_attr()
-                .map_or(false, |atom| case_sensitivity.eq_atom(&atom, id)),
+                .is_some_and(|atom| case_sensitivity.eq_atom(atom, id)),
             _ => self.element.has_id(id, case_sensitivity),
         }
     }
@@ -416,13 +436,13 @@ where
     fn pseudo_element_originating_element(&self) -> Option<Self> {
         self.element
             .pseudo_element_originating_element()
-            .map(|e| ElementWrapper::new(e, self.snapshot_map))
+            .map(|e| ElementWrapper::new(e, self.snapshots))
     }
 
     fn assigned_slot(&self) -> Option<Self> {
         self.element
             .assigned_slot()
-            .map(|e| ElementWrapper::new(e, self.snapshot_map))
+            .map(|e| ElementWrapper::new(e, self.snapshots))
     }
 
     fn add_element_unique_hashes(&self, _filter: &mut BloomFilter) -> bool {

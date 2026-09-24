@@ -35,6 +35,7 @@
 #include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/DOMCollectedFramesBinding.h"
 #include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Event.h"

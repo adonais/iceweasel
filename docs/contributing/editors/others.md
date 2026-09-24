@@ -35,4 +35,4 @@ running:
 ./mach compileflags path/to/file
 ```
 
-This is how the {ref}`VIM <VIM>` integration works, for example.
+This is how the [Vim / Neovim](vim.md) integration works, for example.

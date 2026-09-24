@@ -6,6 +6,7 @@
 
 #include "ImageContainer.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gfx/Tools.h"
 
@@ -158,38 +159,68 @@ void FakeVideoSource::GenerateImage() {
                            mHeight, CaptureStage::ImageType::I420);
   }
 
-  // Update the target color
-  if (mCr <= 16) {
-    if (mCb < 240) {
-      mCb++;
-    } else {
-      mCr++;
-    }
-  } else if (mCb >= 240) {
-    if (mCr < 240) {
-      mCr++;
-    } else {
-      mCb--;
-    }
-  } else if (mCr >= 240) {
-    if (mCb > 16) {
-      mCb--;
-    } else {
-      mCr--;
-    }
-  } else {
-    mCr--;
-  }
-
   RefPtr<layers::PlanarYCbCrImage> ycbcr_image =
       mImageContainer->CreatePlanarYCbCrImage();
   const size_t yLen = mFrameData->mCbChannel - mFrameData->mYChannel;
   const size_t cbLen = mFrameData->mCrChannel - mFrameData->mCbChannel;
   const size_t crLen = cbLen;
   MOZ_RELEASE_ASSERT(mFrame.Length() == yLen + cbLen + crLen);
-  memset(mFrame.Elements(), 0x80, yLen);
-  memset(mFrame.Elements() + yLen, mCb, cbLen);
-  memset(mFrame.Elements() + yLen + cbLen, mCr, crLen);
+
+  if (StaticPrefs::media_getusermedia_camera_fake_rotation_test_pattern()) {
+    // Static test pattern: red background + blue bottom-right quadrant.
+    // BT.601 limited-range values:  red Y=81 Cb=90 Cr=240, blue Y=41 Cb=240
+    // Cr=110. The quadrant (rather than a fixed-size marker) scales safely
+    // to any requested width/height.
+    const int32_t yStride = mFrameData->mYStride;
+    const int32_t cbcrStride = mFrameData->mCbCrStride;
+    // Red background
+    memset(mFrame.Elements(), 81, yLen);
+    memset(mFrame.Elements() + yLen, 90, cbLen);
+    memset(mFrame.Elements() + yLen + cbLen, 240, crLen);
+    // Blue bottom-right quadrant
+    const int32_t squareWidth = mWidth / 2;
+    const int32_t squareLeft = mWidth - squareWidth;
+    const int32_t squareTop = mHeight - mHeight / 2;
+    for (int32_t row = squareTop; row < mHeight; ++row) {
+      memset(mFrame.Elements() + row * yStride + squareLeft, 41, squareWidth);
+    }
+    const int32_t cbcrLeft = squareLeft / 2;
+    const int32_t cbcrTop = squareTop / 2;
+    const int32_t cbcrSquareCols = (mWidth + 1) / 2 - cbcrLeft;
+    const int32_t cbcrRows = (mHeight + 1) / 2;
+    for (int32_t row = cbcrTop; row < cbcrRows; ++row) {
+      memset(mFrame.Elements() + yLen + row * cbcrStride + cbcrLeft, 240,
+             cbcrSquareCols);
+      memset(mFrame.Elements() + yLen + cbLen + row * cbcrStride + cbcrLeft,
+             110, cbcrSquareCols);
+    }
+  } else {
+    // Update the animated target color
+    if (mCr <= 16) {
+      if (mCb < 240) {
+        mCb++;
+      } else {
+        mCr++;
+      }
+    } else if (mCb >= 240) {
+      if (mCr < 240) {
+        mCr++;
+      } else {
+        mCb--;
+      }
+    } else if (mCr >= 240) {
+      if (mCb > 16) {
+        mCb--;
+      } else {
+        mCr--;
+      }
+    } else {
+      mCr--;
+    }
+    memset(mFrame.Elements(), 0x80, yLen);
+    memset(mFrame.Elements() + yLen, mCb, cbLen);
+    memset(mFrame.Elements() + yLen + cbLen, mCr, crLen);
+  }
 
 #ifdef MOZ_WEBRTC
   uint64_t timestamp = PR_Now();
@@ -204,7 +235,22 @@ void FakeVideoSource::GenerateImage() {
     return;
   }
 
-  mGeneratedImageEvent.Notify(ycbcr_image, now);
+  VideoRotation rotation = VideoRotation::kDegree_0;
+  switch (StaticPrefs::media_getusermedia_camera_fake_rotation()) {
+    case 90:
+      rotation = VideoRotation::kDegree_90;
+      break;
+    case 180:
+      rotation = VideoRotation::kDegree_180;
+      break;
+    case 270:
+      rotation = VideoRotation::kDegree_270;
+      break;
+    default:
+      break;
+  }
+
+  mGeneratedImageEvent.Notify(ycbcr_image, now, rotation);
   mCaptureRecorder.Record(0);
 }
 

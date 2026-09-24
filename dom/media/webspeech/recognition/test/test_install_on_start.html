@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: start() offers to install a missing model</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// start() on a language whose model is supported but not installed asks to
+// download it (the same prompt install() uses), delays every event until it
+// is there, and fires "not-allowed" if the download is refused.
+//
+// Uses the in-process model hub mock, where nothing is installed to begin
+// with, and the prompt-testing pref, where
+// media.navigator.permission.disabled decides allow/deny.
+
+SimpleTest.waitForExplicitFinish();
+
+const LANG = "en-US";
+
+// Resolves at "end" with what the session did on its way there.
+function sessionOutcome(sr) {
+  return new Promise(resolve => {
+    let started = false;
+    let error = null;
+    sr.onstart = () => {
+      started = true;
+    };
+    sr.onerror = e => {
+      error = e.error;
+    };
+    sr.onend = () => resolve({ started, error });
+  });
+}
+
+function audioTrack() {
+  const ctx = new AudioContext();
+  return ctx.createMediaStreamDestination().stream.getAudioTracks()[0];
+}
+
+// Starts a session on a language whose model is not installed yet, with the
+// prompt answered by allowDownload.
+async function startSession(allowDownload) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHub.testing", true],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", allowDownload],
+    ],
+  });
+
+  const sr = new SpeechRecognition();
+  sr.lang = LANG;
+  const outcome = sessionOutcome(sr);
+  sr.start(audioTrack());
+  return { sr, outcome };
+}
+
+async function refusedDownloadFailsTheSession() {
+  const { outcome } = await startSession(false);
+  const { started, error } = await outcome;
+
+  is(error, "not-allowed", "a refused model download fails with not-allowed");
+  ok(!started, "\"start\" must not fire for a session that never got a model");
+
+  await SpecialPowers.popPrefEnv();
+}
+
+async function allowedDownloadStartsTheSession() {
+  const { sr, outcome } = await startSession(true);
+  await new Promise(resolve => {
+    sr.addEventListener("start", resolve, { once: true });
+  });
+  ok(true, "\"start\" fires once the model has been installed");
+
+  const opts = { langs: [LANG], processLocally: true };
+  is(await SpeechRecognition.available(opts), "available",
+     "start() installed the model");
+
+  sr.abort();
+  const { error } = await outcome;
+  is(error, null, "no error event for a session that got its model");
+
+  await SpecialPowers.popPrefEnv();
+}
+
+(async () => {
+  try {
+    await refusedDownloadFailsTheSession();
+    await allowedDownloadStartsTheSession();
+  } catch (e) {
+    ok(false, "Test threw: " + e + "\n" + e.stack);
+  }
+  SimpleTest.finish();
+})();
+</script>
+</pre>
+</body>
+</html>

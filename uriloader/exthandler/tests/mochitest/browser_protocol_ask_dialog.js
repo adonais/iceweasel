@@ -24,12 +24,6 @@ function isProtocolDialog(url) {
   return url == CONTENT_HANDLING_URL || url == PERMISSION_DIALOG_URL;
 }
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 add_task(setupMailHandler);
 
 /**

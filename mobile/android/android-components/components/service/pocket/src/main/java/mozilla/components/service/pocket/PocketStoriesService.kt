@@ -6,6 +6,7 @@ package mozilla.components.service.pocket
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.mars.SponsoredContentsUseCases
@@ -18,10 +19,12 @@ import mozilla.components.service.pocket.update.SponsoredContentsRefreshSchedule
  *
  * @param context Android Context. Prefer sending application context to limit the possibility of even small leaks.
  * @param pocketStoriesConfig Configuration for how and what pocket stories to get.
+ * @param crashReporter Optional [CrashReporting] instance used for recording caught exceptions.
  */
 class PocketStoriesService(
     private val context: Context,
     private val pocketStoriesConfig: PocketStoriesConfig,
+    private val crashReporter: CrashReporting? = null,
 ) {
     @VisibleForTesting
     internal var contentRecommendationsRefreshScheduler = ContentRecommendationsRefreshScheduler(pocketStoriesConfig)
@@ -35,6 +38,7 @@ class PocketStoriesService(
             appContext = context,
             client = pocketStoriesConfig.client,
             config = pocketStoriesConfig.contentRecommendationsParams,
+            crashReporter = crashReporter,
         )
 
     @VisibleForTesting

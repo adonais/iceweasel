@@ -42,7 +42,8 @@
 namespace mozilla {
 namespace dom {
 class ContentParent;
-}
+struct RemoteType;
+}  // namespace dom
 namespace ipc {
 class FileDescriptor;
 }
@@ -98,7 +99,7 @@ class ScriptPreloader : public nsIObserver,
   static void DeleteSingleton();
   static void DeleteCacheDataSingleton();
 
-  static ProcessType GetChildProcessType(const nsACString& remoteType);
+  static ProcessType GetChildProcessType(const dom::RemoteType& remoteType);
 
   // Fill some options that should be consistent across all scripts stored
   // into preloader cache.

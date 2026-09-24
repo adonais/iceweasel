@@ -48,7 +48,7 @@ using namespace mozilla::dom;
 
 namespace mozilla::hal {
 
-static bool sInitialized = false;
+[[maybe_unused]] static bool sInitialized = false;
 
 mozilla::LogModule* GetHalLog() {
   static mozilla::LazyLogModule sHalLog("hal");

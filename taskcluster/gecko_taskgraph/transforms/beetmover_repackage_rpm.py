@@ -66,7 +66,7 @@ def make_beetmover_rpm_task(config, jobs):
 
         locales = ["en-US"]
         for dep_task in config.kind_dependencies_tasks.values():
-            if dep_task.kind in ("shippable-l10n-signing", "l10n"):
+            if dep_task.kind in ("l10n-signing", "l10n"):
                 if dep_task.attributes.get("build_platform") == platform:
                     task_locales = dep_task.attributes.get(
                         "chunk_locales", dep_task.attributes.get("all_locales", [])

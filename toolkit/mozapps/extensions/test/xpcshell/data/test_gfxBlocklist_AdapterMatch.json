@@ -1,0 +1,158 @@
+[
+  {
+    "os": "All",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "DX_NV12",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Linux",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "DX_NV12",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Darwin",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "DX_NV12",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Android",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "DX_NV12",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "All",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "DIRECT3D_9_LAYERS",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Linux",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "DIRECT3D_9_LAYERS",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Darwin",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "DIRECT3D_9_LAYERS",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "Android",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "DIRECT3D_9_LAYERS",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "SECONDARY"
+  },
+  {
+    "os": "All",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "CANVAS2D_ACCELERATION",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Linux",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "CANVAS2D_ACCELERATION",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Darwin",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "CANVAS2D_ACCELERATION",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Android",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "CANVAS2D_ACCELERATION",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "All",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "WEBRENDER",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Linux",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "WEBRENDER",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Darwin",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "WEBRENDER",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "Android",
+    "vendor": "0xabcd",
+    "devices": ["0x1234"],
+    "feature": "WEBRENDER",
+    "featureStatus": "BLOCKED_DEVICE",
+    "adapterMatch": "ANY"
+  },
+  {
+    "os": "All",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "WEBRENDER_PARTIAL_PRESENT",
+    "featureStatus": "BLOCKED_DEVICE"
+  },
+  {
+    "os": "Linux",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "WEBRENDER_PARTIAL_PRESENT",
+    "featureStatus": "BLOCKED_DEVICE"
+  },
+  {
+    "os": "Darwin",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "WEBRENDER_PARTIAL_PRESENT",
+    "featureStatus": "BLOCKED_DEVICE"
+  },
+  {
+    "os": "Android",
+    "vendor": "0xdcba",
+    "devices": ["0x5678"],
+    "feature": "WEBRENDER_PARTIAL_PRESENT",
+    "featureStatus": "BLOCKED_DEVICE"
+  }
+]

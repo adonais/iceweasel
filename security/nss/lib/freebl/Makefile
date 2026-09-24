@@ -137,34 +137,26 @@ endif
     endif
 endif
 ifeq ($(CPU_ARCH),aarch64)
-    ifdef CC_IS_CLANG
+    # CC_IS_GCC covers clang too; the Arm crypto extension intrinsics need one
+    # or the other.
+    ifeq (1,$(CC_IS_GCC))
         DEFINES += -DUSE_HW_AES -DUSE_HW_SHA1 -DUSE_HW_SHA2
+        EXTRA_SRCS += aes-armv8.c sha1-armv8.c sha256-armv8.c
+        # The PMULL code is little-endian only. This must agree with the #if
+        # in ghash-aarch64.c, or freebl ends up with duplicate or missing
+        # gcm_*_hw symbols. See bug 2068010.
         ifeq ($(LITTLE_ENDIAN),1)
-            DEFINES += -DHAVE_PLATFORM_GHASH
-        endif
-        EXTRA_SRCS += aes-armv8.c ghash-aarch64.c sha1-armv8.c sha256-armv8.c
-    else ifeq (1,$(CC_IS_GCC))
-        # GCC versions older than 4.9 don't support ARM AES. The check
-        # is done in two parts, first allows "major.minor" == "4.9",
-        # and then rejects any major versions prior to 5. Note that
-        # there has been no GCC 4.10, as it was renamed to GCC 5.
-        ifneq (,$(filter 4.9,$(word 1,$(GCC_VERSION)).$(word 2,$(GCC_VERSION))))
-            DEFINES += -DUSE_HW_AES -DUSE_HW_SHA1 -DUSE_HW_SHA2
-            ifeq ($(LITTLE_ENDIAN),1)
-                DEFINES += -DHAVE_PLATFORM_GHASH
-            endif
-            EXTRA_SRCS += aes-armv8.c ghash-aarch64.c sha1-armv8.c sha256-armv8.c
-        endif
-        ifeq (,$(filter 0 1 2 3 4,$(word 1,$(GCC_VERSION))))
-            DEFINES += -DUSE_HW_AES -DUSE_HW_SHA1 -DUSE_HW_SHA2
-            ifeq ($(LITTLE_ENDIAN),1)
-                DEFINES += -DHAVE_PLATFORM_GHASH
-            endif
-            EXTRA_SRCS += aes-armv8.c ghash-aarch64.c sha1-armv8.c sha256-armv8.c
+            AARCH64_PMULL = 1
         endif
     endif
+    ifdef AARCH64_PMULL
+        DEFINES += -DHAVE_PLATFORM_GHASH
+        EXTRA_SRCS += ghash-aarch64.c
+    endif
     # AArch64 AES-GCM implementation from AWS-LC. Not supported on Windows.
+    # It bridges to the ghash-aarch64.c hash context, so it needs PMULL too.
     ifndef USE_STUB_BUILD
+    ifdef AARCH64_PMULL
     ifneq ($(OS_TARGET),WINNT)
         DEFINES += -DHAVE_PLATFORM_GCM
         EXTRA_SRCS += aarch64-gcm-wrap.c
@@ -187,6 +179,7 @@ ifeq ($(CPU_ARCH),aarch64)
         ifdef FREEBL_CHILD_BUILD
             OBJS += $(addprefix $(OBJDIR)/$(PROG_PREFIX), $(AARCH64_GCM_ASFILES:.S=$(OBJ_SUFFIX)))
         endif
+    endif
     endif
     endif
 endif
@@ -636,10 +629,6 @@ ifndef NSS_DISABLE_CHACHAPOLY
     VERIFIED_SRCS += Hacl_Poly1305_32.c Hacl_Chacha20.c Hacl_Chacha20Poly1305_32.c
 endif # NSS_DISABLE_CHACHAPOLY
 
-ifndef NSS_DISABLE_KYBER
-KYBER_PQCRYSTALS = kyber-pqcrystals-ref.c
-endif
-
 VERIFIED_SRCS += Hacl_Hash_SHA3.c Hacl_P256.c Hacl_P384.c Hacl_P521.c
 VERIFIED_SRCS += Hacl_Ed25519.c
 VERIFIED_SRCS += Hacl_Curve25519_51.c
@@ -650,11 +639,21 @@ VERIFIED_SRCS += Hacl_Curve25519_51.c
 # extraction in verified/.
 LIBCRUX_SRCS = combined_core.c libcrux_ct_ops.c libcrux_sha3_portable.c \
                libcrux_mlkem_core.c libcrux_mlkem_portable.c \
-               libcrux_mlkem768_portable.c libcrux_mlkem1024_portable.c \
+               libcrux_mlkem512_portable.c libcrux_mlkem768_portable.c \
+               libcrux_mlkem1024_portable.c \
                libcrux_mldsa_core.c libcrux_mldsa_portable.c \
                libcrux_mldsa44_portable.c libcrux_mldsa65_portable.c \
                libcrux_mldsa87_portable.c
+# Bug 2067434 - restrict these to the child build that compiles the real
+# library. The parent (loader-only) and lowhash stub builds reset CSRCS to their
+# single source file, and appending here bypasses that. The stub build shares
+# its OBJDIR with the real single-shlib build, so under make -jN both would
+# compile these to the same object files at once, producing truncated objects.
+ifdef FREEBL_CHILD_BUILD
+ifndef USE_STUB_BUILD
 CSRCS += $(LIBCRUX_SRCS)
+endif
+endif
 
 # Bug 1918767 / Bug 1918711 - by setting KRML_MUSTINLINE=inline here, we
 # avoid it being defined to `inline __forceinline` (for msvc) or `inline

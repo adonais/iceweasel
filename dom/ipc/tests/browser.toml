@@ -41,6 +41,12 @@ support-files = [
   "file_dummy.html",
 ]
 
+["browser_coop_coep_webext_data_frame.js"]
+support-files = [
+  "../../tests/browser/file_coop_coep.html",
+  "../../tests/browser/file_coop_coep.html^headers^",
+]
+
 ["browser_crash_oopiframe.js"]
 run-if = [
   "crashreporter",

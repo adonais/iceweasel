@@ -8,7 +8,6 @@ ChromeUtils.defineESModuleGetters(this, {
   actionTypes: "resource://newtab/common/Actions.mjs",
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
-  PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.sys.mjs",
   PlacesFeed: "resource://newtab/lib/PlacesFeed.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -666,54 +665,6 @@ add_task(async function test_onAction_FILL_SEARCH_TERM() {
 
   sandbox.restore();
 });
-
-add_task(async function test_onAction_PARTNER_LINK_ATTRIBUTION() {
-  info(
-    "PlacesFeed.onAction should call makeAttributionRequest on " +
-      "PARTNER_LINK_ATTRIBUTION"
-  );
-  let sandbox = sinon.createSandbox();
-
-  let feed = getPlacesFeedForTest(sandbox);
-  sandbox.stub(feed, "makeAttributionRequest");
-
-  let data = { targetURL: "https://partnersite.com", source: "topsites" };
-  feed.onAction({
-    type: actionTypes.PARTNER_LINK_ATTRIBUTION,
-    data,
-  });
-
-  Assert.ok(
-    feed.makeAttributionRequest.calledOnce,
-    "PlacesFeed.makeAttributionRequest called"
-  );
-  Assert.ok(feed.makeAttributionRequest.calledWithExactly(data));
-
-  sandbox.restore();
-});
-
-add_task(
-  async function test_makeAttributionRequest_PartnerLinkAttribution_makeReq() {
-    info(
-      "PlacesFeed.makeAttributionRequest should call " +
-        "PartnerLinkAttribution.makeRequest"
-    );
-    let sandbox = sinon.createSandbox();
-
-    let feed = getPlacesFeedForTest(sandbox);
-    sandbox.stub(PartnerLinkAttribution, "makeRequest");
-
-    let data = { targetURL: "https://partnersite.com", source: "topsites" };
-    feed.makeAttributionRequest(data);
-
-    Assert.ok(
-      PartnerLinkAttribution.makeRequest.calledOnce,
-      "PartnerLinkAttribution.makeRequest called"
-    );
-
-    sandbox.restore();
-  }
-);
 
 add_task(async function test_observe_dispatch_PLACES_LINK_BLOCKED() {
   info(

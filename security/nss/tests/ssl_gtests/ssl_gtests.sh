@@ -20,7 +20,10 @@
 ########################################################################
 
 ssl_gtest_certs() {
-  ./ssl_gtest_db.sh "${SSLGTESTDIR}" "${BINDIR}/certutil" "${R_NOISE_FILE}"
+  # Resolved against QADIR rather than the working directory: when this script
+  # is run standalone it sources common/init.sh, which leaves the working
+  # directory in common/.
+  "${QADIR}"/ssl_gtests/ssl_gtest_db.sh "${SSLGTESTDIR}" "${BINDIR}/certutil" "${R_NOISE_FILE}"
   html_msg $? 0 "create ssl_gtest certificates"
 }
 

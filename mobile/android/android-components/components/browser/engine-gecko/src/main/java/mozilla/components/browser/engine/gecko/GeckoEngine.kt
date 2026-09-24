@@ -1509,6 +1509,10 @@ class GeckoEngine(
                                 }
                             }
 
+                            // A null value leaves the pref untouched so a Nimbus rollout can own it.
+                            fingerprintingProtection = policy.fingerprintingProtection
+                            fingerprintingProtectionPrivateBrowsing = policy.fingerprintingProtectionPrivateBrowsing
+
                             defaultSettings?.trackingProtectionPolicy = value
                             field = value
                         }

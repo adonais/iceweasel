@@ -4,12 +4,6 @@
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 // Adapted from widget/tests/file_test_clipboard_pngPreservesTransparency.js
 async function getPNGFromClipboard(clipboard) {
   let trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(

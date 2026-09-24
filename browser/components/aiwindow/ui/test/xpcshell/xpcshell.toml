@@ -23,7 +23,11 @@ run-if = [
 
 ["test_ChatSwitchModel.js"]
 
+["test_ConversationStore.js"]
+
 ["test_FeedbackModal.js"]
+
+["test_MonitorAttention.js"]
 
 ["test_MonitorUIUtils.js"]
 

@@ -17,15 +17,12 @@ import androidx.test.uiautomator.UiObject2
 /**
  * A backend-agnostic handle to a single located UI element.
  *
- * This is the harness's interaction facade: once a selector has been resolved to one of these, the interaction verbs
- * (mozClick, later mozVerify/mozEnterText/…) act through this interface and never switch on Compose
- * (SemanticsNodeInteraction) vs Espresso (ViewInteraction) vs UiAutomator (UiObject/UiObject2) types themselves. That
- * keeps the per-backend quirks in one place (here) and the verbs thin. Grow this interface (longClick, enterText, …) as
- * verbs migrate onto it.
+ * Once a selector resolves to one of these, every single-element verb stays on this boundary. Backend-specific actions
+ * and state queries unwrap it inside the core rather than leaking Compose, Espresso, or UiAutomator objects to callers.
  *
  * Lives in the `core` package (split out of BasePage) so it can be shared and evolved independently.
  */
-interface UiElement {
+sealed interface UiElement {
     fun exists(): Boolean
 
     fun isDisplayed(): Boolean
@@ -46,7 +43,7 @@ interface UiElement {
     }
 }
 
-class ComposeUiElement(private val node: SemanticsNodeInteraction) : UiElement {
+internal class ComposeUiElement(val node: SemanticsNodeInteraction) : UiElement {
     override fun exists(): Boolean =
         try {
             node.assertExists()
@@ -71,7 +68,7 @@ class ComposeUiElement(private val node: SemanticsNodeInteraction) : UiElement {
     }
 }
 
-class EspressoUiElement(private val interaction: ViewInteraction) : UiElement {
+internal class EspressoUiElement(val interaction: ViewInteraction) : UiElement {
     override fun isDisplayed(): Boolean =
         try {
             interaction.check(matches(ViewMatchers.isDisplayed()))
@@ -89,7 +86,7 @@ class EspressoUiElement(private val interaction: ViewInteraction) : UiElement {
     }
 }
 
-class UiObjectUiElement(private val obj: UiObject) : UiElement {
+internal class UiObjectUiElement(val obj: UiObject) : UiElement {
     override fun exists(): Boolean = obj.exists()
 
     override fun isDisplayed(): Boolean = obj.exists()
@@ -100,12 +97,20 @@ class UiObjectUiElement(private val obj: UiObject) : UiElement {
     }
 }
 
-class UiObject2UiElement(private val obj: UiObject2) : UiElement {
-    override fun exists(): Boolean = true
+internal class UiObject2UiElement(val obj: UiObject2) : UiElement {
+    override fun exists(): Boolean = runCatching { !obj.visibleBounds.isEmpty }.getOrDefault(false)
 
-    override fun isDisplayed(): Boolean = true
+    override fun isDisplayed(): Boolean = exists()
 
     override fun click() {
         obj.click()
     }
 }
+
+internal fun UiElement.backend(): Any =
+    when (this) {
+        is ComposeUiElement -> node
+        is EspressoUiElement -> interaction
+        is UiObjectUiElement -> obj
+        is UiObject2UiElement -> obj
+    }

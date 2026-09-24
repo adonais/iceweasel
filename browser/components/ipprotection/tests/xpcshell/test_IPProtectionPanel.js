@@ -485,7 +485,6 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
   refreshUsageStub.restore();
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.everOpenedPanel");
-  Services.prefs.clearUserPref("browser.ipProtection.openedPanelWithLocation");
 });
 
 /**
@@ -533,7 +532,6 @@ add_task(async function test_showing_checks_is_premium_once() {
   isPremiumStub.restore();
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.everOpenedPanel");
-  Services.prefs.clearUserPref("browser.ipProtection.openedPanelWithLocation");
 });
 
 /**

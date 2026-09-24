@@ -148,7 +148,8 @@ add_task(async function test_protection_per_feature_mapping() {
 });
 
 // Multiple feature toggles join into one comma-separated list, in the mirror's
-// mapping order (trackers, fingerprinters, cryptominers, social, email).
+// mapping order, which follows UrlClassifierFeatureFactory's canceling-feature
+// order (email, cryptominers, fingerprinters, social, harmful-addon, trackers).
 add_task(async function test_protection_multiple_features_joined() {
   await enableMirror({
     "privacy.trackingprotection.enabled": true,
@@ -157,7 +158,7 @@ add_task(async function test_protection_multiple_features_joined() {
   });
   is(
     Services.prefs.getStringPref(PROT_ENGINES),
-    "trackers,cryptominers,email-trackers",
+    "email-trackers,cryptominers,trackers",
     "enabled features joined in mapping order"
   );
 });
@@ -176,7 +177,7 @@ add_task(async function test_pbm_prefs_drive_pbmode_list_only() {
   );
   is(
     Services.prefs.getStringPref(PROT_ENGINES_PBM),
-    "trackers,email-trackers",
+    "email-trackers,trackers",
     "PBM prefs map to pbmode protection list"
   );
   is(
@@ -204,8 +205,8 @@ add_task(async function test_modeless_features_apply_to_both_modes() {
   );
 });
 
-// annotate_channels drives the annotation list (trackers, fingerprinters,
-// cryptominers, social-trackers); it gates both normal and PBM annotation.
+// annotate_channels drives the annotation list (cryptominers, fingerprinters,
+// social-trackers, trackers); it gates both normal and PBM annotation.
 // trackers-content is gated separately by the strict-list pref and is absent
 // here.
 add_task(async function test_annotate_channels_drives_annotation_list() {
@@ -214,12 +215,12 @@ add_task(async function test_annotate_channels_drives_annotation_list() {
   });
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "trackers,fingerprinters,cryptominers,social-trackers",
+    "cryptominers,fingerprinters,social-trackers,trackers",
     "annotate_channels maps to annotation engines"
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
-    "trackers,fingerprinters,cryptominers,social-trackers",
+    "cryptominers,fingerprinters,social-trackers,trackers",
     "annotate_channels gates PBM annotation too"
   );
   is(Services.prefs.getBoolPref(ANNO_ENABLED), true, "annotation enabled");

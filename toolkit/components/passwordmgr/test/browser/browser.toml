@@ -63,6 +63,8 @@ skip-if = [
 
 ["browser_autocomplete_insecure_warning.js"]
 
+["browser_autocomplete_secondary_actions.js"]
+
 ["browser_autocomplete_primary_password.js"]
 
 ["browser_autofill_after_paint.js"]
@@ -74,6 +76,8 @@ skip-if = [
 
 ["browser_autofill_http.js"]
 https_first_disabled = true
+
+["browser_autofill_primary_password.js"]
 
 ["browser_autofill_track_filled_logins.js"]
 
@@ -110,6 +114,11 @@ support-files = ["form_cross_origin_secure_action.html"]
 ["browser_deleteLoginsBackup.js"]
 skip-if = [
   "os == 'android'",
+]
+
+["browser_doorhanger_autocomplete_color_scheme.js"]
+fail-if = [
+  "a11y_checks", # Bug 1854452 clicked password-notification-username-dropmaker may not be focusable and/or labeled
 ]
 
 ["browser_doorhanger_autocomplete_values.js"]
@@ -228,7 +237,6 @@ support-files = [
 ["browser_formless_submit_chrome.js"]
 skip-if = [
   "tsan", # Bug 1683730
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2062458
 ]
 
 ["browser_glean_pwmgr_form_autofill_result.js"]
@@ -254,9 +262,6 @@ skip-if = [
 ["browser_openPasswordManager.js"]
 
 ["browser_preselect_login.js"]
-fail-if = [
-  "a11y_checks", # Bug 1854452 clicked ac-secondary-action may not be labeled
-]
 skip-if = [
   "asan",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1840479
@@ -265,6 +270,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && debug", # Bug 1840479
   "tsan",
 ]
+
+["browser_primary_password_reauth.js"]
 
 ["browser_private_window.js"]
 support-files = [

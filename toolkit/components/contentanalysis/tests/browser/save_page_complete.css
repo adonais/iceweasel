@@ -1,0 +1,4 @@
+p {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: red;
+}

@@ -27,6 +27,9 @@ class RemoteDecoderModule : public PlatformDecoderModule {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override;
 
+  RefPtr<SupportsDecoderPromise> SupportsAsync(
+      const SupportDecoderParams& aParams) const override;
+
   RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 

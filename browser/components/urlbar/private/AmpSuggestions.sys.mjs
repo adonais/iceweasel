@@ -227,6 +227,13 @@ export class AmpSuggestions extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {string} state
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {{index: number, result: UrlbarResult}[]} featureResults
+   * @param {object|null} details
+   */
   onImpression(state, queryContext, controller, featureResults, details) {
     // For the purpose of the `quick-suggest` impression ping, "impression"
     // means that one of these suggestions was visible at the time of an
@@ -243,6 +250,12 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
 
@@ -414,8 +427,8 @@ export class AmpSuggestions extends SuggestProvider {
       isClicked:
         // `selType` == "quicksuggest" if the result itself was clicked. It will
         // be a command name if a command was clicked, e.g., "dismiss". Match by
-        // id: on the message path the visible result and the picked result are
-        // reconstructed as distinct objects.
+        // id: the visible result and the picked result aren't necessarily the
+        // same object.
         result.id == details.result?.id && details.selType == "quicksuggest",
       reportingUrl: result.payload.sponsoredImpressionUrl,
     });

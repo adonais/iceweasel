@@ -71,6 +71,9 @@ class gfxMacFont final : public gfxFont {
   gfxFloat GetCharWidth(CFDataRef aCmap, char16_t aUniChar, uint32_t* aGlyphID,
                         gfxFloat aConvFactor);
 
+  // Init some metrics that may be based on measuring glyphs.
+  void InitMetricsByGlyphMeasurement(CFDataRef aCmap, gfxFloat aConvFactor);
+
   // a strong reference to the CoreGraphics font
   CGFontRef mCGFont;
 

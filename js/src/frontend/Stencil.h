@@ -670,7 +670,7 @@ class StencilModuleEntry {
  public:
   // clang-format off
   //
-  // (+/- = required/null, ns = *namespace*, abd = *all-but-default*,
+  // (+/- = required/null, ns = *namespace*, all = *all star exports*,
   //  src = *source*)
   //
   //                     | moduleRequest | localName | importName | exportName |
@@ -679,10 +679,13 @@ class StencilModuleEntry {
   // ImportEntry         | +             | +         | +/ns/src   | -          |
   // ExportAs            | -             | +         | -          | +          |
   // ExportFrom          | +             | -         | +/ns       | +          |
-  // ExportBatchFrom     | +             | -         | abd        | -          |
+  // ExportBatchFrom     | +             | -         | all        | -          |
   //
-  // The ns/src/abd forms above are recorded by importNameValueType; importName is
-  // null when importNameValueType is not String.
+  // The ns/src/all forms above are recorded by importNameValueType. The all form
+  // represents `export * from` and includes the default export when the export
+  // star default preference is enabled; otherwise it preserves the historical
+  // all-but-default behavior. importName is null when importNameValueType is
+  // not String.
   //
   // clang-format on
   MaybeModuleRequestIndex moduleRequest;
@@ -800,7 +803,7 @@ class StencilModuleEntry {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);
-    entry.importNameValueType = js::ImportNameValueType::AllButDefault;
+    entry.importNameValueType = js::ImportNameValueType::All;
     return entry;
   }
 };

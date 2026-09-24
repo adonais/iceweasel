@@ -1,0 +1,13 @@
+<!-- Do not add a doctype: in standards mode these elements do not nest into
+     four sticky frames. Each sticky frame has an unconstrained inline-axis
+     sticky range, so each contributes an applied offset of nscoord_MIN / 2 app
+     units to the accumulated display list normalization offset. -->
+<style>
+* {
+  contain: layout style;
+  inset-block: auto 1px;
+  position: sticky;
+}
+</style>
+<ol>
+<li></li>

@@ -4,13 +4,17 @@
 
 include "ipc/nsGUIEventIPC.h";
 
+using mozilla::LayoutDeviceCoord from "Units.h";
 using mozilla::LayoutDeviceIntPoint from "Units.h";
 using mozilla::LayoutDevicePoint from "Units.h";
+using mozilla::ScreenPoint from "Units.h";
 using mozilla::layers::GeckoContentController_TapType from "mozilla/layers/GeckoContentControllerTypes.h";
 using mozilla::layers::DoubleTapToZoomMetrics from "mozilla/layers/DoubleTapToZoom.h";
 using struct mozilla::layers::ScrollableLayerGuid from "mozilla/layers/ScrollableLayerGuid.h";
+using mozilla::layers::ScrollableLayerGuid::ViewID from "mozilla/layers/ScrollableLayerGuid.h";
 using struct mozilla::layers::APZEventResult from "mozilla/layers/APZInputBridge.h";
 using struct mozilla::layers::APZHandledResult from "mozilla/layers/APZInputBridge.h";
+using mozilla::layers::BrowserGestureResponse from "mozilla/layers/APZInputBridge.h";
 
 using mozilla::EventMessage from "mozilla/EventForwards.h";
 using mozilla::Modifiers from "mozilla/EventForwards.h";
@@ -18,11 +22,16 @@ using class mozilla::MultiTouchInput from "InputData.h";
 using class mozilla::MouseInput from "InputData.h";
 using class mozilla::PanGestureInput from "InputData.h";
 using class mozilla::PinchGestureInput from "InputData.h";
+using mozilla::PinchGestureInput::PinchGestureType from "InputData.h";
 using class mozilla::TapGestureInput from "InputData.h";
 using class mozilla::ScrollWheelInput from "InputData.h";
 using class mozilla::KeyboardInput from "InputData.h";
 
+using class mozilla::layers::KeyboardMap from "mozilla/layers/KeyboardMap.h";
+
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
+
+using mozilla::layers::MatrixMessage from "mozilla/layers/MatrixMessage.h";
 
 namespace mozilla {
 namespace layers {
@@ -82,6 +91,19 @@ parent:
              uint64_t               aOutFocusSequenceNumber,
              LayersId               aOutLayersId);
 
+  async SetKeyboardMap(KeyboardMap aKeyboardMap);
+
+  async SetDPI(float aDpiValue);
+
+  async SetBrowserGestureResponse(uint64_t aInputBlockId,
+                                  BrowserGestureResponse aResponse);
+
+  async StartAutoscroll(ScrollableLayerGuid aGuid, ScreenPoint aAnchorLocation);
+
+  async StopAutoscroll(ScrollableLayerGuid aGuid);
+
+  async SetLongTapEnabled(bool aTapGestureEnabled);
+
 child:
   async CallInputBlockCallback(uint64_t aInputBlockId,
                                APZHandledResult aHandledResult);
@@ -89,6 +111,22 @@ child:
   async HandleTap(GeckoContentController_TapType aType, LayoutDevicePoint point,
                   Modifiers aModifiers, ScrollableLayerGuid aGuid,
                   uint64_t aInputBlockId, DoubleTapToZoomMetrics? aDoubleTapToZoomMetrics);
+
+  async NotifyPinchGesture(PinchGestureType aType, ScrollableLayerGuid aGuid,
+                           LayoutDevicePoint aFocusPoint, LayoutDeviceCoord aSpanChange,
+                           Modifiers aModifiers);
+
+  async CancelAutoscroll(ViewID aScrollId);
+
+  async NotifyScaleGestureComplete(ViewID aScrollId, float aScale);
+
+  async LayerTransforms(MatrixMessage[] aTransforms);
+
+  async UpdateOverscrollVelocity(ScrollableLayerGuid aGuid, float aX, float aY, bool aIsRootContent);
+
+  async UpdateOverscrollOffset(ScrollableLayerGuid aGuid, float aX, float aY, bool aIsRootContent);
+
+  async HideDynamicToolbar();
 };
 
 } // namespace gfx

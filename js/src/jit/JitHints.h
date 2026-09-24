@@ -8,6 +8,7 @@
 #include "mozilla/BloomFilter.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Span.h"
 
 #include "jit/ICState.h"
 #include "jit/JitOptions.h"
@@ -103,7 +104,7 @@ class JitHintsMap {
       return monomorphicInlineOffsets.length() < MonomorphicInlineMaxEntries;
     }
 
-    bool hasMonomorphicInlineOffset(uint32_t offset) {
+    bool hasMonomorphicInlineOffset(uint32_t offset) const {
       for (uint32_t iterOffset : monomorphicInlineOffsets) {
         if (iterOffset == offset) {
           return true;
@@ -198,7 +199,8 @@ class JitHintsMap {
   bool getIonThresholdHint(JSScript* script, uint32_t& thresholdOut);
 
   bool addMonomorphicInlineLocation(JSScript* script, BytecodeLocation loc);
-  bool hasMonomorphicInlineHintAtOffset(JSScript* script, uint32_t offset);
+  mozilla::Span<const uint32_t> getMonomorphicInlineOffsets(
+      JSScript* script) const;
 
   bool shouldTransitionMegamorphic(JSScript* script, ICScript* icScript,
                                    ICFallbackStub* stub);

@@ -4,7 +4,7 @@
 
 use std::env;
 use std::path::Path;
-use std::process::{exit, Command};
+use std::process::{Command, exit};
 use std::sync::LazyLock;
 use walkdir::WalkDir;
 
@@ -28,7 +28,7 @@ pub static PYTHON: LazyLock<String> = LazyLock::new(|| {
                 .arg("--version")
                 .output()
                 .ok()
-                .map_or(false, |out| out.status.success())
+                .is_some_and(|out| out.status.success())
             {
                 return name.to_owned();
             }

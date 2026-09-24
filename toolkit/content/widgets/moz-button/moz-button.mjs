@@ -223,11 +223,13 @@ class MenuController {
  * @property {string} ariaHasPopup - The button's aria-haspopup attribute, that indicates that a popup element can be triggered by the button.
  * @property {string} ariaExpanded - The button's aria-expanded attribute, that indicates whether or not the controlled elements are displayed or hidden.
  * @property {string} ariaPressed - The button's aria-pressed attribute, used in shadow DOM and therefore not as an attribute on moz-button.
+ * @property {string} ariaChecked - The button's aria-checked attribute, used in shadow DOM and therefore not as an attribute on moz-button.
  * @property {string} iconSrc - Path to the icon that should be displayed in the button.
  * @property {string} ariaLabelAttribute - Internal, map aria-label attribute to the ariaLabel JS property.
  * @property {string} ariaHasPopupAttribute - Internal, map aria-haspopup attribute to the ariaHasPopup JS property.
  * @property {string} ariaExpandedAttribute - Internal, map aria-expanded attribute to the ariaExpanded JS property.
  * @property {string} ariaPressedAttribute - Internal, map aria-pressed attribute to the ariaPressed JS property.
+ * @property {string} ariaCheckedAttribute - Internal, map aria-checked attribute to the ariaChecked JS property.
  * @property {string} hasVisibleLabel - Internal, tracks whether or not the button has a visible label.
  * @property {boolean} attention - Show a dot notification on the button if true.
  * @property {boolean} parentDisabled - When the parent of this component is disabled.
@@ -262,6 +264,7 @@ export default class MozButton extends MozLitElement {
     ariaHasPopup: { type: String, mapped: true },
     ariaExpanded: { type: String, mapped: true },
     ariaPressed: { type: String, mapped: true },
+    ariaChecked: { type: String, mapped: true },
     iconSrc: { type: String },
     hasVisibleLabel: { type: Boolean, state: true },
     accessKey: { type: String, mapped: true },
@@ -382,6 +385,7 @@ export default class MozButton extends MozLitElement {
           this.isSplitButton ? undefined : this.ariaHasPopup
         )}
         aria-pressed=${ifDefined(this.ariaPressed)}
+        aria-checked=${ifDefined(this.ariaChecked)}
         accesskey=${ifDefined(this.accessKey)}
       >
         <span

@@ -11,7 +11,6 @@
 add_task(async function testGlobalPrivacyControlDisabled() {
   await SpecialPowers.pushPrefEnv({ set: [
     ["privacy.globalprivacycontrol.enabled", false],
-    ["privacy.globalprivacycontrol.functionality.enabled", true],
   ]})
   .then(() => fetch("file_gpc_server.sjs"))
   .then((response) => response.text())
@@ -30,7 +29,6 @@ add_task(async function testGlobalPrivacyControlDisabled() {
 add_task(async function testGlobalPrivacyControlEnabled() {
   await SpecialPowers.pushPrefEnv({ set: [
     ["privacy.globalprivacycontrol.enabled", true],
-    ["privacy.globalprivacycontrol.functionality.enabled", true],
   ]})
   .then(() => fetch("file_gpc_server.sjs"))
   .then((response) => response.text())

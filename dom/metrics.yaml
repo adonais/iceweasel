@@ -765,8 +765,6 @@ dom.contentprocess:
       The number of times a content process has had its OS priority
       lowered due to only containing background tabs without audible media
       playing.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar dom.contentprocess.os_priority_lowered.
     bugs:
       - https://bugzil.la/1538987
     data_reviews:
@@ -775,7 +773,6 @@ dom.contentprocess:
       - mconley@mozilla.com
       - gsvelto@mozilla.com
     expires: never
-    telemetry_mirror: DOM_CONTENTPROCESS_OS_PRIORITY_LOWERED
 
   os_priority_raised:
     type: counter
@@ -783,8 +780,6 @@ dom.contentprocess:
       The number of times a content process has had its OS priority raised
       due to containing at least one foregrounded tab, or a tab with
       audible media has started playing in it.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar dom.contentprocess.os_priority_raised.
     bugs:
       - https://bugzil.la/1538987
     data_reviews:
@@ -793,15 +788,12 @@ dom.contentprocess:
       - mconley@mozilla.com
       - gsvelto@mozilla.com
     expires: never
-    telemetry_mirror: DOM_CONTENTPROCESS_OS_PRIORITY_RAISED
 
   os_priority_change_considered:
     type: counter
     description: >
       The number of times we've had the opportunity to change content
       process priority due to a tab switch or a tab being opened.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar dom.contentprocess.os_priority_change_considered.
     bugs:
       - https://bugzil.la/1538987
     data_reviews:
@@ -810,7 +802,6 @@ dom.contentprocess:
       - mconley@mozilla.com
       - gsvelto@mozilla.com
     expires: never
-    telemetry_mirror: DOM_CONTENTPROCESS_OS_PRIORITY_CHANGE_CONSIDERED
 
   launch_mainthread:
     type: timing_distribution
@@ -898,8 +889,6 @@ dom.parentprocess:
     type: boolean
     description: >
       Whether a private browsing window has been used in the session.
-      This metric was generated to correspond to the Legacy Telemetry
-      scalar dom.parentprocess.private_window_used.
     bugs:
       - https://bugzil.la/1491047
     data_reviews:
@@ -908,7 +897,6 @@ dom.parentprocess:
       - seceng-telemetry@mozilla.com
       - ehsan+telemetry@mozilla.com
     expires: never
-    telemetry_mirror: DOM_PARENTPROCESS_PRIVATE_WINDOW_USED
 
   process_launch_errors:
     type: labeled_counter
@@ -1182,9 +1170,6 @@ dom:
     type: labeled_counter
     description: >
       Webkit/Blink filesystem used
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram BLINK_FILESYSTEM_USED.
     labels:
       - "false"
       - "true"
@@ -1195,15 +1180,11 @@ dom:
     notification_emails:
       - amarchesini@mozilla.com
     expires: never
-    telemetry_mirror: h#BLINK_FILESYSTEM_USED
 
   webkit_directory_used:
     type: labeled_counter
     description: >
       HTMLInputElement.webkitdirectory attribute used
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram WEBKIT_DIRECTORY_USED.
     labels:
       - "false"
       - "true"
@@ -1214,4 +1195,3 @@ dom:
     notification_emails:
       - amarchesini@mozilla.com
     expires: never
-    telemetry_mirror: h#WEBKIT_DIRECTORY_USED

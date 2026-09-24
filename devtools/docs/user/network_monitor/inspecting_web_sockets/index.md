@@ -96,6 +96,7 @@ Selecting a message in the list shows a preview of the data being sent in that m
 The inspector currently supports the following web socket protocols:
 
 - Plain JSON
+- JSON Lines (one JSON value per line)
 - Socket.IO
 - SockJS
 - SignalR

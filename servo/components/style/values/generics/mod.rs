@@ -5,8 +5,8 @@
 //! Generic types that share their serialization implementations
 //! for both specified and computed values.
 
-use crate::derives::*;
 use crate::Zero;
+use crate::derives::*;
 use std::ops::Add;
 
 pub mod animation;

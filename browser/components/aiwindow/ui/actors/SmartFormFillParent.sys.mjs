@@ -10,6 +10,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  FORM_REVIEW_ERRORS:
+    "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs",
   GetPageContent: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   MAX_SELECTED_TABS:
     "chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs",
@@ -17,6 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NonPrivateTabs: "resource:///modules/OpenTabs.sys.mjs",
   SmartFormFillController:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillController.sys.mjs",
+  SmartFormFillReviewSession:
+    "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillReviewSession.sys.mjs",
   SmartFormFillAutocomplete:
     "moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillAutocomplete.sys.mjs",
   SmartFormFillTelemetry:
@@ -35,11 +39,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillController.sys.mjs").SmartFormFillController} Controller */
+/** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillController.sys.mjs").FillFormResult} FillFormResult */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillController.sys.mjs").SelectedTab} SelectedTab */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FormData} FormData */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FocusedForm} FocusedForm  */
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs").PageInfo} PageInfo */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillAutocomplete.sys.mjs").SmartFormFillAutocompleteSource} SmartFormFillAutocompleteSource */
+/** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewField} FormReviewField */
+/** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewFillResult} FormReviewFillResult */
+/** @typedef {import("chrome://browser/content/aiwindow/modules/SmartFormFillConstants.mjs").FormReviewGenerationResult} FormReviewGenerationResult */
+/** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillReviewSession.sys.mjs").SmartFormFillReviewSession} SmartFormFillReviewSession */
 
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs").ClassificationResponse} ClassificationResponse */
 /** @typedef {import("moz-src:///browser/components/aiwindow/models/SmartFormFillModel.sys.mjs").ClassifyFieldsRequestBody} ClassifyFieldsRequestBody */
@@ -140,11 +149,25 @@ export class SmartFormFillParent extends JSWindowActorParent {
   #autocompleteFormId;
 
   /**
+   * Whether tab metadata changed while form values were being generated.
+   *
+   * @type {boolean}
+   */
+  #tabsChangedDuringValueGeneration;
+
+  /**
    * Current tab-selector dialog.
    *
    * @type {object | null}
    */
   #tabSelectorDialog;
+
+  /**
+   * Current generated-value review session.
+   *
+   * @type {SmartFormFillReviewSession | null}
+   */
+  #formReviewSession;
 
   /**
    * User-selected tabs by form ID.
@@ -216,7 +239,9 @@ export class SmartFormFillParent extends JSWindowActorParent {
     this.#controller = null;
     this.#autocompleteFormId = null;
     this.#destroyed = false;
+    this.#tabsChangedDuringValueGeneration = false;
     this.#tabSelectorDialog = null;
+    this.#formReviewSession = null;
     this.#userSelectedTabsByFormId = new Map();
     this.#smartWindowIds = new Set();
     this.#autofillGeneration = 0;
@@ -262,13 +287,12 @@ export class SmartFormFillParent extends JSWindowActorParent {
     this.#tabSelectorDialog?.abort();
     this.#userSelectedTabsByFormId.clear();
 
-    for (const metadata of this.#formMetadataById.values()) {
-      ++metadata.relevantTabsRevision;
-      metadata.relevantTabsPromise = null;
-      metadata.relevantTabsStatus = METADATA_STATUS.IDLE;
+    if (this.#formReviewSession?.generationPending) {
+      this.#tabsChangedDuringValueGeneration = true;
+      return;
     }
 
-    this.#controller?.invalidateTabs();
+    this.#invalidateTabMetadata();
   }
 
   /**
@@ -487,6 +511,9 @@ export class SmartFormFillParent extends JSWindowActorParent {
     lazy.NonPrivateTabs.removeEventListener("TabChange", this);
     this.#tabSelectorDialog?.abort();
     this.#tabSelectorDialog = null;
+    this.#formReviewSession?.abort();
+    this.#formReviewSession = null;
+    this.#tabsChangedDuringValueGeneration = false;
     this.#userSelectedTabsByFormId.clear();
     this.#smartWindowIds.clear();
     this.#destroyed = true;
@@ -695,11 +722,20 @@ export class SmartFormFillParent extends JSWindowActorParent {
    * @returns {Promise<void>}
    */
   async #performAutofill(focusedForm, selectedTabs) {
+    if (this.#formReviewSession) {
+      return;
+    }
+
     const generation = ++this.#autofillGeneration;
 
     if (!focusedForm || this.#cannotApplyAutofill(generation)) {
       return;
     }
+
+    const reviewSessionPromise = this.#openFormReview(
+      focusedForm.id,
+      generation
+    );
 
     const numberOfTabs = selectedTabs.length + 1;
     const perTabTextCharBudget = Math.ceil(
@@ -715,7 +751,9 @@ export class SmartFormFillParent extends JSWindowActorParent {
       return;
     }
 
-    const result = await this.#controller
+    // Handle value generation errors here in case it errors before the dialog is
+    // ready.
+    const generationPromise = this.#controller
       .autofill(
         focusedForm.id,
         focusedForm.emptyFieldIds,
@@ -723,22 +761,248 @@ export class SmartFormFillParent extends JSWindowActorParent {
         tabContentById,
         pageText
       )
-      .catch(error => {
-        if (!this.#destroyed) {
-          lazy.console.error(
-            "Could not generate Smart Form Fill values",
-            error
-          );
-        }
+      .then(result => ({ result, error: null }))
+      .catch(error => ({ result: null, error }));
 
-        return null;
-      });
+    let reviewSession;
+    try {
+      reviewSession = await reviewSessionPromise;
+    } catch (error) {
+      this.#cancelFormReviewGeneration(focusedForm.id, generation);
+      throw error;
+    }
 
-    if (!result || this.#cannotApplyAutofill(generation)) {
+    if (!reviewSession) {
+      this.#cancelFormReviewGeneration(focusedForm.id, generation);
       return;
     }
 
-    this.sendAsyncMessage("SmartFormFill:FillForm", result);
+    if (this.#cannotApplyAutofill(generation)) {
+      return;
+    }
+
+    const generationResult = await generationPromise;
+    if (generationResult.error) {
+      if (!this.#cannotApplyAutofill(generation)) {
+        lazy.console.error(
+          "Could not generate Smart Form Fill values",
+          generationResult.error
+        );
+
+        this.#finishFormReviewGeneration(reviewSession, generation, {
+          errorType: lazy.FORM_REVIEW_ERRORS.GENERATION_FAILED,
+        });
+      }
+      return;
+    }
+
+    if (this.#cannotApplyAutofill(generation)) {
+      return;
+    }
+
+    const fields = generationResult.result
+      ? this.#getFormReviewFields(generationResult.result)
+      : [];
+    this.#finishFormReviewGeneration(
+      reviewSession,
+      generation,
+      fields.length
+        ? { fields }
+        : {
+            errorType: lazy.FORM_REVIEW_ERRORS.NO_SUGGESTIONS,
+          }
+    );
+  }
+
+  /**
+   * Opens the form review dialog while suggestion generation begins.
+   *
+   * @param {string} formId The stable form ID.
+   * @param {number} generation The current autofill generation.
+   *
+   * @returns {Promise<SmartFormFillReviewSession | null>}
+   *   The initialized review session, or null if it could not be opened.
+   */
+  async #openFormReview(formId, generation) {
+    if (this.#formReviewSession || this.#destroyed) {
+      return null;
+    }
+
+    const browser = this.browsingContext.embedderElement;
+    const chromeWindow = this.browsingContext.topChromeWindow;
+    if (!browser || !chromeWindow?.gBrowser) {
+      return null;
+    }
+
+    const session = new lazy.SmartFormFillReviewSession({
+      browser,
+      chromeWindow,
+      onCancelGeneration: () =>
+        this.#cancelFormReviewGeneration(formId, generation),
+      onClose: closedSession => this.#onFormReviewClosed(closedSession),
+      onFill: fields => this.#fillReviewedFields(formId, fields),
+    });
+    this.#formReviewSession = session;
+
+    let ready = false;
+    try {
+      ready = await session.open();
+    } finally {
+      if (!ready && this.#formReviewSession === session) {
+        this.#formReviewSession = null;
+      }
+    }
+
+    return ready ? session : null;
+  }
+
+  /**
+   * Sends a completed generation result to the form review session.
+   *
+   * @param {SmartFormFillReviewSession} session
+   *   The session associated with the generation request.
+   * @param {number} generation The completed autofill generation.
+   * @param {FormReviewGenerationResult} result The generation outcome.
+   * @returns {void}
+   */
+  #finishFormReviewGeneration(session, generation, result) {
+    if (
+      this.#formReviewSession !== session ||
+      this.#cannotApplyAutofill(generation)
+    ) {
+      return;
+    }
+
+    if (session.completeGeneration(result)) {
+      this.#refreshDeferredTabData();
+    }
+  }
+
+  /**
+   * Clears parent state after a form-review session closes.
+   *
+   * @param {SmartFormFillReviewSession} session The closed session.
+   * @returns {void}
+   */
+  #onFormReviewClosed(session) {
+    if (this.#formReviewSession !== session) {
+      return;
+    }
+
+    this.#formReviewSession = null;
+    this.#refreshDeferredTabData();
+  }
+
+  /**
+   * Invalidates tab metadata that changed during value generation.
+   *
+   * @returns {void}
+   */
+  #refreshDeferredTabData() {
+    if (!this.#tabsChangedDuringValueGeneration) {
+      return;
+    }
+
+    this.#tabsChangedDuringValueGeneration = false;
+    this.#invalidateTabMetadata();
+  }
+
+  /**
+   * Cancels suggestion generation associated with the open review dialog.
+   *
+   * @param {string} formId The form whose generation should be cancelled.
+   * @param {number} generation The generation associated with the session.
+   * @returns {void}
+   */
+  #cancelFormReviewGeneration(formId, generation) {
+    if (generation !== this.#autofillGeneration) {
+      return;
+    }
+
+    ++this.#autofillGeneration;
+    this.#controller?.cancelAutofill(formId);
+  }
+
+  /**
+   * Enriches generated values with current serialized field metadata for the
+   * review UI. Values for fields that no longer exist are omitted.
+   *
+   * @param {FillFormResult} result The generated form values.
+   *
+   * @returns {Array<FormReviewField>}
+   *   Current fields and their generated values to present for review.
+   */
+  #getFormReviewFields(result) {
+    const formData = this.#formMetadataById.get(result.id)?.formData;
+    const fieldDataById = new Map(
+      formData?.fields.map(field => [field.id, field]) ?? []
+    );
+    const reviewFields = [];
+
+    for (const { id, value } of result.fields) {
+      const fieldData = fieldDataById.get(id);
+      if (!fieldData) {
+        continue;
+      }
+
+      reviewFields.push({
+        id,
+        label: fieldData.label ?? "",
+        placeholder: fieldData.placeholder ?? "",
+        name: fieldData.name ?? "",
+        value,
+      });
+    }
+
+    return reviewFields;
+  }
+
+  /**
+   * Sends reviewed values to the content actor for filling.
+   *
+   * @param {string} formId The stable form ID.
+   * @param {Array<{id: string, value: string}>} fields
+   *   The reviewed values approved by the session.
+   * @returns {Promise<FormReviewFillResult>} The form-filling result.
+   */
+  async #fillReviewedFields(formId, fields) {
+    if (this.#destroyed) {
+      return {
+        hasErrors: true,
+        cancelled: false,
+        filledFieldCount: 0,
+      };
+    }
+
+    try {
+      const result = await this.sendQuery("SmartFormFill:FillForm", {
+        id: formId,
+        fields,
+      });
+
+      if (!result) {
+        return {
+          hasErrors: true,
+          cancelled: false,
+          filledFieldCount: 0,
+        };
+      }
+
+      return {
+        hasErrors: !!result.hasErrors,
+        cancelled: !!result.cancelled,
+        filledFieldCount: result.filledFieldCount,
+      };
+    } catch (error) {
+      if (!this.#destroyed) {
+        lazy.console.error("Could not fill Smart Form Fill values", error);
+      }
+      return {
+        hasErrors: true,
+        cancelled: false,
+        filledFieldCount: 0,
+      };
+    }
   }
 
   /**
@@ -835,6 +1099,19 @@ export class SmartFormFillParent extends JSWindowActorParent {
         .filter(window => lazy.AIWindow.isAIWindowActive(window))
         .map(window => window.windowGlobalChild.innerWindowId)
     );
+  }
+
+  /**
+   * Invalidates tab-dependent metadata for all tracked forms.
+   */
+  #invalidateTabMetadata() {
+    for (const metadata of this.#formMetadataById.values()) {
+      ++metadata.relevantTabsRevision;
+      metadata.relevantTabsPromise = null;
+      metadata.relevantTabsStatus = METADATA_STATUS.IDLE;
+    }
+
+    this.#controller?.invalidateTabs();
   }
 
   /**

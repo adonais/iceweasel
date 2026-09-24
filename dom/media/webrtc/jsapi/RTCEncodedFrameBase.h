@@ -11,6 +11,8 @@
 #include "mozilla/dom/TypedArray.h"  // ArrayBuffer
 
 class nsIGlobalObject;
+struct JSStructuredCloneReader;
+struct JSStructuredCloneWriter;
 
 namespace webrtc {
 class TransformableFrameInterface;
@@ -18,35 +20,25 @@ class TransformableFrameInterface;
 
 namespace mozilla::dom {
 
-struct RTCEncodedFrameState {
-  std::unique_ptr<webrtc::TransformableFrameInterface> mFrame;
-  uint64_t mCounter = 0;
-  unsigned long mTimestamp = 0;
-
-  explicit RTCEncodedFrameState(
-      std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-      uint64_t aCounter = 0, unsigned long aTimestamp = 0);
-
-  // work around only having forward-declared TransformableFrameInterface
-  ~RTCEncodedFrameState();
-
-  // avoid "move got disabled by a user-declared destructor” trap
-  RTCEncodedFrameState() = default;
-  RTCEncodedFrameState(RTCEncodedFrameState&&) noexcept = default;
-  RTCEncodedFrameState& operator=(RTCEncodedFrameState&&) noexcept = default;
-  RTCEncodedFrameState(const RTCEncodedFrameState&) = delete;
-  RTCEncodedFrameState& operator=(const RTCEncodedFrameState&) = delete;
-};
-
 class RTCRtpScriptTransformer;
 
 class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
  public:
-  explicit RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
-                               RTCEncodedFrameState& aState,
-                               RTCRtpScriptTransformer* aOwner);
+  // A live frame; owns the libwebrtc frame it came from, and can be enqueued
+  // back into the transformer that owns it (see TakeFrame).
+  RTCEncodedFrameBase(
+      nsIGlobalObject* aGlobal,
+      std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
+      uint64_t aCounter, RTCRtpScriptTransformer* aOwner);
 
-  // forbid copy/move to protect mState
+  // A copy (structured clone, or copy construction from script), adopting a
+  // buffer the JS engine made for us (see ReadData and CopyData). Does not have
+  // an owner, meaning it cannot be enqueued, which means it doesn't need a
+  // counter or libwebrtc frame either.
+  RTCEncodedFrameBase(nsIGlobalObject* aGlobal, JS::Handle<JSObject*> aData);
+
+  // There's no situation where creating an exact copy is valid right now, even
+  // if the members were copyable. No need for move either.
   RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
   RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
   RTCEncodedFrameBase(RTCEncodedFrameBase&&) = delete;
@@ -58,36 +50,52 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const;
 
-  // Common webidl for RTCEncodedVideoFrame/RTCEncodedAudioFrame
-  unsigned long Timestamp() const;
-
   void SetData(const ArrayBuffer& aData);
 
   void GetData(JSContext* aCx, JS::Rooted<JSObject*>* aObj) const;
+
+  // False if we could not make a buffer for the frame's data. Such a frame is
+  // not fit to hand to script, and will be dropped.
+  bool HasData() const { return mData; }
 
   uint64_t GetCounter() const;
 
   size_t Size() const;
 
-  virtual bool CheckOwner(RTCRtpScriptTransformer* aOwner) const = 0;
+  bool CheckOwner(RTCRtpScriptTransformer* aOwner) const {
+    return aOwner == mOwner;
+  }
 
   std::unique_ptr<webrtc::TransformableFrameInterface> TakeFrame();
-
-  virtual bool IsVideo() const = 0;
 
  protected:
   virtual ~RTCEncodedFrameBase();
   void DetachData();
 
-  RefPtr<nsIGlobalObject> mGlobal;
-  RefPtr<RTCRtpScriptTransformer> mOwner;
+  // Deep copies the data buffer, as copy construction needs. Leaves an
+  // exception pending on aCx and returns false on failure.
+  [[nodiscard]] bool CopyData(JSContext* aCx,
+                              JS::MutableHandle<JSObject*> aData) const;
 
-  // Keep serializable state separate in this base and its subclasses
-  // in a manner that avoids diamond inheritance. Subclasses must pass
-  // in *this, to ensure it's constructed before and destroyed after
-  // this base; copy and move are deleted.
-  RTCEncodedFrameState& mState;
+  // Writes the data buffer into the clone stream, which gets us its
+  // ArrayBuffer serialization semantics (transfer, internal backreferences)
+  // instead of reimplementing them. Leaves an exception pending on aCx on
+  // failure, as the structured clone callbacks are expected to do.
+  [[nodiscard]] bool WriteData(JSContext* aCx,
+                               JSStructuredCloneWriter* aWriter) const;
+
+  // Reads back what WriteData wrote.
+  [[nodiscard]] static bool ReadData(JSContext* aCx,
+                                     JSStructuredCloneReader* aReader,
+                                     JS::MutableHandle<JSObject*> aData);
+
+  RefPtr<nsIGlobalObject> mGlobal;
   JS::Heap<JSObject*> mData;
+
+  // These are only set on originals, not copies/clones.
+  RefPtr<RTCRtpScriptTransformer> mOwner;
+  std::unique_ptr<webrtc::TransformableFrameInterface> mFrame;
+  uint64_t mCounter = 0;
 };
 
 }  // namespace mozilla::dom

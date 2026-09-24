@@ -9,6 +9,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ResolveInfo
 import android.speech.RecognizerIntent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable.Companion.DirectToSearchConfig
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.shadows.ShadowPackageManager
 
 @RunWith(AndroidJUnit4::class)
@@ -88,6 +90,10 @@ class HomeToolbarComposableTest {
 
     @Test
     fun `GIVEN a specific tab WHEN should start a typed search from it THEN enter search mode with tab's URL prefilled`() {
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { showAddressBarInFocusMode } returns false
+            }
         val tab = createTab("https://test.com")
         val browserStore = BrowserStore(BrowserState(tabs = listOf(tab)))
         val htc =
@@ -100,6 +106,7 @@ class HomeToolbarComposableTest {
                         source = MetricsUtils.Source.ACTION,
                     ),
                 browserStore = browserStore,
+                settings = settings,
             )
 
         htc.build(false)
@@ -110,6 +117,35 @@ class HomeToolbarComposableTest {
         assertEquals(MetricsUtils.Source.ACTION, appStore.state.searchState.searchAccessPoint)
         assertEquals(tab.content.url, toolbarStore.state.editState.query.current)
         assertTrue(toolbarStore.state.editState.isQueryPrefilled)
+    }
+
+    @Test
+    fun `GIVEN addressbar focus mode is enabled WHEN should start a typed search from a tab THEN don't prefill its URL`() {
+        val settings: Settings =
+            mockk(relaxed = true) {
+                every { showAddressBarInFocusMode } returns true
+            }
+        val tab = createTab("https://test.com")
+        val browserStore = BrowserStore(BrowserState(tabs = listOf(tab)))
+        val htc =
+            buildHomeToolbarComposable(
+                directToSearchConfig =
+                    DirectToSearchConfig(
+                        startVoiceSearch = false,
+                        startSearch = true,
+                        sessionId = tab.id,
+                        source = MetricsUtils.Source.ACTION,
+                    ),
+                browserStore = browserStore,
+                settings = settings,
+            )
+
+        htc.build(false)
+
+        assertTrue(appStore.state.searchState.isSearchActive)
+        assertEquals(tab.id, appStore.state.searchState.sourceTabId)
+        assertEquals("", toolbarStore.state.editState.query.current)
+        assertFalse(toolbarStore.state.editState.isQueryPrefilled)
     }
 
     @Test
@@ -137,6 +173,7 @@ class HomeToolbarComposableTest {
     private fun buildHomeToolbarComposable(
         directToSearchConfig: DirectToSearchConfig,
         browserStore: BrowserStore = this.browserStore,
+        settings: Settings = mockk(relaxed = true),
         coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     ) =
         HomeToolbarComposable(
@@ -146,7 +183,7 @@ class HomeToolbarComposableTest {
             appStore = appStore,
             browserStore = browserStore,
             browsingModeManager = mockk(),
-            settings = mockk(relaxed = true),
+            settings = settings,
             directToSearchConfig = directToSearchConfig,
             coroutineScope = coroutineScope,
             tabStripContent = {},

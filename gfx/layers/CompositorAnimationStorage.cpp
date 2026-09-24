@@ -238,9 +238,10 @@ void CompositorAnimationStorage::StoreAnimatedValue(
     JankedAnimationMap& aJankedAnimationMap) {
   switch (aProperty) {
     case eCSSProperty_background_color: {
-      SetAnimatedValue(aId, aAnimatedValueEntry,
-                       Servo_AnimationValue_GetColor(aAnimationValues[0],
-                                                     NS_RGBA(0, 0, 0, 0)));
+      StyleAbsoluteColor color;
+      Servo_AnimationValue_GetColor(
+          aAnimationValues[0], &StyleAbsoluteColor::TRANSPARENT_BLACK, &color);
+      SetAnimatedValue(aId, aAnimatedValueEntry, color.ToColor());
       break;
     }
     case eCSSProperty_opacity: {

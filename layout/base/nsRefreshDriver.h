@@ -199,6 +199,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
    */
   void SetActivity(bool aIsActive);
 
+  // Called when our pres shell gets attached to a widget, so that we can switch
+  // to its vsync source if we started ticking before the widget was available.
+  void NotifyWidgetAttached();
+
   /**
    * Return the prescontext we were initialized with
    */

@@ -138,4 +138,22 @@ add_task(async function test_config_engine_google() {
     "google-com-nocodes",
     "Should have returned the correct telemetry id"
   );
+
+  submission = engine.getSubmission("searchterm", null, "newtab_search_widget");
+
+  Assert.equal(
+    submission.uri.spec,
+    "https://google.com/?pc=firefox-b-exp1&q=searchterm",
+    "Should have the correct partner code in the url for the newtab search widget"
+  );
+  Assert.equal(
+    submission.partnerCode,
+    "firefox-b-exp1",
+    "Should have returned the correct partner code"
+  );
+  Assert.equal(
+    submission.telemetryId,
+    "google-b-exp1",
+    "Should have returned the correct telemetry id"
+  );
 });

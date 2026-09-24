@@ -1,7 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-""" Creates or updates profiles.
+"""Creates or updates profiles.
 
 The profile creation works as following:
 
@@ -23,6 +23,7 @@ When Firefox changes its version, profiles from the previous version
 should work as expected. Each profile tarball comes with a metadata file
 that keep track of the Firefox version that was used and the profile age.
 """
+
 import os
 import tempfile
 import shutil

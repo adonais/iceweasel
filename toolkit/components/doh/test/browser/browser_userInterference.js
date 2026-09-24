@@ -9,7 +9,6 @@ add_task(setup);
 add_task(async function testUserInterference() {
   // Set up a passing environment and enable DoH.
   setPassingHeuristics();
-  let promise = waitForDoorhanger();
   let prefPromise = TestUtils.waitForPrefChange(prefs.BREADCRUMB_PREF);
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
@@ -27,23 +26,17 @@ add_task(async function testUserInterference() {
   await checkTRRSelectionTelemetry();
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, EXAMPLE_URL);
-  let panel = await promise;
 
   prefPromise = TestUtils.waitForPrefChange(
     prefs.DOORHANGER_USER_DECISION_PREF
   );
-
-  // Click the doorhanger's "accept" button.
-  let button = panel.querySelector(".popup-notification-primary-button");
-  promise = BrowserTestUtils.waitForEvent(panel, "popuphidden");
-  EventUtils.synthesizeMouseAtCenter(button, {});
-  await promise;
+  simulateUserDecision(true);
   await prefPromise;
 
   is(
     Services.prefs.getStringPref(prefs.DOORHANGER_USER_DECISION_PREF),
     "UIOk",
-    "Doorhanger decision saved."
+    "User decision recorded."
   );
 
   BrowserTestUtils.removeTab(tab);

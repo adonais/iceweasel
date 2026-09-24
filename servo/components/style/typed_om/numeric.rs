@@ -5,10 +5,10 @@
 //! Typed OM Numeric Value.
 
 use crate::derives::*;
+use crate::values::CSSFloat;
 use crate::values::specified::{
     NoCalcAngle, NoCalcLength, NoCalcNumber, NoCalcPercentage, NoCalcTime,
 };
-use crate::values::CSSFloat;
 use cssparser::match_ignore_ascii_case;
 use style_traits::ParsingMode;
 

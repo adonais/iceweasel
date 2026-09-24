@@ -178,8 +178,8 @@ void HTMLTableCellElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTableCellElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTableCellElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::align}, {nsGkAtoms::valign}, {nsGkAtoms::nowrap},
 #if 0

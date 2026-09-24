@@ -11,7 +11,7 @@ process for fixing a bug**.
 
 Here are security guidelines to follow if you’re involved in reviewing,
 testing and landing a security patch. See
-{ref}`security-bug-approval-process`
+[Security Bug Approval Process](security-approval.md)
 for more details about how to request sec-approval and land the patch.
 
 ## Keeping private information private
@@ -120,7 +120,7 @@ the security issue less easily identifiable.
 
 ### Requesting sec-approval
 
-See {ref}`security-bug-approval-process`
+See [Security Bug Approval Process](security-approval.md)
 for more details
 
 (landing-your-patch)=
@@ -209,8 +209,8 @@ This is the responsibility of the security management team.
 
 ## Documentation & Contacts
 
-- {ref}`Normal process for submitting a patch <how-to-submit-a-patch>`
+- [Normal process for submitting a patch](/contributing/how_to_submit_a_patch.md)
 - [How to file a security bug](https://wiki.mozilla.org/Security/Fileabug)
 - [Handling Mozilla security bugs (policy)](https://www.mozilla.org/en-US/about/governance/policies/security-group/bugs/)
-- {ref}`security-bug-approval-process`
+- [Security Bug Approval Process](security-approval.md)
 - [Contacting the Security team(s) at Mozilla:](https://wiki.mozilla.org/Security)

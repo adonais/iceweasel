@@ -73,6 +73,10 @@ async function setupSmartFormFillAutocompleteTest() {
       [SMART_FORM_FILL_PREF, true],
       ["signon.rememberSignons", true],
       ["signon.showAutoCompleteFooter", true],
+      // Autofilling a saved login writes to the field asynchronously, which
+      // cancels an autocomplete search that is already in flight. These tests
+      // only need the login to exist so its footer row shows up.
+      ["signon.autofillForms", false],
     ],
   });
 
@@ -103,18 +107,23 @@ async function cleanupSmartFormFillAutocompleteTest(context) {
     get: async () => MOCK_RS_RECORDS,
   });
 
-  if (context.win && !context.win.closed) {
-    await closeAutocomplete(context.win.gBrowser.selectedBrowser);
-  }
-
   context.mockEngineManager?.rejectAllRequests();
   context.mockEngineManager?.cleanupMocks();
 
-  await SpecialPowers.popPrefEnv();
-  Region._setHomeRegion(context.originalRegion, false);
+  try {
+    if (context.win && !context.win.closed) {
+      await closeAutocomplete(context.win.gBrowser.selectedBrowser);
+    }
+  } finally {
+    try {
+      await SpecialPowers.popPrefEnv();
+    } finally {
+      Region._setHomeRegion(context.originalRegion, false);
 
-  if (context.win && !context.win.closed) {
-    await BrowserTestUtils.closeWindow(context.win);
+      if (context.win && !context.win.closed) {
+        await BrowserTestUtils.closeWindow(context.win);
+      }
+    }
   }
 }
 
@@ -198,6 +207,54 @@ function respondToMetadataRequest(
 }
 
 /**
+ * Captures and answers metadata requests made through the Smart Form Fill
+ * model integration.
+ *
+ * @param {MockEngineManager} mockEngineManager Mock model manager.
+ * @param {object} [options] Request capture options.
+ * @param {Array<string>} [options.expectedSchemas] Schemas to capture.
+ * @param {string | null} [options.selectedSourceUrl] Source tab to select.
+ *
+ * @returns {Promise<Map<string, object>>} Request data by schema.
+ */
+async function captureMetadataRequests(
+  mockEngineManager,
+  {
+    expectedSchemas = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA],
+    selectedSourceUrl = null,
+  } = {}
+) {
+  const requestDataBySchema = new Map();
+
+  while (expectedSchemas.some(schema => !requestDataBySchema.has(schema))) {
+    const { request, respond } = await mockEngineManager.captureRequest({
+      purpose: SMART_FORM_FILL_MODEL_PURPOSE,
+    });
+    const schemaName = getModelRequestSchema(request);
+
+    Assert.ok(
+      expectedSchemas.includes(schemaName),
+      `The ${schemaName} request should be expected`
+    );
+    Assert.ok(
+      !requestDataBySchema.has(schemaName),
+      `The ${schemaName} request should only run once`
+    );
+
+    const requestData = getModelRequestData(request);
+    requestDataBySchema.set(schemaName, requestData);
+    respondToMetadataRequest(
+      schemaName,
+      requestData,
+      respond,
+      selectedSourceUrl
+    );
+  }
+
+  return requestDataBySchema;
+}
+
+/**
  * Settles all pending Smart Form Fill metadata requests.
  *
  * @param {MockEngineManager} mockEngineManager Mock model manager.
@@ -205,13 +262,16 @@ function respondToMetadataRequest(
  * @param {string | null | undefined} selectedSourceUrl Source tab to select.
  * @param {Array<string>} failedSchemas Schemas whose requests should fail.
  * @param {Array<string>} [schemasToSettle] Metadata schemas to settle.
+ * @param {Map<string, object> | null} [requestDataBySchema] Captured request
+ *   data by schema.
  */
 function settlePendingMetadataRequests(
   mockEngineManager,
   handledSchemas,
   selectedSourceUrl,
   failedSchemas,
-  schemasToSettle = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA]
+  schemasToSettle = [FIELD_CLASSIFICATION_SCHEMA, RELEVANT_TABS_SCHEMA],
+  requestDataBySchema = null
 ) {
   const engine = mockEngineManager.engines.get(SMART_FORM_FILL_MODEL_PURPOSE);
   if (!engine) {
@@ -224,13 +284,16 @@ function settlePendingMetadataRequests(
       continue;
     }
 
+    const requestData = getModelRequestData(request);
+    requestDataBySchema?.set(schemaName, requestData);
+
     if (failedSchemas.includes(schemaName)) {
       engine.runRequests.delete(requestId);
       reject(new Error(`Test failure for ${schemaName}`));
     } else {
       respondToMetadataRequest(
         schemaName,
-        getModelRequestData(request),
+        requestData,
         response => engine.respond(requestId, response),
         selectedSourceUrl
       );
@@ -250,7 +313,8 @@ function settlePendingMetadataRequests(
  *
  * @returns {Promise<{
  *   row: HTMLElement,
- *   handledSchemas: Set<string>
+ *   handledSchemas: Set<string>,
+ *   requestDataBySchema: Map<string, object>
  * }>} Updated row and metadata schemas handled while waiting.
  */
 async function waitForMetadataAndUpdatedRow(
@@ -261,6 +325,7 @@ async function waitForMetadataAndUpdatedRow(
   failedSchemas
 ) {
   const handledSchemas = new Set();
+  const requestDataBySchema = new Map();
   let row;
 
   await TestUtils.waitForCondition(() => {
@@ -268,7 +333,9 @@ async function waitForMetadataAndUpdatedRow(
       mockEngineManager,
       handledSchemas,
       selectedSourceUrl,
-      failedSchemas
+      failedSchemas,
+      undefined,
+      requestDataBySchema
     );
 
     row = popup
@@ -283,7 +350,40 @@ async function waitForMetadataAndUpdatedRow(
   }, "Waiting for Smart Form Fill metadata and autocomplete refresh");
 
   await row.updateComplete;
-  return { row, handledSchemas };
+  return { row, handledSchemas, requestDataBySchema };
+}
+
+function getSmartFormFillActor(browser) {
+  return browser.browsingContext.currentWindowGlobal.getActor("SmartFormFill");
+}
+
+function getFieldsByName(formData) {
+  return new Map(formData.fields.map(field => [field.name, field]));
+}
+
+function hasSmartFormFillProvider(browser, selector) {
+  return SpecialPowers.spawn(browser, [selector], fieldSelector => {
+    const input = content.document.querySelector(fieldSelector);
+    const autocompleteActor =
+      input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
+
+    return [...autocompleteActor.providersByInput(input)].some(
+      provider => provider.actorName === "SmartFormFill"
+    );
+  });
+}
+
+async function waitForFocusedForm(browser, selector, check, message) {
+  await waitForSmartFormFillProvider(browser, selector, { focus: true });
+
+  const actor = getSmartFormFillActor(browser);
+  let formData;
+  await TestUtils.waitForCondition(async () => {
+    formData = await actor.sendQuery("SmartFormFill:GetFocusedForm");
+    return formData && check(formData);
+  }, message);
+
+  return formData;
 }
 
 /**
@@ -296,34 +396,57 @@ async function waitForMetadataAndUpdatedRow(
  *
  * @returns {Promise<string | null>} ID of the focused element, when requested.
  */
-function waitForSmartFormFillProvider(
+async function waitForSmartFormFillProvider(
   browser,
   selector,
   { focus: shouldFocus = false } = {}
 ) {
-  return SpecialPowers.spawn(
-    browser,
-    [selector, shouldFocus],
-    async (fieldSelector, focusField) => {
-      const input = content.document.querySelector(fieldSelector);
-      const autocompleteActor =
-        input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
+  await SpecialPowers.spawn(browser, [selector], async fieldSelector => {
+    const input = content.document.querySelector(fieldSelector);
+    const autocompleteActor =
+      input.documentGlobal.windowGlobalChild.getActor("AutoComplete");
 
-      await ContentTaskUtils.waitForCondition(
-        () =>
-          [...autocompleteActor.providersByInput(input)].some(
-            provider => provider.actorName === "SmartFormFill"
-          ),
-        "Waiting for Smart Form Fill to register as an autocomplete provider"
-      );
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        [...autocompleteActor.providersByInput(input)].some(
+          provider => provider.actorName === "SmartFormFill"
+        ),
+      "Waiting for Smart Form Fill to register as an autocomplete provider"
+    );
+  });
 
-      if (focusField) {
+  if (!shouldFocus) {
+    return SpecialPowers.spawn(
+      browser,
+      [],
+      () => content.document.activeElement?.id ?? null
+    );
+  }
+
+  // The AI Window can still be settling and take focus back after the browser
+  // first got it. document.activeElement stays on the field even then, so the
+  // field looks focused while its document is not, and the arrow key reaches
+  // the input without ever opening the autocomplete popup. Re-assert focus
+  // until the form document actually holds it.
+  let focusedField = null;
+  await TestUtils.waitForCondition(async () => {
+    await SimpleTest.promiseFocus(browser);
+    focusedField = await SpecialPowers.spawn(
+      browser,
+      [selector],
+      fieldSelector => {
+        const input = content.document.querySelector(fieldSelector);
         input.focus();
+        return content.document.hasFocus() &&
+          content.document.activeElement === input
+          ? input.id
+          : null;
       }
+    );
+    return focusedField !== null;
+  }, "Waiting for the form field to actually hold focus");
 
-      return content.document.activeElement?.id ?? null;
-    }
-  );
+  return focusedField;
 }
 
 /**
@@ -366,8 +489,6 @@ async function openLoadingAutocomplete(win, selector) {
 
   await SimpleTest.promiseFocus(browser);
 
-  const popupShown = BrowserTestUtils.waitForPopupEvent(popup, "shown");
-
   const focusedField = await waitForSmartFormFillProvider(browser, selector, {
     focus: true,
   });
@@ -379,7 +500,10 @@ async function openLoadingAutocomplete(win, selector) {
   );
 
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
-  await popupShown;
+  await TestUtils.waitForCondition(
+    () => popup.state == "open",
+    "Waiting for the autocomplete popup to open"
+  );
 
   let item = popup.querySelector('[originaltype="smartFormFill"]');
   if (!item) {

@@ -4,6 +4,7 @@
 
 //! Specified types for properties related to animations and transitions.
 
+use crate::Atom;
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{NonCustomPropertyId, PropertyId, ShorthandId};
@@ -12,8 +13,7 @@ use crate::values::generics::animation as generics;
 use crate::values::generics::position::{IsTreeScoped, TreeScoped};
 use crate::values::specified::{LengthPercentage, NonNegativeNumber, Time};
 use crate::values::{AtomIdent, CustomIdent, DashedIdent, KeyframesName};
-use crate::Atom;
-use cssparser::{match_ignore_ascii_case, Parser};
+use cssparser::{Parser, match_ignore_ascii_case};
 use std::fmt::{self, Write};
 use style_traits::{
     CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
@@ -57,7 +57,7 @@ impl Parse for TransitionProperty {
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         let ident = input.expect_ident()?;
 
-        let id = match PropertyId::parse_ignoring_rule_type(&ident, context) {
+        let id = match PropertyId::parse_ignoring_rule_type(ident, context) {
             Ok(id) => id,
             Err(..) => {
                 // None is not acceptable as a single transition-property.
@@ -156,7 +156,7 @@ pub type AnimationDuration = generics::GenericAnimationDuration<Time>;
 
 impl Parse for AnimationDuration {
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
-        if static_prefs::pref!("layout.css.scroll-driven-animations.enabled")
+        if crate::pref!("layout.css.scroll-driven-animations.enabled")
             && input.try_parse(|i| i.expect_ident_matching("auto")).is_ok()
         {
             return Ok(Self::auto());
@@ -396,8 +396,10 @@ pub enum AnimationComposition {
     ToShmem,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum Scroller {
     /// The nearest ancestor scroll container. (Default.)
+    #[default]
     Nearest,
     /// The document viewport as the scroll container.
     Root,
@@ -411,12 +413,6 @@ impl Scroller {
     #[inline]
     fn is_default(&self) -> bool {
         matches!(*self, Self::Nearest)
-    }
-}
-
-impl Default for Scroller {
-    fn default() -> Self {
-        Self::Nearest
     }
 }
 
@@ -442,8 +438,10 @@ impl Default for Scroller {
     ToTyped,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ScrollAxis {
     /// The block axis of the scroll container. (Default.)
+    #[default]
     Block = 0,
     /// The inline axis of the scroll container.
     Inline = 1,
@@ -458,12 +456,6 @@ impl ScrollAxis {
     #[inline]
     pub fn is_default(&self) -> bool {
         matches!(*self, Self::Block)
-    }
-}
-
-impl Default for ScrollAxis {
-    fn default() -> Self {
-        Self::Block
     }
 }
 
@@ -707,7 +699,7 @@ impl ViewTransitionNameKeyword {
 
 impl IsTreeScoped for ViewTransitionNameKeyword {
     fn is_tree_scoped(&self) -> bool {
-        self.0 .0 != atom!("none")
+        self.0.0 != atom!("none")
     }
 }
 

@@ -316,6 +316,8 @@ Switch the toggle button to have the raw view presented:
 :class: border
 ```
 
+JSON Lines documents (one JSON value per line, served as `application/jsonl`, `text/jsonl`, `application/jsonlines` or `application/x-ndjson`) are also recognized. They are displayed like a JSON array, with one independently collapsible entry per non-blank line, in document order (blank lines are skipped, so entry indices don't necessarily match file line numbers). A line that isn't valid JSON is shown inline as an error without affecting the rest of the document.
+
 (network-monitor-request-details-response-tab)=
 
 ### Response tab
@@ -337,6 +339,8 @@ If the response is JSON, it will be shown as an inspectable object:
 ```{image} json_formatted_response.png
 :class: border
 ```
+
+JSON Lines documents (one JSON value per line, served as `application/jsonl`, `text/jsonl`, `application/jsonlines` or `application/x-ndjson`, or as a `.jsonl` file) are also recognized. They are displayed like a JSON array, with one independently collapsible entry per non-blank line, in document order (blank lines are skipped, so entry indices don't necessarily match file line numbers). A line that isn't valid JSON is shown inline as an error without affecting the rest of the document.
 
 In the raw response view the response will be shown as a string:
 

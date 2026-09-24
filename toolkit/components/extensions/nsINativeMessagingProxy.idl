@@ -1,0 +1,77 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * An interface to talk to the XDG Native Messaging Proxy,
+ * for sandboxed browsers (e.g. packaged as a snap or a flatpak):
+ * https://github.com/flatpak/xdg-native-messaging-proxy
+ * This is a newer version of nsINativeMessagingPortal.
+ */
+[scriptable, builtinclass, uuid(a89af240-f53f-48c4-8468-168136a628d4)]
+interface nsINativeMessagingProxy : nsISupports
+{
+  /**
+   * Whether client code should use the proxy, or fall back to the "legacy"
+   * implementation that spawns and communicates directly with native
+   * applications.
+   */
+  boolean shouldUse();
+
+  /**
+   * Whether the proxy is available and can be talked to. It is an error to
+   * call other methods in this interface if the proxy isn't available.
+   *
+   * @returns Promise that resolves with a boolean that reflects
+              the availability of the proxy.
+   */
+  [implicit_jscontext]
+  readonly attribute Promise available;
+
+  /**
+   * Close a previously open session.
+   *
+   * @param aHandle The handle of a valid session.
+   *
+   * @returns Promise that resolves when the session is successfully closed.
+   */
+  [implicit_jscontext]
+  Promise closeSession(in ACString aHandle);
+
+  /**
+   * Find and return the JSON manifest for the named native messaging server
+   * as a string. This allows the browser to validate the manifest before
+   * deciding to start the server.
+   *
+   * @param aName      The name of the native messaging server to start.
+   * @param aExtension The ID of the extension that issues the request.
+   *
+   * @returns Promise that resolves with an UTF8-encoded string containing
+   *          the raw JSON manifest.
+   */
+  [implicit_jscontext]
+  Promise getManifest(in ACString aName, in ACString aExtension);
+
+  /**
+   * Start the named native messaging server, in a previously open session.
+   * The caller must indicate the requesting web extension (by extension ID).
+   *
+   * @param aName      The name of the native messaging server to start.
+   * @param aExtension The ID of the extension that issues the request.
+   *
+   * @returns Promise that resolves with an object containing:
+   *          - stdin  (unsigned long) - file descriptor for writing to the
+   *            native application
+   *          - stdout (unsigned long) - file descriptor for reading from the
+   *            native application
+   *          - stderr (unsigned long) - file descriptor for the native
+   *            application's error output
+   *          - handle (ACString) - a D-Bus object path of the form
+   *            /org/freedesktop/nativemessagingproxy/TOKEN, used to close
+   *            the session
+   */
+  [implicit_jscontext]
+  Promise start(in ACString aName, in ACString aExtension);
+};

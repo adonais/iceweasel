@@ -26,6 +26,7 @@ import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
@@ -348,7 +349,8 @@ class BrowserToolbarMiddleware(
             }
 
             is TabCounterClicked -> {
-                thumbnailsFeature()?.requestScreenshot()
+                thumbnailsFeature()
+                    ?.requestScreenshot(trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK)
 
                 navController.nav(
                     R.id.browserFragment,
@@ -419,7 +421,9 @@ class BrowserToolbarMiddleware(
                         )
                     )
                 } else {
-                    store.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms), true))
+                    if (!settings.showAddressBarInFocusMode) {
+                        store.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms), true))
+                    }
                     appStore.dispatch(SearchStarted(selectedTab.id))
                 }
             }

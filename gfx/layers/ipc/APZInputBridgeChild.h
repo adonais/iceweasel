@@ -31,6 +31,20 @@ class APZInputBridgeChild : public PAPZInputBridgeChild, public APZInputBridge {
       InputData& aEvent,
       InputBlockCallback&& aCallback = InputBlockCallback()) override;
 
+  void SetKeyboardMap(const KeyboardMap& aKeyboardMap) override;
+
+  void SetDPI(float aDpiValue) override;
+
+  void SetBrowserGestureResponse(uint64_t aInputBlockId,
+                                 BrowserGestureResponse aResponse) override;
+
+  void StartAutoscroll(const ScrollableLayerGuid& aGuid,
+                       const ScreenPoint& aAnchorLocation) override;
+
+  void StopAutoscroll(const ScrollableLayerGuid& aGuid) override;
+
+  void SetLongTapEnabled(bool aTapGestureEnabled) override;
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvHandleTap(
       const TapType& aType, const LayoutDevicePoint& aPoint,
@@ -40,6 +54,30 @@ class APZInputBridgeChild : public PAPZInputBridgeChild, public APZInputBridge {
 
   mozilla::ipc::IPCResult RecvCallInputBlockCallback(
       uint64_t aInputBlockId, const APZHandledResult& handledResult);
+
+  mozilla::ipc::IPCResult RecvNotifyPinchGesture(
+      const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
+      const LayoutDevicePoint& aFocusPoint,
+      const LayoutDeviceCoord& aSpanChange, const Modifiers& aModifiers);
+
+  mozilla::ipc::IPCResult RecvCancelAutoscroll(
+      const ScrollableLayerGuid::ViewID& aScrollId);
+
+  mozilla::ipc::IPCResult RecvNotifyScaleGestureComplete(
+      const ScrollableLayerGuid::ViewID& aScrollId, float aScale);
+
+  mozilla::ipc::IPCResult RecvLayerTransforms(
+      nsTArray<MatrixMessage>&& aTransforms);
+
+  mozilla::ipc::IPCResult RecvUpdateOverscrollVelocity(
+      const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+      const bool& aIsRootContent);
+
+  mozilla::ipc::IPCResult RecvUpdateOverscrollOffset(
+      const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+      const bool& aIsRootContent);
+
+  mozilla::ipc::IPCResult RecvHideDynamicToolbar();
 
  protected:
   void ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
@@ -66,8 +104,31 @@ class APZInputBridgeChild : public PAPZInputBridgeChild, public APZInputBridge {
       const uint64_t& aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
 
+  void NotifyPinchGestureOnMainThread(const PinchGestureType& aType,
+                                      const LayoutDevicePoint& aFocusPoint,
+                                      const LayoutDeviceCoord& aSpanChange,
+                                      const Modifiers& aModifiers);
+
+  void NotifyScaleGestureCompleteOnMainThread(float aScale);
+
+  void NotifyLayerTransformsOnMainThread(nsTArray<MatrixMessage>&& aTransforms);
+
+  void UpdateOverscrollVelocityOnMainThread(const ScrollableLayerGuid& aGuid,
+                                            float aX, float aY,
+                                            bool aIsRootContent);
+
+  void UpdateOverscrollOffsetOnMainThread(const ScrollableLayerGuid& aGuid,
+                                          float aX, float aY,
+                                          bool aIsRootContent);
+
+  void HideDynamicToolbarOnMainThread();
+
+  // Returns null if the compositor session has already been torn down.
+  GeckoContentController* GetContentController();
+
   bool mIsOpen;
   uint64_t mProcessToken;
+  // Currently, this can only be used by the main thread
   MOZ_NON_OWNING_REF RemoteCompositorSession* mCompositorSession = nullptr;
 
   using InputBlockCallbackMap =

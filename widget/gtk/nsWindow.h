@@ -201,8 +201,6 @@ class nsWindow : public nsIWidget {
   nsSizeMode GetSizeMode() const { return mSizeMode; }
   nsSizeMode SizeMode() override { return mSizeMode; }
   void SetSizeMode(nsSizeMode aMode) override;
-  void GetWorkspaceID(nsAString& workspaceID) override;
-  void MoveToWorkspace(const nsAString& workspaceID) override;
   void Enable(bool aState) override;
   void SetFocus(Raise, mozilla::dom::CallerType aCallerType) override;
   LayoutDeviceIntRect GetBounds() override;

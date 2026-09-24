@@ -182,6 +182,16 @@ class Raptor(
                 {"action": "store", "dest": "test", "help": "Raptor test to run"},
             ],
             [
+                ["--power-profile"],
+                {
+                    "action": "store",
+                    "choices": ["performance"],
+                    "dest": "power_profile",
+                    "help": "Set the host power-profiles-daemon profile to performance "
+                    "for the duration of the Raptor run.",
+                },
+            ],
+            [
                 ["--app"],
                 {
                     "default": "firefox",
@@ -1450,6 +1460,7 @@ class Raptor(
         if not os.path.isdir(env["MOZ_UPLOAD_DIR"]):
             self.mkdir_p(env["MOZ_UPLOAD_DIR"])
         env = self.query_env(partial_env=env, log_level=INFO)
+        power_profile = self.config.get("power_profile")
         # adjust PYTHONPATH to be able to use raptor as a python package
         if "PYTHONPATH" in env:
             env["PYTHONPATH"] = self.raptor_path + os.pathsep + env["PYTHONPATH"]
@@ -1522,6 +1533,30 @@ class Raptor(
             self.logcat_start()
 
         command = [python, run_tests] + options + mozlog_opts
+        if power_profile:
+            command = [
+                "powerprofilesctl",
+                "launch",
+                "--profile",
+                "performance",
+                "--reason",
+                "Raptor performance test",
+                "--appid",
+                "org.mozilla.raptor",
+                "--",
+                "/bin/sh",
+                "-c",
+                (
+                    'profile="$(powerprofilesctl get)" || exit $?; '
+                    'printf "Active power profile: %s\\n" "$profile"; '
+                    'if [ "$profile" != performance ]; then '
+                    'printf "Expected active power profile performance, got %s\\n" '
+                    '"$profile" >&2; exit 1; fi; '
+                    'exec "$@"'
+                ),
+                "raptor-power-profile",
+            ] + command
+
         if launch_in_debug_mode(command):
             raptor_process = subprocess.Popen(command, cwd=self.workdir, env=env)
             raptor_process.wait()

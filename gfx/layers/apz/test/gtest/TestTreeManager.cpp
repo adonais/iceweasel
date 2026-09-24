@@ -11,16 +11,6 @@
 
 class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
  protected:
-  void CreateSimpleScrollingLayer() {
-    const char* treeShape = "x";
-    LayerIntRect layerVisibleRect[] = {
-        LayerIntRect(0, 0, 200, 200),
-    };
-    CreateScrollData(treeShape, layerVisibleRect);
-    SetScrollableFrameMetrics(layers[0], START_SCROLL_ID,
-                              CSSRect(0, 0, 500, 500));
-  }
-
   void CreateSimpleMultiLayerTree() {
     const char* treeShape = "x(xx)";
     // LayerID               0 12
@@ -204,25 +194,6 @@ TEST_F(APZCTreeManagerGenericTesterMock, TargetChangesMidGesture_Bug1570559) {
   // If we've failed to clear the child's gesture state, then the long tap
   // timeout task will fire in TearDown() and a long-tap will be dispatched.
   EXPECT_CALL(*mcc, HandleTap(TapType::eLongTap, _, _, _, _, _)).Times(0);
-}
-
-TEST_F(APZCTreeManagerGenericTesterMock, Bug1198900) {
-  // This is just a test that cancels a wheel event to make sure it doesn't
-  // crash.
-  CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
-  UpdateHitTestingTree();
-
-  ScreenPoint origin(100, 50);
-  ScrollWheelInput swi(mcc->Time(), 0, ScrollWheelInput::SCROLLMODE_INSTANT,
-                       ScrollWheelInput::SCROLLDELTA_PIXEL, origin, 0, 10,
-                       false, WheelDeltaAdjustmentStrategy::eNone);
-  uint64_t blockId;
-  QueueMockHitResult(START_SCROLL_ID,
-                     {CompositorHitTestFlags::eVisibleToHitTest,
-                      CompositorHitTestFlags::eIrregularArea});
-  blockId = manager->ReceiveInputEvent(swi).mInputBlockId;
-  manager->ContentReceivedInputBlock(blockId, /* preventDefault= */ true);
 }
 
 // The next two tests check that APZ clamps the scroll offset it composites even

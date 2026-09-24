@@ -12,9 +12,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsPrivateBrowsingTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     @Ignore("Covered by verifyNavigationReachability[1: SettingsPrivateBrowsingPage (TBD) — Navigation Reachability]")
     @Test
     fun verifyTheSettingsPrivateBrowsingTest() {

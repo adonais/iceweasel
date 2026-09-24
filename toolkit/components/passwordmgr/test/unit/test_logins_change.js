@@ -283,6 +283,72 @@ add_task(async function test_removeLogin_nonexisting() {
 });
 
 /**
+ * Tests that removing a login requires the credentials to match, and does not
+ * fall back to a stored login with an empty username.
+ */
+add_task(async function test_removeLogin_requiresMatchingCredentials() {
+  const loginInfo = await Services.logins.addLoginAsync(TestData.formLogin());
+
+  const wrongPassword = loginInfo.clone();
+  wrongPassword.password = "not the stored password";
+  await Assert.rejects(
+    Services.logins.removeLoginAsync(wrongPassword),
+    /No matching logins/
+  );
+  await LoginTestUtils.checkLogins([loginInfo]);
+
+  await LoginTestUtils.clearData();
+
+  const emptyUsernameLogin = await Services.logins.addLoginAsync(
+    TestData.formLogin({ username: "" })
+  );
+  await Assert.rejects(
+    Services.logins.removeLoginAsync(TestData.formLogin()),
+    /No matching logins/
+  );
+  await LoginTestUtils.checkLogins([emptyUsernameLogin]);
+
+  await LoginTestUtils.clearData();
+});
+
+/**
+ * Tests that modifying a login requires the password of the login to modify to
+ * match the stored one.
+ */
+add_task(async function test_modifyLogin_requiresMatchingCredentials() {
+  const loginInfo = await Services.logins.addLoginAsync(TestData.formLogin());
+
+  const wrongPassword = loginInfo.clone();
+  wrongPassword.password = "not the stored password";
+  await Assert.rejects(
+    Services.logins.modifyLoginAsync(
+      wrongPassword,
+      newPropertyBag({ password: "the new password" })
+    ),
+    /No matching logins/
+  );
+  await LoginTestUtils.checkLogins([loginInfo]);
+
+  await LoginTestUtils.clearData();
+});
+
+/**
+ * Tests that a login can still be removed when the storage backend normalized
+ * a field on write, so the caller's login is not field-for-field identical to
+ * the stored one.
+ */
+add_task(async function test_removeLogin_normalizedOrigin() {
+  const loginInfo = TestData.formLogin({
+    origin: "https://example.org",
+    formActionOrigin: "https://example.org/",
+  });
+  await Services.logins.addLoginAsync(loginInfo);
+
+  await Services.logins.removeLoginAsync(loginInfo);
+  await LoginTestUtils.checkLogins([]);
+});
+
+/**
  * Tests removing all logins at once.
  */
 add_task(async function test_removeAllUserFacingLogins() {

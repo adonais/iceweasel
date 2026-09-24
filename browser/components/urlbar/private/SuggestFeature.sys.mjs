@@ -337,7 +337,7 @@ export class SuggestProvider extends SuggestFeature {
    *   The urlbar session's query context.
    * @param {UrlbarParentController} controller
    *   The controller.
-   * @param {Array} featureResults
+   * @param {{index: number, result: UrlbarResult}[]} featureResults
    *   The feature's results that were visible at the end of the session. This
    *   will always be non-empty and will only contain results from the feature.
    * @param {object|null} details
@@ -397,7 +397,7 @@ export class SuggestProvider extends SuggestFeature {
    *   The result the command acted on.
    */
   handleShowLessFrequently(controller, result) {
-    controller.view.acknowledgeFeedback(result);
+    controller.view.acknowledgeFeedback(result.id);
     this.incrementShowLessFrequentlyCount();
     if (!this.canShowLessFrequently) {
       controller.view.updateResultMenuCommands(

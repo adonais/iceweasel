@@ -77,7 +77,6 @@ import mozilla.components.feature.privatemode.notification.PrivateNotificationFe
 import mozilla.components.feature.search.BrowserStoreSearchAdapter
 import mozilla.components.lib.crash.store.CrashAction
 import mozilla.components.service.fxa.sync.SyncReason
-import mozilla.components.support.base.ext.isNotificationChannelEnabled
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.UserInteractionOnBackPressedCallback
@@ -90,8 +89,6 @@ import mozilla.components.support.utils.BootUtils
 import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.BuildManufacturerChecker
-import mozilla.components.support.utils.DateTimeProvider
-import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.toSafeIntent
 import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
@@ -166,6 +163,7 @@ import org.mozilla.fenix.home.intent.CrashReporterIntentProcessor
 import org.mozilla.fenix.home.intent.HomeDeepLinkIntentProcessor
 import org.mozilla.fenix.home.intent.LensResultIntentProcessor
 import org.mozilla.fenix.home.intent.OpenBrowserIntentProcessor
+import org.mozilla.fenix.home.intent.OpenHomeIntentProcessor
 import org.mozilla.fenix.home.intent.OpenPasswordManagerIntentProcessor
 import org.mozilla.fenix.home.intent.OpenRecentlyClosedIntentProcessor
 import org.mozilla.fenix.home.intent.OpenSpecificTabIntentProcessor
@@ -187,9 +185,7 @@ import org.mozilla.fenix.perf.ProfilerMarkers
 import org.mozilla.fenix.perf.StartupPathProvider
 import org.mozilla.fenix.perf.StartupTimeline
 import org.mozilla.fenix.perf.StartupTypeTelemetry
-import org.mozilla.fenix.privacyreport.PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID
-import org.mozilla.fenix.privacyreport.PrivacyReportNotificationWorker
-import org.mozilla.fenix.privacyreport.ensurePrivacyReportNotificationChannelExists
+import org.mozilla.fenix.privacyreport.PrivacyReportNotificationScheduler
 import org.mozilla.fenix.session.PrivateNotificationService
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.shortcut.NewTabShortcutIntentProcessor.Companion.ACTION_OPEN_PRIVATE_TAB
@@ -308,6 +304,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     private val homepageTabBinding by lazy {
         HomepageTabBinding(
             browserStore = components.core.store,
+            appStore = components.appStore,
             browsingModeManager = browsingModeManager,
             fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
             repository = DefaultHomepageAsANewTabPreferenceRepository(components.settings),
@@ -389,6 +386,10 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             AssistIntentProcessor(),
             StartSearchIntentProcessor { components.fenixOnboarding.userHasBeenOnboarded() },
             LensResultIntentProcessor(this),
+            OpenHomeIntentProcessor(
+                fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
+                browsingModeManager = browsingModeManager,
+            ),
             OpenBrowserIntentProcessor(this, ::getIntentSessionId),
             OpenSpecificTabIntentProcessor(this),
             OpenPasswordManagerIntentProcessor(),
@@ -398,6 +399,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     private val uninstallSurveyManager by lazy {
         UninstallSurveyManager(this, DefaultShortcutManagerCompatWrapper())
+    }
+
+    private val privacyReportNotificationScheduler by lazy {
+        PrivacyReportNotificationScheduler(
+            applicationContext = applicationContext,
+            settings = components.settings,
+        )
     }
 
     // See onKeyDown for why this is necessary
@@ -548,6 +556,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                                 inactiveTabsEnabled = components.settings.inactiveTabsAreEnabled,
                                 loginsStorage = components.core.passwordsStorage,
                                 tabGroupRepository = components.core.tabGroupRepository,
+                                listenStore = components.listenToPage.store,
                             )
                         }
                     } else {
@@ -636,6 +645,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             components.core.summarizationSettingsBinding,
             translationsAIControllableFeatureRegistrar,
             ipProtectionPrompter,
+            privacyReportNotificationScheduler,
         )
 
         addAboutHomeBinding(lifecycle)
@@ -655,9 +665,14 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         startupTelemetryOnCreateCalled(intent.toSafeIntent())
         startupPathProvider.attachOnActivityOnCreate(lifecycle, intent)
         startupTypeTelemetry =
-            StartupTypeTelemetry(components.startupStateProvider, startupPathProvider).apply {
-                attachOnHomeActivityOnCreate(lifecycle)
-            }
+            StartupTypeTelemetry(
+                    components.startupStateProvider,
+                    startupPathProvider,
+                    components.applicationScope,
+                )
+                .apply {
+                    attachOnHomeActivityOnCreate(lifecycle)
+                }
 
         components.core.requestInterceptor.setNavigationController(navHost.navController)
 
@@ -847,8 +862,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             }
         }
 
-        lifecycleScope.launch(IO) { updatePrivacyReportNotificationWorker() }
-
         onBackPressedCallback.isEnabled = true
 
         // This was done in order to refresh search engines when app is running in background
@@ -857,44 +870,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         components.core.store.dispatch(SearchAction.RefreshSearchEnginesAction)
 
         showPendingSendToDevicesIfPossible()
-    }
-
-    /**
-     * Register the [PrivacyReportNotificationWorker]'s notification channel if the feature is enabled and app
-     * notifications are allowed, then schedule or cancel the worker based on whether the feature is enabled and that
-     * channel is enabled.
-     *
-     * @param dateTimeProvider Used to compute the worker's initial delay when scheduling. Overridable so tests can
-     *   control the resulting delay instead of it being computed against the real clock, which could otherwise be zero
-     *   and cause WorkManager's test harness to actually execute the worker.
-     */
-    @VisibleForTesting
-    internal fun updatePrivacyReportNotificationWorker(dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider()) {
-        val settings = components.settings
-
-        // If the tracking protection feature is disabled then don't schedule the notification.
-        if (!settings.shouldUseTrackingProtection) {
-            PrivacyReportNotificationWorker.cancel(applicationContext)
-            return
-        }
-
-        val notificationManager = NotificationManagerCompat.from(applicationContext)
-        val featureEnabled = settings.weeklyPrivacyNotificationFeatureFlagEnabled
-
-        if (featureEnabled && notificationManager.areNotificationsEnabled()) {
-            // Register the channel so that it appears in the Android Settings App even
-            // before the first notification is sent.
-            ensurePrivacyReportNotificationChannelExists(applicationContext)
-        }
-
-        val shouldSchedule =
-            featureEnabled && notificationManager.isNotificationChannelEnabled(PRIVACY_REPORT_NOTIFICATION_CHANNEL_ID)
-
-        if (shouldSchedule) {
-            PrivacyReportNotificationWorker.schedule(applicationContext, settings, dateTimeProvider)
-        } else {
-            PrivacyReportNotificationWorker.cancel(applicationContext)
-        }
     }
 
     override fun onRestart() {
@@ -1837,6 +1812,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     companion object {
+        const val OPEN_TO_HOME = "open_to_home"
         const val OPEN_TO_BROWSER = "open_to_browser"
         const val OPEN_TO_BROWSER_AND_LOAD = "open_to_browser_and_load"
         const val LENS_RESULT_URL = "lens_result_url"

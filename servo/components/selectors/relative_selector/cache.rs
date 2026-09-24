@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use rustc_hash::FxHashMap;
+use crate::FxHashMap;
 /// Relative selector cache. This is useful for following cases.
 /// First case is non-subject relative selector: Imagine `.anchor:has(<..>) ~ .foo`, with DOM
 /// `.anchor + .foo + .. + .foo`. Each match on `.foo` triggers `:has()` traversal that
@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use std::hash::Hash;
 
 use crate::parser::{RelativeSelector, SelectorKey};
-use crate::{tree::OpaqueElement, SelectorImpl};
+use crate::{SelectorImpl, tree::OpaqueElement};
 
 /// Match data for a given element and a selector.
 #[derive(Clone, Copy)]

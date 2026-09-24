@@ -265,6 +265,7 @@
   skin/classic/browser/taskbar-tabs-move-tab.svg      (../shared/icons/taskbar-tabs-move-tab.svg)
   skin/classic/browser/save.svg                       (../shared/icons/save.svg)
   skin/classic/browser/screenshot.svg                 (../shared/icons/screenshot.svg)
+  skin/classic/browser/search-tabs.svg                (../shared/icons/search-tabs.svg)
   skin/classic/browser/share.svg                      (../shared/icons/share.svg)
   skin/classic/browser/sidebar-collapsed.svg          (../shared/icons/sidebar-collapsed.svg)
   skin/classic/browser/sidebar-collapsed-right.svg    (../shared/icons/sidebar-collapsed-right.svg)
@@ -288,7 +289,6 @@
   skin/classic/browser/translations.svg               (../shared/icons/translations.svg)
   skin/classic/browser/thumb-down.svg                 (../shared/icons/thumb-down.svg)
   skin/classic/browser/topsites.svg                   (../shared/icons/topsites.svg)
-  skin/classic/browser/trending.svg                   (../shared/icons/trending.svg)
   skin/classic/browser/window.svg                     (../shared/icons/window.svg)
   skin/classic/browser/window-firefox.svg             (../shared/icons/window-firefox.svg)
 

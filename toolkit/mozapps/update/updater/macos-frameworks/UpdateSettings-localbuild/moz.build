@@ -23,7 +23,5 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
         "UpdateSettings-localbuild.framework"
     ]
     if CONFIG["COMPILE_ENVIRONMENT"]:
-        framework += [
-            (f"!/{FINAL_TARGET}/UpdateSettings-localbuild", "UpdateSettings")
-        ]
+        framework += [(f"!/{FINAL_TARGET}/UpdateSettings-localbuild", "UpdateSettings")]
     framework.Resources += ["../UpdateSettings/Info.plist"]

@@ -3502,7 +3502,8 @@ sealed class Suggestion {
         val `clickUrl`: kotlin.String, 
         val `rawClickUrl`: kotlin.String, 
         val `score`: kotlin.Double, 
-        val `ftsMatchInfo`: mozilla.appservices.suggest.FtsMatchInfo?) : Suggestion()
+        val `ftsMatchInfo`: mozilla.appservices.suggest.FtsMatchInfo?, 
+        val `suggestionId`: kotlin.String) : Suggestion()
         
     {
         
@@ -3628,6 +3629,7 @@ public object FfiConverterTypeSuggestion : FfiConverterRustBuffer<Suggestion>{
                 FfiConverterString.read(buf),
                 FfiConverterDouble.read(buf),
                 FfiConverterOptionalTypeFtsMatchInfo.read(buf),
+                FfiConverterString.read(buf),
                 )
             2 -> Suggestion.Wikipedia(
                 FfiConverterString.read(buf),
@@ -3697,6 +3699,7 @@ public object FfiConverterTypeSuggestion : FfiConverterRustBuffer<Suggestion>{
                 + FfiConverterString.allocationSize(value.`rawClickUrl`)
                 + FfiConverterDouble.allocationSize(value.`score`)
                 + FfiConverterOptionalTypeFtsMatchInfo.allocationSize(value.`ftsMatchInfo`)
+                + FfiConverterString.allocationSize(value.`suggestionId`)
             )
         }
         is Suggestion.Wikipedia -> {
@@ -3788,6 +3791,7 @@ public object FfiConverterTypeSuggestion : FfiConverterRustBuffer<Suggestion>{
                 FfiConverterString.write(value.`rawClickUrl`, buf)
                 FfiConverterDouble.write(value.`score`, buf)
                 FfiConverterOptionalTypeFtsMatchInfo.write(value.`ftsMatchInfo`, buf)
+                FfiConverterString.write(value.`suggestionId`, buf)
                 Unit
             }
             is Suggestion.Wikipedia -> {

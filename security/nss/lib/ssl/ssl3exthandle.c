@@ -1215,8 +1215,7 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, const SECItem *ticket,
 
     if (ss->sec.ci.sid != NULL) {
         ssl_UncacheSessionID(ss);
-        ssl_FreeSID(ss->sec.ci.sid);
-        ss->sec.ci.sid = NULL;
+        ssl_SetSocketSID(ss, NULL);
     }
 
     if (!SECITEM_AllocItem(NULL, &decryptedTicket, ticket->len)) {
@@ -1271,7 +1270,7 @@ ssl3_ProcessSessionTicketCommon(sslSocket *ss, const SECItem *ticket,
         }
 
         ss->statelessResume = PR_TRUE;
-        ss->sec.ci.sid = sid;
+        ssl_SetSocketSID(ss, sid);
 
         /* We have the baseline value for the obfuscated ticket age here.  Save
          * that in xtnData temporarily.  This value is updated in

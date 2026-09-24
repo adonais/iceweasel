@@ -318,7 +318,7 @@ bool JSWindowActorProtocol::MessageManagerGroupMatches(
 }
 
 bool JSWindowActorProtocol::Matches(BrowsingContext* aBrowsingContext,
-                                    nsIURI* aURI, const nsACString& aRemoteType,
+                                    nsIURI* aURI, const RemoteType& aRemoteType,
                                     ErrorResult& aRv) {
   MOZ_ASSERT(aBrowsingContext, "DocShell without a BrowsingContext!");
   MOZ_ASSERT(aURI, "Must have URI!");
@@ -336,10 +336,10 @@ bool JSWindowActorProtocol::Matches(BrowsingContext* aBrowsingContext,
     return false;
   }
 
-  if (!RemoteTypePrefixMatches(aRemoteType)) {
+  if (!RemoteTypeMatches(aRemoteType)) {
     aRv.ThrowNotSupportedError(
         nsPrintfCString("Window protocol '%s' doesn't match remote type '%s'",
-                        mName.get(), PromiseFlatCString(aRemoteType).get()));
+                        mName.get(), aRemoteType.Stringify().get()));
     return false;
   }
 

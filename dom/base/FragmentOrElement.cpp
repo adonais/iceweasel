@@ -1835,6 +1835,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
     if (idAtom) {
       id.AppendLiteral(" id='");
       id.Append(nsDependentAtomString(idAtom));
+      id.ReplaceChar(char16_t('\n'), char16_t(' '));
       id.Append('\'');
     }
 

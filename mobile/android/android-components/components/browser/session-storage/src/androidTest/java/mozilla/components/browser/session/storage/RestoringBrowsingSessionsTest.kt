@@ -44,7 +44,7 @@ class RestoringBrowsingSessionsTest {
 
             assertTrue(getFileForEngine(context, engine).writeString { json })
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             val state = storage.restore()
 
             assertNotNull(state)
@@ -88,7 +88,7 @@ class RestoringBrowsingSessionsTest {
 
             assertTrue(getFileForEngine(context, engine).writeString { json })
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             val state = storage.restore()
 
             assertNotNull(state)
@@ -169,7 +169,7 @@ class RestoringBrowsingSessionsTest {
 
             assertTrue(getFileForEngine(context, engine).writeString { json })
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             val state = storage.restore()
 
             assertNotNull(state)
@@ -223,7 +223,7 @@ class RestoringBrowsingSessionsTest {
 
             assertTrue(getFileForEngine(context, engine).writeString { json })
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             val state = storage.restore()
 
             assertNotNull(state)
@@ -271,7 +271,7 @@ class RestoringBrowsingSessionsTest {
 
             assertTrue(getFileForEngine(context, engine).writeString { json })
 
-            val storage = SessionStorage(context, engine)
+            val storage = SessionStorage(context, engine, applicationScope = this)
             val state = storage.restore()
 
             assertNotNull(state)

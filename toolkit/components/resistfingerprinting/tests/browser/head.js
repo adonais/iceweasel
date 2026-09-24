@@ -157,6 +157,85 @@ function runFunctionInServiceWorker(browser, fn) {
   });
 }
 
+/**
+ *
+ * Runs a callback against a fresh tab with the service worker test prefs and the
+ * given prefs pushed. The tab, the site data it created and the pref
+ * environment are torn down unconditionally, so a failing callback cannot leak
+ * state into later tasks.
+ *
+ * @param {Array} prefs - Additional pref pairs to push for the callback.
+ * @param {string} url - The page to load in the tab.
+ * @param {Function} callback - Called with the tab's browser.
+ * @returns {Promise} A Promise that resolves to the result of the callback.
+ */
+async function withServiceWorkerTab(prefs, url, callback) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.serviceWorkers.enabled", true],
+      ["dom.serviceWorkers.testing.enabled", true],
+      ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+      ...prefs,
+    ],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  try {
+    return await callback(tab.linkedBrowser);
+  } finally {
+    await BrowserTestUtils.removeTab(tab);
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, () =>
+        resolve()
+      );
+    });
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+/**
+ *
+ * Reports whether a timestamp is rounded to the expected precision. The epsilon
+ * is absolute because for ms-since-epoch values a double's precision is around
+ * 1/5 of a microsecond, where a relative comparison is below one ulp. Mirrors
+ * the helper of the same name in
+ * browser/components/resistfingerprinting/test/browser/head.js.
+ *
+ * @param {number} value - The timestamp to check, in milliseconds.
+ * @param {number} expectedPrecision - The expected resolution, in milliseconds.
+ * @returns {boolean} Whether the value is rounded to that resolution.
+ */
+function isTimeValueRounded(value, expectedPrecision) {
+  const nearestExpected =
+    Math.round(value / expectedPrecision) * expectedPrecision;
+  if (value === nearestExpected) {
+    return true;
+  }
+
+  if (Math.abs(value - nearestExpected) < 0.0005) {
+    return true;
+  }
+
+  // A sub-millisecond resolution cannot be observed through a value that only
+  // has millisecond resolution, such as Date.now().
+  if (
+    Math.round(expectedPrecision) != expectedPrecision &&
+    Math.round(value) == value
+  ) {
+    return (
+      Math.floor(nearestExpected) == value ||
+      Math.ceil(nearestExpected) == value
+    );
+  }
+
+  return false;
+}
+
+const TEST_EMPTY_PAGE =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "https://example.com"
+  ) + "empty.html";
 const TEST_FIRST_PARTY_CONTEXT_PAGE =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",

@@ -27,7 +27,7 @@
     <filter id="dropShadow5">
       <feDropShadow in="SourceAlpha" flood-color="green"/>
     </filter>
-    <!-- check negative stdDeviation (should not display anything) -->
+    <!-- check negative stdDeviation (should display as stdDeviation of zero) -->
     <filter id="dropShadow6">
       <feDropShadow stdDeviation="-2" flood-color="green"/>
     </filter>

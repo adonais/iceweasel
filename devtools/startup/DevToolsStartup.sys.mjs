@@ -31,6 +31,8 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserToolboxLauncher:
+    "resource://devtools/client/framework/browser-toolbox/Launcher.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   CustomizableWidgets:
@@ -320,6 +322,9 @@ export class DevToolsStartup {
     this.onMoreToolsViewShowing = this.onMoreToolsViewShowing.bind(this);
     this.toggleProfilerKeyShortcuts =
       this.toggleProfilerKeyShortcuts.bind(this);
+    this.onDisabledByPolicyChanged = this.onDisabledByPolicyChanged.bind(this);
+    this.onBrowserToolsMenuPopupShowing =
+      this.onBrowserToolsMenuPopupShowing.bind(this);
   }
   /**
    * Boolean flag to check if DevTools have been already initialized or not.
@@ -342,15 +347,26 @@ export class DevToolsStartup {
   }
 
   /**
-   * Flag that indicates if the developer toggle was already added to customizableUI.
+   * The developer toggle widget definition. Built once and reused across
+   * disable/enable cycles.
    */
-  developerToggleCreated = false;
+  developerToggle = null;
+
+  /**
+   * Whether the developer toggle is currently registered with CustomizableUI.
+   */
+  developerToggleRegistered = false;
 
   /**
    * Flag that indicates if the profiler recording popup was already added to
    * customizableUI.
    */
   profilerRecordingButtonCreated = false;
+
+  /**
+   * Set of currently hooked windows
+   */
+  hookedWindows = new WeakSet();
 
   isDisabledByPolicy() {
     return Services.prefs.getBoolPref(DEVTOOLS_POLICY_DISABLED_PREF, false);
@@ -386,6 +402,13 @@ export class DevToolsStartup {
         // Initialize DevTools to create all menuitems in the system menu.
         this.initDevTools("CustomKeysUI");
       }, "customkeys-ui-showing");
+
+      // React to the DisableDeveloperTools policy being applied or removed at
+      // runtime.
+      Services.prefs.addObserver(
+        DEVTOOLS_POLICY_DISABLED_PREF,
+        this.onDisabledByPolicyChanged
+      );
       /* eslint-enable mozilla/balanced-observers */
 
       if (!this.isDisabledByPolicy()) {
@@ -586,12 +609,56 @@ export class DevToolsStartup {
   }
 
   /**
+   * React to the DisableDeveloperTools policy being toggled live: tear down any
+   * open DevTools UI (toolboxes and Browser Console) when disabled, then hook
+   * or unhook every browser window accordingly.
+   */
+  onDisabledByPolicyChanged() {
+    const disabled = this.isDisabledByPolicy();
+
+    if (disabled) {
+      const { require } = ChromeUtils.importESModule(
+        "resource://devtools/shared/loader/Loader.sys.mjs"
+      );
+
+      if (this.initialized) {
+        // Close any open toolbox. They can only exist once DevTools have
+        // been initialized, so don't load the framework otherwise
+        const { gDevTools } = require("devtools/client/framework/devtools");
+        gDevTools.closeAllToolboxes();
+        lazy.BrowserToolboxLauncher.closeAll();
+      }
+
+      if (Services.wm.getMostRecentWindow("devtools:webconsole")) {
+        // Close any open browser console.
+        const {
+          BrowserConsoleManager,
+        } = require("devtools/client/webconsole/browser-console-manager");
+        BrowserConsoleManager.closeBrowserConsole();
+      }
+      this.unhookDeveloperToggle();
+    } else {
+      this.hookDeveloperToggle();
+    }
+
+    for (const window of Services.wm.getEnumerator("navigator:browser")) {
+      if (disabled) {
+        this.unhookWindow(window);
+      } else {
+        this.hookWindow(window);
+      }
+    }
+  }
+
+  /**
    * Called when receiving the "browser-delayed-startup-finished" event for a top-level
    * window for the first time.
    *
    * @param {Window} window
    */
   onFirstWindowReady(window) {
+    this.hookDeveloperToggle();
+
     if (this.devtoolsFlag) {
       this.handleDevToolsFlag(window);
 
@@ -614,13 +681,12 @@ export class DevToolsStartup {
    * @param {Window} window
    */
   hookWindow(window) {
+    if (this.hookedWindows.has(window)) {
+      return;
+    }
     // Key Shortcuts need to be added on all the created windows.
     this.hookKeyShortcuts(window);
 
-    // In some situations (e.g. starting Firefox with --jsconsole) DevTools will be
-    // initialized before the first browser-delayed-startup-finished event is received.
-    // We use a dedicated flag because we still need to hook the developer toggle.
-    this.hookDeveloperToggle();
     this.hookProfilerRecordingButton();
 
     // The developer menu hook only needs to be added if devtools have not been
@@ -628,6 +694,24 @@ export class DevToolsStartup {
     if (!this.initialized) {
       this.hookBrowserToolsMenu(window);
     }
+
+    this.hookedWindows.add(window);
+  }
+
+  /**
+   * Unregister listeners to all possible entry points for Developer Tools.
+   *
+   * @param {Window} window
+   */
+  unhookWindow(window) {
+    if (!this.hookedWindows.has(window)) {
+      return;
+    }
+
+    this.unhookKeyShortcuts(window);
+    this.unhookBrowserToolsMenu(window);
+
+    this.hookedWindows.delete(window);
   }
 
   /**
@@ -647,46 +731,76 @@ export class DevToolsStartup {
    * initDevTools, from onViewShowing is also calling browser-menu.
    */
   hookDeveloperToggle() {
-    if (this.developerToggleCreated) {
+    if (AppConstants.MOZ_APP_NAME == "thunderbird") {
       return;
     }
+    if (!this.developerToggle) {
+      // Build the widget only once; it is reused every time the
+      // toggle is re-registered after a disable/enable cycle.
+      const id = "developer-button";
+      const widget = lazy.CustomizableUI.getWidget(id);
+      if (widget && widget.provider == lazy.CustomizableUI.PROVIDER_API) {
+        return;
+      }
 
-    const id = "developer-button";
-    const widget = lazy.CustomizableUI.getWidget(id);
-    if (widget && widget.provider == lazy.CustomizableUI.PROVIDER_API) {
-      return;
+      const panelviewId = "PanelUI-developer-tools";
+      const subviewId = "PanelUI-developer-tools-view";
+
+      this.developerToggle = {
+        id,
+        type: "view",
+        viewId: panelviewId,
+        shortcutId: "key_toggleToolbox",
+        tooltiptext: "developer-button.tooltiptext2",
+        onViewShowing: event => {
+          const doc = event.target.ownerDocument;
+          const developerItems = lazy.PanelMultiView.getViewNode(
+            doc,
+            subviewId
+          );
+          this.addDevToolsItemsToSubview(developerItems);
+        },
+        onInit(anchor) {
+          // Since onBeforeCreated already bails out when initialized, we can call
+          // it right away.
+          this.onBeforeCreated(anchor.ownerDocument);
+        },
+        onBeforeCreated: doc => {
+          // The developer toggle needs the "key_toggleToolbox" <key> element.
+          // In DEV EDITION, the toggle is added before 1st paint and hookKeyShortcuts() is
+          // not called yet when CustomizableUI creates the widget.
+          this.hookKeyShortcuts(doc.defaultView);
+        },
+      };
     }
 
-    const panelviewId = "PanelUI-developer-tools";
-    const subviewId = "PanelUI-developer-tools-view";
+    if (!this.developerToggleRegistered) {
+      lazy.CustomizableUI.createWidget(
+        this.developerToggle,
+        lazy.CustomizableUI.SOURCE_BUILTIN
+      );
+      lazy.CustomizableWidgets.push(this.developerToggle);
+      this.developerToggleRegistered = true;
+    }
+  }
 
-    const item = {
-      id,
-      type: "view",
-      viewId: panelviewId,
-      shortcutId: "key_toggleToolbox",
-      tooltiptext: "developer-button.tooltiptext2",
-      onViewShowing: event => {
-        const doc = event.target.ownerDocument;
-        const developerItems = lazy.PanelMultiView.getViewNode(doc, subviewId);
-        this.addDevToolsItemsToSubview(developerItems);
-      },
-      onInit(anchor) {
-        // Since onBeforeCreated already bails out when initialized, we can call
-        // it right away.
-        this.onBeforeCreated(anchor.ownerDocument);
-      },
-      onBeforeCreated: doc => {
-        // The developer toggle needs the "key_toggleToolbox" <key> element.
-        // In DEV EDITION, the toggle is added before 1st paint and hookKeyShortcuts() is
-        // not called yet when CustomizableUI creates the widget.
-        this.hookKeyShortcuts(doc.defaultView);
-      },
-    };
-    lazy.CustomizableUI.createWidget(item, lazy.CustomizableUI.SOURCE_BUILTIN);
-    lazy.CustomizableWidgets.push(item);
-
-    this.developerToggleCreated = true;
+  /**
+   * Unregister the developer toggle widget from CustomizableUI, keeping its
+   * definition so it can be re-registered later.
+   */
+  unhookDeveloperToggle() {
+    if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+      return;
+    }
+    if (!this.developerToggleRegistered) {
+      return;
+    }
+    lazy.CustomizableUI.destroyWidget(this.developerToggle.id);
+    const index = lazy.CustomizableWidgets.indexOf(this.developerToggle);
+    if (index != -1) {
+      lazy.CustomizableWidgets.splice(index, 1);
+    }
+    this.developerToggleRegistered = false;
   }
 
   addDevToolsItemsToSubview(subview) {
@@ -799,11 +913,26 @@ export class DevToolsStartup {
    */
   hookBrowserToolsMenu(window) {
     const menu = window.document.getElementById("browserToolsMenu");
-    const onPopupShowing = () => {
-      menu.removeEventListener("popupshowing", onPopupShowing);
-      this.initDevTools("SystemMenu");
-    };
-    menu.addEventListener("popupshowing", onPopupShowing);
+    menu.addEventListener("popupshowing", this.onBrowserToolsMenuPopupShowing, {
+      once: true,
+    });
+  }
+
+  onBrowserToolsMenuPopupShowing() {
+    this.initDevTools("SystemMenu");
+  }
+
+  /**
+   * Remove the "Browser Tools" menu popupshowing listener from the given window.
+   *
+   * @param {Window} window
+   */
+  unhookBrowserToolsMenu(window) {
+    const menu = window.document.getElementById("browserToolsMenu");
+    menu.removeEventListener(
+      "popupshowing",
+      this.onBrowserToolsMenuPopupShowing
+    );
   }
 
   /**
@@ -836,6 +965,21 @@ export class DevToolsStartup {
     // account (see bug 832984).
     const mainKeyset = doc.getElementById("mainKeyset");
     mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
+  }
+
+  /**
+   * Remove the DevTools key shortcuts from the given window.
+   *
+   * @param {Window} window
+   */
+  unhookKeyShortcuts(window) {
+    const doc = window.document;
+    const keyset = doc.getElementById("devtoolsKeyset");
+
+    if (!keyset) {
+      return;
+    }
+    keyset.remove();
   }
 
   /**
@@ -1315,6 +1459,10 @@ export class DevToolsStartup {
    * @param {XULFrameElement} tab
    */
   async slowScriptDebugHandler(tab) {
+    if (this.isDisabledByPolicy()) {
+      // Devtools are disabled
+      return;
+    }
     const require = this.initDevTools("SlowScript");
     const { gDevTools } = require("devtools/client/framework/devtools");
     const toolbox = await gDevTools.showToolboxForTab(tab, {

@@ -56,6 +56,16 @@ internal interface TabGroupOperationsDao : StoredTabGroupDao, TabGroupAssignment
         updateTabGroupLastModified(id = tabGroupId, currentTime = currentTime)
     }
 
+    /**
+     * Deletes the [StoredTabGroup] corresponding to [tabGroupId] along with its [TabGroupAssignment]'s, leaving the
+     * previously assigned tabs in place.
+     */
+    @Transaction
+    suspend fun ungroupTabGroup(tabGroupId: String) {
+        deleteTabGroupAssignmentsByTabGroupId(tabGroupId = tabGroupId)
+        deleteTabGroupById(id = tabGroupId)
+    }
+
     /** Deletes the [TabGroupAssignment] corresponding to [tabId] and updates the group's timestamp. */
     @Transaction
     suspend fun deleteTabGroupAssignmentById(tabId: String, currentTime: Long) {

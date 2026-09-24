@@ -1,0 +1,211 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+:host {
+  position: fixed;
+  inset-inline: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-xlarge);
+  box-sizing: border-box;
+
+  --sff-loader-gradient-light: linear-gradient(
+    90deg,
+    var(--color-violet-20) 0%,
+    var(--color-violet-30) 52%,
+    var(--color-purple-40) 72%,
+    var(--color-purple-50) 100%
+  );
+  --sff-loader-gradient-dark: linear-gradient(
+    90deg,
+    var(--color-pink-40) 0%,
+    var(--color-pink-30) 42%,
+    var(--color-violet-30) 62%,
+    var(--color-violet-40) 100%
+  );
+  --sff-icon-color: light-dark(var(--color-violet-80), var(--color-violet-10));
+}
+
+.form-review-dialog {
+  display: flex;
+  /* stylelint-disable-next-line */
+  width: min(var(--size-layout-xlarge), 100%);
+  /* stylelint-disable-next-line */
+  max-height: 90vh;
+  box-sizing: border-box;
+  padding: var(--space-large);
+  background-color: var(--background-color-box);
+  box-shadow: var(--box-shadow-level-4);
+  /* stylelint-disable-next-line */
+  border-radius: var(--border-radius-xlarge);
+  border: var(--border-width) solid var(--popup-border-color);
+
+  &.vertical-layout {
+    flex-direction: column;
+  }
+}
+
+.form-review-heading {
+  /* stylelint-disable-next-line */
+  color: var(--smartwindow-text-color);
+  font-weight: var(--font-weight-semibold);
+}
+
+.form-review-heading,
+.form-review-description {
+  font-size: var(--font-size-root);
+  margin-block: 0 var(--space-large);
+}
+
+/* Wraps the scrolling list so the jump-to-bottom button and the separator
+   stay pinned instead of scrolling away with the fields. */
+.form-review-fields-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    height: 1px;
+    inset-block-start: 0;
+    inset-inline: 0;
+    /* stylelint-disable-next-line */
+    background-color: var(--color-black-alpha-20);
+  }
+}
+
+.form-review-fields {
+  /* overflow can cut off focus outlines when they're not inset, so this makes
+     space for them */
+  --form-review-focus-padding: calc(var(--focus-outline-offset) + var(--focus-outline-width));
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+  min-height: 0;
+  overflow-y: auto;
+  padding-block: var(--space-large);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  padding-inline: var(--form-review-focus-padding);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline: calc(-1 * var(--form-review-focus-padding));
+
+  @media not (prefers-reduced-motion) {
+    scroll-behavior: smooth;
+  }
+}
+
+/* TODO: Bug 2067225 make the jump-to-bottom a reusable component in aiwindow */
+.form-review-jump-to-bottom-button {
+  --button-opacity-disabled: 1;
+  bottom: var(--space-large);
+  inset-inline: 0;
+  margin-inline: auto;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  visibility: hidden;
+  width: max-content;
+
+  @media not (forced-colors) {
+    --button-border-color-ghost: var(--color-accent-primary);
+    --button-background-color-ghost: light-dark(var(--color-white), var(--color-gray-80));
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-0), var(--color-gray-70));
+  }
+
+  @media not (prefers-reduced-motion) {
+    transition:
+      opacity 100ms linear,
+      visibility 100ms linear;
+  }
+
+  &[visible] {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+
+  &::part(button) {
+    box-shadow: var(--box-shadow-level-1);
+  }
+}
+
+.form-review-actions {
+  display: flex;
+  justify-content: end;
+  gap: var(--space-small);
+}
+
+.form-review-progress {
+  justify-content: space-between;
+}
+
+.form-review-progress-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.form-review-progress-label {
+  background-image: light-dark(var(--sff-loader-gradient-light), var(--sff-loader-gradient-dark));
+  background-clip: text;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: transparent;
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* TODO: Bug 2067227 make the loader a reusable component in aiwindow */
+.form-review-progress-icon {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: 0.9s spinLoader infinite linear;
+    will-change: transform;
+  }
+}
+
+@keyframes spinLoader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.form-review-icon,
+.form-review-progress-icon {
+  -moz-context-properties: fill, stroke;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.form-review-stop {
+  --button-padding: 0;
+
+  @media not (forced-colors) {
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-20) 24%, transparent));
+    --button-background-color-ghost-active: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-0) 24%, transparent));
+    --button-icon-fill: light-dark(var(--color-violet-70), var(--color-violet-20));
+  }
+
+  &::part(button) {
+    width: var(--size-item-large);
+    height: var(--size-item-large);
+    border-color: var(--color-accent-primary);
+    cursor: pointer;
+  }
+}
+
+.form-review-final-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
+.form-review-final-icon {
+  fill: var(--sff-icon-color);
+}

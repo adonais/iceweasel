@@ -84,7 +84,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
     frameDepth_ = AlignBytes(graph->localSlotsSize(), sizeof(uintptr_t));
 #endif
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) || \
       defined(JS_CODEGEN_ARM64)
     // On X64/x86 and ARM64, we don't need alignment for Wasm SIMD at this time.

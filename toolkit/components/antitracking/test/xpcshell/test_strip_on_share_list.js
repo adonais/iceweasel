@@ -24,15 +24,15 @@ let testJson = {
   },
   example: {
     queryParams: ["test_2", "test_1"],
-    origins: ["www.example.com"],
+    hosts: ["www.example.com"],
   },
   testparam: {
     queryParams: ["testparam"],
-    origins: ["testparamexample.com"],
+    hosts: ["testparamexample.com"],
   },
   exampleNet: {
     queryParams: ["test_3", "test_4"],
-    origins: ["www.example.net"],
+    hosts: ["www.example.net"],
   },
   exampleRoot: {
     queryParams: ["rootparam"],
@@ -65,7 +65,7 @@ add_task(async function test_striponshare_rules_cleared() {
   let testJson2 = {
     example2: {
       queryParams: ["testparam"],
-      origins: ["example2.com"],
+      hosts: ["example2.com"],
     },
   };
 

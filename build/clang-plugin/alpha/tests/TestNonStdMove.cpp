@@ -1,17 +1,13 @@
 #include <mozilla/RefPtr.h>
 
 // we can't include nsCOMPtr.h here, so let's redefine a basic version
-template<typename T>
-struct nsCOMPtr {
+template <typename T> struct nsCOMPtr {
   nsCOMPtr() = default;
 
-  template<typename U>
-  MOZ_IMPLICIT nsCOMPtr(already_AddRefed<U>&& aSrc);
+  template <typename U> MOZ_IMPLICIT nsCOMPtr(already_AddRefed<U> &&aSrc);
 
-  template<typename U>
-  nsCOMPtr& operator=(already_AddRefed<U>&& aSrc);
+  template <typename U> nsCOMPtr &operator=(already_AddRefed<U> &&aSrc);
 };
-
 
 using namespace mozilla;
 
@@ -25,14 +21,11 @@ struct RefCountedBase {
 struct RefCountedDerived : RefCountedBase {};
 
 struct RefCountedBaseHolder {
-  RefPtr<RefCountedBase> GetRefCountedBase() const {
-    return mRefCountedBase;
-  }
+  RefPtr<RefCountedBase> GetRefCountedBase() const { return mRefCountedBase; }
 
 private:
   RefPtr<RefCountedBase> mRefCountedBase = MakeRefPtr<RefCountedBase>();
 };
-
 
 void test_assign_same_type() {
   RefPtr<RefCountedBase> a = MakeRefPtr<RefCountedBase>();
@@ -57,7 +50,8 @@ void test_assign_different_template() {
 
 void test_construct_different_template() {
   RefPtr<RefCountedDerived> a = MakeRefPtr<RefCountedDerived>();
-  nsCOMPtr<RefCountedBase> b = a.forget(); // expected-warning {{non-standard move construction}}
+  nsCOMPtr<RefCountedBase> b =
+      a.forget(); // expected-warning {{non-standard move construction}}
 }
 
 void test_assign_already_addrefed() {
@@ -74,32 +68,38 @@ void test_construct_already_addrefed() {
 
 void test_construct_same_type() {
   RefPtr<RefCountedBase> a = MakeRefPtr<RefCountedBase>();
-  RefPtr<RefCountedBase> b = a.forget(); // expected-warning {{non-standard move construction}}
+  RefPtr<RefCountedBase> b =
+      a.forget(); // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_implicit_cast() {
   RefPtr<RefCountedDerived> a = MakeRefPtr<RefCountedDerived>();
-  RefPtr<RefCountedBase> b = a.forget(); // expected-warning {{non-standard move construction}}
+  RefPtr<RefCountedBase> b =
+      a.forget(); // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_brace_same_type() {
   RefPtr<RefCountedBase> a = MakeRefPtr<RefCountedBase>();
-  auto b = RefPtr<RefCountedBase>{a.forget()}; // expected-warning {{non-standard move construction}}
+  auto b = RefPtr<RefCountedBase>{
+      a.forget()}; // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_brace_implicit_cast() {
   RefPtr<RefCountedDerived> a = MakeRefPtr<RefCountedDerived>();
-  auto b = RefPtr<RefCountedBase>{a.forget()}; // expected-warning {{non-standard move construction}}
+  auto b = RefPtr<RefCountedBase>{
+      a.forget()}; // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_function_style_same_type() {
   RefPtr<RefCountedBase> a = MakeRefPtr<RefCountedBase>();
-  auto b = RefPtr<RefCountedBase>(a.forget()); // expected-warning {{non-standard move construction}}
+  auto b = RefPtr<RefCountedBase>(
+      a.forget()); // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_function_style_implicit_cast() {
   RefPtr<RefCountedDerived> a = MakeRefPtr<RefCountedDerived>();
-  auto b = RefPtr<RefCountedBase>(a.forget());  // expected-warning {{non-standard move construction}}
+  auto b = RefPtr<RefCountedBase>(
+      a.forget()); // expected-warning {{non-standard move construction}}
 }
 
 void test_construct_result_type() {
@@ -112,7 +112,7 @@ void test_construct_implicitly_cast_result_type() {
   already_AddRefed<RefCountedBase> b = a.forget();
 }
 
-void foo(already_AddRefed<RefCountedBase>&& aArg);
+void foo(already_AddRefed<RefCountedBase> &&aArg);
 
 void test_call_with_result_type() {
   RefPtr<RefCountedBase> a = MakeRefPtr<RefCountedBase>();

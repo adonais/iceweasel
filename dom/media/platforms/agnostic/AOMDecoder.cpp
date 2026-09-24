@@ -416,7 +416,7 @@ void AOMDecoder::OBUIterator::UpdateNext() {
                             "Not enough bits left for an OBU extension header");
       return;
     }
-    br.ReadBits(3);  // temporal_id
+    temp.mTemporalId = br.ReadBits(3);
     br.ReadBits(2);  // spatial_id
     br.ReadBits(3);  // extension_header_reserved_3bits
   }

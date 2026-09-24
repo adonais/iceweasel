@@ -1,6 +1,10 @@
 /* Any copyright is dedicated to the Public Domain.
  * https://creativecommons.org/publicdomain/zero/1.0/ */
 
+/**
+ * @import { MockOpenAIServerOptions } from "resource://testing-common/AIWindowTestUtils.sys.mjs"
+ */
+
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -10,6 +14,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   AIWindowAccountAuth:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs",
+  AIWindowTestUtils: "resource://testing-common/AIWindowTestUtils.sys.mjs",
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
@@ -35,6 +40,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 SearchTestUtils.init(this);
+AIWindowTestUtils.init(this, window);
 
 const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
@@ -55,9 +61,9 @@ const {
   "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs"
 );
 
-/**
- * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
- */
+const { _clearDismissedResumeMemoriesForTesting } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ResumeActivityDismissals.sys.mjs"
+);
 
 async function modelFor(choiceId) {
   return (await getModelForChoice(choiceId)).model;
@@ -65,6 +71,35 @@ async function modelFor(choiceId) {
 
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
+
+// Wrappers over the shared implementations in AIWindowTestUtils.sys.mjs.
+function openAIWindow(options) {
+  return AIWindowTestUtils.openReadyAIWindow(options);
+}
+
+function getAichatBrowser(browser) {
+  return AIWindowTestUtils.getAichatBrowser(browser);
+}
+
+function selectExplicitSmartbarAction(browser, action) {
+  return AIWindowTestUtils.selectExplicitSmartbarAction(browser, action);
+}
+
+function waitForSmartbarAction(browser, expectedAction) {
+  return AIWindowTestUtils.waitForSmartbarAction(browser, expectedAction);
+}
+
+function startMockOpenAI(options) {
+  return AIWindowTestUtils.startMockOpenAI(options);
+}
+
+function stopMockOpenAI(server) {
+  return AIWindowTestUtils.stopMockOpenAI(server);
+}
+
+function withServer(serverOptions, task) {
+  return AIWindowTestUtils.withServer(serverOptions, task);
+}
 
 let gIntentEngineStub;
 
@@ -345,30 +380,6 @@ add_setup(async function () {
 });
 
 /**
- * Opens a new AI Window
- *
- * @param {object} options
- * @param {string} [options.waitForTabURL] - URL to wait for, or empty string to skip waiting
- * @returns {Promise<Window>}
- */
-async function openAIWindow({ waitForTabURL = AIWINDOW_URL } = {}) {
-  info("Opening new AI Window");
-  const win = await BrowserTestUtils.openNewBrowserWindow({
-    aiWindow: true,
-    waitForTabURL,
-  });
-  info("Waiting for AI window attr");
-  await BrowserTestUtils.waitForMutationCondition(
-    win.document.documentElement,
-    { attributes: true },
-    () => win.document.documentElement.hasAttribute("ai-window")
-  );
-  info("Promising focus");
-  await SimpleTest.promiseFocus(win);
-  return win;
-}
-
-/**
  * Waits for the sidebar ai-window element to connect.
  *
  * @param {Window} win - Window reference
@@ -480,6 +491,21 @@ async function getPromptButtons(browser) {
   return promptsEl.shadowRoot.querySelectorAll(".sw-prompt-button");
 }
 
+async function getDismissButton(browser) {
+  const aiWindow = await TestUtils.waitForCondition(
+    () => browser.contentDocument?.querySelector("ai-window"),
+    "Wait for ai-window element"
+  );
+  const promptsEl = await TestUtils.waitForCondition(
+    () => aiWindow.shadowRoot.querySelector("smartwindow-prompts"),
+    "Wait for smartwindow-prompts element"
+  );
+  return TestUtils.waitForCondition(
+    () => promptsEl.shadowRoot.querySelector(".sw-prompt-dismiss"),
+    "Wait for the resume pill's dismiss button"
+  );
+}
+
 async function getConversationId(browser) {
   const aiWindow = await TestUtils.waitForCondition(
     () => browser.contentDocument?.querySelector("ai-window"),
@@ -488,11 +514,21 @@ async function getConversationId(browser) {
   return aiWindow.conversationId.toString();
 }
 
-async function stubResumeActivityGeneration(sb) {
-  const urls = [1, 2, 3, 4, 5].map(id => ({
-    url: `https://example.com/${id}`,
-    title: `Example ${id}`,
-  }));
+/**
+ * Stubs resume generation for the supplied memories, cards, and URLs.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {object} options
+ * @param {Array<object>} options.memories
+ * @param {Array<object>} options.cards - Mocked headline-generation output
+ * @param {Array<{url: string, title: string}>} options.urls - Inserted into
+ *   Places and removed again on cleanup
+ * @param {?string} [options.fxAccountToken]
+ */
+async function _stubResumeActivityGenerationCore(
+  sb,
+  { memories, cards, urls, fxAccountToken = null }
+) {
   for (const [index, page] of urls.entries()) {
     await PlacesUtils.history.insert({
       ...page,
@@ -505,6 +541,65 @@ async function stubResumeActivityGeneration(sb) {
     });
   }
 
+  const getMemoriesStub = sb
+    .stub(MemoriesManager, "getMemoriesByAttribute")
+    .resolves(memories);
+  // Keep cached results from being filtered as deleted.
+  sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
+  // Prevent cached results and dismissals from leaking between tests.
+  _clearResumeActivityCacheForTesting();
+  _clearDismissedResumeMemoriesForTesting();
+  _setGetConversationsByIdForTesting(async () => []);
+  _setConversationSuggestionsLoadPromptForTesting(async () => ({
+    prompt: "Test prompt",
+  }));
+  _setBuildConversationForTesting(async () => ({
+    setSystemMessage() {},
+    addUserMessage() {},
+    securityProperties: {
+      setPrivateData() {},
+      setUntrustedInput() {},
+      commit() {},
+    },
+    run: sb.stub().resolves({ finalOutput: JSON.stringify(cards) }),
+  }));
+  sb.stub(openAIEngine, "getFxAccountToken").resolves(fxAccountToken);
+
+  const originalAvailableLocales = Services.locale.availableLocales;
+  const originalRequestedLocales = Services.locale.requestedLocales;
+  Services.locale.availableLocales = ["en-US"];
+  Services.locale.requestedLocales = ["en-US"];
+
+  return {
+    getMemoriesStub,
+    memories,
+    async cleanup() {
+      _setGetConversationsByIdForTesting(null);
+      _setConversationSuggestionsLoadPromptForTesting(null);
+      _setBuildConversationForTesting(null);
+      _clearResumeActivityCacheForTesting();
+      _clearDismissedResumeMemoriesForTesting();
+      for (const { url } of urls) {
+        await PlacesUtils.history.remove(url);
+      }
+      Services.locale.availableLocales = originalAvailableLocales;
+      Services.locale.requestedLocales = originalRequestedLocales;
+    },
+  };
+}
+
+/**
+ * Stubs two candidates with one valid resume pill.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {object} [options]
+ * @param {?string} [options.fxAccountToken]
+ */
+async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
+  const urls = [1, 2, 3, 4, 5].map(id => ({
+    url: `https://example.com/${id}`,
+    title: `Example ${id}`,
+  }));
   const memories = [
     {
       id: "memory-1",
@@ -523,58 +618,41 @@ async function stubResumeActivityGeneration(sb) {
       },
     },
   ];
-
-  const getMemoriesStub = sb
-    .stub(MemoriesManager, "getMemoriesByAttribute")
-    .resolves(memories);
-  // Keep cached results from being filtered as deleted.
-  sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
-  // Prevent cached results from leaking between tests.
-  _clearResumeActivityCacheForTesting();
-  _setGetConversationsByIdForTesting(async () => []);
-  _setConversationSuggestionsLoadPromptForTesting(async () => ({
-    prompt: "Test prompt",
-  }));
-  _setBuildConversationForTesting(async () => ({
-    setSystemMessage() {},
-    addUserMessage() {},
-    securityProperties: {
-      setPrivateData() {},
-      setUntrustedInput() {},
-      commit() {},
-    },
-    run: sb.stub().resolves({
-      finalOutput: JSON.stringify([
-        {
-          id: 0,
-          headline: "Pick up your research",
-          status: "Continue reading",
-        },
-      ]),
-    }),
-  }));
-  sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
-
-  const originalAvailableLocales = Services.locale.availableLocales;
-  const originalRequestedLocales = Services.locale.requestedLocales;
-  Services.locale.availableLocales = ["en-US"];
-  Services.locale.requestedLocales = ["en-US"];
-
-  return {
-    getMemoriesStub,
+  const cards = [
+    { id: 0, headline: "Pick up your research", status: "Continue reading" },
+  ];
+  return _stubResumeActivityGenerationCore(sb, {
     memories,
-    async cleanup() {
-      _setGetConversationsByIdForTesting(null);
-      _setConversationSuggestionsLoadPromptForTesting(null);
-      _setBuildConversationForTesting(null);
-      _clearResumeActivityCacheForTesting();
-      for (const { url } of urls) {
-        await PlacesUtils.history.remove(url);
-      }
-      Services.locale.availableLocales = originalAvailableLocales;
-      Services.locale.requestedLocales = originalRequestedLocales;
+    cards,
+    urls,
+    fxAccountToken,
+  });
+}
+
+/**
+ * Stubs `memoryCount` ranked candidates with valid headlines.
+ *
+ * @param {object} sb - Sinon sandbox, owned and restored by the caller
+ * @param {number} memoryCount
+ */
+async function stubResumeActivityGenerationPool(sb, memoryCount) {
+  const urls = Array.from({ length: memoryCount }, (_, i) => ({
+    url: `https://example.com/pool-${i}`,
+    title: `Example ${i}`,
+  }));
+  const memories = urls.map((page, i) => ({
+    id: `pool-memory-${i}`,
+    memory_summary: `Research topic ${i}`,
+    source_ids: {
+      history_source_ids: [PlacesUtils.history.hashURL(page.url)],
     },
-  };
+  }));
+  const cards = memories.map((memory, i) => ({
+    id: i,
+    headline: `Pick up ${memory.memory_summary}`,
+    status: "Continue",
+  }));
+  return _stubResumeActivityGenerationCore(sb, { memories, cards, urls });
 }
 
 /**
@@ -899,42 +977,6 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
 }
 
 /**
- * Select an explicit action from the smartbar CTA dropdown menu.
- *
- * @param {MozBrowser} browser - The browser element
- * @param {SmartbarAction} action - The action to select
- */
-async function selectExplicitSmartbarAction(browser, action) {
-  await SpecialPowers.spawn(browser, [action], async actionType => {
-    const aiWindow = content.document.querySelector("ai-window");
-    await ContentTaskUtils.waitForMutationCondition(
-      aiWindow.shadowRoot,
-      { childList: true, subtree: true },
-      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
-    );
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    const inputCta = smartbar.querySelector("input-cta");
-    const mozButton = inputCta.shadowRoot.querySelector("moz-button");
-
-    await ContentTaskUtils.waitForMutationCondition(
-      mozButton.shadowRoot,
-      { childList: true, subtree: true },
-      () => mozButton.shadowRoot.querySelector("#chevron-button")
-    );
-    const chevronButton = mozButton.shadowRoot.querySelector("#chevron-button");
-    const panelList = inputCta.shadowRoot.querySelector("panel-list");
-    const shownPromise = ContentTaskUtils.waitForEvent(panelList, "shown");
-    chevronButton.click();
-    await shownPromise;
-
-    const actionItem = panelList.querySelector(
-      `panel-item[icon="${actionType}"]`
-    );
-    actionItem.click();
-  });
-}
-
-/**
  * Select the first search engine from the smartbar CTA "Search with…" submenu.
  *
  * @param {MozBrowser} browser - The browser element
@@ -967,30 +1009,8 @@ async function selectSmartbarSearchEngine(browser) {
 }
 
 /**
- * Wait for the smartbar action to be set.
- *
- * @param {MozBrowser} browser - The browser element
- * @param {string} expectedAction - The expected action value
- */
-async function waitForSmartbarAction(browser, expectedAction) {
-  await SpecialPowers.spawn(browser, [expectedAction], async action => {
-    const aiWindow = content.document.querySelector("ai-window");
-    await ContentTaskUtils.waitForMutationCondition(
-      aiWindow.shadowRoot,
-      { childList: true, subtree: true },
-      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
-    );
-    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
-    await ContentTaskUtils.waitForCondition(
-      () => smartbar.smartbarAction === action,
-      `Wait for smartbar action to be "${action}"`
-    );
-  });
-}
-
-/**
  * Stub the smartbar's load path to prevent navigation. The load funnels through
- * the private #loadURL into controller.loadURL, so the controller is the seam.
+ * the private #loadURL into the parent controller's loadURL, which is the seam.
  *
  * @param {MozBrowser} browser - The browser element
  * @param {object} [options] - Options for the stub
@@ -1008,13 +1028,13 @@ async function stubLoadURL(browser, { captureURL = false } = {}) {
     if (capture) {
       content._stubLoadURLCalled = false;
       content._stubLoadedURL = null;
-      smartbar.controller.loadURL = ({ loadRequest }) => {
+      smartbar.parentController.loadURL = ({ loadRequest }) => {
         content._stubLoadURLCalled = true;
         content._stubLoadedURL = loadRequest.urlLoad?.url ?? null;
         return {};
       };
     } else {
-      smartbar.controller.loadURL = () => ({});
+      smartbar.parentController.loadURL = () => ({});
     }
   });
 }
@@ -1049,7 +1069,7 @@ async function stubOpenSERP(browser) {
     content._stubOpenSERPCalled = false;
     content._stubOpenSERPTerms = null;
     content._stubOpenSERPEngine = null;
-    smartbar.controller.openSERP = (engineId, searchTerms) => {
+    smartbar.parentController.openSERP = (engineId, searchTerms) => {
       content._stubOpenSERPCalled = true;
       content._stubOpenSERPTerms = searchTerms;
       content._stubOpenSERPEngine = engineId;
@@ -1626,250 +1646,6 @@ async function checkForNumberOfElementsInChatMessage(
 }
 
 /**
- * Mock OpenAI server helpers
- */
-
-const { HttpServer } = ChromeUtils.importESModule(
-  "resource://testing-common/httpd.sys.mjs"
-);
-
-function readRequestBody(request) {
-  const stream = request.bodyInputStream;
-  const available = stream.available();
-  return NetUtil.readInputStreamToString(stream, available, {
-    charset: "UTF-8",
-  });
-}
-
-/**
- * @typedef {object} MockToolCall
- * @property {string} name - The tool function name (e.g. "run_search",
- *   "get_page_content").
- * @property {string} [args] - JSON-encoded arguments for the tool call.
- *   Defaults to "{}".
- */
-
-/**
- * @typedef {object} MockOpenAIServerOptions
- * @property {string[]} [streamChunks] - Array of content strings sent as
- *   individual SSE chunks in the streaming response. Defaults to
- *   ["Hello from mock."].
- * @property {MockToolCall|null} [toolCall] - When non-null, the first
- *   streaming request that includes tools will respond with this tool call
- *   instead of text content. A subsequent request containing the tool result
- *   will receive followupChunks as the response. Defaults to null.
- * @property {string[]} [followupChunks] - Content chunks sent in the
- *   streaming response after a tool result is received. Only used when
- *   toolCall is set. Defaults to ["Tool complete."].
- * @property {Function} [onRequest] - Callback invoked with the parsed
- *   request body for every request to /v1/chat/completions.
- */
-
-/**
- * Starts a local HTTP server that mimics the OpenAI chat completions API.
- *
- * Handles both streaming (SSE) and non-streaming (JSON) requests to
- * /v1/chat/completions. When toolCall is configured, the server simulates
- * a tool-use round-trip: the first request returns the tool call, and the
- * follow-up request (containing the tool result) returns followupChunks.
- *
- * @deprecated - Please use MockEngineManager in AIWindowTestUtils.sys.mjs unless
- * a test is explicitly needing to test the network layer of the OpenAI chat protocol.
- *   TODO (Bug 2045844): Remove and replace existing usages across test files.
- * @param {MockOpenAIServerOptions} [options]
- * @returns {{ server: HttpServer, port: number }} The running server and
- *   its port number.
- */
-function startMockOpenAI({
-  streamChunks = ["Hello from mock."],
-  streamChunkDelayMs = 0,
-  toolCall = null,
-  followupChunks = ["Tool complete."],
-  onRequest,
-} = {}) {
-  const server = new HttpServer();
-
-  server.registerPathHandler("/v1/chat/completions", (request, response) => {
-    let bodyText = "";
-    if (request.method === "POST") {
-      try {
-        bodyText = readRequestBody(request);
-      } catch (_) {}
-    }
-
-    let body;
-    try {
-      body = JSON.parse(bodyText || "{}");
-    } catch (_) {
-      body = {};
-    }
-
-    onRequest?.(body);
-
-    const wantsStream = !!body.stream;
-    const tools = Array.isArray(body.tools) ? body.tools : [];
-    const askedForTools = tools.length;
-    const messages = Array.isArray(body.messages) ? body.messages : [];
-    const hasToolResult = messages.some(m => m && m.role === "tool");
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    const startSSE = () => {
-      response.setStatusLine(request.httpVersion, 200, "OK");
-      response.setHeader(
-        "Content-Type",
-        "text/event-stream; charset=utf-8",
-        false
-      );
-      response.setHeader("Cache-Control", "no-cache", false);
-      response.setHeader("Access-Control-Allow-Origin", "*", false);
-      response.processAsync();
-    };
-
-    const sendSSE = obj => {
-      // Encode data so special §followup:§-type tokens preserves utf-8
-      response.write(
-        Array.from(
-          new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`),
-          b => String.fromCharCode(b)
-        ).join("")
-      );
-    };
-
-    if (wantsStream && toolCall && askedForTools && !hasToolResult) {
-      startSSE();
-
-      sendSSE({
-        id: "chatcmpl-aiwindow-stream-tool-1",
-        object: "chat.completion.chunk",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [
-          {
-            index: 0,
-            delta: {
-              content: "",
-              tool_calls: [
-                {
-                  index: 0,
-                  id: "call_1",
-                  type: "function",
-                  function: {
-                    name: toolCall.name,
-                    arguments: toolCall.args ?? "{}",
-                  },
-                },
-              ],
-            },
-            finish_reason: null,
-          },
-        ],
-      });
-
-      sendSSE({
-        id: "chatcmpl-aiwindow-stream-tool-2",
-        object: "chat.completion.chunk",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
-      });
-
-      response.write("data: [DONE]\n\n");
-      response.finish();
-      return;
-    }
-
-    if (wantsStream && toolCall && askedForTools && hasToolResult) {
-      startSSE();
-
-      followupChunks.forEach((chunk, index) => {
-        sendSSE({
-          id: `chatcmpl-aiwindow-stream-tool-followup-${index}`,
-          object: "chat.completion.chunk",
-          created: timestamp,
-          model: "aiwindow-mock",
-          choices: [
-            {
-              index: 0,
-              delta: { content: chunk },
-              finish_reason:
-                index === followupChunks.length - 1 ? "stop" : null,
-            },
-          ],
-        });
-      });
-
-      response.write("data: [DONE]\n\n");
-      response.finish();
-      return;
-    }
-
-    if (wantsStream) {
-      startSSE();
-
-      (async () => {
-        for (const [index, chunk] of streamChunks.entries()) {
-          if (streamChunkDelayMs) {
-            await new Promise(resolve =>
-              setTimeout(resolve, streamChunkDelayMs)
-            );
-          }
-          sendSSE({
-            id: `chatcmpl-aiwindow-stream-${index}`,
-            object: "chat.completion.chunk",
-            created: timestamp,
-            model: "aiwindow-mock",
-            choices: [
-              {
-                index: 0,
-                delta: { content: chunk },
-                finish_reason:
-                  index === streamChunks.length - 1 ? "stop" : null,
-              },
-            ],
-          });
-        }
-
-        response.write("data: [DONE]\n\n");
-        response.finish();
-      })();
-      return;
-    }
-
-    // Non-streaming fallback for conversation starters, title generation, etc.
-    response.setStatusLine(request.httpVersion, 200, "OK");
-    response.setHeader("Content-Type", "application/json", false);
-    response.write(
-      JSON.stringify({
-        id: "chatcmpl-aiwindow-non-stream",
-        object: "chat.completion",
-        created: timestamp,
-        model: "aiwindow-mock",
-        choices: [
-          {
-            index: 0,
-            message: { role: "assistant", content: "Mock response" },
-            finish_reason: "stop",
-          },
-        ],
-      })
-    );
-  });
-
-  server.start(-1);
-  return { server, port: server.identity.primaryPort };
-}
-
-/**
- * Stops a running mock OpenAI server.
- *
- * @param {HttpServer} server - The server instance returned by startMockOpenAI.
- * @returns {Promise<void>} Resolves when the server has fully stopped.
- */
-function stopMockOpenAI(server) {
-  return new Promise(resolve => server.stop(resolve));
-}
-
-/**
  * Retrieves the context chip labels from a user message rendered in the
  * ai-chat-content area. Waits for the aichat-browser, chat content, and
  * chips to be available before reading labels.
@@ -1918,77 +1694,4 @@ async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
       chip => chip.shadowRoot?.querySelector(".chip-label")?.textContent ?? ""
     );
   });
-}
-
-/**
- * Convenience wrapper that starts a mock OpenAI server, pushes the endpoint
- * pref, stubs getFxAccountToken, runs a task, then tears everything down.
- *
- * Consider using stubEngineNetworkBoundaries instead for new tests — it
- * additionally stubs openAIEngine.build to prevent leaked-window issues from
- * background async operations, and its setup/restore pattern fits
- * beforeEach/afterEach without requiring a callback wrapper.
- *
- * @param {MockOpenAIServerOptions} serverOptions - Options for the mock server.
- * @param {Function} task - Async callback receiving { port }.
- */
-async function withServer(serverOptions, task) {
-  const { server, port } = startMockOpenAI(serverOptions);
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.endpoint", `http://localhost:${port}/v1`],
-      ["browser.smartwindow.customEndpoint", `http://localhost:${port}/v1`],
-    ],
-  });
-
-  const getFxAccountTokenStub = sinon
-    .stub(openAIEngine, "getFxAccountToken")
-    .resolves("mock-fxa-token");
-
-  try {
-    await task({ port });
-  } finally {
-    getFxAccountTokenStub.restore();
-    await SpecialPowers.popPrefEnv();
-    await stopMockOpenAI(server);
-  }
-}
-
-/**
- * Waits for ai-window, then its shadowRoot, then the loaded #aichat-browser.
- *
- * @param {object} browser - The chrome browser element hosting ai-window
- * @returns {Promise<object>} The aichat browser element
- */
-async function getAichatBrowser(browser) {
-  const aiWindowEl = await TestUtils.waitForCondition(
-    () => browser.contentDocument?.querySelector("ai-window"),
-    "Wait for ai-window element to exist"
-  );
-
-  await TestUtils.waitForCondition(
-    () => aiWindowEl.shadowRoot,
-    "Wait for ai-window shadowRoot to be ready"
-  );
-
-  const aichatBrowser = await TestUtils.waitForCondition(
-    () => aiWindowEl.shadowRoot.querySelector("#aichat-browser"),
-    "Wait for aichat-browser element"
-  );
-
-  if (aichatBrowser.currentURI?.spec !== "about:aichatcontent") {
-    await BrowserTestUtils.browserLoaded(
-      aichatBrowser,
-      false,
-      "about:aichatcontent"
-    );
-  }
-
-  Assert.equal(
-    aichatBrowser.currentURI.spec,
-    "about:aichatcontent",
-    "aichat-browser should be loaded with about:aichatcontent"
-  );
-
-  return aichatBrowser;
 }

@@ -7,7 +7,7 @@
 use crate::derives::*;
 use crate::device::Device;
 use crate::invalidation::stylesheets::{RuleChangeKind, StylesheetInvalidationSet};
-use crate::shared_lock::SharedRwLockReadGuard;
+use crate::shared_lock::{SharedRwLockReadGuard, StylesheetGuards};
 use crate::stylesheets::{
     CssRule, CssRuleRef, CustomMediaMap, Origin, OriginSet, PerOrigin, StylesheetInDocument,
 };
@@ -39,10 +39,11 @@ where
 }
 
 /// The validity of the data in a given cascade origin.
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Eq, MallocSizeOf, Ord, PartialEq, PartialOrd)]
 pub enum DataValidity {
     /// The origin is clean, all the data already there is valid, though we may
     /// have new sheets at the end.
+    #[default]
     Valid = 0,
 
     /// The cascade data is invalid, but not the invalidation data (which is
@@ -51,12 +52,6 @@ pub enum DataValidity {
 
     /// Everything needs to be rebuilt.
     FullyInvalid = 2,
-}
-
-impl Default for DataValidity {
-    fn default() -> Self {
-        DataValidity::Valid
-    }
 }
 
 /// A struct to iterate over the different stylesheets to be flushed.
@@ -130,7 +125,7 @@ where
     }
 
     /// Returns an iterator over the remaining list of sheets to consume.
-    pub fn sheets<'b>(&'b self) -> impl Iterator<Item = &'b S> {
+    pub fn sheets(&self) -> impl Iterator<Item = &S> {
         self.entries.iter().map(|entry| &entry.sheet)
     }
 }
@@ -229,11 +224,13 @@ where
         rev_pos.map(|i| self.entries.len() - i - 1)
     }
 
-    fn remove(&mut self, sheet: &S) {
+    /// Removes a sheet from the collection, returning whether the sheet had
+    /// been committed (that is, whether it has been part of a flush).
+    fn remove(&mut self, sheet: &S) -> bool {
         let index = self.find_sheet_index(sheet);
         if cfg!(feature = "gecko") && index.is_none() {
             // FIXME(emilio): Make Gecko's PresShell::AddUserSheet not suck.
-            return;
+            return false;
         }
         let sheet = self.entries.remove(index.unwrap());
         // Removing sheets makes us tear down the whole cascade and invalidation
@@ -248,6 +245,7 @@ where
         } else {
             self.dirty = true;
         }
+        sheet.committed
     }
 
     fn contains(&self, sheet: &S) -> bool {
@@ -298,6 +296,26 @@ where
         self.entries.iter_mut().map(|e| &mut e.sheet)
     }
 
+    /// Collects invalidations for the sheets that have been added (i.e. sheets not yet committed)
+    /// since the last flush.
+    fn collect_pending_invalidations(
+        &self,
+        invalidations: &mut StylesheetInvalidationSet,
+        device: &Device,
+        custom_media: &CustomMediaMap,
+        guard: &SharedRwLockReadGuard,
+    ) {
+        if !self.dirty {
+            return;
+        }
+        for entry in &self.entries {
+            if entry.committed {
+                continue;
+            }
+            invalidations.collect_invalidations_for(device, custom_media, &entry.sheet, guard);
+        }
+    }
+
     fn flush(&mut self) -> SheetCollectionFlusher<'_, S> {
         let dirty = mem::replace(&mut self.dirty, false);
         let validity = mem::replace(&mut self.data_validity, DataValidity::Valid);
@@ -346,37 +364,30 @@ macro_rules! sheet_set_methods {
 
         /// Appends a new stylesheet to the current set.
         ///
-        /// No device implies not computing invalidations.
-        pub fn append_stylesheet(
-            &mut self,
-            device: Option<&Device>,
-            custom_media: &CustomMediaMap,
-            sheet: S,
-            guard: &SharedRwLockReadGuard,
-        ) {
+        /// Invalidations for the new sheet are collected when flushing.
+        pub fn append_stylesheet(&mut self, sheet: S, guard: &SharedRwLockReadGuard) {
             debug!(concat!($set_name, "::append_stylesheet"));
-            self.collect_invalidations_for(device, custom_media, &sheet, guard);
             let collection = self.collection_for(&sheet, guard);
             collection.append(sheet);
         }
 
         /// Insert a given stylesheet before another stylesheet in the document.
+        ///
+        /// Invalidations for the new sheet are collected when flushing.
         pub fn insert_stylesheet_before(
             &mut self,
-            device: Option<&Device>,
-            custom_media: &CustomMediaMap,
             sheet: S,
             before_sheet: S,
             guard: &SharedRwLockReadGuard,
         ) {
             debug!(concat!($set_name, "::insert_stylesheet_before"));
-            self.collect_invalidations_for(device, custom_media, &sheet, guard);
-
             let collection = self.collection_for(&sheet, guard);
             collection.insert_before(sheet, &before_sheet);
         }
 
         /// Remove a given stylesheet from the set.
+        ///
+        /// No device implies not computing invalidations.
         pub fn remove_stylesheet(
             &mut self,
             device: Option<&Device>,
@@ -385,10 +396,12 @@ macro_rules! sheet_set_methods {
             guard: &SharedRwLockReadGuard,
         ) {
             debug!(concat!($set_name, "::remove_stylesheet"));
-            self.collect_invalidations_for(device, custom_media, &sheet, guard);
-
             let collection = self.collection_for(&sheet, guard);
-            collection.remove(&sheet)
+            // If the sheet never made it to a flush, it never affected the document styles, so
+            // nothing to invalidate.
+            if collection.remove(&sheet) {
+                self.collect_invalidations_for(device, custom_media, &sheet, guard);
+            }
         }
 
         /// Notify the set that a rule from a given stylesheet has changed
@@ -449,6 +462,15 @@ macro_rules! sheet_set_methods {
     };
 }
 
+impl<S> Default for DocumentStylesheetSet<S>
+where
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S> DocumentStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -502,8 +524,24 @@ where
 
     /// Flush the current set, unmarking it as dirty, and returns a `DocumentStylesheetFlusher` in
     /// order to rebuild the stylist and the invalidation set.
-    pub fn flush(&mut self) -> (DocumentStylesheetFlusher<'_, S>, StylesheetInvalidationSet) {
+    ///
+    /// `custom_media_for_origin` is used to compute the invalidations for the sheets added since
+    /// the last flush.
+    pub fn flush<'a>(
+        &mut self,
+        device: &Device,
+        guards: &StylesheetGuards,
+        custom_media_for_origin: impl Fn(Origin) -> &'a CustomMediaMap,
+    ) -> (DocumentStylesheetFlusher<'_, S>, StylesheetInvalidationSet) {
         debug!("DocumentStylesheetSet::flush");
+        for (collection, origin) in self.collections.iter_origins() {
+            collection.collect_pending_invalidations(
+                &mut self.invalidations,
+                device,
+                custom_media_for_origin(origin),
+                guards.for_origin(origin),
+            );
+        }
         (
             DocumentStylesheetFlusher {
                 collections: &mut self.collections,
@@ -577,6 +615,15 @@ where
     pub sheets: SheetCollectionFlusher<'a, S>,
 }
 
+impl<S> Default for AuthorStylesheetSet<S>
+where
+    S: StylesheetInDocument + PartialEq + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S> AuthorStylesheetSet<S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
@@ -634,7 +681,22 @@ where
     }
 
     /// Flush the stylesheets for this author set.
-    pub fn flush(&mut self) -> (AuthorStylesheetFlusher<'_, S>, StylesheetInvalidationSet) {
+    ///
+    /// No device implies not computing invalidations.
+    pub fn flush(
+        &mut self,
+        device: Option<&Device>,
+        custom_media: &CustomMediaMap,
+        guard: &SharedRwLockReadGuard,
+    ) -> (AuthorStylesheetFlusher<'_, S>, StylesheetInvalidationSet) {
+        if let Some(device) = device {
+            self.collection.collect_pending_invalidations(
+                &mut self.invalidations,
+                device,
+                custom_media,
+                guard,
+            );
+        }
         (
             AuthorStylesheetFlusher {
                 sheets: self.collection.flush(),

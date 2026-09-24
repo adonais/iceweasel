@@ -96,11 +96,13 @@ recurse_syms: $(syms_targets)
 ifneq ($(CURRENT_TIER),compile)
 
 # Recursion rule for all directories traversed for all subtiers in the
-# current tier.
-$(addsuffix /$(CURRENT_TIER),$(CURRENT_DIRS)): %/$(CURRENT_TIER):
+# current tier, except the ones the rule above already covers.
+current_tier_targets := $(filter-out $(pre_compile_targets) $(compile_targets) $(syms_targets),$(addsuffix /$(CURRENT_TIER),$(CURRENT_DIRS)))
+
+$(current_tier_targets): %/$(CURRENT_TIER):
 	$(call RECURSE,$(CURRENT_TIER),$*)
 
-.PHONY: $(addsuffix /$(CURRENT_TIER),$(CURRENT_DIRS))
+.PHONY: $(current_tier_targets)
 
 # Dummy rules for possibly inexisting dependencies for the above tier targets
 $(addsuffix /Makefile,$(CURRENT_DIRS)) $(addsuffix /backend.mk,$(CURRENT_DIRS)):

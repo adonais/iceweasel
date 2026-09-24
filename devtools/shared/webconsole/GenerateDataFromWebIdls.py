@@ -22,29 +22,25 @@ from mozfile import json
 # This is an explicit list of interfaces to load [Pure] and [Constant]
 # annotation for. There are a bunch of things that are pure in other interfaces
 # that we don't care about in the context of the devtools.
-PURE_INTERFACE_ALLOWLIST = set(
-    [
-        "Document",
-        "Node",
-        "DOMTokenList",
-        "Element",
-        "Performance",
-        "URLSearchParams",
-        "FormData",
-        "Headers",
-    ]
-)
+PURE_INTERFACE_ALLOWLIST = set([
+    "Document",
+    "Node",
+    "DOMTokenList",
+    "Element",
+    "Performance",
+    "URLSearchParams",
+    "FormData",
+    "Headers",
+])
 
 # This is an explicit list of interfaces to exclude.
-DEPRECATED_INTERFACE__EXCLUDE_LIST = set(
-    [
-        "External",
-        "TestExampleInterface",
-        "TestInterface",
-        "TestJSImplInterface",
-        "TestingDeprecatedInterface",
-    ]
-)
+DEPRECATED_INTERFACE__EXCLUDE_LIST = set([
+    "External",
+    "TestExampleInterface",
+    "TestInterface",
+    "TestJSImplInterface",
+    "TestingDeprecatedInterface",
+])
 
 FILE_TEMPLATE = """\
 /* This Source Code Form is subject to the terms of the Mozilla Public

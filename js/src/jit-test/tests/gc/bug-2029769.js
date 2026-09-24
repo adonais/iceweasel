@@ -1,0 +1,13 @@
+var s = Symbol();
+var m = new Map();
+m.set(0, s);
+grayRoot().push(m);
+s = null;
+m = null;
+gc();
+schedulezone(this);
+startgc(1);
+while (gcstate() === "Prepare") gcslice(10);
+var held = grayRoot()[0];
+finishgc();
+held.get(0);

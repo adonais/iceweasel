@@ -67,7 +67,7 @@ The full API documentation is found [here], but the key objects are:
 
 * {class}`Marionette <marionette_driver.marionette.Marionette>`: client that speaks to Firefox
 
-[here]: /python/marionette_driver.rst
+[here]: /python/marionette_driver.md
 
 ## Registering Test Manifests
 

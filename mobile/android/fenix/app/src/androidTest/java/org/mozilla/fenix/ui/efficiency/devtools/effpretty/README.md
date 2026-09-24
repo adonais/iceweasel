@@ -75,8 +75,7 @@ stack of whatever threw, and the label of the screen dump taken for that failure
 
 - Structured steps → indented, colored, glyph-annotated.
 - `TestRunner` → `▶ TEST` banners; `run finished` green (0 failed) / vermillion (≥1 failed).
-- `BaseTest` retry → loud `↻ RETRY (first attempt failed)` — a test that failed attempt #1 and passed
-  on retry (a potentially masked failure).
+- Provider retries remain separate attempts; `BaseTest` does not retry a failure in-process.
 - `AndroidRuntime:E` → `‼ CRASH`.
 
 Palette is Okabe–Ito (colorblind-safe); glyphs + indentation carry the meaning so it stays readable

@@ -1,0 +1,15 @@
+---
+pnpm-audit:
+    description: >
+        Audits the vendored node packages for vulnerabilities reported in the
+        npm advisory database.
+    type: external
+    payload: pnpm-audit:lint
+    include:
+        - third_party/node/pnpm-lock.yaml
+    exclude-error: []
+    extensions:
+        - yaml
+    support-files:
+        - 'tools/lint/pnpm-audit/**'
+    setup: pnpm-audit:setup

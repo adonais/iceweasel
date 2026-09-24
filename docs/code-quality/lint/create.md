@@ -170,10 +170,17 @@ ruff:
 ```
 
 Notice the payload has two parts, delimited by ':'. The first is the module
-path, which `mozlint` will attempt to import. The second is the object path
-within that module (e.g, the name of a function to call). It is up to consumers
-of `mozlint` to ensure the module is in `sys.path`. Structured log linters
-use the same import mechanism.
+path, which `mozlint` resolves to a file next to the linter definition and
+loads from there, so it cannot collide with a module of the same name on
+`sys.path`. The second is the object path within that module (e.g, the name of
+a function to call). The payload's own imports still go through `sys.path`, so
+consumers of `mozlint` must keep the linter directory on it. Structured log
+linters use the same mechanism.
+
+A consumer whose definitions live apart from the modules they name (such as
+comm-central, whose definitions in `comm/tools/lint` wrap payloads from
+`tools/lint`) can pass those extra directories as the `linter_paths` lintarg.
+They are searched after the definition's own directory.
 
 The `support-files` key is used to list configuration files or files related
 to the running of the linter itself. If using `--outgoing` or `--workdir`

@@ -10,57 +10,34 @@
 #include "sdp/RsdparsaSdpGlue.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
-#include "sdp/Sdp.h"
+#include "sdp/SdpImpl.h"
 
 namespace mozilla {
 
 class RsdparsaSdpParser;
 class SdpParser;
 
-class RsdparsaSdp final : public Sdp {
+class RsdparsaSdp final : public SdpImpl {
   friend class RsdparsaSdpParser;
 
  public:
   explicit RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin);
-
-  UniquePtr<Sdp> Clone() const override;
-
-  const SdpOrigin& GetOrigin() const override;
-
-  // Note: connection information is always retrieved from media sections
-  uint32_t GetBandwidth(const std::string& type) const override;
-
-  size_t GetMediaSectionCount() const override {
-    return sdp_media_section_count(mSession.get());
-  }
-
-  const SdpAttributeList& GetAttributeList() const override {
-    return *mAttributeList;
-  }
-
-  SdpAttributeList& GetAttributeList() override { return *mAttributeList; }
-
-  const SdpMediaSection& GetMediaSection(size_t level) const override;
-
-  SdpMediaSection& GetMediaSection(size_t level) override;
-
-  SdpMediaSection& AddMediaSection(const SdpMediaSection::MediaType media,
-                                   const SdpDirectionAttribute::Direction dir,
-                                   const uint16_t port,
-                                   const SdpMediaSection::Protocol proto,
-                                   const sdp::AddrType addrType,
-                                   const std::string& addr) override;
-
-  void Serialize(std::ostream&) const override;
+  RsdparsaSdp() = delete;
 
  private:
-  RsdparsaSdp() = default;
-  RsdparsaSdp(const RsdparsaSdp& aOrig);
+  // Built before mSession is initialized, so it takes the session it is to
+  // reference rather than reading the member
+  static UniquePtr<SdpAttributeListImpl> CreateAttributeList(
+      const RsdparsaSessionHandle& session);
+
+  // mAttributeList is always a RsdparsaSdpAttributeList for this sdp
+  RsdparsaSdpAttributeList& RsdparsaAttributeList() {
+    return *static_cast<RsdparsaSdpAttributeList*>(mAttributeList.get());
+  }
+
+  void LoadBandwidths();
 
   RsdparsaSessionHandle mSession;
-  SdpOrigin mOrigin{"", 0, 0, sdp::kIPv4, ""};
-  UniquePtr<RsdparsaSdpAttributeList> mAttributeList;
-  std::vector<UniquePtr<RsdparsaSdpMediaSection>> mMediaSections;
 };
 
 }  // namespace mozilla

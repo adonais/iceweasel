@@ -92,7 +92,7 @@ class QualityScalingTest : public test::CallTest {
        << "," << p.vp9_low << "," << p.vp9_high         //
        << "," << p.h264_low << "," << p.h264_high       //
        << ",0,0,0.9995,0.9999,1";
-    field_trials().Set("WebRTC-Video-QualityScaling", sb.str());
+    field_trials().Set("WebRTC-Video-QualityScaling", sb.Release());
   }
 
   const std::optional<VideoEncoder::ResolutionBitrateLimits>

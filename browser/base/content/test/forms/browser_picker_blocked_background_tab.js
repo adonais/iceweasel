@@ -71,8 +71,8 @@ add_task(async function test_date_picker_blocked_in_background_tab() {
       shouldOpen: false,
     });
   });
-  // Need to remove the iframe to prevent a leak, see DateTimeTestHelper.cleanup()
-  // in toolkit/content/tests/browser/datetime/head.js.
+  // The panel keeps its iframe for the lifetime of the window, which the
+  // shutdown leak check attributes to this test.
   document.getElementById("DateTimePickerPanelPopupFrame")?.remove();
 });
 

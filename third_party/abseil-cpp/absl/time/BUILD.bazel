@@ -25,7 +25,7 @@ load(
 )
 
 package(
-    default_visibility = ["//visibility:public"],
+    default_visibility = ["//visibility:private"],
     features = [
         "header_modules",
         "layering_check",
@@ -53,6 +53,7 @@ cc_library(
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = ["//visibility:public"],
     deps = [
         "//absl/base",
         "//absl/base:config",
@@ -77,6 +78,7 @@ cc_library(
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = ["//visibility:public"],
     deps = [
         ":time",
         "//absl/base:config",
@@ -99,6 +101,7 @@ cc_library(
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = ["//visibility:public"],
     deps = [
         ":clock_interface",
         ":time",
@@ -145,6 +148,7 @@ cc_test(
         "//absl/hash:hash_testing",
         "//absl/numeric:int128",
         "//absl/random",
+        "//absl/strings",
         "//absl/strings:str_format",
         "//absl/time/internal/cctz:time_zone",
         "@googletest//:gtest",

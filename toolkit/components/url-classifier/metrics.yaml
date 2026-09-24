@@ -546,7 +546,6 @@ urlclassifier:
       - mozstd-trackwhite-digest256
       - google-trackwhite-digest256
       - content-track-digest256
-      - mozplugin-block-digest256
       - ads-track-digest256
       - social-track-digest256
       - analytics-track-digest256
@@ -591,7 +590,6 @@ urlclassifier:
       - mozstd-trackwhite-digest256
       - google-trackwhite-digest256
       - content-track-digest256
-      - mozplugin-block-digest256
       - ads-track-digest256
       - social-track-digest256
       - analytics-track-digest256

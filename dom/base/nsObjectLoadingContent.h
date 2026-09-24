@@ -295,11 +295,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
   nsresult CloseChannel();
 
   /**
-   * If this object should be tested against blocking list.
-   */
-  bool ShouldBlockContent();
-
-  /**
    * This method tells the final answer on whether this object's fallback
    * content should be used instead of the original plugin content.
    *
@@ -450,9 +445,6 @@ class nsObjectLoadingContent : public nsIStreamListener,
   // created using NS_FROM_PARSER_NETWORK flag. If the element is modified,
   // it may lose the flag.
   bool mNetworkCreated : 1;
-
-  // Whether content blocking is enabled or not for this object.
-  bool mContentBlockingEnabled : 1;
 
   // Protects DoStopPlugin from reentry (bug 724781).
   bool mIsStopping : 1;

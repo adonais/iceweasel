@@ -19,6 +19,8 @@
 #include "nsIWidget.h"
 #include "nsIWidgetListener.h"
 #include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsRefreshDriver.h"
 #include "nsXULPopupManager.h"
 
 using namespace mozilla;
@@ -87,6 +89,9 @@ void PresShellWidgetListener::AttachToTopLevelWidget(nsIWidget* aWidget) {
   mWindow->SetAttachedWidgetListener(this);
   if (mWindow->GetWindowType() != WindowType::Invisible) {
     mWindow->AsyncEnableDragDrop(true);
+  }
+  if (nsPresContext* pc = mPresShell->GetPresContext()) {
+    pc->RefreshDriver()->NotifyWidgetAttached();
   }
 }
 

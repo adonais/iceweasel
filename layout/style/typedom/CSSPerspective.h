@@ -9,6 +9,7 @@
 #include "mozilla/dom/CSSPerspectiveBinding.h"
 #include "mozilla/dom/CSSPerspectiveBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
+#include "mozilla/dom/DOMMatrixBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 template <class T>
@@ -55,10 +56,16 @@ class CSSPerspective final : public CSSTransformComponent {
 
   // end of CSSPerspective Web IDL declarations
 
+  already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
+
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;
 
  protected:
+  static OwningCSSPerspectiveValue ConstructLength(
+      nsCOMPtr<nsISupports> aGlobal, const CSSPerspectiveValue& aLength,
+      ErrorResult& aRv);
+
   virtual ~CSSPerspective() = default;
 
   OwningCSSPerspectiveValue mLength;

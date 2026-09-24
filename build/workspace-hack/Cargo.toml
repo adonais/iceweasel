@@ -85,7 +85,7 @@ zip = { version = "2.1.2", default-features = false, features = ["deflate-flate2
 scopeguard = { version = "1", optional = true }
 
 [build-dependencies]
-bindgen = { version = "0.69", default-features = false, features = ["runtime"], optional = true }
+bindgen = { version = "0.73", default-features = false, features = ["runtime"], optional = true }
 cc = { version = "1.0", features = ["parallel"], optional = true }
 itertools = { version = "0.15", default-features = false, features = ["use_alloc"], optional = true }
 libc = "0.2"
@@ -280,6 +280,7 @@ crashreporter-android-export = ["dep:allocator-api2", "dep:arrayvec", "dep:bitfl
 mozwer_s = ["dep:allocator-api2", "dep:byteorder", "dep:getrandom", "dep:hashbrown", "dep:indexmap", "dep:log", "dep:once_cell", "dep:scroll", "dep:serde_json", "dep:uuid", "dep:windows-sys", "dep:zerocopy"]
 nmhproxy = ["dep:allocator-api2", "dep:bitflags", "dep:byteorder", "dep:form_urlencoded", "dep:hashbrown", "dep:icu_locale_core", "dep:icu_properties", "dep:idna", "dep:indexmap", "dep:once_cell", "dep:percent-encoding", "dep:serde_json", "dep:smallvec", "dep:stable_deref_trait", "dep:tinystr", "dep:unicode-bidi", "dep:url", "dep:windows-sys", "dep:yoke", "dep:zerocopy", "dep:zerofrom", "dep:zerovec"]
 pkcs11testmodule-static = []
+pushnotificationhelper = []
 test-trust-anchors-static = ["dep:bindgen", "dep:bitflags", "dep:itertools", "dep:memchr", "dep:nom", "dep:regex", "dep:smallvec"]
 toolchain-embedded-uniffi-bindgen = []
 toolchain-nimbus-fml = []

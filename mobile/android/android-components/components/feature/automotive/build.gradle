@@ -8,10 +8,27 @@ plugins {
 
 android {
     namespace = 'mozilla.components.feature.automotive'
+    useLibrary("android.car", false)
 }
 
 dependencies {
+    implementation project(":components:browser-state")
+    implementation project(":components:concept-engine")
+    implementation project(":components:feature-media")
+    implementation project(":components:support-base")
 
+    implementation libs.androidx.annotation
+    implementation libs.kotlinx.coroutines
+
+    testImplementation project(":components:support-test")
+
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.junit
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit4
+    testImplementation libs.kotlin.test
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../common-config.gradle'

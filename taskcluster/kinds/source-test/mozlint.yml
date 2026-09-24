@@ -251,6 +251,8 @@ typescript:
             - 'browser/components/places/**/*.ts'
             - 'browser/components/search/**/*.*js'
             - 'browser/components/search/**/*.ts'
+            - 'browser/components/sessionstore/**/*.*js'
+            - 'browser/components/sessionstore/**/*.ts'
             - 'browser/components/tabbrowser/**/*.*js'
             - 'browser/components/tabbrowser/**/*.ts'
             - 'browser/components/urlbar/**/*.*js'
@@ -352,6 +354,7 @@ node-licenses:
             - tools/lint/eslint/eslint-plugin-mozilla/package.json
             - tools/lint/stylelint/stylelint-plugin-mozilla/package.json
             - tools/terser/package.json
+            - third_party/node/**
     fetches:
         toolchain:
             - linux64-node
@@ -661,6 +664,23 @@ cargo-audit:
     fetches:
         toolchain:
             - linux64-rust
+
+pnpm-audit:
+    description: Audit the vendored node packages for vulnerable dependencies
+    treeherder:
+        symbol: node(pnpm-audit)
+    run:
+        mach: lint -v --warnings=soft -l pnpm-audit -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - 'third_party/node/pnpm-lock.yaml'
+            - 'tools/lint/pnpm-audit.yml'
+            - 'tools/lint/pnpm-audit/**'
+    fetches:
+        toolchain:
+            - linux64-node
+        fetch:
+            - pnpm
 
 mozcheck-tests:
     description: mozcheck Rust unit tests

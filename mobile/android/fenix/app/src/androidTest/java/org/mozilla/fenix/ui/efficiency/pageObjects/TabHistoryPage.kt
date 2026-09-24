@@ -8,8 +8,8 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -20,17 +20,17 @@ import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 class TabHistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "TabHistoryPage"
 
-    init {
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
         // The tab history sheet is opened by long-pressing the main menu Back button, but that
         // button is disabled (and the long-press is a no-op) unless the tab has back-history. The
         // incoming BrowserPage edge only loads a single page, so load a second, distinct page here
         // to create a back entry before opening the menu.
-        NavigationRegistry.register(
+        builder.register(
             from = "BrowserPage",
             to = pageName,
             steps =
                 listOf(
-                    NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR),
+                    NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR2),
                     NavigationStep.EnterTextValue(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE, "example.org"),
                     NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
                     NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR),
@@ -39,8 +39,16 @@ class TabHistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): TabHistoryPage {
-        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): TabHistoryPage {
+        super.navigateToPage(
+            url = url.ifBlank { "example.com" },
+            forceNavigation = forceNavigation,
+            navigationOptions = navigationOptions,
+        )
         return this
     }
 
@@ -61,7 +69,5 @@ class TabHistoryPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         return this
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return TabHistorySelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = TabHistorySelectors
 }

@@ -28,6 +28,9 @@ secp244r1: an ECC key on the curve secp244r1
 secp256r1: an ECC key on the curve secp256r1
 secp384r1: an ECC key on the curve secp384r1
 secp521r1: an ECC key on the curve secp521r1
+mldsa44: an ML-DSA-44 key
+mldsa65: an ML-DSA-65 key
+mldsa87: an ML-DSA-87 key
 """
 
 import base64
@@ -124,6 +127,21 @@ class UnsupportedHashAlgorithmError(Exception):
 
     def __str__(self):
         return 'Unsupported hash algorithm "%s"' % repr(self.value)
+
+
+class UnavailableMLDSAImplementationError(Exception):
+    """Helper exception type for when the cryptography package (which
+    provides the ML-DSA implementation) isn't importable."""
+
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+
+    def __str__(self):
+        return (
+            f'The key specification "{self.value}" needs the cryptography '
+            "package (version 46 or later)"
+        )
 
 
 class RSAPublicKey(univ.Sequence):
@@ -935,10 +953,97 @@ class ECCKey:
         return byteStringToHexifiedBitString(encoder.encode(point))
 
 
+mlDsa44 = univ.ObjectIdentifier("2.16.840.1.101.3.4.3.17")
+mlDsa65 = univ.ObjectIdentifier("2.16.840.1.101.3.4.3.18")
+mlDsa87 = univ.ObjectIdentifier("2.16.840.1.101.3.4.3.19")
+
+
+class MLDSAKey:
+    """An ML-DSA key (see FIPS 204). Key material is derived from a
+    fixed seed so that regenerating a certificate doesn't change the
+    key. Note that ML-DSA signatures are randomized, so regenerating a
+    certificate signed by one of these keys does change the
+    signature."""
+
+    # These seeds are arbitrary. They are the SHA-256 hashes of the
+    # corresponding key specifications.
+    mldsa44Seed = "5819dabdbff9b71586dabcaf20ec6ecfd66b0d1242fc327574071b320651014c"
+    mldsa65Seed = "d7a4bfd7b8e930a2d9fcea5b3a44ba23e3fffe57fd5e13a4a7fbf06730c64c8e"
+    mldsa87Seed = "7d2c69db079773fbe5b90b2431e36299c4e1bb5ac5664913f49eb24932d35ccd"
+
+    def __init__(self, specification):
+        try:
+            from cryptography.hazmat.primitives.asymmetric import mldsa
+        except ImportError:
+            raise UnavailableMLDSAImplementationError(specification)
+
+        if specification == "mldsa44":
+            seed = self.mldsa44Seed
+            self.keyOID = mlDsa44
+            keyType = mldsa.MLDSA44PrivateKey
+        elif specification == "mldsa65":
+            seed = self.mldsa65Seed
+            self.keyOID = mlDsa65
+            keyType = mldsa.MLDSA65PrivateKey
+        elif specification == "mldsa87":
+            seed = self.mldsa87Seed
+            self.keyOID = mlDsa87
+            keyType = mldsa.MLDSA87PrivateKey
+        else:
+            raise UnknownKeySpecificationError(specification)
+
+        self.key = keyType.from_seed_bytes(binascii.unhexlify(seed))
+
+    def toDER(self):
+        """Returns this key as a PKCS #8 private key info. The private
+        key itself is the seed it was derived from."""
+        from cryptography.hazmat.primitives import serialization
+
+        return self.key.private_bytes(
+            serialization.Encoding.DER,
+            serialization.PrivateFormat.PKCS8,
+            serialization.NoEncryption(),
+        )
+
+    def toPEM(self):
+        output = "-----BEGIN PRIVATE KEY-----"
+        der = self.toDER()
+        b64 = base64.b64encode(der).decode()
+        while b64:
+            output += "\n" + b64[:64]
+            b64 = b64[64:]
+        output += "\n-----END PRIVATE KEY-----"
+        return output
+
+    def asSubjectPublicKeyInfo(self):
+        """Returns a subject public key info representing
+        this key for use by pyasn1."""
+        algorithmIdentifier = rfc2459.AlgorithmIdentifier()
+        algorithmIdentifier["algorithm"] = self.keyOID
+        # RFC 9881 requires that the parameters field be absent.
+        spki = rfc2459.SubjectPublicKeyInfo()
+        spki["algorithm"] = algorithmIdentifier
+        spki["subjectPublicKey"] = univ.BitString(
+            byteStringToHexifiedBitString(self.key.public_key().public_bytes_raw())
+        )
+        return spki
+
+    def sign(self, data, _hashAlgorithm):
+        """Returns a hexified bit string representing a
+        signature by this key over the specified data.
+        Intended for use with pyasn1.type.univ.BitString"""
+        # ML-DSA doesn't hash its input separately, so the hash algorithm is
+        # unused. RFC 9881 signatures use the pure variant of ML-DSA
+        # with an empty context string.
+        return byteStringToHexifiedBitString(self.key.sign(data))
+
+
 def keyFromSpecification(specification):
     """Pass in a specification, get the appropriate key back."""
     if specification.startswith("secp"):
         return ECCKey(specification)
+    if specification.startswith("mldsa"):
+        return MLDSAKey(specification)
     return RSAKey(specification)
 
 

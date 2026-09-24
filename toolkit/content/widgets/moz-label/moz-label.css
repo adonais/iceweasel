@@ -6,3 +6,7 @@ label span.accesskey {
   text-decoration: underline;
   text-decoration-skip-ink: none;
 }
+
+label[enable-center-crop] {
+  text-wrap: nowrap;
+}

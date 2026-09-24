@@ -7,3 +7,5 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
   "tsan",
 ]
+
+["browser_savePrefFile_explicit_target.js"]

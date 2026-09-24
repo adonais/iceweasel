@@ -99,6 +99,7 @@ fuzzy(0-10,0-1200) == filter-nested-filtering-02.svg pass.svg
 == filter-region-01a.html pass.svg
 == filter-region-01b.html pass.svg
 == filter-transform-01.svg pass.svg
+== filter-zero-size-element-01.svg pass.svg
 
 == feColorMatrix-saturate-01.svg pass.svg
 

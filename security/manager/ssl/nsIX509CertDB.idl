@@ -364,10 +364,11 @@ interface nsIX509CertDB : nsISupports {
   nsIX509Cert addCertFromBase64(in ACString base64, in ACString trust);
 
   /*
-   * Get all the known certs in the database
+   * Asynchronously gathers all known certificates and returns them as an array
+   * of nsIX509Cert.
    */
-  [must_use]
-  Array<nsIX509Cert> getCerts();
+  [implicit_jscontext]
+  Promise getCerts();
 
   /**
    * Encode the list of certificates as a PKCS#7 SignedData structure. No data

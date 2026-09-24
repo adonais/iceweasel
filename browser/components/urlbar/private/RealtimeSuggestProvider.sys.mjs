@@ -578,6 +578,12 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     switch (details.result.payload.source) {
       case "merino":

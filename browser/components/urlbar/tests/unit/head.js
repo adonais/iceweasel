@@ -397,7 +397,7 @@ function testEngine_setup() {
       Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
       Services.prefs.clearUserPref("browser.urlbar.contextualSearch.enabled");
       Services.prefs.clearUserPref(
-        "browser.search.separatePrivateDefault.ui.enabled"
+        "browser.search.separatePrivateDefault.featureGate"
       );
       SearchService.setDefault(
         oldDefaultEngine,
@@ -407,7 +407,7 @@ function testEngine_setup() {
 
     SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
     Services.prefs.setBoolPref(
-      "browser.search.separatePrivateDefault.ui.enabled",
+      "browser.search.separatePrivateDefault.featureGate",
       false
     );
     Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
@@ -1122,7 +1122,7 @@ async function check_results({
   // return reliable resultsets, thus we have to wait.
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
-  const controller = UrlbarTestUtils.newMockController({
+  const controller = UrlbarTestUtils.mockChildController({
     input: {
       isPrivate: context.isPrivate,
       getSearchSource() {

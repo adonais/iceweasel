@@ -59,7 +59,7 @@ class AccountObserverTest {
                 pushScope,
                 crashReporter,
                 lifecycleOwner,
-                coroutineContext,
+                this,
                 false,
             )
         `when`(lifecycle.currentState).thenReturn(Lifecycle.State.STARTED)
@@ -87,7 +87,7 @@ class AccountObserverTest {
                 pushScope,
                 crashReporter,
                 mock(),
-                coroutineContext,
+                this,
                 false,
             )
 
@@ -114,7 +114,7 @@ class AccountObserverTest {
                 pushScope,
                 crashReporter,
                 mock(),
-                coroutineContext,
+                this,
                 false,
             )
 
@@ -146,7 +146,7 @@ class AccountObserverTest {
                 pushScope,
                 crashReporter,
                 mock(),
-                coroutineContext,
+                this,
                 false,
             )
 
@@ -164,7 +164,7 @@ class AccountObserverTest {
                 pushScope,
                 crashReporter,
                 mock(),
-                coroutineContext,
+                this,
                 false,
             )
 

@@ -201,7 +201,6 @@ const BackgroundImage = {
 const BackgroundPosition = {
   allow: ["0", "top", "bottom", "left", "right", "center"],
   tokenTypes: ["size", "space"],
-  aliasTokenTypes: ["dimension"],
   allowUnits: true,
 };
 
@@ -210,7 +209,6 @@ const BackgroundSize = {
   allow: ["auto", "cover", "contain"],
   allowFunctions: ["max"],
   tokenTypes: ["size", "space", "icon-size"],
-  aliasTokenTypes: ["dimension"],
   allowUnits: true,
 };
 
@@ -394,7 +392,6 @@ const TextColor = {
 const Space = {
   allow: ["-1px", "0", "1px", "auto"],
   tokenTypes: ["space"],
-  aliasTokenTypes: ["dimension"],
   allowUnits: true,
   allowedUnits: ["ch", "em", "lh"],
   customFixes: {
@@ -423,7 +420,6 @@ const Size = {
   ],
   allowFunctions: ["max"],
   tokenTypes: ["size", "icon-size"],
-  aliasTokenTypes: ["dimension"],
   allowUnits: true,
   allowedUnits: ["%", "ch", "em", "vh", "vw"],
   customFixes: {

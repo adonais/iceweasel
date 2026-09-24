@@ -53,7 +53,7 @@
 #include "clang/Lex/Lexer.h"
 
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
-  auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
+  auto Refcounted = qualType(isRefCounted());
   auto StackSmartPtr = ignoreTrivials(declRefExpr(to(varDecl(
       hasAutomaticStorageDuration(), hasType(isSmartPtrToRefCounted())))));
   auto ConstMemberOfThisSmartPtr =
@@ -147,7 +147,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
 
   // A matcher that matches various known-live things that don't involve
   // non-unary operators.
-  auto KnownLiveSimple = anyOf(
+  auto KnownLiveExceptMethods = anyOf(
       // Things that are just known live.
       KnownLiveBase,
       // Method calls on a live things that are smart ptrs.  Note that we don't
@@ -156,10 +156,7 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       // example).  For purposes of this analysis we are assuming the method
       // calls on smart ptrs all just return the pointer inside,
       cxxMemberCallExpr(
-          on(anyOf(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase),
-                   // Allow it if calling a member method which is marked as
-                   // MOZ_KNOWN_LIVE
-                   KnownLiveMemberOfParam))),
+          on(allOf(hasType(isSmartPtrToRefCounted()), KnownLiveBase))),
       // operator* or operator-> on a thing that is already known to be live.
       cxxOperatorCallExpr(
           hasAnyOverloadedOperatorName("*", "->"),
@@ -192,6 +189,18 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
                     hasUnaryOperand(allOf(anyOf(hasType(references(Refcounted)),
                                                 hasType(Refcounted)),
                                           ignoreTrivials(KnownLiveBase)))));
+
+  // Consider return value of method marked as MOZ_KNOWN_LIVE to be live
+  // if it's called on a live object.
+  auto KnownLiveSimple =
+      anyOf(KnownLiveExceptMethods,
+            ignoreTrivials(cxxMemberCallExpr(
+                callee(cxxMethodDecl(methodHasKnownLiveAnnotation())),
+                // It's not clear whether a method like
+                //   MOZ_KNOWN_LIVE RefCounted1* Foo(RefCounted2* aArg);
+                // should check the liveness of aArg, so for simplicity, let's
+                // just restrict to 0 arguments.
+                argumentCountIs(0), on(KnownLiveExceptMethods))));
 
   auto KnownLive = anyOf(
       // Anything above, of course.
@@ -231,29 +240,28 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   // because we check that the corresponding functions can run script later in
   // the checker code.
   AstMatcher->addMatcher(
-      expr(
-          anyOf(
-              // We want to match a method call expression,
-              cxxMemberCallExpr(
-                  // which optionally has an invalid arg,
-                  OptionalInvalidExplicitArg,
-                  // or which optionally has an invalid this argument,
-                  optionally(on(InvalidArg)), expr().bind("callExpr")),
-              // or a regular call expression,
-              callExpr(
-                  // which optionally has an invalid arg.
-                  OptionalInvalidExplicitArg, expr().bind("callExpr")),
-              // or a construct expression,
-              cxxConstructExpr(
-                  // which optionally has an invalid arg.
-                  OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
+      expr(anyOf(
+               // We want to match a method call expression,
+               cxxMemberCallExpr(
+                   // which optionally has an invalid arg,
+                   OptionalInvalidExplicitArg,
+                   // or which optionally has an invalid this argument,
+                   optionally(on(InvalidArg)), expr().bind("callExpr")),
+               // or a regular call expression,
+               callExpr(
+                   // which optionally has an invalid arg.
+                   OptionalInvalidExplicitArg, expr().bind("callExpr")),
+               // or a construct expression,
+               cxxConstructExpr(
+                   // which optionally has an invalid arg.
+                   OptionalInvalidExplicitArg, expr().bind("constructExpr"))),
 
-              // We want to match the parent function.
-              optionally(forFunction(functionDecl().bind("nonCanRunScriptParentFunction"))),
+           // We want to match the parent function.
+           optionally(forFunction(
+               functionDecl().bind("nonCanRunScriptParentFunction"))),
 
-              // Not concerned by standard headers or third party.
-              isFirstParty()
-              ),
+           // Not concerned by standard headers or third party.
+           isFirstParty()),
       this);
 }
 

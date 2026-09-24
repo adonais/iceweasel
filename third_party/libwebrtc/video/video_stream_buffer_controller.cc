@@ -32,7 +32,6 @@
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/timing/timing.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
@@ -49,9 +48,11 @@ constexpr size_t kMaxFramesBuffered = 800;
 // Max number of decoded frame info that will be saved.
 constexpr int kMaxFramesHistory = 1 << 13;
 
-// Default value for the maximum decode queue size that is used when the
-// low-latency renderer is used.
-constexpr size_t kZeroPlayoutDelayDefaultMaxDecodeQueueSize = 8;
+// Maximum number of frames in the decode queue to allow pacing for the
+// low-latency renderer path. If the queue grows beyond the max limit,
+// pacing will be disabled and frames will be pushed to the decoder as
+// soon as possible.
+constexpr size_t kZeroPlayoutDelayMaxDecodeQueueSize = 8;
 
 struct FrameMetadata {
   explicit FrameMetadata(const EncodedFrame& frame)
@@ -109,25 +110,19 @@ VideoStreamBufferController::VideoStreamBufferController(
       buffer_(std::make_unique<FrameBuffer>(kMaxFramesBuffered,
                                             kMaxFramesHistory,
                                             field_trials)),
-      decode_timing_(clock_, timing_, field_trials_),
+      decode_timing_(clock_, timing_),
       timeout_tracker_(
           clock_,
           worker_queue,
           VideoReceiveStreamTimeoutTracker::Timeouts{
               .max_wait_for_keyframe = max_wait_for_keyframe,
               .max_wait_for_frame = max_wait_for_frame},
-          absl::bind_front(&VideoStreamBufferController::OnTimeout, this)),
-      zero_playout_delay_max_decode_queue_size_(
-          "max_decode_queue_size",
-          kZeroPlayoutDelayDefaultMaxDecodeQueueSize) {
+          absl::bind_front(&VideoStreamBufferController::OnTimeout, this)) {
   RTC_DCHECK(stats_proxy_);
   RTC_DCHECK(receiver_);
   RTC_DCHECK(timing_);
   RTC_DCHECK(clock_);
   RTC_DCHECK(frame_decode_scheduler_);
-
-  ParseFieldTrial({&zero_playout_delay_max_decode_queue_size_},
-                  field_trials.Lookup("WebRTC-ZeroPlayoutDelay"));
 }
 
 void VideoStreamBufferController::Stop() {
@@ -371,7 +366,7 @@ void VideoStreamBufferController::UpdateFrameBufferTimings(
 
 bool VideoStreamBufferController::IsTooManyFramesQueued() const
     RTC_RUN_ON(&worker_sequence_checker_) {
-  return buffer_->CurrentSize() > zero_playout_delay_max_decode_queue_size_;
+  return buffer_->CurrentSize() > kZeroPlayoutDelayMaxDecodeQueueSize;
 }
 
 void VideoStreamBufferController::ForceKeyFrameReleaseImmediately()

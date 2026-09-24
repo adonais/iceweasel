@@ -16,6 +16,8 @@
 #     per flow, and emits structured logging for every request so that
 #     hangs and missing-resource bugs are diagnosable from mitmproxy.log.
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import os

@@ -1272,8 +1272,6 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
       case TryNoteKind::Loop:
         break;
 
-      // TryNoteKind::ForOfIterClose is handled internally by the try note
-      // iterator.
       default:
         MOZ_CRASH("Invalid try note");
     }

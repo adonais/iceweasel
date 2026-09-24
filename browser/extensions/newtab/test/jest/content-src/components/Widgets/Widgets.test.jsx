@@ -574,7 +574,7 @@ describe("<Widgets> row-collapsed attribute", () => {
 });
 
 describe("<Widgets> manage widgets menu item", () => {
-  it("calls openWidgetsPanel and dispatches SHOW_PERSONALIZE when clicked", () => {
+  it("calls openWidgetsPanel when clicked", () => {
     const novaState = {
       ...ENABLED_STATE,
       Prefs: {
@@ -586,7 +586,6 @@ describe("<Widgets> manage widgets menu item", () => {
       },
     };
     const store = createStore(combineReducers(reducers), novaState);
-    jest.spyOn(store, "dispatch");
     const openWidgetsPanel = jest.fn();
     const { container } = render(
       <Provider store={store}>
@@ -601,12 +600,6 @@ describe("<Widgets> manage widgets menu item", () => {
     expect(manageItem).toBeInTheDocument();
     fireEvent.click(manageItem);
     expect(openWidgetsPanel).toHaveBeenCalledTimes(1);
-    expect(store.dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: at.TELEMETRY_USER_EVENT,
-        data: expect.objectContaining({ event: "SHOW_PERSONALIZE" }),
-      })
-    );
   });
 });
 
@@ -787,5 +780,293 @@ describe("<Widgets> header controls", () => {
     expect(
       container.querySelector('[data-l10n-id="newtab-widget-menu-change-size"]')
     ).toBeInTheDocument();
+  });
+});
+
+// experiment / bug 2066527 (remove)
+describe("<Widgets> auto-minimize layout", () => {
+  const PREF_OVERRIDE = "widgets.autoMinimize.userOverride";
+
+  function makeState(values = {}) {
+    return {
+      ...ENABLED_STATE,
+      Prefs: {
+        ...ENABLED_STATE.Prefs,
+        values: {
+          ...ENABLED_STATE.Prefs.values,
+          "nova.enabled": true,
+          "widgets.system.maximized": true,
+          "widgets.maximized": false,
+          ...values,
+        },
+      },
+    };
+  }
+
+  function setReducedMotion(matches) {
+    globalThis.matchMedia = () => ({
+      matches,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+  }
+
+  function containerActions(store) {
+    return store.dispatch.mock.calls
+      .map(([action]) => action)
+      .filter(action => action?.type === at.WIDGETS_CONTAINER_ACTION)
+      .map(action => action.data);
+  }
+
+  const widgetsContainer = container =>
+    container.querySelector("#widgets-container");
+
+  let realMatchMedia;
+  beforeEach(() => {
+    realMatchMedia = globalThis.matchMedia;
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+    globalThis.matchMedia = realMatchMedia;
+  });
+
+  it("collapses the section after the configured delay", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 3000,
+      })
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(2999);
+    });
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
+    expect(widgetsContainer(container)).toHaveAttribute(
+      "data-section-collapsed"
+    );
+    expect(containerActions(store)).toEqual([
+      {
+        action_type: "auto_minimize",
+        action_value: "collapse_section",
+        widget_size: "medium",
+      },
+    ]);
+  });
+
+  it("prefers the trainhopConfig delay over the pref", () => {
+    const { container } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 3000,
+        trainhopConfig: { pageLayouts: { autoMinimizeDelayMs: 500 } },
+      })
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+    expect(widgetsContainer(container)).toHaveAttribute(
+      "data-section-collapsed"
+    );
+  });
+
+  it("does not collapse outside the variant", () => {
+    const { container, store } = renderWidgets(makeState());
+
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+    expect(containerActions(store)).toEqual([]);
+  });
+
+  it("does not collapse once the user has overridden", () => {
+    const { container } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        [PREF_OVERRIDE]: true,
+      })
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+  });
+
+  it("does not collapse under prefers-reduced-motion", () => {
+    setReducedMotion(true);
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+    expect(containerActions(store)).toEqual([]);
+  });
+
+  it("makes the collapsed container inert so it leaves the tab order", () => {
+    const { container } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+    expect(widgetsContainer(container)).not.toHaveAttribute("inert");
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(widgetsContainer(container)).toHaveAttribute("inert");
+  });
+
+  it("leaves the section open if focus is inside the row", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+    const focusable = widgetsContainer(container).querySelector(
+      "button, input, [tabindex]"
+    );
+    expect(focusable).toBeTruthy();
+    focusable.focus();
+
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+    expect(containerActions(store)).toEqual([]);
+  });
+
+  it("does not re-arm the timer when an unrelated pref changes", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(containerActions(store)).toHaveLength(1);
+
+    // Any PREF_CHANGED hands the component a fresh prefs object.
+    act(() => {
+      store.dispatch({
+        type: at.PREF_CHANGED,
+        data: { name: "widgets.hideAllToast.enabled", value: true },
+      });
+    });
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+
+    expect(
+      containerActions(store).filter(
+        data => data.action_value === "collapse_section"
+      )
+    ).toHaveLength(1);
+    expect(widgetsContainer(container)).toHaveAttribute(
+      "data-section-collapsed"
+    );
+  });
+
+  it("uncollapses if the variant is turned off after auto-collapsing", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+    expect(widgetsContainer(container)).toHaveAttribute(
+      "data-section-collapsed"
+    );
+
+    act(() => {
+      store.dispatch({
+        type: at.PREF_CHANGED,
+        data: { name: "pageLayouts.variant", value: "nova-full-width" },
+      });
+    });
+
+    expect(widgetsContainer(container)).not.toHaveAttribute(
+      "data-section-collapsed"
+    );
+    expect(widgetsContainer(container)).not.toHaveAttribute("inert");
+  });
+
+  it("expands and records the override when the header button is used", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        "pageLayouts.autoMinimizeDelayMs": 100,
+      })
+    );
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    fireEvent.click(container.querySelector("#toggle-widgets-size-button"));
+
+    const setPref = store.dispatch.mock.calls
+      .map(([action]) => action)
+      .find(
+        action =>
+          action?.type === at.SET_PREF && action.data?.name === PREF_OVERRIDE
+      );
+    expect(setPref).toBeTruthy();
+    expect(setPref.data.value).toBe(true);
+    expect(
+      containerActions(store).some(
+        data =>
+          data.action_type === "auto_minimize" &&
+          data.action_value === "expand_section"
+      )
+    ).toBe(true);
+  });
+
+  it("returns the header button to the size toggle once overridden", () => {
+    const { container, store } = renderWidgets(
+      makeState({
+        "pageLayouts.variant": "auto-minimize-widgets",
+        [PREF_OVERRIDE]: true,
+      })
+    );
+
+    fireEvent.click(container.querySelector("#toggle-widgets-size-button"));
+
+    expect(
+      containerActions(store).some(
+        data => data.action_type === "change_size_all"
+      )
+    ).toBe(true);
   });
 });

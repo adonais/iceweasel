@@ -41,8 +41,8 @@ static int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   NS_ConvertASCIItoUTF16 policy(reinterpret_cast<const char*>(data), size);
   if (!policy.get()) return 0;
 
-  FeaturePolicyParser::ParseString(policy, nullptr, selfURIPrincipal,
-                                   selfURIPrincipal, parsedFeatures);
+  FeaturePolicyParser::ParsePolicyFromAttribute(
+      policy, nullptr, selfURIPrincipal, selfURIPrincipal, parsedFeatures);
 
   for (const Feature& feature : parsedFeatures) {
     nsTArray<nsCOMPtr<nsIPrincipal>> list;

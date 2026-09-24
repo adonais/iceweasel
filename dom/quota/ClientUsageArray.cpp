@@ -16,7 +16,7 @@ void ClientUsageArray::Serialize(nsACString& aText) const {
   bool first = true;
 
   for (Client::Type type : quotaManager->AllClientTypes()) {
-    const Maybe<uint64_t>& clientUsage = (*this)[type];
+    const Maybe<int64_t>& clientUsage = (*this)[type];
     if (clientUsage.isSome()) {
       if (first) {
         first = false;
@@ -40,9 +40,18 @@ nsresult ClientUsageArray::Deserialize(const nsACString& aText) {
     QM_TRY(OkIf(Client::TypeFromPrefix(token.First(), clientType, fallible)),
            NS_ERROR_FAILURE);
 
+    const auto& digits = Substring(token, 1);
+
     nsresult rv;
-    const uint64_t usage = Substring(token, 1).ToUnsignedInteger64(&rv);
-    QM_TRY(MOZ_TO_RESULT(rv));
+    int64_t usage = digits.ToInteger64(&rv);
+    if (NS_FAILED(rv)) {
+      // A value written before this field became signed (bug 2066923) may
+      // have already underflowed to a huge uint64_t before being persisted,
+      // in which case it's too big to parse as int64_t. So parse as uint64_t
+      // and reinterpret it as signed.
+      usage = static_cast<int64_t>(digits.ToUnsignedInteger64(&rv));
+      QM_TRY(MOZ_TO_RESULT(rv));
+    }
 
     (*this)[clientType] = Some(usage);
   }

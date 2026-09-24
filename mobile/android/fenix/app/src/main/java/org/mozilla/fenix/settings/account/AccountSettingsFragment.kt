@@ -135,6 +135,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        @Suppress("DEPRECATION") // getLastSynced / setLastSynced is deprecated see bug 2067060
         accountSettingsStore =
             fragmentStore(
                     AccountSettingsFragmentState(
@@ -522,6 +523,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
             // Returns the last saved sync time (in millis)
             // If the corresponding shared preference doesn't have a value yet,
             // it is initialized with the current time (in millis)
+            @Suppress("DEPRECATION") // getLastSynced / setLastSynced is deprecated see bug 2067060
             private fun lastSavedSyncTime(): Long {
                 val lastSyncedTime = getLastSynced(requireContext())
                 return if (lastSyncedTime != 0L) {

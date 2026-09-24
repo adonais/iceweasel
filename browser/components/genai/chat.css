@@ -25,6 +25,7 @@ browser {
   align-items: center;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--sidebar-background-color);
+  color: var(--sidebar-text-color);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;

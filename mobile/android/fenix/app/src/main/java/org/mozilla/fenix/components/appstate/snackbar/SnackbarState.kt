@@ -158,12 +158,14 @@ sealed class SnackbarState {
     data class CannotOpenFileError(val downloadState: DownloadState) : SnackbarState()
 
     /**
-     * Display a snackbar when the IP protection monthly data limit has been reached, offering an action to navigate to
-     * the VPN settings screen.
+     * Display a snackbar related to the IP Protection feature with an action that navigates the user into the ip
+     * protection settings screen. Unlike the general [ShowSnackbar], this state is also consumed by
+     * [IPProtectionSnackbarBinding], which lets the snackbar be drawn on top of menus and to avoid double invocation,
+     * depending on which binding has focus.
      *
      * @property title The title to display in the snackbar.
      */
-    data class IPProtectionDataLimitReached(val title: String) : SnackbarState()
+    data class IPProtectionShowActionSettingsSnackbar(val title: String) : SnackbarState()
 
     /**
      * Display a text only snackbar related to the IP Protection feature. Unlike the general [ShowSnackbar], this state

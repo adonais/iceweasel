@@ -53,6 +53,8 @@
 #sidebar-tools-and-extensions-splitter {
   display: block;
   border: none;
+  /* Overrides the default background-color for Win/Linux in splitter.css */
+  background-color: transparent;
   background-image: var(--sidebar-divider-image);
   background-size: var(--sidebar-divider-size);
   background-position: var(--sidebar-divider-position);

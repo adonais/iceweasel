@@ -33,6 +33,7 @@
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"
 #include "nsCSSProps.h"
+#include "nsChangeHint.h"
 #include "nsContainerFrame.h"
 #include "nsDeviceContext.h"
 #include "nsIURI.h"
@@ -2264,6 +2265,8 @@ nsStyleDisplay::nsStyleDisplay()
       mScrollSnapStop{StyleScrollSnapStop::Normal},
       mScrollSnapType{StyleScrollSnapAxis::Both,
                       StyleScrollSnapStrictness::None},
+      mScrollbarInsetBlock{StyleLength{0.}, StyleLength{0.}},
+      mScrollbarInsetInline{StyleLength{0.}, StyleLength{0.}},
       mBackfaceVisibility(StyleBackfaceVisibility::Visible),
       mTransformStyle(StyleTransformStyle::Flat),
       mTransformBox(StyleTransformBox::ViewBox),
@@ -2323,6 +2326,8 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mScrollSnapAlign(aSource.mScrollSnapAlign),
       mScrollSnapStop(aSource.mScrollSnapStop),
       mScrollSnapType(aSource.mScrollSnapType),
+      mScrollbarInsetBlock(aSource.mScrollbarInsetBlock),
+      mScrollbarInsetInline(aSource.mScrollbarInsetInline),
       mBackfaceVisibility(aSource.mBackfaceVisibility),
       mTransformStyle(aSource.mTransformStyle),
       mTransformBox(aSource.mTransformBox),
@@ -2736,6 +2741,10 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   // container-query selection on descendants).
   // container-type / contain / content-visibility are handled by the
   // mEffectiveContainment check.
+  //
+  // scrollbar-inset changes are dealt with in
+  // nsSubDocumentFrame::DidSetComputedStyle and
+  // ScrollContainerFrame::DidSetComputedStyle.
   if (!hint && (mWillChange != aNewData.mWillChange ||
                 mOverflowAnchor != aNewData.mOverflowAnchor ||
                 mContentVisibility != aNewData.mContentVisibility ||
@@ -2743,7 +2752,9 @@ nsChangeHint nsStyleDisplay::CalcDifference(
                 mContain != aNewData.mContain ||
                 mContainerName != aNewData.mContainerName ||
                 mAnchorName != aNewData.mAnchorName ||
-                mAnchorScope != aNewData.mAnchorScope)) {
+                mAnchorScope != aNewData.mAnchorScope ||
+                mScrollbarInsetBlock != aNewData.mScrollbarInsetBlock ||
+                mScrollbarInsetInline != aNewData.mScrollbarInsetInline)) {
     hint |= nsChangeHint_NeutralChange;
   }
 

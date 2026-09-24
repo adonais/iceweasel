@@ -103,6 +103,37 @@ already_AddRefed<Promise> SubtleCrypto::DeriveBits(
     const Nullable<uint32_t>& length, ErrorResult& aRv){
     SUBTLECRYPTO_METHOD_BODY(DeriveBits, aRv, cx, algorithm, baseKey, length)}
 
+already_AddRefed<Promise> SubtleCrypto::EncapsulateBits(
+    JSContext* cx, const ObjectOrString& encapsulationAlgorithm,
+    CryptoKey& encapsulationKey, ErrorResult& aRv){
+    SUBTLECRYPTO_METHOD_BODY(EncapsulateBits, aRv, cx, encapsulationAlgorithm,
+                             encapsulationKey)}
+
+already_AddRefed<Promise> SubtleCrypto::EncapsulateKey(
+    JSContext* cx, const ObjectOrString& encapsulationAlgorithm,
+    CryptoKey& encapsulationKey, const ObjectOrString& sharedKeyAlgorithm,
+    bool extractable, const Sequence<nsString>& keyUsages, ErrorResult& aRv){
+    SUBTLECRYPTO_METHOD_BODY(EncapsulateKey, aRv, mParent, cx,
+                             encapsulationAlgorithm, encapsulationKey,
+                             sharedKeyAlgorithm, extractable, keyUsages)}
+
+already_AddRefed<Promise> SubtleCrypto::DecapsulateBits(
+    JSContext* cx, const ObjectOrString& decapsulationAlgorithm,
+    CryptoKey& decapsulationKey, const CryptoOperationData& ciphertext,
+    ErrorResult& aRv){SUBTLECRYPTO_METHOD_BODY(DecapsulateBits, aRv, cx,
+                                               decapsulationAlgorithm,
+                                               decapsulationKey, ciphertext)}
+
+already_AddRefed<Promise> SubtleCrypto::DecapsulateKey(
+    JSContext* cx, const ObjectOrString& decapsulationAlgorithm,
+    CryptoKey& decapsulationKey, const CryptoOperationData& ciphertext,
+    const ObjectOrString& sharedKeyAlgorithm, bool extractable,
+    const Sequence<nsString>& keyUsages, ErrorResult& aRv){
+    SUBTLECRYPTO_METHOD_BODY(DecapsulateKey, aRv, mParent, cx,
+                             decapsulationAlgorithm, decapsulationKey,
+                             ciphertext, sharedKeyAlgorithm, extractable,
+                             keyUsages)}
+
 already_AddRefed<Promise> SubtleCrypto::WrapKey(
     JSContext* cx, const nsAString& format, CryptoKey& key,
     CryptoKey& wrappingKey, const ObjectOrString& wrapAlgorithm,

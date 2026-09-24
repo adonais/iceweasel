@@ -13,7 +13,7 @@ use crate::values::generics::{NonNegative, Optional};
 use crate::values::specified::calc::{CalcNode, CalcNumeric, CalcPercentageLeaf, Leaf};
 use crate::values::specified::{CalcLengthPercentage, LengthPercentage, NoCalcNumber, Number};
 use crate::values::tagged_numeric::{Extracted, NumericUnion, Unpacked, UnpackedMut};
-use crate::values::{normalize, reify_percentage, serialize_percentage, CSSFloat};
+use crate::values::{CSSFloat, normalize, reify_percentage, serialize_percentage};
 use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
@@ -82,7 +82,7 @@ impl NoCalcPercentage {
         if !unit.eq_ignore_ascii_case("percent") {
             return Err(());
         }
-        Ok(self.clone())
+        Ok(*self)
     }
 }
 
@@ -191,7 +191,7 @@ impl Percentage {
     pub fn to_number(&self) -> Option<Number> {
         Some(match self.0.unpack() {
             Unpacked::Inline((), p) => Number::new(p),
-            Unpacked::Boxed(ref calc) => {
+            Unpacked::Boxed(calc) => {
                 let p = calc.as_percentage()?.get();
                 Number::new_calc(Box::new(
                     calc.with_leaf_node(Leaf::Number(NoCalcNumber::new(p))),
@@ -296,7 +296,7 @@ impl ToComputedValue for Percentage {
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match self.0.unpack() {
             Unpacked::Inline((), p) => NoCalcPercentage(p).to_computed_value(context),
-            Unpacked::Boxed(ref calc) => {
+            Unpacked::Boxed(calc) => {
                 let value = calc.resolve(context, |result| match result {
                     Ok(Leaf::Percentage(p)) => p.get(),
                     _ => {

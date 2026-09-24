@@ -1,0 +1,196 @@
+# Firefox-local: typed drain of finalized words (text + timing + confidence)
+# from a streaming session, so the host derives a per-result confidence and
+# keeps per-word timestamps without parsing the JSON feed. Also finalizes the
+# words an <EOU> closes instead of always withholding the trailing word, which
+# otherwise makes each utterance's last word lag until the next utterance
+# starts. Applies on top of parakeet-fd-loading.patch. Upstreamable to
+# https://github.com/mudler/parakeet.cpp
+#
+--- a/include/parakeet_capi.h
++++ b/include/parakeet_capi.h
+@@ -242,6 +242,26 @@
+ // Safe on NULL.
+ void parakeet_capi_free_events(parakeet_stream_event* events);
+ 
++// Firefox-local: a finalized word with timing + confidence. Same data the JSON
++// "words" array carries, in a typed form so the host need not parse JSON.
++typedef struct parakeet_stream_word {
++    const char* text;  // malloc'd UTF-8; freed by parakeet_capi_free_words
++    float start;       // seconds from stream start
++    float end;
++    float conf;        // 0..1
++} parakeet_stream_word;
++
++// Drain the words finalized since the previous call (the same set whose text
++// stream_feed returned). Returns the count (>= 0), or -1 on error; on success
++// *out_words is a malloc'd array of `count` entries (free with
++// parakeet_capi_free_words). Mutually exclusive with the JSON feed entry points.
++int parakeet_capi_stream_drain_words(parakeet_stream* s,
++                                     parakeet_stream_word** out_words);
++
++// Free a word array (and each word's text) from parakeet_capi_stream_drain_words.
++// Safe on NULL.
++void parakeet_capi_free_words(parakeet_stream_word* words, int count);
++
+ // Like parakeet_capi_stream_feed but returns a malloc'd UTF-8 JSON document
+ // instead of bare text:
+ //   {"text":"...","eou":0,"eob":0,"frame_sec":0.080000,
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -649,6 +649,49 @@
+     std::free(events);
+ }
+ 
++// Firefox-local: typed drain of finalized words (timing + confidence), so the
++// host gets per-word data without parsing the JSON feed.
++extern "C" int parakeet_capi_stream_drain_words(
++    parakeet_stream* s, parakeet_stream_word** out_words) {
++    if (out_words) *out_words = nullptr;
++    if (!s || !out_words) return -1;
++    if (!s->ctx || !s->ctx->model || !s->sess) return -1;
++    try {
++        std::vector<pk::Word> ws = s->sess->drain_words();
++        s->ctx->last_error.clear();
++        if (ws.empty()) return 0;
++        auto* arr = static_cast<parakeet_stream_word*>(
++            std::calloc(ws.size(), sizeof(parakeet_stream_word)));
++        if (!arr) { s->ctx->last_error = "out of memory"; return -1; }
++        for (size_t i = 0; i < ws.size(); ++i) {
++            char* t = static_cast<char*>(std::malloc(ws[i].text.size() + 1));
++            if (t) {
++                std::memcpy(t, ws[i].text.c_str(), ws[i].text.size() + 1);
++            }
++            arr[i].text  = t;
++            arr[i].start = ws[i].start;
++            arr[i].end   = ws[i].end;
++            arr[i].conf  = ws[i].conf;
++        }
++        *out_words = arr;
++        return (int)ws.size();
++    } catch (const std::exception& e) {
++        s->ctx->last_error = e.what();
++        return -1;
++    } catch (...) {
++        s->ctx->last_error = "unknown error";
++        return -1;
++    }
++}
++
++extern "C" void parakeet_capi_free_words(parakeet_stream_word* words, int count) {
++    if (!words) return;
++    for (int i = 0; i < count; ++i) {
++        std::free(const_cast<char*>(words[i].text));
++    }
++    std::free(words);
++}
++
+ namespace {
+ 
+ // Serialize a streaming feed/finalize result to JSON: the newly-finalized text,
+--- a/src/streaming.hpp
++++ b/src/streaming.hpp
+@@ -171,12 +171,19 @@
+     std::vector<Word> words_;       // last regrouping of word_tokens_
+     size_t words_finalized_ = 0;    // # of words_ that are final (safe to emit)
+     size_t words_taken_ = 0;        // # of words already returned by drain_words()
++    // High-water mark of words closed by an <EOU>/<EOB>. regroup_words() runs per
++    // chunk and recomputes words_finalized_ from scratch, but a caller can feed
++    // several chunks before draining, so without remembering this the next chunk
++    // would withhold an already-closed word again.
++    size_t eou_closed_words_ = 0;
+     float frame_sec_f_ = 0.0f;      // frame_sec as float (group_words uses float)
+ 
+     // Regroup word_tokens_ into words_ and advance words_finalized_ to all but
+     // the last (still-open) word — flush_all=true (finalize) makes every word
+-    // final, including the trailing one.
+-    void regroup_words(bool flush_all);
++    // final, including the trailing one. `eou_word_tokens` is the word_tokens_
++    // count as of the chunk's last <EOU>/<EOB> (0 if the chunk had none): that
++    // token closes the utterance, so the words it ends are final as well.
++    void regroup_words(bool flush_all, size_t eou_word_tokens = 0);
+ };
+ 
+ // Drive a StreamingSession over a whole 16 kHz mono PCM clip in the model's
+--- a/src/streaming.cpp
++++ b/src/streaming.cpp
+@@ -63,6 +63,7 @@
+     words_.clear();
+     words_finalized_ = 0;
+     words_taken_ = 0;
++    eou_closed_words_ = 0;
+ }
+ 
+ void StreamingSession::process_emitted(const std::vector<int32_t>& emitted) {
+@@ -143,12 +144,16 @@
+     // Re-walk emitted to assign the correct absolute frame to each new event,
+     // and accumulate NON-special tokens (absolute frame) for word grouping.
+     size_t evi = prev_events;
++    size_t eou_word_tokens = 0;
+     for (size_t i = 0; i < emitted.size(); ++i) {
+         if (emitted[i] == eou_id_ || emitted[i] == eob_id_) {
+             const int abs_frame = base_frame + (int)local_frames[i];
+             events_[evi].encoder_frame = abs_frame;
+             events_[evi].time_sec = abs_frame * frame_sec_;
+             ++evi;
++            // Tokens are walked in emission order, so this is the word-token
++            // count the <EOU> closes.
++            eou_word_tokens = word_tokens_.size();
+         } else {
+             TokenInfo ti = chunk_tokens[i];
+             ti.frame += base_frame;  // local -> absolute encoder frame
+@@ -156,8 +161,9 @@
+         }
+     }
+     // Regroup the accumulated tokens; words before the last (still-open) one are
+-    // final and become available to drain_words().
+-    regroup_words(/*flush_all=*/false);
++    // final and become available to drain_words(), as are the words closed by an
++    // <EOU> in this chunk.
++    regroup_words(/*flush_all=*/false, eou_word_tokens);
+ 
+     // 4. End-of-utterance reset. The realtime EOU model is trained to emit <EOU>
+     //    (end of utterance) / <EOB> (backchannel) and have the decoder START THE
+@@ -200,7 +206,7 @@
+     return take_new_text();
+ }
+ 
+-void StreamingSession::regroup_words(bool flush_all) {
++void StreamingSession::regroup_words(bool flush_all, size_t eou_word_tokens) {
+     // Re-run the validated offline grouping over the whole accumulated
+     // non-special token sequence (it does the punctuation lookahead / refinement
+     // exactly like the offline transcribe_with_timestamps path). The last word is
+@@ -210,8 +216,33 @@
+     words_ = group_words(word_tokens_, ml_.config().tokenizer_pieces, frame_sec_f_);
+     if (words_.empty()) {
+         words_finalized_ = 0;
++    } else if (flush_all) {
++        words_finalized_ = words_.size();
+     } else {
+-        words_finalized_ = flush_all ? words_.size() : (words_.size() - 1);
++        words_finalized_ = words_.size() - 1;
++        // An <EOU> ends the utterance: the decoder restarts from a fresh state
++        // (see feed_mel_chunk), so no later token can extend a word decoded
++        // before it and those words are final now. Without this the trailing
++        // word of every utterance is withheld until the NEXT utterance emits a
++        // token, so each utterance's last word lags by a whole utterance.
++        // Regroup the closed prefix to count them: the next utterance opens on a
++        // word-start token, so its words are exactly words_[closed.size()..].
++        if (eou_word_tokens > 0) {
++            const std::vector<Word> closed = group_words(
++                std::vector<TokenInfo>(word_tokens_.begin(),
++                                       word_tokens_.begin() + eou_word_tokens),
++                ml_.config().tokenizer_pieces, frame_sec_f_);
++            if (closed.size() > eou_closed_words_) {
++                eou_closed_words_ = closed.size();
++            }
++        }
++        // Applied on every chunk, not just the one that carried the <EOU>: a
++        // caller feeding several chunks per call only drains once at the end, so
++        // recomputing the line above would un-finalize the closed word again and
++        // hold it until the NEXT utterance emits a token.
++        if (eou_closed_words_ > words_finalized_) {
++            words_finalized_ = eou_closed_words_;
++        }
+     }
+     // Never "un-finalize" a word we've already handed out.
+     if (words_finalized_ < words_taken_) words_finalized_ = words_taken_;

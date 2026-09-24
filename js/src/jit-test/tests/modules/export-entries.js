@@ -140,4 +140,4 @@ testStarExportEntries(
 
 testStarExportEntries(
     'export * from "mod";',
-    [{exportName: null, moduleRequest: {specifier:'mod'}, importName: null, importNameValueType: 'all-but-default', localName: null}]);
+    [{exportName: null, moduleRequest: {specifier:'mod'}, importName: null, importNameValueType: 'all', localName: null}]);

@@ -6,9 +6,7 @@ package org.mozilla.fenix.crashes
 
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -70,12 +68,11 @@ class CrashReporterController(
      * @return [Job] allowing to check status / cancel the reporting operation or null if reporting is disabled.
      */
     @VisibleForTesting
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     internal fun submitPendingNonFatalCrashesIfNecessary(reportCrashes: Boolean): Job? {
         var job: Job? = null
         if (reportCrashes && settings.isCrashReportingEnabled) {
             job =
-                GlobalScope.launch(Dispatchers.IO) {
+                components.applicationScope.launch(Dispatchers.IO) {
                     val crashes = appStore.state.nonFatalCrashes
                     crashes.forEach {
                         components.analytics.crashReporter.submitReport(it)

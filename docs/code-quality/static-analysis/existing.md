@@ -84,46 +84,6 @@ directory structure clang-tidy from toolchain artifacts.
 ./mach static-analysis install clang.tar.gz
 ```
 
-## Regression Testing
-
-In order to prevent regressions in our clang-tidy based static analysis,
-we have created a
-{searchfox}`task <taskcluster/kinds/static-analysis-autotest/kind.yml>`
-on automation. This task runs on each commit and launches a test suite
-that is integrated into mach.
-
-The test suite implements the following:
-
-- Downloads the necessary clang-tidy artifacts.
-- Reads the
-  {searchfox}`configuration <tools/clang-tidy/config.yaml>`
-  file.
-- For each checker reads the test file plus the expected result. A
-  sample of test and expected result can be found
-  {searchfox}`in the test file <tools/clang-tidy/test/clang-analyzer-deadcode.DeadStores.cpp>`
-  and
-  {searchfox}`the json file <tools/clang-tidy/test/clang-analyzer-deadcode.DeadStores.json>`.
-
-This testing suit can be run locally by doing the following:
-
-```shell
-./mach static-analysis autotest
-```
-
-If we want to test only a specific checker, let's say
-modernize-raw-string-literal, we can run:
-
-```shell
-./mach static-analysis autotest modernize-raw-string-literal
-```
-
-If we want to add a new checker we need to generate the expected result
-file, by doing:
-
-```shell
-./mach static-analysis autotest modernize-raw-string-literal -d
-```
-
 ## Build-time static-analysis
 
 If you want to build with the Firefox Clang plug-in

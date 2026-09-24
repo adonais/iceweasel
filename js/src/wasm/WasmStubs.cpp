@@ -59,7 +59,7 @@ static uint32_t ResultStackSize(ValType type) {
       return ABIResult::StackSizeOfFloat;
     case ValType::F64:
       return ABIResult::StackSizeOfDouble;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128:
       return ABIResult::StackSizeOfV128;
 #endif
@@ -85,7 +85,7 @@ uint32_t js::wasm::MIRTypeToABIResultSize(jit::MIRType type) {
       return ABIResult::StackSizeOfFloat;
     case MIRType::Double:
       return ABIResult::StackSizeOfDouble;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128:
       return ABIResult::StackSizeOfV128;
 #endif
@@ -121,7 +121,7 @@ void ABIResultIter::settleRegister(ValType type) {
     case ValType::Ref:
       cur_ = ABIResult(type, ReturnReg);
       break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128:
       cur_ = ABIResult(type, ReturnSimd128Reg);
       break;
@@ -302,7 +302,7 @@ static void GenPrintF64(DebugChannel channel, MacroAssembler& masm,
            });
 }
 
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 static void GenPrintV128(DebugChannel channel, MacroAssembler& masm,
                          const FloatRegister& src) {
   // TODO: We might try to do something meaningful here once SIMD data are
@@ -323,7 +323,7 @@ static void GenPrintF32(DebugChannel channel, MacroAssembler& masm,
                         const FloatRegister& src) {}
 static void GenPrintF64(DebugChannel channel, MacroAssembler& masm,
                         const FloatRegister& src) {}
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 static void GenPrintV128(DebugChannel channel, MacroAssembler& masm,
                          const FloatRegister& src) {}
 #  endif
@@ -409,7 +409,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             masm.loadFloat32(src, iter->fpu());
             break;
           case MIRType::Simd128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
             // This is only used by the testing invoke path,
             // wasmLosslessInvoke, and is guarded against in normal JS-API
             // call paths.
@@ -456,7 +456,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             break;
           }
           case MIRType::Simd128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
             // This is only used by the testing invoke path,
             // wasmLosslessInvoke, and is guarded against in normal JS-API
             // call paths.
@@ -504,7 +504,7 @@ static void StoreRegisterResult(MacroAssembler& masm, const FuncExport& fe,
           masm.store64(result.gpr64(), Address(loc, 0));
           break;
         case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
           masm.storeUnalignedSimd128(result.fpr(), Address(loc, 0));
           break;
 #else
@@ -1642,7 +1642,7 @@ static void StackCopy(MacroAssembler& masm, MIRType type, Register scratch,
     masm.loadDouble(src, fpscratch);
     GenPrintF64(DebugChannel::Import, masm, fpscratch);
     masm.storeDouble(fpscratch, dst);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   } else if (type == MIRType::Simd128) {
     ScratchSimd128Scope fpscratch(masm);
     masm.loadUnalignedSimd128(src, fpscratch);
@@ -1948,6 +1948,10 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   CallSiteDesc desc(CallSiteKind::Import);
   MoveSPForJitABI(masm);
   masm.wasmCallImport(desc, CalleeDesc::import(funcImportInstanceOffset));
+
+  // The call may not have preserved the stack pointer, so recover it from FP
+  // before reading the instance slot.
+  masm.freeStackTo(framePushed);
 
   // Restore the instance register and pinned regs, per wasm function ABI.
   masm.loadPtr(
@@ -2623,7 +2627,7 @@ static const LiveRegisterSet RegsToPreserve(
                        ~((Registers::SetType(1) << Registers::sp) |
                          (Registers::SetType(1) << Registers::pc))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 #    error "high lanes of SIMD registers need to be saved too."
 #  endif
 #elif defined(JS_CODEGEN_MIPS64)
@@ -2634,7 +2638,7 @@ static const LiveRegisterSet RegsToPreserve(
                          (Registers::SetType(1) << Registers::sp) |
                          (Registers::SetType(1) << Registers::zero))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 #    error "high lanes of SIMD registers need to be saved too."
 #  endif
 #elif defined(JS_CODEGEN_LOONG64)
@@ -2645,7 +2649,7 @@ static const LiveRegisterSet RegsToPreserve(
                          (uint32_t(1) << Registers::sp) |
                          (uint32_t(1) << Registers::zero))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 #    error "high lanes of SIMD registers need to be saved too."
 #  endif
 #elif defined(JS_CODEGEN_RISCV64)
@@ -2656,7 +2660,7 @@ static const LiveRegisterSet RegsToPreserve(
                          (uint32_t(1) << Registers::sp) |
                          (uint32_t(1) << Registers::zero))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 #    error "high lanes of SIMD registers need to be saved too."
 #  endif
 #elif defined(JS_CODEGEN_ARM64)
@@ -2667,7 +2671,7 @@ static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(Registers::AllMask &
                        ~((Registers::SetType(1) << RealStackPointer.code()) |
                          (Registers::SetType(1) << Registers::lr))),
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
     FloatRegisterSet(FloatRegisters::AllSimd128Mask));
 #  else
     // If SIMD is not enabled, it's pointless to save/restore the upper 64
@@ -2685,7 +2689,7 @@ static const LiveRegisterSet RegsToPreserve(
 #else
 static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(0), FloatRegisterSet(FloatRegisters::AllDoubleMask));
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 #    error "no SIMD support"
 #  endif
 #endif
@@ -2964,7 +2968,7 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
           case ABIArg::FPU:
             if (type == MIRType::Float32) {
               masm.loadFloat32(src, iter->fpu());
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
             } else if (type == MIRType::Simd128) {
               masm.loadUnalignedSimd128(src, iter->fpu());
 #  endif
@@ -2991,6 +2995,11 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   CodeOffset slowCallOffset;
   masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
 
+  // The current stack pointer might not match the one before the call if the
+  // callee performed a tail call, so recover it from FP before reading the
+  // stack results.
+  masm.freeStackTo(masm.framePushed());
+
   // Store results to returnTarget.paramsArea in source order. scratch3 holds
   // the paramsArea pointer for the whole routine, so it must not alias a result
   // register: loading it would clobber the register result. We store the
@@ -3010,8 +3019,8 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
                               offsetof(wasm::SwitchTarget, paramsArea)),
         scratch3);
 
-    // The call leaves SP unchanged, so the stack results the callee wrote
-    // through the hidden pointer are still at SP + stackResultAreaOffset.
+    // SP was restored above, so the stack results the callee wrote through the
+    // hidden pointer are at SP + stackResultAreaOffset.
     int32_t stackAreaSPOffset = static_cast<int32_t>(stackResultAreaOffset);
 
     // Iterate in Prev direction (source order: result[0], result[1], ...) and
@@ -3045,7 +3054,7 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
           case ValType::Ref:
             masm.storePtr(result.gpr(), dst);
             break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
           case ValType::V128:
             masm.storeUnalignedSimd128(result.fpr(), dst);
             break;

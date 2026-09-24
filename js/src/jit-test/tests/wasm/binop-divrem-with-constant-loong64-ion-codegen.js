@@ -204,11 +204,13 @@ const i64_div_s = [
                ${WasmTrapIns}`,
   },
 
-  // Power of two divisor
+  // Division by 1 yields no code.
   {
     divisor: 1,
-    expected: `or            \\$a0, \\$a0, \\$zero`,
+    expected: ``,
   },
+
+  // Power of two divisor
   {
     divisor: 2,
     expected: `srli\\.d      \\$t6, \\$a0, 0x3f
@@ -337,11 +339,13 @@ const i64_div_u = [
                ${WasmTrapIns}`,
   },
 
-  // Power of two divisor
+  // Division by 1 yields no code.
   {
     divisor: 1,
-    expected: `or            \\$a0, \\$a0, \\$zero`,
+    expected: ``,
   },
+
+  // Power of two divisor
   {
     divisor: 2,
     expected: `srli\\.d      \\$a0, \\$a0, 0x1`,

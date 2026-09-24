@@ -8,8 +8,8 @@ use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::size::Size2D;
 use crate::values::specified::length::NonNegativeLength;
-use crate::values::{generics, CustomIdent};
-use cssparser::{match_ignore_ascii_case, Parser};
+use crate::values::{CustomIdent, generics};
+use cssparser::{Parser, match_ignore_ascii_case};
 use style_traits::ParseError;
 
 pub use generics::page::PageOrientation;

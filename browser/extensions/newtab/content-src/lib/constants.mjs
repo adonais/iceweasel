@@ -47,3 +47,12 @@ export const WALLPAPER_CATEGORIES = {
   Firefox: "firefox",
   CustomWallpaper: "custom-wallpaper",
 };
+
+// Ids of the customize panel's subpanels. New Tab telemetry records them as
+// its `panel` value (Bug 2066344), so keep them stable.
+export const CUSTOMIZE_SUBPANELS = Object.freeze({
+  SECTIONS: "sections_management",
+  WIDGETS: "widgets_management",
+  THEMES: "themes_management",
+  WALLPAPERS: "wallpaper_categories",
+});

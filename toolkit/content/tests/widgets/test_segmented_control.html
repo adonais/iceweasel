@@ -14,8 +14,16 @@
       type="module"
       src="chrome://global/content/elements/moz-segmented-control.mjs"
     ></script>
+    <script src="common.js"></script>
+    <script src="name.js"></script>
+    <script src="role.js"></script>
+    <script src="states.js"></script>
     <script src="lit-test-helpers.js"></script>
     <script>
+      /* import-globals-from ../../../../accessible/tests/mochitest/common.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/name.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/role.js */
+      /* import-globals-from ../../../../accessible/tests/mochitest/states.js */
       let html;
       let defaultTemplate;
       let testHelpers = new InputTestHelpers();
@@ -98,11 +106,22 @@
         );
         items.forEach(item => {
           is(
-            item.role,
+            item.buttonEl.getAttribute("role"),
             "radio",
             "Segmented control items use the 'radio' role by default."
           );
+          ok(
+            !item.hasAttribute("role"),
+            "Segmented control item host has no role attribute."
+          );
         });
+        is(
+          control.fieldset.shadowRoot
+            .querySelector("fieldset")
+            .getAttribute("role"),
+          "radiogroup",
+          "Segmented control container is a radiogroup by default."
+        );
       });
 
       add_task(async function testSegmentedControlItemText() {
@@ -147,7 +166,7 @@
         async function verifySelectedControlItem(selectedItem, focusedItem) {
           ok(selectedItem.checked, "The selected control item is checked.");
           is(
-            selectedItem.getAttribute("aria-checked"),
+            selectedItem.buttonEl.getAttribute("aria-checked"),
             "true",
             "The checked item has the correct aria-checked value."
           );
@@ -170,9 +189,13 @@
               `${item.value} item is ${isChecked ? "" : "not"} checked`
             );
             is(
-              item.getAttribute("aria-checked"),
+              item.buttonEl.getAttribute("aria-checked"),
               isChecked ? "true" : "false",
               `${item.value} item has the expected aria-checked value`
+            );
+            ok(
+              !item.hasAttribute("aria-checked"),
+              `${item.value} item host has no aria-checked attribute`
             );
             is(
               item.tabIndex,
@@ -542,13 +565,103 @@
         ]);
       });
 
+      add_task(async function testNoEventsWhenValueUnchanged() {
+        let { control, items, firstItem, secondItem } =
+          await renderSegmentedControl();
+        let { trackEvent, verifyEvents } = testHelpers.getInputEventHelpers();
+
+        // Ensure control is visible in the test harness.
+        control.focus();
+        control.scrollIntoView();
+
+        items.forEach(item => {
+          item.addEventListener("click", trackEvent);
+          item.addEventListener("input", trackEvent);
+          item.addEventListener("change", trackEvent);
+        });
+        control.addEventListener("click", trackEvent);
+        control.addEventListener("change", trackEvent);
+        control.addEventListener("input", trackEvent);
+
+        ok(firstItem.checked, "The first item is selected.");
+
+        info("Clicking the selected item doesn't emit input or change events.");
+        synthesizeMouseAtCenter(firstItem, {});
+        await control.updateComplete;
+        await TestUtils.waitForTick();
+
+        is(control.value, firstItem.value, "The control value is unchanged.");
+        ok(firstItem.checked, "The first item is still selected.");
+        is(
+          document.activeElement,
+          firstItem,
+          "Focus moves to the clicked item."
+        );
+        // The click event still fires on the item, but it doesn't propagate to
+        // the control.
+        verifyEvents([
+          {
+            type: "click",
+            value: "first",
+            localName: "moz-segmented-control-item",
+            checked: true,
+          },
+        ]);
+
+        info("Clicking a different item still emits input and change events.");
+        synthesizeMouseAtCenter(secondItem, {});
+        await control.updateComplete;
+        await TestUtils.waitForTick();
+
+        is(control.value, secondItem.value, "The control value is updated.");
+        verifyEvents([
+          {
+            type: "input",
+            value: "second",
+            localName: "moz-segmented-control-item",
+            checked: true,
+          },
+          {
+            type: "input",
+            value: "second",
+            localName: "moz-segmented-control",
+          },
+          {
+            type: "change",
+            value: "second",
+            localName: "moz-segmented-control-item",
+            checked: true,
+          },
+          {
+            type: "change",
+            value: "second",
+            localName: "moz-segmented-control",
+          },
+          {
+            type: "click",
+            value: "second",
+            localName: "moz-segmented-control-item",
+            checked: true,
+          },
+        ]);
+
+        info("Clicking an item in a disabled control doesn't emit events.");
+        control.disabled = true;
+        await control.updateComplete;
+
+        synthesizeMouseAtCenter(firstItem, {});
+        await control.updateComplete;
+        await TestUtils.waitForTick();
+
+        is(control.value, secondItem.value, "The control value is unchanged.");
+        ok(!firstItem.checked, "The disabled item didn't become selected.");
+        verifyEvents([]);
+      });
+
       add_task(async function testNamedDeckIntegration() {
+        // Start as a radio group to verify the live role transition.
         let template = html`
-          <moz-segmented-control
-            label="Deck control"
-            value="first"
-            deck="test-deck"
-          >
+          <moz-segmented-control label="Deck control" value="first">
             <moz-segmented-control-item value="first" label="First">
             </moz-segmented-control-item>
             <moz-segmented-control-item value="second" label="Second">
@@ -565,9 +678,60 @@
 
         let { control, items, secondItem, thirdItem } =
           await renderSegmentedControl(template);
+        await control.fieldset.updateComplete;
+
         let deck = document.getElementById("test-deck");
 
-        // Verify items have tab role when deck is specified
+        let innerFieldset =
+          control.fieldset.shadowRoot.querySelector("fieldset");
+
+        is(
+          innerFieldset.getAttribute("role"),
+          "radiogroup",
+          "Segmented control container is a radiogroup before a deck is set."
+        );
+        ok(
+          !control.fieldset.hasAttribute("role"),
+          "Segmented control fieldset host has no role before a deck is set."
+        );
+        items.forEach(item => {
+          is(
+            item.role,
+            "radio",
+            "Segmented control items use 'radio' role before a deck is set."
+          );
+        });
+
+        control.deck = "test-deck";
+        await control.updateComplete;
+        await control.fieldset.updateComplete;
+
+        // Adding a deck changes the child role to `tab` while `type` stays "radio".
+        is(
+          innerFieldset.getAttribute("role"),
+          "tablist",
+          "Segmented control container is a tablist once a deck is set."
+        );
+        ok(
+          !control.fieldset.hasAttribute("role"),
+          "Segmented control fieldset host has no role once a deck is set."
+        );
+        control.scrollIntoView();
+        await TestUtils.waitForCondition(
+          () => gAccService.getAccessibleFor(innerFieldset),
+          "Accessible is created for the segmented control's inner fieldset."
+        );
+        testRole(innerFieldset, ROLE_PAGETABLIST);
+        testName(innerFieldset, "Deck control");
+        testStates(
+          innerFieldset,
+          0,
+          EXT_STATE_HORIZONTAL,
+          0,
+          EXT_STATE_VERTICAL,
+          "horizontal tablist segmented control"
+        );
+        // Verify items have tab role when deck is specified.
         items.forEach(item => {
           is(
             item.role,
@@ -575,6 +739,7 @@
             "Segmented control items use 'tab' role when deck is specified."
           );
         });
+        is(control.type, "radio", "Setting deck leaves type as radio.");
 
         // Verify initial deck state matches control value
         is(

@@ -54,6 +54,10 @@ WebBrowserPersistDocumentParent::~WebBrowserPersistDocumentParent() {
 mozilla::ipc::IPCResult WebBrowserPersistDocumentParent::RecvAttributes(
     Attrs&& aAttrs, NotNull<nsIPrincipal*> aPrincipal,
     nsIInputStream* aPostStream) {
+  if (!mOnReady || mReflection) {
+    return IPC_FAIL(this, "invalid actor state");
+  }
+
   auto* contentParent = dom::ContentParent::Cast(Manager());
   if (!contentParent->ValidatePrincipal(aPrincipal, {})) {
     return IPC_FAIL(this, "invalid principal");

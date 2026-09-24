@@ -9,6 +9,7 @@ import android.app.ApplicationExitInfo
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.filters.SdkSuppress
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -477,6 +478,49 @@ class TelemetryMiddlewareTest {
             assertEquals(1, recordedEvents.size)
             assertEquals("app_session_restore", recordedEvents[0].extra?.get("reason"))
         }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.R)
+    fun `GIVEN AMS getHistoricalProcessExitReasons throws WHEN tabs are restored THEN we do not crash`() = runTest {
+        val tabId = "test-tab-id"
+        val throwingContext = mockk<Context>(relaxed = true)
+        val throwingActivityManager = mockk<ActivityManager>()
+        every { throwingContext.getSystemService(Context.ACTIVITY_SERVICE) } returns throwingActivityManager
+        every {
+            throwingActivityManager.getHistoricalProcessExitReasons(any(), any(), any())
+        } throws IllegalArgumentException("simulated OEM AMS bug 2072086")
+
+        val hardenedMiddleware =
+            TelemetryMiddleware(
+                context = throwingContext,
+                settings = settings,
+                metrics = metrics,
+            )
+        val engine: Engine = mockk(relaxed = true)
+        every { engine.createSession(any(), any()) } returns mockk(relaxed = true)
+        val hardenedStore =
+            BrowserStore(
+                middleware = listOf(hardenedMiddleware) + EngineMiddleware.create(engine),
+                initialState = BrowserState(),
+            )
+
+        // Must not throw — this is the crash under bug 2072086.
+        hardenedStore.dispatch(
+            TabListAction.RestoreAction(
+                tabs = listOf(RecoverableTab(null, TabState(url = "https://firefox.com", id = tabId))),
+                restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
+            )
+        )
+        hardenedStore.dispatch(RestoreCompleteAction)
+        hardenedStore.dispatch(EngineAction.CreateEngineSessionAction(tabId))
+
+        ShadowLooper.idleMainLooper()
+
+        // Cannot-confirm falls back to conservative default: treat as unexpected → record metric.
+        val recordedEvents = EngineMetrics.reloaded.testGetValue()
+        assertNotNull(recordedEvents)
+        assertEquals("app_session_restore", recordedEvents[0].extra?.get("reason"))
+    }
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.R])

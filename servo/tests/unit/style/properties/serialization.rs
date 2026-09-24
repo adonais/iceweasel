@@ -7,11 +7,11 @@ use style::computed_values::display::T as Display;
 use style::properties::declaration_block::PropertyDeclarationBlock;
 use style::properties::parse_property_declaration_list;
 use style::properties::{Importance, PropertyDeclaration};
-use style::values::specified::url::SpecifiedUrl;
+use style::values::RGBA;
 use style::values::specified::NoCalcLength;
+use style::values::specified::url::SpecifiedUrl;
 use style::values::specified::{BorderSideWidth, BorderStyle, Color};
 use style::values::specified::{Length, LengthPercentage, LengthPercentageOrAuto};
-use style::values::RGBA;
 use style_traits::ToCss;
 use stylesheets::block_from;
 
@@ -178,8 +178,10 @@ mod shorthand_serialization {
             properties.push(PropertyDeclaration::BorderLeftColor(blue.clone()));
 
             let serialization = shorthand_properties_to_string(properties);
-            assert_eq!(serialization,
-          "border-style: solid; border-width: 30px 30px 30px 10px; border-color: rgb(0, 0, 255);");
+            assert_eq!(
+                serialization,
+                "border-style: solid; border-width: 30px 30px 30px 10px; border-color: rgb(0, 0, 255);"
+            );
         }
 
         #[test]
@@ -555,7 +557,8 @@ mod shorthand_serialization {
             let serialization = block.to_css_string();
 
             assert_eq!(
-                serialization, "background: \
+                serialization,
+                "background: \
                 url(\"http://servo/test.png\") repeat-x scroll 7px 4px / 70px 50px border-box padding-box, \
                 rgb(0, 0, 255) none repeat-y scroll 70px 40px / 20px 30px padding-box;"
             );

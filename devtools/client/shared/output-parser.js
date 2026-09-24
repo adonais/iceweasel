@@ -947,7 +947,14 @@ class OutputParser {
             -1
           )
           .trim();
-        if (!InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, syntax)) {
+        if (
+          // For now, let's skip attribute value using substitution functions.
+          // Those guards should be removed as part of Bug 2070443.
+          !attrValue.includes("var(") &&
+          !attrValue.includes("attr(") &&
+          !attrValue.includes("env(") &&
+          !InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, syntax)
+        ) {
           fallbackValueIsUsed = true;
           attrTypeMismatchText = STYLE_INSPECTOR_L10N.getFormatStr(
             "rule.attributeUnmatchedType",

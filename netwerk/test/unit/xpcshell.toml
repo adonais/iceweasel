@@ -517,6 +517,12 @@ prefs = ["browser.cache.disk.encryption.enabled=true"]
 
 ["test_cache2-43-purge-residual-folder.js"]
 
+["test_cache2-44-no-rewrite-unchanged-metadata.js"]
+
+["test_cache2-44-clear-origin-context-evictor.js"]
+
+["test_cache2-45-clear-base-domain-context-evictor.js"]
+
 ["test_cache2_clear_with_principal.js"]
 run-sequentially = ["true"] # httpd server
 
@@ -565,14 +571,14 @@ skip-if = [
 
 ["test_compareURIs.js"]
 
-["test_compressappend.js"]
-
 ["test_compressConv_offmainthread_js_listener.js"]
 prefs = [
   "network.decompression_off_mainthread2=true",
   "network.decompression_off_mainthread_min_size=0",
   "network.http.encoding.trustworthy_is_https=false",
 ]
+
+["test_compressappend.js"]
 
 ["test_connection_based_auth.js"]
 
@@ -708,6 +714,7 @@ skip-if = [
 ["test_dns_service.js"]
 
 ["test_dns_stale_zero_ttl.js"]
+
 ["test_dns_stress.js"]
 
 ["test_domain_eviction.js"]
@@ -788,6 +795,14 @@ run-sequentially = ["true"] # TlsServer listens to the same port
 skip-if = [
   "os == 'android'",
   "os == 'win'",
+]
+
+["test_happy_eyeballs_all_addrs_unusable.js"]
+
+["test_happy_eyeballs_altsvc_h3_only_claim.js"]
+skip-if = [
+  "os == 'android'",
+  "os == 'win' && msix",
 ]
 
 ["test_happy_eyeballs_cancel_and_reuse.js"]
@@ -1482,6 +1497,8 @@ run-if = [
 
 ["test_no_cookies_after_last_pb_exit.js"]
 
+["test_no_vary_search_memory_only.js"]
+
 ["test_no_vary_search_revalidation.js"]
 
 ["test_no_vary_search_telemetry.js"]
@@ -1854,6 +1871,9 @@ firefox-appdir = "browser"
 ["test_traceable_channel.js"]
 
 ["test_trackingProtection_annotateChannels.js"]
+
+["test_transaction_restart_activity.js"]
+run-sequentially = ["true"] # arranging the pooled retry is timing-sensitive
 
 ["test_transparent_redirect.js"]
 

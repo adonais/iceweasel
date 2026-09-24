@@ -13,7 +13,7 @@ def migrate(ctx):
         path,
         path,
         transforms_from(
-            ""
+            """
 report-broken-site-panel-reason-load-moz-box-button =
     .label = {COPY_PATTERN(from_path, "report-broken-site-panel-reason-load")}
 report-broken-site-panel-reason-checkout-moz-box-button =

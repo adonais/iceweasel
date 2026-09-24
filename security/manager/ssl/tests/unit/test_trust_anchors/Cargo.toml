@@ -16,7 +16,7 @@ smallvec = { version = "1.9.0", features = ["const_new"] }
 mozilla-central-workspace-hack = { version = "0.1", features = ["test-trust-anchors-static"], optional = true }
 
 [build-dependencies]
-bindgen = { default-features = false, features = ["runtime"], version = "0.69" }
+bindgen = { default-features = false, features = ["runtime"], version = "0.73" }
 mozbuild = "0.1"
 nom = "7.1.1"
 sha2 = "0.10"

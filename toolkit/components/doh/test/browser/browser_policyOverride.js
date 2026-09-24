@@ -39,7 +39,7 @@ add_task(async function testPolicyOverride() {
   is(
     Services.prefs.getBoolPref(prefs.SKIP_HEURISTICS_PREF),
     true,
-    "Pref set to suppress CFR."
+    "Pref set to skip heuristics."
   );
   await ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(undefined);

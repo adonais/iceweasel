@@ -335,6 +335,19 @@ describe("PrefsFeed", () => {
       })
     );
   });
+  describe("supportsWidgetSearchSap", () => {
+    it("is true in the initial values on a host that knows the access point", () => {
+      feed.onAction({ type: at.INIT });
+      const [{ data }] = feed.store.dispatch.firstCall.args;
+      assert.isTrue(data.supportsWidgetSearchSap);
+    });
+    it("is false in the initial values on a host older than 157", () => {
+      ServicesStub.vc.compare = sinon.stub().returns(-1);
+      feed.onAction({ type: at.INIT });
+      const [{ data }] = feed.store.dispatch.firstCall.args;
+      assert.isFalse(data.supportsWidgetSearchSap);
+    });
+  });
   describe("recordsHistory", () => {
     // The initial values are what the first new tab of a session reads, so the
     // widget-hiding depends on this being present before any pref changes.

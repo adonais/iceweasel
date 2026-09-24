@@ -15,7 +15,7 @@
 namespace mozilla::dom {
 
 #if !defined(XP_WIN) && !defined(XP_MACOSX) && \
-    !(defined(XP_LINUX) && !defined(ANDROID))
+    !(defined(XP_LINUX) && !defined(ANDROID)) && !defined(XP_FREEBSD)
 already_AddRefed<SerialPlatformService>
 SerialPlatformService::GetInstanceImpl() {
   return MakeAndAddRef<TestSerialPlatformService>();

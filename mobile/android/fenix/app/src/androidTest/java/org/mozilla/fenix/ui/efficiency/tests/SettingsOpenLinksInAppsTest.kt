@@ -15,9 +15,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class SettingsOpenLinksInAppsTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     @Ignore("Covered by verifyNavigationReachability[1: SettingsOpenLinksInAppsPage (TBD) — Navigation Reachability]")
     @Test
     fun verifyTheSettingsOpenLinksInAppsTest() {

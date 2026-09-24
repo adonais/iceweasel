@@ -157,8 +157,8 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
   bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
-  // FixDomain() and FixPath() from CookieParser MUST be run first to make sure
-  // invalid attributes are rejected and to regularlize them. In particular all
+  // FixDomain() from CookieParser MUST be run first to make sure invalid
+  // attributes are rejected and to regularlize them. In particular all
   // explicit domain attributes result in a host that starts with a dot, and if
   // the host doesn't start with a dot it correctly matches the true
   // host.

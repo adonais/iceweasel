@@ -24,13 +24,11 @@ import org.mozilla.fenix.ui.efficiency.selectors.NotificationSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.TabHistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
 class CustomTabsTest : BaseTest() {
-
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
 
     // Required by verifyDownloadInACustomTabTest: without it the download prompt's Download button
     // resolves and the click reports success, but the click is dropped as prompt abuse, so the dialog
@@ -56,7 +54,7 @@ class CustomTabsTest : BaseTest() {
         on.customTabs.launchCustomTab(customTabPage.url.toString(), customMenuItem)
         on.customTabs.mozVerify(CustomTabsSelectors.CLOSE_BUTTON)
         on.customTabs.openMainMenu()
-        on.customTabs.mozVerifyElementsByGroup("customTabMainMenuItems")
+        on.customTabs.mozVerifyElementsByGroup(CustomTabsSelectors.Group.CUSTOM_TAB_MAIN_MENU_ITEMS)
         on.customTabs.mozVerify(CustomTabsSelectors.MENU_CUSTOM_ITEM(customMenuItem))
     }
 
@@ -143,7 +141,7 @@ class CustomTabsTest : BaseTest() {
         on.customTabs.clickWebContent(downloadFile)
         on.downloads
             .mozVerify(DownloadsSelectors.DOWNLOAD_DIALOG_TITLE)
-            .mozVerifyElementsByGroup("downloadDialog")
+            .mozVerifyElementsByGroup(DownloadsSelectors.Group.DOWNLOAD_DIALOG)
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
             .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR, timeout = 15_000)
         on.notification
@@ -187,7 +185,7 @@ class CustomTabsTest : BaseTest() {
         // the intended page instead of whatever the tab happened to be showing.
         on.customTabs.verifyWebContent(customTabPage.content)
         on.customTabs.openMainMenu().mozClick(CustomTabsSelectors.MENU_SHARE)
-        on.shareOverlay.mozVerifyElementsByGroup("shareTabLayout")
+        on.shareOverlay.mozVerifyElementsByGroup(ShareOverlaySelectors.Group.SHARE_TAB_LAYOUT)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/249659

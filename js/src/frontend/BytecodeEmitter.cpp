@@ -34,6 +34,7 @@
 #include "frontend/ExpressionStatementEmitter.h"  // ExpressionStatementEmitter
 #include "frontend/ForInEmitter.h"                // ForInEmitter
 #include "frontend/ForOfEmitter.h"                // ForOfEmitter
+#include "frontend/FrontendContext.h"             // FrontendContext
 #include "frontend/FunctionEmitter.h"  // FunctionEmitter, FunctionScriptEmitter, FunctionParamsEmitter
 #include "frontend/IfEmitter.h"     // IfEmitter, InternalIfEmitter, CondEmitter
 #include "frontend/LabelEmitter.h"  // LabelEmitter
@@ -2417,6 +2418,10 @@ bool BytecodeEmitter::emitDeclarationInstantiation(ParseNode* body) {
 }
 
 bool BytecodeEmitter::emitScript(ParseNode* body) {
+  if (!fc->checkCompilationCancellation()) {
+    return false;
+  }
+
   setScriptStartOffsetIfUnset(body->pn_pos.begin);
 
   MOZ_ASSERT(inPrologue());
@@ -2608,6 +2613,11 @@ bool BytecodeEmitter::getNslots(uint32_t* nslots) const {
 
 bool BytecodeEmitter::emitFunctionScript(FunctionNode* funNode) {
   MOZ_ASSERT(inPrologue());
+
+  if (!fc->checkCompilationCancellation()) {
+    return false;
+  }
+
   ParamsBodyNode* paramsBody = funNode->body();
   FunctionBox* funbox = sc->asFunctionBox();
 

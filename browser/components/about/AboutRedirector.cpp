@@ -17,6 +17,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/browser/NimbusFeatures.h"
 
+#define AITAB_ENABLED_PREF "browser.smartwindow.aitab.enabled"
 #define REFERRALS_ENABLED_PREF "browser.referrals.enabled"
 #define PROFILES_ENABLED_PREF "browser.profiles.enabled"
 #define ABOUT_WELCOME_CHROME_URL \
@@ -47,6 +48,11 @@ struct RedirEntry {
 */
 static const RedirEntry kRedirMap[] = {
     {"aichatcontent", "chrome://browser/content/aiwindow/aiChatContent.html",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+    {"aitab", "chrome://browser/content/aiwindow/aitab.html",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
          nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
@@ -120,7 +126,8 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"referrals", "https://www.firefox.com/invite/",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
-         nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"restartrequired", "chrome://browser/content/aboutRestartRequired.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"rights", "https://www.mozilla.org/about/legal/terms/firefox/",
@@ -134,6 +141,12 @@ static const RedirEntry kRedirMap[] = {
          nsIAboutModule::IS_SECURE_CHROME_UI},
     {"settings", "chrome://browser/content/preferences/preferences.xhtml",
      nsIAboutModule::ALLOW_SCRIPT | nsIAboutModule::IS_SECURE_CHROME_UI |
+         nsIAboutModule::HIDE_FROM_ABOUTABOUT},
+    {"smartformfillreview",
+     "chrome://browser/content/aiwindow/smartformfill-form-review-content.html",
+     nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
+         nsIAboutModule::URI_CAN_LOAD_IN_PRIVILEGEDABOUT_PROCESS |
+         nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT |
          nsIAboutModule::HIDE_FROM_ABOUTABOUT},
     {"smartwindowtasks", "chrome://browser/content/aiwindow/tasks.html",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
@@ -208,6 +221,11 @@ AboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   NS_ASSERTION(result, "must not be null");
 
   nsAutoCString path = GetAboutModuleName(aURI);
+
+  if (path.EqualsASCII("aitab") &&
+      !mozilla::Preferences::GetBool(AITAB_ENABLED_PREF, false)) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   if (path.EqualsASCII("referrals") &&
       !mozilla::Preferences::GetBool(REFERRALS_ENABLED_PREF, false)) {

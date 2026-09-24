@@ -3,30 +3,36 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --icon-height: var(--icon-size-large);
-  --icon-width: var(--icon-size-large);
+  --icon-height: var(--icon-size);
+  --icon-width: var(--icon-size);
+
+  --row-item-column-gap: var(--space-small);
+  --row-item-padding: var(--space-small);
+  --row-item-border-radius: var(--border-radius-large);
+  --row-item-label-font-size: inherit;
+
+  @media (not (forced-colors)) {
+    --button-background-color-ghost-hover: color-mix(in srgb, currentColor 15%, transparent);
+    --button-background-color-ghost-active: color-mix(in srgb, currentColor 30%, transparent);
+  }
 }
 
 .row-item {
   display: flex;
   align-items: center;
-  column-gap: var(--space-small);
-  padding: var(--space-small);
-  border-radius: var(--border-radius-large);
-
-  &:hover {
-    color: var(--button-text-color-hover);
-    background-color: var(--button-background-color-hover);
-
-    > .secondary-action {
-      visibility: visible;
-    }
-  }
+  column-gap: var(--row-item-column-gap);
+  padding: var(--row-item-padding);
+  border-radius: var(--row-item-border-radius);
 
   &:active {
     color: var(--button-text-color-active);
     background-color: var(--button-background-color-active);
   }
+}
+
+:host(:hover) .row-item {
+  color: var(--button-text-color-hover);
+  background-color: var(--button-background-color-hover);
 }
 
 .labels-container {
@@ -37,6 +43,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: var(--row-item-label-font-size);
   }
 
   > .description {
@@ -55,69 +62,184 @@
 .secondary-action {
   visibility: hidden;
   margin-inline-start: auto;
-  --button-background-color-ghost-hover: var(--button-background-color-active);
+}
 
-  &.selected {
-    visibility: visible;
-  }
+:host(:is(:hover, [selected]:not([pointerselected]), [subfocused])) .secondary-action {
+  visibility: visible;
 }
 
 :host([subfocused]) .secondary-action {
-  visibility: visible;
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-offset);
   border-radius: var(--button-border-radius);
 }
 
+:host([menuopen]) .row-item {
+  color: var(--button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+}
+
+:host([menuopen]) .secondary-action {
+  visibility: visible;
+}
+
 /**
  * Smart Form Fill styles
  */
+:host([type="smartFormFill"]) {
+  --sff-pill-bg-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
+  --sff-pill-bg-color-focus: light-dark(var(--color-violet-desaturated-0), var(--color-violet-desaturated-70));
+  --sff-loader-gradient-light: linear-gradient(
+    90deg,
+    var(--color-violet-20) 0%,
+    var(--color-violet-30) 52%,
+    var(--color-purple-40) 72%,
+    var(--color-purple-50) 100%
+  );
+  --sff-loader-gradient-dark: linear-gradient(
+    90deg,
+    var(--color-pink-40) 0%,
+    var(--color-pink-30) 42%,
+    var(--color-violet-30) 62%,
+    var(--color-violet-40) 100%
+  );
+
+  .row-item moz-button::part(button) {
+    cursor: pointer;
+  }
+}
 
 .smart-form-fill-sources {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-xsmall);
   min-width: 0;
 }
 
 .sources-label {
-  flex: none;
-  color: var(--text-color-deemphasized);
+  color: var(--button-text-color);
+  font-size: larger;
+  font-weight: var(--font-weight-semibold);
 }
 
-.sources-value {
-  min-width: 0;
-  overflow: hidden;
-}
-
-.sources-list {
-  display: flex;
-  gap: var(--space-xsmall);
-  min-width: 0;
-  overflow: hidden;
-}
-
-.source-pill {
-  display: flex;
+.sources-pill {
   align-items: center;
-  gap: var(--space-small);
-  /* stylelint-disable-next-line -- Figma style */
-  max-width: 170px;
-  padding: var(--space-xsmall) var(--space-small);
-  border-radius: var(--border-radius-large);
-  /* stylelint-disable-next-line -- TODO: Bug 2061059 */
-  background-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-60));
+  display: flex;
+  gap: var(--space-medium);
+  padding: var(--space-small) var(--space-medium);
+  border-radius: var(--border-radius-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--sff-pill-bg-color);
+
+  &:is(:hover, :active) {
+    .sources-count:not(.sources-count-hover) {
+      display: none;
+    }
+
+    .sources-count-hover {
+      display: block;
+    }
+  }
+}
+
+/* Only the summary pill is its own click target. */
+.sources-pill:not(.sources-pill-named) {
+  cursor: pointer;
+
+  :host([subfocused]) & {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    background-color: var(--sff-pill-bg-color-focus);
+    outline: var(--focus-outline);
+  }
+}
+
+.sources-pill-named {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- Figma style */
+  max-width: 120px;
   white-space: nowrap;
 }
 
-.source-favicon {
-  flex: none;
-  width: var(--icon-size-small);
-  height: var(--icon-size-small);
+.sources-named-list,
+.sources-summary-text {
+  align-items: center;
+  display: flex;
+}
+
+.sources-summary-text {
+  gap: var(--space-small);
+}
+
+.sources-named-list {
+  gap: var(--space-large);
 }
 
 .source-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.sources-count {
+  color: var(--button-text-color);
+}
+
+.sources-count-hover {
+  display: none;
+}
+
+.sources-count-icon {
+  fill: var(--button-icon-fill);
+  -moz-context-properties: fill;
+  height: var(--icon-size-xsmall);
+  width: var(--icon-size-xsmall);
+}
+
+.source-favicon {
+  border-radius: var(--border-radius-xsmall);
+  width: var(--icon-size-small);
+  height: var(--icon-size-small);
+}
+
+.source-favicon-single {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  margin-inline-end: calc(-1 * var(--space-xsmall));
+}
+
+/* sff loader */
+.sff-loader {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--sff-pill-bg-color);
+  border-radius: var(--border-radius-large);
+  display: flex;
+  gap: var(--space-small);
+  padding: var(--space-small);
+  width: fit-content;
+}
+
+.sff-loader-spinner {
+  background-image: var(--sff-loader-image, url("chrome://global/skin/icons/loading.svg"));
+  background-size: var(--size-item-small);
+  height: var(--size-item-small);
+  width: var(--size-item-small);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: 0.9s spinLoader infinite linear;
+    will-change: transform;
+  }
+}
+
+@keyframes spinLoader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.sff-loader-label {
+  background-image: light-dark(var(--sff-loader-gradient-light), var(--sff-loader-gradient-dark));
+  background-clip: text;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  color: transparent;
 }

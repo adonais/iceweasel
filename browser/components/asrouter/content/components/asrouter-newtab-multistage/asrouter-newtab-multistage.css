@@ -568,7 +568,7 @@ div#feature-callout.hidden {
   border: 1px solid var(--fc-border);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   border-radius: var(--panel-border-radius, var(--border-radius-large));
-  padding: var(--callout-padding, var(--dimension-20));
+  padding: var(--callout-padding, 20px);
   width: 25em;
   gap: 16px;
   background: var(--fc-background);
@@ -666,7 +666,7 @@ div#feature-callout.hidden {
 #feature-callout .screen[pos=callout] .section-main .main-content .steps {
   height: auto;
   position: absolute;
-  bottom: calc(var(--callout-padding, var(--dimension-20)) + var(--cta-height, var(--button-min-height-small, 24px)) / 2 - 4px);
+  bottom: calc(var(--callout-padding, 20px) + var(--cta-height, var(--button-min-height-small, 24px)) / 2 - 4px);
   padding-block: 0;
 }
 #feature-callout .screen[pos=callout] .section-main .main-content .steps .indicator {
@@ -1436,7 +1436,8 @@ html {
   --screen-1-yellow-circle-background-color: var(--color-purple-60);
   --screen-2-yellow-circle-background-color: var(--color-pink-50);
   --message-bar-icon-color: light-dark(var(--color-blue-60), var(--color-blue-20));
-  --multi-select-card-background-color: light-dark(var(--color-violet-10), var(--color-violet-80));
+  --multi-select-card-background-color: light-dark(color-mix(in srgb, var(--color-white) 30%, transparent), color-mix(in srgb, var(--color-violet-80) 80%, transparent));
+  --multi-select-card-border-color: var(--card-border-color);
   --multi-select-notice-background-color: light-dark(color-mix(in srgb, var(--color-violet-10) 40%, transparent), color-mix(in srgb, var(--color-violet-80) 30%, transparent));
   --multi-select-notice-border-color: light-dark(color-mix(in srgb, var(--color-violet-70) 15%, transparent), color-mix(in srgb, var(--color-violet-30) 10%, transparent));
   --multi-select-notice-icon-color: light-dark(var(--color-violet-70), var(--color-violet-30));
@@ -1460,6 +1461,7 @@ html {
     --picker-checkbox-hover-color: SelectedItem;
     --picker-focus-ring-color: CanvasText;
     --multi-select-card-background-color: ButtonFace;
+    --multi-select-card-border-color: ButtonText;
     --multi-select-notice-background-color: ButtonFace;
     --multi-select-notice-border-color: ButtonText;
     --multi-select-notice-icon-color: ButtonText;
@@ -1510,7 +1512,6 @@ html {
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content {
   box-shadow: none;
-  position: relative;
   justify-content: center;
   overflow: visible;
 }
@@ -1530,7 +1531,6 @@ html {
   }
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner {
-  position: relative;
   width: 50%;
   margin: auto;
   flex-grow: 0;
@@ -1548,13 +1548,48 @@ html {
     inset-inline: -100px;
     margin: auto;
     z-index: -1;
-    width: calc(100% + 200px);
-    height: calc(100% + 120px);
+    width: calc(50% + 200px);
+    height: calc(50% + 120px);
     border-radius: 50%;
     background-color: var(--center-large-glow-color);
     filter: blur(70px);
     pointer-events: none;
   }
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .arrow-icon {
+  -moz-context-properties: fill;
+  fill: currentColor;
+  text-decoration: none;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .arrow-icon::after {
+  content: "";
+  padding-inline-end: var(--space-medium);
+  margin-inline-start: var(--space-xsmall);
+  background: url("chrome://browser/skin/forward.svg") no-repeat center/12px;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .arrow-icon:dir(rtl)::after {
+  background-image: url("chrome://browser/skin/back.svg");
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .secondary {
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
+  border: var(--button-border);
+  line-height: 12px;
+  font-size: 0.72em;
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-small) var(--space-large);
+  text-decoration: none;
+  cursor: default;
+  color: var(--button-text-color);
+  border: none;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .secondary:hover, .onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .secondary[open] {
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .secondary:hover:active, .onboardingContainer:has([pos=center-large][fullscreen]) .section-main .main-content .main-content-inner .secondary-cta .secondary[open]:active {
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container {
   position: absolute;
@@ -1572,25 +1607,96 @@ html {
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image {
   position: absolute;
+  --entrance-distance: 0px;
+  --entrance-scale: 1;
+  --entrance-duration: var(--corner-image-entrance-duration, 0.6s);
+  --entrance-delay: var(--corner-image-entrance-delay, 0s);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image {
+    --entrance-distance: var(--corner-image-entrance-distance, 60px);
+    --entrance-scale: 0.85;
+  }
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image:not(.entrance-none) {
+  transition-property: opacity, translate, scale;
+  transition-duration: var(--entrance-duration);
+  transition-delay: var(--entrance-delay);
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image.bottom-left {
+  --entrance-block: var(--entrance-distance);
+  --entrance-inline: calc(-1 * var(--entrance-distance));
   bottom: -10px;
   left: 20px;
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image.bottom-right {
+  --entrance-block: var(--entrance-distance);
+  --entrance-inline: var(--entrance-distance);
   bottom: -10px;
   right: 20px;
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image.top-left {
+  --entrance-block: calc(-1 * var(--entrance-distance));
+  --entrance-inline: calc(-1 * var(--entrance-distance));
   top: -10px;
   left: 20px;
 }
 .onboardingContainer:has([pos=center-large][fullscreen]) .corner-image-container .corner-image.top-right {
+  --entrance-block: calc(-1 * var(--entrance-distance));
+  --entrance-inline: var(--entrance-distance);
   top: -10px;
   right: 20px;
 }
 .onboardingContainer:has([pos=center-large][fullscreen]):has(theme-picker) .content-tile {
   margin-inline: auto;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]):has(migration-wizard) .welcome-text {
+  margin: 0.5em auto;
+  width: 60%;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]):has(migration-wizard) .content-tile {
+  width: 60%;
+  align-self: center;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(deck) {
+  width: 100%;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(page-selection), .onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(page-progress) {
+  align-items: center;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(profile-selector) {
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--card-border-color);
+  background: var(--multi-select-card-background-color);
+  width: -moz-available;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(profile-name) {
+  text-transform: unset;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(resource-selection-details) {
+  border-radius: var(--border-radius-medium);
+  border: 1px solid var(--card-border-color);
+  background: var(--multi-select-card-background-color);
+  width: -moz-available;
+  margin-block-start: var(--space-large);
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(resource-type-list) {
+  padding-block-end: var(--space-large);
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(buttons) {
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--space-xxlarge);
+  margin-inline-start: calc(-1 * (var(--space-small)));
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(import-primary), .onboardingContainer:has([pos=center-large][fullscreen]) migration-wizard::part(continue-primary) {
+  width: 100%;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) #content-tiles-container .content-tile.has-header button.tile-header.link-style {
+  margin-block-end: 6px;
+}
+.onboardingContainer:has([pos=center-large][fullscreen]) #content-tiles-container .content-tile.has-header button.tile-header.link-style:focus-visible {
+  border-radius: var(--border-radius-small);
 }
 .onboardingContainer .section-main {
   display: flex;
@@ -1749,6 +1855,7 @@ html {
 }
 .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary {
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
@@ -1850,6 +1957,7 @@ html {
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary {
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
@@ -2152,6 +2260,7 @@ html {
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary {
   background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
@@ -2258,6 +2367,7 @@ html {
   }
   .onboardingContainer .screen[pos=split] .section-main .main-content .steps.progress-bar .indicator {
     background-color: var(--button-background-color-primary);
+    color: var(--button-text-color-primary);
   }
 }
 .onboardingContainer .screen[pos=split] .section-secondary {
@@ -3576,6 +3686,7 @@ html {
   /* stylelint-disable-next-line */
   border-radius: 8px 8px 0 0;
   background-color: var(--button-background-color-primary);
+  color: var(--button-text-color-primary);
   position: relative;
   right: unset;
   top: unset;
@@ -3782,27 +3893,89 @@ html {
   padding: 0;
 }
 .onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item {
-  flex-direction: row-reverse;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-medium);
   align-items: center;
-  gap: var(--space-medium);
-  padding: var(--space-xxlarge);
   border-radius: var(--border-radius-medium);
   background-color: var(--multi-select-card-background-color);
+  border: 1px solid var(--multi-select-card-border-color);
+  padding: var(--space-xxlarge);
   font-size: 16px;
 }
-@media (forced-colors: active) {
-  .onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item {
-    border: 1px solid ButtonText;
-  }
+.onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item input {
+  grid-column: 2;
+  grid-row: 1/-1;
+  margin: 0;
+  align-self: center;
 }
 .onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item label {
-  flex: 1 1 auto;
+  grid-area: 1/1;
   margin: 0;
   color: var(--text-color);
 }
-.onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item > input {
+.onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item p {
+  grid-area: 2/1;
+  margin: var(--space-xxsmall) 0 0;
+  font-size: 13px;
+  font-weight: normal;
+}
+@media not (prefers-contrast) {
+  .onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item p {
+    color: light-dark(#5B5B66, #CFCFD8);
+  }
+}
+@media (forced-colors: active) {
+  .onboardingContainer .multi-select-container.select-card .checkbox-container.multi-select-item {
+    background-color: ButtonFace;
+    border-color: ButtonText;
+  }
+}
+.onboardingContainer .multi-select-container.grouped-card {
+  border-radius: var(--border-radius-medium);
+  background-color: var(--multi-select-card-background-color);
+  border: 1px solid var(--multi-select-card-border-color);
+  align-items: stretch;
+  gap: var(--space-medium);
+  margin-block: 0;
+  margin-inline: 0;
+  padding: var(--space-xlarge);
+}
+@media (forced-colors: active) {
+  .onboardingContainer .multi-select-container.grouped-card {
+    background-color: ButtonFace;
+    border-color: ButtonText;
+  }
+}
+.onboardingContainer .multi-select-container.grouped-card .checkbox-container.multi-select-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-medium);
+  align-items: center;
+}
+.onboardingContainer .multi-select-container.grouped-card .checkbox-container.multi-select-item input {
+  grid-column: 2;
+  grid-row: 1/-1;
   margin: 0;
+  align-self: center;
+}
+.onboardingContainer .multi-select-container.grouped-card .checkbox-container.multi-select-item label {
+  grid-area: 1/1;
+  margin: 0;
+  color: var(--text-color);
+}
+.onboardingContainer .multi-select-container.grouped-card .checkbox-container.multi-select-item p {
+  grid-area: 2/1;
+  margin: var(--space-xxsmall) 0 0;
+  font-size: 13px;
+  font-weight: normal;
+}
+@media not (prefers-contrast) {
+  .onboardingContainer .multi-select-container.grouped-card .checkbox-container.multi-select-item p {
+    color: light-dark(#5B5B66, #CFCFD8);
+  }
 }
 .onboardingContainer .multi-select-container .multi-select-notice-region:not(:empty) {
   display: block;
@@ -4042,9 +4215,23 @@ html {
 .onboardingContainer button.content-tiles-header .arrow-icon {
   margin-inline: 1em;
 }
+.onboardingContainer .main-content-inner:has(#content-tiles-container) .action-buttons {
+  margin-inline: 48px;
+}
+.onboardingContainer .main-content-inner:has(#content-tiles-container) .action-buttons .primary:only-child {
+  margin-inline: 0;
+}
 .onboardingContainer #content-tiles-container {
   --tiles-container-border-radius: var(--border-radius-medium);
   margin: var(--space-xlarge) 48px;
+}
+.onboardingContainer #content-tiles-container .legal-paragraph {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-color);
+}
+.onboardingContainer #content-tiles-container:has(> .content-tile:last-child > button.tile-header.link-style[aria-expanded=false]) {
+  margin-block-end: 0;
 }
 .onboardingContainer #content-tiles-container .content-tile {
   display: flex;
@@ -4067,6 +4254,10 @@ html {
   border-top: none;
   border-radius: 0 0 var(--tiles-container-border-radius) var(--tiles-container-border-radius);
 }
+.onboardingContainer #content-tiles-container .content-tile.has-header:not(:has(+ .content-tile.has-header)) button.tile-header[aria-expanded=true].link-style + .tile-content {
+  border: none;
+  border-radius: 0;
+}
 .onboardingContainer #content-tiles-container .content-tile.has-header:has(+ .content-tile.has-header) button.tile-header[aria-expanded=false],
 .onboardingContainer #content-tiles-container .content-tile.has-header:has(+ .content-tile.has-header) button.tile-header[role=link] {
   border-bottom: none;
@@ -4079,6 +4270,9 @@ html {
   border-inline-start: 1px solid var(--border-color);
   border-inline-end: 1px solid var(--border-color);
 }
+.onboardingContainer #content-tiles-container .content-tile button.tile-header.link-style + .tile-content {
+  border-inline: none;
+}
 .onboardingContainer #content-tiles-container .content-tile button.tile-header .header-text-container {
   display: flex;
   flex-direction: column;
@@ -4086,6 +4280,26 @@ html {
 .onboardingContainer #content-tiles-container .content-tile button.tile-header .header-text-container .header-title, .onboardingContainer #content-tiles-container .content-tile button.tile-header .header-text-container .header-subtitle {
   font-weight: normal;
   line-height: 1.5;
+}
+.onboardingContainer #content-tiles-container .content-tile button.tile-header.link-style {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  width: fit-content;
+  margin: 0 auto;
+  outline-offset: var(--space-xxsmall);
+  color: var(--link-color);
+  text-decoration: underline;
+}
+.onboardingContainer #content-tiles-container .content-tile button.tile-header.link-style:hover {
+  color: var(--link-color-hover);
+}
+.onboardingContainer #content-tiles-container .content-tile button.tile-header.link-style:active {
+  color: var(--link-color-active);
+}
+.onboardingContainer #content-tiles-container .content-tile button.tile-header.link-style .arrow-icon {
+  margin-inline-start: var(--space-xsmall);
 }
 .onboardingContainer #content-tiles-container .content-tile .multi-select-container {
   padding: var(--space-xlarge);
@@ -4160,6 +4374,14 @@ html {
 }
 .onboardingContainer #content-tiles-container .content-tile .multi-select-container .checkbox-container p {
   margin-block: 0.5em 0;
+}
+.onboardingContainer #content-tiles-container .content-tile .multi-select-container.select-card .checkbox-container.multi-select-item label,
+.onboardingContainer #content-tiles-container .content-tile .multi-select-container.select-card .checkbox-container.multi-select-item p, .onboardingContainer #content-tiles-container .content-tile .multi-select-container.grouped-card .checkbox-container.multi-select-item label,
+.onboardingContainer #content-tiles-container .content-tile .multi-select-container.grouped-card .checkbox-container.multi-select-item p {
+  grid-column: 1;
+}
+.onboardingContainer #content-tiles-container .content-tile .multi-select-container.select-card {
+  padding: 0;
 }
 .onboardingContainer .pinnable-sites-list {
   display: flex;
@@ -4415,6 +4637,7 @@ html {
   height: 100%;
   margin-inline: -1px;
   background-color: var(--button-background-color-primary);
+  color: var(--button-text-color-primary);
   border: 0;
   border-radius: 0;
   opacity: 1;
@@ -4711,6 +4934,25 @@ html {
 .onboardingContainer.transition-in .screen:not(.dialog-initial) .steps:not(.progress-bar, [above-button]) {
   opacity: 0.2;
 }
+.onboardingContainer.transition-in .screen .corner-image.entrance-fade {
+  opacity: 0;
+}
+.onboardingContainer.transition-in .screen .corner-image.entrance-slide-block {
+  opacity: 0;
+  translate: 0 var(--entrance-block);
+}
+.onboardingContainer.transition-in .screen .corner-image.entrance-slide-inline {
+  opacity: 0;
+  translate: var(--entrance-inline) 0;
+}
+.onboardingContainer.transition-in .screen .corner-image.entrance-slide-corner {
+  opacity: 0;
+  translate: var(--entrance-inline) var(--entrance-block);
+}
+.onboardingContainer.transition-in .screen .corner-image.entrance-zoom {
+  opacity: 0;
+  scale: var(--entrance-scale);
+}
 .onboardingContainer .system-prompt-spotlight {
   user-select: none;
 }
@@ -4834,6 +5076,10 @@ html {
   translate: 0 calc(2 * var(--translate));
   transition-delay: 0.4s;
 }
+.onboardingContainer.transition-out:has([pos=center-large][fullscreen]) .corner-image:not(.entrance-none) {
+  opacity: 0;
+  transition-delay: 0s;
+}
 .onboardingContainer .inline-image,
 .onboardingContainer .link-paragraph,
 .onboardingContainer theme-picker {
@@ -4849,6 +5095,7 @@ html {
 }
 .onboardingContainer migration-wizard::part(deck) {
   font-size: 0.83em;
+  align-items: center;
 }
 .onboardingContainer turn-on-scheduled-backups::part(form) {
   transition: var(--transition);
@@ -4987,6 +5234,7 @@ html {
 .multistage-newtab-wrapper {
   position: relative;
   max-width: 904px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  min-width: var(--size-layout-large);
   margin-inline: auto;
 }
 .multistage-newtab-wrapper > moz-button {
@@ -5018,5 +5266,11 @@ html {
     background-color: var(--background-color-dimmed);
     border-radius: 0;
     margin: 0;
+  }
+}
+
+@media (width <= 800px) {
+  .multistage-newtab-wrapper {
+    height: unset !important; /* stylelint-disable-line declaration-no-important */
   }
 }

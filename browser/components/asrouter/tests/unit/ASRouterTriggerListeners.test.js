@@ -859,8 +859,10 @@ describe("ASRouterTriggerListeners", () => {
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
           context: {
             visitsCount: 1,
+            totalVisitsCount: 1,
             url: "www.mozilla.org",
             host: "www.mozilla.org",
+            isAddressBarUrlNavigation: false,
           },
         });
       });
@@ -916,8 +918,10 @@ describe("ASRouterTriggerListeners", () => {
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
           context: {
             visitsCount: 1,
+            totalVisitsCount: 1,
             url: "www.mozilla.org",
             host: "www.mozilla.org",
+            isAddressBarUrlNavigation: false,
           },
         });
       });
@@ -973,8 +977,10 @@ describe("ASRouterTriggerListeners", () => {
           param: { host: "www.mozilla.org", url: "www.mozilla.org" },
           context: {
             visitsCount: 1,
+            totalVisitsCount: 1,
             url: "www.mozilla.org",
             host: "www.mozilla.org",
+            isAddressBarUrlNavigation: false,
           },
         });
       });
@@ -1067,10 +1073,44 @@ describe("ASRouterTriggerListeners", () => {
           },
           context: {
             visitsCount: 1,
+            totalVisitsCount: 1,
             url: "www.mozilla.org",
             host: "www.mozilla.org",
+            isAddressBarUrlNavigation: false,
           },
         });
+      });
+      it("should count totalVisitsCount across distinct URLs", () => {
+        const newTriggerHandler = sinon.stub();
+        openURLListener.init(newTriggerHandler, hosts);
+
+        const browser = {};
+        const webProgress = { isTopLevel: true };
+        for (const spec of [
+          "www.mozilla.org/a",
+          "www.mozilla.org/b",
+          "www.mozilla.org/a",
+        ]) {
+          openURLListener.onLocationChange(browser, webProgress, undefined, {
+            host: "www.mozilla.org",
+            spec,
+          });
+        }
+
+        assert.calledThrice(newTriggerHandler);
+        const contexts = newTriggerHandler
+          .getCalls()
+          .map(call => call.args[1].context);
+        assert.deepEqual(
+          contexts.map(c => c.totalVisitsCount),
+          [1, 2, 3],
+          "totalVisitsCount increments on every matched visit"
+        );
+        assert.deepEqual(
+          contexts.map(c => c.visitsCount),
+          [1, 1, 2],
+          "visitsCount stays per-URL"
+        );
       });
     });
   });

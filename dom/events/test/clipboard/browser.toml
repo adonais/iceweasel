@@ -5,6 +5,12 @@ support-files = [
   "!/gfx/layers/apz/test/mochitest/apz_test_utils.js",
 ]
 
+["browser_clipboard_source_url.js"]
+support-files = ["simple_page_ext.html"]
+skip-if = [
+  "headless", # HeadlessClipboard doesn't support text/x-moz-url-priv
+]
+
 ["browser_document_command_copy.js"]
 
 ["browser_document_command_cut.js"]

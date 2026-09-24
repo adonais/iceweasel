@@ -473,10 +473,6 @@ MethodStatus jit::BaselineCompile(JSContext* cx, JSScript* script,
 
 static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
                                         AbstractFramePtr osrSourceFrame) {
-  if (!CanBaselineCompileScript(cx, script)) {
-    return Method_CantCompile;
-  }
-
   // This check is needed in the following corner case. Consider a function h,
   //
   //   function h(x) {
@@ -504,6 +500,10 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 
   if (script->hasBaselineScript()) {
     return Method_Compiled;
+  }
+
+  if (!CanBaselineCompileScript(cx, script)) {
+    return Method_CantCompile;
   }
 
   if (script->isBaselineCompilingOffThread()) {

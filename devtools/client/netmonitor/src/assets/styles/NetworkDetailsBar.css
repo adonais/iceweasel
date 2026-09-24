@@ -184,10 +184,18 @@
  */
 .network-monitor .editor-row-container,
 .network-monitor .tree-container .treeTable tr:last-child td[colspan="2"] {
-  display: block;
   height: 100%;
   flex: 1;
   overflow-x: auto;
+}
+
+.network-monitor .tree-container .treeTable tr:last-child td[colspan="2"] {
+  display: block;
+}
+
+.network-monitor .editor-row-container {
+  display: flex;
+  flex-direction: column;
 }
 
 .network-monitor .responseTextContainer {
@@ -207,6 +215,7 @@
 .network-monitor .source-editor-mount {
   width: 100%;
   height: 100%;
+  overflow: auto;
 }
 
 .network-monitor .headers-summary-label,
@@ -229,6 +238,13 @@
 .theme-dark .network-monitor .request-error-header,
 .theme-dark .network-monitor .response-error-header {
   background-color: var(--red-70);
+}
+
+/* A JSON Lines entry which isn't valid JSON */
+
+.network-monitor .jsonl-line-error {
+  color: var(--theme-error-color);
+  background-color: var(--theme-error-background);
 }
 
 /* Response tabpanel */

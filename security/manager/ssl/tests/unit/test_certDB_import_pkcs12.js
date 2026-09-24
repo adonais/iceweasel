@@ -83,22 +83,11 @@ let gTestcases = [
   },
 ];
 
-function doesCertExist(commonName) {
-  let allCerts = gCertDB.getCerts();
-  for (let cert of allCerts) {
-    if (cert.commonName == commonName) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function runOneTestcase(testcase) {
+async function runOneTestcase(testcase) {
   info(`running ${testcase.name}`);
   if (testcase.checkCertExist) {
     ok(
-      !doesCertExist(testcase.certCommonName),
+      !(await findCertByCommonName(testcase.certCommonName)),
       "cert should not be in the database before import"
     );
   }
@@ -109,14 +98,14 @@ function runOneTestcase(testcase) {
   let errorCode = gCertDB.importPKCS12File(certFile, testcase.passwordToUse);
   equal(errorCode, testcase.errorCode, `verifying error code`);
   equal(
-    doesCertExist(testcase.certCommonName),
+    !!(await findCertByCommonName(testcase.certCommonName)),
     testcase.successExpected,
     `cert should${testcase.successExpected ? "" : " not"} be found now`
   );
 }
 
-function run_test() {
+add_task(async function run_test() {
   for (let testcase of gTestcases) {
-    runOneTestcase(testcase);
+    await runOneTestcase(testcase);
   }
-}
+});

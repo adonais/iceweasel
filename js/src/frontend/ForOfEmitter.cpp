@@ -169,7 +169,7 @@ bool ForOfEmitter::emitInitialize(uint32_t forPos) {
   // Emit code to assign result.value to the iteration variable.
   //
   // Note that ES 13.7.5.13, step 5.c says getting result.value does not
-  // call IteratorClose, so start TryNoteKind::ForOfIterClose after the GetProp.
+  // call IteratorClose, so start the try-block below after the GetProp.
   if (!bce_->emitAtomOp(JSOp::GetProp,
                         TaggedParserAtomIndex::WellKnown::value())) {
     //              [stack] NEXT ITER VALUE
@@ -245,6 +245,11 @@ bool ForOfEmitter::emitEnd(uint32_t iteratedPos) {
                                         1);
 
   if (!bce_->emitPopN(3)) {
+    //              [stack]
+    return false;
+  }
+
+  if (!loopInfo_->emitEnd(bce_)) {
     //              [stack]
     return false;
   }

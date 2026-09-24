@@ -674,3 +674,78 @@ add_task(
     );
   }
 );
+
+add_task(async function subdialog_closes_when_hash_changes_pane() {
+  await open_subdialog_and_test_generic_start_state(tab.linkedBrowser);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let currentCategory = content.window.gLastCategory.category;
+    let target = currentCategory === "panePrivacy" ? "sync" : "privacy";
+    let paneShown = new Promise(resolve =>
+      content.document.addEventListener("paneshown", resolve, { once: true })
+    );
+    content.location.hash = `#${target}`;
+    await paneShown;
+
+    Assert.ok(
+      !content.window.gSubDialog.hasDialogs,
+      "sub-dialog closes when hash changes to a different pane"
+    );
+  });
+});
+
+add_task(async function subdialog_closes_when_category_click_changes_pane() {
+  await open_subdialog_and_test_generic_start_state(tab.linkedBrowser);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let currentCategory = content.window.gLastCategory.category;
+    let targetId =
+      currentCategory === "paneHome" ? "category-search" : "category-home";
+    let targetCategory =
+      currentCategory === "paneHome" ? "paneSearch" : "paneHome";
+    let targetButton = content.document.getElementById(targetId);
+    let paneShown = new Promise(resolve =>
+      content.document.addEventListener("paneshown", function once(event) {
+        if (event.detail?.category === targetCategory) {
+          content.document.removeEventListener("paneshown", once);
+          resolve();
+        }
+      })
+    );
+    targetButton.activate();
+    await paneShown;
+
+    Assert.ok(
+      !content.window.gSubDialog.hasDialogs,
+      "sub-dialog closes when clicking a different category"
+    );
+  });
+});
+
+add_task(async function subdialog_stays_open_on_same_pane_hash_change() {
+  await open_subdialog_and_test_generic_start_state(tab.linkedBrowser);
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let currentCategory = content.window.gLastCategory.category;
+    let friendlyName = currentCategory.replace(/^pane/, "").toLowerCase();
+    let hashChanged = new Promise(resolve =>
+      content.window.addEventListener("hashchange", resolve, { once: true })
+    );
+    content.location.hash = `#${friendlyName}-imaginarysubcategory`;
+    await hashChanged;
+
+    Assert.ok(
+      content.window.gSubDialog.hasDialogs,
+      "sub-dialog stays open on same-pane hash change"
+    );
+  });
+
+  await close_subdialog_and_test_generic_end_state(
+    tab.linkedBrowser,
+    function () {
+      content.window.gSubDialog._topDialog._frame.contentWindow.window.close();
+    },
+    null,
+    0
+  );
+});

@@ -558,6 +558,78 @@ add_task(async function test_ui_state_unconfigured() {
   await closeFxaPanel();
 });
 
+// A user who signed out keeps the compact sign-in row in the app menu, rather
+// than the never-signed-in promo. The row tells them they're signed out and
+// offers its own sign-in button, like the account menu's signed-out card.
+add_task(async function test_app_menu_signed_out_row() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com/");
+  await SpecialPowers.pushPrefEnv({
+    set: [["services.sync.lastversion", "1.120.0"]],
+  });
+  const sandbox = sinon.createSandbox();
+  const signInStub = sandbox.stub(gSync, "openFxAEmailFirstPageFromFxaMenu");
+
+  gSync.updateAllUI({ status: UIState.STATUS_NOT_CONFIGURED });
+
+  ok(
+    document.documentElement.hasAttribute("fxasignedout"),
+    "The root element reflects that the user signed out"
+  );
+
+  await openMainPanel();
+
+  const statusItem = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-status2"
+  );
+  ok(
+    BrowserTestUtils.isVisible(statusItem),
+    "Compact sign-in row is visible after signing out"
+  );
+  ok(
+    BrowserTestUtils.isHidden(
+      PanelMultiView.getViewNode(document, "appMenu-fxa-sign-in-promo")
+    ),
+    "Sign-in promo is hidden after signing out"
+  );
+  is(
+    statusItem.getAttribute("fxastatus"),
+    "signed-out",
+    "Compact sign-in row is in the signed-out state"
+  );
+
+  const signedOutRow = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-row"
+  );
+  ok(
+    BrowserTestUtils.isVisible(signedOutRow),
+    "Signed-out copy and sign-in button are shown"
+  );
+  ok(
+    BrowserTestUtils.isHidden(
+      PanelMultiView.getViewNode(document, "appMenu-fxa-label2")
+    ),
+    "The button spanning the row is not used when signed out"
+  );
+  checkAppMenuFxAText(true);
+  const signInButton = PanelMultiView.getViewNode(
+    document,
+    "appMenu-fxa-signed-out-sign-in-button"
+  );
+  const panelHidden = BrowserTestUtils.waitForEvent(
+    PanelUI.panel,
+    "popuphidden"
+  );
+  signInButton.click();
+  ok(signInStub.called, "The row's button leads to the sign-in page");
+  await panelHidden;
+
+  sandbox.restore();
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_ui_state_signed_in() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "https://example.com/");
 
@@ -1125,14 +1197,16 @@ add_task(async function test_bookmarks_menu_remote_tabs_promo() {
   sandbox.restore();
 });
 
-// When signed out, the sign-in promo replaces the account header button. The
-// email of a remembered account can't be recovered from the stored hashed UID,
-// so the promo is shown whether or not a previous account is remembered.
-add_task(async function test_signed_out_sign_in_promo() {
-  const LAST_USER_PREF = "identity.fxaccounts.lastSignedInUserIdHash";
+// A user who has never signed in gets the sign-in promo in place of the
+// account header button.
+add_task(async function test_never_signed_in_sign_in_promo() {
   const promo = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sign-in-promo"
+  );
+  const card = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-signed-out-card"
   );
 
   const sandbox = sinon.createSandbox();
@@ -1140,23 +1214,92 @@ add_task(async function test_signed_out_sign_in_promo() {
     status: UIState.STATUS_NOT_CONFIGURED,
   });
 
-  for (const cachedUser of [false, true]) {
-    if (cachedUser) {
-      Services.prefs.setStringPref(LAST_USER_PREF, "cached-uid-hash");
-    } else {
-      Services.prefs.clearUserPref(LAST_USER_PREF);
-    }
-    gSync.updateAllUI(UIState.get());
-    await openFxaPanel();
-    ok(
-      BrowserTestUtils.isVisible(promo),
-      `Sign-in promo is visible when signed out (cachedUser=${cachedUser})`
-    );
-    await closeFxaPanel();
-  }
+  gSync.updateAllUI(UIState.get());
+  await openFxaPanel();
+  ok(
+    BrowserTestUtils.isVisible(promo),
+    "Sign-in promo is visible when the user has never signed in"
+  );
+  ok(
+    !BrowserTestUtils.isVisible(card),
+    "Signed-out card is hidden when the user has never signed in"
+  );
+  await closeFxaPanel();
 
-  Services.prefs.clearUserPref(LAST_USER_PREF);
   sandbox.restore();
+});
+
+// A user who signed out gets the signed-out card, with standalone copy in place
+// of the email - the account they signed out of is only remembered as a hashed
+// UID, so it can't be identified.
+add_task(async function test_signed_out_card() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["services.sync.lastversion", "1.120.0"]],
+  });
+  const promo = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sign-in-promo"
+  );
+  const card = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-signed-out-card"
+  );
+  const titleEl = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-signed-out-email"
+  );
+  const messageEl = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-signed-out-message"
+  );
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_NOT_CONFIGURED,
+  });
+  let signInStub = sandbox.stub(gSync, "openFxAEmailFirstPageFromFxaMenu");
+
+  gSync.updateAllUI(UIState.get());
+  await openFxaPanel();
+
+  ok(
+    BrowserTestUtils.isVisible(card),
+    "Signed-out card is visible after signing out"
+  );
+  ok(
+    !BrowserTestUtils.isVisible(promo),
+    "Sign-in promo is hidden after signing out"
+  );
+  is(
+    titleEl.value,
+    gSync.fluentStrings.formatValueSync("fxa-menu-signed-out-title"),
+    "Signed-out card reads 'You're signed out' in place of the email"
+  );
+  is(
+    messageEl.getAttribute("data-l10n-id"),
+    "fxa-menu-signed-out-description",
+    "Signed-out card shows the sign-in description underneath"
+  );
+  isnot(
+    getComputedStyle(messageEl).color,
+    getComputedStyle(titleEl).color,
+    "Description is error-colored rather than using the default text color"
+  );
+
+  await gSync.clickFxAMenuHeaderButton(
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-signed-out-sign-in-button"
+    )
+  );
+  ok(
+    signInStub.called,
+    "The card's sign-in button leads to the sign-in page when signed out"
+  );
+
+  await closeFxaPanel();
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
 });
 
 // If the PXI experiment is enabled, we need to ensure we can see the CTAs when signed out
@@ -2105,6 +2248,121 @@ add_task(async function test_all_devices_button_and_panel() {
 });
 
 /**
+ * Clicking a device in the account menu records fxa_avatar_menu.synced_device_submenu
+ * with the device's type collapsed to "mobile"/"desktop".
+ */
+add_task(async function test_synced_device_submenu_telemetry() {
+  await promiseSyncReady();
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+  });
+  sandbox.stub(SyncedTabs, "isConfiguredToSyncTabs").get(() => false);
+
+  let devices = [
+    {
+      id: "dev-desktop",
+      name: "Laptop",
+      type: "desktop",
+      isCurrentDevice: false,
+      lastAccessTime: Date.now(),
+      availableCommands: {},
+    },
+    {
+      id: "dev-mobile",
+      name: "Phone",
+      type: "mobile",
+      isCurrentDevice: false,
+      lastAccessTime: Date.now(),
+      availableCommands: {},
+    },
+    {
+      id: "dev-tablet",
+      name: "Tablet",
+      type: "tablet",
+      isCurrentDevice: false,
+      lastAccessTime: Date.now(),
+      availableCommands: {},
+    },
+  ];
+  let clients = devices.map(d => ({
+    id: d.id.replace("dev", "client"),
+    name: d.name,
+    lastModified: Date.now(),
+    tabs: [],
+  }));
+  sandbox.stub(fxAccounts.device, "recentDeviceList").get(() => devices);
+  sandbox.stub(SyncedTabs, "getTabClients").resolves(clients);
+  sandbox
+    .stub(Weave.Service.clientsEngine, "getClientFxaDeviceId")
+    .callsFake(clientId => clientId.replace("client", "dev"));
+  sandbox.stub(gSync, "getSendTabTargets").returns(devices);
+
+  await openFxaPanel();
+  let panelview = PanelMultiView.getViewNode(document, "PanelUI-fxa");
+  await panelview.syncedTabsPanelList._doUpdateDeviceList();
+
+  let devicesList = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-devices-list"
+  );
+  Assert.equal(
+    devicesList.querySelectorAll(".PanelUI-fxa-menu-device-entry").length,
+    devices.length,
+    "All devices are listed"
+  );
+
+  let recentTabsPanel = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-device-recent-tabs"
+  );
+
+  // The list is sorted by last-used, so look entries up by name rather than
+  // by position.
+  for (let [name, expectedType] of [
+    ["Laptop", "desktop"],
+    ["Phone", "mobile"],
+    ["Tablet", "mobile"],
+  ]) {
+    await Services.fog.testFlushAllChildren();
+    Services.fog.testResetFOG();
+
+    let shown = BrowserTestUtils.waitForEvent(recentTabsPanel, "ViewShown");
+    devicesList
+      .querySelector(`.PanelUI-fxa-menu-device-entry[label="${name}"]`)
+      .click();
+    await shown;
+    await Services.fog.testFlushAllChildren();
+
+    let events = Glean.fxaAvatarMenu.syncedDeviceSubmenu.testGetValue();
+    Assert.equal(events?.length, 1, `One event recorded for ${name}`);
+    Assert.equal(
+      events[0].extra.device_type,
+      expectedType,
+      "device_type matches the clicked device"
+    );
+    Assert.equal(
+      events[0].extra.device_count,
+      String(devices.length),
+      "device_count is the number of send tab targets"
+    );
+    Assert.equal(
+      events[0].extra.fxa_status,
+      UIState.STATUS_SIGNED_IN,
+      "Shared FxA extra keys are recorded too"
+    );
+
+    let back = BrowserTestUtils.waitForEvent(panelview, "ViewShown");
+    recentTabsPanel.closest("panelmultiview").goBack();
+    await back;
+  }
+
+  await closeFxaPanel();
+  sandbox.restore();
+});
+
+/**
  * Every device on the account is shown in the connected devices list, including
  * a device that has not synced any tabs (and therefore has no Sync tab-client).
  * The current device is excluded, and a device that has synced tabs keeps them.
@@ -2806,6 +3064,161 @@ add_task(async function test_recent_tabs_close_then_undo() {
   sandbox.restore();
 });
 
+/**
+ * A closed tab's row keeps offering Undo for a few seconds, then removes
+ * itself from the recent tabs list. Undoing within that window keeps the row.
+ */
+add_task(async function test_recent_tabs_close_removes_row_after_delay() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+  });
+  sandbox.stub(BrowserUtils, "getShareableURL").returnsArg(0);
+  sandbox
+    .stub(fxAccounts.commands.sendTab, "isDeviceCompatible")
+    .returns(false);
+  sandbox
+    .stub(fxAccounts.commands.closeTab, "isDeviceCompatible")
+    .returns(true);
+  sandbox.stub(SyncedTabsManagement, "enqueueTabToClose").resolves();
+  sandbox.stub(SyncedTabsManagement, "removePendingTabToClose").resolves();
+  sandbox.replace(window.FxAMenuDeviceList, "TAB_REMOVAL_DELAY_MS", 50);
+
+  gSync.updateAllUI({
+    status: UIState.STATUS_SIGNED_IN,
+    syncEnabled: true,
+    email: "foo@bar.com",
+  });
+  await openFxaPanel();
+
+  let panelview = PanelMultiView.getViewNode(document, "PanelUI-fxa");
+  let devicesListContainer = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-devices-list"
+  );
+  let mockDevice = {
+    id: "dev-1",
+    name: "Device 1",
+    availableCommands: {
+      "https://identity.mozilla.com/cmd/close-uri": "baz",
+    },
+  };
+  let mockClient = {
+    id: "client-1",
+    name: "Device 1",
+    lastModified: Date.now(),
+    tabs: [
+      {
+        title: "Tab 1",
+        url: "https://example.com/",
+        icon: "",
+        lastUsed: Date.now(),
+        inactive: false,
+      },
+      {
+        title: "Tab 2",
+        url: "https://example.org/",
+        icon: "",
+        lastUsed: Date.now(),
+        inactive: false,
+      },
+    ],
+  };
+
+  let subviewShown = BrowserTestUtils.waitForEvent(
+    PanelMultiView.getViewNode(document, "PanelUI-fxa-device-recent-tabs"),
+    "ViewShown"
+  );
+  panelview.syncedTabsPanelList._showDeviceRecentTabs(
+    mockClient,
+    mockDevice,
+    devicesListContainer,
+    new PointerEvent("click")
+  );
+  await subviewShown;
+
+  let tabsList = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-device-recent-tabs-list"
+  );
+  let [firstItem, secondItem] = tabsList.querySelectorAll(
+    "toolbaritem.all-tabs-item"
+  );
+  let viewAllBtn = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-device-view-all-tabs"
+  );
+  let noTabsLabel = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-device-no-open-tabs"
+  );
+  // Built through Fluent rather than hardcoded, so the assertions don't depend
+  // on the plural form's wording or on its bidi isolation marks.
+  let viewAllLabelFor = tabCount => {
+    let [message] = gSync.fluentStrings.formatMessagesSync([
+      { id: "fxa-menu-device-view-all-synced-tabs", args: { tabCount } },
+    ]);
+    return message.attributes.find(attr => attr.name === "label").value;
+  };
+  is(
+    viewAllBtn.getAttribute("label"),
+    viewAllLabelFor(2),
+    "View all tabs button counts both tabs before anything is closed"
+  );
+
+  EventUtils.synthesizeMouseAtCenter(
+    firstItem.querySelector(".all-tabs-close-button"),
+    {},
+    window
+  );
+  ok(firstItem.isConnected, "The closed tab's row is still shown right away");
+  is(
+    viewAllBtn.getAttribute("label"),
+    viewAllLabelFor(2),
+    "View all tabs button still counts the tab while it can be undone"
+  );
+
+  await TestUtils.waitForCondition(
+    () => !firstItem.isConnected,
+    "The closed tab's row is removed once the undo window elapses"
+  );
+  ok(secondItem.isConnected, "The other tab's row is untouched");
+  is(
+    viewAllBtn.getAttribute("label"),
+    viewAllLabelFor(1),
+    "View all tabs button drops the removed tab from its count"
+  );
+
+  let secondClose = secondItem.querySelector(".all-tabs-close-button");
+  let secondUndo = secondItem.querySelector(".remote-tabs-undo-button");
+  EventUtils.synthesizeMouseAtCenter(secondClose, {}, window);
+  EventUtils.synthesizeMouseAtCenter(secondUndo, {}, window);
+
+  // Long enough for the (cancelled) removal to have fired.
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 500));
+  ok(secondItem.isConnected, "Undo keeps the row in the list");
+  ok(!secondClose.hidden, "The close button is shown again after undo");
+  is(
+    viewAllBtn.getAttribute("label"),
+    viewAllLabelFor(1),
+    "An undone close leaves the count alone"
+  );
+
+  EventUtils.synthesizeMouseAtCenter(secondClose, {}, window);
+  await TestUtils.waitForCondition(
+    () => !secondItem.isConnected,
+    "The last row is removed once its undo window elapses"
+  );
+  ok(viewAllBtn.hidden, "View all tabs button is hidden with no tabs left");
+  ok(tabsList.hidden, "Tabs list is hidden with no tabs left");
+  ok(!noTabsLabel.hidden, "No open tabs label is shown with no tabs left");
+
+  await closeFxaPanel();
+  sandbox.restore();
+});
+
 add_task(async function test_sync_status_button_visible_when_sync_on() {
   let state = {
     status: UIState.STATUS_SIGNED_IN,
@@ -2909,7 +3322,7 @@ add_task(async function test_sync_status_button_sync_off_signed_in() {
   sandbox.restore();
 });
 
-add_task(async function test_sync_status_button_sync_off_signed_out() {
+add_task(async function test_sync_status_button_sync_off_never_signed_in() {
   const sandbox = sinon.createSandbox();
   sandbox.stub(UIState, "get").returns({
     status: UIState.STATUS_NOT_CONFIGURED,
@@ -2949,6 +3362,65 @@ add_task(async function test_sync_status_button_sync_off_signed_out() {
   ok(signInStub.called, "Clicking leads to the sign-in page when signed out");
 
   sandbox.restore();
+});
+
+add_task(async function test_sync_status_button_sync_off_after_signing_out() {
+  // Sync's startOver gives this pref a user value when it tears down, which is
+  // how we tell a signed-out user from one who never signed in.
+  await SpecialPowers.pushPrefEnv({
+    set: [["services.sync.lastversion", "1.120.0"]],
+  });
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").returns({
+    status: UIState.STATUS_NOT_CONFIGURED,
+  });
+  let signInStub = sandbox.stub(gSync, "openFxAEmailFirstPageFromFxaMenu");
+
+  gSync.updateAllUI(UIState.get());
+
+  const syncStatusBtn = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sync-status-button"
+  );
+  ok(
+    !syncStatusBtn.hidden,
+    "Sync status button is shown after signing out of sync"
+  );
+  is(
+    PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-status-title"
+    ).getAttribute("value"),
+    gSync.fluentStrings.formatValueSync("fxa-menu-sync-status-off"),
+    "Sync status title reads 'Sync is Off' after signing out"
+  );
+  const descEl = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sync-status-description"
+  );
+  is(
+    descEl.getAttribute("value"),
+    gSync.fluentStrings.formatValueSync("fxa-menu-sync-off-signin-description"),
+    "Description reads 'Sign in to sync' after signing out"
+  );
+  ok(!descEl.hidden, "Description label is rendered after signing out");
+  ok(
+    descEl.classList.contains("fxa-menu-sync-status-description-error"),
+    "Description uses the error color after signing out"
+  );
+  ok(
+    !syncStatusBtn.classList.contains("subviewbutton-nav"),
+    "Sync status button has no chevron after signing out"
+  );
+
+  gSync._onSyncStatusButtonClick(syncStatusBtn, new PointerEvent("click"));
+  ok(
+    signInStub.called,
+    "Clicking leads to the sign-in page after signing out of sync"
+  );
+
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_sync_your_data_closes_panel_when_signed_out() {

@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(
       "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs",
     JSON_NUMBER:
       "resource://devtools/client/shared/components/reps/reps/constants.mjs",
+    isJsonlMimeType: "resource://devtools/client/shared/jsonl-mime-types.mjs",
+    parseJsonl: "resource://devtools/client/shared/jsonl-utils.mjs",
   },
   { global: "contextual" }
 );
@@ -703,6 +705,62 @@ function isBase64(payload) {
 }
 
 /**
+ * The type a JSON Lines document served as a top level document is turned into
+ * by the JSON Viewer's stream converter.
+ */
+const JSONLINES_VIEW_MIME_TYPE = "application/vnd.mozilla.jsonlines.view";
+
+/**
+ * Checks whether a content type describes a JSON Lines document.
+ *
+ * @param {string} contentType: content type, with or without parameters
+ *                              (e.g. "application/jsonl; charset=utf-8")
+ * @returns {boolean}
+ */
+function isJsonlContentType(contentType) {
+  if (!contentType) {
+    return false;
+  }
+  const mimeType = contentType.split(";")[0].trim().toLowerCase();
+  return (
+    mimeType === JSONLINES_VIEW_MIME_TYPE || lazy.isJsonlMimeType(mimeType)
+  );
+}
+
+/**
+ * Checks whether a response holds a JSON Lines document, either from its
+ * content type or, as the JSON Viewer's sniffer does, from a .jsonl file
+ * extension when the served type doesn't say so.
+ *
+ * @param {string} mimeType: the response content type
+ * @param {string} url: the request url
+ * @returns {boolean}
+ */
+function isJsonlResponse(mimeType, url) {
+  if (isJsonlContentType(mimeType)) {
+    return true;
+  }
+  try {
+    return getUrlBaseName(url).toLowerCase().endsWith(".jsonl");
+  } catch (err) {
+    // Not a url we can extract a path from (e.g. some data: URIs).
+    return false;
+  }
+}
+
+/**
+ * Parses a JSON Lines payload into one entry per non-blank line.
+ *
+ * @param {string} payload
+ * @returns {object} shape:
+ *  {Array} json: the parsed entries, absent when there is nothing to display
+ */
+function parseJSONL(payload) {
+  const json = lazy.parseJsonl(payload);
+  return json.length ? { json } : {};
+}
+
+/**
  * Checks if the payload is of JSON type.
  * This function also handles JSON with XSSI-escaping characters by stripping them
  * and returning the stripped chars in the strippedChars property
@@ -895,7 +953,10 @@ module.exports = {
   processNetworkUpdates,
   propertiesEqual,
   ipToLong,
+  isJsonlContentType,
+  isJsonlResponse,
   parseJSON,
+  parseJSONL,
   getRequestHeadersRawText,
   responseIsFresh,
 };

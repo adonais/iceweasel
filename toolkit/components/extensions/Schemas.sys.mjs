@@ -765,7 +765,7 @@ class Context {
    *
    * @param {string} component
    * @param {Function} callback
-   * @returns {*}
+   * @returns {any}
    */
   withPath(component, callback) {
     this.path.push(component);
@@ -1464,9 +1464,9 @@ class Entry {
    * Preprocess the given value with the preprocessor declared in
    * `preprocessor`.
    *
-   * @param {*} value
+   * @param {any} value
    * @param {Context} context
-   * @returns {*}
+   * @returns {any}
    */
   preprocess(value, context) {
     if (this.preprocessor) {

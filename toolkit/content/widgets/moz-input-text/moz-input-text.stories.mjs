@@ -44,6 +44,7 @@ const Template = ({
   iconSrc,
   disabled,
   readonly,
+  required,
   invalid,
   l10nId,
   description,
@@ -60,6 +61,7 @@ const Template = ({
     iconsrc=${ifDefined(iconSrc || null)}
     ?disabled=${disabled}
     ?readonly=${readonly}
+    ?required=${required}
     ?invalid=${invalid}
     data-l10n-id=${l10nId}
     support-page=${ifDefined(supportPage || null)}
@@ -83,6 +85,7 @@ Default.args = {
   iconSrc: "",
   disabled: false,
   readonly: false,
+  required: false,
   invalid: false,
   l10nId: "moz-input-text-label",
   supportPage: "",
@@ -129,6 +132,13 @@ Readonly.args = {
   ...Default.args,
   l10nId: "moz-input-text-description",
   readonly: true,
+};
+
+export const Required = Template.bind({});
+Required.args = {
+  ...Default.args,
+  l10nId: "moz-input-text-description",
+  required: true,
 };
 
 export const Invalid = Template.bind({});

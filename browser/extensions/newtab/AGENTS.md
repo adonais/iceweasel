@@ -28,8 +28,6 @@ Most of the code should be located in `browser/extensions/newtab`
 - After making code changes: format with `./mach format path/to/file`, lint with `./mach lint --fix path/to/file`, then build
 
 ## Build Output
-- Webpack bundles to: `data/content/activity-stream.bundle.js`
-- Sass compiles to: `css/activity-stream.css`
 - Pre-rendered HTML: `prerendered/activity-stream.html`
 - Final package copied to `browser/components/newtab/` by mach
 

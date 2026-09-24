@@ -265,15 +265,15 @@ macro_rules! auto_profiler_marker_text {
 /// https://firefox-source-docs.mozilla.org/tools/profiler/markers-guide.html#how-to-define-new-marker-types
 ///
 /// - `marker_type_name`: Returns a static string as the marker type name. This
-/// should be unique and it is used to keep track of the type of markers in the
-/// profiler storage, and to identify them uniquely on the profiler front-end.
+///   should be unique and it is used to keep track of the type of markers in the
+///   profiler storage, and to identify them uniquely on the profiler front-end.
 /// - `marker_type_display`: Where and how to display the marker and its data.
-/// Returns a `MarkerSchema` object which will be forwarded to the profiler
-/// front-end.
+///   Returns a `MarkerSchema` object which will be forwarded to the profiler
+///   front-end.
 /// - `stream_json_marker_data`: Data specific to this marker type should be
-/// serialized to JSON for the profiler front-end. All the common marker data
-/// like marker name, category, timing will be serialized automatically. But
-/// marker specific data should be serialized here.
+///   serialized to JSON for the profiler front-end. All the common marker data
+///   like marker name, category, timing will be serialized automatically. But
+///   marker specific data should be serialized here.
 pub trait ProfilerMarker: Serialize + DeserializeOwned {
     /// A static method that returns the name of the marker type.
     fn marker_type_name() -> &'static str;
@@ -295,7 +295,7 @@ unsafe fn transmute_and_stream<T>(
     T: ProfilerMarker,
 {
     let payload_slice = std::slice::from_raw_parts(payload, payload_size);
-    let payload: T = bincode::deserialize(&payload_slice).unwrap();
+    let payload: T = bincode::deserialize(payload_slice).unwrap();
     payload.stream_json_marker_data(json_writer);
 }
 
@@ -402,7 +402,7 @@ macro_rules! lazy_add_marker {
 pub struct Tracing(pub CowString);
 
 impl Tracing {
-    pub fn from_str(s: &'static str) -> Self {
+    pub fn from_static_str(s: &'static str) -> Self {
         Tracing(Cow::Borrowed(s))
     }
 }
@@ -413,7 +413,7 @@ impl ProfilerMarker for Tracing {
     }
 
     fn stream_json_marker_data(&self, json_writer: &mut JSONWriter) {
-        if self.0.len() != 0 {
+        if !self.0.is_empty() {
             json_writer.string_property("category", &self.0);
         }
     }

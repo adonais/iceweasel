@@ -229,7 +229,8 @@ export let ContentSearch = {
     // There is a chance that by the time we receive the search message, the user
     // has switched away from the tab that triggered the search. If, based on the
     // event, we need to load the search in the same tab that triggered it (i.e.
-    // where === "current"), openUILinkIn will not work because that tab is no
+    // where === "current"), browser/modules/URILoadingHelper.sys.mjs#openTrustedLinkIn
+    // will not work because that tab is no
     // longer the current one. For this case we manually load the URI.
     if (where === "current") {
       // Since we're going to load the search in the same browser, blur the search
@@ -511,23 +512,10 @@ export let ContentSearch = {
       : lazy.SearchService.defaultEngine;
     let isFirstChange = true;
 
-    // It's possible that this is a handoff from about:home / about:newtab,
-    // in which case we want to include the newtab_session_id in our call to
-    // urlBar.handoff. We have to jump through some unfortunate hoops to get
-    // that.
-    let newtabSessionId = null;
-    let newtabActor =
-      browser.browsingContext?.currentWindowGlobal?.getExistingActor(
-        "AboutNewTab"
-      );
-    if (newtabActor) {
-      const portID = newtabActor.getTabDetails()?.portID;
-      if (portID) {
-        newtabSessionId = lazy.AboutNewTab.activityStream.store.feeds
-          .get("feeds.telemetry")
-          ?.sessions.get(portID)?.session_id;
-      }
-    }
+    // It's possible that this is a handoff from about:home / about:newtab, in
+    // which case we want to include the newtab_session_id in our call to
+    // urlBar.handoff.
+    let newtabSessionId = lazy.AboutNewTab.getVisitId(browser);
 
     if (!text) {
       urlBar.setHiddenFocus();

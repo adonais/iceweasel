@@ -48,6 +48,7 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/GlobalTeardownObserver.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla::dom {
 
@@ -117,6 +118,11 @@ class LlamaGenerateTask final : public mozilla::CancelableRunnable {
   // Returns true if the message was consumed immediately or queued to resolve a
   // pending promise.
   bool MaybePushMessage(mozilla::Maybe<LlamaChatResponse> aMessage);
+  bool MaybePushMessageLocked(mozilla::Maybe<LlamaChatResponse> aMessage,
+                              const MutexAutoLock& aProofOfLock);
+
+  // Records the failure and rejects the consumer's pending promise, if any.
+  void FailTask(nsCString aMessage);
 
   // Unconditionally pushes a message. First tries MaybePushMessage(); if that
   // fails, enqueues the message into the internal queue. Returns true if the
@@ -152,6 +158,11 @@ class LlamaGenerateTask final : public mozilla::CancelableRunnable {
 
   // Thread-safe flag indicating whether a consumer is waiting for data.
   Atomic<bool> mHasPendingConsumer{false};
+
+  // Serializes the consumer's check-then-wait in GetMessage() against the
+  // producer's check-then-enqueue, so a message pushed between the two can not
+  // leave the consumer waiting forever.
+  Mutex mMutex{"LlamaGenerateTask::mMutex"};
 
   // Thread-safe buffer for messages to be sent back to the consumer.
   SPSCQueue<mozilla::Maybe<LlamaChatResponse>> mMessagesQueue;

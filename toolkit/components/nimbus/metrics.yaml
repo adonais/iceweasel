@@ -37,6 +37,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017267
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069093
     data_reviews: &targeting_context_data_reviews
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1928107
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937207
@@ -52,6 +53,7 @@ nimbus_targeting_environment:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2011286
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2017267
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2057060
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069093
     notification_emails: &targeting_context_notification_emails
       - beth@mozilla.com
       - project-nimbus@mozilla.com
@@ -93,6 +95,7 @@ nimbus_targeting_environment:
       - "browser.newtabpage.enabled"
       - "browser.profiles.created"
       - "browser.startup.page"
+      - "browser.tabs.splitview.hasUsed"
       - "browser.toolbars.bookmarks.visibility"
       - "browser.urlbar.lastUrlbarSearchSeconds"
       - "browser.urlbar.showSearchSuggestionsFirst"
@@ -212,6 +215,8 @@ nimbus_targeting_environment:
           type: boolean
         browser__startup__page:
           type: number
+        browser__tabs__splitview__hasUsed:
+          type: boolean
         browser__toolbars__bookmarks__visibility:
           type: string
         browser__urlbar__lastUrlbarSearchSeconds:
@@ -1271,6 +1276,44 @@ nimbus_events:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1985079
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2053781
+
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - beth@mozilla.com
+      - project-nimbus@mozilla.com
+    expires: never
+
+  update_error:
+    type: event
+    description: >
+      Triggered when Nimbus fails to complete an update.
+
+    extra_keys:
+      trigger:
+        type: string
+        description: >
+          The trigger for the update. In practice this is one of "timer" or
+          "enable".
+
+      during_shutdown:
+        type: boolean
+        description: Whether the error occured during shutdown.
+
+      error:
+        type: string
+        description: >
+          A description of the error; one of:
+
+          - DOMException:{name} (e.g., DOMException:AbortError)
+          - NS_ERROR_*
+          - the error constructor's name
+          - the string "(unknown)"
+
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063425
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063425
 
     data_sensitivity:
       - technical

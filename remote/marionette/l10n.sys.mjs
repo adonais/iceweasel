@@ -5,7 +5,7 @@
 /**
  * An API which allows Marionette to handle localized content.
  *
- * The localization (https://mzl.la/2eUMjyF) of UI elements in Gecko
+ * The localization (https://firefox-source-docs.mozilla.org/l10n/) of UI elements in Gecko
  * based applications is done via entities and properties. For static
  * values entities are used, which are located in .dtd files. Whereby for
  * dynamically updated content the values come from .property files. Both

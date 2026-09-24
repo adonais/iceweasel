@@ -372,11 +372,29 @@ NS_IMETHODIMP NotificationActionStorageEntry::GetTitle(nsAString& aTitle) {
   return NS_OK;
 }
 
+NS_IMETHODIMP NotificationActionStorageEntry::GetNavigate(
+    nsACString& aNavigate) {
+  nsIURI* navigateUri = mIPCAction.navigate();
+  if (!navigateUri) {
+    aNavigate.SetIsVoid(true);
+    return NS_OK;
+  }
+  navigateUri->GetSpec(aNavigate);
+  return NS_OK;
+}
+
 Result<IPCNotificationAction, nsresult> NotificationActionStorageEntry::ToIPC(
     nsINotificationActionStorageEntry& aEntry) {
   IPCNotificationAction action;
   MOZ_TRY(aEntry.GetName(action.name()));
   MOZ_TRY(aEntry.GetTitle(action.title()));
+  if (StaticPrefs::dom_webnotifications_navigate_enabled()) {
+    nsAutoCString navigateUrl;
+    MOZ_TRY(aEntry.GetNavigate(navigateUrl));
+    if (!navigateUrl.IsVoid()) {
+      MOZ_TRY(NS_NewURI(getter_AddRefs(action.navigate()), navigateUrl));
+    }
+  }
   return action;
 }
 
@@ -419,6 +437,16 @@ NS_IMETHODIMP NotificationStorageEntry::GetIcon(nsACString& aIcon) {
     return NS_OK;
   }
   iconUri->GetSpec(aIcon);
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetNavigate(nsACString& aNavigate) {
+  nsIURI* navigateUri = mIPCNotification.options().navigate();
+  if (!navigateUri) {
+    aNavigate.SetIsVoid(true);
+    return NS_OK;
+  }
+  navigateUri->GetSpec(aNavigate);
   return NS_OK;
 }
 
@@ -482,6 +510,15 @@ Result<IPCNotification, nsresult> NotificationStorageEntry::ToIPC(
   MOZ_TRY(aEntry.GetIcon(iconUrl));
   if (!iconUrl.IsEmpty()) {
     MOZ_TRY(NS_NewURI(getter_AddRefs(notification.options().icon()), iconUrl));
+  }
+
+  if (StaticPrefs::dom_webnotifications_navigate_enabled()) {
+    nsAutoCString navigateUrl;
+    MOZ_TRY(aEntry.GetNavigate(navigateUrl));
+    if (!navigateUrl.IsVoid()) {
+      MOZ_TRY(NS_NewURI(getter_AddRefs(notification.options().navigate()),
+                        navigateUrl));
+    }
   }
 
   MOZ_TRY(aEntry.GetRequireInteraction(&options.requireInteraction()));

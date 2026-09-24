@@ -95,7 +95,7 @@ async function setupTest({
     `legacy migration pref should be unset`
   );
 
-  for (const [phase, pref] of Object.keys(NIMBUS_MIGRATION_PREFS)) {
+  for (const [phase, pref] of Object.entries(NIMBUS_MIGRATION_PREFS)) {
     Assert.ok(
       !Services.prefs.prefHasUserValue(pref),
       `${phase} migration pref should be unset`
@@ -1059,159 +1059,138 @@ add_task(async function testMigrateEnrollmentsToSql() {
       { featureId: "prefFlips", value: { prefs: {} } },
       {
         isRollout: true,
-
         userFacingName: "prefFlips-rollout",
         userFacingDescription: "prefFlips-rollout description",
       }
     ),
   ];
 
+  const recipesBySlug = Object.fromEntries(
+    [...experiments, ...secureExperiments].map(recipe => [recipe.slug, recipe])
+  );
+
   const storePath = await NimbusTestUtils.createStoreWith(store => {
     store.set(
       "inactive-1",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "inactive-1",
-        { featureId: "no-feature-firefox-desktop" },
+      NimbusTestUtils.factories.enrollment(
+        NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-1", {
+          featureId: "no-feature-firefox-desktop",
+        }),
         {
-          active: false,
-          unenrollReason: "reason-1",
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
+          extra: {
+            active: false,
+            unenrollReason: "reason-1",
+          },
         }
       )
     );
     store.set(
       "inactive-2",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "inactive-2",
-        { branchSlug: "treatment-a", featureId: "no-feature-firefox-desktop" },
+      NimbusTestUtils.factories.enrollment(
+        NimbusTestUtils.factories.recipe.withFeatureConfig("inactive-2", {
+          branchSlug: "treatment-a",
+          featureId: "no-feature-firefox-desktop",
+        }),
         {
-          active: false,
-          unenrollReason: "reason-2",
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
+          extra: {
+            active: false,
+            unenrollReason: "reason-2",
+          },
         }
       )
     );
     store.set(
       "expired-but-active",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "expired-but-active",
-        { featureId: "no-feature-firefox-desktop" },
-        { source: NimbusTelemetry.EnrollmentSource.RS_LOADER }
+      NimbusTestUtils.factories.enrollment(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          "expired-but-active",
+          { featureId: "no-feature-firefox-desktop" }
+        ),
+        { extra: { source: NimbusTelemetry.EnrollmentSource.RS_LOADER } }
       )
     );
-
     store.set(
       "experiment-1",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "experiment-1",
-        {
-          branchSlug: "experiment-1",
-          featureId: "no-feature-firefox-desktop",
-        },
-        {
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
-          userFacingName: "experiment-1",
-          userFacingDescription: "experiment-1 description",
-        }
-      )
+      NimbusTestUtils.factories.enrollment(recipesBySlug["experiment-1"])
     );
     store.set(
       "rollout-1",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "rollout-1",
-        { featureId: "no-feature-firefox-desktop" },
-        {
-          isRollout: true,
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
-          isFirefoxLabsOptIn: true,
-          firefoxLabsTitle: "title",
-          firefoxLabsDescription: "description",
-          firefoxLabsDescriptionLinks: {
-            foo: "https://example.com",
-          },
-          firefoxLabsGroup: "group",
-          requiresRestart: true,
-          userFacingName: "rollout-1",
-          userFacingDescription: "rollout-1 description",
-        }
-      )
+      NimbusTestUtils.factories.enrollment(recipesBySlug["rollout-1"])
     );
     store.set(
       "prefFlips-experiment",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "prefFlips-experiment",
+      NimbusTestUtils.factories.enrollment(
+        recipesBySlug["prefFlips-experiment"],
         {
-          featureId: "prefFlips",
-          value: PREFFLIPS_EXPERIMENT_VALUE,
-        },
-        {
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
-          prefFlips: {
-            originalValues: {
-              "foo.bar.baz": "original-value",
+          extra: {
+            prefFlips: {
+              originalValues: {
+                "foo.bar.baz": "original-value",
+              },
             },
           },
-          userFacingName: "prefFlips-experiment",
-          userFacingDescription: "prefFlips-experiment description",
         }
       )
     );
     store.set(
       "setPref-experiment",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "setPref-experiment",
+      NimbusTestUtils.factories.enrollment(
+        recipesBySlug["setPref-experiment"],
         {
-          featureId: "nimbus-qa-1",
-          value: { value: "qa-1" },
-        },
-        {
-          source: NimbusTelemetry.EnrollmentSource.RS_LOADER,
-          prefs: [
-            {
-              name: "nimbus.qa.pref-1",
-              branch: "default",
-              featureId: "nimbus-qa-1",
-              variable: "value",
-              originalValue: "original-value",
-            },
-          ],
-          userFacingName: "setPref-experiment",
-          userFacingDescription: "setPref-experiment description",
+          extra: {
+            prefs: [
+              {
+                name: "nimbus.qa.pref-1",
+                branch: "default",
+                featureId: "nimbus-qa-1",
+                variable: "value",
+                originalValue: "original-value",
+              },
+            ],
+          },
         }
       )
     );
     store.set(
       "devtools",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "devtools",
-        {
-          branchSlug: "devtools",
-          featureId: "no-feature-firefox-desktop",
-        },
-        {
-          source: "nimbus-devtools",
-          userFacingName: "devtools",
-          userFacingDescription: "devtools-description",
-        }
+      NimbusTestUtils.factories.enrollment(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          "devtools",
+          {
+            branchSlug: "devtools",
+            featureId: "no-feature-firefox-desktop",
+          },
+          {
+            userFacingName: "devtools",
+            userFacingDescription: "devtools-description",
+          }
+        ),
+        { extra: { source: "nimbus-devtools" } }
       )
     );
     store.set(
       "optin",
-      NimbusTestUtils.factories.experiment.withFeatureConfig(
-        "optin",
-        {
-          branchSlug: "force-enroll",
-          featureId: "no-feature-firefox-desktop",
-        },
-        {
-          source: NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT,
-          localizations: {
-            "en-US": {
-              foo: "foo",
-            },
+      NimbusTestUtils.factories.enrollment(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          "optin",
+          {
+            branchSlug: "force-enroll",
+            featureId: "no-feature-firefox-desktop",
           },
-          userFacingName: "optin",
-          userFacingDescription: "optin-description",
+          {
+            localizations: {
+              "en-US": {
+                foo: "foo",
+              },
+            },
+            userFacingName: "optin",
+            userFacingDescription: "optin-description",
+          }
+        ),
+        {
+          extra: {
+            source: NimbusTelemetry.EnrollmentSource.FORCE_ENROLLMENT,
+          },
         }
       )
     );

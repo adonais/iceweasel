@@ -292,6 +292,21 @@ export var BrowserTestUtils = {
               opening
             );
           }
+        }).then(async result => {
+          // The content process only gets the browser's size once we have
+          // reflowed it, so until then callers that synthesize input would hit
+          // test against a 0x0 viewport. Callers that opted out of waiting for
+          // the load want the tab before it is ready, and tests don't interact
+          // with a minimized or fully occluded window, whose refresh driver is
+          // throttled anyway.
+          if (aWaitForLoad && win.browsingContext.isActive) {
+            await win.promiseDocumentFlushed(() => {});
+            // Avoid ever resolving in the middle of a refresh driver tick,
+            // which would otherwise happen whenever this is the last promise
+            // to resolve.
+            await TestUtils.waitForTick();
+          }
+          return result;
         }),
       ];
 

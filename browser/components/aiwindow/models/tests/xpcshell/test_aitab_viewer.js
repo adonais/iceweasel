@@ -13,8 +13,11 @@ const VIEWER_PREF = "browser.smartwindow.aitab.viewerURL";
 registerCleanupFunction(() => Services.prefs.clearUserPref(VIEWER_PREF));
 
 add_task(function test_buildViewerURL_puts_config_in_hash() {
-  const page = { header: { type: "header", title: "Hi <b>x</b>" }, blocks: [] };
-  const url = buildViewerURL("https://viewer.example/app", page);
+  const surface = {
+    components: [{ id: "root", component: "Page", children: [] }],
+    dataModel: {},
+  };
+  const url = buildViewerURL("https://viewer.example/app", surface);
   const parsed = new URL(url);
 
   Assert.equal(parsed.origin, "https://viewer.example", "host is unchanged");
@@ -22,14 +25,14 @@ add_task(function test_buildViewerURL_puts_config_in_hash() {
   Assert.equal(parsed.search, "", "config is NOT in the query string");
   Assert.deepEqual(
     JSON.parse(decodeURIComponent(parsed.hash.slice(1))),
-    page,
-    "the page config round-trips through the URL hash fragment"
+    surface,
+    "the surface round-trips through the URL hash fragment"
   );
 });
 
 add_task(function test_buildViewerURL_strips_existing_hash() {
   const url = buildViewerURL("https://viewer.example/app#stale", {
-    blocks: [],
+    components: [],
   });
   Assert.ok(!url.includes("#stale"), "an existing hash on the base is dropped");
 });

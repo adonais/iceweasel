@@ -7,7 +7,7 @@ import os
 import shutil
 import stat
 import sys
-from collections import Counter, OrderedDict, defaultdict
+from collections import Counter, defaultdict
 from concurrent import futures
 
 import mozpack.path as mozpath
@@ -103,7 +103,7 @@ class FileRegistry:
     """
 
     def __init__(self):
-        self._files = OrderedDict()
+        self._files = {}
         self._required_directories = Counter()
         self._partial_paths_cache = {}
 

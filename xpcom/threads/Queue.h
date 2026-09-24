@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <limits>
 #include <utility>
 
 #include "mozalloc.h"

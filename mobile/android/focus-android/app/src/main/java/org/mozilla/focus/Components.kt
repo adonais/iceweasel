@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.engine.gecko.util.EngineDownloadDelegate
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -108,6 +109,13 @@ class Components(
     context: Context,
     private val engineOverride: Engine? = null,
     private val clientOverride: Client? = null,
+    /**
+     * A [CoroutineScope] tied to the lifetime of the application process.
+     *
+     * Note: Tasks should be scoped to the container which holds their UI. If necessary, applicationScope can be used
+     * for top-level background work that must remain active for the whole duration of the application.
+     */
+    @Suppress("UnusedPrivateProperty") val applicationScope: CoroutineScope,
 ) {
     val appStore: AppStore by lazy {
         AppStore(
@@ -134,7 +142,7 @@ class Components(
     val settings by lazy { Settings(context) }
 
     val fileUploadsDirCleaner: FileUploadsDirCleaner by lazy {
-        FileUploadsDirCleaner { context.cacheDir }
+        FileUploadsDirCleaner(applicationScope) { context.cacheDir }
     }
 
     val remoteSettingsSyncScheduler by lazy {
@@ -205,7 +213,7 @@ class Components(
                         // We are currently using the default location service. We should consider using
                         // an actual implementation:
                         // https://github.com/mozilla-mobile/focus-android/issues/4781
-                        RegionMiddleware(context, locationService),
+                        RegionMiddleware(context, locationService, applicationScope = applicationScope),
                         SearchMiddleware(
                             context,
                             migration = SearchMigration(context),

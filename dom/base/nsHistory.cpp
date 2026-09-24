@@ -24,13 +24,9 @@ extern LazyLogModule gSHistoryLog;
 #define LOG(format) MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug, format)
 
 static bool CheckNavigationRateLimit(BrowsingContext* aContext,
-                                     CallerType aCallerType, ErrorResult& aRv) {
+                                     CallerType aCallerType) {
   if (aContext) {
-    nsresult rv = aContext->CheckNavigationRateLimit(aCallerType);
-    if (NS_FAILED(rv)) {
-      aRv.Throw(rv);
-      return false;
-    }
+    return aContext->CheckNavigationRateLimit(aCallerType);
   }
 
   return true;
@@ -105,7 +101,7 @@ void nsHistory::SetScrollRestoration(mozilla::dom::ScrollRestoration aMode,
     return;
   }
 
-  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
+  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType)) {
     return;
   }
 
@@ -175,19 +171,15 @@ void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
     return;
   }
 
-  if (!win->HasActiveDocument()) {
+  if (!win->IsFullyActive()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
 
     return;
   }
 
-  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
-    return;
-  }
-
   // AddState might run scripts, so we need to hold a strong reference to the
   // docShell here to keep it from going away.
-  nsCOMPtr<nsIDocShell> docShell = win->GetDocShell();
+  RefPtr docShell = nsDocShell::Cast(win->GetDocShell());
 
   if (!docShell) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -197,8 +189,7 @@ void nsHistory::PushOrReplaceState(JSContext* aCx, JS::Handle<JS::Value> aData,
 
   // The "replace" argument tells the docshell to whether to add a new
   // history entry or modify the current one.
-
-  aRv = docShell->AddState(aData, aTitle, aUrl, aReplace, aCx);
+  aRv = docShell->AddState(aData, aTitle, aUrl, aCallerType, aReplace, aCx);
 }
 
 already_AddRefed<ChildSHistory> nsHistory::GetSessionHistory() const {
@@ -226,12 +217,12 @@ void nsHistory::DeltaTraverse(mozilla::Maybe<NotNull<JSContext*>> aCx,
     return;
   }
 
-  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType, aRv)) {
-    MOZ_LOG(gSHistoryLog, LogLevel::Debug, ("Rejected"));
+  // Step 3
+  if (!CheckNavigationRateLimit(win->GetBrowsingContext(), aCallerType)) {
     return;
   }
 
-  // Step 3
+  // Step 4
   if (!aDelta) {
     MOZ_DIAGNOSTIC_ASSERT(aCx);
     RefPtr<nsDocShell> docShell = nsDocShell::Cast(win->GetDocShell());
@@ -244,7 +235,7 @@ void nsHistory::DeltaTraverse(mozilla::Maybe<NotNull<JSContext*>> aCx,
     return;
   }
 
-  // Step 4 is the remainder of this method.
+  // Step 5 is the remainder of this method.
   RefPtr<ChildSHistory> session_history = GetSessionHistory();
   if (!session_history) {
     aRv.Throw(NS_ERROR_FAILURE);

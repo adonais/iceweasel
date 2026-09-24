@@ -1,0 +1,27 @@
+# Any copyright is dedicated to the Public Domain.
+# http://creativecommons.org/publicdomain/zero/1.0/
+
+
+SharedLibrary("extra-link-deps-lib")
+
+GENERATED_FILES += ["generated.rsp"]
+response = GENERATED_FILES["generated.rsp"]
+response.script = "generate.py:generate"
+response.inputs = ["rsp-data"]
+
+GENERATED_FILES += ["nested/deep.rsp"]
+nested = GENERATED_FILES["nested/deep.rsp"]
+nested.script = "generate.py:generate"
+nested.inputs = ["rsp-data"]
+
+GENERATED_FILES += ["other/deep.rsp"]
+other = GENERATED_FILES["other/deep.rsp"]
+other.script = "generate.py:generate"
+other.inputs = ["rsp-data"]
+
+LDFLAGS += ["@generated.rsp", "@nested/deep.rsp"]
+
+EXTRA_LINK_DEPS += [
+    "!generated.rsp",
+    "!nested/deep.rsp",
+]

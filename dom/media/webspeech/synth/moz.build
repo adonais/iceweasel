@@ -31,12 +31,11 @@ UNIFIED_SOURCES += [
     "SpeechSynthesisVoice.cpp",
 ]
 
-if CONFIG["MOZ_WEBSPEECH_TEST_BACKEND"]:
-    UNIFIED_SOURCES += ["test/nsFakeSynthServices.cpp"]
+UNIFIED_SOURCES += ["test/nsFakeSynthServices.cpp"]
 
-    XPCOM_MANIFESTS += [
-        "test/components.conf",
-    ]
+XPCOM_MANIFESTS += [
+    "test/components.conf",
+]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     DIRS += ["windows"]

@@ -131,6 +131,45 @@ if CONFIG['OS_TARGET'] == 'Darwin':
       "-framework Accelerate"
   ]
 
+  # Metal backend support
+  DEFINES["GGML_USE_METAL"] = 1
+  DEFINES["GGML_METAL_EMBED_LIBRARY"] = 1
+
+  # Generate assembly file with embedded Metal shader source
+  GeneratedFile(
+      'ggml-metal-embed.s',
+      'ggml-metal-embed.metal',
+      script='generate_metal_embed.py',
+      inputs=[
+          'ggml/src/ggml-common.h',
+          'ggml/src/ggml-metal/ggml-metal-impl.h',
+          'ggml/src/ggml-metal/ggml-metal.metal',
+      ]
+  )
+
+  # Add Metal backend sources
+  SOURCES += [
+      '!ggml-metal-embed.s',
+      'ggml/src/ggml-metal/ggml-metal-common.cpp',
+      'ggml/src/ggml-metal/ggml-metal-context.m',
+      'ggml/src/ggml-metal/ggml-metal-device-m.m',
+      'ggml/src/ggml-metal/ggml-metal-device.cpp',
+      'ggml/src/ggml-metal/ggml-metal-ops.cpp',
+      'ggml/src/ggml-metal/ggml-metal.cpp',
+  ]
+
+  # Export Metal header
+  EXPORTS += [
+      'ggml/include/ggml-metal.h',
+  ]
+
+  # Link Metal frameworks
+  OS_LIBS += [
+      '-framework Foundation',
+      '-framework Metal',
+      '-framework MetalKit',
+  ]
+
 if CONFIG["OS_TARGET"] == "Linux":
   OS_LIBS += [
       "dl",

@@ -1587,6 +1587,30 @@ gfxFcPlatformFontList::~gfxFcPlatformFontList() {
 #endif
 }
 
+static bool IsTrueTypeOrOpenTypeFont(FcPattern* aPattern) {
+  FcChar8* format;
+  if (FcPatternGetString(aPattern, FC_FONTFORMAT, 0, &format) !=
+      FcResultMatch) {
+    return false;
+  }
+  return !FcStrCmp(format, ToFcChar8Ptr("TrueType")) ||
+         !FcStrCmp(format, ToFcChar8Ptr("CFF"));
+}
+
+// Whether to keep a legacy font out of the font list altogether.
+static bool ShouldSkipLegacyFont(FcPattern* aPattern) {
+  if (!StaticPrefs::gfx_font_rendering_fontconfig_skip_legacy_fonts()) {
+    return false;
+  }
+  FcChar8* format;
+  if (FcPatternGetString(aPattern, FC_FONTFORMAT, 0, &format) !=
+      FcResultMatch) {
+    return false;
+  }
+  return !FcStrCmp(format, ToFcChar8Ptr("Type 1")) ||
+         !FcStrCmp(format, ToFcChar8Ptr("PCF"));
+}
+
 void gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet,
                                                const SandboxPolicy* aPolicy,
                                                bool aAppFonts) {
@@ -1624,6 +1648,10 @@ void gfxFcPlatformFontList::AddFontSetFamilies(FcFontSet* aFontSet,
       continue;
     }
 #endif
+
+    if (ShouldSkipLegacyFont(pattern)) {
+      continue;
+    }
 
     AddPatternToFontList(pattern, lastFamilyName, familyName, fontFamily,
                          aAppFonts);
@@ -2095,6 +2123,10 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       }
 #endif
 
+      if (ShouldSkipLegacyFont(pattern)) {
+        continue;
+      }
+
       // Clone the pattern, because we can't operate on the one belonging to
       // the FcFontSet directly.
       FcPattern* clone = FcPatternDuplicate(pattern);
@@ -2115,20 +2147,12 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       // (which may be very large), because we'll read the 'cmap' directly.
       // This substantially reduces the pressure on shared memory (bug 1664151)
       // due to the large font descriptors (serialized patterns).
-      FcChar8* fontFormat;
       MOZ_PUSH_IGNORE_THREAD_SAFETY
-      if (FcPatternGetString(clone, FC_FONTFORMAT, 0, &fontFormat) ==
-              FcResultMatch &&
-          (!FcStrCmp(fontFormat, (const FcChar8*)"TrueType") ||
-           !FcStrCmp(fontFormat, (const FcChar8*)"CFF"))) {
+      if (IsTrueTypeOrOpenTypeFont(clone)) {
         FcPatternDel(clone, FC_CHARSET);
-        if (addPattern(clone, lastFamilyName, familyName, aAppFonts)) {
-          ++count;
-        }
-      } else {
-        if (addPattern(clone, lastFamilyName, familyName, aAppFonts)) {
-          ++count;
-        }
+      }
+      if (addPattern(clone, lastFamilyName, familyName, aAppFonts)) {
+        ++count;
       }
       MOZ_POP_THREAD_SAFETY
 
@@ -2294,7 +2318,9 @@ static void GetSystemFontList(nsTArray<nsString>& aListOfFonts,
     return;
   }
 
-  UniquePtr<FcObjectSet> os(FcObjectSetBuild(FC_FAMILY, nullptr));
+  // We need FC_FONTFORMAT for ShouldSkipLegacyFont() below.
+  UniquePtr<FcObjectSet> os(
+      FcObjectSetBuild(FC_FAMILY, FC_FONTFORMAT, nullptr));
   if (!os) {
     return;
   }
@@ -2314,6 +2340,10 @@ static void GetSystemFontList(nsTArray<nsString>& aListOfFonts,
 
   for (int i = 0; i < fs->nfont; i++) {
     char* family;
+
+    if (ShouldSkipLegacyFont(fs->fonts[i])) {
+      continue;
+    }
 
     if (FcPatternGetString(fs->fonts[i], FC_FAMILY, 0, (FcChar8**)&family) !=
         FcResultMatch) {

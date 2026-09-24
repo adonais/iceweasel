@@ -10,9 +10,13 @@
 
 #include "modules/rtp_rtcp/source/rtp_format.h"
 
+#include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "api/video/video_frame_type.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -25,6 +29,7 @@ using ::testing::Gt;
 using ::testing::IsEmpty;
 using ::testing::Le;
 using ::testing::Not;
+using ::testing::NotNull;
 using ::testing::SizeIs;
 
 // Calculate difference between largest and smallest packets respecting sizes
@@ -231,19 +236,33 @@ TEST(RtpPacketizerSplitAboutEqually,
   EXPECT_THAT(RtpPacketizer::SplitAboutEqually(20, limits), ElementsAre(9, 11));
 }
 
-TEST(RtpPacketizerSplitAboutEqually, RejectsZeroSize) {
+TEST(RtpPacketizerTest, RejectsZeroSize) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 1200;
+  RTPVideoHeader video_header;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
 
-  EXPECT_THAT(RtpPacketizer::SplitAboutEqually(0, limits), IsEmpty());
+  std::unique_ptr<RtpPacketizer> packetizer =
+      RtpPacketizer::Create(RtpPacketizer::PacketizationFormat::kGeneric,
+                            /*payload=*/{}, limits, video_header);
+
+  ASSERT_THAT(packetizer, NotNull());
+  EXPECT_EQ(packetizer->NumPackets(), 0u);
 }
 
-TEST(RtpPacketizerSplitAboutEqually, RejectsHugeSize) {
+TEST(RtpPacketizerTest, RejectsHugeSize) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 1200;
+  RTPVideoHeader video_header;
+  video_header.frame_type = VideoFrameType::kVideoFrameKey;
+  const uint8_t kPayload[40'000'000] = {};
 
-  EXPECT_THAT(RtpPacketizer::SplitAboutEqually(0xFFFF'FFFF, limits), IsEmpty());
-  EXPECT_THAT(RtpPacketizer::SplitAboutEqually(40'000'000, limits), IsEmpty());
+  std::unique_ptr<RtpPacketizer> packetizer =
+      RtpPacketizer::Create(RtpPacketizer::PacketizationFormat::kGeneric,
+                            kPayload, limits, video_header);
+
+  ASSERT_THAT(packetizer, NotNull());
+  EXPECT_EQ(packetizer->NumPackets(), 0u);
 }
 
 TEST(RtpPacketizerSplitAboutEqually, RejectsZeroMaxPayloadLen) {

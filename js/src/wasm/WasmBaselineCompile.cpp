@@ -168,6 +168,31 @@ using mozilla::Some;
 
 ////////////////////////////////////////////////////////////
 //
+// Stackmap helpers
+
+// This wraps up BaseCompiler::stackMaps_ so it can be piped deep into the
+// innards of the assembler stack, and be given the opportunity to add stackmaps
+// associated with trapsites that are created.
+class BaselineStackMapRegistry : public StackMapRegistry, public TempObject {
+  StackMaps* stackMaps_ = nullptr;
+
+ public:
+  explicit BaselineStackMapRegistry(StackMaps* stackMaps)
+      : stackMaps_(stackMaps) {}
+
+  [[nodiscard]]
+  bool addMap(StackMap* map, FaultingCodeRange insnRange) override {
+    if (insnRange.isValid()) {
+      MOZ_ASSERT(map);
+      return stackMaps_->add(insnRange.resumeOffset(), map);
+    } else {
+      return true;
+    }
+  }
+};
+
+////////////////////////////////////////////////////////////
+//
 // Out of line code management.
 
 // The baseline compiler will use OOL code more sparingly than Ion since our
@@ -656,7 +681,7 @@ bool BaseCompiler::beginFunction() {
       case MIRType::Float32:
         fr.storeLocalF32(RegF32(i->fpu()), l);
         break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case MIRType::Simd128:
         fr.storeLocalV128(RegV128(i->fpu()), l);
         break;
@@ -1043,7 +1068,7 @@ void BaseCompiler::saveRegisterReturnValues(const ResultType& resultType) {
         break;
       }
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         masm.storeUnalignedSimd128(RegV128(result.fpr()), dest);
         break;
 #else
@@ -1088,7 +1113,7 @@ void BaseCompiler::restoreRegisterReturnValues(const ResultType& resultType) {
         masm.loadPtr(src, RegRef(result.gpr()));
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         masm.loadUnalignedSimd128(src, RegV128(result.fpr()));
         break;
 #else
@@ -1304,7 +1329,7 @@ void BaseCompiler::popRegisterResults(ABIResultIter& iter) {
         popRef(RegRef(result.gpr()));
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         popV128(RegV128(result.fpr()));
 #else
         MOZ_CRASH("No SIMD support");
@@ -1428,7 +1453,7 @@ void BaseCompiler::popStackResults(ABIResultIter& iter, StackHeight stackBase) {
       case Stk::ConstF64:
         fr.storeImmediateF64ToStack(v.f64val_, resultHeight, temp);
         break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case Stk::ConstV128:
         fr.storeImmediateV128ToStack(v.v128val_, resultHeight, temp);
         break;
@@ -1555,7 +1580,7 @@ bool BaseCompiler::pushResults(ResultType type, StackHeight resultsBase) {
         pushI64(RegI64(result.gpr64()));
         break;
       case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         pushV128(RegV128(result.fpr()));
         break;
 #else
@@ -1759,7 +1784,7 @@ void BaseCompiler::passArg(ValType type, const Stk& arg, FunctionCall* call) {
       break;
     }
     case ValType::V128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       ABIArg argLoc = call->abi.next(MIRType::Simd128);
       switch (argLoc.kind()) {
         case ABIArg::Stack: {
@@ -2002,7 +2027,7 @@ void BaseCompiler::pushBuiltinCallResult(const FunctionCall& call,
       pushF64(rv);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case MIRType::Simd128: {
       RegV128 rv = captureReturnedV128(call);
       pushV128(rv);
@@ -2609,19 +2634,30 @@ class OutOfLineTruncateCheckF32OrF64ToI32 : public OutOfLineCode {
   RegI32 dest;
   TruncFlags flags;
   TrapSiteDesc trapSiteDesc;
+  StackMap* stackMapForTraps = nullptr;
+  StackMapRegistry* stackMapRegistry = nullptr;
 
  public:
   OutOfLineTruncateCheckF32OrF64ToI32(AnyReg src, RegI32 dest, TruncFlags flags,
-                                      TrapSiteDesc trapSiteDesc)
-      : src(src), dest(dest), flags(flags), trapSiteDesc(trapSiteDesc) {}
+                                      TrapSiteDesc trapSiteDesc,
+                                      StackMap* stackMapForTraps,
+                                      StackMapRegistry* stackMapRegistry)
+      : src(src),
+        dest(dest),
+        flags(flags),
+        trapSiteDesc(trapSiteDesc),
+        stackMapForTraps(stackMapForTraps),
+        stackMapRegistry(stackMapRegistry) {}
 
   virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     if (src.tag == AnyReg::F32) {
       masm->oolWasmTruncateCheckF32ToI32(src.f32(), dest, flags, trapSiteDesc,
-                                         rejoin());
+                                         rejoin(), stackMapForTraps,
+                                         stackMapRegistry);
     } else if (src.tag == AnyReg::F64) {
       masm->oolWasmTruncateCheckF64ToI32(src.f64(), dest, flags, trapSiteDesc,
-                                         rejoin());
+                                         rejoin(), stackMapForTraps,
+                                         stackMapRegistry);
     } else {
       MOZ_CRASH("unexpected type");
     }
@@ -2629,12 +2665,34 @@ class OutOfLineTruncateCheckF32OrF64ToI32 : public OutOfLineCode {
 };
 
 bool BaseCompiler::truncateF32ToI32(RegF32 src, RegI32 dest, TruncFlags flags) {
+  // If the conversion goes bad (NaN, overflow, etc), we'll trap; and in debug
+  // mode we'll need a stackmap for the trap.  Create it, and
+  // `stackMapRegistry`, which we'll plumb through to the OOL code generation,
+  // which can register the map once it knows what the trapsite offsets are
+  // (there are sometimes two trapsites).  Same scheme is repeated in subsequent
+  // methods.
+  StackMap* debugStackMap;
+  if (!createDebugOnlyStackMapForNonResumingTrap(
+          &debugStackMap, Trap::IntegerOverflow,
+          Trap::InvalidConversionToInteger)) {
+    return false;
+  }
+  BaselineStackMapRegistry* stackMapRegistry = nullptr;
+  if (debugStackMap) {
+    stackMapRegistry = new (alloc_) BaselineStackMapRegistry(stackMaps_);
+    if (!stackMapRegistry) {
+      return false;
+    }
+  }
+  // Set up the OOL code creation, but don't run it yet.
   OutOfLineCode* ool =
       addOutOfLineCode(new (alloc_) OutOfLineTruncateCheckF32OrF64ToI32(
-          AnyReg(src), dest, flags, trapSiteDesc()));
+          AnyReg(src), dest, flags, trapSiteDesc(), debugStackMap,
+          stackMapRegistry));
   if (!ool) {
     return false;
   }
+  // Create the IL code.
   bool isSaturating = flags & TRUNC_SATURATING;
   if (flags & TRUNC_UNSIGNED) {
     masm.wasmTruncateFloat32ToUInt32(src, dest, isSaturating, ool->entry());
@@ -2646,9 +2704,23 @@ bool BaseCompiler::truncateF32ToI32(RegF32 src, RegI32 dest, TruncFlags flags) {
 }
 
 bool BaseCompiler::truncateF64ToI32(RegF64 src, RegI32 dest, TruncFlags flags) {
+  StackMap* debugStackMap;
+  if (!createDebugOnlyStackMapForNonResumingTrap(
+          &debugStackMap, Trap::IntegerOverflow,
+          Trap::InvalidConversionToInteger)) {
+    return false;
+  }
+  BaselineStackMapRegistry* stackMapRegistry = nullptr;
+  if (debugStackMap) {
+    stackMapRegistry = new (alloc_) BaselineStackMapRegistry(stackMaps_);
+    if (!stackMapRegistry) {
+      return false;
+    }
+  }
   OutOfLineCode* ool =
       addOutOfLineCode(new (alloc_) OutOfLineTruncateCheckF32OrF64ToI32(
-          AnyReg(src), dest, flags, trapSiteDesc()));
+          AnyReg(src), dest, flags, trapSiteDesc(), debugStackMap,
+          stackMapRegistry));
   if (!ool) {
     return false;
   }
@@ -2667,19 +2739,30 @@ class OutOfLineTruncateCheckF32OrF64ToI64 : public OutOfLineCode {
   RegI64 dest;
   TruncFlags flags;
   TrapSiteDesc trapSiteDesc;
+  StackMap* stackMapForTraps = nullptr;
+  StackMapRegistry* stackMapRegistry = nullptr;
 
  public:
   OutOfLineTruncateCheckF32OrF64ToI64(AnyReg src, RegI64 dest, TruncFlags flags,
-                                      TrapSiteDesc trapSiteDesc)
-      : src(src), dest(dest), flags(flags), trapSiteDesc(trapSiteDesc) {}
+                                      TrapSiteDesc trapSiteDesc,
+                                      StackMap* stackMapForTraps,
+                                      StackMapRegistry* stackMapRegistry)
+      : src(src),
+        dest(dest),
+        flags(flags),
+        trapSiteDesc(trapSiteDesc),
+        stackMapForTraps(stackMapForTraps),
+        stackMapRegistry(stackMapRegistry) {}
 
   virtual void generate(MacroAssembler* masm, BaseCompiler* bc) override {
     if (src.tag == AnyReg::F32) {
       masm->oolWasmTruncateCheckF32ToI64(src.f32(), dest, flags, trapSiteDesc,
-                                         rejoin());
+                                         rejoin(), stackMapForTraps,
+                                         stackMapRegistry);
     } else if (src.tag == AnyReg::F64) {
       masm->oolWasmTruncateCheckF64ToI64(src.f64(), dest, flags, trapSiteDesc,
-                                         rejoin());
+                                         rejoin(), stackMapForTraps,
+                                         stackMapRegistry);
     } else {
       MOZ_CRASH("unexpected type");
     }
@@ -2699,9 +2782,23 @@ RegF64 BaseCompiler::needTempForFloatingToI64(TruncFlags flags) {
 
 bool BaseCompiler::truncateF32ToI64(RegF32 src, RegI64 dest, TruncFlags flags,
                                     RegF64 temp) {
+  StackMap* debugStackMap;
+  if (!createDebugOnlyStackMapForNonResumingTrap(
+          &debugStackMap, Trap::IntegerOverflow,
+          Trap::InvalidConversionToInteger)) {
+    return false;
+  }
+  BaselineStackMapRegistry* stackMapRegistry = nullptr;
+  if (debugStackMap) {
+    stackMapRegistry = new (alloc_) BaselineStackMapRegistry(stackMaps_);
+    if (!stackMapRegistry) {
+      return false;
+    }
+  }
   OutOfLineCode* ool =
       addOutOfLineCode(new (alloc_) OutOfLineTruncateCheckF32OrF64ToI64(
-          AnyReg(src), dest, flags, trapSiteDesc()));
+          AnyReg(src), dest, flags, trapSiteDesc(), debugStackMap,
+          stackMapRegistry));
   if (!ool) {
     return false;
   }
@@ -2718,9 +2815,23 @@ bool BaseCompiler::truncateF32ToI64(RegF32 src, RegI64 dest, TruncFlags flags,
 
 bool BaseCompiler::truncateF64ToI64(RegF64 src, RegI64 dest, TruncFlags flags,
                                     RegF64 temp) {
+  StackMap* debugStackMap;
+  if (!createDebugOnlyStackMapForNonResumingTrap(
+          &debugStackMap, Trap::IntegerOverflow,
+          Trap::InvalidConversionToInteger)) {
+    return false;
+  }
+  BaselineStackMapRegistry* stackMapRegistry = nullptr;
+  if (debugStackMap) {
+    stackMapRegistry = new (alloc_) BaselineStackMapRegistry(stackMaps_);
+    if (!stackMapRegistry) {
+      return false;
+    }
+  }
   OutOfLineCode* ool =
       addOutOfLineCode(new (alloc_) OutOfLineTruncateCheckF32OrF64ToI64(
-          AnyReg(src), dest, flags, trapSiteDesc()));
+          AnyReg(src), dest, flags, trapSiteDesc(), debugStackMap,
+          stackMapRegistry));
   if (!ool) {
     return false;
   }
@@ -4757,7 +4868,7 @@ bool BaseCompiler::emitTryTable() {
           break;
         }
         case ValType::V128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
           RegV128 reg = needV128();
           masm.loadUnalignedSimd128(Address(data, offset), reg);
           pushV128(reg);
@@ -4984,7 +5095,7 @@ bool BaseCompiler::emitCatch() {
         break;
       }
       case ValType::V128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         RegV128 reg = needV128();
         masm.loadUnalignedSimd128(Address(data, offset), reg);
         pushV128(reg);
@@ -5281,7 +5392,7 @@ bool BaseCompiler::emitThrow() {
         break;
       }
       case ValType::V128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
         RegV128 reg = popV128();
         masm.storeUnalignedSimd128(reg, Address(data, offset));
         freeV128(reg);
@@ -5971,9 +6082,25 @@ bool BaseCompiler::emitConvertFloatingToInt64Callout(SymbolicAddress callee,
   // and we need to produce traps.
   OutOfLineCode* ool = nullptr;
   if (!(flags & TRUNC_SATURATING)) {
+    // When compiling for debugging, we need to take care of creating stackmaps
+    // for the traps we generate here.
+    StackMap* debugStackMap;
+    if (!createDebugOnlyStackMapForNonResumingTrap(
+            &debugStackMap, Trap::IntegerOverflow,
+            Trap::InvalidConversionToInteger)) {
+      return false;
+    }
+    BaselineStackMapRegistry* stackMapRegistry = nullptr;
+    if (debugStackMap) {
+      stackMapRegistry = new (alloc_) BaselineStackMapRegistry(stackMaps_);
+      if (!stackMapRegistry) {
+        return false;
+      }
+    }
     // The OOL check just succeeds or fails, it does not generate a value.
     ool = addOutOfLineCode(new (alloc_) OutOfLineTruncateCheckF32OrF64ToI64(
-        AnyReg(inputVal), rv, flags, trapSiteDesc()));
+        AnyReg(inputVal), rv, flags, trapSiteDesc(), debugStackMap,
+        stackMapRegistry));
     if (!ool) {
       return false;
     }
@@ -6012,7 +6139,7 @@ bool BaseCompiler::emitGetLocal() {
       pushLocalI64(slot);
       break;
     case ValType::V128:
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       pushLocalV128(slot);
       break;
 #else
@@ -6085,7 +6212,7 @@ bool BaseCompiler::emitSetOrTeeLocal(uint32_t slot) {
       break;
     }
     case ValType::V128: {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       RegV128 rv = popV128();
       syncLocal(slot);
       fr.storeLocalV128(rv, localFromSlot(slot, MIRType::Simd128));
@@ -6163,7 +6290,7 @@ bool BaseCompiler::emitGetGlobal() {
       case ValType::Ref:
         pushRef(intptr_t(value.ref().forCompiledCode()));
         break;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case ValType::V128:
         pushV128(value.v128());
         break;
@@ -6210,7 +6337,7 @@ bool BaseCompiler::emitGetGlobal() {
       pushRef(rv);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 rv = needV128();
       ScratchPtr tmp(*this);
@@ -6285,7 +6412,7 @@ bool BaseCompiler::emitSetGlobal() {
       freeRef(rv);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 rv = popV128();
       ScratchPtr tmp(*this);
@@ -6430,7 +6557,7 @@ bool BaseCompiler::emitSelect(bool typed) {
       pushF64(r);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case ValType::V128: {
       RegV128 r, rs;
       pop2xV128(&r, &rs);
@@ -7791,7 +7918,7 @@ void BaseCompiler::emitGcGet(StorageType type, FieldWideningOp wideningOp,
       pushF64(r);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case StorageType::V128: {
       MOZ_ASSERT(wideningOp == FieldWideningOp::None);
       RegV128 r = needV128();
@@ -7856,7 +7983,7 @@ void BaseCompiler::emitGcSetScalar(const T& dst, StorageType type,
       NullCheckPolicy::emitTrapSite(this, fcr, TrapMachineInsn::Store64);
       break;
     }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     case StorageType::V128: {
       FaultingCodeRange fcr = masm.storeUnalignedSimd128(value.v128(), dst);
       NullCheckPolicy::emitTrapSite(this, fcr, TrapMachineInsn::Store128);
@@ -9306,7 +9433,7 @@ bool BaseCompiler::emitExternConvertAny() {
 //
 // SIMD and Relaxed SIMD.
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 
 // Emitter trampolines used by abstracted SIMD operations.  Naming here follows
 // the SIMD spec pretty closely.
@@ -10539,7 +10666,7 @@ bool BaseCompiler::emitVectorLaneSelect() {
   return true;
 }
 #  endif  // ENABLE_WASM_RELAXED_SIMD
-#endif    // ENABLE_WASM_SIMD
+#endif    // ENABLE_JIT_SIMD
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -11458,7 +11585,7 @@ bool BaseCompiler::emitBody() {
         return iter_.unrecognizedOpcode(&op);
       }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       // SIMD operations
       case uint16_t(Op::SimdPrefix): {
         uint32_t laneIndex;
@@ -12072,7 +12199,7 @@ bool BaseCompiler::emitBody() {
         }  // switch (op.b1)
         return iter_.unrecognizedOpcode(&op);
       }
-#endif  // ENABLE_WASM_SIMD
+#endif  // ENABLE_JIT_SIMD
 
       // "Miscellaneous" operations
       case uint16_t(Op::MiscPrefix): {
@@ -12450,7 +12577,7 @@ void BaseCompiler::assertResultRegistersAvailable(ResultType type) {
         MOZ_ASSERT(isAvailableI64(RegI64(result.gpr64())));
         break;
       case ValType::V128:
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
         MOZ_ASSERT(isAvailableV128(RegV128(result.fpr())));
         break;
 #  else
@@ -12501,7 +12628,7 @@ void BaseCompiler::performRegisterLeakCheck() {
       case Stk::RegisterF64:
         check.addKnownF64(item.f64reg());
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case Stk::RegisterV128:
         check.addKnownV128(item.v128reg());
         break;
@@ -12541,7 +12668,7 @@ void BaseCompiler::assertStackInvariants() const {
       case Stk::MemF32:
         size += BaseStackFrame::StackSizeOfFloat;
         break;
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
       case Stk::MemV128:
         size += BaseStackFrame::StackSizeOfV128;
         break;
@@ -12812,12 +12939,19 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
     }
 
     // Do the check.  This asserts if the check fails.
-    auto checkThisTrapKind = [](Trap t) -> bool {
-      // Temporary setting, to make all of this a no-op.
+    auto checkThisTrapKind_debugMode = [](Trap t) -> bool {
+      // Trap kinds to check in debug mode
+      return t == Trap::InvalidConversionToInteger ||
+             t == Trap::IntegerOverflow || t == Trap::IntegerDivideByZero;
+    };
+    auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
+      // Trap kinds to check in non-debug mode
       return false;
     };
-    CheckStackMapsForTraps(masm, code->stackMaps, trapSitesBefore,
-                           trapSitesAfter, checkThisTrapKind);
+    CheckStackMapsForTraps(
+        masm, code->stackMaps, trapSitesBefore, trapSitesAfter,
+        compilerEnv.debugEnabled() ? checkThisTrapKind_debugMode
+                                   : checkThisTrapKind_normalMode);
 #endif
 
     JitSpew(JitSpew_Codegen,

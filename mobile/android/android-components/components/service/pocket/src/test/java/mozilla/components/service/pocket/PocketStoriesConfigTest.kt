@@ -4,11 +4,13 @@
 
 package mozilla.components.service.pocket
 
+import java.util.Locale
 import kotlin.reflect.KVisibility
 import mozilla.components.service.pocket.helpers.assertClassVisibility
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -59,9 +61,11 @@ class PocketStoriesConfigTest {
     fun `WHEN instantiating a PocketStoriesConfig THEN contentRecommendationsParams default value is used`() {
         val config = PocketStoriesConfig(mock())
 
-        assertTrue(config.contentRecommendationsParams.locale.isBlank())
+        assertEquals(Locale.getDefault(), config.contentRecommendationsParams.locale)
         assertTrue(config.contentRecommendationsParams.region.isBlank())
         assertTrue(config.contentRecommendationsParams.topics.isEmpty())
         assertEquals(DEFAULT_CONTENT_RECOMMENDATIONS_COUNT, config.contentRecommendationsParams.count)
+        assertTrue(config.contentRecommendationsParams.userAgent.isBlank())
+        assertFalse(config.contentRecommendationsParams.useMerinoClient)
     }
 }

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_Ed25519_H
 #define __Hacl_Ed25519_H
 
@@ -40,6 +41,7 @@ extern "C" {
 /********************************************************************************
   Verified C library for EdDSA signing and verification on the edwards25519 curve.
 ********************************************************************************/
+
 
 /**
 Compute the public key from the private key.
@@ -74,10 +76,11 @@ Create an Ed25519 signature with the (precomputed) expanded keys.
 */
 void
 Hacl_Ed25519_sign_expanded(
-    uint8_t *signature,
-    uint8_t *expanded_keys,
-    uint32_t msg_len,
-    uint8_t *msg);
+  uint8_t *signature,
+  uint8_t *expanded_keys,
+  uint32_t msg_len,
+  uint8_t *msg
+);
 
 /**
 Create an Ed25519 signature.

@@ -63,12 +63,6 @@ async function runTest(src, withClose, expectation) {
   await BrowserTestUtils.removeTab(tab);
 }
 
-add_setup(async function setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 async function testAudioCrash(withClose) {
   info(`Running tests for audio decoder process crashing: ${withClose}`);
 

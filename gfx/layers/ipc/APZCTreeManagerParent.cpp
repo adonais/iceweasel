@@ -40,23 +40,6 @@ void APZCTreeManagerParent::ActorDestroy(ActorDestroyReason aWhy) {
   CompositorBridgeParent::DisconnectApzcTreeManager(this);
 }
 
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetKeyboardMap(
-    const KeyboardMap& aKeyboardMap) {
-  // See RecvStartAutoscroll() for why this check is necessary.
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(
-        this,
-        "SetKeyboardMap from non-root APZCTreeManagerParent is not expected.");
-  }
-
-  mUpdater->RunOnUpdaterThread(
-      mLayersId, NewRunnableMethod<KeyboardMap>(
-                     "layers::IAPZCTreeManager::SetKeyboardMap", mTreeManager,
-                     &IAPZCTreeManager::SetKeyboardMap, aKeyboardMap));
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvZoomToRect(
     const ScrollableLayerGuid& aGuid, const ZoomTarget& aZoomTarget,
     const uint32_t& aFlags) {
@@ -85,6 +68,12 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvContentReceivedInputBlock(
 
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetTargetAPZC(
     const uint64_t& aInputBlockId, nsTArray<ScrollableLayerGuid>&& aTargets) {
+  for (const auto& guid : aTargets) {
+    if (!IsGuidValid(guid)) {
+      return IPC_FAIL_NO_REASON(this);
+    }
+  }
+
   mUpdater->RunOnUpdaterThread(
       mLayersId,
       NewRunnableMethod<uint64_t,
@@ -107,21 +96,6 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvUpdateZoomConstraints(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetDPI(
-    const float& aDpiValue) {
-  // See RecvStartAutoscroll() for why this check is necessary.
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(
-        this, "SetDPI from non-root APZCTreeManagerParent is not expected.");
-  }
-
-  mUpdater->RunOnUpdaterThread(
-      mLayersId,
-      NewRunnableMethod<float>("layers::IAPZCTreeManager::SetDPI", mTreeManager,
-                               &IAPZCTreeManager::SetDPI, aDpiValue));
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetAllowedTouchBehavior(
     const uint64_t& aInputBlockId, nsTArray<TouchBehaviorFlags>&& aValues) {
   mUpdater->RunOnUpdaterThread(
@@ -131,24 +105,6 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetAllowedTouchBehavior(
           "layers::IAPZCTreeManager::SetAllowedTouchBehavior", mTreeManager,
           &IAPZCTreeManager::SetAllowedTouchBehavior, aInputBlockId,
           std::move(aValues)));
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetBrowserGestureResponse(
-    const uint64_t& aInputBlockId, const BrowserGestureResponse& aResponse) {
-  // See RecvStartAutoscroll() for why this check is necessary.
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(this,
-                    "SetBrowserGestureResponse from non-root "
-                    "APZCTreeManagerParent is not expected.");
-  }
-
-  mUpdater->RunOnUpdaterThread(
-      mLayersId, NewRunnableMethod<uint64_t, BrowserGestureResponse>(
-                     "layers::IAPZCTreeManager::SetBrowserGestureResponse",
-                     mTreeManager, &IAPZCTreeManager::SetBrowserGestureResponse,
-                     aInputBlockId, aResponse));
 
   return IPC_OK();
 }
@@ -168,61 +124,6 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartScrollbarDrag(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStartAutoscroll(
-    const ScrollableLayerGuid& aGuid, const ScreenPoint& aAnchorLocation) {
-  // Autoscroll is legitimately started only through the APZCTreeManagerParent
-  // that corresponds to the root of the layer tree. We check if this
-  // instance corresponds to the root of the layer tree.
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(
-        this,
-        "StartAutoscroll from non-root APZCTreeManagerParent is not expected.");
-  }
-
-  mUpdater->RunOnControllerThread(
-      mLayersId,
-      NewRunnableMethod<ScrollableLayerGuid, ScreenPoint>(
-          "layers::IAPZCTreeManager::StartAutoscroll", mTreeManager,
-          &IAPZCTreeManager::StartAutoscroll, aGuid, aAnchorLocation));
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvStopAutoscroll(
-    const ScrollableLayerGuid& aGuid) {
-  // See RecvStartAutoscroll().
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(
-        this,
-        "StopAutoscroll from non-root APZCTreeManagerParent is not expected.");
-  }
-
-  mUpdater->RunOnControllerThread(
-      mLayersId, NewRunnableMethod<ScrollableLayerGuid>(
-                     "layers::IAPZCTreeManager::StopAutoscroll", mTreeManager,
-                     &IAPZCTreeManager::StopAutoscroll, aGuid));
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetLongTapEnabled(
-    const bool& aLongTapEnabled) {
-  // See RecvStartAutoscroll() for why this check is necessary.
-  if (!IsForRootLayer()) {
-    return IPC_FAIL(this,
-                    "SetLongTapEnabled from non-root APZCTreeManagerParent is "
-                    "not expected.");
-  }
-
-  mUpdater->RunOnUpdaterThread(
-      mLayersId,
-      NewRunnableMethod<bool>(
-          "layers::IAPZCTreeManager::SetLongTapEnabled", mTreeManager,
-          &IAPZCTreeManager::SetLongTapEnabled, aLongTapEnabled));
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvNotifyApzAwareListenerAdded(
     const ScrollableLayerGuid& aGuid) {
   if (!IsGuidValid(aGuid)) {
@@ -238,10 +139,6 @@ bool APZCTreeManagerParent::IsGuidValid(const ScrollableLayerGuid& aGuid) {
     return false;
   }
   return true;
-}
-
-bool APZCTreeManagerParent::IsForRootLayer() const {
-  return mLayersId == mTreeManager->GetRootLayersId();
 }
 
 }  // namespace layers

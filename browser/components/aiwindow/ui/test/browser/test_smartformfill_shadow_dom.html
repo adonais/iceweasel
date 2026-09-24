@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Smart Form Fill Shadow DOM Test</title>
+</head>
+<body>
+  <div id="form-host"></div>
+  <script>
+    const shadowRoot = document
+      .querySelector("#form-host")
+      .attachShadow({ mode: "open" });
+    const form = document.createElement("form");
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+
+    label.htmlFor = "shadow-email";
+    label.textContent = "Shadow email";
+    input.id = "shadow-email";
+    input.name = "shadowEmail";
+    input.type = "email";
+    input.autocomplete = "email";
+
+    form.append(label, input);
+    shadowRoot.append(form);
+  </script>
+</body>
+</html>

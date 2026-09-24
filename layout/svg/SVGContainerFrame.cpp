@@ -365,6 +365,11 @@ void SVGDisplayContainerFrame::NotifySVGChanged(ChangeFlags aFlags) {
                  aFlags.contains(ChangeFlag::CoordContextChanged),
              "Invalidation logic may need adjusting");
 
+  if (aFlags.contains(ChangeFlag::CoordContextChanged) &&
+      SVGIntegrationUtils::UsingEffectsForFrame(this)) {
+    // Effects may have percentage dependent units.
+    SVGUtils::ScheduleReflowSVG(this);
+  }
   if (aFlags.contains(ChangeFlag::TransformChanged)) {
     // make sure our cached transform matrix gets (lazily) updated
     mCanvasTM = nullptr;

@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import io
 from collections import defaultdict
+from collections.abc import Mapping
 from itertools import filterfalse
-from typing import Dict, Mapping, TypeVar
+from typing import TypeVar
 
 from jaraco.text import yield_lines
 from packaging.requirements import Requirement
@@ -22,7 +23,7 @@ from .._reqs import _StrOrIter
 
 # dict can work as an ordered set
 _T = TypeVar("_T")
-_Ordered = Dict[_T, None]
+_Ordered = dict[_T, None]
 
 
 def _prepare(
@@ -37,13 +38,13 @@ def _prepare(
 
 def _convert_extras_requirements(
     extras_require: Mapping[str, _StrOrIter],
-) -> Mapping[str, _Ordered[Requirement]]:
+) -> defaultdict[str, _Ordered[Requirement]]:
     """
     Convert requirements in `extras_require` of the form
     `"extra": ["barbazquux; {marker}"]` to
     `"extra:{marker}": ["barbazquux"]`.
     """
-    output: Mapping[str, _Ordered[Requirement]] = defaultdict(dict)
+    output = defaultdict[str, _Ordered[Requirement]](dict)
     for section, v in extras_require.items():
         # Do not strip empty sections.
         output[section]

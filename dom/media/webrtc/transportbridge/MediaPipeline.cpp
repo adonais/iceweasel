@@ -1473,6 +1473,21 @@ void MediaPipelineReceiveAudio::UpdateListener() {
   }
 }
 
+static VideoRotation FromWebrtcVideoRotation(webrtc::VideoRotation aRotation) {
+  switch (aRotation) {
+    case webrtc::kVideoRotation_0:
+      return VideoRotation::kDegree_0;
+    case webrtc::kVideoRotation_90:
+      return VideoRotation::kDegree_90;
+    case webrtc::kVideoRotation_180:
+      return VideoRotation::kDegree_180;
+    case webrtc::kVideoRotation_270:
+      return VideoRotation::kDegree_270;
+  }
+  MOZ_ASSERT_UNREACHABLE("Bad webrtc::VideoRotation value");
+  return VideoRotation::kDegree_0;
+}
+
 class MediaPipelineReceiveVideo::PipelineListener
     : public GenericReceiveListener {
  public:
@@ -1563,6 +1578,7 @@ class MediaPipelineReceiveVideo::PipelineListener
     }
 
     VideoSegment segment;
+    VideoRotation rotation = FromWebrtcVideoRotation(aVideoFrame.rotation());
     auto size = image->GetSize();
     auto processingDuration =
         aVideoFrame.processing_time()
@@ -1573,7 +1589,7 @@ class MediaPipelineReceiveVideo::PipelineListener
         image.forget(), size, principal,
         /* aForceBlack */ false, TimeStamp::Now(), processingDuration,
         aVideoFrame.rtp_timestamp(), aVideoFrame.ntp_time_ms(),
-        receiveTime ? receiveTime->us() : 0);
+        receiveTime ? receiveTime->us() : 0, rotation);
     mSource->AppendData(&segment);
   }
 

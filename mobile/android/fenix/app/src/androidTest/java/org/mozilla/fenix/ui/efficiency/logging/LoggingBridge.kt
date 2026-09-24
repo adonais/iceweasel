@@ -38,7 +38,12 @@ object LoggingBridge {
     fun createReporter(runId: String? = null): TimedReporter {
         val forwarder: StepLogger? =
             try {
-                LoggerFactory.create(runId ?: System.currentTimeMillis().toString())
+                val identityRunId = ProcessEventEnvelope.current.identity.runId
+                LoggerFactory.create(
+                    runId
+                        ?: identityRunId.takeUnless { it == ExecutionIdentity.UNASSIGNED }
+                        ?: System.currentTimeMillis().toString()
+                )
             } catch (_: Throwable) {
                 null
             }

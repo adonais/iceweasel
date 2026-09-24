@@ -20,6 +20,8 @@ import {
  */
 class Mentions {
   #editor;
+  #hasMentionCacheDoc = null;
+  #hasMentionCacheValue = false;
 
   /**
    * @param {object} editor - Multiline editor instance
@@ -91,16 +93,21 @@ class Mentions {
     const { state } = this.#editor.view;
     const { doc, schema } = state;
 
-    let foundMention = false;
+    if (this.#hasMentionCacheDoc == doc) {
+      return this.#hasMentionCacheValue;
+    }
+
+    this.#hasMentionCacheDoc = doc;
+    this.#hasMentionCacheValue = false;
     doc.nodesBetween(0, doc.content.size, node => {
       if (node.type === schema.nodes.mention) {
-        foundMention = true;
+        this.#hasMentionCacheValue = true;
         return false;
       }
       return true;
     });
 
-    return foundMention;
+    return this.#hasMentionCacheValue;
   }
 
   /**

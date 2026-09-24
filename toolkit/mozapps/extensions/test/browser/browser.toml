@@ -79,6 +79,8 @@ skip-if = [
 ["browser_history_navigation.js"]
 https_first_disabled = true
 
+["browser_html_a11y_no_horizontal_overflow.js"]
+
 ["browser_html_detail_permissions.js"]
 
 ["browser_html_detail_permissions_file_access.js"]

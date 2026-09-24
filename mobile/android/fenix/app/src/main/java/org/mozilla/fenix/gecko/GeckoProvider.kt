@@ -6,6 +6,7 @@ package org.mozilla.fenix.gecko
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.engine.gecko.autofill.GeckoAutocompleteStorageDelegate
 import mozilla.components.browser.engine.gecko.crash.GeckoCrashPullDelegate
 import mozilla.components.browser.engine.gecko.ext.toContentBlockingSetting
@@ -27,15 +28,27 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 object GeckoProvider {
     private var runtime: GeckoRuntime? = null
 
+    /**
+     * Gets the existing [GeckoRuntime] instance or creates a new one if it hasn't been initialized. This method is
+     * synchronized to ensure that only a single instance of the runtime is created.
+     *
+     * @param context The application context used to initialize the runtime and its settings.
+     * @param autofillStorage Lazy provider for credit card and address storage.
+     * @param loginStorage Lazy provider for login and password storage.
+     * @param trackingProtectionPolicy The policy defining how tracking protection should be configured.
+     * @param applicationScope The [CoroutineScope] used for background operations within the autocomplete delegate.
+     * @return The singleton [GeckoRuntime] instance.
+     */
     @Synchronized
     fun getOrCreateRuntime(
         context: Context,
         autofillStorage: Lazy<CreditCardsAddressesStorage>,
         loginStorage: Lazy<LoginsStorage>,
         trackingProtectionPolicy: TrackingProtectionPolicy,
+        applicationScope: CoroutineScope,
     ): GeckoRuntime {
         if (runtime == null) {
-            runtime = createRuntime(context, autofillStorage, loginStorage, trackingProtectionPolicy)
+            runtime = createRuntime(context, autofillStorage, loginStorage, trackingProtectionPolicy, applicationScope)
         }
 
         return runtime!!
@@ -46,6 +59,7 @@ object GeckoProvider {
         autofillStorage: Lazy<CreditCardsAddressesStorage>,
         loginStorage: Lazy<LoginsStorage>,
         policy: TrackingProtectionPolicy,
+        applicationScope: CoroutineScope,
     ): GeckoRuntime {
         val runtimeSettings = createRuntimeSettings(context, policy)
 
@@ -69,6 +83,7 @@ object GeckoProvider {
                     loginStorage = loginStorage,
                     isLoginAutofillEnabled = { context.components.settings.shouldAutofillLogins },
                 ),
+                applicationScope = applicationScope,
             )
 
         geckoRuntime.crashPullDelegate =

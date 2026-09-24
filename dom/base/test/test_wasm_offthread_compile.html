@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<!-- https://bugzilla.mozilla.org/show_bug.cgi?id=2007696 -->
+<head>
+  <meta charset="utf-8">
+  <title>Test for off-main-thread compilation of source phase wasm modules.</title>
+  <script src="/resources/testharness.js"></script>
+  <script src="/resources/testharnessreport.js"></script>
+  <script type="application/javascript">
+    // Each import needs a distinct URL, otherwise the module map returns the
+    // already-compiled module and the ScriptLoader is never consulted.
+    let counter = 0;
+    function moduleUrl() {
+      return `./file_wasm_offthread_module.sjs?n=${counter++}`;
+    }
+
+    // Source phase imports the given module and returns both the module and the
+    // compilation path the ScriptLoader reported for it.
+    async function importAndTrace(specifier) {
+      // The notification reports the resolved URL, which has no "./" prefix.
+      const url = specifier.replace(/^\.\//, "");
+      let resolveTrace;
+      const trace = new Promise(resolve => { resolveTrace = resolve; });
+
+      function observer(subject, topic, data) {
+        const param = {};
+        for (const line of data.split("\n")) {
+          const m = line.match(/^([^:]+):(.+)/);
+          if (m) {
+            param[m[1]] = m[2];
+          }
+        }
+
+        // Other scripts on the page emit notifications too; only watch the
+        // module this call is importing.
+        if (!param.url || !param.url.includes(url)) {
+          return;
+        }
+
+        if (param.event == "compile:off thread" ||
+            param.event == "compile:main thread") {
+          resolveTrace(param.event);
+        }
+      }
+
+      SpecialPowers.Services.obs.addObserver(observer, "ScriptLoaderTest");
+      try {
+        const mod = await import.source(specifier);
+        return { mod, path: await trace };
+      } finally {
+        SpecialPowers.Services.obs.removeObserver(observer, "ScriptLoaderTest");
+      }
+    }
+
+    // Setting dom.expose_test_interfaces causes the ScriptLoader to fire the
+    // notifications this test observes.
+    //
+    // The wasm ESM integration and source phase import prefs are required for
+    // `import source` to be available at all.
+    const BASE_PREFS = [
+      ['dom.expose_test_interfaces', true],
+      ['javascript.options.experimental.wasm_esm_integration', true],
+      ['javascript.options.experimental.source_phase_imports', true],
+    ];
+
+    promise_test(async function() {
+      await SpecialPowers.pushPrefEnv({set: [
+        ...BASE_PREFS,
+        ['javascript.options.parallel_parsing', true],
+      ]});
+
+      const url = moduleUrl();
+      const { mod, path } = await importAndTrace(url);
+
+      assert_equals(path, "compile:off thread",
+                    "a module over the size threshold compiles off-thread");
+      assert_true(mod instanceof WebAssembly.Module,
+                  "source phase import produces a WebAssembly.Module");
+
+      const instance = await WebAssembly.instantiate(mod);
+      assert_equals(instance.exports.f0(2, 3), 5,
+                    "an off-thread compiled function runs correctly");
+    }, "A large source phase wasm module is compiled off the main thread");
+
+    // The negative control: without it, the test above would still pass if the
+    // trace were emitted unconditionally.
+    promise_test(async function() {
+      await SpecialPowers.pushPrefEnv({set: [
+        ...BASE_PREFS,
+        ['javascript.options.parallel_parsing', false],
+      ]});
+
+      const url = moduleUrl();
+      const { mod, path } = await importAndTrace(url);
+
+      assert_equals(path, "compile:main thread",
+                    "disabling parallel parsing falls back to the main thread");
+
+      const instance = await WebAssembly.instantiate(mod);
+      assert_equals(instance.exports.f0(2, 3), 5,
+                    "a main-thread compiled function runs correctly");
+    }, "Source phase wasm compilation falls back to the main thread");
+
+    done();
+  </script>
+</head>
+<body>
+  <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=2007696">Mozilla Bug 2007696</a>
+</body>
+</html>

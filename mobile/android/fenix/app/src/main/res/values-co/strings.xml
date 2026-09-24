@@ -145,6 +145,12 @@
   <string name="home_screen_shortcut_passwords">Parolle d’intesa</string>
   <!-- Shortcut action to open uninstall survey -->
   <string name="home_screen_shortcut_uninstall_survey">Perchè disinstallà ?</string>
+  <!--
+    Recent Tabs
+
+    Header text on the homescreen for continuing to browse the most recent browser tab
+  -->
+  <string name="recent_tabs_header_2">Cuntinuà</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">Tuttu affissà</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -281,8 +287,12 @@
   <string name="browser_menu_summarize_page">Riassume a pagina</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Novu</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">Novu</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">Signalà prublemi cù stu situ</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">Aghjunghje à u gruppu</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Traduttu</string>
   <!-- Browser menu label for the print feature -->
@@ -808,6 +818,8 @@
   <string name="preferences_toolbar_shortcut">Accurtatoghju nant’à a barra d’attrezzi</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_toolbar_select_shortcut">Selezziunà un accurtatoghju</string>
+  <!-- Title of a menu option allowing to change the shortcut button shown in the toolbar -->
+  <string name="toolbar_shortcut_menu_edit_option">Mudificà l’accurtatoghju</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Mosse</string>
   <!-- Preference for settings related to visual options -->
@@ -893,6 +905,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Ùn avete micca u permessu d’impiegà stu cartulare. Pruvate di scegliene un altru.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Urganizà i scaricamenti cù un’altra appiecazione</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">Impussibule d’apre u selettore di cartulare nant’à st’apparechju.</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">Squassà o caccià scaricamenti</string>
   <string name="preferences_downloads_delete_from_device">Squassà da l’apparechju</string>
@@ -916,6 +930,12 @@
   <string name="notifications_allowed_summary">Permesse</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Micca permesse</string>
+  <!-- Preference for local network access / nearby devices in Android 17 -->
+  <string name="preferences_local_network_access">Accessu à a reta lucale / Apparechji à prussimità</string>
+  <!-- Summary for local network access preference indicating access is allowed -->
+  <string name="local_network_access_allowed_summary">Permessu</string>
+  <!-- Summary for local network access preference indicating access is not allowed -->
+  <string name="local_network_access_not_allowed_summary">Micca permessu</string>
   <!--
     Add-on Permissions
 
@@ -960,6 +980,8 @@
     Title for the customize home screen section with privacy report.
   -->
   <string name="customize_toggle_privacy_report">Raportu di cunfidenzialità</string>
+  <!-- Title for a customize home screen section. Continue is a section that displays the most recent browser tab, so users can continue browsing where they left off. -->
+  <string name="customize_toggle_continue">Cuntinuà</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Indette</string>
   <!--
@@ -973,6 +995,8 @@
   <string name="customize_toggle_pocket_sponsored">Articuli spunsurizati</string>
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">Sfonduli di screnu</string>
+  <!-- Label for the menu item that opens the customize homepage settings screen. -->
+  <string name="browser_menu_customize_homepage">Persunalizà a pagina d’accolta</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Accurtatoghji spunsurizati</string>
   <!--
@@ -1099,6 +1123,8 @@
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Pruvà di rilancià l’estensioni</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Cuntinuà cù l’estensioni disattivate</string>
+  <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
+  <string name="addon_failure_retry_action">Pruvà torna</string>
   <!--
     Account Preferences
 
@@ -1272,6 +1298,11 @@
   <string name="preference_light_theme">Chjaru</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Scuru</string>
+  <!--
+    Preference for using the OLED theme. For localization, this can be translated as "True Black", "Maximum Darkness",
+    or "Full dark" if needed.
+  -->
+  <string name="preference_oled_theme">Neru neru</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">Definitu da l’ecunumizatore d’energia di batteria</string>
   <!-- Preference for using following device theme -->
@@ -1282,6 +1313,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">Affissà a barra d’unghjette</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">Pusizione di a barra d’unghjette</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">Insù</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">Inghjò</string>
   <!--
     Gestures Preferences
 
@@ -1384,6 +1421,8 @@
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Chjusura autumatica di l’unghjette aperte</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button -->
   <string name="tab_manager_close_tabs">Chjode</string>
+  <!-- Content description for the media playback indicator in the tabs tray. -->
+  <string name="tab_indicator_media_playing">Cuntenutu multimedià in corsu di lettura</string>
   <!--
     Opening screen
 
@@ -1418,6 +1457,16 @@
   <string name="preferences_inactive_tabs">Dispiazzà e vechje unghjette in a sezzione inattiva</string>
   <!-- Title of inactive tabs preference -->
   <string name="preferences_inactive_tabs_title">L’unghjette chì vo ùn avete micca viste dapoi duie settimane sò dispiazzate in a sezzione inattiva.</string>
+  <!-- Title for the preference to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_feature">Attivà i gruppi d’unghjette</string>
+  <!--
+    Privacy report
+
+    Category header of a preference that allows a user to enable or disable the privacy report feature
+  -->
+  <string name="preferences_privacy_report">Raportu di cunfidenzialità</string>
+  <!-- Title of the privacy report preference that allows a user to enable or disable the feature -->
+  <string name="preferences_privacy_report_title">Attivà u raportu di cunfidenzialità</string>
   <!--
     Studies
 
@@ -1623,6 +1672,36 @@
   <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Squassà u gruppu</string>
   <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Abbandunà</string>
+  <!-- Content description for the three dot button next to a tab group" -->
+  <string name="tab_group_three_dot_button_content_description">Ozzioni addiziunale</string>
+  <!-- Text shown on the edit button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_edit">Mudificà</string>
+  <!-- Text shown on the ungroup button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_ungroup">Disunisce</string>
+  <!-- Text shown on the delete button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_delete">Squassà</string>
+  <!-- Text shown on the share button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_share">Sparte</string>
+  <!-- Text shown on the close button for a tab group on the three dot menu -->
+  <string name="tab_group_three_dot_menu_close">Chjode</string>
+  <!-- Title for the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_title">Disunisce u gruppu d’unghjette\u00a0?</string>
+  <!-- Text shown in the body of the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_body">L’unghjette steranu aperte nant’à st’apparechju, ma u gruppu serà squassatu.</string>
+  <!-- Text shown on the Don't Ask Again checkbox button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_dont_ask_again">Ùn dumandà più</string>
+  <!-- Text shown on the confirm button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_confirm">Disunisce</string>
+  <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_cancel">Abbandunà</string>
+  <!-- Custom accessibility action to reorder a tab up rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_up">Dispiazzà l’unghjetta insù</string>
+  <!-- Custom accessibility action to reorder a tab left rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_left">Dispiazzà l’unghjetta à manu manca</string>
+  <!-- Custom accessibility action to reorder a tab right rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_right">Dispiazzà l’unghjetta à manu diritta</string>
+  <!-- Custom accessibility action to reorder a tab down rather than dragging. -->
+  <string name="custom_accessibility_action_reorder_tab_down">Dispiazzà l’unghjetta inghjò</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -1896,6 +1975,8 @@
   <string name="webcompat_reporter_description_error">Ci vole à stampittà omancu 10 caratteri</string>
   <!-- The label/title of a mandatory field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_mandatory_description">Discrivite u prublema in detagliu per aiutacci à determinane l’origine</string>
+  <!-- The label/title of a optional field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_optional_description">Discrivite u prublema in detagliu per aiutacci à determinane l’origine (ozzionale)</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Abbandunà</string>
   <!-- The button text for the send button to submit the provided form data. -->
@@ -2298,6 +2379,10 @@
   <string name="sync_sign_in">Cunnettesi à Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Mandà à tutti l’apparechji</string>
+  <!-- Text displayed when no other sync devices are available for link sharing -->
+  <string name="sync_no_devices_available">Nisunu apparechju dispunibule</string>
+  <!-- Text displayed when no other sync devices are available for link sharing. -->
+  <string name="sync_no_devices_available_description">Tutti l’apparechji cunnessi è sincrunizati cù stu contu seranu affissati quì.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Ricunnettesi à Sync</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -2322,6 +2407,20 @@
   <string name="sent_from_firefox_template" tools:ignore="UnusedResources">%1$s\n\nMandatu da %2$s 🦊 Pruvate u navigatore mobile : %3$s</string>
   <!-- A short message template for the shared link with a footer. %1$s is the shared link, %2$s is the app name (e.g. Firefox) and %3$s is a download link for the app. -->
   <string name="sent_from_firefox_template_short" tools:ignore="UnusedResources">%1$s\n\nMandatu da %2$s 🦊 %3$s</string>
+  <!-- Send tab to synced devices: Authentication error title - Message asking the user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_title">Ricunnittitevi per mandà unghjette trà l’apparechji</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to re-authenticate -->
+  <string name="sync_send_tab_error_auth_button">Cunnettesi</string>
+  <!-- Send tab to synced devices: Authentication error button - Allows user to remove the currently connected account -->
+  <string name="sync_send_tab_error_auth_remove_account">Caccià u contu</string>
+  <!-- Send tab to synced devices: Empty state title - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_title">Nisunu apparechju cunnessu</string>
+  <!-- Send tab to synced devices: Empty state message - Displayed when the user has no synced devices -->
+  <string name="sync_send_tab_empty_state_description" tools:ignore="BrandUsage">Per mandà un’unghjetta, cunnittitevi à u vostru contu Firefox nant’à omancu un altru apparechju.</string>
+  <!-- Send tab to synced devices: Connectivity Error title -->
+  <string name="sync_send_tab_error_connection_title">Verificate a vostra cunnessione internet</string>
+  <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
+  <string name="sync_send_tab_error_connection_text">Eppò pruvate torna di mandà a vostra unghjetta.</string>
   <!--
     Notifications
 
@@ -2343,6 +2442,18 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Fate di Firefox u vostru navigatore predefinitu</string>
+  <!--
+    Privacy report notification
+
+    Name of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app.
+  -->
+  <string name="notification_privacy_report_channel_name">Raportu di cunfidenzialità</string>
+  <!-- Description of the weekly privacy report notification channel. Displayed in the "App notifications" system settings for the app. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_channel_description">%1$s vi mostra quantu perseguitatori sò stati bluccati durante a vostra navigazione.</string>
+  <!-- Body text for the weekly privacy report notification for when trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_body_has_trackers">Cuntinuate à navigà. %1$s cuntinuerà à bluccalli.</string>
+  <!-- Headline text of the weekly privacy report notification for when no trackers have been blocked. %1$s is the app name (e.g. Firefox) -->
+  <string name="notification_privacy_report_headline_no_trackers">%1$s blocca i perseguitatori durante a vostra navigazione. I viderete quì.</string>
   <!--
     Survey
 
@@ -2911,6 +3022,8 @@
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_settings_title">VPN integrata</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
@@ -2949,6 +3062,8 @@
   <string name="ip_protection_menu_paused">In pausa</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Sbagliu</string>
+  <!-- Badge label shown in the VPN menu item when the user is eligible for the feature but needs to authenticate / authorize to enable it -->
+  <string name="ip_protection_menu_try_vpn_cta">Pruvalla di rigalu</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Apre i parametri VPN</string>
   <!--
@@ -2965,6 +3080,10 @@
   <string name="ip_protection_toolbar_pill_label">VPN attivata</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description">A VPN hè attivata.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN turns off -->
+  <string name="ip_protection_toolbar_pill_label_off">VPN disattivata</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has turned off -->
+  <string name="ip_protection_toolbar_pill_description_off">A VPN hè disattivata.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Principià</string>
   <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
@@ -2991,11 +3110,15 @@
   <string name="ip_protection_onboarding_not_now_button">Micca subitu</string>
   <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
   <string name="ip_protection_connection_error_snackbar">Ùn pò micca cunnettassi à a VPN. Pruvate torna trà qualchì minutu.</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the VPN location has been reset due to the previously selected VPN location being no longer available. -->
+  <string name="ip_protection_location_selection_reset_snackbar">A pusizione VPN selezziunata hè indispunibule. Cunnessione à a pusizione ricumandata.</string>
   <!--
     Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">Avete impiegatu %1$d Go di dati VPN. L’accessu serà ristabilitu u mese chì vene.</string>
+  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+  <string name="ip_protection_open_settings_snackbar_action">Parametri</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_data_limit_reached_snackbar_action">Parametri</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
@@ -3014,10 +3137,20 @@
   <string name="ip_protection_location_picker_title" tools:ignore="UnusedResources">Sceglie a pusizione di a VPN</string>
   <!-- Description for what it means to use the Recommended setting and let the app automatically pick the best server location. -->
   <string name="ip_protection_location_fastest_description" tools:ignore="BrandUsage">Firefox trova a pusizione a più rapida</string>
+  <!-- Description for an unavailable VPN location in the location list. -->
+  <string name="ip_protection_location_unavailable_description">Indispunibule</string>
   <!-- Error message shown when the selected browser VPN location is unavailable. -->
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Pusizione indispunibule. Sciglite un’altra pusizione.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
   <string name="ip_protection_location_unavailable_recommended_snackbar" tools:ignore="UnusedResources">A pusizione VPN selezziunata hè indispunibule. A cunnessione hè stata fatta à a pusizione ricumandata.</string>
+  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_title">Pusizioni indispunibule</string>
+  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_description">Cunnessione à a pusizione ricumandata.</string>
+  <!-- Title for the browser VPN location selection screen (displayed in the app bar) -->
+  <string name="ip_protection_locations_title">Sceglie a pusizione di a VPN</string>
+  <!-- Content description for the browser VPN location selection screen top bar back button -->
+  <string name="ip_protection_locations_navigate_back_button_content_description">Navigazione in daretu</string>
   <!--
     Autofill
 
@@ -3301,6 +3434,16 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Affissà tutti l’accurtatoghji</string>
+  <!--
+    Label for the button in the shortcuts home screen section that expands the section to show
+    every shortcut.
+  -->
+  <string name="homepage_shortcuts_show_all">Tuttu affissà</string>
+  <!--
+    Label for the button in the shortcuts home screen section that collapses the section back
+    to showing only the first shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_less">Menu detaglii</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Aghjunghje un accurtatoghju</string>
   <!-- Title for the "Add to homepage" bottom sheet. -->
@@ -4307,6 +4450,16 @@
   <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Pulitica di cunfidenzialità</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Sapene di più</string>
+  <!--
+    Collections migration homepage card
+
+    Title shown on the collections to tab groups migration card on the homepage.
+  -->
+  <string name="collections_migration_homepage_banner_title">Oramai, e cullezzioni sò gruppi</string>
+  <!-- Message shown on the collections to tab groups migration card on the homepage. -->
+  <string name="collections_migration_homepage_card_message">Ci hè una manera più simplice d’urganizà e vostre unghjette</string>
+  <!-- Link text shown on the collections to tab groups migration card that opens the tab groups page in the tab manager. -->
+  <string name="collections_migration_homepage_card_link">Affissà i mo gruppi d’unghjette</string>
   <!-- Google Lens prototype related strings -->
   <string name="preferences_debug_settings_google_lens_integration">Attivà l’integrazione cù Google Lens</string>
   <!-- Lens image search button content description -->
@@ -4341,6 +4494,16 @@
   <string name="lens_camera_mode_qr">Analiza di codice QR</string>
   <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
   <string name="lens_camera_qr_no_code_found">Nisunu codice QR trovu in a fiura</string>
+  <!-- Title of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_title">Truvatelu cù Google Lens</string>
+  <!-- Description of the bottom sheet shown the first time the user opens the Google Lens camera screen -->
+  <string name="lens_opt_out_description">Sciglite una fiura o impiegate u vostru apparechju’fotò per ottene risultati cù Google Lens.</string>
+  <!-- Text of the link in the first-run Google Lens bottom sheet that opens the Search settings page -->
+  <string name="lens_opt_out_settings_link">Parametri Google Lens</string>
+  <!-- Button in the first-run Google Lens bottom sheet that dismisses it and starts the camera -->
+  <string name="lens_opt_out_try_it_now_button">Pruvà subitu</string>
+  <!-- Button in the first-run Google Lens bottom sheet that leaves Google Lens without using it -->
+  <string name="lens_opt_out_not_now_button">Micca subitu</string>
   <!--
     Firefox Labs
 
@@ -4381,4 +4544,34 @@
   <string name="firefox_labs_feature_conflict">Sta funzione ùn hè micca dispunibule à a prova.</string>
   <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
   <string name="firefox_labs_no_labs_available_description">Ora, ùn ci hè alcuna funzione esperimentale da pruvà</string>
+  <!-- Title of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_title" tools:ignore="UnusedResources">Isulamentu di situ web</string>
+  <!-- Description of the Firefox Labs Sandboxing experiment. -->
+  <string name="firefox_labs_website_isolation_description" tools:ignore="UnusedResources">Una prutezzione addiziunale trà i siti web chì vi aiuta à prutege i vostri dati d’una unghjetta à l’altra. L’isulamentu pò avè un effettu nant’à e perfurmenze, a stabilità, a cumpatibilità di i siti web è cumu a cronolugia di navigazione hè arregistrata.</string>
+  <!--
+    PDF viewer toolbar and buttons
+
+    Content description for accessibility (used by screen readers): Description for the button that triggers the start of a signature workflow on the PDF displayed on the screen.
+  -->
+  <string name="pdf_tools_sign_content_description">Firmà u PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description of the button that downloads the PDF displayed on the screen to the user's device. -->
+  <string name="pdf_tools_download_content_description">Scaricà u PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the printing dialogue window for the PDF displayed on the screen. -->
+  <string name="pdf_tools_print_content_description">Stampà u PDF</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that opens the sharing options for the PDF being displayed on the screen. -->
+  <string name="pdf_tools_share_content_description">Sparte u PDF</string>
+  <!--
+    PDF viewer add a signature dialog
+
+    The title of the dialog for adding a signature to a PDF.
+  -->
+  <string name="pdf_tools_signature_title">Aghjuntu d’una segnatura</string>
+  <!-- Content description for accessibility (used by screen readers): Description for the button that closes the dialog for adding a signature to a PDF. -->
+  <string name="pdf_tools_signature_close_content_description">Chjode u pannellu di segnatura di u PDF</string>
+  <!-- The placeholder text shown in the empty text input field where users can enter the signature they wish to add to a PDF. -->
+  <string name="pdf_tools_signature_placeholder">Stampittà a segnatura</string>
+  <!-- The text for the button that erases the text the user entered in the "add a signature" field. -->
+  <string name="pdf_tools_signature_clear_button">Squassà</string>
+  <!-- The text for the button that adds the signature the user has typed to the PDF. -->
+  <string name="pdf_tools_signature_add_button">Aghjunghje</string>
 </resources>

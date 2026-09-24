@@ -26,7 +26,7 @@ add_task(async function test_installEngine_with_updates_disabled() {
     updateFile: "opensearch/simple.xml",
   };
 
-  Services.prefs.setBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "update", false);
+  Services.prefs.setBoolPref("browser.search.update", false);
   Assert.ok(
     !("search-engine-update-timer" in timerManager.wrappedJSObject._timers),
     "Should not have registered the update timer already"
@@ -55,7 +55,7 @@ add_task(async function test_installEngine_with_updates_enabled() {
     imageURL: "data:image/png;base64,Zm9v", // engineMaker sets to te resolution to 16x16.
   };
 
-  Services.prefs.setBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "update", true);
+  Services.prefs.setBoolPref("browser.search.update", true);
 
   Assert.ok(
     !("search-engine-update-timer" in timerManager.wrappedJSObject._timers),

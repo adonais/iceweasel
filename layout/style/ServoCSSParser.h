@@ -72,37 +72,38 @@ class ServoCSSParser {
   static bool IsValidCSSImage(const nsACString& aValue);
 
   /**
-   * Computes an nscolor from the given CSS <color> value.
+   * Computes an nscolor from the given CSS <color> value, with black used as
+   * current color.
    *
    * @param aStyleData The style data to compute system colors and other special
    *   color values.
-   * @param aCurrentColor The color value that currentcolor should compute to.
    * @param aValue The CSS <color> value.
    * @param aResultColor The resulting computed color value.
    * @param aWasCurrentColor Whether aValue was currentcolor. Can be nullptr
    *   if the caller doesn't care.
+   *
+   * FIXME(emilio): This argument seems fundamentally wrong, it should really be
+   * "depends on currentcolor". But that means we probably need to keep the
+   * whole StyleColor around.
+   *
    * @param aLoader The CSS loader for document we're parsing a color for,
    *   so that parse errors can be reported to the console. If nullptr, errors
    *   won't be reported to the console.
    * @return Whether aValue was successfully parsed and aResultColor was set.
    */
   static bool ComputeColor(const StylePerDocumentStyleData* aStyleData,
-                           nscolor aCurrentColor, const nsACString& aValue,
-                           nscolor* aResultColor,
+                           const nsACString& aValue, nscolor* aResultColor,
                            bool* aWasCurrentColor = nullptr,
                            css::Loader* aLoader = nullptr);
 
   /**
-   * Computes a StyleAbsoluteColor from the given CSS <color> value.
-   *
-   * @param aStyleData The style data to compute system colors and other special
-   *   color values.
-   * @param aValue The CSS <color> value.
-   * @return The resulting computed color value. For invalid color value,
-   *   Nothing() will be returned.
+   * Computes a StyleAbsoluteColor from the given CSS <color> value, with black
+   * used as current color. Same argument meanings as the function above, except
+   * returned as a Maybe<> rather than bool + out-param.
    */
   static Maybe<StyleAbsoluteColor> ComputeAbsoluteColor(
-      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue);
+      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
+      bool* aWasCurrentColor = nullptr, css::Loader* aLoader = nullptr);
 
   /**
   * Takes a CSS <color> and convert it to another color space.

@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>A page with PDFs in frames it doesn't display</title>
+  </head>
+  <body>
+    <dialog>
+      <iframe src="file_pdfjs_test.pdf?dialog" width="600" height="400"></iframe>
+    </dialog>
+    <div style="display: none">
+      <iframe src="file_pdfjs_test.pdf?hidden" width="600" height="400"></iframe>
+    </div>
+    <iframe src="file_pdfjs_test.pdf?shown" width="600" height="400"></iframe>
+  </body>
+</html>

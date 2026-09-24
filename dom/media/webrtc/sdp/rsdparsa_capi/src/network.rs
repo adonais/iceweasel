@@ -9,6 +9,7 @@ use nsstring::nsACString;
 use rsdparsa::address::{Address, AddressType, AddressTyped, ExplicitlyTypedAddress};
 use rsdparsa::{SdpBandwidth, SdpConnection, SdpOrigin};
 use std::convert::TryFrom;
+use thin_vec::ThinVec;
 use types::StringView;
 
 #[repr(C)]
@@ -214,6 +215,34 @@ pub fn get_bandwidth(bandwidths: &Vec<SdpBandwidth>, bandwidth_type: &nsACString
         }
     }
     0
+}
+
+#[repr(C)]
+pub struct RustSdpBandwidth {
+    pub name: StringView,
+    pub value: u32,
+}
+
+/// Copies out each bandwidth as a name/value pair. Bandwidths whose modifier
+/// is not understood are skipped: RFC 4566 requires parsers to ignore those,
+/// so they must not reach a reserialized sdp either (see bug 1264726).
+#[no_mangle]
+pub extern "C" fn sdp_get_bandwidths(bw: &Vec<SdpBandwidth>, ret: &mut ThinVec<RustSdpBandwidth>) {
+    ret.extend(bw.iter().filter_map(|bandwidth| match *bandwidth {
+        SdpBandwidth::As(val) => Some(RustSdpBandwidth {
+            name: StringView::from("AS"),
+            value: val,
+        }),
+        SdpBandwidth::Ct(val) => Some(RustSdpBandwidth {
+            name: StringView::from("CT"),
+            value: val,
+        }),
+        SdpBandwidth::Tias(val) => Some(RustSdpBandwidth {
+            name: StringView::from("TIAS"),
+            value: val,
+        }),
+        SdpBandwidth::Unknown(..) => None,
+    }));
 }
 
 #[no_mangle]

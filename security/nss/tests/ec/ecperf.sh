@@ -41,10 +41,15 @@ ecperf_cleanup()
 
 ecperf_init
 ECPERF_OUT=$(ecperf 2>&1)
-echo "$ECPERF_OUT"
-ECPERF_OUT=`echo $ECPERF_OUT | grep -i 'failed\|Assertion failure'`
+ECPERF_RV=$?
+# Tee to the log so that cleanup.sh sees sanitizer diagnostics; a bare echo
+# only reaches the console.
+echo "$ECPERF_OUT" | tee -a ${LOGFILE}
+ECPERF_ERR=`echo "$ECPERF_OUT" | grep -i 'failed\|Assertion failure'`
 # TODO: this is a perf test we don't check for performance here but only failed
-if [ -n "$ECPERF_OUT" ] ; then
+# A sanitizer abort kills ecperf before it prints anything, so the exit status
+# has to be checked as well as the output.
+if [ ${ECPERF_RV} -ne 0 -o -n "$ECPERF_ERR" ] ; then
   html_failed "ec(perf) test"
 else
   html_passed "ec(perf) test"

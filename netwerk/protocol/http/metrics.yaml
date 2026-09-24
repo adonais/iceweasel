@@ -1982,6 +1982,20 @@ http:
       - necko@mozilla.com
     expires: never
 
+  altsvc_h3_expired_staleness:
+    type: timing_distribution
+    time_unit: second
+    description: >
+      When an expired HTTP/3 Alt-Svc mapping is discarded on lookup, how long
+      past its expiry (TTL) it was, i.e. how stale the discarded mapping was.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063577
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2063577
+    notification_emails:
+      - necko@mozilla.com
+    expires: never
+
   response_version:
     type: custom_distribution
     description: >

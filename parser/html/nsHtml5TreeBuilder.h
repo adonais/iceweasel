@@ -405,6 +405,7 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   void removeFromStack(int32_t pos);
   void removeFromStack(nsHtml5StackNode* node);
   void removeFromListOfActiveFormattingElements(int32_t pos);
+  void anyOtherEndTagInBody(nsAtom* name);
   bool adoptionAgencyEndTag(nsAtom* name);
   void insertIntoStack(nsHtml5StackNode* node, int32_t position);
   void insertIntoListOfActiveFormattingElements(
@@ -442,7 +443,8 @@ class nsHtml5TreeBuilder : public nsAHtml5TreeBuilderState {
   nsHtml5StackNode* createStackNode(nsHtml5ElementName* elementName,
                                     nsIContentHandle* node, nsAtom* popName,
                                     bool markAsIntegrationPoint);
-  void insertIntoFosterParent(nsIContentHandle* child);
+  void insertIntoFosterParent(nsIContentHandle* child,
+                              nsIContentHandle* furthestBlock);
   nsIContentHandle* createAndInsertFosterParentedElement(
       int32_t ns, nsAtom* name, nsHtml5HtmlAttributes* attributes,
       nsHtml5ContentCreatorFunction creator);

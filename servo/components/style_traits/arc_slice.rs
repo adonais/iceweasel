@@ -91,10 +91,8 @@ impl<T> ArcSlice<T> {
     /// Creates an Arc for a slice using the given iterator to generate the
     /// slice.
     #[inline]
-    pub fn from_iter<I>(items: I) -> Self
-    where
-        I: Iterator<Item = T> + ExactSizeIterator,
-    {
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_iter(items: impl ExactSizeIterator<Item = T>) -> Self {
         if items.len() == 0 {
             return Self::default();
         }
@@ -105,10 +103,7 @@ impl<T> ArcSlice<T> {
     /// slice, and marks the arc as intentionally leaked from the refcount
     /// logging point of view.
     #[inline]
-    pub fn from_iter_leaked<I>(items: I) -> Self
-    where
-        I: Iterator<Item = T> + ExactSizeIterator,
-    {
+    pub fn from_iter_leaked(items: impl ExactSizeIterator<Item = T>) -> Self {
         let arc = ThinArc::from_header_and_iter(ARC_SLICE_CANARY, items);
         arc.mark_as_intentionally_leaked();
         ArcSlice(arc)
@@ -152,7 +147,7 @@ impl<T: MallocSizeOf> MallocUnconditionalSizeOf for ArcSlice<T> {
 
 impl<T: Hash> Hash for ArcSlice<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        T::hash_slice(&**self, state)
+        T::hash_slice(self, state)
     }
 }
 

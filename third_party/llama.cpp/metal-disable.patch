@@ -1,0 +1,26 @@
+--- a/ggml/include/ggml-metal.h
++++ b/ggml/include/ggml-metal.h
+@@ -56,6 +56,10 @@
+
+ GGML_BACKEND_API ggml_backend_reg_t ggml_backend_metal_reg(void);
+
++// register no Metal device, so that Metal is never brought up
++// must be called before the backend registry is first used
++GGML_BACKEND_API void ggml_backend_metal_disable(void);
++
+ #ifdef __cplusplus
+ }
+ #endif
+--- a/ggml/src/ggml-metal/ggml-metal.cpp
++++ b/ggml/src/ggml-metal/ggml-metal.cpp
+@@ -18,6 +18,10 @@
+ // note: can be overridden with GGML_METAL_DEVICES env to simulate virtual devices
+ static int g_devices = 1;
+
++void ggml_backend_metal_disable(void) {
++    g_devices = 0;
++}
++
+ // forward declaration
+ static bool ggml_backend_buffer_is_metal(ggml_backend_buffer_t buffer);
+

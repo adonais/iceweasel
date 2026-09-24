@@ -193,22 +193,11 @@ static dom::TabId GetTabId(dom::WindowGlobalParent* aWGP) {
 }
 
 /* static */
-bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
+void CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
                               const dom::DOMRect* aRect, float aScale,
                               nscolor aBackgroundColor,
                               CrossProcessPaintFlags aFlags,
                               dom::Promise* aPromise) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  aScale = std::max(aScale, kMinPaintScale);
-
-  CPP_LOG(
-      "Starting paint. "
-      "[wgp=%p, "
-      "scale=%f, "
-      "color=(%u, %u, %u, %u)]\n",
-      aRoot, aScale, NS_GET_R(aBackgroundColor), NS_GET_G(aBackgroundColor),
-      NS_GET_B(aBackgroundColor), NS_GET_A(aBackgroundColor));
-
   Maybe<IntRect> rect;
   if (aRect) {
     rect =
@@ -216,90 +205,25 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
                                (float)aRect->Width(), (float)aRect->Height()));
   }
 
-  if (rect && rect->IsEmpty()) {
-    return false;
-  }
-
-  dom::TabId rootTabId = GetTabId(aRoot);
-
-  RefPtr<CrossProcessPaint> resolver =
-      new CrossProcessPaint(aScale, rootTabId, aRoot->InnerWindowId(), aFlags);
-  RefPtr<CrossProcessPaint::ResolvePromise> promise;
-  if (aRoot->IsInProcess()) {
-    RefPtr<dom::WindowGlobalChild> childActor = aRoot->GetChildActor();
-    if (!childActor) {
-      return false;
-    }
-
-    // `BrowsingContext()` cannot be nullptr.
-    RefPtr<dom::BrowsingContext> bc = childActor->BrowsingContext();
-
-    promise = resolver->Init();
-    resolver->mPendingFragments += 1;
-    resolver->ReceiveFragment(
-        aRoot,
-        PaintFragment::Record(bc, rect, aScale, aBackgroundColor, aFlags));
-  } else {
-    promise = resolver->Init();
-    resolver->QueuePaint(aRoot, rect, aBackgroundColor, aFlags);
-  }
-
-  promise->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [promise = RefPtr{aPromise},
-       rootTabId](ResolvedFragmentMap&& aFragments) {
-        RefPtr<RecordedDependentSurface> root = aFragments.Get(rootTabId);
-        CPP_LOG("Resolved all fragments.\n");
-
-        // Create the destination draw target
-        RefPtr<DrawTarget> drawTarget =
-            gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-                root->mSize, SurfaceFormat::B8G8R8A8);
-        if (!drawTarget || !drawTarget->IsValid()) {
-          CPP_LOG("Couldn't create (%d x %d) surface for fragment %" PRIu64
-                  ".\n",
-                  root->mSize.width, root->mSize.height, (uint64_t)rootTabId);
-          promise->MaybeReject(NS_ERROR_FAILURE);
-          return;
-        }
-
-        // Translate the recording using our child tabs
-        {
-          InlineTranslator translator(drawTarget, nullptr);
-          translator.SetDependentSurfaces(&aFragments);
-          if (!translator.TranslateRecording((char*)root->mRecording.mData,
-                                             root->mRecording.mLen)) {
-            CPP_LOG("Couldn't translate recording for fragment %" PRIu64 ".\n",
-                    (uint64_t)rootTabId);
-            promise->MaybeReject(NS_ERROR_FAILURE);
-            return;
-          }
-        }
-
-        RefPtr<SourceSurface> snapshot = drawTarget->Snapshot();
-        if (!snapshot) {
-          promise->MaybeReject(NS_ERROR_FAILURE);
-          return;
-        }
-
-        ErrorResult rv;
-        RefPtr<dom::ImageBitmap> bitmap =
-            dom::ImageBitmap::CreateFromSourceSurface(
-                promise->GetParentObject(), snapshot, rv);
-
-        if (!rv.Failed()) {
-          CPP_LOG("Success, fulfilling promise.\n");
-          promise->MaybeResolve(bitmap);
-        } else {
-          CPP_LOG("Couldn't create ImageBitmap for SourceSurface.\n");
-          promise->MaybeReject(std::move(rv));
-        }
-      },
-      [promise = RefPtr{aPromise}](const nsresult& aRv) {
-        promise->MaybeReject(aRv);
-      });
-
-  return true;
+  Start(aRoot, rect, aScale, aBackgroundColor, aFlags)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [promise = RefPtr{aPromise}](RefPtr<SourceSurface>&& aSnapshot) {
+            ErrorResult rv;
+            RefPtr<dom::ImageBitmap> bitmap =
+                dom::ImageBitmap::CreateFromSourceSurface(
+                    promise->GetParentObject(), aSnapshot, rv);
+            if (!rv.Failed()) {
+              CPP_LOG("Success, fulfilling promise.\n");
+              promise->MaybeResolve(bitmap);
+            } else {
+              CPP_LOG("Couldn't create ImageBitmap for SourceSurface.\n");
+              promise->MaybeReject(std::move(rv));
+            }
+          },
+          [promise = RefPtr{aPromise}](const nsresult& aRv) {
+            promise->MaybeReject(aRv);
+          });
 }
 
 /* static */
@@ -321,6 +245,97 @@ RefPtr<CrossProcessPaint::ResolvePromise> CrossProcessPaint::Start(
   resolver->MaybeResolve();
 
   return promise;
+}
+
+/* static */
+RefPtr<CrossProcessPaint::SnapshotPromise> CrossProcessPaint::Start(
+    dom::WindowGlobalParent* aRoot, const Maybe<IntRect>& aRect, float aScale,
+    nscolor aBackgroundColor, CrossProcessPaintFlags aFlags) {
+  CPP_LOG(
+      "Starting paint. "
+      "[wgp=%p, "
+      "scale=%f, "
+      "color=(%u, %u, %u, %u)]\n",
+      aRoot, aScale, NS_GET_R(aBackgroundColor), NS_GET_G(aBackgroundColor),
+      NS_GET_B(aBackgroundColor), NS_GET_A(aBackgroundColor));
+
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  aScale = std::max(aScale, kMinPaintScale);
+
+  if (aRect && aRect->IsEmpty()) {
+    return SnapshotPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
+  }
+
+  dom::TabId rootTabId = GetTabId(aRoot);
+  RefPtr<CrossProcessPaint> resolver =
+      new CrossProcessPaint(aScale, rootTabId, aRoot->InnerWindowId(), aFlags);
+  RefPtr<ResolvePromise> promise;
+  if (aRoot->IsInProcess()) {
+    RefPtr<dom::WindowGlobalChild> childActor = aRoot->GetChildActor();
+    if (!childActor) {
+      return SnapshotPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+    }
+
+    // `BrowsingContext()` cannot be nullptr.
+    RefPtr<dom::BrowsingContext> bc = childActor->BrowsingContext();
+
+    promise = resolver->Init();
+    resolver->mPendingFragments += 1;
+    resolver->ReceiveFragment(
+        aRoot,
+        PaintFragment::Record(bc, aRect, aScale, aBackgroundColor, aFlags));
+  } else {
+    promise = resolver->Init();
+    resolver->QueuePaint(aRoot, aRect, aBackgroundColor, aFlags);
+  }
+
+  auto snapshotPromise = MakeRefPtr<SnapshotPromise::Private>(__func__);
+  promise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [snapshotPromise, rootTabId](ResolvedFragmentMap&& aFragments) {
+        RefPtr<RecordedDependentSurface> root = aFragments.Get(rootTabId);
+        if (!root) {
+          snapshotPromise->Reject(NS_ERROR_FAILURE, __func__);
+          return;
+        }
+
+        // Create the destination draw target.
+        RefPtr<DrawTarget> drawTarget =
+            gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+                root->mSize, SurfaceFormat::B8G8R8A8);
+        if (!drawTarget || !drawTarget->IsValid()) {
+          CPP_LOG("Couldn't create (%d x %d) surface for fragment %" PRIu64
+                  ".\n",
+                  root->mSize.width, root->mSize.height, (uint64_t)rootTabId);
+          snapshotPromise->Reject(NS_ERROR_FAILURE, __func__);
+          return;
+        }
+
+        // Translate the recording using our child tabs.
+        {
+          InlineTranslator translator(drawTarget, nullptr);
+          translator.SetDependentSurfaces(&aFragments);
+          if (!translator.TranslateRecording((char*)root->mRecording.mData,
+                                             root->mRecording.mLen)) {
+            CPP_LOG("Couldn't translate recording for fragment %" PRIu64 ".\n",
+                    (uint64_t)rootTabId);
+            snapshotPromise->Reject(NS_ERROR_FAILURE, __func__);
+            return;
+          }
+        }
+
+        RefPtr<SourceSurface> snapshot = drawTarget->Snapshot();
+        if (!snapshot) {
+          snapshotPromise->Reject(NS_ERROR_FAILURE, __func__);
+          return;
+        }
+        snapshotPromise->Resolve(std::move(snapshot), __func__);
+      },
+      [snapshotPromise](const nsresult& aRv) {
+        snapshotPromise->Reject(aRv, __func__);
+      });
+
+  return snapshotPromise;
 }
 
 CrossProcessPaint::CrossProcessPaint(float aScale, dom::TabId aRootTabId,

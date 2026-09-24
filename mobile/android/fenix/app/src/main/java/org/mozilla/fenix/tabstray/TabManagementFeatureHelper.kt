@@ -28,6 +28,9 @@ interface TabManagementFeatureHelper {
 
     /** Control whether reorder happens live during a drag and drop action for Tab Groups. */
     val tabGroupsLiveReorderEnabled: Boolean
+
+    /** Whether the Tab Groups strip is shown while the active tab is in a group. */
+    val tabGroupsStripEnabled: Boolean
 }
 
 /** The default implementation of [TabManagementFeatureHelper]. */
@@ -46,10 +49,13 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
         get() = FxNimbus.features.tabGroupsLiveReorder.value().enabled
 
     override val ungroupTabGroupEnabled: Boolean
-        get() = false
+        get() = Config.channel.isDebug || FxNimbus.features.tabGroupsUngroup.value().enabled
 
     override val tabGroupsOnboardingEnabled: Boolean
         get() = Config.channel.isDebug || FxNimbus.features.tabGroupsOnboarding.value().enabled
+
+    override val tabGroupsStripEnabled: Boolean
+        get() = Config.channel.isDebug || FxNimbus.features.tabGroupsStrip.value().enabled
 }
 
 val LocalTabManagementFeatureHelper =

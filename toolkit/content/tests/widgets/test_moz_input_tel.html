@@ -36,6 +36,10 @@
       add_task(async function testMozInputTelEvents() {
         await testHelpers.testTextBasedInputEvents("moz-input-tel");
       });
+
+      add_task(async function testMozInputTelRequiredProperty() {
+        await testHelpers.verifyRequired("moz-input-tel");
+      });
     </script>
   </head>
   <body>

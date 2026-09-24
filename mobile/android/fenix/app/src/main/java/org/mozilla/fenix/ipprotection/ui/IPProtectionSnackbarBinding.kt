@@ -4,7 +4,8 @@
 
 package org.mozilla.fenix.ipprotection.ui
 
-import com.google.android.material.snackbar.Snackbar
+import android.content.Context
+import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -12,12 +13,17 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.ui.widgets.SnackbarDelegate
+import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
+import org.mozilla.fenix.utils.getSnackbarTimeout
 
 /**
  * A binding for observing the [SnackbarState] for IP Protection related states in the [AppStore].
@@ -29,11 +35,15 @@ import org.mozilla.fenix.snackbar.SnackbarBinding
  * the menu consumed the bookmark and immediately dismissed itself, the snackbar would not get visible for the user).
  *
  * @param appStore The [AppStore] used to observe the [SnackbarState].
+ * @param context The Android [Context] used for system interactions and accessing resources.
+ * @param navController [NavController] used for navigation.
  * @param snackbarDelegate The [SnackbarDelegate] used to display a snackbar.
  * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
  */
 class IPProtectionSnackbarBinding(
     private val appStore: AppStore,
+    private val context: Context,
+    private val navController: NavController,
     private val snackbarDelegate: FenixSnackbarDelegate,
     mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : AbstractBinding<AppState>(appStore, mainDispatcher) {
@@ -44,17 +54,37 @@ class IPProtectionSnackbarBinding(
             .distinctUntilChanged()
             .collect { state ->
                 when (state) {
-                    is SnackbarState.IPProtectionShowSnackbar -> state.title
-                    is SnackbarState.IPProtectionDataLimitReached -> state.title
-                    else -> null
-                }?.let {
-                    snackbarDelegate.show(
-                        text = it,
-                        duration = Snackbar.LENGTH_SHORT,
-                    )
-
-                    appStore.dispatch(SnackbarAction.SnackbarShown)
+                    is SnackbarState.IPProtectionShowSnackbar -> showIPProtectionSnackBar(state.title)
+                    is SnackbarState.IPProtectionShowActionSettingsSnackbar -> showActionSettingsSnackbar(state.title)
+                    else -> {
+                        // no-op, this binding is only concerned with ip protection related snackbars
+                    }
                 }
             }
+    }
+
+    private fun showIPProtectionSnackBar(title: String) {
+        snackbarDelegate.show(
+            text = title,
+            duration = context.components.settings.getSnackbarTimeout().value.toInt(),
+        )
+
+        appStore.dispatch(SnackbarAction.SnackbarShown)
+    }
+
+    private fun showActionSettingsSnackbar(title: String) {
+        snackbarDelegate.show(
+            text = title,
+            duration = context.components.settings.getSnackbarTimeout(hasAction = true).value.toInt(),
+            action = context.getString(R.string.ip_protection_open_settings_snackbar_action),
+        ) {
+            navController.navigate(
+                BrowserFragmentDirections.actionGlobalIpProtectionFragment(
+                    entrypoint = FenixFxAEntryPoint.IPProtectionSettings
+                )
+            )
+        }
+
+        appStore.dispatch(SnackbarAction.SnackbarShown)
     }
 }

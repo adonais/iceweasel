@@ -32,12 +32,12 @@ struct NativeException {
 };
 
 template <class T>
-static NativeException NullHandle() {
+inline NativeException NullHandle() {
   return {FUNCTION_SIGNATURE};
 }
 
 template <class T>
-static NativeException NullWeakPtr() {
+inline NativeException NullWeakPtr() {
   return {FUNCTION_SIGNATURE};
 }
 

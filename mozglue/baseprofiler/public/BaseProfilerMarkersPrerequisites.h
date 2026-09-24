@@ -1063,6 +1063,14 @@ class MarkerSchema {
   std::vector<GraphData> mGraphs;
 };
 
+// Check if T::PayloadFields exists and if it is not empty
+template <typename T, typename = void>
+struct MarkerHasPayloadFields : std::false_type {};
+template <typename T>
+struct MarkerHasPayloadFields<
+    T, std::void_t<decltype(T::PayloadFields),
+                   decltype(std::size(T::PayloadFields))>> : std::true_type {};
+
 namespace detail {
 // GCC doesn't allow this to live inside the class.
 // Class template so that partial specializations (e.g. for ProfilerString16View
@@ -1196,19 +1204,21 @@ template <typename T, size_t... Is>
 auto PayloadFieldsTupleHelper(std::index_sequence<Is...>) -> std::tuple<
     typename InputTypeToCpp<T::PayloadFields[Is].InputTy>::Type...>;
 
+// A marker type with no (or empty) `PayloadFields` has no payload arguments.
+template <typename T, bool = MarkerHasPayloadFields<T>::value>
+struct PayloadFieldsTupleImpl {
+  using Type = std::tuple<>;
+};
 template <typename T>
-using PayloadFieldsTuple = decltype(PayloadFieldsTupleHelper<T>(
-    std::make_index_sequence<std::size(T::PayloadFields)>{}));
+struct PayloadFieldsTupleImpl<T, true> {
+  using Type = decltype(PayloadFieldsTupleHelper<T>(
+      std::make_index_sequence<std::size(T::PayloadFields)>{}));
+};
+
+template <typename T>
+using PayloadFieldsTuple = typename PayloadFieldsTupleImpl<T>::Type;
 
 }  // namespace detail
-
-// Check if T::PayloadFields exists and if it is not empty
-template <typename T, typename = void>
-struct MarkerHasPayloadFields : std::false_type {};
-template <typename T>
-struct MarkerHasPayloadFields<
-    T, std::void_t<decltype(T::PayloadFields),
-                   decltype(std::size(T::PayloadFields))>> : std::true_type {};
 
 // Check if T::TranslateMarkerInputToSchema exists
 template <typename T, typename = void>
@@ -1244,6 +1254,8 @@ struct BaseMarkerType {
 
   static constexpr MarkerSchema::ETWMarkerGroup Group =
       MarkerSchema::ETWMarkerGroup::Generic;
+
+  static constexpr MarkerSchema::PayloadField PayloadFields[0] = {};
 
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;

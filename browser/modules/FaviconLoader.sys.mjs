@@ -45,6 +45,9 @@ const SIZES_TELEMETRY_ENUM = {
 };
 
 const FAVICON_PARSING_TIMEOUT = 100;
+// Without an explicit idle timeout DeferredTask waits indefinitely for an idle
+// slot, letting a busy content process suppress favicon updates globally.
+const FAVICON_PARSING_MAX_IDLE_WAIT = 3000;
 const FAVICON_RICH_ICON_MIN_WIDTH = 96;
 const PREFERRED_WIDTH = 16;
 
@@ -658,7 +661,8 @@ export class FaviconLoader {
 
     this.iconTask = new lazy.DeferredTask(
       () => this.loadIcons(),
-      FAVICON_PARSING_TIMEOUT
+      FAVICON_PARSING_TIMEOUT,
+      FAVICON_PARSING_MAX_IDLE_WAIT
     );
   }
 

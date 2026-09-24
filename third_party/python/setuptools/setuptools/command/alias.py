@@ -30,14 +30,14 @@ class alias(option_base):
         self.args = None
         self.remove = None
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         option_base.finalize_options(self)
         if self.remove and len(self.args) != 1:
             raise DistutilsOptionError(
                 "Must specify exactly one argument (the alias name) when using --remove"
             )
 
-    def run(self):
+    def run(self) -> None:
         aliases = self.distribution.get_option_dict('aliases')
 
         if not self.args:
@@ -55,13 +55,13 @@ class alias(option_base):
                 print("setup.py alias", format_alias(alias, aliases))
                 return
             else:
-                print("No alias definition found for %r" % alias)
+                print(f"No alias definition found for {alias!r}")
                 return
         else:
             alias = self.args[0]
             command = ' '.join(map(shquote, self.args[1:]))
 
-        edit_config(self.filename, {'aliases': {alias: command}}, self.dry_run)
+        edit_config(self.filename, {'aliases': {alias: command}})
 
 
 def format_alias(name, aliases):
@@ -73,5 +73,5 @@ def format_alias(name, aliases):
     elif source == config_file('local'):
         source = ''
     else:
-        source = '--filename=%r' % source
+        source = f'--filename={source!r}'
     return source + name + ' ' + command

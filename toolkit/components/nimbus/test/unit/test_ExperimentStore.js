@@ -760,12 +760,9 @@ add_task(async function test_cleanupOldRecipes() {
   const inactiveOverTwelveMonths =
     NimbusTestUtils.factories.recipe("inactive-over-12mo");
 
-  const inactiveNoLastSeen = NimbusTestUtils.factories.experiment(
-    "inactive-unknown",
-    {
-      active: false,
-      unenrollReason: "unknown",
-    }
+  const inactiveNoLastSeen = NimbusTestUtils.factories.enrollment(
+    NimbusTestUtils.factories.recipe("inactive-unknown"),
+    { branchSlug: "control", extra: { active: false } }
   );
 
   delete inactiveNoLastSeen.lastSeen;

@@ -253,7 +253,6 @@ class TokensTable extends LitElement {
     "box-shadow": this.shadowTemplate,
     size: this.spaceAndSizeTemplate,
     space: this.spaceAndSizeTemplate,
-    dimension: this.spaceAndSizeTemplate,
     "text-color": this.fontTemplate,
   };
 

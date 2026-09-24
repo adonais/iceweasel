@@ -12,7 +12,7 @@ These steps were verified to work as of June 2024.
 
 3. Upon reboot, you should be asked to set up a user and password for Linux. If not, open Ubuntu from the Start menu.
 
-4. Follow the {ref}`building-firefox-on-linux` instructions.
+4. Follow the [Building Firefox On Linux](linux_build.md) instructions.
 
    :::{note}
    For Mercurial to work, you will need to follow the instructions for bash and restart WSL.

@@ -31,11 +31,14 @@ export class InputPickerPanelCommon {
     return frame;
   }
 
-  openPicker(type, rect, detail) {
+  openPicker(type, rect, detail, isDarkBackground) {
     const impl = this.openPickerImpl(type);
     this.#pickerState = {};
     // TODO: Resize picker according to content zoom level
     this.#element.style.fontSize = "10px";
+    // The color scheme is inherited by the popup frame's document, so the
+    // picker's system colors match the input's.
+    this.#element.style.colorScheme = isDarkBackground ? "dark" : "light";
     this.#type = impl.type;
     this.#detail = detail;
     this.#abortController = new AbortController();

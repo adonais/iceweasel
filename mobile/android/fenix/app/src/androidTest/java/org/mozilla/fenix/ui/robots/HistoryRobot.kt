@@ -5,6 +5,7 @@
 package org.mozilla.fenix.ui.robots
 
 import android.net.Uri
+import android.text.format.DateUtils
 import android.util.Log
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.espresso.Espresso.onView
@@ -31,6 +32,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
+import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.snackbarButton
@@ -41,9 +43,10 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 class HistoryRobot {
 
     fun verifyHistoryMenuView(historyItemExists: Boolean = false) {
+        mDevice.waitForIdle()
         assertUIObjectExists(
-            itemWithDescription(getStringResource(R.string.action_bar_up_description)),
             itemContainingText("History"),
+            itemWithDescription(getStringResource(R.string.action_bar_up_description)),
             itemWithResId("$packageName:id/history_search"),
             itemWithResId("$packageName:id/history_delete"),
             itemWithResId("$packageName:id/recently_closed_tabs_header"),
@@ -74,14 +77,20 @@ class HistoryRobot {
 
     fun verifyHistoryListExists() = assertUIObjectExists(itemWithResId("$packageName:id/history_list"))
 
-    fun verifyVisitedTimeTitle() {
+    fun verifyVisitedTimeTitle(timestamp: Long = System.currentTimeMillis()) {
+        val expectedTitle =
+            DateUtils.formatDateTime(
+                appContext,
+                timestamp,
+                DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_SHOW_YEAR,
+            )
         mDevice.waitNotNull(
-            Until.findObject(By.text("Today")),
+            Until.findObject(By.text(expectedTitle)),
             waitingTime,
         )
-        Log.i(TAG, "verifyVisitedTimeTitle: Trying to verify \"Today\" chronological timeline title")
-        onView(withId(R.id.header_title)).check(matches(withText("Today")))
-        Log.i(TAG, "verifyVisitedTimeTitle: Verified \"Today\" chronological timeline title")
+        Log.i(TAG, "verifyVisitedTimeTitle: Trying to verify \"$expectedTitle\" chronological timeline title")
+        onView(withId(R.id.header_title)).check(matches(withText(expectedTitle)))
+        Log.i(TAG, "verifyVisitedTimeTitle: Verified \"$expectedTitle\" chronological timeline title")
     }
 
     fun verifyHistoryItemExists(shouldExist: Boolean, item: String) =

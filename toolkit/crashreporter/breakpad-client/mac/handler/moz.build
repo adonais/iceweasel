@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 UNIFIED_SOURCES += [
-    'breakpad_nlist_64.cc',
     'dynamic_images.cc',
     'exception_handler.cc',
     'minidump_generator.cc',

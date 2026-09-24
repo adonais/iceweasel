@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_SpeechStreamListener_h
-#define mozilla_dom_SpeechStreamListener_h
+#ifndef DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHTRACKLISTENER_H_
+#define DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHTRACKLISTENER_H_
 
 #include "AudioSegment.h"
 #include "MediaTrackGraph.h"
@@ -16,15 +16,15 @@ class AudioSegment;
 
 namespace dom {
 
-class SpeechRecognition;
+class SpeechRecognitionBackend;
 
 class SpeechTrackListener : public MediaTrackListener {
  private:
-  explicit SpeechTrackListener(SpeechRecognition* aRecognition);
+  explicit SpeechTrackListener(SpeechRecognitionBackend* aBackend);
 
  public:
   static already_AddRefed<SpeechTrackListener> Create(
-      SpeechRecognition* aRecognition);
+      SpeechRecognitionBackend* aBackend);
 
   ~SpeechTrackListener() = default;
 
@@ -36,11 +36,10 @@ class SpeechTrackListener : public MediaTrackListener {
   void NotifyRemoved(MediaTrackGraph* aGraph) override;
 
  private:
-  template <typename SampleFormatType>
-  void ConvertAndDispatchAudioChunk(int aDuration, float aVolume,
-                                    SampleFormatType* aData,
-                                    TrackRate aTrackRate);
-  nsMainThreadPtrHandle<SpeechRecognition> mRecognition;
+  // Written on main thread (constructor, cleared after NotifyRemoved)
+  // Read on graph thread (NotifyQueuedChanges, before NotifyRemoved)
+  // Safe: All graph thread access completes before main thread clears this
+  RefPtr<SpeechRecognitionBackend> mBackend;
   MozPromiseHolder<GenericNonExclusivePromise> mRemovedHolder;
 
  public:
@@ -50,4 +49,4 @@ class SpeechTrackListener : public MediaTrackListener {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif
+#endif  // DOM_MEDIA_WEBSPEECH_RECOGNITION_SPEECHTRACKLISTENER_H_

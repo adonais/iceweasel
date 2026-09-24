@@ -171,8 +171,8 @@ add_task(async function test_get_get_all_clear_all_alarms() {
     browser.test.assertEq(undefined, alarm, "non-existent alarm is undefined");
     browser.test.sendMessage(`get-invalid`);
 
-    wasCleared = await browser.alarms.clearAll();
-    browser.test.assertTrue(wasCleared, "alarms were cleared");
+    let result = await browser.alarms.clearAll();
+    browser.test.assertEq(undefined, result, "clearAll returns undefined");
 
     alarms = await browser.alarms.getAll();
     browser.test.assertEq(0, alarms.length, "no alarms exist");

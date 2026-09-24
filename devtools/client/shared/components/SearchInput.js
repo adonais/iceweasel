@@ -300,6 +300,7 @@ class SearchInput extends Component {
       React.createElement(CloseButton, {
         handleClick: this.props.handleClose,
         buttonClass: this.props.size,
+        tooltip: locale.getStr("editor.searchResults.close"),
       })
     );
   }

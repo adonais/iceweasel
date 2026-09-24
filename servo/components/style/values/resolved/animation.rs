@@ -6,8 +6,8 @@
 
 use super::{Context, ToResolvedValue};
 
-use crate::values::computed::time::Time;
 use crate::values::computed::AnimationDuration;
+use crate::values::computed::time::Time;
 
 impl ToResolvedValue for AnimationDuration {
     type ResolvedValue = Self;

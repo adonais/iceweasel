@@ -95,7 +95,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_VIEW intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
         whenever(intent.dataString).thenReturn("http://mozilla.org")
@@ -136,7 +136,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_MAIN intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_MAIN)
         whenever(intent.dataString).thenReturn("https://mozilla.org")
@@ -168,7 +168,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open or select tab on ACTION_NDEF_DISCOVERED intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(ACTION_NDEF_DISCOVERED)
         whenever(intent.dataString).thenReturn("https://mozilla.org")
@@ -199,7 +199,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_SEND intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEND)
@@ -245,7 +245,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_SEND if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -265,7 +265,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `nothing happens on ACTION_SEND if no text is provided`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEND)
@@ -277,7 +277,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `nothing happens on ACTION_SEARCH if text is empty`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEARCH)
@@ -289,7 +289,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_SEARCH intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_SEARCH)
@@ -313,7 +313,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_SEARCH intent if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -333,7 +333,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `nothing happens on ACTION_WEB_SEARCH if text is empty`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_WEB_SEARCH)
@@ -345,7 +345,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab on ACTION_WEB_SEARCH intent`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_WEB_SEARCH)
@@ -368,7 +368,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `open tab and trigger search on ACTION_WEB_SEARCH intent if text is not a URL`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val searchTerms = "mozilla android"
         val searchUrl = "https://localhost/?q=mozilla%20android"
@@ -387,7 +387,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `returns external flags when no intent extra for app link launch type extra present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
         val intent: Intent = mock()
         val safeIntent = SafeIntent(intent)
 
@@ -398,7 +398,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `uses app link launch type from intent when the extra is present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -415,7 +415,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `uses the default unknown app link launch type when an invalid extra value is present`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -432,7 +432,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `does not use the default when the extra is present but an invalid integer value`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent =
             Intent().apply {
@@ -451,7 +451,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets app link intent launch type value`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -470,7 +470,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets does not app link intent launch type value when there's no extra`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -486,7 +486,7 @@ class TabIntentProcessorTest {
 
     @Test
     fun `process intent sets default app link intent launch type value when there's no valid value for type`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch)
+        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, applicationScope = scope)
 
         val intent: Intent = mock()
         whenever(intent.action).thenReturn(Intent.ACTION_VIEW)
@@ -504,7 +504,13 @@ class TabIntentProcessorTest {
     fun `getHostForDnsWarmup returns app link host when DoH is disabled`() {
         val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.DEFAULT)
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -515,7 +521,13 @@ class TabIntentProcessorTest {
     fun `getHostForDnsWarmup returns app link host when DoH is OFF`() {
         val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.OFF)
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -530,7 +542,13 @@ class TabIntentProcessorTest {
                 dohProviderUrl = "https://cloudflare-dns.com/dns-query",
             )
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -545,7 +563,13 @@ class TabIntentProcessorTest {
                 dohProviderUrl = "https://dns.nextdns.io/abc123",
             )
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -560,7 +584,13 @@ class TabIntentProcessorTest {
                 dohProviderUrl = "",
             )
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -569,7 +599,13 @@ class TabIntentProcessorTest {
 
     @Test
     fun `getHostForDnsWarmup returns app link host when engine is null`() {
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = null)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = null,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 
@@ -580,7 +616,13 @@ class TabIntentProcessorTest {
     fun `getHostForDnsWarmup returns null for malformed app link URL`() {
         val settings = DefaultSettings(dohSettingsMode = Engine.DohSettingsMode.OFF)
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("not a valid url")
 
@@ -595,7 +637,13 @@ class TabIntentProcessorTest {
                 dohProviderUrl = "not a valid url",
             )
         whenever(engine.settings).thenReturn(settings)
-        val handler = TabIntentProcessor(TabsUseCases(store), searchUseCases.newTabSearch, engine = engine)
+        val handler =
+            TabIntentProcessor(
+                TabsUseCases(store),
+                searchUseCases.newTabSearch,
+                engine = engine,
+                applicationScope = scope,
+            )
 
         val result = handler.getHostForDnsWarmup("https://mozilla.org/path")
 

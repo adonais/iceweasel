@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "harfbuzz/hb.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/RefPtr.h"
@@ -26,15 +27,15 @@ class FontPalette {
 
  public:
   FontPalette() = default;
-  explicit FontPalette(nsTArray<mozilla::gfx::sRGBColor>&& aColors)
+  explicit FontPalette(nsTArray<hb_color_t>&& aColors)
       : mColors(std::move(aColors)) {}
 
-  const nsTArray<mozilla::gfx::sRGBColor>* Colors() const { return &mColors; }
+  const nsTArray<hb_color_t>* Colors() const { return &mColors; }
 
  private:
   ~FontPalette() = default;
 
-  nsTArray<mozilla::gfx::sRGBColor> mColors;
+  nsTArray<hb_color_t> mColors;
 };
 
 // MRU cache used for resolved color-font palettes, to avoid reconstructing

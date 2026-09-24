@@ -89,17 +89,15 @@ void DanglingOnTemporaryChecker::registerMatchers(MatchFinder *AstMatcher) {
           // We optionally match a parent call expression or a parent construct
           // expression because using a temporary inside a call is fine as long
           // as the pointer doesn't escape the function call.
-          optionally(
-            anyOf(
+          optionally(anyOf(
               // This is the case where the call is the direct parent, so we
               // know that the member call expression is the argument.
               allOf(hasParentCall, expr().bind("parentCallArg")),
 
               // This is the case where the call is not the direct parent, so we
               // get its child to know in which argument tree we are.
-              hasAncestor(expr(hasParentCall, expr().bind("parentCallArg")))
-             ))
-            ).bind("memberCallExpr"),
+              hasAncestor(expr(hasParentCall, expr().bind("parentCallArg"))))))
+          .bind("memberCallExpr"),
       this);
 }
 
@@ -176,9 +174,8 @@ void DanglingOnTemporaryChecker::check(const MatchFinder::MatchResult &Result) {
     auto FunctionEscapeData =
         ParentOperatorCallExpr
             ? escapesFunction(ParentCallArg, ParentOperatorCallExpr)
-            : ParentCallExpr
-                  ? escapesFunction(ParentCallArg, ParentCallExpr)
-                  : escapesFunction(ParentCallArg, ParentConstructExpr);
+        : ParentCallExpr ? escapesFunction(ParentCallArg, ParentCallExpr)
+                         : escapesFunction(ParentCallArg, ParentConstructExpr);
 
     // If there was an error in the escapesFunction call.
     if (std::error_code ec = FunctionEscapeData.getError()) {

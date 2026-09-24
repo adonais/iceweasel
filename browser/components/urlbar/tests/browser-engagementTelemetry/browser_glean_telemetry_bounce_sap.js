@@ -96,8 +96,9 @@ add_task(async function urlbar_newtab() {
 
 add_task(async function urlbar() {
   await doUrlbarTest({
-    trigger: win => doSecondEngagementAndNavigateBack(win, "urlbar"),
-    assert: () => assertBounceTelemetry([{ sap: "urlbar" }, { sap: "urlbar" }]),
+    trigger: win => doSecondEngagementAndNavigateBack(win, "urlbar_newtab"),
+    assert: () =>
+      assertBounceTelemetry([{ sap: "urlbar_newtab" }, { sap: "urlbar" }]),
   });
 });
 

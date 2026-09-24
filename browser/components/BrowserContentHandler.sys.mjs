@@ -27,7 +27,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
-  UpdatePing: "resource://gre/modules/UpdatePing.sys.mjs",
 });
 
 /**
@@ -286,6 +285,8 @@ function getPostUpdateOverridePage(
  *        url, or null.
  * @param forcePrivate (optional)
  *        Boolean. If set to true, the new window will be a private browsing one.
+ * @param forceAllowDataURI (optional)
+ *        Boolean. Whether to force allow a data URI as a top-level document.
  *
  * @returns {ChromeWindow}
  *          Returns the top level window opened.
@@ -295,7 +296,8 @@ function openBrowserWindow(
   triggeringPrincipal,
   urlOrUrlList,
   postData = null,
-  forcePrivate = false
+  forcePrivate = false,
+  forceAllowDataURI = false
 ) {
   const isStartup =
     cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
@@ -337,6 +339,9 @@ function openBrowserWindow(
       Ci.nsIWritablePropertyBag2
     );
     extraOptions.setPropertyAsBool("fromExternal", true);
+    if (forceAllowDataURI) {
+      extraOptions.setPropertyAsBool("forceAllowDataURI", true);
+    }
 
     // Always pass at least 3 arguments to avoid the "|"-splitting behavior,
     // ie. avoid the loadOneOrMoreURIs function.
@@ -542,6 +547,31 @@ nsBrowserContentHandler.prototype = {
       console.error(e);
     }
 
+    try {
+      while ((uriparam = cmdLine.handleFlagWithParam("data", false))) {
+        let { uri, principal } = resolveURIInternal(cmdLine, uriparam);
+        if (!uri.schemeIs("data")) {
+          console.error("--data requires a data: URL");
+          continue;
+        }
+        if (cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH) {
+          openBrowserWindow(cmdLine, principal, uri.spec, null, false, true);
+        } else {
+          handURIToExistingBrowser(
+            uri,
+            Ci.nsIBrowserDOMWindow.OPEN_DEFAULTWINDOW,
+            cmdLine,
+            false,
+            principal,
+            true
+          );
+        }
+        cmdLine.preventDefault = true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     var chromeParam = cmdLine.handleFlagWithParam("chrome", false);
     if (chromeParam) {
       // Handle old preference dialog URLs.
@@ -710,6 +740,7 @@ nsBrowserContentHandler.prototype = {
       "  --browser          Open a browser window.\n" +
       "  --new-window <url> Open <url> in a new window.\n" +
       "  --new-tab <url>    Open <url> in a new tab.\n" +
+      "  --data <data-URL>  Open a data: URL.\n" +
       "  --private-window [<url>] Open <url> in a new private window.\n";
     if (AppConstants.platform == "win") {
       info += "  --preferences      Open Options dialog.\n";
@@ -983,11 +1014,14 @@ nsBrowserContentHandler.prototype = {
               lazy.UpdateManager.updateInstalledAtStartup().then(
                 async updateInstalledAtStartup => {
                   if (updateInstalledAtStartup) {
-                    await lazy.UpdatePing.handleUpdateSuccess(
-                      old_mstone,
-                      old_buildId,
-                      progress
+                    Glean.update.previousChannel.set(
+                      updateInstalledAtStartup.channel
                     );
+                    Glean.update.previousVersion.set(old_mstone);
+                    Glean.update.previousBuildId.set(old_buildId);
+                    GleanPings.update.submit("success");
+                    progress.updateFetched = true;
+                    progress.payloadCreated = true;
                   }
                 }
               );
@@ -1011,17 +1045,12 @@ nsBrowserContentHandler.prototype = {
             let updateInstalledAtStartup = spinForUpdateInstalledAtStartup();
 
             if (updateInstalledAtStartup) {
-              let handleUpdateSuccessTask = lazy.UpdatePing.handleUpdateSuccess(
-                old_mstone,
-                old_buildId,
-                progress
+              Glean.update.previousChannel.set(
+                updateInstalledAtStartup.channel
               );
-
-              lazy.AsyncShutdown.profileBeforeChange.addBlocker(
-                "BrowserContentHandler: running handleUpdateSuccess",
-                handleUpdateSuccessTask,
-                { fetchState: () => ({ progress }) }
-              );
+              Glean.update.previousVersion.set(old_mstone);
+              Glean.update.previousBuildId.set(old_buildId);
+              GleanPings.update.submit("success");
 
               lazy.LaterRun.enable(lazy.LaterRun.ENABLE_REASON_UPDATE_APPLIED);
             }
@@ -1272,7 +1301,8 @@ function handURIToExistingBrowser(
   location,
   cmdLine,
   forcePrivate,
-  triggeringPrincipal
+  triggeringPrincipal,
+  forceAllowDataURI = false
 ) {
   if (!shouldLoadURI(uri)) {
     return;
@@ -1283,7 +1313,10 @@ function handURIToExistingBrowser(
       uri,
       null,
       location,
-      Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL,
+      Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL |
+        (forceAllowDataURI
+          ? Ci.nsIBrowserDOMWindow.OPEN_FORCE_ALLOW_DATA_URI
+          : 0),
       triggeringPrincipal
     );
   };
@@ -1313,7 +1346,14 @@ function handURIToExistingBrowser(
   }
 
   // if we couldn't load it in an existing window, open a new one
-  openBrowserWindow(cmdLine, triggeringPrincipal, uri.spec, null, forcePrivate);
+  openBrowserWindow(
+    cmdLine,
+    triggeringPrincipal,
+    uri.spec,
+    null,
+    forcePrivate,
+    forceAllowDataURI
+  );
 }
 
 /**

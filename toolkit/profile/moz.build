@@ -18,7 +18,12 @@ XPIDL_SOURCES += [
 ]
 
 MOZ_SRC_FILES += [
+    "ProfileMetrics.sys.mjs",
     "ProfilesDatastoreService.sys.mjs",
+]
+
+EXTRA_COMPONENTS += [
+    "ProfileComponents.manifest",
 ]
 
 XPIDL_MODULE = "toolkitprofile"

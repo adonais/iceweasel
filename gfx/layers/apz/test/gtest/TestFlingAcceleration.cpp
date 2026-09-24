@@ -33,12 +33,7 @@ class APZCFlingAccelerationTester : public APZCTreeManagerTester {
 
   void ExecutePanGesture100Hz(const ScreenIntPoint& aStartPoint,
                               std::initializer_list<int32_t> aYDeltas) {
-    APZEventResult result = TouchDown(apzc, aStartPoint, mcc->Time());
-
-    // Allowed touch behaviours must be set after sending touch-start.
-    if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
-      SetDefaultAllowedTouchBehavior(apzc, result.mInputBlockId);
-    }
+    TouchDown(apzc, aStartPoint, mcc->Time());
 
     const TimeDuration kTouchTimeDelta100Hz =
         TimeDuration::FromMilliseconds(10);

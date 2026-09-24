@@ -19,7 +19,7 @@ subject:<subject distinguished name specification>
 [tamperSpki:]
 [signature:{sha256WithRSAEncryption,sha1WithRSAEncryption,
             md5WithRSAEncryption,ecdsaWithSHA256,ecdsaWithSHA384,
-            ecdsaWithSHA512}]
+            ecdsaWithSHA512,mldsa44,mldsa65,mldsa87}]
 [serialNumber:<integer in the interval [1, 127]>]
 [extension:<extension name:<extension-specific data>>]
 [...]
@@ -337,6 +337,12 @@ def stringToAlgorithmIdentifiers(string):
     elif string == "ecdsaWithSHA512":
         algorithmType = pykey.HASH_SHA512
         algorithm = univ.ObjectIdentifier("1.2.840.10045.4.3.4")
+    elif string == "mldsa44":
+        algorithm = pykey.mlDsa44
+    elif string == "mldsa65":
+        algorithm = pykey.mlDsa65
+    elif string == "mldsa87":
+        algorithm = pykey.mlDsa87
     else:
         raise UnknownAlgorithmTypeError(string)
     algorithmIdentifier["algorithm"] = algorithm

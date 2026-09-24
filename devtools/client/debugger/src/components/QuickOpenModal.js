@@ -39,6 +39,7 @@ import ResultList from "./shared/ResultList";
 
 import SearchInput from "devtools/client/shared/components/SearchInput";
 import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
+import { getEditor } from "../utils/editor/index";
 
 const maxResults = 100;
 
@@ -363,7 +364,9 @@ export class QuickOpenModal extends Component {
     if (e.key === "Enter") {
       if (isGoToQuery) {
         const location = parseLineColumn(query);
-        this.gotoLocation(location);
+        if (location.line > 0 && location.line <= getEditor().getLineCount()) {
+          this.gotoLocation(location);
+        }
         return;
       }
 

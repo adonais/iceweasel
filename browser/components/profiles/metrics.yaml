@@ -487,6 +487,59 @@ profiles.selector_window:
     send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_SelectorWindow_ShowAtStartup
 
+profiles:
+  active:
+    type: boolean
+    description: >
+      Whether the selectable profiles feature has been activated by the user
+      creating profiles. Set during initialization.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    send_in_pings: ['metrics', 'new-profile']
+  current_missing:
+    type: event
+    description: >
+      Recorded when the service initializes after startup and cannot find the
+      current profile in the database. This is an unexpected state that
+      triggers either profile re-creation or a full reset.
+    extra_keys:
+      profile_count:
+        description: The number of profiles in the database at the time.
+        type: quantity
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    send_in_pings: ['events', 'profile']
+  profile_count:
+    type: quantity
+    unit: profiles
+    description: >
+      The number of selectable profiles in the current profile group.
+      Updated during initialization and whenever the database changes.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2068631
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    send_in_pings: ['metrics', 'new-profile']
+
 profile.lock:
   failed_lock_count:
     type: quantity

@@ -35,24 +35,24 @@ void GroupInfo::LockedAddOriginInfo(NotNull<RefPtr<OriginInfo>>&& aOriginInfo) {
   QuotaManager* quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  const uint64_t usage = aOriginInfo->LockedUsage();
+  const int64_t usage = aOriginInfo->LockedUsage();
   const bool persisted = aOriginInfo->LockedPersisted();
 
   auto foundIndex = mOriginInfos.IndexOf(aOriginInfo);
 
   if (decltype(mOriginInfos)::NoIndex != foundIndex) {
     const auto& oldOriginInfo = mOriginInfos[foundIndex];
-    const uint64_t oldUsage = oldOriginInfo->LockedUsage();
+    const int64_t oldUsage = oldOriginInfo->LockedUsage();
 
     // The persisted flag may differ between old and new, so subtract and
     // re-add mUsage conditionally rather than using a simple delta.
     if (!oldOriginInfo->LockedPersisted()) {
-      AssertNoUnderflow(mUsage, oldUsage);
       mUsage -= oldUsage;
+      QM_ASSERT_NOT_NEGATIVE(mUsage);
     }
 
-    AssertNoUnderflow(quotaManager->mTemporaryStorageUsage, oldUsage);
     quotaManager->mTemporaryStorageUsage -= oldUsage;
+    QM_ASSERT_NOT_NEGATIVE(quotaManager->mTemporaryStorageUsage);
 
     mOriginInfos[foundIndex] = std::move(aOriginInfo);
   } else {
@@ -70,18 +70,18 @@ void GroupInfo::LockedAddOriginInfo(NotNull<RefPtr<OriginInfo>>&& aOriginInfo) {
 
 void GroupInfo::LockedAdjustUsageForRemovedOriginInfo(
     const OriginInfo& aOriginInfo) {
-  const uint64_t usage = aOriginInfo.LockedUsage();
+  const int64_t usage = aOriginInfo.LockedUsage();
 
   if (!aOriginInfo.LockedPersisted()) {
-    QM_ASSERT_NO_UNDERFLOW(mUsage, usage);
     mUsage -= usage;
+    QM_ASSERT_NOT_NEGATIVE(mUsage);
   }
 
   QuotaManager* const quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
 
-  QM_ASSERT_NO_UNDERFLOW(quotaManager->mTemporaryStorageUsage, usage);
   quotaManager->mTemporaryStorageUsage -= usage;
+  QM_ASSERT_NOT_NEGATIVE(quotaManager->mTemporaryStorageUsage);
 }
 
 void GroupInfo::LockedRemoveOriginInfo(const nsACString& aOrigin) {

@@ -1,5 +1,6 @@
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
 import { actionTypes as at } from "common/Actions.mjs";
+import { INITIAL_STATE } from "common/Reducers.sys.mjs";
 import { ContentSection } from "content-src/components/CustomizeMenu/ContentSection/ContentSection";
 import { WrapWithProvider } from "test/jest/test-utils";
 
@@ -32,8 +33,10 @@ const DEFAULT_PROPS = {
   weatherDisplay: "simple",
   mayHaveTimerWidget: false,
   mayHaveListsWidget: false,
-  exitEventFired: false,
-  onSubpanelToggle: jest.fn(),
+  showWallpapersPanel: false,
+  wallpapersPanelCategory: null,
+  openWallpapersPanel: jest.fn(),
+  closeWallpapersPanel: jest.fn(),
   toggleSectionsMgmtPanel: jest.fn(),
   showSectionsMgmtPanel: false,
   novaEnabled: false,
@@ -136,5 +139,52 @@ describe("<ContentSection>", () => {
         widget_size: "large",
       });
     });
+  });
+
+  it("drives WallpaperCategories from the wallpaper subpanel props", () => {
+    const openWallpapersPanel = jest.fn();
+    const closeWallpapersPanel = jest.fn();
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "newtabWallpapers.wallpaper": "",
+        },
+      },
+      Wallpapers: {
+        ...INITIAL_STATE.Wallpapers,
+        wallpaperList: [
+          { title: "moon", category: "celestial", theme: "light" },
+        ],
+        categories: ["celestial"],
+      },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <ContentSection
+          {...DEFAULT_PROPS}
+          wallpapersEnabled={true}
+          showWallpapersPanel={true}
+          wallpapersPanelCategory="celestial"
+          openWallpapersPanel={openWallpapersPanel}
+          closeWallpapersPanel={closeWallpapersPanel}
+        />
+      </WrapWithProvider>
+    );
+
+    expect(
+      container.querySelector(".wallpaper-list .arrow-button")
+    ).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-wallpaper-category-title-celestial"
+    );
+
+    fireEvent.click(container.querySelector("#celestial"));
+    expect(openWallpapersPanel).toHaveBeenCalledWith("celestial");
+
+    fireEvent.click(container.querySelector(".wallpaper-list .arrow-button"));
+    expect(closeWallpapersPanel).toHaveBeenCalledTimes(1);
   });
 });

@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use app_units::Au;
-use style::attr::{parse_length, AttrValue, LengthPercentageOrAuto};
+use style::attr::{AttrValue, LengthPercentageOrAuto, parse_length};
 use style::values::computed::{CalcLengthPercentage, Percentage};
 
 #[test]

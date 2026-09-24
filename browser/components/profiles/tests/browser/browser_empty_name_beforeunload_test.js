@@ -5,10 +5,7 @@
 
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.require_user_interaction_for_beforeunload", false],
-      ["test.wait300msAfterTabSwitch", true],
-    ],
+    set: [["dom.require_user_interaction_for_beforeunload", false]],
   });
 
   await initGroupDatabase();

@@ -5923,6 +5923,7 @@ void GCRuntime::checkHashTablesAfterMovingGC() {
   for (CompartmentsIter c(this); !c.done(); c.next()) {
     for (RealmsInCompartmentIter r(c); !r.done(); r.next()) {
       r->dtoaCache.checkCacheAfterMovingGC();
+      r->checkModuleScriptSourcesAfterMovingGC();
       if (r->debugEnvs()) {
         r->debugEnvs()->checkHashTablesAfterMovingGC();
       }

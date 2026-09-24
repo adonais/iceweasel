@@ -87,6 +87,20 @@ void AudioWorkletImpl::OnAddModulePromiseSettled() const {
                       {MarkerTiming::IntervalEnd()});
 }
 
+void AudioWorkletImpl::OnFinishedOnExecutionThread() {
+  if (mGlobalScopePortIdentifier.neutered()) {
+    // ConstructGlobalScope() consumed it.
+    return;
+  }
+  // addModule() was never called, so the global scope's port is still open.
+  // ~UniqueMessagePortId closes it over PBackground, which on the graph thread
+  // would bind the connection to the graph as its serial event target and
+  // outlive it, so destroy the identifier on the main thread instead.
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "AudioWorkletImpl::ReleaseGlobalScopePortIdentifier",
+      [identifier = std::move(mGlobalScopePortIdentifier)] {})));
+}
+
 already_AddRefed<dom::WorkletGlobalScope>
 AudioWorkletImpl::ConstructGlobalScope(JSContext* aCx) {
   dom::WorkletThread::AssertIsOnWorkletThread();

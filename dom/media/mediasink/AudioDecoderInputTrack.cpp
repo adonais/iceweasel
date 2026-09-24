@@ -621,6 +621,15 @@ uint32_t AudioDecoderInputTrack::NumberOfChannels() const {
   return maxChannelCount ? maxChannelCount : mInitialInputChannels;
 }
 
+#ifdef ENABLE_TESTS
+uint32_t AudioDecoderInputTrack::TimeStretcherSamplesForTesting() {
+  AssertOnGraphThread();
+  return mTimeStretcher ? mTimeStretcher->numSamples().unverified_safe_because(
+                              "Only used by an AudioDecoderInputTrack gtest.")
+                        : 0;
+}
+#endif
+
 void AudioDecoderInputTrack::EnsureTimeStretcher() {
   AssertOnGraphThread();
   if (!mTimeStretcher) {

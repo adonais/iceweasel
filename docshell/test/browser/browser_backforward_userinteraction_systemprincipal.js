@@ -105,3 +105,40 @@ add_task(async function test_urlBar() {
     await loaded;
   });
 });
+
+// A session history load carries the target entry's original triggering
+// principal, which is the system principal for anything that was loaded from
+// browser UI. Going back to such an entry must not count as user interaction
+// with the entry we are leaving.
+add_task(async function test_goBackDoesNotAddUserInteraction() {
+  // A bfcached entry is restored in the parent without a load, which would not
+  // exercise the session history load path at all.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.sessionhistory.max_total_viewers", 0]],
+  });
+
+  // Opened from the parent process, so entry 0's triggering principal is the
+  // system principal.
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_PAGE + "?entry=0"
+  );
+  let browser = tab.linkedBrowser;
+  await SpecialPowers.spawn(browser, [], () => {
+    content.document.notifyUserGestureActivation();
+  });
+
+  await followLink(TEST_PAGE + "?entry=1");
+  await goBack(TEST_PAGE + "?entry=0");
+
+  let sessionHistory = browser.browsingContext.sessionHistory;
+  is(sessionHistory.count, 2, "Two session history entries");
+  is(
+    sessionHistory.getEntryAtIndex(1).hasUserInteraction,
+    false,
+    "Going back did not add user interaction to the entry we left"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});

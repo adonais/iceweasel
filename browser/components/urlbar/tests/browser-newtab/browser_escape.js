@@ -8,11 +8,7 @@
 
 const TEST_VALUE = "https://example.com/";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", false]],
-  });
-});
+add_setup(useEngineWithoutSuggestions);
 
 add_task(async function escapeWalksBackOut() {
   let tab = await NewtabSearchbarTestUtils.openNewTabPage();

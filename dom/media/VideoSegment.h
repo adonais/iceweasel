@@ -6,6 +6,7 @@
 #define MOZILLA_VIDEOSEGMENT_H_
 
 #include "ImageContainer.h"
+#include "MediaInfo.h"
 #include "MediaSegment.h"
 #include "TimeUnits.h"
 #include "gfxPoint.h"
@@ -103,6 +104,7 @@ struct VideoChunk {
   layers::ContainerCaptureTime mWebrtcCaptureTime = AsVariant(Nothing());
   layers::ContainerReceiveTime mWebrtcReceiveTime;
   layers::ContainerRtpTimestamp mRtpTimestamp;
+  VideoRotation mRotation = VideoRotation::kDegree_0;
 };
 
 class VideoSegment : public MediaSegmentBase<VideoSegment, VideoChunk> {
@@ -126,15 +128,14 @@ class VideoSegment : public MediaSegmentBase<VideoSegment, VideoChunk> {
       const PrincipalHandle& aPrincipalHandle, bool aForceBlack = false,
       TimeStamp aTimeStamp = TimeStamp::Now(),
       media::TimeUnit aProcessingDuration = media::TimeUnit::Invalid(),
-      media::TimeUnit aMediaTime = media::TimeUnit::Invalid());
-  void AppendWebrtcRemoteFrame(already_AddRefed<Image> aImage,
-                               const IntSize& aIntrinsicSize,
-                               const PrincipalHandle& aPrincipalHandle,
-                               bool aForceBlack, TimeStamp aTimeStamp,
-                               media::TimeUnit aProcessingDuration,
-                               uint32_t aRtpTimestamp,
-                               int64_t aWebrtcCaptureTimeNtp,
-                               int64_t aWebrtcReceiveTimeUs);
+      media::TimeUnit aMediaTime = media::TimeUnit::Invalid(),
+      VideoRotation aRotation = VideoRotation::kDegree_0);
+  void AppendWebrtcRemoteFrame(
+      already_AddRefed<Image> aImage, const IntSize& aIntrinsicSize,
+      const PrincipalHandle& aPrincipalHandle, bool aForceBlack,
+      TimeStamp aTimeStamp, media::TimeUnit aProcessingDuration,
+      uint32_t aRtpTimestamp, int64_t aWebrtcCaptureTimeNtp,
+      int64_t aWebrtcReceiveTimeUs, VideoRotation aRotation);
   void AppendWebrtcLocalFrame(already_AddRefed<Image> aImage,
                               const IntSize& aIntrinsicSize,
                               const PrincipalHandle& aPrincipalHandle,

@@ -212,6 +212,41 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_send_tab_extra
 
+  synced_device_submenu:
+    type: event
+    description: >
+      Recorded when the user opens a submenu for a specific connected device
+      in the FxA avatar menu to open recent tabs and management options.
+    bugs:
+      - https://bugzil.la/2051648
+    data_reviews:
+      - https://bugzil.la/2051648
+    notification_emails:
+      - sync-dev@mozilla.org
+    expires: never
+    extra_keys:
+      fxa_status:
+        description: >
+          The current state of the user. Possible states are "not_configured", "unverified", "signedin" and "login_failed".
+        type: string
+      fxa_avatar:
+        description: >
+          Boolean for whether or not account has set an avatar
+        type: string
+      fxa_sync_on:
+        description: >
+          Boolean for whether or not sync was configured at the time the event fired.
+        type: string
+      device_count:
+        description: >
+          Number of connected devices available to send tabs to
+        type: string
+      device_type:
+        description: >
+          The type of the device whose submenu was opened. Possible values are
+          "mobile" and "desktop".
+        type: string
+
   click_sync_now:
     type: event
     description: >
@@ -379,6 +414,172 @@ fxa_avatar_menu:
     expires: never
     extra_keys: *fxa_avatar_menu_click_extra
     telemetry_mirror: Fxa_avatar_menu_Click_SyncCta
+
+  create_new_profile_submenu:
+    type: event
+    description: >
+      Recorded when a user clicks the Create new profile label in the avatar menu.
+      Label is shown when there are no user created profiles.
+    bugs: &fxa_avatar_menu_profiles_bugs
+      - https://bugzil.la/2051632
+    data_reviews: &fxa_avatar_menu_profiles_data_reviews
+      - https://bugzil.la/2051632
+    notification_emails: &fxa_avatar_menu_profiles_emails
+      - asafko@mozilla.com
+      - kpatenio@mozilla.com
+    expires: never
+    extra_keys: &fxa_avatar_menu_profiles_extra
+      fxa_status:
+        description: >
+          The current state of the user. Possible states are "not_configured", "unverified", "signedin" and "login_failed".
+        type: string
+      fxa_avatar:
+        description: >
+          Boolean for whether or not account has set an avatar
+        type: string
+      fxa_sync_on:
+        description: >
+          Boolean for whether or not sync was configured at the time the event fired.
+        type: string
+
+  sync_your_data_cta:
+    type: event
+    description: >
+      Recorded when a user clicks on the Sync your data label that leads to Sign in and Sync flow.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_extra
+
+  get_firefox_for_mobile_cta:
+    type: event
+    description: >
+      Recorded when a user clicks on the Get Firefox for mobile label in the avatar menu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_extra
+
+  create_new_profile_cta_button:
+    type: event
+    description: >
+      Recorded when a user clicks on the Create new profile button in the profile submenu.
+      Button is shown when there are no user created profiles.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: &fxa_avatar_menu_profiles_count_extra
+      <<: *fxa_avatar_menu_profiles_extra
+      profile_count:
+        description: >
+          Number of profiles the user has when the event is recorded. This is
+          0 for a user who has not created a profile group yet, which is
+          distinct from a user who has a single profile.
+        type: quantity
+
+  what_are_profiles:
+    type: event
+    description: >
+      Recorded when a user clicks on the What are profiles label in the profile submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  manage_primary_profile:
+    type: event
+    description: >
+      Recorded when a user clicks on the primary profile to manage it in the avatar menu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_extra
+
+  launch_secondary_profile:
+    type: event
+    description: >
+      Recorded when a user launches a secondary profile from the avatar menu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_extra
+
+  edit_primary_profile:
+    type: event
+    description: >
+      Recorded when a user clicks the Edit this profile label in the profile submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  copy_primary_profile:
+    type: event
+    description: >
+      Recorded when a user clicks on Copy this profile label in the profile submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  manage_profiles:
+    type: event
+    description: >
+      Recorded when a user clicks on the Manage profiles label in the profile submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  create_new_profile_cta_label:
+    type: event
+    description: >
+      Recorded when a user clicks on the Create new profile label in the profile submenu.
+      Label is shown when there is at least one user created profile.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  view_all_profiles:
+    type: event
+    description: >
+      Recorded when a user clicks the All profiles label in the avatar menu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  manage_all_profiles:
+    type: event
+    description: >
+      Recorded when a user clicks the Manage profiles label in the all profiles submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
+
+  launch_secondary_profile_all_profiles:
+    type: event
+    description: >
+      Recorded when a user clicks a secondary profile in the all profiles submenu.
+    bugs: *fxa_avatar_menu_profiles_bugs
+    data_reviews: *fxa_avatar_menu_profiles_data_reviews
+    notification_emails: *fxa_avatar_menu_profiles_emails
+    expires: never
+    extra_keys: *fxa_avatar_menu_profiles_count_extra
 
 fxa_app_menu:
   click_account_settings:

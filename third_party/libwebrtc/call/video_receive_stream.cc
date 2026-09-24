@@ -70,8 +70,8 @@ std::string VideoReceiveStreamInterface::Stats::ToString(
   ss << "frameHeight: " << height << ", ";
   // TODO(crbug.com/webrtc/15166): `key` and `delta` will not
   // perfectly match the other frame counters.
-  ss << "key: " << frame_counts.key_frames << ", ";
-  ss << "delta: " << frame_counts.delta_frames << ", ";
+  ss << "key: " << received_frame_counts.key_frames << ", ";
+  ss << "delta: " << received_frame_counts.delta_frames << ", ";
   ss << "framesAssembledFromMultiplePackets: "
      << frames_assembled_from_multiple_packets << ", ";
   ss << "framesDecoded: " << frames_decoded << ", ";
@@ -117,7 +117,6 @@ std::string VideoReceiveStreamInterface::Stats::ToString(
   return ss.Release();
 }
 
-VideoReceiveStreamInterface::Config::Config(const Config&) = default;
 VideoReceiveStreamInterface::Config::Config(Config&&) = default;
 VideoReceiveStreamInterface::Config::Config(
     Transport* rtcp_send_transport,
@@ -181,6 +180,22 @@ std::string VideoReceiveStreamInterface::Config::Rtp::ToString() const {
      << (rtcp_event_observer ? "(rtcp_event_observer)" : "nullptr");
   ss << "}";
   return ss.Release();
+}
+
+VideoReceiveStreamInterface::Config VideoReceiveStreamInterface::Config::Copy()
+    const {
+  VideoReceiveStreamInterface::Config config_copy(rtcp_send_transport,
+                                                  decoder_factory);
+  config_copy.decoders = decoders;
+  config_copy.rtp = rtp;
+  config_copy.renderer = renderer;
+  config_copy.render_delay_ms = render_delay_ms;
+  config_copy.enable_prerenderer_smoothing = enable_prerenderer_smoothing;
+  config_copy.sync_group = sync_group;
+  config_copy.frame_decryptor = frame_decryptor;
+  config_copy.crypto_options = crypto_options;
+  config_copy.frame_transformer = frame_transformer;
+  return config_copy;
 }
 
 }  // namespace webrtc

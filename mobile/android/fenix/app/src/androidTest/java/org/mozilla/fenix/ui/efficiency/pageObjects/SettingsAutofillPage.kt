@@ -23,8 +23,8 @@ import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorTestTags
 import org.mozilla.fenix.ui.efficiency.data.AddressDetails
 import org.mozilla.fenix.ui.efficiency.data.CreditCardDetails
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAutofillSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
@@ -32,22 +32,24 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 class SettingsAutofillPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "SettingsAutofillPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = pageName,
             to = "SettingsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SettingsAutofillSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SettingsAutofillSelectors
 
     // Narrow the return type to this page so callers can fluently chain page-specific helpers
     // (e.g. fillAndSaveAddress) directly off navigateToPage().
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAutofillPage {
-        super.navigateToPage(url = url, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsAutofillPage {
+        super.navigateToPage(url = url, forceNavigation = forceNavigation, navigationOptions = navigationOptions)
         return this
     }
 

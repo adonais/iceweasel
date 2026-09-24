@@ -94,6 +94,21 @@ window.addEventListener(
  * @implements {nsIBrowser}
  */
 export class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
+  /**
+   * The URI the tabbrowser has registered with UrlbarProviderOpenTabs.
+   *
+   * @type {nsIURI}
+   */
+  registeredOpenURI;
+
+  /**
+   * The device sharing state, set by the WebRTC parent actor and read by the
+   * tabbrowser and the site permission panel.
+   *
+   * @type {any}
+   */
+  _sharingState;
+
   static get observedAttributes() {
     return ["remote"];
   }

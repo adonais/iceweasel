@@ -9,6 +9,8 @@
 <resources>
   <!-- Link text to learn more about downloading Gemini Nano -->
   <string name="mozac_summarize_learn_more_link">Uzzināt vairāk</string>
+  <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_button_positive">Turpināt</string>
   <!-- Title for the download error screen -->
   <string name="mozac_summarize_download_error_title">Kļūda</string>
   <!-- Generic fallback message for the download error screen -->

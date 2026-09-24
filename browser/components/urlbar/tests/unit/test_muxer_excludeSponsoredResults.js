@@ -62,10 +62,9 @@ add_task(async function test_filters_sponsored_results() {
     providers: [provider.name],
     excludeSponsoredResults: true,
   });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -92,10 +91,9 @@ add_task(async function test_filters_all_sponsored_results() {
     providers: [provider.name],
     excludeSponsoredResults: true,
   });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -117,10 +115,9 @@ add_task(async function test_keeps_non_sponsored_when_flag_set() {
     providers: [provider.name],
     excludeSponsoredResults: true,
   });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -144,10 +141,9 @@ add_task(async function test_keeps_sponsored_when_flag_unset() {
   ];
   let provider = registerBasicTestProvider(results);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,
@@ -171,10 +167,9 @@ add_task(async function test_keeps_sponsored_tab_when_flag_unset() {
   ];
   let provider = registerBasicTestProvider(results);
   let context = createContext(undefined, { providers: [provider.name] });
-  let controller = UrlbarTestUtils.newMockController();
   await ProvidersManager.getInstanceForSap("urlbar").startQuery(
     context,
-    controller
+    UrlbarTestUtils.mockChildController().parentController
   );
   Assert.deepEqual(
     context.results,

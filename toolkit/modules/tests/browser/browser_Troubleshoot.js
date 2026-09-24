@@ -887,6 +887,32 @@ const SNAPSHOT_SCHEMA = {
         },
       },
     },
+    pdfjs: {
+      required: true,
+      type: "object",
+      properties: {
+        version: {
+          required: true,
+          type: "string",
+        },
+        enabled: {
+          required: true,
+          type: "boolean",
+        },
+        annotationEditorEnabled: {
+          required: true,
+          type: "boolean",
+        },
+        enableXfa: {
+          required: true,
+          type: "boolean",
+        },
+        openPdfAttachmentsInline: {
+          required: true,
+          type: "boolean",
+        },
+      },
+    },
     libraryVersions: {
       required: true,
       type: "object",

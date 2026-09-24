@@ -1018,8 +1018,9 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
   }
   for (size_t i = 0; i < thumbnail_receive_configs_.size(); ++i) {
     thumbnail_receive_streams_.push_back(sender_call_->CreateVideoReceiveStream(
-        thumbnail_receive_configs_[i].Copy()));
+        std::move(thumbnail_receive_configs_[i])));
   }
+  thumbnail_receive_configs_.clear();
 }
 
 void VideoQualityTest::DestroyThumbnailStreams() {

@@ -184,6 +184,9 @@ var gBrowserInit = {
           true
         );
       }
+      if (extraOptions.hasKey("aswebauth")) {
+        document.documentElement.setAttribute("aswebauth", true);
+      }
     }
 
     // Run menubar initialization first, to avoid CustomTitlebar code picking

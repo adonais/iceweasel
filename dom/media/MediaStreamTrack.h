@@ -128,6 +128,8 @@ class MediaStreamTrackSource : public nsISupports {
   virtual void Destroy() {}
 
   struct CloneResult {
+    ~CloneResult();
+
     RefPtr<MediaStreamTrackSource> mSource;
     RefPtr<mozilla::MediaTrack> mInputTrack;
   };

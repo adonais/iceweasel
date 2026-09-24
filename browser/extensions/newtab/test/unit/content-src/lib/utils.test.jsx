@@ -4,6 +4,7 @@ import {
   useIntersectionObserver,
   getActiveCardSize,
   getActiveColumnLayout,
+  getCardColumn,
   getNovaColumnLayout,
   useConfetti,
 } from "content-src/lib/utils.jsx";
@@ -201,6 +202,83 @@ describe("getNovaColumnLayout", () => {
     document.body.appendChild(el);
     assert.equal(getNovaColumnLayout(el), "col-3");
     el.remove();
+  });
+});
+
+describe("getCardColumn", () => {
+  const COL_WIDTH = 100;
+  const GAP = 10;
+  let grid;
+
+  function buildGrid(columnCount) {
+    grid = document.createElement("div");
+    grid.className = "ds-section-grid";
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = `repeat(${columnCount}, ${COL_WIDTH}px)`;
+    grid.style.gap = `${GAP}px`;
+    grid.style.width = `${columnCount * COL_WIDTH + (columnCount - 1) * GAP}px`;
+    grid.style.setProperty("--sections-col-count", `${columnCount}`);
+    document.body.appendChild(grid);
+    return grid;
+  }
+
+  function addCard(span = 1) {
+    const card = document.createElement("article");
+    card.style.gridColumn = `span ${span}`;
+    card.style.height = "20px";
+    grid.appendChild(card);
+    return card;
+  }
+
+  afterEach(() => {
+    grid?.remove();
+    grid = null;
+    document.dir = "ltr";
+  });
+
+  it("returns null for a card with no layout", () => {
+    buildGrid(4);
+    const card = addCard();
+    card.style.display = "none";
+    assert.isNull(getCardColumn(card));
+  });
+
+  it("reports each column across a full row", () => {
+    buildGrid(4);
+    const cards = [addCard(), addCard(), addCard(), addCard()];
+    assert.deepEqual(
+      cards.map(card => getCardColumn(card)),
+      [1, 2, 3, 4]
+    );
+  });
+
+  it("reports the leftmost column for a card spanning several", () => {
+    buildGrid(4);
+    const wide = addCard(2);
+    const next = addCard();
+    const last = addCard();
+    assert.equal(getCardColumn(wide), 1);
+    assert.equal(getCardColumn(next), 3);
+    assert.equal(getCardColumn(last), 4);
+  });
+
+  it("counts columns from the inline start under RTL", () => {
+    document.dir = "rtl";
+    buildGrid(3);
+    const cards = [addCard(), addCard(), addCard()];
+    assert.deepEqual(
+      cards.map(card => getCardColumn(card)),
+      [1, 2, 3]
+    );
+  });
+
+  it("resolves the grid item from an element inside the card", () => {
+    buildGrid(2);
+    addCard();
+    const card = addCard();
+    const inner = document.createElement("span");
+    card.appendChild(inner);
+    assert.equal(getCardColumn(inner), 2);
   });
 });
 

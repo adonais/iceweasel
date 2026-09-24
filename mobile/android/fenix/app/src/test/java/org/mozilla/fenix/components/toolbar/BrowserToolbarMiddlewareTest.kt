@@ -52,6 +52,7 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
+import mozilla.components.browser.thumbnails.facts.BrowserThumbnailsFacts
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
@@ -581,7 +582,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
@@ -615,7 +618,9 @@ class BrowserToolbarMiddlewareTest {
             )
         }
         verify {
-            thumbnailsFeature.requestScreenshot()
+            thumbnailsFeature.requestScreenshot(
+                trigger = BrowserThumbnailsFacts.CaptureAttemptedTriggers.TAB_COUNTER_CLICK
+            )
         }
     }
 
@@ -664,6 +669,7 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN the current tab has search terms WHEN the page origin is clicked THEN start search in the browser screen`() {
+        settings.showAddressBarInFocusMode = false
         val currentTab = createTab("test.com", searchTerms = "test")
         val browserStore =
             BrowserStore(
@@ -681,6 +687,28 @@ class BrowserToolbarMiddlewareTest {
         verify { appStore.dispatch(SearchStarted(currentTab.id)) }
         assertEquals(currentTab.content.searchTerms, toolbarStore.state.editState.query.current)
         assertTrue(toolbarStore.state.editState.isQueryPrefilled)
+    }
+
+    @Test
+    fun `GIVEN addressbar focus mode is enabled WHEN the page origin is clicked THEN start search without prefilling current URL`() {
+        settings.showAddressBarInFocusMode = true
+        val currentTab = createTab("test.com", searchTerms = "test")
+        val browserStore =
+            BrowserStore(
+                BrowserState(
+                    tabs = listOf(currentTab),
+                    selectedTabId = currentTab.id,
+                )
+            )
+        val middleware = buildMiddleware(browserStore = browserStore)
+        val toolbarStore = buildStore(middleware)
+
+        toolbarStore.dispatch(toolbarStore.state.displayState.pageOrigin.onClick as BrowserToolbarAction)
+
+        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
+        verify { appStore.dispatch(SearchStarted(currentTab.id)) }
+        assertEquals("", toolbarStore.state.editState.query.current)
+        assertFalse(toolbarStore.state.editState.isQueryPrefilled)
     }
 
     @Test

@@ -3,12 +3,6 @@
 
 "use strict";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 add_task(async function test_about_glean_redesign_views_hidden_behind_pref() {
   await BrowserTestUtils.withNewTab("about:glean", async function (browser) {
     ok(!browser.isRemoteBrowser, "Browser should not be remote.");

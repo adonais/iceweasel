@@ -22,7 +22,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -32,14 +31,15 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.tabstray.R as tabstrayR
 import mozilla.components.compose.base.RadioCheckmark
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.DismissibleItemBackground
+import org.mozilla.fenix.compose.SwipeToDismissBackground
 import org.mozilla.fenix.compose.TabThumbnail
+import org.mozilla.fenix.compose.rememberSwipeToDismissBoxState
+import org.mozilla.fenix.compose.swipeToDismissFade
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.browser.compose.TabItemInteractionState
@@ -77,8 +77,7 @@ fun TabListTabItem(
     onClick: (TabsTrayItem) -> Unit,
     onLongClick: ((TabsTrayItem) -> Unit)? = null,
 ) {
-    val swipeToDismissBoxState = rememberTabSwipeToDismissBoxState(tabId = tab.id)
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val swipeToDismissBoxState = rememberSwipeToDismissBoxState(id = tab.id)
 
     // SwipeToDismissBox invokes onDismiss from a LaunchedEffect keyed on the callback, so an
     // unstable lambda would re-close the tab on every recomposition that follows the dismissal.
@@ -91,13 +90,7 @@ fun TabListTabItem(
         onDismiss = onDismiss,
         gesturesEnabled = !selectionState.multiSelectEnabled && swipingEnabled,
         backgroundContent = {
-            // dismissDirection comes from the raw offset and is not mirrored for RTL.
-            val contentMovedRight = swipeToDismissBoxState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
-
-            DismissibleItemBackground(
-                isSwipeActive = swipeToDismissBoxState.dismissDirection != SwipeToDismissBoxValue.Settled,
-                isSwipingToStart = if (isRtl) contentMovedRight else !contentMovedRight,
-            )
+            SwipeToDismissBackground(swipeToDismissBoxState)
         },
     ) {
         TabContent(
@@ -108,7 +101,7 @@ fun TabListTabItem(
             // The fade has to wrap the caller's modifier: the focus outline is a border applied
             // there by tabListItemShapeStyling, and it only picks up the alpha if it is drawn
             // inside the layer.
-            modifier = Modifier.fadeOnSwipeToDismiss(swipeToDismissBoxState).then(modifier),
+            modifier = Modifier.swipeToDismissFade(swipeToDismissBoxState).then(modifier),
             onCloseClick = onCloseClick,
             onClick = onClick,
             onLongClick = onLongClick,

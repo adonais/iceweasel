@@ -3,8 +3,6 @@ import { WrapWithProvider } from "test/jest/test-utils";
 import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
 
 const DEFAULT_PROPS = {
-  exitEventFired: false,
-  onSubpanelToggle: jest.fn(),
   togglePanel: jest.fn(),
   showPanel: false,
   enabledSections: {
@@ -34,5 +32,17 @@ describe("<WidgetsManagementPanel>", () => {
     expect(
       container.querySelector(".widgets-mgmt-panel-container")
     ).toBeInTheDocument();
+  });
+
+  it("gives the back button an accessible name and tooltip", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={true} />
+      </WrapWithProvider>
+    );
+    expect(container.querySelector("moz-button.arrow-button")).toHaveAttribute(
+      "data-l10n-id",
+      "newtab-customize-panel-back-button"
+    );
   });
 });

@@ -22,8 +22,12 @@
 
 namespace mozilla {
 
-AudioConverter::AudioConverter(const AudioConfig& aIn, const AudioConfig& aOut)
-    : mIn(aIn), mOut(aOut), mResampler(nullptr) {
+AudioConverter::AudioConverter(const AudioConfig& aIn, const AudioConfig& aOut,
+                               int aResamplerQuality)
+    : mIn(aIn),
+      mOut(aOut),
+      mResamplerQuality(aResamplerQuality),
+      mResampler(nullptr) {
   MOZ_DIAGNOSTIC_ASSERT(CanConvert(aIn, aOut),
                         "The conversion is not supported");
   mIn.Layout().MappingTable(mOut.Layout(), &mChannelOrderMap);
@@ -399,7 +403,7 @@ void AudioConverter::RecreateResampler() {
   }
   int error;
   mResampler = speex_resampler_init(mOut.Channels(), mIn.Rate(), mOut.Rate(),
-                                    SPEEX_RESAMPLER_QUALITY_DEFAULT, &error);
+                                    mResamplerQuality, &error);
 
   if (error == RESAMPLER_ERR_SUCCESS) {
     speex_resampler_skip_zeros(mResampler);

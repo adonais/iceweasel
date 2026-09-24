@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 SYMBOL_REGEX = re.compile("^(.*)-[a-z0-9]{11}-bk$")
 GROUP_SYMBOL_REGEX = re.compile("^(.*)-bk$")
 MIN_SLICE_GAP = 7
+_PRIORITIES = ["lowest", "very-low", "low", "medium", "high", "very-high", "highest"]
+_PERF_SUITES = ("raptor", "talos")
 
 # Allowed browser applications for performance test backfills
 # Only Firefox and Geckoview should be backfilled for regression detection
@@ -35,6 +37,23 @@ ALLOWED_PERFTEST_BACKFILL_APPS = (
     "geckoview",
     "fenix",
 )
+
+
+def _is_perf_task(task):
+    return (
+        task.kind == "perftest" or task.attributes.get("unittest_suite") in _PERF_SUITES
+    )
+
+
+def _lower_priority(current, max_priority):
+    try:
+        if current is None or _PRIORITIES.index(max_priority) < _PRIORITIES.index(
+            current
+        ):
+            return max_priority
+    except ValueError:
+        pass
+    return current
 
 
 def input_for_support_action(revision, task, times=1, retrigger=True):
@@ -235,7 +254,10 @@ def is_speedometer_task(label):
     return "shippable" in label and "speedometer3" in label
 
 
-def backfill_modifier(task, input):
+def backfill_modifier(task, input, lower_priority=False):
+    if lower_priority:
+        task.task["priority"] = _lower_priority(task.task.get("priority"), "very-low")
+
     if task.label != input["label"]:
         return task
 
@@ -275,10 +297,6 @@ def backfill_modifier(task, input):
                 GROUP_SYMBOL_REGEX, th_info["groupSymbol"], "-bk"
             )
         task.task["tags"]["action"] = "backfill-task"
-    return task
-
-
-def do_not_modify(task):
     return task
 
 
@@ -395,6 +413,11 @@ def add_task_with_original_manifests(
 
     to_run = [label]
 
+    # When backfilling a performance test, lower the priority of every task this
+    # action schedules (the test and its dependencies) to avoid delaying the
+    # tasks of regular pushes.
+    lower_priority = _is_perf_task(full_task_graph[label])
+
     logger.info("Creating tasks...")
     create_tasks(
         graph_config,
@@ -404,7 +427,7 @@ def add_task_with_original_manifests(
         parameters,
         decision_task_id,
         suffix="0",
-        modifier=partial(backfill_modifier, input=input),
+        modifier=partial(backfill_modifier, input=input, lower_priority=lower_priority),
     )
 
     # TODO Implement a way to write out artifacts without assuming there's

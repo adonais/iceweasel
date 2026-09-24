@@ -1,0 +1,4 @@
+[DEFAULT]
+support-files = ["empty.html"]
+
+["browser_speech_recognition_process_lifetime.js"]

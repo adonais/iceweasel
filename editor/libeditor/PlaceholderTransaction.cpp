@@ -318,13 +318,11 @@ nsresult PlaceholderTransaction::EndPlaceHolderBatch() {
   mAbsorb = false;
 
   if (mForwardingTransaction) {
-    if (mForwardingTransaction) {
-      DebugOnly<nsresult> rvIgnored =
-          mForwardingTransaction->EndPlaceHolderBatch();
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "PlaceholderTransaction::EndPlaceHolderBatch() failed, but ignored");
-    }
+    DebugOnly<nsresult> rvIgnored =
+        mForwardingTransaction->EndPlaceHolderBatch();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "PlaceholderTransaction::EndPlaceHolderBatch() failed, but ignored");
   }
   // remember our selection state.
   nsresult rv = RememberEndingSelection();

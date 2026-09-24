@@ -2993,11 +2993,7 @@ class RuleViewTool {
       this.onPanelSelected,
       baseEventConfig
     );
-    this.inspector.styleChangeTracker.on(
-      "style-changed",
-      this.refresh,
-      baseEventConfig
-    );
+    this.inspector.on("style-changed", this.refresh, baseEventConfig);
 
     this.inspector.commands.resourceCommand.watchResources(
       [

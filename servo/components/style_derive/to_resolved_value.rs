@@ -32,7 +32,7 @@ pub fn derive(input: DeriveInput) -> TokenStream {
         parse_quote!(ResolvedValue),
         BindStyle::Move,
         |binding| {
-            let attrs = cg::parse_field_attrs::<ResolvedValueAttrs>(&binding.ast());
+            let attrs = cg::parse_field_attrs::<ResolvedValueAttrs>(binding.ast());
             to_computed_value::ToValueAttrs {
                 field_bound: attrs.field_bound,
                 no_field_bound: attrs.no_field_bound,

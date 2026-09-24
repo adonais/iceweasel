@@ -247,6 +247,63 @@ ssl_ReferenceSID(sslSessionID *sid)
     return sid;
 }
 
+/* Install |sid| as the socket's session ID: the caller's reference passes to
+ * the socket, and the socket's reference to the previous session is released.
+ * |sid| may already be the socket's session, in which case the caller must
+ * still hold a reference of its own.
+ *
+ * Swapping and releasing under the cache lock is what makes
+ * ssl_ReferenceSocketSID safe: a reader on another thread can never observe a
+ * pointer whose last reference has already been dropped.
+ */
+void
+ssl_SetSocketSID(sslSocket *ss, sslSessionID *sid)
+{
+    sslSessionID *old;
+
+    LOCK_CACHE;
+    old = ss->sec.ci.sid;
+    ss->sec.ci.sid = sid;
+    if (old) {
+        ssl_FreeLockedSID(old);
+    }
+    UNLOCK_CACHE;
+}
+
+/* Clear the socket's session ID and return it, transferring the socket's
+ * reference to the caller.
+ */
+sslSessionID *
+ssl_TakeSocketSID(sslSocket *ss)
+{
+    sslSessionID *sid;
+
+    LOCK_CACHE;
+    sid = ss->sec.ci.sid;
+    ss->sec.ci.sid = NULL;
+    UNLOCK_CACHE;
+    return sid;
+}
+
+/* Return the socket's session ID with an extra reference, or NULL. The caller
+ * must release it with ssl_FreeSID. Safe to call from any thread; in
+ * particular it takes no socket lock, so it can be used from application
+ * callbacks that NSS invokes while holding them.
+ */
+sslSessionID *
+ssl_ReferenceSocketSID(sslSocket *ss)
+{
+    sslSessionID *sid;
+
+    LOCK_CACHE;
+    sid = ss->sec.ci.sid;
+    if (sid) {
+        sid->references++;
+    }
+    UNLOCK_CACHE;
+    return sid;
+}
+
 /************************************************************************/
 
 /*

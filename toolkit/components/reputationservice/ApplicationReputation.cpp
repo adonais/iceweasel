@@ -432,7 +432,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".scptd",  // AppleScript
     //".scr", exec         // Windows
     //".sct", exec         // Windows shell
-    //".search-ms", exec         // Windows Saved Search
+    //".search-ms", exec          // Windows Saved Search
+    //".searchConnector-ms", exec // Windows Search Connector
     ".seplugin",  // AppleScript
     ".service",   // Systemd service unit file
     //".settingcontent-ms", exec // Windows settings

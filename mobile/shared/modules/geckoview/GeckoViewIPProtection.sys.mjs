@@ -165,11 +165,16 @@ export const GeckoViewIPProtection = {
       }
       case "GeckoView:IPProtection:ServerList:GetCountryList": {
         lazy.IPProtectionServerlist.maybeFetchList()
-          .then(() => {
-            lazy.EventDispatcher.instance.sendRequest(
-              "GeckoView:IPProtection:ServerList:ListChanged",
-              { countries: lazy.IPProtectionServerlist.countries }
-            );
+          .then(changed => {
+            // maybeFetchList already dispatches ListChanged (forwarded to the
+            // delegate) when the list changed; only push manually otherwise so
+            // getCountryList() delivers the current list exactly once.
+            if (!changed) {
+              lazy.EventDispatcher.instance.sendRequest(
+                "GeckoView:IPProtection:ServerList:ListChanged",
+                { countries: lazy.IPProtectionServerlist.countries }
+              );
+            }
             aCallback.onSuccess();
           })
           .catch(err => {

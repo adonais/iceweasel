@@ -25,7 +25,7 @@
 
         const error = await device.popErrorScope();
         ok(error, "expected error from invalid shader");
-        is(error.message, "Shader module creation failed: Parsing error");
+        is(error.message, "Validation Error\n\nCaused by:\n  In \n    Shader module creation failed: Parsing error\n");
 
         const compilationInfo = await shaderModule.getCompilationInfo();
         is(compilationInfo.messages.length, 1);

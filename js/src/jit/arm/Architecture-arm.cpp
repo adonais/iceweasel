@@ -413,7 +413,7 @@ FloatRegisters::Code FloatRegisters::FromName(const char* name) {
 }
 
 FloatRegisterSet VFPRegister::ReduceSetForPush(const FloatRegisterSet& s) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -431,7 +431,7 @@ FloatRegisterSet VFPRegister::ReduceSetForPush(const FloatRegisterSet& s) {
 }
 
 uint32_t VFPRegister::GetPushSizeInBytes(const FloatRegisterSet& s) {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 
@@ -442,7 +442,7 @@ uint32_t VFPRegister::GetPushSizeInBytes(const FloatRegisterSet& s) {
   return ret;
 }
 uint32_t VFPRegister::getRegisterDumpOffsetInBytes() {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  error "Needs more careful logic if SIMD is enabled"
 #endif
 

@@ -4,28 +4,33 @@ const { FirstStartup } = ChromeUtils.importESModule(
   "resource://gre/modules/FirstStartup.sys.mjs"
 );
 
-add_task(async function test_createTargetingContext() {
-  const manager = NimbusTestUtils.stubs.manager();
-  const sandbox = sinon.createSandbox();
-  const recipe = NimbusTestUtils.factories.recipe("foo");
-  const rollout = NimbusTestUtils.factories.rollout("bar");
-  sandbox.stub(manager.store, "ready").resolves();
-  sandbox.stub(manager.store, "getAllActiveExperiments").returns([recipe]);
-  sandbox.stub(manager.store, "getAllActiveRollouts").returns([rollout]);
-  sandbox.stub(manager.store, "getAll").returns([
-    {
-      slug: "foo",
-      branch: {
-        slug: "bar",
-      },
+function setupFirstStartup(state) {
+  const originalState = FirstStartup._state;
+
+  FirstStartup._state = state;
+
+  return {
+    [Symbol.dispose]() {
+      FirstStartup._state = originalState;
     },
-    {
-      slug: "baz",
-      branch: {
-        slug: "qux",
-      },
-    },
-  ]);
+  };
+}
+
+add_task(async function testCreateTargetingContext() {
+  const { cleanup, manager } = await NimbusTestUtils.setupTest();
+
+  const experiment = NimbusTestUtils.factories.recipe.withFeatureConfig("foo", {
+    branchSlug: "bar",
+    featureId: "no-feature-firefox-desktop",
+  });
+  const rollout = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "baz",
+    { branchSlug: "qux", featureId: "no-feature-firefox-desktop" },
+    { isRollout: true }
+  );
+
+  await manager.enroll(experiment, "test");
+  await manager.enroll(rollout, "test");
 
   let context = manager.createTargetingContext();
   const activeSlugs = await context.activeExperiments;
@@ -40,7 +45,7 @@ add_task(async function test_createTargetingContext() {
   );
   Assert.deepEqual(
     activeRollouts,
-    ["bar"],
+    ["baz"],
     "should return slugs for all rollouts stored"
   );
   Assert.deepEqual(
@@ -52,14 +57,23 @@ add_task(async function test_createTargetingContext() {
     "should return a map of slugs to branch slugs"
   );
 
-  // Pretend to be in the first startup
-  FirstStartup._state = FirstStartup.IN_PROGRESS;
-  context = manager.createTargetingContext();
-
-  Assert.ok(context.isFirstStartup, "should set the first startup flag");
+  await NimbusTestUtils.cleanupManager(["foo", "baz"]);
+  await cleanup();
 });
 
-add_task(async function test_isNonStubFirstRun() {
+add_task(async function testIsFirstStartup() {
+  using disposable = new DisposableStack();
+  disposable.use(setupFirstStartup(FirstStartup.IN_PROGRESS));
+
+  const { cleanup, manager } = await NimbusTestUtils.setupTest();
+
+  const context = manager.createTargetingContext();
+  Assert.ok(context.isFirstStartup, "should set the first startup flag");
+
+  await cleanup();
+});
+
+add_task(async function testIsNonStubFirstRun() {
   Assert.ok(
     !Services.prefs.getBoolPref("nimbus.firstUpdateComplete", false),
     "nimbus.firstUpdateComplete should be false on a new profile"

@@ -27,7 +27,6 @@ components/glean/index
 modules/toolkit_modules/index
 content/toolkit_widgets/index
 components/resistfingerprinting/resistfingerprinting/index
-components/url-classifier/url-classifier/index
 components/extensions/webextensions/index
 /extensions/spellcheck/index
 mozapps/dmgInstallHelper/docs/index

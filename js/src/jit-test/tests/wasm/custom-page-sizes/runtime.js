@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !wasmCustomPageSizesEnabled()
+// |jit-test| skip-if: !wasmCustomPageSizesEnabled(); test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 for (const addrtype of ["i32", "i64"]) {
   console.log(`Address type: ${addrtype}`);

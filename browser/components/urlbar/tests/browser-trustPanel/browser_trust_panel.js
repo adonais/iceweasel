@@ -17,6 +17,8 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   SiteDataTestUtils: "resource://testing-common/SiteDataTestUtils.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
+  UrlClassifierTestUtils:
+    "resource://testing-common/UrlClassifierTestUtils.sys.mjs",
 });
 
 const { FX_MONITOR_OAUTH_CLIENT_ID: monitorClientId } =
@@ -31,6 +33,12 @@ ChromeUtils.defineLazyGetter(this, "fxAccounts", () => {
 const TRACKING_PAGE =
   // eslint-disable-next-line sdl/no-insecure-url
   "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
+
+// The http is required here so that the sub iframe is not blocked which prevents the
+// cookie test.
+const COOKIE_PAGE =
+  // eslint-disable-next-line sdl/no-insecure-url
+  "http://not-tracking.example.com/browser/browser/base/content/test/protectionsUI/cookiePage.html";
 
 const TEST_BREACH = {
   // Make sure the breach is a recent one, since breaches older than a year are not taken into account:
@@ -261,17 +269,22 @@ add_task(async function test_update() {
     "trustpanel-blocker-section-header"
   );
 
-  // The test page loads a trackertest.org iframe, so one tracker is already
-  // blocked by the time the panel opens. The count now reflects the full
-  // content-blocking log, so the section shows that baseline rather than a
-  // misleading "0 trackers blocked".
   await TestUtils.waitForCondition(
-    () => parseInt(blockerHeader.textContent, 10) == 1,
-    "Shows the tracker already blocked on page load"
+    () =>
+      // eslint-disable-next-line sdl/no-insecure-url
+      "http://trackertest.org" in
+        JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog()) &&
+      blockerHeader.textContent.length,
+    "Waiting for the tracking iframe to be recorded and the count rendered"
+  );
+  Assert.equal(
+    parseInt(blockerHeader.textContent, 10),
+    0,
+    "Detected but unblocked trackers (i.e. the tracking iframe) are not counted"
   );
   Assert.ok(
-    !blockerSection.hasAttribute("hidden"),
-    "Blocker section is shown once a tracker is blocked"
+    blockerSection.hasAttribute("hidden"),
+    "Blocker section is hidden while nothing has been blocked"
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
@@ -279,12 +292,12 @@ add_task(async function test_update() {
   });
 
   await TestUtils.waitForCondition(
-    () => parseInt(blockerHeader.textContent, 10) == 2,
+    () => parseInt(blockerHeader.textContent, 10) == 1,
     "Updated to show new cryptominer blocked"
   );
   Assert.ok(
     !blockerSection.hasAttribute("hidden"),
-    "Blocker section stays shown with multiple trackers blocked"
+    "Blocker section is shown once a tracker is blocked"
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
@@ -292,7 +305,7 @@ add_task(async function test_update() {
   });
 
   await TestUtils.waitForCondition(
-    () => parseInt(blockerHeader.textContent, 10) == 3,
+    () => parseInt(blockerHeader.textContent, 10) == 2,
     "Updated to show new fingerprinter blocked"
   );
   Assert.ok(
@@ -1343,4 +1356,82 @@ add_task(async function test_close_on_tab_switch() {
 
   BrowserTestUtils.removeTab(tab2);
   BrowserTestUtils.removeTab(tab1);
+});
+
+add_task(async function test_closes_on_navigation() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://example.com",
+    waitForLoad: true,
+  });
+  const popup = document.getElementById("trustpanel-popup");
+
+  await UrlbarTestUtils.openTrustPanel(window);
+  Assert.equal(popup.state, "open", "Trust Panel is open");
+
+  info("Navigate from the content page, without touching the panel");
+  let popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+    content.location = "https://example.org/";
+  });
+  await popupHidden;
+
+  Assert.equal(
+    popup.state,
+    "closed",
+    "Trust Panel closed for the new document"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_cookie_details_title() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "network.cookie.cookieBehavior",
+        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+      ],
+    ],
+  });
+  await UrlClassifierTestUtils.addTestTrackers();
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: COOKIE_PAGE,
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  let blockerShown = BrowserTestUtils.waitForEvent(
+    document.getElementById("trustpanel-blockerView"),
+    "ViewShown"
+  );
+  document.getElementById("trustpanel-blocker-see-all").click();
+  await blockerShown;
+
+  const COOKIE_BUTTON =
+    '#trustpanel-blocked [data-l10n-id="trustpanel-list-label-tracking-cookies"]';
+  await BrowserTestUtils.waitForMutationCondition(
+    document.getElementById("trustpanel-blocked"),
+    { childList: true, subtree: true },
+    () => document.querySelector(COOKIE_BUTTON),
+    "waiting for the blocked cookies entry"
+  );
+
+  let detailsView = document.getElementById("trustpanel-blockerDetailsView");
+  let detailsShown = BrowserTestUtils.waitForEvent(detailsView, "ViewShown");
+  document.querySelector(COOKIE_BUTTON).click();
+  await detailsShown;
+
+  Assert.equal(
+    detailsView.dataset.l10nId,
+    "protections-blocking-cookies-trackers",
+    "Cross-site tracking cookies are not titled as third-party cookies"
+  );
+
+  UrlClassifierTestUtils.cleanupTestTrackers();
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 });

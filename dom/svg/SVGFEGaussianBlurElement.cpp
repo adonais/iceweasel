@@ -66,12 +66,9 @@ FilterPrimitiveDescription SVGFEGaussianBlurElement::GetPrimitiveDescription(
   float stdY = aInstance->GetPrimitiveNumber(
       SVGLength::Axis::Y, &mNumberPairAttributes[STD_DEV],
       SVGAnimatedNumberPairWhichOne::Second);
-  if (stdX < 0 || stdY < 0) {
-    return FilterPrimitiveDescription();
-  }
 
   GaussianBlurAttributes atts;
-  atts.mStdDeviation = Size(stdX, stdY);
+  atts.mStdDeviation = Size(std::max(stdX, 0.f), std::max(stdY, 0.f));
   return FilterPrimitiveDescription(AsVariant(std::move(atts)));
 }
 

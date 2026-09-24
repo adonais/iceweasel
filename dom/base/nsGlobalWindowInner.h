@@ -111,6 +111,7 @@ class ContentMediaController;
 enum class ImageBitmapFormat : uint8_t;
 class IdleRequest;
 class IdleRequestCallback;
+class IdleRequestMap;
 class IntlUtils;
 class MediaQueryList;
 class OwningExternalOrWindowProxy;
@@ -1460,6 +1461,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   // The current idle request callback handle
   uint32_t mIdleRequestCallbackCounter;
   IdleRequests mIdleRequestCallbacks;
+  RefPtr<mozilla::dom::IdleRequestMap> mIdleRequestCallbacksByHandle;
   RefPtr<IdleRequestExecutor> mIdleRequestExecutor;
 
 #ifdef DEBUG

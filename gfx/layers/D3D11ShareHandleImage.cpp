@@ -14,7 +14,7 @@
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositableForwarder.h"
-#include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
+#include "mozilla/layers/CompositeProcessFencesHolderMap.h"
 #include "mozilla/layers/FenceD3D11.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/TextureD3D11.h"
@@ -210,7 +210,7 @@ already_AddRefed<TextureClient> D3D11RecycleAllocator::CreateOrRecycleClient(
   }
   mImageDevice = device;
 
-  auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
+  auto* fencesHolderMap = CompositeProcessFencesHolderMap::Get();
   const bool useFence =
       fencesHolderMap && FenceD3D11::IsSupported(mImageDevice);
   TextureAllocationFlags allocFlags = TextureAllocationFlags::ALLOC_DEFAULT;
@@ -233,8 +233,9 @@ already_AddRefed<TextureClient> D3D11RecycleAllocator::CreateOrRecycleClient(
     MOZ_ASSERT(textureData);
     if (textureData && textureData->mFencesHolderId.isSome() &&
         fencesHolderMap) {
-      fencesHolderMap->WaitAllFencesAndForget(
-          textureData->mFencesHolderId.ref(), mDevice);
+      auto fences = fencesHolderMap->TakeAllFencesAndForget(
+          textureData->mFencesHolderId.ref());
+      FenceD3D11::WaitD3D11Fences(fences, mDevice);
     }
   }
   return textureClient.forget();

@@ -64,12 +64,12 @@
 //! selectors are effectively stripped off, so that matching them all against
 //! elements makes sense.
 
-use crate::applicable_declarations::ApplicableDeclarationBlock;
 use crate::bloom::StyleBloom;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, SharedStyleContext, StyleContext};
 use crate::dom::{SendElement, TElement, TNode};
 use crate::properties::ComputedValues;
+use crate::rule_tree::StyleSource;
 use crate::selector_map::RelevantAttributes;
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles};
 use crate::stylist::Stylist;
@@ -183,7 +183,10 @@ pub struct ValidationData {
     part_list: Option<ThinVec<AtomIdent>>,
 
     /// The list of presentational attributes of the element.
-    pres_hints: Option<ThinVec<ApplicableDeclarationBlock>>,
+    ///
+    /// We only need the declaration blocks, since all the other fields of the applicable
+    /// declaration are the same for all presentational hints.
+    pres_hints: Option<ThinVec<StyleSource>>,
 
     /// The pointer identity of the parent ComputedValues.
     parent_style_identity: Option<OpaqueComputedValues>,
@@ -196,12 +199,12 @@ pub struct ValidationData {
 impl ValidationData {
     /// Move the cached data to a new instance, and return it.
     pub fn take(&mut self) -> Self {
-        mem::replace(self, Self::default())
+        std::mem::take(self)
     }
 
     /// Get or compute the list of presentational attributes associated with
     /// this element.
-    pub fn pres_hints<E>(&mut self, element: E) -> &[ApplicableDeclarationBlock]
+    pub fn pres_hints<E>(&mut self, element: E) -> &[StyleSource]
     where
         E: TElement,
     {
@@ -212,7 +215,7 @@ impl ValidationData {
                 VisitedHandlingMode::AllLinksUnvisited,
                 &mut pres_hints,
             );
-            ThinVec::from_iter(pres_hints.drain(..))
+            ThinVec::from_iter(pres_hints.drain(..).map(|d| d.source.to_owned()))
         })
     }
 
@@ -261,9 +264,8 @@ impl ValidationData {
         self.parent_style_identity
             .get_or_insert_with(|| {
                 let parent = el.inheritance_parent().unwrap();
-                let values =
-                    OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary());
-                values
+
+                OpaqueComputedValues::from(parent.borrow_data().unwrap().styles.primary())
             })
             .clone()
     }
@@ -342,7 +344,7 @@ impl<E: TElement> StyleSharingCandidate<E> {
     }
 
     /// Get the pres hints of this candidate.
-    fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
+    fn pres_hints(&mut self) -> &[StyleSource] {
         self.validation_data.pres_hints(self.element)
     }
 
@@ -404,7 +406,7 @@ impl<E: TElement> StyleSharingTarget<E> {
     /// Trivially construct a new StyleSharingTarget to test against the cache.
     pub fn new(element: E) -> Self {
         Self {
-            element: element,
+            element,
             validation_data: ValidationData::default(),
         }
     }
@@ -418,7 +420,7 @@ impl<E: TElement> StyleSharingTarget<E> {
     }
 
     /// Get the pres hints of this candidate.
-    fn pres_hints(&mut self) -> &[ApplicableDeclarationBlock] {
+    fn pres_hints(&mut self) -> &[StyleSource] {
         self.validation_data.pres_hints(self.element)
     }
 
@@ -579,6 +581,12 @@ impl<E: TElement> Drop for StyleSharingCache<E> {
     }
 }
 
+impl<E: TElement> Default for StyleSharingCache<E> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<E: TElement> StyleSharingCache<E> {
     fn cache_mut_at(&mut self, index: usize) -> &mut SharingCache<E> {
         let base: &mut TypelessSharingCache = &mut self.cache_typeless[index % SHARING_MAX_LEVELS];
@@ -586,11 +594,11 @@ impl<E: TElement> StyleSharingCache<E> {
     }
 
     /// Create a new style sharing candidate cache.
-
-    // Forced out of line to limit stack frame sizes after extra inlining from
-    // https://github.com/rust-lang/rust/pull/43931
-    //
-    // See https://github.com/servo/servo/pull/18420#issuecomment-328769322
+    ///
+    /// Forced out of line to limit stack frame sizes after extra inlining from
+    /// https://github.com/rust-lang/rust/pull/43931
+    ///
+    /// See https://github.com/servo/servo/pull/18420#issuecomment-328769322
     #[inline(never)]
     pub fn new() -> Self {
         assert_eq!(
@@ -730,7 +738,7 @@ impl<E: TElement> StyleSharingCache<E> {
             Self::test_candidate(
                 target,
                 candidate,
-                &shared_context,
+                shared_context,
                 bloom_filter,
                 selector_caches,
                 shared_context,
@@ -917,7 +925,7 @@ impl<E: TElement> StyleSharingCache<E> {
             }
             let data = candidate.element.borrow_data().unwrap();
             let style = data.styles.primary();
-            if style.rules.as_ref() != Some(&inputs.rules.as_ref().unwrap()) {
+            if style.rules.as_ref() != Some(inputs.rules.as_ref().unwrap()) {
                 return None;
             }
             if style.visited_rules() != inputs.visited_rules.as_ref() {

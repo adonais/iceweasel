@@ -1,8 +1,0 @@
-[
-  [
-    "warning",
-    "the const qualified variable 'UnnecessaryCopy' of type 'const std::string' (aka 'const basic_string<char>') is copy-constructed from a const reference but is never used; consider removing the statement",
-    "performance-unnecessary-copy-initialization"
-  ],
-  { "reliability": "high" }
-]

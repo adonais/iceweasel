@@ -417,6 +417,20 @@ features:
         type: Boolean
         default: false
 
+  addressbar-focus-mode:
+    description: >
+      When starting to edit the current URL show the website details in the awesomebar
+      instead of the addressbar.
+    variables:
+      enabled:
+        description: Whether the feature is enabled
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+
   homescreen-edge-to-edge-background:
     description: >
       Feature that sets an edge to edge background on the Home Screen if the user hasn't selected
@@ -492,28 +506,33 @@ features:
     description: Control Fingerprinting Protection
     variables:
       enabled:
-        description: If true, the feature is active.
+        description: >
+          Deprecated and no longer read. Each of the values below is applied
+          independently when a recipe supplies it; leaving a value unset means
+          "leave the existing setting alone".
         type: Boolean
         default: false
       enabled-normal:
         description: >
           Enables / disables fingerprinting protection in normal browsing mode.
-        type: Boolean
-        default: false
+          Unset leaves the existing setting alone.
+        type: Option<Boolean>
+        default: null
       enabled-private:
         description: >
           Enables / disables fingerprinting protection in private browsing mode.
-        type: Boolean
-        default: true
+          Unset leaves the existing setting alone.
+        type: Option<Boolean>
+        default: null
       overrides:
         description: >
           The protection overrides to add or remove fingerprinting protection
           targets. Please check RFPTargets.inc for all supported targets.
           The format of the overrides is +Target1,-Target2,+Target3
           where + means add and - means remove. The targets are separated by
-          commas. The default value is empty string.
-        type: String
-        default: ""
+          commas. Unset leaves the existing setting alone.
+        type: Option<String>
+        default: null
       fdlibm-math:
         description: >
           Uses a different math backend for Math.sin/cos/tan in JavaScript that
@@ -525,22 +544,27 @@ features:
     description: Control Baseline Fingerprinting Protection
     variables:
       feat-enabled:
-        description: If true, the feature is active.
+        description: >
+          Deprecated and no longer read. Each of the values below is applied
+          independently when a recipe supplies it; leaving a value unset means
+          "leave the existing setting alone".
         type: Boolean
         default: false
       enabled:
-        type: Boolean
-        description: Enables / disables baseline fingerprinting protection.
-        default: true
+        type: Option<Boolean>
+        description: >
+          Enables / disables baseline fingerprinting protection. Unset leaves
+          the existing setting alone.
+        default: null
       overrides:
-        type: String
+        type: Option<String>
         description: >-
           The protection overrides to add or remove fingerprinting protection
           targets. Please check RFPTargets.inc for all supported targets.
           The format of the overrides is +Target1,-Target2,+Target3
           where + means add and - means remove. The targets are separated by
-          commas. The default value is empty string.
-        default: ""
+          commas. Unset leaves the existing setting alone.
+        default: null
 
   third-party-cookie-blocking:
     description: Control third-party cookie blocking.
@@ -619,20 +643,6 @@ features:
           Negative cache TTL in seconds for the real-time request simulator.
         type: Int
         default: 300
-
-  firefox-jp-guide-default-site:
-    description: >
-      This feature is for managing the visibility of the Firefox Japanese Guide default suggested site shortcut
-    variables:
-      enabled:
-        description: >
-          Enables the feature.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
 
   microsurveys:
     description: Feature for microsurveys.
@@ -900,17 +910,7 @@ features:
         description: >
           Whether or not to enable the tab groups feature.
         type: Boolean
-        default: false
-    defaults:
-      - channel: release
-        value:
-          enabled: false
-      - channel: beta
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
+        default: true
   tab-groups-drag-and-drop:
     description: Control the visibility of drag and drop for tab groups.
     variables:
@@ -955,6 +955,22 @@ features:
       - channel: nightly
         value:
           enabled: false
+  tab-groups-ungroup:
+    description: Control whether the ungroup option is available for tab groups.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable ungrouping tab groups.
+        type: Boolean
+        default: true
+  tab-groups-strip:
+    description: Control whether the tab groups strip is shown.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the tab groups strip.
+        type: Boolean
+        default: false
 
   marketing-onboarding-card:
     description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.
@@ -1055,7 +1071,7 @@ features:
       enabled:
         description: If true, IP Protection feature is enabled.
         type: Boolean
-        default: false
+        default: true
       show-beta-badge:
         description: If true, a BETA badge is shown next to the IP Protection entry in the settings list.
         type: Boolean
@@ -1071,8 +1087,21 @@ features:
       allowed-regions:
         description: Country codes whose users are eligible for IP Protection.
         type: List<String>
-        default: [ "AU", "AT", "BE", "BG", "CA", "CL", "CO", "DK", "FI", "FR", "DE", "IE", "IT", "JP", "MY", "MX",
-                   "NL", "NZ", "NO", "PL", "PT", "RO", "SG", "ZA", "ES", "SE", "CH", "TH", "GB", "US" ]
+        default: [
+          "AD", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "BA", "BB", "BD",
+          "BE", "BF", "BG", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BW", "BZ", "CA",
+          "CC", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CO", "CR", "CV", "CW", "CY", "CZ", "DE", "DJ",
+          "DK", "DM", "DO", "DZ", "EC", "EE", "ES", "ET", "FI", "FJ", "FK", "FM", "FO", "FR", "GA", "GB",
+          "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GT", "GU", "GW", "GY",
+          "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IO", "IS", "IT", "JE", "JM", "JO", "JP", "KE",
+          "KG", "KH", "KI", "KM", "KN", "KR", "KW", "KY", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT",
+          "LU", "LV", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MN", "MO", "MP", "MQ", "MR",
+          "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO",
+          "NP", "NR", "NU", "NZ", "PA", "PE", "PF", "PG", "PH", "PL", "PM", "PN", "PR", "PT", "PW", "PY",
+          "RE", "RO", "RS", "RW", "SB", "SC", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO",
+          "SR", "ST", "SV", "SX", "SZ", "TC", "TD", "TG", "TH", "TK", "TL", "TN", "TO", "TT", "TV", "TW",
+          "UA", "US", "UY", "VA", "VC", "VE", "VG", "VI", "VU", "WF", "WS", "XK", "YT", "ZA", "ZM", "ZW"
+        ]
       promo-deadline:
         description: The final date for the promotion to end. This needs to be an ISO 8601 formatted date (i.e. YYYY-MM-DD).
         type: String
@@ -1080,14 +1109,7 @@ features:
     defaults:
       - channel: developer
         value:
-          enabled: true
           allowed-regions: ["XX"]
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: beta
-        value:
-          enabled: true
 
   native-share-sheet:
     description: Feature to enable the Native Share Sheet for users on Firefox on Android.
@@ -1127,6 +1149,13 @@ features:
         description: If true, Merino Client is enabled.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
 
   ads-client-for-stories:
     description: Feature to enable the Mozilla Ads Client support for Sponsored Stories for users on Firefox on Android.
@@ -1281,14 +1310,7 @@ features:
       enabled:
         description: If true, trending and recent searches are shown on the Homepage Search.
         type: Boolean
-        default: false
-    defaults:
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: developer
-        value:
-          enabled: true
+        default: true
 
   collections-to-tab-groups-migration:
     description: Feature to migrate Collections to Tab Groups for users on Firefox for Android.
@@ -1309,6 +1331,18 @@ features:
         description: If true, the OLED theme option is shown.
         type: Boolean
         default: false
+
+  pairing-signin-prompt:
+    description: Controls the day 1 sign-in prompt for users who installed Firefox through a pairing link.
+    variables:
+      enabled:
+        description: Whether the day 1 sign-in prompt can be shown.
+        type: Boolean
+        default: false
+      campaign-utm-content:
+        description: The "utm_content" value used to identify installs from the pairing campaign.
+        type: String
+        default: ""
 
   pdf-viewer:
     description: Feature for the PDF viewer tools for users on Firefox for Android.

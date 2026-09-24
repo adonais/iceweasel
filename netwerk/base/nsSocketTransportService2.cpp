@@ -728,17 +728,7 @@ int32_t nsSocketTransportService::Poll(PRIntervalTime ts) {
   int32_t n;
   {
     TimeStamp startTime = TimeStamp::Now();
-    if (pollTimeout != PR_INTERVAL_NO_WAIT) {
-      // There will be an actual non-zero wait, let the profiler know about it
-      // by marking thread as sleeping around the polling call.
-      profiler_thread_sleep();
-    }
-
     n = PR_Poll(firstPollEntry, pollCount, pollTimeout);
-
-    if (pollTimeout != PR_INTERVAL_NO_WAIT) {
-      profiler_thread_wake();
-    }
     if (profiler_thread_is_being_profiled_for_markers()) {
       PROFILER_MARKER_TEXT(
           "SocketTransportService::Poll", NETWORK,

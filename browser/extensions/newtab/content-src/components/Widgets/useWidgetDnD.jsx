@@ -5,15 +5,40 @@
 import { useEffect, useState } from "react";
 import { actionCreators as ac } from "../../../common/Actions.mjs";
 import { PREF_WIDGETS_ORDER } from "common/WidgetsRegistry.mjs";
-import { useMouseDnD } from "./useMouseDnD.jsx";
+import { usePointerReorder } from "content-src/lib/usePointerReorder.jsx";
+
+// A pointerdown on one of these starts an interaction, not a widget reorder.
+// Anchors are deliberately absent: dragging one moves the widget, and a click
+// still navigates because a gesture below the threshold commits nothing.
+// [draggable='true'] covers nested reorderable lists, such as the tasks inside
+// the Lists widget, which own their own drag.
+const INTERACTIVE_DESCENDANT_SELECTOR = [
+  "[draggable='true']",
+  "button",
+  "moz-button",
+  "moz-checkbox",
+  "moz-toggle",
+  "moz-radio",
+  "moz-select",
+  "moz-input-text",
+  "moz-input-password",
+  "moz-input-search",
+  "input",
+  "textarea",
+  "select",
+  "dialog",
+  "[contenteditable='true']",
+  "[role='button']",
+  "[role='checkbox']",
+  "[role='switch']",
+  "[role='textbox']",
+].join(", ");
 
 /**
- * Wraps the mouse widget-reorder hook. Owns the optimistic-order snapshot
- * (the local override that renders the user's just-committed order while
- * the pref-write round trip is in flight) and exposes a single set of
- * handlers + preview state for Widgets.jsx.
+ * Widgets-row adapter over the generic pointer reorder hook. Keeps the order
+ * the user just chose on screen until the pref write comes back.
  */
-export function useWidgetDnD({ widgetOrder, prefs, dispatch }) {
+export function useWidgetDnD({ widgetOrder, prefs, dispatch, enabled = true }) {
   const [optimisticOrder, setOptimisticOrder] = useState(null);
 
   useEffect(() => {
@@ -32,21 +57,14 @@ export function useWidgetDnD({ widgetOrder, prefs, dispatch }) {
     dispatch(ac.SetPref(PREF_WIDGETS_ORDER, newOrder.join(",")));
   }
 
-  const mouse = useMouseDnD({ effectiveOrder, commitOrder });
+  const { containerRef, draggedId, getItemProps } = usePointerReorder({
+    order: effectiveOrder,
+    onCommit: commitOrder,
+    itemSelector: "[data-widget-id]",
+    idAttr: "widgetId",
+    ignoreSelector: INTERACTIVE_DESCENDANT_SELECTOR,
+    enabled,
+  });
 
-  const previewOrderMap = mouse.previewOrder
-    ? Object.fromEntries(mouse.previewOrder.map((id, i) => [id, i]))
-    : null;
-
-  return {
-    effectiveOrder,
-    draggedId: mouse.draggedId,
-    previewOrder: mouse.previewOrder,
-    previewOrderMap,
-    handleDragStart: mouse.handleDragStart,
-    handleDragOver: mouse.handleDragOver,
-    handleDrop: mouse.handleDrop,
-    handleDragEnd: mouse.handleDragEnd,
-    handleMouseDown: mouse.handleMouseDown,
-  };
+  return { effectiveOrder, containerRef, draggedId, getItemProps };
 }

@@ -63,6 +63,12 @@ export class ThemeAppearanceMode extends MozLitElement {
         appearance === "light" ? 0 : 1
       );
     }
+    Glean.themePicker.change.record({
+      source: "about:addons",
+      layout: "full",
+      property: "appearance",
+      appearance,
+    });
   }
 
   render() {
@@ -71,7 +77,11 @@ export class ThemeAppearanceMode extends MozLitElement {
         rel="stylesheet"
         href="chrome://mozapps/content/extensions/components/aboutaddons-themes-mode.css"
       />
-      <moz-segmented-control .value=${this.value} @change=${this.#onChange}>
+      <moz-segmented-control
+        data-l10n-id="themes-mode"
+        .value=${this.value}
+        @change=${this.#onChange}
+      >
         <moz-segmented-control-item
           size="small"
           value="light"

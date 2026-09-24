@@ -7,8 +7,8 @@ package org.mozilla.fenix.ui.efficiency.pageObjects
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.CustomTabsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.FindInPageSelectors
@@ -18,8 +18,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
 class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "FindInPagePage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "BrowserPage",
             to = pageName,
             steps =
@@ -30,7 +30,7 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         )
 
         // Open Find in page from a custom tab's own menu.
-        NavigationRegistry.register(
+        builder.register(
             from = "CustomTabsPage",
             to = pageName,
             steps =
@@ -41,8 +41,16 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         )
     }
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): FindInPagePage {
-        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): FindInPagePage {
+        super.navigateToPage(
+            url = url.ifBlank { "example.com" },
+            forceNavigation = forceNavigation,
+            navigationOptions = navigationOptions,
+        )
         return this
     }
 
@@ -60,7 +68,5 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         return this
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return FindInPageSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = FindInPageSelectors
 }

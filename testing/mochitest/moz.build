@@ -224,6 +224,12 @@ TEST_HARNESS_FILES.testing.mochitest.websocketprocessbridge += [
     "/testing/tools/websocketprocessbridge/websocketprocessbridge_requirements_3.txt",
 ]
 
+# Local model-hub server for the speech-recognition (parakeet) tests; started by
+# runtests.py when those tests run. Serves models from MOZ_FETCHES_DIR.
+TEST_HARNESS_FILES.testing.mochitest += [
+    "/testing/tools/serve_model.py",
+]
+
 TEST_HARNESS_FILES.testing.mochitest.DoHServer.dns_packet += [
     "../xpcshell/dns-packet/classes.js",
     "../xpcshell/dns-packet/index.js",

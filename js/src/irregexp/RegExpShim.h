@@ -404,7 +404,8 @@ inline constexpr size_t RoundUpToPowerOfTwo(size_t value) {
 
 template <typename T>
 constexpr bool IsPowerOfTwo(T value) {
-  return std::has_single_bit(value);
+  static_assert(std::is_integral_v<T>);
+  return value > 0 && (value & (value - 1)) == 0;
 }
 
 constexpr uint32_t CountPopulation(uint32_t value) {

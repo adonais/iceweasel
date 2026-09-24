@@ -9,7 +9,8 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -20,8 +21,8 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
     BasePage(composeRule) {
     override val pageName = "SettingsDeleteBrowsingDataPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "HomePage",
             to = pageName,
             steps =
@@ -35,7 +36,7 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
 
         // Reachable from the Settings screen too, so the page can be opened after browsing (Browser ->
         // MainMenu -> Settings -> here) and not only straight from Home.
-        NavigationRegistry.register(
+        builder.register(
             from = "SettingsPage",
             to = pageName,
             steps =
@@ -47,19 +48,21 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
 
         // Back out to Settings so the graph can route onward (e.g. to Home, the tab drawer or History)
         // after a deletion, the way the legacy tests do with goBack()/exitMenu().
-        NavigationRegistry.register(
+        builder.register(
             from = pageName,
             to = "SettingsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SettingsDeleteBrowsingDataSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SettingsDeleteBrowsingDataSelectors
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsDeleteBrowsingDataPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsDeleteBrowsingDataPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 
@@ -116,50 +119,47 @@ class SettingsDeleteBrowsingDataPage(composeRule: AndroidComposeTestRule<HomeAct
 
     /** Uncheck everything except "Open tabs", asserting each toggle took, as the legacy robot did. */
     fun selectOnlyOpenTabsCheckBox(): SettingsDeleteBrowsingDataPage {
-        mozClick(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
         verifyCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = true)
         return this
     }
 
     /** Uncheck everything except "Browsing history", asserting each toggle took. */
     fun selectOnlyBrowsingHistoryCheckBox(): SettingsDeleteBrowsingDataPage {
-        mozClick(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
         verifyCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = true)
         return this
     }
 
     /** Uncheck everything except "Cookies and site data", asserting each toggle took. */
     fun selectOnlyCookiesCheckBox(): SettingsDeleteBrowsingDataPage {
-        mozClick(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.OPEN_TABS_CHECKBOX, checked = false)
         verifyCheckBox(SettingsDeleteBrowsingDataSelectors.COOKIES_CHECKBOX, checked = true)
-        mozClick(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
-        mozClick(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX)
-        verifyCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.CACHED_FILES_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.SITE_PERMISSIONS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.DOWNLOADS_CHECKBOX, checked = false)
+        toggleCheckBox(SettingsDeleteBrowsingDataSelectors.BROWSING_HISTORY_CHECKBOX, checked = false)
         return this
+    }
+
+    private fun toggleCheckBox(selector: Selector, checked: Boolean) {
+        for (attempt in 1..3) {
+            mozClick(selector)
+            try {
+                verifyCheckBox(selector, checked)
+                return
+            } catch (e: AssertionError) {
+                if (attempt == 3) throw e
+            }
+        }
     }
 
     fun clickDeleteBrowsingDataButton(): SettingsDeleteBrowsingDataPage {

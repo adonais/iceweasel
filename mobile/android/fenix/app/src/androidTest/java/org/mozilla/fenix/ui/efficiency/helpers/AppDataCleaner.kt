@@ -7,8 +7,16 @@ package org.mozilla.fenix.ui.efficiency.helpers
 import android.content.ComponentName
 import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import mozilla.components.browser.state.action.DownloadAction
+import mozilla.components.browser.state.action.RecentlyClosedAction
+import mozilla.components.browser.state.action.UndoAction
+import mozilla.components.browser.storage.sync.PlacesHistoryStorage
+import org.mozilla.fenix.components.appstate.AppAction.CollectionsChange
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deleteBookmarksStorage
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deletePinnedSitesStorage
@@ -26,14 +34,10 @@ import org.mozilla.fenix.ui.efficiency.logging.TestLogging
  *
  * **A failed clear has to be distinguishable from a leak.** Every clear was wrapped in runCatching with a log line, so
  * a clear that errored and a genuine state leak produced identical symptoms: a later test starting with state it did
- * not create. [clear] returns what failed and puts it on the structured stream, so the ledger can say "clean, but the
- * clear that would have made it clean errored" --- a different and far more actionable fact than either "clean" or
- * "dirty".
+ * not create. [clear] returns what failed and puts it on the structured stream; BaseTest then fails the boundary while
+ * preserving any earlier test failure as the primary error.
  *
- * Note what is NOT here. `FenixTestRule` at rule order 0 wraps `TestSetupRule`, which separately clears history,
- * bookmarks, site permissions, the downloads folder and notifications before any of this runs. The effective per-test
- * cleanup is the union of the two, which is exactly the confusion this class exists to start unpicking: reading either
- * one alone tells you the wrong answer about what leaks.
+ * This is the only app-data cleanup list used by efficiency tests; legacy setup rules are not part of their lifecycle.
  */
 object AppDataCleaner {
 
@@ -42,10 +46,18 @@ object AppDataCleaner {
 
     private val steps =
         listOf(
+            Step("searchConfiguration") { HarnessSearchState.clear() },
+            Step("preferences") { HarnessPreferenceState.clear() },
             Step("bookmarks") { deleteBookmarksStorage() },
             Step("pinnedSites") { deletePinnedSitesStorage() },
-            Step("sessions") {
-                withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
+            Step("history") {
+                withContext(Dispatchers.IO) {
+                    PlacesHistoryStorage(appContext.applicationContext).deleteEverything()
+                }
+            },
+            Step("permissions") {
+                appContext.components.core.permissionStorage.deleteAllSitePermissions()
+                appContext.components.core.geckoSitePermissionsStorage.clearTemporaryPermissions()
             },
             // A leftover address changes the Autofill settings layout and can push "Add address"
             // off-screen; a leftover card replaces "Add card" with "Manage cards", so a card test
@@ -62,26 +74,47 @@ object AppDataCleaner {
             Step("logins") {
                 withContext(Dispatchers.IO) { appContext.components.core.passwordsStorage.wipeLocal() }
             },
-            Step("tabs") { appContext.components.useCases.tabsUseCases.removeAllTabs() },
+            Step("tabs") { clearTabsAndPendingUndo() },
+            Step("recentlyClosedTabs") {
+                appContext.components.core.recentlyClosedTabsStorage.value.removeAllTabs()
+                appContext.components.core.store.dispatch(RecentlyClosedAction.ReplaceTabsAction(emptyList()))
+            },
+            Step("sessions") {
+                withContext(Dispatchers.IO) { appContext.components.core.sessionStorage.clear() }
+            },
+            Step("collections") {
+                val storage = appContext.components.core.tabCollectionStorage
+                storage.getCollectionsList().forEach { storage.removeCollection(it) }
+                storage.cachedTabCollections = emptyList()
+                appContext.components.appStore.dispatch(CollectionsChange(emptyList()))
+            },
+            Step("tabGroups") {
+                appContext.components.core.tabGroupRepository.deleteAllTabGroupData()
+            },
+            Step("downloads") {
+                appContext.components.core.store.dispatch(DownloadAction.RemoveAllDownloadsAction)
+            },
             Step("launcherIcon") { resetLauncherIconAliases() },
         )
 
     /**
      * Run every clear. Returns the names of the ones that failed.
      *
-     * Never throws. A cleanup that fails the test it was preparing is worse than a cleanup that did not happen --- but
-     * it must not be silent either, which is what the return value and the record are for.
+     * This function attempts every step and returns all failures instead of stopping at the first. BaseTest enforces
+     * the returned result after the complete cleanup attempt has been recorded.
      *
      * `phase` is "before" or "after", so a consumer can tell a test that started dirty from one that failed to tidy up
      * after itself.
      */
     fun clear(phase: String, testId: String): List<String> {
         val failed = mutableListOf<String>()
+        val failureDetails = linkedMapOf<String, String>()
         runBlocking {
             for (step in steps) {
                 runCatching { step.run() }
                     .onFailure {
                         failed += step.name
+                        failureDetails[step.name] = "${it::class.simpleName}: ${it.message}"
                         Log("${step.name} clear failed at $phase: ${it.message}")
                     }
             }
@@ -90,13 +123,45 @@ object AppDataCleaner {
             TestLogging.installed()
                 .record(
                     "cleanup",
-                    mapOf("phase" to phase, "testId" to testId, "failed" to failed.joinToString(",")),
+                    mapOf(
+                        "phase" to phase,
+                        "testId" to testId,
+                        "failed" to failed.joinToString(","),
+                        "failureDetails" to failureDetails,
+                    ),
                 )
         }
         return failed
     }
 
     private fun Log(msg: String) = android.util.Log.i("AppDataCleaner", msg)
+
+    private suspend fun clearTabsAndPendingUndo() {
+        val components = appContext.components
+        val store = components.core.store
+        val hadPendingUndo = store.state.undoHistory.tabs.any { !it.state.private }
+        if (store.state.undoHistory.tabs.isNotEmpty()) {
+            store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
+        }
+        val expectedRecentlyClosedIds = if (hadPendingUndo) store.state.closedTabs.map { it.id }.toSet() else emptySet()
+        components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        if (store.state.undoHistory.tabs.isNotEmpty()) {
+            store.dispatch(UndoAction.ClearRecoverableTabs(store.state.undoHistory.tag))
+        }
+        withTimeout(TAB_CLEAR_TIMEOUT_MS) {
+            while (store.state.tabs.isNotEmpty() || store.state.undoHistory.tabs.isNotEmpty()) {
+                delay(10)
+            }
+        }
+        if (expectedRecentlyClosedIds.isNotEmpty()) {
+            withTimeout(RECENTLY_CLOSED_SYNC_TIMEOUT_MS) {
+                val storage = components.core.recentlyClosedTabsStorage.value
+                while (!storage.getTabs().first().map { it.id }.toSet().containsAll(expectedRecentlyClosedIds)) {
+                    delay(10)
+                }
+            }
+        }
+    }
 
     /**
      * Put the launcher icon back to the manifest default.
@@ -132,4 +197,7 @@ object AppDataCleaner {
                 )
             }
     }
+
+    private const val TAB_CLEAR_TIMEOUT_MS = 2_000L
+    private const val RECENTLY_CLOSED_SYNC_TIMEOUT_MS = 5_000L
 }

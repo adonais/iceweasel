@@ -531,6 +531,14 @@ enum OpcodeField {
   op_fldx_d = 0x7068U << 15,
   op_fstx_s = 0x7070U << 15,
   op_fstx_d = 0x7078U << 15,
+  op_amcas_b = 0x70b0U << 15,
+  op_amcas_h = 0x70b1U << 15,
+  op_amcas_w = 0x70b2U << 15,
+  op_amcas_d = 0x70b3U << 15,
+  op_amcas_db_b = 0x70b4U << 15,
+  op_amcas_db_h = 0x70b5U << 15,
+  op_amcas_db_w = 0x70b6U << 15,
+  op_amcas_db_d = 0x70b7U << 15,
   op_amswap_b = 0x70b8U << 15,
   op_amswap_h = 0x70b9U << 15,
   op_amadd_b = 0x70baU << 15,
@@ -1296,6 +1304,17 @@ class AssemblerLOONG64 : public AssemblerShared {
   BufferOffset as_amswap_db_h(Register rd, Register rj, Register rk);
   BufferOffset as_amadd_db_b(Register rd, Register rj, Register rk);
   BufferOffset as_amadd_db_h(Register rd, Register rj, Register rk);
+
+  // Atomic instructions from LAMCAS extension
+  BufferOffset as_amcas_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_w(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_d(Register rd, Register rj, Register rk);
+
+  BufferOffset as_amcas_db_b(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_db_h(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_db_w(Register rd, Register rj, Register rk);
+  BufferOffset as_amcas_db_d(Register rd, Register rj, Register rk);
 
   // Barrier instructions
   BufferOffset as_dbar(int32_t hint);

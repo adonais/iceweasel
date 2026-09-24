@@ -131,6 +131,106 @@ win64-llvm-symbolizer-22:
             - linux64-clang-22-stage1
             - vs-toolchain
 
+linux32-llvm-symbolizer-23:
+    description: "llvm-symbolizer for Linux"
+    treeherder:
+        symbol: TL32(llvm-symbolizer-23)
+    run:
+        arguments:
+            - i686-unknown-linux-gnu
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-23
+        toolchain:
+            - linux64-clang-23-stage1
+            - linux32-toolchain-sysroot
+
+linux64-llvm-symbolizer-23:
+    description: "llvm-symbolizer for Linux"
+    treeherder:
+        symbol: TL(llvm-symbolizer-23)
+    run:
+        arguments:
+            - x86_64-unknown-linux-gnu
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-23
+        toolchain:
+            - linux64-clang-23-stage1
+            - linux64-toolchain-sysroot
+
+macosx64-llvm-symbolizer-23:
+    description: "llvm-symbolizer for macOS x64"
+    treeherder:
+        symbol: TM(llvm-symbolizer-23)
+    run:
+        arguments:
+            - x86_64-apple-darwin
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-23
+        toolchain:
+            - linux64-clang-23-stage1
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-llvm-symbolizer-23:
+    description: "llvm-symbolizer for macOS aarch64"
+    treeherder:
+        symbol: TMA64(llvm-symbolizer-23)
+    run:
+        arguments:
+            - aarch64-apple-darwin
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-23
+        toolchain:
+            - linux64-clang-23-stage1
+            - macosx64-sdk-toolchain
+
+win64-llvm-symbolizer-23:
+    description: "llvm-symbolizer for Windows"
+    treeherder:
+        symbol: TW64(llvm-symbolizer-23)
+    run:
+        arguments:
+            - x86_64-pc-windows-msvc
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+        resources:
+            - build/build-clang/clang-23.json
+            - build/build-clang/llvm-symbolizer-19.json
+            - taskcluster/scripts/misc/build-llvm-common.sh
+    fetches:
+        fetch:
+            - clang-23
+        toolchain:
+            - linux64-clang-23-stage1
+            - vs-toolchain
+
 linux32-llvm-symbolizer-trunk:
     description: "llvm-symbolizer for Linux"
     attributes:

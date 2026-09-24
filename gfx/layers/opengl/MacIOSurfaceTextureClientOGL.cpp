@@ -60,15 +60,6 @@ bool MacIOSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
   return true;
 }
 
-void MacIOSurfaceTextureData::GetSubDescriptor(
-    RemoteDecoderVideoSubDescriptor* const aOutDesc) {
-  RefPtr<layers::GpuFence> gpuFence;
-  *aOutDesc = SurfaceDescriptorMacIOSurface(
-      mSurface->GetIOSurfaceID(), !mSurface->HasAlpha(),
-      mSurface->GetYUVColorSpace(), mSurface->GetTransferFunction(),
-      std::move(gpuFence));
-}
-
 void MacIOSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {
   aInfo.size = gfx::IntSize(mSurface->GetDevicePixelWidth(),
                             mSurface->GetDevicePixelHeight());

@@ -17,6 +17,7 @@
   background:
     linear-gradient(90deg, var(--color-violet-30) 50%, light-dark(var(--color-orange-30), var(--color-violet-50)) 100%) border-box,
     var(--panel-background-color) padding-box;
+  color: var(--panel-text-color);
   border-radius: var(--promo-border-radius);
   padding: 1px;
 }

@@ -1,0 +1,189 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: session lifecycle (concurrent, sequential) is not leaked</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// Two things this test guards against:
+//   - a session aborted before init completes (sr1) leaking the single-
+//     session slot and rejecting the next session (sr2) as concurrent;
+//   - a session ended normally via stop() (sr2) leaking that slot instead
+//     of releasing it, which would prevent a third, sequential session
+//     (sr3) from starting. sr2 and sr3 also both verify a real transcript
+//     is produced, not just that the session reaches "audiostart".
+//
+// Requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+// Upper bound on how long a session gets to produce its first final result.
+// The session is stopped as soon as one arrives, so this only bounds the
+// failure case; it is generous because a session started right after another
+// one's teardown can wait on the engine reloading its model.
+const RESULT_TIMEOUT_MS = 30000;
+
+// Stops the session as soon as it produces a final result rather than after a
+// fixed listening window - what these rounds check is that a session works at
+// all, not how fast it is - and resolves with its transcript once "end" has
+// fired, since the next round must start from a fully finished session. The
+// caller starts the session, so this can also be attached to a running one.
+async function transcriptFromSession(sr, label) {
+  const finals = [];
+  const transcript = () => finals.join(" ").replace(/\s+/g, " ").trim();
+  let timer = null;
+  try {
+    return await new Promise(resolve => {
+      sr.onresult = e => {
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            finals.push(e.results[i][0].transcript);
+          }
+        }
+        if (transcript()) {
+          info(`${label}: got ${finals.length} final result(s), stopping`);
+          sr.stop();
+        }
+      };
+      sr.onnomatch = () => info(`${label}: nomatch`);
+      sr.onerror = e => {
+        info(`${label}: error ${e.error}`);
+        resolve(transcript());
+      };
+      sr.onend = () => resolve(transcript());
+      timer = setTimeout(() => {
+        info(`${label}: no final result within ${RESULT_TIMEOUT_MS}ms, stopping`);
+        sr.stop();
+      }, RESULT_TIMEOUT_MS);
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for parakeet session init");
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const ctx = await createResumedAudioContext();
+
+    // Keep the context running with a silent looping source.
+    const kick = ctx.createBufferSource();
+    kick.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+    kick.loop = true;
+    kick.connect(ctx.destination);
+    kick.start(0);
+
+    const audio = document.createElement("audio");
+    audio.src = "kennedy-appolo.opus";
+    document.getElementById("content").appendChild(audio);
+
+    const src = ctx.createMediaElementSource(audio);
+    // Independent stream destinations: one per recognition session.
+    const dst1 = ctx.createMediaStreamDestination();
+    const dst2 = ctx.createMediaStreamDestination();
+    const dst3 = ctx.createMediaStreamDestination();
+    src.connect(dst1);
+    src.connect(dst2);
+    src.connect(dst3);
+
+    await new Promise((resolve, reject) => {
+      audio.addEventListener("canplaythrough", resolve, { once: true });
+      audio.addEventListener("error", () => reject(new Error("Audio load failed")), { once: true });
+      audio.load();
+    });
+
+    audio.loop = true;
+    audio.currentTime = 0;
+    await audio.play().catch(e => info("play() error: " + e));
+
+    const track1 = dst1.stream.getAudioTracks()[0];
+    const track2 = dst2.stream.getAudioTracks()[0];
+    const track3 = dst3.stream.getAudioTracks()[0];
+    ok(track1 && track2 && track3, "Got all three audio tracks");
+
+    await waitForAudioFlowing(ctx, dst2.stream);
+
+    const installed = await ensureModelInstalled(["en-US"]);
+    ok(installed, "Model installed successfully");
+
+    // First recognition: start, then abort synchronously, i.e. before the
+    // asynchronous session init has reached the inference process.
+    const sr1 = new SpeechRecognition();
+    sr1.lang = "en-US";
+    sr1.start(track1);
+    sr1.abort();
+    info("sr1 started and aborted");
+
+    // Second recognition: a completely separate session. It must be able to
+    // start; with the leak it would immediately fail with service-not-allowed.
+    const sr2 = new SpeechRecognition();
+    sr2.continuous = true;
+    sr2.lang = "en-US";
+
+    const result = await new Promise(resolve => {
+      sr2.onaudiostart = () => resolve({ kind: "audiostart" });
+      sr2.onerror = e => resolve({ kind: "error", error: e.error });
+      sr2.start(track2);
+      info("sr2 started, waiting for audiostart or error");
+    });
+
+    isnot(result.kind, "error",
+          "sr2 must not fail; got " +
+          (result.kind === "error" ? result.error : result.kind));
+    if (result.kind === "error") {
+      isnot(result.error, "service-not-allowed",
+            "sr2 must not be rejected with a spurious concurrent-session error");
+    } else {
+      ok(true, "sr2 reached audiostart: the session slot was not leaked");
+    }
+
+    // Let sr2 produce a real result, then stop() it cleanly (as opposed to
+    // sr1's abort() above): a normal end-of-session, not a race. This, together
+    // with the sr3 round below, is the "start a session, stop it, start another
+    // one" sequential-lifecycle path.
+    const transcript2 = await transcriptFromSession(sr2, "sr2");
+    isnot(transcript2, "", "sr2 produced a real result before being stopped");
+
+    // Third recognition, started only after sr2 has fully ended: confirms
+    // the session slot released by a clean stop() (not just abort()) can be
+    // reused, and that the resulting session works end-to-end again.
+    const sr3 = new SpeechRecognition();
+    sr3.continuous = true;
+    sr3.lang = "en-US";
+
+    const transcript3Promise = transcriptFromSession(sr3, "sr3");
+    sr3.start(track3);
+    const transcript3 = await transcript3Promise;
+    isnot(transcript3, "", "sr3 (a fresh session after sr2's clean stop) also produced a real result");
+
+    audio.pause();
+    await ctx.close();
+
+    SimpleTest.finish();
+  } catch (e) {
+    ok(false, "Test threw: " + e + "\n" + e.stack);
+    SimpleTest.finish();
+  }
+});
+</script>
+</pre>
+</body>
+</html>

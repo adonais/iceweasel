@@ -206,6 +206,7 @@
     <string name="pref_key_toolbar_tab_swipe_cfr">pref_key_should_show_tab_swipe_cfr</string>
     <string name="pref_key_toolbar_has_shown_tab_swipe_cfr">pref_key_has_shown_tab_swipe_cfr</string>
     <string name="pref_key_toolbar_expanded" translatable="false">pref_key_toolbar_expanded</string>
+    <string name="pref_key_toolbar_focus_mode" translatable="false">pref_key_toolbar_focus_mode</string>
 
     <!-- App icon settings-->
     <string name="pref_key_app_icon">pref_key_app_icon</string>
@@ -618,6 +619,7 @@
     <string name="pref_key_tab_groups_drag_and_drop" translatable="false">pref_key_tab_groups_drag_and_drop</string>
     <string name="pref_key_tab_groups_live_reorder" translatable="false">pref_key_tab_groups_live_reorder</string>
     <string name="pref_key_tab_groups_onboarding" translatable="false">pref_key_tab_groups_onboarding</string>
+    <string name="pref_key_tab_groups_strip" translatable="false">pref_key_tab_groups_strip</string>
 
     <!-- Native Share Sheet -->
     <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>

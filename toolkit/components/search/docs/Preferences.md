@@ -39,12 +39,12 @@ browser.search.update (boolean, default: true)
 These preferences are experimental and not officially supported. They could be
 removed at any time.
 
-browser.search.separatePrivateDefault.ui.enabled (boolean, default: false)
+browser.search.separatePrivateDefault.featureGate (boolean, default: false)
 
 : Whether the UI is enabled for having a separate default search engine in
   private browsing mode.
 
-browser.search.separatePrivateDefault (boolean, default: false)
+browser.search.separatePrivateDefault.enabled (boolean, default: false)
 
 : Whether the user has selected to have a separate default search engine in
   private browsing mode.

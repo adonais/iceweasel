@@ -92,6 +92,7 @@ const val BOTTOM_END_THUMBNAIL_INDEX = 3
  * @param onCloseTabGroupClick Invoked when the user clicks to close the tab group.
  * @param onShareTabGroupClick Invoked when the user clicks to share the tab group.
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
+ * @param onUngroupTabGroupClick Invoked when the user clicks to ungroup the tab group.
  * @param itemInfo: Optional CollectionItemInfo? for reading this item in a list.
  * @param accessibilityActions Accessibility actions offered on the item, such as reordering it.
  */
@@ -107,6 +108,7 @@ fun TabGroupCard(
     onCloseTabGroupClick: () -> Unit,
     onShareTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onUngroupTabGroupClick: () -> Unit,
     itemInfo: CollectionItemInfo? = null,
     accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
 ) {
@@ -164,6 +166,7 @@ fun TabGroupCard(
                             onCloseTabGroupClick = onCloseTabGroupClick,
                             onShareTabGroupClick = { onShareTabGroupClick(group) },
                             onDeleteTabGroupClick = { onDeleteTabGroupClick(group) },
+                            onUngroupTabGroupClick = onUngroupTabGroupClick,
                         )
                     }
                 }
@@ -200,6 +203,7 @@ private fun TabGroupOptionButton(
     onCloseTabGroupClick: () -> Unit,
     onShareTabGroupClick: () -> Unit,
     onDeleteTabGroupClick: () -> Unit,
+    onUngroupTabGroupClick: () -> Unit,
 ) {
     if (selectionState.multiSelectEnabled) {
         MultiSelectTabButton(
@@ -215,7 +219,7 @@ private fun TabGroupOptionButton(
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
             onShareTabGroupClick = onShareTabGroupClick,
-            onUngroupTabGroupClick = {},
+            onUngroupTabGroupClick = onUngroupTabGroupClick,
         )
     }
 }
@@ -545,6 +549,7 @@ private fun TabGroupCardPreview(
                 onCloseTabGroupClick = {},
                 onShareTabGroupClick = {},
                 onDeleteTabGroupClick = {},
+                onUngroupTabGroupClick = {},
             )
         }
     }

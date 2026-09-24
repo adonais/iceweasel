@@ -1010,12 +1010,12 @@ nsXMLContentSink::HandleStartElement(const char16_t* aName,
                                      uint32_t aAttsCount, uint32_t aLineNumber,
                                      uint32_t aColumnNumber) {
   return HandleStartElement(aName, aAtts, aAttsCount, aLineNumber,
-                            aColumnNumber, true);
+                            aColumnNumber, FROM_PARSER_NETWORK);
 }
 
 nsresult nsXMLContentSink::HandleStartElement(
     const char16_t* aName, const char16_t** aAtts, uint32_t aAttsCount,
-    uint32_t aLineNumber, uint32_t aColumnNumber, bool aInterruptable) {
+    uint32_t aLineNumber, uint32_t aColumnNumber, FromParser aFromParser) {
   MOZ_RELEASE_ASSERT(aAttsCount % 2 == 0, "incorrect aAttsCount");
   // Adjust aAttsCount so it's the actual number of attributes
   aAttsCount /= 2;
@@ -1048,9 +1048,9 @@ nsresult nsXMLContentSink::HandleStartElement(
   nodeInfo = mNodeInfoManager->GetNodeInfo(localName, prefix, nameSpaceID,
                                            nsINode::ELEMENT_NODE);
 
-  result = CreateElement(aAtts, aAttsCount, nodeInfo, aLineNumber,
-                         aColumnNumber, getter_AddRefs(content), &appendContent,
-                         FROM_PARSER_NETWORK);
+  result =
+      CreateElement(aAtts, aAttsCount, nodeInfo, aLineNumber, aColumnNumber,
+                    getter_AddRefs(content), &appendContent, aFromParser);
   NS_ENSURE_SUCCESS(result, result);
 
   // Have to do this before we push the new content on the stack... and have to
@@ -1101,8 +1101,7 @@ nsresult nsXMLContentSink::HandleStartElement(
       nsContentUtils::AddScriptRunner(
           MakeAndAddRef<nsDocElementCreatedNotificationRunner>(mDocument));
 
-      if (aInterruptable && NS_SUCCEEDED(result) && mParser &&
-          !mParser->IsParserEnabled()) {
+      if (NS_SUCCEEDED(result) && mParser && !mParser->IsParserEnabled()) {
         return NS_ERROR_HTMLPARSER_BLOCK;
       }
     } else if (!mCurrentHead) {
@@ -1112,8 +1111,7 @@ nsresult nsXMLContentSink::HandleStartElement(
     }
   }
 
-  return aInterruptable && NS_SUCCEEDED(result) ? DidProcessATokenImpl()
-                                                : result;
+  return NS_SUCCEEDED(result) ? DidProcessATokenImpl() : result;
 }
 
 NS_IMETHODIMP

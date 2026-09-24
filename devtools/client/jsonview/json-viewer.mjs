@@ -12,7 +12,7 @@ import TreeViewClass from "resource://devtools/client/shared/components/tree/Tre
 import { ObjectProvider } from "resource://devtools/client/shared/components/tree/ObjectProvider.mjs";
 import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
 import { parseJsonLossless } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import { JsonlLineError } from "resource://devtools/client/jsonview/jsonl-utils.mjs";
+import { parseJsonl } from "resource://devtools/client/shared/jsonl-utils.mjs";
 import { createSizeProfile } from "resource://devtools/client/jsonview/json-size-profiler.mjs";
 
 const { MainTabbedArea } = createFactories(MainTabbedAreaClass);
@@ -138,33 +138,6 @@ function expandBucketsWithMatches(data, searchFilter) {
   }
 
   return expandedNodes;
-}
-
-/**
- * Parses a JSON Lines document (one JSON value per line) into an
- * array of records, in document order. Blank lines are skipped, so
- * the array is contiguous and displayed like any other JSON array.
- * A line that fails to parse becomes a JsonlLineError instead of
- * blocking the rest of the document.
- *
- * @param {string} jsonlinesText
- *        The whole JSON Lines document, as text.
- * @returns {Array<object|JsonlLineError>}
- *        One entry per non-blank line, in document order.
- */
-function parseJsonl(jsonlinesText) {
-  const entries = [];
-  for (const line of jsonlinesText.split("\n")) {
-    if (!line.trim()) {
-      continue;
-    }
-    try {
-      entries.push(parseJsonLossless(line));
-    } catch (err) {
-      entries.push(new JsonlLineError(line, err.message));
-    }
-  }
-  return entries;
 }
 
 /**

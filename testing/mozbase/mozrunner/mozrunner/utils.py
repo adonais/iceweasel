@@ -191,7 +191,11 @@ def test_environment(
     if tsan and mozinfo.isLinux:
         # Symbolizer support.
         if os.path.isfile(llvmsym):
-            env["TSAN_OPTIONS"] = "external_symbolizer_path=%s" % llvmsym
+            tsanOptions = env.get("TSAN_OPTIONS", "")
+            newOption = "external_symbolizer_path=%s" % llvmsym
+            env["TSAN_OPTIONS"] = (
+                "%s:%s" % (tsanOptions, newOption) if tsanOptions else newOption
+            )
             log.info("INFO | runtests.py | TSan using symbolizer at %s" % llvmsym)
         else:
             log.error(

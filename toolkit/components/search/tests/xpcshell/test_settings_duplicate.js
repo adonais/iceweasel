@@ -92,7 +92,7 @@ add_setup(async function () {
     },
     { identifier: "other" },
   ]);
-  Services.prefs.setCharPref(SearchUtils.BROWSER_SEARCH_PREF + "region", "US");
+  Services.prefs.setCharPref("browser.search.region", "US");
   Services.locale.availableLocales = ["en-US"];
   Services.locale.requestedLocales = ["en-US"];
 

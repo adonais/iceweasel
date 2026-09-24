@@ -138,6 +138,16 @@ class DebugDrawerNavigationMiddlewareTest {
         }
 
     @Test
+    fun `WHEN the IP protection location tools screen is the next destination THEN that screen is navigated to`() =
+        runTest(testDispatcher) {
+            store.dispatch(DebugDrawerAction.NavigateTo.IPProtectionLocationTools)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { navController.navigate(DebugDrawerRoute.IPProtectionLocationTools.route) }
+        }
+
+    @Test
     fun `WHEN the back button is pressed THEN the drawer should go back one screen`() =
         runTest(testDispatcher) {
             store.dispatch(DebugDrawerAction.OnBackPressed)

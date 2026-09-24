@@ -296,7 +296,7 @@ bool InitExprInterpreter::evaluate(JSContext* cx, Decoder& d) {
         }
         CHECK(evalF64Const(c));
       }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case uint16_t(Op::SimdPrefix): {
         MOZ_RELEASE_ASSERT(op.b1 == uint32_t(SimdOp::V128Const));
         V128 c;
@@ -503,7 +503,7 @@ bool wasm::DecodeConstantExpression(Decoder& d, CodeMetadata* codeMeta,
         *literal = Some(LitVal(c));
         break;
       }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case uint16_t(Op::SimdPrefix): {
         if (!codeMeta->simdAvailable()) {
           return d.fail("v128 not enabled");

@@ -130,6 +130,7 @@ namespace jit {
   _(ToDouble)                     \
   _(ToFloat32)                    \
   _(ToFloat16)                    \
+  _(UnsignedToDouble)             \
   _(TruncateToInt32)              \
   _(CanonicalizeNaN)              \
   _(NewObject)                    \
@@ -883,6 +884,14 @@ class RToFloat32 final : public RInstruction {
 class RToFloat16 final : public RInstruction {
  public:
   RINSTRUCTION_HEADER_NUM_OP_(ToFloat16, 1)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RUnsignedToDouble final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(UnsignedToDouble, 1)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

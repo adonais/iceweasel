@@ -79,7 +79,7 @@ def vendor(
     Vendoring other libraries can be done with ./mach vendor [arguments] path/to/file.yaml
     """
     library = library[0]
-    assert library not in ["rust", "python"]
+    assert library not in ["rust", "python", "node"]
 
     command_context.populate_logger()
     command_context.log_manager.enable_unstructured()
@@ -309,4 +309,56 @@ def vendor_python(
         '"./mach generate-python-lockfiles" to verify no incompatibilities were introduced.'
         "\n\nNote: If there are incompatibilities, it may be useful to re-run with the "
         '"--keep-lockfiles" flag and inspect the lockfiles manually to determine the culprit(s).'
+    )
+
+
+# =====================================================================
+
+
+@SubCommand(
+    "vendor",
+    "node",
+    description="Vendor node packages needed to build Firefox into "
+    "third_party/node. Resolves third_party/node/package.json with pnpm, "
+    "prunes documentation and tests, and adds the result to version control.",
+)
+@CommandArgument(
+    "--add",
+    action="append",
+    default=[],
+    metavar="PACKAGE",
+    help="Specify one or more dependencies to vendor.\n"
+    "Use the format: '<dependency>@<version>' (e.g. '--add webpack@5.89.0')",
+)
+@CommandArgument(
+    "--remove",
+    action="append",
+    default=[],
+    metavar="PACKAGE",
+    help="Remove one or more vendored dependencies.\n"
+    "Use the format: '<dependency>' (e.g. '--remove webpack')",
+)
+@CommandArgument(
+    "-f",
+    "--force",
+    action="store_true",
+    help="Discard pnpm-lock.yaml and resolve again, taking the newest versions "
+    "that satisfy third_party/node/package.json. Without this, a dependency "
+    "already in the lock file keeps the version it has.",
+)
+@CommandArgument(
+    "--ignore-modified",
+    action="store_true",
+    default=False,
+    help="Ignore modified files under third_party/node in the current checkout.",
+)
+def vendor_node(command_context, add, remove, force, ignore_modified):
+    from mozbuild.vendor.vendor_node import VendorNode
+
+    vendor_command = command_context._spawn(VendorNode)
+    return vendor_command.vendor(
+        add=add,
+        remove=remove,
+        force=force,
+        ignore_modified=ignore_modified,
     )

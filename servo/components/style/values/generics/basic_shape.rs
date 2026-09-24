@@ -5,15 +5,15 @@
 //! CSS handling for the [`basic-shape`](https://drafts.csswg.org/css-shapes/#typedef-basic-shape)
 //! types that are generic over their `ToCss` implementations.
 
+use crate::Zero;
 use crate::derives::*;
-use crate::values::animated::{lists, Animate, Procedure, ToAnimatedZero};
+use crate::values::animated::{Animate, Procedure, ToAnimatedZero, lists};
 use crate::values::computed::Percentage;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::{
-    border::GenericBorderRadius, position::GenericPositionOrAuto, rect::Rect, NonNegative, Optional,
+    NonNegative, Optional, border::GenericBorderRadius, position::GenericPositionOrAuto, rect::Rect,
 };
 use crate::values::specified::svg_path::{PathCommand, SVGPathData};
-use crate::Zero;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -37,6 +37,7 @@ use style_traits::{CssWriter, ToCss};
     ToTyped,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ShapeGeometryBox {
     /// Depending on which kind of element this style value applied on, the
     /// default value of the reference-box can be different.  For an HTML
@@ -45,17 +46,12 @@ pub enum ShapeGeometryBox {
     /// default value at parsing time, we keep this value to make a decision on
     /// it.
     #[css(skip)]
+    #[default]
     ElementDependent,
     FillBox,
     StrokeBox,
     ViewBox,
     ShapeBox(ShapeBox),
-}
-
-impl Default for ShapeGeometryBox {
-    fn default() -> Self {
-        Self::ElementDependent
-    }
 }
 
 /// Skip the serialization if the author omits the box or specifies border-box.
@@ -90,17 +86,13 @@ fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
     ToTyped,
 )]
 #[repr(u8)]
+#[derive(Default)]
 pub enum ShapeBox {
+    #[default]
     MarginBox,
     BorderBox,
     PaddingBox,
     ContentBox,
-}
-
-impl Default for ShapeBox {
-    fn default() -> Self {
-        ShapeBox::MarginBox
-    }
 }
 
 /// A value for the `clip-path` property.

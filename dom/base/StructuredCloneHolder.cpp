@@ -1215,7 +1215,8 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
       aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
     if (RTCEncodedVideoFrame_Binding::ConstructorEnabled(aCx, global)) {
       return RTCEncodedVideoFrame::ReadStructuredClone(
-          aCx, nativeGlobal, aReader, RtcEncodedVideoFrames()[aIndex]);
+          aCx, nativeGlobal, aReader,
+          std::move(RtcEncodedVideoFrames()[aIndex]));
     }
   }
 
@@ -1225,7 +1226,8 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
       aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
     if (RTCEncodedAudioFrame_Binding::ConstructorEnabled(aCx, global)) {
       return RTCEncodedAudioFrame::ReadStructuredClone(
-          aCx, nativeGlobal, aReader, RtcEncodedAudioFrames()[aIndex]);
+          aCx, nativeGlobal, aReader,
+          std::move(RtcEncodedAudioFrames()[aIndex]));
     }
   }
 #endif
@@ -1379,7 +1381,7 @@ bool StructuredCloneHolder::CustomWriteHandler(
     if (NS_SUCCEEDED(UNWRAP_OBJECT(RTCEncodedVideoFrame, &obj, rtcFrame))) {
       SameProcessScopeRequired(aSameProcessScopeRequired);
       return CloneScope() == StructuredCloneScope::SameProcess
-                 ? rtcFrame->WriteStructuredClone(aWriter, this)
+                 ? rtcFrame->WriteStructuredClone(aCx, aWriter, this)
                  : false;
     }
   }
@@ -1390,7 +1392,7 @@ bool StructuredCloneHolder::CustomWriteHandler(
     if (NS_SUCCEEDED(UNWRAP_OBJECT(RTCEncodedAudioFrame, &obj, rtcFrame))) {
       SameProcessScopeRequired(aSameProcessScopeRequired);
       return CloneScope() == StructuredCloneScope::SameProcess
-                 ? rtcFrame->WriteStructuredClone(aWriter, this)
+                 ? rtcFrame->WriteStructuredClone(aCx, aWriter, this)
                  : false;
     }
   }

@@ -254,7 +254,8 @@ async function main() {
 
   const recipes = records.filter(
     record =>
-      record.application === "firefox-desktop" &&
+      (record.application === "firefox-desktop" ||
+        record.appId === "firefox-desktop") &&
       record.featureIds.some(id =>
         MESSAGING_EXPERIMENTS_DEFAULT_FEATURES.includes(id)
       ) &&
@@ -301,7 +302,6 @@ async function main() {
       }
       for (const feature of features) {
         if (
-          feature.enabled &&
           MESSAGING_EXPERIMENTS_DEFAULT_FEATURES.includes(feature.featureId) &&
           feature.value &&
           typeof feature.value === "object" &&

@@ -217,7 +217,6 @@ depending on how old the code that uses them is:
 This simplest way to define a component is to include a header defining a
 concrete type, and let the component manager call that class's constructor:
 
-% rstcheck: ignore-languages=python
 
 ```python
 'type': 'mozilla::foo::Foo',
@@ -236,7 +235,6 @@ returns the same instance on subsequent calls. This requires declaring the
 constructor in an included header, and implementing it in a separate source
 file:
 
-% rstcheck: ignore-languages=python
 
 ```python
 'type': 'mozilla::foo::Foo',
@@ -266,7 +264,6 @@ already_AddRefed<Foo> Foo::GetSingleton() {
 For types whose headers can't easily be included, constructors can be defined
 using a template specialization on an incomplete type:
 
-% rstcheck: ignore-languages=python
 
 ```python
 'type': 'mozilla::foo::Foo',
@@ -291,7 +288,6 @@ reader.
 Classes which need define category entries with the same value as their
 contract ID may do so using the following:
 
-% rstcheck: ignore-languages=python
 
 ```python
 'contract_ids': ['@mozilla.org/foo;1'],

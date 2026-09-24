@@ -11,7 +11,6 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/webgpu/PWebGPUTypes.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsTHashSet.h"

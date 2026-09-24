@@ -129,6 +129,9 @@ skip-if = [
 ]
 
 ["test_ScheduledTask.js"]
+skip-if = [
+  "os == 'android'",
+]
 
 ["test_Services.js"]
 

@@ -39,8 +39,7 @@ void HTMLDivElement::MapAttributesIntoRule(
   MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLDivElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLDivElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sDivAlignAttributeMap,
                                                     sCommonAttributeMap};
   return FindAttributeDependence(aAttribute, map);

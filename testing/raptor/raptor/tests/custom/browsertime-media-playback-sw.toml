@@ -1,0 +1,49 @@
+# Media playback power benchmark, software-decode track. See
+# browsertime-media-playback.toml for everything not specific to this track.
+#
+# Separate from that file because a section's preferences replace the DEFAULT list
+# rather than extending it. Firefox-only: preferences are dropped for other apps.
+[DEFAULT]
+alert_threshold = 5.0
+apps = "firefox"
+benchmark_webserver = true
+browser_cycles = 1
+custom_data = true
+gecko_profile_features = "stackwalk,processcpu,power"
+gecko_profile_interval = 1
+gecko_profile_threads = "GeckoMain,MediaDecoderStateMachine,MediaPDecoder"
+lower_is_better = true
+measure = "powerUsage_cpu_package, powerUsage_cpu_cores, powerUsage_gpu, presentedFps"
+subtest_lower_is_better = false
+owner = "Media Team"
+page_cycles = 15
+page_timeout = 60000
+subtest_unit = "uWh"
+repository = "https://github.com/mozilla/perf-automation"
+repository_revision = "7046a4bd167a082989802856aaa86b77e84e939a"
+repository_path = "benchmarks/media-playback"
+sparse_checkout = true
+support_class = "media_playback.py"
+test_script = "media_playback.js"
+type = "pageload"
+unit = "uWh"
+use_live_sites = false
+preferences = [
+  "media.autoplay.default=0",
+  "media.autoplay.blocking_policy=0",
+  "media.block-autoplay-until-in-foreground=false",
+  "media.suspend-background-video.enabled=false",
+  "media.hardware-video-decoding.enabled=false",
+]
+
+["mp-1080p30-av1-sw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=av1_1080p30&driver=single&raptor=1"
+
+["mp-1080p30-h264-sw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=h264_1080p30&driver=single&raptor=1"
+
+["mp-1080p30-vp9-sw"]
+alert_on = "powerUsage_cpu_package"
+test_url = "http://<host>:<port>/index.html?clip=vp9_1080p30&driver=single&raptor=1"

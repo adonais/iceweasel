@@ -142,6 +142,8 @@ Finally, apply the patches:
   stdio.h function, that causes bug 1879740 issue on Windows.
 - opusenc-dtx.patch to allow enabling DTX in the opus encoder.
 - libaomenc-svc.patch to allow configuring SVC in the libaom encoder.
+- libaomenc-color-metadata.patch to apply each AVFrame's color metadata in the
+  libaom encoder.
 - mediacodec_eos.patch to add a method to check definitely if a decoder has
   reached the end of stream on Android.
 - mediacodec_drm.patch to add support for encrypted packets on Android.
@@ -160,3 +162,6 @@ Finally, apply the patches:
   neither, so multichannel Vorbis plays with its channels permuted
   (bug 1991957). Drop this patch if it is ever fixed upstream.
 - av1_tilesize.patch to clean up av1 tile handling
+- vp9-flush-unref-next-refs.patch to clear VP9 frame-thread references on
+  flush. Cherry-pick of FFmpeg commit a024f8c5413d, which is not in the 9.0
+  release branch; drop this patch once ffvpx is updated past it.

@@ -31,6 +31,8 @@ static FeatureMap sSupportedFeatures[] = {
     {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"geolocation", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"microphone", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"on-device-speech-recognition",
+     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"digital-credentials-create",
      FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"digital-credentials-get", FeaturePolicyUtils::FeaturePolicyValue::eSelf},

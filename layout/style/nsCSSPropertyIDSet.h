@@ -145,7 +145,12 @@ class nsCSSPropertyIDSet {
   }
 
   bool IsSubsetOf(const nsCSSPropertyIDSet& aOther) const {
-    return this->Intersect(aOther).Equals(*this);
+    for (size_t i = 0; i < std::size(mProperties); ++i) {
+      if (mProperties[i] & ~aOther.mProperties[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // Returns a new nsCSSPropertyIDSet with all properties that are both in

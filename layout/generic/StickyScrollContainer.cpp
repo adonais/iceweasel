@@ -101,14 +101,8 @@ void StickyScrollContainer::ComputeStickyOffsets(nsIFrame* aFrame) {
   computedOffsets.bottom = ComputeStickySideOffset(eSideBottom, *position,
                                                    scrollContainerSize.height);
 
-  // Store the offset
-  nsMargin* offsets = aFrame->GetProperty(nsIFrame::ComputedOffsetProperty());
-  if (offsets) {
-    *offsets = computedOffsets;
-  } else {
-    aFrame->SetProperty(nsIFrame::ComputedOffsetProperty(),
-                        new nsMargin(computedOffsets));
-  }
+  aFrame->SetOrUpdateDeletableProperty(nsIFrame::ComputedOffsetProperty(),
+                                       computedOffsets);
 }
 
 static constexpr nscoord gUnboundedNegative = nscoord_MIN / 2;

@@ -872,7 +872,7 @@ urlbar-searchmode-no-keyword2 =
     .title = Keyword search is disabled
 
 urlbar-searchmode-dropmarker2 =
-    .title = Pick a Search Engine
+    .title = Pick a search engine
 urlbar-searchmode-bookmarks3 = Bookmarks
     .accesskey = B
 urlbar-searchmode-tabs3 = Tabs
@@ -934,20 +934,16 @@ urlbar-result-action-switch-to-tabgroup = Switch to { $group }
 #  $group (String): the name of the tab group to re-open
 urlbar-result-action-open-saved-tabgroup = Open { $group }
 
-## Used in the context menu in urlbar view.
+## Used in the menu of a urlbar result.
 
-urlbar-view-context-menu-open-in-tab =
-  .label = Open in New Tab
-  .accesskey = w
-urlbar-view-context-menu-open-in-container-tab =
-  .label = Open in New Container Tab
-  .accesskey = i
-urlbar-view-context-menu-open-in-window =
-  .label = Open in New Window
-  .accesskey = N
-urlbar-view-context-menu-open-in-private-window =
-  .label = Open in New Private Window
-  .accesskey = P
+urlbar-view-context-menu-open-in-tab2 = Open in New Tab
+    .accesskey = w
+urlbar-view-context-menu-open-in-container-tab2 = Open in New Container Tab
+    .accesskey = i
+urlbar-view-context-menu-open-in-window2 = Open in New Window
+    .accesskey = N
+urlbar-view-context-menu-open-in-private-window2 = Open in New Private Window
+    .accesskey = P
 
 ## Labels shown above groups of urlbar results
 

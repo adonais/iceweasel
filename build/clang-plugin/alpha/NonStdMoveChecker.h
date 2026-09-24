@@ -19,11 +19,12 @@ private:
 
   static
 #if CLANG_VERSION_FULL >= 1600
-  std::optional<FixItHint>
+      std::optional<FixItHint>
 #else
-  Optional<FixItHint>
+      Optional<FixItHint>
 #endif
-  makeFixItHint(const MatchFinder::MatchResult &Result, const Expr *TargetExpr);
+      makeFixItHint(const MatchFinder::MatchResult &Result,
+                    const Expr *TargetExpr);
 };
 
 #endif

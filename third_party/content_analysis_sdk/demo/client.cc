@@ -40,6 +40,7 @@ std::string request_token;
 std::string tag = "dlp";
 bool threaded = false;
 std::string digest = "sha256-123456";
+uint64_t size = 16;
 std::string url = "https://upload.example.com";
 std::string email = "me@example.com";
 std::string machine_user = "DOMAIN\\me";
@@ -63,6 +64,7 @@ constexpr const char* kArgGroup = "--group";
 constexpr const char* kArgMachineUser = "--machine-user=";
 constexpr const char* kArgPath = "--path=";
 constexpr const char* kArgRequestToken = "--request-token=";
+constexpr const char* kArgSize = "--size=";
 constexpr const char* kArgTag = "--tag=";
 constexpr const char* kArgThreaded = "--threaded";
 constexpr const char* kArgUrl = "--url=";
@@ -98,6 +100,8 @@ bool ParseCommandLine(int argc, char* argv[]) {
       threaded = true;
     } else if (arg.find(kArgDigest) == 0) {
       digest = arg.substr(strlen(kArgDigest));
+    } else if (arg.find(kArgSize) == 0) {
+      size = std::stoull(arg.substr(strlen(kArgSize)));
     } else if (arg.find(kArgUrl) == 0) {
       url = arg.substr(strlen(kArgUrl));
     } else if (arg.find(kArgMachineUser) == 0) {
@@ -145,6 +149,7 @@ void PrintHelp() {
     << kArgPath << " <path> : Used the specified path instead of default. Must come after --user." << std::endl
     << kArgUserSpecific << " : Connects to an OS user specific agent" << std::endl
     << kArgDigest << "<digest> : defaults to 'sha256-123456'" << std::endl
+    << kArgSize << "<size> : file size, defaults to '16'" << std::endl
     << kArgGroup << " : Generate the same final action for all requests" << std::endl
     << kArgHelp << " : prints this help message" << std::endl;
 }
@@ -176,6 +181,7 @@ ContentAnalysisRequest BuildRequest(const std::string& data) {
   request_data->set_url(url);
   request_data->set_email(email);
   request_data->set_digest(digest);
+  request_data->set_file_size(size);
   if (!filename.empty()) {
     request_data->set_filename(filename);
   }

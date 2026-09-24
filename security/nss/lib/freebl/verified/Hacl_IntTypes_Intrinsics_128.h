@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_IntTypes_Intrinsics_128_H
 #define __Hacl_IntTypes_Intrinsics_128_H
 
@@ -39,29 +40,30 @@ extern "C" {
 static inline uint64_t
 Hacl_IntTypes_Intrinsics_128_add_carry_u64(uint64_t cin, uint64_t x, uint64_t y, uint64_t *r)
 {
-    FStar_UInt128_uint128
-        res =
-            FStar_UInt128_add_mod(FStar_UInt128_add_mod(FStar_UInt128_uint64_to_uint128(x),
-                                                        FStar_UInt128_uint64_to_uint128(cin)),
-                                  FStar_UInt128_uint64_to_uint128(y));
-    uint64_t c = FStar_UInt128_uint128_to_uint64(FStar_UInt128_shift_right(res, (uint32_t)64U));
-    r[0U] = FStar_UInt128_uint128_to_uint64(res);
-    return c;
+  FStar_UInt128_uint128
+  res =
+    FStar_UInt128_add_mod(FStar_UInt128_add_mod(FStar_UInt128_uint64_to_uint128(x),
+        FStar_UInt128_uint64_to_uint128(cin)),
+      FStar_UInt128_uint64_to_uint128(y));
+  uint64_t c = FStar_UInt128_uint128_to_uint64(FStar_UInt128_shift_right(res, (uint32_t)64U));
+  r[0U] = FStar_UInt128_uint128_to_uint64(res);
+  return c;
 }
 
 static inline uint64_t
 Hacl_IntTypes_Intrinsics_128_sub_borrow_u64(uint64_t cin, uint64_t x, uint64_t y, uint64_t *r)
 {
-    FStar_UInt128_uint128
-        res =
-            FStar_UInt128_sub_mod(FStar_UInt128_sub_mod(FStar_UInt128_uint64_to_uint128(x),
-                                                        FStar_UInt128_uint64_to_uint128(y)),
-                                  FStar_UInt128_uint64_to_uint128(cin));
-    uint64_t
-        c =
-            FStar_UInt128_uint128_to_uint64(FStar_UInt128_shift_right(res, (uint32_t)64U)) & (uint64_t)1U;
-    r[0U] = FStar_UInt128_uint128_to_uint64(res);
-    return c;
+  FStar_UInt128_uint128
+  res =
+    FStar_UInt128_sub_mod(FStar_UInt128_sub_mod(FStar_UInt128_uint64_to_uint128(x),
+        FStar_UInt128_uint64_to_uint128(y)),
+      FStar_UInt128_uint64_to_uint128(cin));
+  uint64_t
+  c =
+    FStar_UInt128_uint128_to_uint64(FStar_UInt128_shift_right(res, (uint32_t)64U))
+    & (uint64_t)1U;
+  r[0U] = FStar_UInt128_uint128_to_uint64(res);
+  return c;
 }
 
 #if defined(__cplusplus)

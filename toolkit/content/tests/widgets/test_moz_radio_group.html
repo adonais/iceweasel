@@ -116,17 +116,25 @@
         await radioGroup.updateComplete;
         await radioGroup.fieldset.updateComplete;
 
+        let innerFieldset =
+          radioGroup.fieldset.shadowRoot.querySelector("fieldset");
+
         is(
           radioGroup.ariaLabel,
           TEST_ARIA_LABEL,
           "ariaLabel property reflects aria-label attribute on moz-radio-group."
         );
         is(
-          radioGroup.fieldset.shadowRoot
-            .querySelector("fieldset")
-            .getAttribute("aria-label"),
+          innerFieldset.getAttribute("aria-label"),
           TEST_ARIA_LABEL,
           "aria-label is set on the inner fieldset element."
+        );
+        // The name has to land on the element carrying the role, since
+        // radiogroup requires an accessible name where group does not.
+        is(
+          innerFieldset.getAttribute("role"),
+          "radiogroup",
+          "The role is on the same inner fieldset as the aria-label."
         );
       });
 

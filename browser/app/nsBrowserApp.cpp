@@ -108,7 +108,7 @@ using namespace mozilla;
 
 // Only `Output` below cares about this, and only on Windows, where it decides
 // whether to pop up a message box.
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
 static bool gIsBackgroundTask = false;
 #endif
 
@@ -183,7 +183,7 @@ static bool IsFlag(const char* arg, const char* s) {
   return false;
 }
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
 /**
  * Return true if any arguments are flags with the given string.
  *
@@ -344,7 +344,7 @@ int main(int argc, char* argv[], char* envp[]) {
   ReserveDefaultFileDescriptors();
 #endif
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN)
+#if defined(MOZ_BACKGROUNDTASKS) && defined(XP_WIN) && !MOZ_WINCONSOLE
   // Check whether this is a background task very early, as the `Output`
   // function uses this information.
   gIsBackgroundTask = HasFlag(argc, argv, "backgroundtask");

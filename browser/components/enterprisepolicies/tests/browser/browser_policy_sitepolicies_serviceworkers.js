@@ -76,6 +76,16 @@ async function goBack(browser) {
   await pageShown;
 }
 
+// Storing the previous page into the BFCache happens asynchronously after the
+// new page has finished loading, so poll instead of asserting synchronously.
+async function assertEntryInBFCache(sh, index, expectedUrl, description) {
+  await TestUtils.waitForCondition(
+    () => sh.getEntryAtIndex(index).URI.spec == expectedUrl,
+    `Waiting for ${description}`
+  );
+  Assert.ok(sh.getEntryAtIndex(index).isInBFCache, description);
+}
+
 add_task(async function test_serviceworker_api_hidden_on_blocked_site() {
   // Pre-register SWs for both origins before applying policy.
   await setupPolicyEngineWithJson({ policies: {} });
@@ -173,12 +183,16 @@ add_task(async function test_serviceworker_api_hidden_on_blocked_site() {
       );
 
       let sh = browser.browsingContext.sessionHistory;
-      Assert.ok(
-        sh.getEntryAtIndex(sh.index - 1).isInBFCache,
+      await assertEntryInBFCache(
+        sh,
+        sh.index - 1,
+        `https://example.org/${SUPPORT_FILES_PATH}/sitepolicies_sw_fetch.html`,
         "example.org entry is in BFCache"
       );
-      Assert.ok(
-        sh.getEntryAtIndex(sh.index - 2).isInBFCache,
+      await assertEntryInBFCache(
+        sh,
+        sh.index - 2,
+        `https://example.com/${SUPPORT_FILES_PATH}/sitepolicies_sw_fetch.html`,
         "first example.com entry is in BFCache"
       );
 
@@ -256,12 +270,16 @@ add_task(async function test_serviceworker_api_hidden_on_blocked_site() {
       );
 
       let sh = browser.browsingContext.sessionHistory;
-      Assert.ok(
-        sh.getEntryAtIndex(sh.index - 1).isInBFCache,
+      await assertEntryInBFCache(
+        sh,
+        sh.index - 1,
+        `https://example.com/${SUPPORT_FILES_PATH}/sitepolicies_sw_fetch.html`,
         "example.com entry is in BFCache"
       );
-      Assert.ok(
-        sh.getEntryAtIndex(sh.index - 2).isInBFCache,
+      await assertEntryInBFCache(
+        sh,
+        sh.index - 2,
+        `https://example.org/${SUPPORT_FILES_PATH}/sitepolicies_sw_fetch.html`,
         "first example.org entry is in BFCache"
       );
 

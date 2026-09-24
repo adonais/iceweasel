@@ -16,12 +16,14 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
  *
  * @property activateResult Passed to the `onResult` of [activate].
  * @property deactivateResult Passed to the `onResult` of [deactivate].
+ * @property countryListResult Passed to the `onResult` of [updateCountryList].
  * @property enrollResult Passed to the `onResult` of [enroll].
  * @property serviceState Passed to the `onResult` of [getState].
  */
 internal class FakeIPProtectionHandler(
     var activateResult: Throwable? = null,
     var deactivateResult: Throwable? = null,
+    var countryListResult: Throwable? = null,
     var enrollResult: IPProtectionHandler.EnrollResult = IPProtectionHandler.EnrollResult(true),
     var serviceState: ServiceState = ServiceState.Uninitialized,
 ) : IPProtectionHandler {
@@ -55,8 +57,9 @@ internal class FakeIPProtectionHandler(
         onResult(serviceState)
     }
 
-    override fun updateCountryList() {
+    override fun updateCountryList(onResult: (Throwable?) -> Unit) {
         calls += Call.UpdateCountryList
+        onResult(countryListResult)
     }
 
     override fun init() {

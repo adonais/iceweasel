@@ -80,7 +80,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     nscolor mFg = kBlack;
 
     bool operator==(const ColorPair& aOther) const = default;
-    bool operator!=(const ColorPair& aOther) const = default;
   };
 
   struct ButtonColors : ColorPair {

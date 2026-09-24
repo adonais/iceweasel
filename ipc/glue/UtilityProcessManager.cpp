@@ -4,10 +4,13 @@
 #include "UtilityProcessManager.h"
 
 #include "JSOracleParent.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/ipc/UtilityProcessHost.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"  // for LaunchUtilityProcess
 #ifndef ANDROID
@@ -42,18 +45,22 @@ extern LazyLogModule gUtilityProcessLog;
 
 static StaticRefPtr<UtilityProcessManager> sSingleton;
 
-static bool sXPCOMShutdown = false;
+// We tear the Utility processes down at the beginning of XPCOMWillShutdown, so
+// from that point on there is no point in handing out or launching any.
+static bool IsPastLaunchDeadline() {
+  return AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown);
+}
 
 bool UtilityProcessManager::IsShutdown() const {
   MOZ_ASSERT(NS_IsMainThread());
-  return sXPCOMShutdown || !sSingleton;
+  return IsPastLaunchDeadline() || !sSingleton;
 }
 
 RefPtr<UtilityProcessManager> UtilityProcessManager::GetSingleton() {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!sXPCOMShutdown && sSingleton == nullptr) {
+  if (!IsPastLaunchDeadline() && sSingleton == nullptr) {
     sSingleton = new UtilityProcessManager();
     sSingleton->Init();
   }
@@ -75,6 +82,72 @@ void UtilityProcessManager::Init() {
   mObserver = new Observer(this);
   nsContentUtils::RegisterShutdownObserver(mObserver);
   Preferences::AddStrongObserver(mObserver, "");
+
+  RegisterShutdownBlocker();
+}
+
+void UtilityProcessManager::RegisterShutdownBlocker() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mShutdownBlocker);
+
+  nsCOMPtr<nsIAsyncShutdownService> svc = components::AsyncShutdown::Service();
+  if (!svc) {
+    return;
+  }
+
+  nsCOMPtr<nsIAsyncShutdownClient> client;
+  if (NS_FAILED(svc->GetXpcomWillShutdown(getter_AddRefs(client))) || !client) {
+    return;
+  }
+
+  RefPtr<ShutdownBlocker> blocker = new ShutdownBlocker(this);
+  if (NS_FAILED(client->AddBlocker(blocker,
+                                   NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
+                                   __LINE__, u""_ns))) {
+    // The phase is already closed for new blockers, so there is nothing left
+    // for us to hold back. OnXPCOMShutdown will do the teardown instead.
+    return;
+  }
+
+  mShutdownBlocker = std::move(blocker);
+  mShutdownBlockerClient = std::move(client);
+}
+
+void UtilityProcessManager::RemoveShutdownBlocker() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mShutdownBlocker) {
+    return;
+  }
+
+  LOGD("[%p] UtilityProcessManager::RemoveShutdownBlocker", this);
+
+  mShutdownBlockerClient->RemoveBlocker(mShutdownBlocker);
+  mShutdownBlockerClient = nullptr;
+  mShutdownBlocker = nullptr;
+}
+
+NS_IMPL_ISUPPORTS(UtilityProcessManager::ShutdownBlocker,
+                  nsIAsyncShutdownBlocker)
+
+NS_IMETHODIMP UtilityProcessManager::ShutdownBlocker::GetName(
+    nsAString& aName) {
+  aName = u"UtilityProcessManager: shutting down the Utility processes"_ns;
+  return NS_OK;
+}
+
+NS_IMETHODIMP UtilityProcessManager::ShutdownBlocker::BlockShutdown(
+    nsIAsyncShutdownClient* aBarrierClient) {
+  if (mManager) {
+    mManager->OnXPCOMWillShutdown();
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP UtilityProcessManager::ShutdownBlocker::GetState(
+    nsIPropertyBag** aState) {
+  *aState = nullptr;
+  return NS_OK;
 }
 
 UtilityProcessManager::~UtilityProcessManager() {
@@ -101,13 +174,51 @@ UtilityProcessManager::Observer::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
+void UtilityProcessManager::OnXPCOMWillShutdown() {
+  LOGD("[%p] UtilityProcessManager::OnXPCOMWillShutdown", this);
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  mBlockingShutdownPhase = true;
+
+  CleanShutdownAllProcesses();
+
+  // Nothing to wait for; otherwise OnProcessShutdownComplete removes the
+  // blocker once every host is done.
+  if (mPendingShutdowns == 0) {
+    RemoveShutdownBlocker();
+  }
+}
+
 void UtilityProcessManager::OnXPCOMShutdown() {
   LOGD("[%p] UtilityProcessManager::OnXPCOMShutdown", this);
 
   MOZ_ASSERT(NS_IsMainThread());
-  sXPCOMShutdown = true;
-  nsContentUtils::UnregisterShutdownObserver(mObserver);
+  if (mObserver) {
+    nsContentUtils::UnregisterShutdownObserver(mObserver);
+  }
+
+  // Normally a no-op, since our blocker already did this during
+  // xpcom-will-shutdown. If we failed to register it, this is the last chance.
   CleanShutdownAllProcesses();
+}
+
+void UtilityProcessManager::OnProcessShutdownComplete() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(mPendingShutdowns > 0);
+
+  --mPendingShutdowns;
+  if (mPendingShutdowns > 0) {
+    return;
+  }
+
+  // If we're already within shutdown, ensure our async shutdown blocker is gone
+  // now that all processes have shut down.
+  if (mBlockingShutdownPhase) {
+    MOZ_ASSERT(NoMoreProcesses(),
+               "How was a process launched during shutdown?");
+    RemoveShutdownBlocker();
+  }
 }
 
 void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
@@ -122,7 +233,7 @@ void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
   mozilla::dom::Pref pref(strData, /* isLocked */ false,
                           /* isSanitized */ false, Nothing(), Nothing());
   Preferences::GetPreference(&pref, GeckoProcessType_Utility,
-                             /* remoteType */ ""_ns);
+                             /* remoteType */ {});
 
   for (auto& p : mProcesses) {
     if (!p) {
@@ -674,6 +785,14 @@ void UtilityProcessManager::OnProcessUnexpectedShutdown(
   for (auto& it : mProcesses) {
     if (it && it->mProcess && it->mProcess == aHost) {
       it->mNumUnexpectedCrashes++;
+#ifndef ANDROID
+      if (it->mSandbox == SandboxingKind::HW_INFERENCE) {
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=2067834
+        // mNumUnexpectedCrashes is reset between restarts. Remove
+        // mHWInferenceRestarts once fixed.
+        mHWInferenceRestarts++;
+      }
+#endif  // !ANDROID
       DestroyProcess(it->mSandbox);
       return;
     }
@@ -697,6 +816,14 @@ void UtilityProcessManager::CleanShutdownAllProcesses() {
 void UtilityProcessManager::CleanShutdown(SandboxingKind aSandbox) {
   LOGD("[%p] UtilityProcessManager::CleanShutdown SandboxingKind=%" PRIu64,
        this, aSandbox);
+
+#ifndef ANDROID
+  if (aSandbox == SandboxingKind::HW_INFERENCE) {
+    // Shut down deliberately rather than crashing: the next launch starts with
+    // a fresh restart budget.
+    mHWInferenceRestarts = 0;
+  }
+#endif  // !ANDROID
 
   DestroyProcess(aSandbox);
 }
@@ -736,7 +863,13 @@ void UtilityProcessManager::DestroyProcess(SandboxingKind aSandbox) {
   p->mProcessParent = nullptr;
 
   if (p->mProcess) {
-    p->mProcess->Shutdown();
+    ++mPendingShutdowns;
+    p->mProcess->Shutdown()->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [self = RefPtr{this}](const UtilityProcessHost::ShutdownPromiseType::
+                                  ResolveOrRejectValue&) {
+          self->OnProcessShutdownComplete();
+        });
     p->mProcess = nullptr;
   }
 
@@ -809,39 +942,24 @@ RefPtr<MemoryReportingProcess> UtilityProcessManager::GetProcessMemoryReporter(
 
 #ifndef ANDROID
 already_AddRefed<UtilityProcessKeepAlive>
-UtilityProcessManager::StartContentHWInferenceManager(
-    Endpoint<hwinference::PHWInferenceManagerParent>&& aEndpoint,
-    dom::ContentParentId aChildId) {
-  LOGD(
-      "[%p] UtilityProcessManager::StartContentHWInferenceManager for content "
-      "%d",
-      this, static_cast<int>(aChildId));
+UtilityProcessManager::AcquireContentHWInferenceProcess() {
+  MOZ_ASSERT(NS_IsMainThread());
 
-  // Before launching, so that an actor cached from a process that is already
-  // gone gets evicted rather than rebound: see GetSingleton().
-  RefPtr<hwinference::HWInferenceParent> hwip =
-      hwinference::HWInferenceParent::GetSingleton();
-  MOZ_ASSERT(hwip, "Unable to get a singleton for HWInference");
-
-  RefPtr<UtilityProcessKeepAlive> keepAlive =
-      LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  if (!keepAlive) {
+  // Only a relaunch is refused: a spent budget must not take a working process
+  // away from its consumers.
+  if (!GetProcess(SandboxingKind::HW_INFERENCE) &&
+      mHWInferenceRestarts >=
+          StaticPrefs::browser_ml_hwinference_max_restarts()) {
     return nullptr;
   }
 
-  keepAlive->StartUtility(hwip)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [hwip, endpoint = std::move(aEndpoint), aChildId]() mutable {
-        // Send parent endpoint to utility process
-        if (!hwip->SendNewContentHWInferenceManager(std::move(endpoint),
-                                                    aChildId)) {
-          LOGD("Failed to send endpoint to utility process");
-        }
-      },
-      [](LaunchError&& aError) {
-        LOGD("Failed to start HWInference: %s", aError.FunctionName().get());
-      });
-
+  RefPtr<UtilityProcessKeepAlive> keepAlive =
+      LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
+  if (keepAlive) {
+    // A no-op once bound, and what re-binds if the PHWInference channel went
+    // away without the process going with it.
+    keepAlive->StartUtility(hwinference::HWInferenceParent::GetSingleton());
+  }
   return keepAlive.forget();
 }
 #endif  // !ANDROID

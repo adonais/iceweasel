@@ -239,5 +239,39 @@ bool FenceD3D11::Wait(ID3D11Device* aDevice) {
   return true;
 }
 
+/* static */
+bool FenceD3D11::WaitD3D11Fence(RefPtr<Fence>& aFence, ID3D11Device* aDevice) {
+  if (!aFence) {
+    return true;
+  }
+  auto* fenceD3D11 = aFence->AsFenceD3D11();
+  if (!fenceD3D11) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected fence type");
+    return false;
+  }
+  return fenceD3D11->Wait(aDevice);
+}
+
+/* static */
+void FenceD3D11::WaitD3D11Fences(const std::vector<RefPtr<Fence>>& aFences,
+                                 ID3D11Device* aDevice) {
+  MOZ_ASSERT(aDevice);
+
+  for (const auto& fence : aFences) {
+    if (!fence) {
+      MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+      continue;
+    }
+
+    auto* fenceD3D11 = fence->AsFenceD3D11();
+    if (!fenceD3D11) {
+      MOZ_ASSERT_UNREACHABLE("Unexpected fence type");
+      continue;
+    }
+
+    fenceD3D11->Wait(aDevice);
+  }
+}
+
 }  // namespace layers
 }  // namespace mozilla

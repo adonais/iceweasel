@@ -70,7 +70,7 @@ bool IsFile(const std::string &Path);
 bool IsDirectory(const std::string &Path);
 size_t FileSize(const std::string &Path);
 
-void ListFilesInDirRecursive(const std::string &Dir, long *Epoch,
+int ListFilesInDirRecursive(const std::string &Dir, long *Epoch,
                              std::vector<std::string> *V, bool TopDir);
 
 bool MkDirRecursive(const std::string &Dir);
@@ -90,7 +90,7 @@ struct SizedFile {
   bool operator<(const SizedFile &B) const { return Size < B.Size; }
 };
 
-void GetSizedFilesFromDir(const std::string &Dir, std::vector<SizedFile> *V);
+int GetSizedFilesFromDir(const std::string &Dir, std::vector<SizedFile> *V);
 
 char GetSeparator();
 bool IsSeparator(char C);

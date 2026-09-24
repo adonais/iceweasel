@@ -202,6 +202,29 @@ HttpConnectionUDP::~HttpConnectionUDP() {
              "Should not have any queued transactions");
 }
 
+void HttpConnectionUDP::RekeyAfterHttp3OnlyHandOff(
+    nsHttpConnectionInfo* aConnInfo) {
+  MOZ_ASSERT(aConnInfo);
+  MOZ_ASSERT(mConnInfo);
+  MOZ_ASSERT(mConnInfo->GetHttp3Only(),
+             "only an h3-only connection info gets handed off");
+  MOZ_ASSERT(!aConnInfo->GetHttp3Only(),
+             "hand-off must relax the policy to Allowed");
+  MOZ_ASSERT(aConnInfo->GetOrigin().Equals(mConnInfo->GetOrigin()) &&
+                 aConnInfo->OriginPort() == mConnInfo->OriginPort(),
+             "hand-off must not change the origin");
+
+  LOG(("HttpConnectionUDP::RekeyAfterHttp3OnlyHandOff this=%p %s -> %s", this,
+       mConnInfo->HashKey().get(), aConnInfo->HashKey().get()));
+  mConnInfo = aConnInfo;
+
+  // The session holds its own clone and later resolves connection entries from
+  // it, so it has to be re-keyed too.
+  if (mHttp3Session) {
+    mHttp3Session->RekeyAfterHttp3OnlyHandOff(aConnInfo);
+  }
+}
+
 nsresult HttpConnectionUDP::Init(nsHttpConnectionInfo* info,
                                  nsIDNSRecord* dnsRecord, nsresult status,
                                  nsIInterfaceRequestor* callbacks,

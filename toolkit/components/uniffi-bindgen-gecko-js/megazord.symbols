@@ -1,0 +1,4 @@
+ffi_*
+uniffi_*
+UNIFFI_META_* @DATA@
+full_megazord_get_version

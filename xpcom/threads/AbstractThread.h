@@ -6,6 +6,7 @@
 #define XPCOM_THREADS_ABSTRACTTHREAD_H_
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/DefineEnum.h"
 #include "mozilla/ThreadLocal.h"
 #include "nsISerialEventTarget.h"
 #include "nsISupports.h"
@@ -19,6 +20,30 @@ namespace mozilla {
 
 class TaskDispatcher;
 
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(
+    TailDispatchPolicy, uint8_t,
+    (
+        // Don't use tail dispatch - all dispatches go straight to the
+        // destination event target. This is the default.
+        NoTailDispatch,
+        // Use tail dispatch with consistent ordering between dispatched tasks.
+        // If you're looking for tail dispatch, this is almost certainly what
+        // you want.
+        // As an example, dispatching to target A, then B, then A will result in
+        // group runnables dispatching to A, then B, then A.
+        // This policy is used when both source and destination targets use it.
+        ConsistentOrdering,
+        // Use tail dispatch with a guarantee that all runnables dispatched to a
+        // single target in a single task will run atomically on the target.
+        // As an example, dispatching to target A, then B, then A will result in
+        // group runnables dispatching to A, then B. The order could be inverted
+        // if something had dispatched to B at an earlier point without the tail
+        // dispatcher firing in between. There are NO guarantees on ordering
+        // between targets A and B. This policy is used when both source and
+        // destination targets support tail dispatch, and *either* of them use
+        // this policy.
+        TargetAtomicity));
+
 /*
  * We often want to run tasks on a target that guarantees that events will never
  * run in parallel. There are various target types that achieve this - namely
@@ -28,6 +53,7 @@ class TaskDispatcher;
  * the structures we might use here and provides a consistent interface.
  *
  * At present, the supported AbstractThread implementations are TaskQueue,
+ * MediaTrackGraph for running tasks on an audio thread,
  * AbstractThread::MainThread() and XPCOMThreadWrapper which can wrap any
  * nsThread.
  *
@@ -46,8 +72,8 @@ class AbstractThread : public nsISerialEventTarget {
   // if the caller is not running in an AbstractThread.
   static AbstractThread* GetCurrent() { return sCurrentThreadTLS.get(); }
 
-  AbstractThread(bool aSupportsTailDispatch)
-      : mSupportsTailDispatch(aSupportsTailDispatch) {}
+  AbstractThread(TailDispatchPolicy aTailDispatchPolicy)
+      : mTailDispatcherPolicy(aTailDispatchPolicy) {}
 
   // We don't use NS_DECL_NSIEVENTTARGET so that we can remove the default
   // |flags| parameter from Dispatch. Otherwise, a single-argument Dispatch call
@@ -90,7 +116,14 @@ class AbstractThread : public nsISerialEventTarget {
   bool HasTailTasksFor(AbstractThread* aThread);
 
   // Returns true if this supports the tail dispatcher.
-  bool SupportsTailDispatch() const { return mSupportsTailDispatch; }
+  bool SupportsTailDispatch() const {
+    return mTailDispatcherPolicy != TailDispatchPolicy::NoTailDispatch;
+  }
+
+  // Returns the policy for tail-dispatch of this AbstractThread.
+  TailDispatchPolicy TailDispatcherPolicy() const {
+    return mTailDispatcherPolicy;
+  }
 
   // Returns true if this thread requires all dispatches originating from
   // aThread go through the tail dispatcher.
@@ -118,9 +151,10 @@ class AbstractThread : public nsISerialEventTarget {
   virtual ~AbstractThread() = default;
   static MOZ_THREAD_LOCAL(AbstractThread*) sCurrentThreadTLS;
 
-  // True if we want to require that every task dispatched from tasks running in
-  // this queue go through our queue's tail dispatcher.
-  const bool mSupportsTailDispatch;
+  // Defines if we want tasks dispatched from tasks running in this
+  // AbstractThread to go through our tail dispatcher, and if so, how they
+  // should be grouped together for different event targets.
+  const TailDispatchPolicy mTailDispatcherPolicy;
 };
 
 }  // namespace mozilla

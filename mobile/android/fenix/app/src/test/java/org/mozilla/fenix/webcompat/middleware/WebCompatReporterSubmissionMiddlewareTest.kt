@@ -13,6 +13,7 @@ import kotlinx.serialization.json.put
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -275,6 +276,42 @@ class WebCompatReporterSubmissionMiddlewareTest {
             val expected = webCompatReporterSubmissionMiddleware.parseWebCompatPreviewJson(expectedJson)
 
             assertEquals(expected, actual)
+        }
+
+    @Test
+    fun `WHEN open preview is clicked AND ETP blocked URLs are excluded THEN preview omits blockedOrigins and btpPurgeHistory`() =
+        runTest {
+            val capture = CaptureActionsMiddleware<WebCompatReporterState, WebCompatReporterAction>()
+
+            val store =
+                WebCompatReporterStore(
+                    initialState =
+                        WebCompatReporterState(
+                            tabUrl = "https://www.mozilla.org",
+                            enteredUrl = "https://www.mozilla.org",
+                            reason = WebCompatReporterState.BrokenSiteReason.Slow,
+                            problemDescription = "",
+                            includeEtpBlockedUrls = false,
+                        ),
+                    middleware =
+                        listOf(
+                            capture,
+                            createMiddleware(
+                                scope = this,
+                                gleanBrokenSiteReportSender = gleanBrokenSiteReportSender,
+                                service = FakeWebCompatReporterRetrievalService(),
+                            ),
+                        ),
+                )
+
+            store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
+            testScheduler.advanceUntilIdle()
+
+            val antitracking = store.state.previewReporterItems.first { it.title == "antitracking" }.data
+
+            assertFalse(antitracking.containsKey("blockedOrigins"))
+            assertFalse(antitracking.containsKey("btpPurgeHistory"))
+            assertTrue(antitracking.containsKey("btpHasPurgedSite"))
         }
 
     @Test

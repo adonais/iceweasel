@@ -222,17 +222,14 @@ VideoColorSpaceInit VideoColorSpaceInternal::ToColorSpaceInit() const {
 }
 
 nsCString VideoColorSpaceInternal::ToString() const {
-  nsCString rv("VideoColorSpace");
-  rv.AppendPrintf(" range: %s",
-                  mFullRange ? mFullRange.value() ? "true" : "false" : "none");
-  rv.AppendPrintf(" matrix: %s",
-                  mMatrix ? GetEnumString(mMatrix.value()).get() : "none");
-  rv.AppendPrintf(
-      " primaries: %s",
-      mPrimaries ? GetEnumString(mPrimaries.value()).get() : "none");
-  rv.AppendPrintf(" transfer: %s",
-                  mTransfer ? GetEnumString(mTransfer.value()).get() : "none");
-
+  nsCString rv;
+  rv.AppendFmt(
+      "VideoColorSpace {{ range={}, matrix={}, primaries={}, transfer={} }}",
+      mFullRange ? mozilla::ToString(mFullRange.value()) : "none",
+      mMatrix ? mozilla::ToString(GetEnumString(mMatrix.value())) : "none",
+      mPrimaries ? mozilla::ToString(GetEnumString(mPrimaries.value()))
+                 : "none",
+      mTransfer ? mozilla::ToString(GetEnumString(mTransfer.value())) : "none");
   return rv;
 }
 
@@ -554,7 +551,7 @@ WebCodecsConfigurationChangeList::ToPEMChangeList() const {
 RefPtr<TaskQueue> GetWebCodecsEncoderTaskQueue() {
   return TaskQueue::Create(
       GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
-      "WebCodecs encoding", false);
+      "WebCodecs encoding", TailDispatchPolicy::NoTailDispatch);
 }
 
 VideoColorSpaceInternal FallbackColorSpaceForVideoContent() {

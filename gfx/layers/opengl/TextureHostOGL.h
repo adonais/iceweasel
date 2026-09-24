@@ -642,6 +642,9 @@ class AndroidImageReaderImageTextureHost : public TextureHost {
   // SurfaceTexture uses android fence internally,
   bool NeedsDeferredDeletion() const override { return false; }
 
+  SurfaceDescriptor GetSurfaceDescriptor() override;
+
+  const AndroidImageReaderImageDescriptor mDescriptor;
   const layers::GpuProcessAndroidImageReaderId mImageReaderId;
   const layers::AndroidMediaCodecFrameId mFrameId;
   const gfx::IntSize mSize;

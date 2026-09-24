@@ -1483,6 +1483,16 @@ var snapshotFormatters = {
     $("startup-cache-wrote-to-disk-cache").textContent = data.WroteToDiskCache;
   },
 
+  pdfjs(data) {
+    $("pdfjs-version-box").textContent = data.version;
+    $("pdfjs-enabled-box").textContent = data.enabled;
+    $("pdfjs-enabled-annotation-editor-box").textContent =
+      data.annotationEditorEnabled;
+    $("pdfjs-enabled-xfa-box").textContent = data.enableXfa;
+    $("pdfjs-open-attachments-inline-box").textContent =
+      data.openPdfAttachmentsInline;
+  },
+
   libraryVersions(data) {
     let trs = [
       $.new("tr", [

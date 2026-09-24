@@ -7,7 +7,7 @@ set -e
 # builds write to the source dir (and its parent), so move the source trees to
 # our workspace from the (cached) checkout dir
 cp -a "${VCS_PATH}/nss" .
-[ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
+"$(dirname "$0")/clone_nspr.sh"
 
 if [ -n "$NSS_BUILD_MODULAR" ]; then
     ln -sf /builds/worker/artifacts artifacts
@@ -19,7 +19,6 @@ if [ -n "$NSS_BUILD_MODULAR" ]; then
 fi
 
 pushd nspr
-git checkout -- .
 if [[ -f ../nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
   patch -p1 < ../nss/nspr.patch
 fi

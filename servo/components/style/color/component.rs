@@ -6,7 +6,7 @@
 
 use std::fmt::Write;
 
-use super::{parsing::ChannelKeyword, AbsoluteColor};
+use super::{AbsoluteColor, parsing::ChannelKeyword};
 use crate::derives::*;
 use crate::typed_om::NumericType;
 use crate::{
@@ -17,7 +17,7 @@ use crate::{
         specified::calc::{CalcNode, CalcParseFlags, Leaf, PercentageContext},
     },
 };
-use cssparser::{color::OPAQUE, Parser, Token};
+use cssparser::{Parser, Token, color::OPAQUE};
 use style_traits::{ParseError, StyleParseErrorKind, ToCss};
 
 /// A single color component.
@@ -130,13 +130,12 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 // Try to compute, substitute channels and fold the calc tree in a
                 // single pass. If it resolves to a concrete value, collapse to a
                 // value; otherwise keep the computed (still symbolic) calc tree.
-                if let Ok(value) = node
+                match node
                     .resolve_map(|leaf| Ok(leaf.to_computed_value(context, origin_color)))
                     .and_then(|leaf| ValueType::try_from_leaf(&leaf))
                 {
-                    Self::Value(value)
-                } else {
-                    Self::Calc(Box::new(node.to_computed_value(context, origin_color)))
+                    Ok(value) => Self::Value(value),
+                    Err(..) => Self::Calc(Box::new(node.to_computed_value(context, origin_color))),
                 }
             },
             Self::AlphaOmitted => match origin_color {

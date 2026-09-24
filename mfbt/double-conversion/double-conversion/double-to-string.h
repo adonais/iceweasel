@@ -38,7 +38,7 @@ class DoubleToStringConverter {
   // When calling ToFixed with a double > 10^kMaxFixedDigitsBeforePoint
   // or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
   // function returns false.
-  static const int kMaxFixedDigitsBeforePoint = 308;
+  static const int kMaxFixedDigitsBeforePoint = 309;
   static const int kMaxFixedDigitsAfterPoint = 100;
 
   // When calling ToExponential with a requested_digits
@@ -235,14 +235,28 @@ class DoubleToStringConverter {
   //   and the significant digits).
   //      "-0.0000033333333333333333", "-0.0012345678901234567"
   // - the longest exponential representation. (A negative number with
-  //   kBase10MaximalLength significant digits).
-  //      "-1.7976931348623157e+308", "-1.7976931348623157E308"
+  //   kBase10MaximalLength significant digits, and an exponent padded to
+  //   min_exponent_width digits).
+  //      "-1.7976931348623157e+308", "-1.7976931348623157e+00308"
   // In addition, the buffer must be able to hold the trailing '\0' character.
+  //
+  // Since the algorithm finds the shortest number of significant digits, it
+  // can produce an output that isn't the shortest possible if the
+  // decimal_in_shortest_high is high enough. For example, the number
+  // 1e23 could be written as 99999999999999991611392 with 23
+  // digits, however, it only needs one significant digit 1, and thus the
+  // result is 100000000000000000000000, which has 24 digits.
   bool ToShortest(double value, StringBuilder* result_builder) const {
     return ToShortestIeeeNumber(value, result_builder, SHORTEST);
   }
 
   // Same as ToShortest, but for single-precision floats.
+  //
+  // Since the algorithm finds the shortest number of significant digits, it
+  // can, in very rare cases, produce an output that isn't the shortest possible.
+  // For example, the number 1e11f could be written as 99999997952 with 11
+  // digits, however, it only needs one significant digit 1, and thus the
+  // result is 100000000000, which has 12 digits.
   bool ToShortestSingle(float value, StringBuilder* result_builder) const {
     return ToShortestIeeeNumber(value, result_builder, SHORTEST_SINGLE);
   }
@@ -276,6 +290,7 @@ class DoubleToStringConverter {
   // except for the following cases:
   //   - the input value is special and no infinity_symbol or nan_symbol has
   //     been provided to the constructor,
+  //   - 'requested_digits' < 0,
   //   - 'value' > 10^kMaxFixedDigitsBeforePoint, or
   //   - 'requested_digits' > kMaxFixedDigitsAfterPoint.
   // The last two conditions imply that the result for non-special values never
@@ -316,6 +331,9 @@ class DoubleToStringConverter {
   // kMaxExponentialDigits + 8 characters (the sign, the digit before the
   // decimal point, the decimal point, the exponent character, the
   // exponent's sign, and at most 3 exponent digits).
+  // If min_exponent_width is greater than 3, the result also needs space
+  // for those additional padding digits. Given that min_exponent_width
+  // is clamped to 5, the result might thus have at most 2 additional characters.
   // In addition, the buffer must be able to hold the trailing '\0' character.
   MFBT_API bool ToExponential(double value,
                      int requested_digits,
@@ -355,8 +373,17 @@ class DoubleToStringConverter {
   //   - precision > kMaxPrecisionDigits
   //
   // The last condition implies that the result never contains more than
-  // kMaxPrecisionDigits + 7 characters (the sign, the decimal point, the
-  // exponent character, the exponent's sign, and at most 3 exponent digits).
+  // kMaxPrecisionDigits + 7 characters when it is returned in exponential
+  // format (the sign, the digit before the decimal point, the decimal point,
+  // the exponent character, the exponent's sign, and at most 3 exponent
+  // digits).
+  // If min_exponent_width is greater than 3, the result also needs space
+  // for those additional padding digits. Given that min_exponent_width
+  // is clamped to 5, the result might thus have at most 2 additional characters.
+  // The result has never more than
+  // kMaxPrecisionDigits + max_leading_padding_zeroes_in_precision_mode + 2
+  // characters when it is returned in decimal format (the sign, the decimal
+  // point, and the leading zeroes, which include the '0' before the point).
   // In addition, the buffer must be able to hold the trailing '\0' character.
   MFBT_API bool ToPrecision(double value,
                    int precision,

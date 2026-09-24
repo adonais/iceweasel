@@ -365,7 +365,7 @@ int CleanseCrashInput(const std::vector<std::string> &Args,
   if (Inputs->size() != 1 || !Flags.exact_artifact_path) {
     Printf("ERROR: -cleanse_crash should be given one input file and"
           " -exact_artifact_path\n");
-    exit(1);
+    return 1;
   }
   std::string InputFilePath = Inputs->at(0);
   std::string OutputFilePath = Flags.exact_artifact_path;
@@ -419,7 +419,7 @@ int MinimizeCrashInput(const std::vector<std::string> &Args,
                        const FuzzingOptions &Options) {
   if (Inputs->size() != 1) {
     Printf("ERROR: -minimize_crash should be given one input file\n");
-    exit(1);
+    return 1;
   }
   std::string InputFilePath = Inputs->at(0);
   Command BaseCmd(Args);
@@ -450,7 +450,7 @@ int MinimizeCrashInput(const std::vector<std::string> &Args,
     bool Success = ExecuteCommand(Cmd, &CmdOutput);
     if (Success) {
       Printf("ERROR: the input %s did not crash\n", CurrentFilePath.c_str());
-      exit(1);
+      return 1;
     }
     Printf("CRASH_MIN: '%s' (%zd bytes) caused a crash. Will try to minimize "
            "it further\n",
@@ -505,42 +505,53 @@ int MinimizeCrashInputInternalStep(Fuzzer *F, InputCorpus *Corpus) {
   Printf("INFO: Starting MinimizeCrashInputInternalStep: %zd\n", U.size());
   if (U.size() < 2) {
     Printf("INFO: The input is small enough, exiting\n");
-    exit(0);
+    return 0;
   }
   F->SetMaxInputLen(U.size());
   F->SetMaxMutationLen(U.size() - 1);
   F->MinimizeCrashLoop(U);
   Printf("INFO: Done MinimizeCrashInputInternalStep, no crashes found\n");
-  exit(0);
+  return 0;
 }
 
-void Merge(Fuzzer *F, FuzzingOptions &Options,
+int Merge(Fuzzer *F, FuzzingOptions &Options,
            const std::vector<std::string> &Args,
            const std::vector<std::string> &Corpora, const char *CFPathOrNull) {
   if (Corpora.size() < 2) {
     Printf("INFO: Merge requires two or more corpus dirs\n");
-    exit(0);
+    return 0;
   }
 
   std::vector<SizedFile> OldCorpus, NewCorpus;
-  GetSizedFilesFromDir(Corpora[0], &OldCorpus);
-  for (size_t i = 1; i < Corpora.size(); i++)
-    GetSizedFilesFromDir(Corpora[i], &NewCorpus);
+  int Res = GetSizedFilesFromDir(Corpora[0], &OldCorpus);
+  if (Res != 0)
+    return Res;
+  for (size_t i = 1; i < Corpora.size(); i++) {
+    Res = GetSizedFilesFromDir(Corpora[i], &NewCorpus);
+    if (Res != 0)
+      return Res;
+  }
   std::sort(OldCorpus.begin(), OldCorpus.end());
   std::sort(NewCorpus.begin(), NewCorpus.end());
 
   std::string CFPath = CFPathOrNull ? CFPathOrNull : TempPath("Merge", ".txt");
   std::vector<std::string> NewFiles;
   std::set<uint32_t> NewFeatures, NewCov;
-  CrashResistantMerge(Args, OldCorpus, NewCorpus, &NewFiles, {}, &NewFeatures,
+  Res = CrashResistantMerge(Args, OldCorpus, NewCorpus, &NewFiles, {}, &NewFeatures,
                       {}, &NewCov, CFPath, true, Flags.set_cover_merge);
+  if (Res != 0)
+    return Res;
+
+  if (F->isGracefulExitRequested())
+    return 0;
+
   for (auto &Path : NewFiles)
     F->WriteToOutputCorpus(FileToVector(Path, Options.MaxLen));
   // We are done, delete the control file if it was a temporary one.
   if (!Flags.merge_control_file)
     RemoveFile(CFPath);
 
-  exit(0);
+  return 0;
 }
 
 int AnalyzeDictionary(Fuzzer *F, const std::vector<Unit> &Dict,
@@ -620,7 +631,7 @@ std::vector<std::string> ParseSeedInputs(const char *seed_inputs) {
     SeedInputs = Flags.seed_inputs; // seed_inputs contains the list.
   if (SeedInputs.empty()) {
     Printf("seed_inputs is empty or @file does not exist.\n");
-    exit(1);
+    return Files;
   }
   // Parse SeedInputs.
   size_t comma_pos = 0;
@@ -653,7 +664,8 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   using namespace fuzzer;
   assert(argc && argv && "Argument pointers cannot be nullptr");
   std::string Argv0((*argv)[0]);
-  EF = new ExternalFunctions();
+  if (!EF)
+    EF = new ExternalFunctions();
   if (EF->LLVMFuzzerInitialize)
     EF->LLVMFuzzerInitialize(argc, argv);
   if (EF->__msan_scoped_disable_interceptor_checks)
@@ -663,7 +675,7 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
   ProgName = new std::string(Args[0]);
   if (Argv0 != *ProgName) {
     Printf("ERROR: argv[0] has been modified in LLVMFuzzerInitialize\n");
-    exit(1);
+    return 1;
   }
   ParseFlags(Args, EF);
   if (Flags.help) {
@@ -878,24 +890,23 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
            "***       executed the target code on a fixed set of inputs.\n"
            "***\n");
     F->PrintFinalStats();
-    exit(0);
+    return 0;
   }
 
   Options.ForkCorpusGroups = Flags.fork_corpus_groups;
   if (Flags.fork)
-    FuzzWithFork(F->GetMD().GetRand(), Options, Args, *Inputs, Flags.fork);
+    return FuzzWithFork(F->GetMD().GetRand(), Options, Args, *Inputs, Flags.fork);
 
   if (Flags.merge || Flags.set_cover_merge)
-    Merge(F, Options, Args, *Inputs, Flags.merge_control_file);
+    return Merge(F, Options, Args, *Inputs, Flags.merge_control_file);
 
   if (Flags.merge_inner) {
     const size_t kDefaultMaxMergeLen = 1 << 20;
     if (Options.MaxLen == 0)
       F->SetMaxInputLen(kDefaultMaxMergeLen);
     assert(Flags.merge_control_file);
-    F->CrashResistantMergeInternalStep(Flags.merge_control_file,
+    return F->CrashResistantMergeInternalStep(Flags.merge_control_file,
                                        !strncmp(Flags.merge_inner, "2", 1));
-    exit(0);
   }
 
   if (Flags.analyze_dict) {
@@ -913,21 +924,24 @@ int FuzzerDriver(int *argc, char ***argv, UserCallback Callback) {
     }
     if (AnalyzeDictionary(F, Dictionary, InitialCorpus)) {
       Printf("Dictionary analysis failed\n");
-      exit(1);
+      return 1;
     }
     Printf("Dictionary analysis succeeded\n");
-    exit(0);
+    return 0;
   }
 
   auto CorporaFiles = ReadCorpora(*Inputs, ParseSeedInputs(Flags.seed_inputs));
-  F->Loop(CorporaFiles);
+  int Res = F->Loop(CorporaFiles);
+  if (Res != 0) return Res;
+  if (F->isGracefulExitRequested())
+    return 0;
 
   if (Flags.verbosity)
     Printf("Done %zd runs in %zd second(s)\n", F->getTotalNumberOfRuns(),
            F->secondsSinceProcessStartUp());
   F->PrintFinalStats();
 
-  exit(0);  // Don't let F destroy itself.
+  return 0;  // Don't let F destroy itself.
 }
 
 extern "C" ATTRIBUTE_INTERFACE int

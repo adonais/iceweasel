@@ -1,7 +1,8 @@
 # Writing an efficiency test
 
-Once the building blocks exist, the test is a short, fluent description of _what_ to check. It
-extends `BaseTest`, which owns the compose rule, retries, cleanup, and the mock web server.
+Once the building blocks exist, the test is a short, fluent description of _what_ to check. It extends
+`BaseTest`, which owns rule composition, launch, cleanup, failure capture, and declared execution
+resources. It does not retry failures in-process.
 
 ## Structure
 
@@ -25,6 +26,8 @@ class OnboardingTest : BaseTest(LaunchConfig(skipOnboarding = false)) {
 - **`on`** is the `PageContext` — `on.<page>` gives the typed page object.
 - **`navigateToPage()`** routes + confirms arrival; `navigateToPage(url)` on `browserPage` loads a
   page. Chain `moz*` verbs off it.
+- **`executionRequirements(description)`** declares test-specific device state, cleanup, and optional
+  resources. See `../test-execution-contracts.md`; ordinary tests use the server owned by `BaseTest`.
 - **Preserve the `// TestRail link:` comment and `@SmokeTest`** from the legacy test — coverage
   tooling joins on the TestRail id, and the smoke tag drives suite membership.
 
@@ -41,6 +44,10 @@ Use the `moz*` verbs (full list in `extending-basepage.md`): `mozClick`, `mozCli
 `mozVerifyElementAbsent`, `mozVerifyElementsByGroup`, `mozVerifyAnyContainsText`, … Each returns the
 page, so chain them. Prefer `mozClickIfPresent` for genuinely conditional UI (e.g. an optional
 interstitial card) rather than branching logic in the test.
+
+Page readiness is a navigation oracle, not a substitute for the behavior oracle. If the test changes a
+setting, saves data, or invokes a feature, verify the user-visible result of that operation rather than
+counting successful navigation as proof.
 
 ## Close-out (order matters)
 

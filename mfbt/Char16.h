@@ -94,7 +94,6 @@ class char16ptr_t {
   char16_t operator[](size_t aIndex) const { return mPtr[aIndex]; }
   bool operator==(const char16ptr_t& aOther) const = default;
   bool operator==(std::nullptr_t) const { return mPtr == nullptr; }
-  bool operator!=(const char16ptr_t& aOther) const = default;
   bool operator!=(std::nullptr_t) const { return mPtr != nullptr; }
   char16ptr_t operator+(int aValue) const { return char16ptr_t(mPtr + aValue); }
   char16ptr_t operator+(unsigned int aValue) const {

@@ -116,6 +116,12 @@ export class DynamicSuggestions extends SuggestProvider {
     });
   }
 
+  /**
+   * @param {UrlbarQueryContext} _queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} _searchString
+   */
   onEngagement(_queryContext, controller, details, _searchString) {
     switch (details.selType) {
       case "manage":

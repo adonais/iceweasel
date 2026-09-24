@@ -8,7 +8,7 @@ const TYPE_EMAIL = 4;
 const TYPE_SERVER = 8;
 
 export class AboutCertViewerParent extends JSWindowActorParent {
-  getCertificates() {
+  async getCertificates() {
     let certs = {
       [TYPE_CA]: [],
       [TYPE_USER]: [],
@@ -18,7 +18,7 @@ export class AboutCertViewerParent extends JSWindowActorParent {
     let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
       Ci.nsIX509CertDB
     );
-    let certcache = certdb.getCerts();
+    let certcache = await certdb.getCerts();
     for (let cert of certcache) {
       for (let certType of Object.keys(certs).map(Number)) {
         if (certType & cert.certType) {
@@ -32,7 +32,7 @@ export class AboutCertViewerParent extends JSWindowActorParent {
     return certs;
   }
 
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     switch (aMessage.name) {
       case "getCertificates":
         return this.getCertificates();

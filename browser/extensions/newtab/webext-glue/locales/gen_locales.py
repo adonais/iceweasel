@@ -27,36 +27,10 @@ import subprocess
 
 import buildconfig
 from fluent.syntax import parse as fluent_parse
-from fluent.syntax import serialize as fluent_serialize
-from fluent.syntax.ast import Message, Resource, Term
+from fluent.syntax.ast import Message, Term
 
 FIREFOX_L10N_REPO = "https://github.com/mozilla-l10n/firefox-l10n.git"
 FLUENT_SUBPATH = os.path.join("browser", "browser", "newtab", "newtab.ftl")
-
-# @backward-compat { version 155 }
-# Bug 2048379 moved these 13 homepage-settings strings out of newtab.ftl into
-# preferences.ftl. The train-hopped XPI still needs them in its packaged
-# newtab.ftl for the pre-155 fallback in AboutPreferences.sys.mjs, so we extract
-# them from preferences.ftl and append them to each generated newtab.ftl. Once
-# 155 reaches Release, this extract step can be removed.
-PREFERENCES_EXTRACT_IDS = (
-    "home-homepage-title",
-    "home-homepage-new-windows",
-    "home-homepage-new-tabs",
-    "home-homepage-custom-homepage-button",
-    "home-custom-homepage-card-header",
-    "home-custom-homepage-address",
-    "home-custom-homepage-address-button",
-    "home-custom-homepage-no-results",
-    "home-custom-homepage-delete-address-button",
-    "home-custom-homepage-replace-with-prompt",
-    "home-custom-homepage-current-pages-button",
-    "home-custom-homepage-bookmarks-button",
-    "home-prefs-homepage-extension-option",
-)
-PREFERENCES_SUBPATH = os.path.join(
-    "browser", "browser", "preferences", "preferences.ftl"
-)
 
 
 def _clone_dir():
@@ -99,28 +73,6 @@ def clone(output):
     output.write("ok\n")
 
 
-# @backward-compat { version 155 }
-def _preferences_extract(preferences_path):
-    """Return a serialized Fluent block containing the IDs in
-    PREFERENCES_EXTRACT_IDS from preferences_path, or an empty string if the
-    file is missing or has none of the target IDs."""
-    try:
-        with open(preferences_path, encoding="utf-8") as f:
-            source = f.read()
-    except FileNotFoundError:
-        return ""
-    resource = fluent_parse(source)
-    wanted = set(PREFERENCES_EXTRACT_IDS)
-    picked = [
-        entry
-        for entry in resource.body
-        if isinstance(entry, Message) and entry.id.name in wanted
-    ]
-    if not picked:
-        return ""
-    return "\n" + fluent_serialize(Resource(body=picked))
-
-
 def copy_locale(output, locale):
     """Write `locale`'s newtab.ftl from the shared clone to `output`.
 
@@ -133,23 +85,6 @@ def copy_locale(output, locale):
             output.write(f.read())
     else:
         output.write("")
-    # @backward-compat { version 155 }
-    output.write(
-        _preferences_extract(os.path.join(_clone_dir(), locale, PREFERENCES_SUBPATH))
-    )
-
-
-# @backward-compat { version 155 }
-def copy_en_us(output, newtab_ftl, preferences_ftl):
-    """Write the in-tree en-US newtab.ftl to `output`, then append the extract block.
-
-    en-US is packaged from the in-tree copy rather than the l10n clone. Bug
-    2048379 removed the homepage strings from newtab.ftl, so they are restored
-    here from preferences.ftl for the pre-155 fallback.
-    """
-    with open(newtab_ftl, encoding="utf-8") as f:
-        output.write(f.read())
-    output.write(_preferences_extract(preferences_ftl))
 
 
 def _string_ids(ftl_path):

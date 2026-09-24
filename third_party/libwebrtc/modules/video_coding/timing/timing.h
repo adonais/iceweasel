@@ -17,7 +17,7 @@
 #include <optional>
 #include <span>
 
-#include "api/field_trials_view.h"
+#include "api/environment/environment.h"
 #include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -28,7 +28,6 @@
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -67,11 +66,8 @@ class VCMTiming {
     TimeDelta current_delay = TimeDelta::Zero();
   };
 
-  VCMTiming(Clock* clock,
-            const FieldTrialsView& field_trials,
-            TimeDelta render_delay);
-  VCMTiming(Clock* clock,
-            const FieldTrialsView& field_trials,
+  VCMTiming(const Environment& env, TimeDelta render_delay);
+  VCMTiming(const Environment& env,
             TimeDelta render_delay,
             std::unique_ptr<VideoJitterTimingInterface> video_jitter_timing);
   ~VCMTiming() = default;

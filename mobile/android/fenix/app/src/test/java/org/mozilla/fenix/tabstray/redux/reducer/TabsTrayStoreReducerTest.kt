@@ -950,6 +950,7 @@ class TabsTrayStoreReducerTest {
                 tabGroupOnboardingImpressionCount = 10,
                 hasUserEverHadOneTabGroup = true,
                 hasViewedTabGroupsPage = true,
+                skipUngroupConfirmation = true,
             )
         val result =
             TabsTrayReducer.reduce(
@@ -962,6 +963,7 @@ class TabsTrayStoreReducerTest {
                                 tabGroupOnboardingImpressionCount = expectedState.tabGroupOnboardingImpressionCount,
                                 hasUserEverHadOneTabGroup = expectedState.hasUserEverHadOneTabGroup,
                                 hasViewedTabGroupsPage = expectedState.hasViewedTabGroupsPage,
+                                skipUngroupConfirmation = expectedState.skipUngroupConfirmation,
                             )
                     ),
             )

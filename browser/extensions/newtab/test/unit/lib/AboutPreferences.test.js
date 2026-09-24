@@ -27,9 +27,6 @@ describe("AboutPreferences Feed", () => {
     globals.set("NimbusFeatures", {
       newtab: { getAllVariables: sandbox.stub() },
     });
-    globals.set("Management", {
-      asyncLoadSettingsModules: sandbox.stub(),
-    });
   });
   afterEach(() => {
     globals.restore();
@@ -158,9 +155,6 @@ describe("AboutPreferences Feed", () => {
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
-        // Default: simulate Firefox 155+ (the preferences component owns
-        // homepage/customHomepage).
-        sandbox.stub(Services.vc, "compare").returns(0);
         registerGroups = sandbox.stub();
         getSettingGroup = sandbox.stub();
         getSettingGroup
@@ -184,8 +178,8 @@ describe("AboutPreferences Feed", () => {
         assert.calledWith(insertFTLIfNeeded, "browser/newtab/newtab.ftl");
       });
 
-      it("on Firefox 155+, should call registerGroups with home only", async () => {
-        // Default beforeEach stub is 155+.
+      it("should call registerGroups with home only", async () => {
+        // homepage/customHomepage are owned by components/preferences.
         await instance.observe(window);
 
         assert.calledOnce(registerGroups);
@@ -193,23 +187,6 @@ describe("AboutPreferences Feed", () => {
         assert.doesNotHaveAnyKeys(registerGroups.firstCall.args[0], [
           "homepage",
           "customHomepage",
-        ]);
-      });
-
-      it("on Firefox <155, should call registerGroups with homepage, customHomepage, and home", async () => {
-        // Override the default 155+ stub with a <155 result, and stub the
-        // setup methods so observe() can run without a real preferences window.
-        Services.vc.compare.restore();
-        sandbox.stub(Services.vc, "compare").returns(-1);
-        sandbox.stub(instance, "_setupHomepageGroup").returns({});
-        sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
-        await instance.observe(window);
-
-        assert.calledOnce(registerGroups);
-        assert.hasAllKeys(registerGroups.firstCall.args[0], [
-          "homepage",
-          "customHomepage",
-          "home",
         ]);
       });
 

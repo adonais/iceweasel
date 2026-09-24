@@ -713,7 +713,7 @@ export class UrlbarInputBaseTestUtils {
     let details = {};
     let result = element.result;
     details.result = result;
-    let { url, postData } = UrlbarUtils.getUrlFromResult(result);
+    let { url, postData } = this.getUrlAndPostData(result);
     details.url = url;
     details.postData = postData;
     details.type = result.type;
@@ -762,6 +762,18 @@ export class UrlbarInputBaseTestUtils {
       details.dynamicType = result.payload.dynamicType;
     }
     return details;
+  }
+
+  /**
+   * The url and post data a result would load, as `getDetailsOfResultAt`
+   * reports them. Resolving a search result's url takes the search service, so
+   * an input in a content process leaves this to its parent-side facade.
+   *
+   * @param {UrlbarResult} result
+   * @returns {{url: ?string, postData: ?nsIInputStream}}
+   */
+  getUrlAndPostData(result) {
+    return UrlbarUtils.getUrlFromResult(result);
   }
 
   /**
@@ -883,10 +895,17 @@ export class UrlbarInputBaseTestUtils {
     // for the current query. For now let's just wait for the search to be
     // complete.
     return this.promiseSearchComplete(win).then(context => {
-      // Look for search suggestions.
-      let firstSearchSuggestionIndex = context.results.findIndex(
-        r => r.type == UrlbarShared.RESULT_TYPE.SEARCH && r.payload.suggestion
-      );
+      // Look for search suggestions. For a urlbar in a content process, a
+      // callback another realm's `findIndex` invokes gets its results
+      // Xray-wrapped, and an Xray over a class instance reads every property as
+      // undefined.
+      let firstSearchSuggestionIndex = context.results.findIndex(result => {
+        result = Cu.waiveXrays(result);
+        return (
+          result.type == UrlbarShared.RESULT_TYPE.SEARCH &&
+          result.payload.suggestion
+        );
+      });
       if (firstSearchSuggestionIndex == -1) {
         throw new Error("Cannot find a search suggestion");
       }
@@ -1173,10 +1192,12 @@ export class UrlbarInputBaseTestUtils {
         "browser.urlbar.placeholderName" +
         (lazy.PrivateBrowsingUtils.isWindowPrivate(window) ? ".private" : "");
       let engineName = Services.prefs.getStringPref(prefName, "");
-      let keywordEnabled = Services.prefs.getBoolPref("keyword.enabled");
+      let keywordEnabled = UrlbarShared.keywordEnabled(
+        this.#urlbar(window).sapName
+      );
 
       let expectedPlaceholder;
-      if (this.#urlbar(window).isSearchbarSAP) {
+      if (!UrlbarShared.navigationEnabled(this.#urlbar(window).sapName)) {
         expectedPlaceholder = { id: "searchbar-input" };
       } else if (keywordEnabled && engineName) {
         expectedPlaceholder = {
@@ -1286,8 +1307,8 @@ export class UrlbarInputBaseTestUtils {
 
     // Check the input's placeholder.
     let expectedPlaceholderL10n;
-    if (this.#urlbar(window).isSearchbarSAP) {
-      // A search bar's placeholder stays constant.
+    if (!UrlbarShared.navigationEnabled(this.#urlbar(window).sapName)) {
+      // The toolbar search bar's placeholder stays constant.
       expectedPlaceholderL10n = {
         id: "searchbar-input",
         args: null,
@@ -1569,7 +1590,7 @@ export class UrlbarInputBaseTestUtils {
    *        UrlbarParentController constructor.
    * @returns {UrlbarChildController} A new controller.
    */
-  newMockController(options = {}) {
+  mockChildController(options = {}) {
     let sapName = options.sapName || "urlbar";
     // Ensure a sapName is defined, as otherwise we'd not get the same
     // ProvidersManager instance across tests.
@@ -1617,7 +1638,6 @@ export class UrlbarInputBaseTestUtils {
     // chrome window). It is exposed as `controller.parentController`.
     parentOptions.input.window.windowGlobalChild = {
       getActor: () => ({
-        usesMessagePath: false,
         browsingContext: { topChromeWindow: browserWindow },
       }),
     };

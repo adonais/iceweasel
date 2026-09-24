@@ -6,9 +6,12 @@ import buildconfig
 import mozpack.path as mozpath
 import sys
 
-sys.path.insert(0, mozpath.join(buildconfig.topsrcdir, "servo", "components", "style", "gecko"))
+sys.path.insert(
+    0, mozpath.join(buildconfig.topsrcdir, "servo", "components", "style", "gecko")
+)
 
 from pseudo_elements import PseudoElementData
+
 
 def generate(output):
     data = PseudoElementData()
@@ -41,10 +44,10 @@ def generate(output):
 #define DEFINED_CSS_PSEUDO_ELEMENT
 #endif
 """
-  )
+    )
 
     for pseudo in data.all_pseudos():
-        flags = ' | '.join(f"PseudoStyleTypeFlags::{flag}" for flag in pseudo.flags())
+        flags = " | ".join(f"PseudoStyleTypeFlags::{flag}" for flag in pseudo.flags())
         macro_name = "CSS_PSEUDO_ELEMENT"
         if pseudo.is_non_inheriting_anon_box():
             macro_name = "CSS_NON_INHERITING_ANON_BOX"

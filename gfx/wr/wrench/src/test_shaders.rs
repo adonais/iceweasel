@@ -139,13 +139,12 @@ pub fn test_shaders() {
             let vert_name = format!("{}.vert", name);
             let frag_name = format!("{}.frag", name);
 
-
             let features = config
                 .split(",")
                 .filter(|f| !f.is_empty())
                 .collect::<Vec<_>>();
 
-            let (vert_src, frag_src) =
+            let (vert_src, frag_src, _, _) =
                 build_shader_strings(ShaderVersion::Gles, &features, shader, &|f| {
                     webrender::get_unoptimized_shader_source(f, None)
                 });

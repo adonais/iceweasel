@@ -825,6 +825,14 @@ scheme = "https"
 
 ["test_fastSeek.html"]
 
+["test_gfx_sanity_gpu.html"]
+scheme = "https"
+tags = "media-gpu os_integration"
+run-if = [
+  # The graphics sanity test only exists on Windows.
+  "os == 'win' && mda_gpu",
+]
+
 ["test_hls_player_independency.html"]
 # There's a limit for creating decoder when API lever < 18(Bug 1278574)
 # We could skip the test in that case as we cannot play 2 video at a time.

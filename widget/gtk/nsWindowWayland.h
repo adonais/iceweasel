@@ -16,8 +16,8 @@ class nsWindowWayland final : public nsWindow {
   nsWindowWayland* AsWayland() override { return this; }
   nsWindow* GetEffectiveParent() const;
 
-  void GetWorkspaceID(nsAString& workspaceID) override;
-  void MoveToWorkspace(const nsAString& workspaceIDStr) override;
+  void GetWorkspaceID(nsAString& aWorkspaceID) override;
+  void MoveToWorkspace(const nsAString& aWorkspaceIDStr) override;
   void RestoreXdgToplevel();
 
   // Use xdg-activation protocol to transfer focus from gFocusWindow.
@@ -236,7 +236,7 @@ class nsWindowWayland final : public nsWindow {
   RefPtr<mozilla::VsyncDispatcher> mWaylandVsyncDispatcher;
   LayoutDeviceIntPoint mNativeLockedPoint;
   xdg_toplevel_session_v1* mSessionRestoreToken = nullptr;
-  nsString mSessionID;
+  nsCString mWorkspaceID;
 
   gulong mXdgToplevelRealizedID = 0;
 

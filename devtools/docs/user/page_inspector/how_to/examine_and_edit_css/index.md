@@ -75,7 +75,7 @@ In addition to compatibility tooltips, the *CSS Compatibility View* shows any CS
 :class: center
 ```
 
-For more information see: {ref}`Page Inspector > CSS Compatibility View <page_inspector_ui_tour_compatibility_view>`.
+For more information see: {ref}`Page Inspector > CSS Compatibility View <page-inspector-ui-tour-compatibility-view>`.
 
 ### Rule display
 

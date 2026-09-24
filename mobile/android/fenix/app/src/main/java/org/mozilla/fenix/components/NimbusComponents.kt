@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components
 
 import android.content.Context
+import java.io.File
 import mozilla.appservices.remotesettings.RemoteSettingsService
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.Engine
@@ -14,8 +15,12 @@ import mozilla.components.service.nimbus.messaging.NimbusMessagingController
 import mozilla.components.service.nimbus.messaging.NimbusMessagingControllerInterface
 import mozilla.components.service.nimbus.messaging.NimbusMessagingStorage
 import mozilla.components.service.nimbus.messaging.OnDiskMessageMetadataStorage
+import org.mozilla.experiments.nimbus.NIMBUS_DATA_DIR
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
+import org.mozilla.experiments.nimbus.internal.EnrollmentSlugs
+import org.mozilla.experiments.nimbus.internal.NimbusException
+import org.mozilla.experiments.nimbus.internal.getActiveEnrollments
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.experiments.createNimbus
 import org.mozilla.fenix.experiments.prefhandling.NimbusGeckoPrefHandler
@@ -111,5 +116,19 @@ class NimbusComponents(
             messagingFeature = FxNimbusMessaging.features.messaging,
             attributeProvider = CustomAttributeProvider,
         )
+    }
+
+    /**
+     * Return the list of enrolled experiments for the crash reporter.
+     *
+     * This will not instantiate the NimbusClient and instead attempt to read from the Nimbus database directly.
+     */
+    fun getEnrollmentsForCrashReporter(): List<EnrollmentSlugs> {
+        try {
+            val dbPath = File(context.applicationInfo.dataDir, NIMBUS_DATA_DIR).path
+            return getActiveEnrollments(dbPath)
+        } catch (e: NimbusException) {
+            return emptyList()
+        }
     }
 }

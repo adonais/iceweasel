@@ -59,9 +59,9 @@ void FopenUsageChecker::check(const MatchFinder::MatchResult &Result) {
       "_sopen_s, OpenFile, CreateFileA should never be used due to lossy "
       "conversion from UTF8 to ANSI.";
 
-    diag(FuncCall->getBeginLoc(),
-         "Usage of ASCII file functions (here %0) is forbidden on Windows.",
-         DiagnosticIDs::Warning)
-        << FuncCall->getDirectCallee()->getName();
-    diag(FuncCall->getBeginLoc(), ExtraInfo, DiagnosticIDs::Note);
+  diag(FuncCall->getBeginLoc(),
+       "Usage of ASCII file functions (here %0) is forbidden on Windows.",
+       DiagnosticIDs::Warning)
+      << FuncCall->getDirectCallee()->getName();
+  diag(FuncCall->getBeginLoc(), ExtraInfo, DiagnosticIDs::Note);
 }

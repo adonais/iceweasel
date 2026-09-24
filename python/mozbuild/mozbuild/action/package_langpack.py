@@ -8,6 +8,8 @@ and the `zip` action.
 Invoked in make via $(call py_action,package_langpack,...).
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path

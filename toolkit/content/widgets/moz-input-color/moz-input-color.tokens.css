@@ -32,8 +32,14 @@
     @layer tokens-foundation-nova {
       --input-color-background-color: var(--button-background-color);
       --input-color-background-color-hover: var(--button-background-color-hover);
-      --input-color-background-color-active: var(--button-background-color-active);
+      --input-color-background-color-active: light-dark(var(--button-background-color-active), var(--color-violet-desaturated-60));
       --input-color-space-padding-inline: var(--space-small);
+    }
+
+    @layer tokens-forced-colors-nova {
+      @media (forced-colors) {
+        --input-color-background-color-active: var(--button-background-color-active);
+      }
     }
   }
 }

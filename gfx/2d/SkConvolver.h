@@ -10,6 +10,7 @@
 #include <numbers>
 
 #include "Types.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Vector.h"
 
 namespace skia {
@@ -109,13 +110,21 @@ class SkConvolutionFilter1D {
   inline const ConvolutionFixed* FilterForValue(int valueOffset,
                                                 int* filterOffset,
                                                 int* filterLength) const {
-    const FilterInstance& filter = fFilters[valueOffset];
+    // Unchecked indexing: valueOffset is always in [0, numValues()), and
+    // numValues() == fFilters.length(); fDataLocation is set by AddFilter to a
+    // valid index into fFilterValues. begin()[] skips the mozilla::Vector
+    // bounds check (there is no unchecked operator[]); the asserts keep both
+    // invariants guarded in debug builds at no release cost.
+    MOZ_ASSERT(valueOffset >= 0 && size_t(valueOffset) < fFilters.length());
+    const FilterInstance& filter = fFilters.begin()[valueOffset];
     *filterOffset = filter.fOffset;
     *filterLength = filter.fTrimmedLength;
     if (filter.fTrimmedLength == 0) {
       return nullptr;
     }
-    return &fFilterValues[filter.fDataLocation];
+    MOZ_ASSERT(filter.fDataLocation >= 0 &&
+               size_t(filter.fDataLocation) < fFilterValues.length());
+    return &fFilterValues.begin()[filter.fDataLocation];
   }
 
   bool ComputeFilterValues(const SkBitmapFilter& aBitmapFilter,

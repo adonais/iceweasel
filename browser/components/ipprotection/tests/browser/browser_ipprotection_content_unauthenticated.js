@@ -88,6 +88,53 @@ add_task(async function test_unauthenticated_content() {
 });
 
 /**
+ * Tests that the site rules list item is only shown when
+ * browser.ipProtection.features.siteInclusions is true.
+ */
+add_task(async function test_unauthenticated_site_rules_item() {
+  setupService({
+    isReady: false,
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", true]],
+  });
+
+  let content = await openPanel({ unauthenticated: true });
+  let unauthenticatedContent = content.unauthenticatedEl;
+  await unauthenticatedContent.updateComplete;
+
+  Assert.ok(
+    unauthenticatedContent.shadowRoot.querySelector(
+      "#unauthenticated-site-rules"
+    ),
+    "Site rules list item should be present when siteInclusions is enabled"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.features.siteInclusions", false]],
+  });
+
+  content = await openPanel({ unauthenticated: true });
+  unauthenticatedContent = content.unauthenticatedEl;
+  await unauthenticatedContent.updateComplete;
+
+  Assert.ok(
+    !unauthenticatedContent.shadowRoot.querySelector(
+      "#unauthenticated-site-rules"
+    ),
+    "Site rules list item should not be present when siteInclusions is disabled"
+  );
+
+  await closePanel();
+  await SpecialPowers.popPrefEnv();
+  cleanupService();
+});
+
+/**
  * Tests get started button functionality.
  */
 add_task(async function test_signin_button() {

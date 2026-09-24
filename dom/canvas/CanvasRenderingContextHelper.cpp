@@ -229,6 +229,10 @@ already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
     } else if (aContextType == CanvasContextType::WebGPU) {
       // Telemetry::Accumulate(Telemetry::CANVAS_WEBGPU_SUCCESS, 1);
     }
+  } else if (!CanCreateContext()) {
+    // Ensure the canvas has not been detached via a transfer.
+    aRv.ThrowInvalidStateError("Cannot create context for detached canvas.");
+    return nullptr;
   } else {
     // We already have a context of some type.
     if (aContextType != mCurrentContextType) return nullptr;

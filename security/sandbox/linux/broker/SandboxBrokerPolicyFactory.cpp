@@ -333,6 +333,8 @@ static void AddMemoryReporting(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   // Bug 1647957: memory reporting.
   aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
   aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+  aPolicy->AddPath(rdonly,
+                   nsPrintfCString("/proc/%d/smaps_rollup", aPid).get());
 }
 
 static void AddDynamicPathList(SandboxBroker::Policy* policy,
@@ -973,6 +975,9 @@ static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
   policy->AddPath(rdwr, "/dev/nvidiactl", SandboxBroker::Policy::AddAlways);
   policy->AddPath(rdwr, "/dev/nvidia-uvm", SandboxBroker::Policy::AddAlways);
   policy->AddPath(rdwr, "/dev/nvidia-modeset",
+                  SandboxBroker::Policy::AddAlways);
+  // Read by InitVulkanDecoder to skip Vulkan when nvidia_drm modeset is off.
+  policy->AddPath(rdonly, "/sys/module/nvidia_drm/parameters/modeset",
                   SandboxBroker::Policy::AddAlways);
   policy->AddTree(rdonly, "/dev/nvidia-caps");
   for (int i = 0; i < 8; i++) {

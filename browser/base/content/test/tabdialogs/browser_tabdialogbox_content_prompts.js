@@ -131,6 +131,60 @@ add_task(async function test_tabdialog_page_title() {
 });
 
 /**
+ * Test that a content prompt uses content's preferred color scheme, even when
+ * the browser theme's differs.
+ */
+add_task(async function test_tabdialog_color_scheme() {
+  for (let contentIsDark of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["ui.systemUsesDarkTheme", contentIsDark ? 0 : 1],
+        [
+          "layout.css.prefers-color-scheme.content-override",
+          contentIsDark ? 0 : 1,
+        ],
+      ],
+    });
+
+    // LookAndFeel updates are applied on a refresh driver tick.
+    let chromeMql = matchMedia("(prefers-color-scheme: dark)");
+    if (chromeMql.matches == contentIsDark) {
+      await new Promise(resolve =>
+        chromeMql.addEventListener("change", resolve, { once: true })
+      );
+    }
+
+    let dialogShown = BrowserTestUtils.waitForEvent(
+      gBrowser,
+      "DOMWillOpenModalDialog"
+    );
+
+    await BrowserTestUtils.withNewTab(TEST_DATA_URI, async function (browser) {
+      info("Waiting for dialog to open.");
+      await dialogShown;
+
+      let dialogBox = gBrowser.getTabDialogBox(browser);
+      let dialog = dialogBox.getContentDialogManager()._dialogs[0];
+      await dialog._dialogReady;
+
+      is(
+        chromeMql.matches,
+        !contentIsDark,
+        "Chrome uses the other color scheme."
+      );
+      is(
+        dialog._frame.contentWindow.matchMedia("(prefers-color-scheme: dark)")
+          .matches,
+        contentIsDark,
+        "Content prompt uses content's preferred color scheme."
+      );
+    });
+
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+/**
  * Test helper for checking the origin header of a dialog.
  *
  * @param {object} browser

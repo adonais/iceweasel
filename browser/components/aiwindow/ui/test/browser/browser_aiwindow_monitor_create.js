@@ -250,7 +250,9 @@ add_task(async function test_form_validation() {
       // Wait for URL pill to appear
       await ContentTaskUtils.waitForCondition(
         () => {
-          const pills = cardShadow.querySelectorAll(".page-pill");
+          const pills = cardShadow.querySelectorAll(
+            ".page-pills-row ai-website-chip"
+          );
           return pills && Boolean(pills.length);
         },
         "URL pill should appear after adding URL",
@@ -259,13 +261,14 @@ add_task(async function test_form_validation() {
       );
 
       // Check that URL pill exists
-      const pagePill = cardShadow.querySelector(".page-pill");
+      const pagePill = cardShadow.querySelector(
+        ".page-pills-row ai-website-chip"
+      );
       Assert.ok(pagePill, "URL pill should exist");
 
       // Check that the pill contains the expected URL text
-      const pillText = pagePill.querySelector(".page-pill-url");
       Assert.ok(
-        pillText && pillText.textContent.includes("example.com"),
+        pagePill.getAttribute("label").includes("example.com"),
         "URL pill should display the domain"
       );
 
@@ -370,7 +373,9 @@ add_task(async function test_monitor_creation() {
 
         // Wait for URL pill to appear
         await ContentTaskUtils.waitForCondition(() => {
-          const pills = cardShadow.querySelectorAll(".page-pill");
+          const pills = cardShadow.querySelectorAll(
+            ".page-pills-row ai-website-chip"
+          );
           return pills && Boolean(pills.length);
         }, "URL pill should appear");
 

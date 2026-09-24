@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::Atom;
 use crate::derives::*;
 use crate::values::AtomIdent;
-use crate::Atom;
 
 type Mapping<'a> = (&'a str, &'a str);
 
@@ -192,7 +192,7 @@ mod tests {
 
     #[test]
     fn parse_valid_mapping_list() {
-        let mut mappings = parse_mapping_list("foo: bar, totally-invalid-mapping,,");
+        let mut mappings = parse_mapping_list("foo: bar, totally-invalid-mapping:,,");
 
         // "foo: bar" is a valid mapping
         assert_eq!(
@@ -202,6 +202,6 @@ mod tests {
         );
         // "totally-invalid-mapping" is not a valid mapping and should be ignored
         // "" is not valid (and consists of nothing but whitespace), so it should be ignored
-        assert!(mappings.next().is_none(), "No more mappings should exist");
+        assert_eq!(mappings.next(), None, "No more mappings should exist");
     }
 }

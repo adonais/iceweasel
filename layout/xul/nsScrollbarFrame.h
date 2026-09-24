@@ -68,6 +68,8 @@ class nsScrollbarFrame final : public nsContainerFrame,
   nsSize ScrollbarMinSize() const;
   bool IsHorizontal() const;
 
+  std::pair<nscoord, nscoord> ScrollbarInset() const;
+
   void Destroy(DestroyContext&) override;
 
   void Init(nsIContent* aContent, nsContainerFrame* aParent,

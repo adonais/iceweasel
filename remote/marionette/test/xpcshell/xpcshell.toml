@@ -17,6 +17,4 @@ run-if = [
 
 ["test_prefs.js"]
 
-["test_sync.js"]
-
 ["test_web-reference.js"]

@@ -1,0 +1,558 @@
+[
+  {
+    "query": "can you tell me the weather in Paris",
+    "label": "chat"
+  },
+  {
+    "query": "please show me iPhone prices",
+    "label": "chat"
+  },
+  {
+    "query": "I'd like to know about quantum computing",
+    "label": "chat"
+  },
+  {
+    "query": "could you help me find restaurants nearby",
+    "label": "chat"
+  },
+  {
+    "query": "what's the best laptop for programming",
+    "label": "chat"
+  },
+  {
+    "query": "tell me about machine learning",
+    "label": "chat"
+  },
+  {
+    "query": "can you find the capital of France",
+    "label": "chat"
+  },
+  {
+    "query": "I need to know the weather tomorrow",
+    "label": "chat"
+  },
+  {
+    "query": "help me find Python tutorials",
+    "label": "chat"
+  },
+  {
+    "query": "show me examples of haikus",
+    "label": "chat"
+  },
+  {
+    "query": "best way to learn JavaScript",
+    "label": "chat"
+  },
+  {
+    "query": "please explain Python syntax",
+    "label": "chat"
+  },
+  {
+    "query": "find me coffee shops open now",
+    "label": "chat"
+  },
+  {
+    "query": "can you recommend a good laptop",
+    "label": "chat"
+  },
+  {
+    "query": "summary of key points",
+    "label": "chat"
+  },
+  {
+    "query": "explanation machine learning concepts",
+    "label": "chat"
+  },
+  {
+    "query": "rewrite email professional tone",
+    "label": "chat"
+  },
+  {
+    "query": "Python code parse CSV",
+    "label": "chat"
+  },
+  {
+    "query": "list pros cons renewable energy",
+    "label": "chat"
+  },
+  {
+    "query": "how does quantum computing work",
+    "label": "chat"
+  },
+  {
+    "query": "optimize code performance",
+    "label": "chat"
+  },
+  {
+    "query": "outline essay structure",
+    "label": "chat"
+  },
+  {
+    "query": "compare iPhone Samsung",
+    "label": "chat"
+  },
+  {
+    "query": "break down complex topic",
+    "label": "chat"
+  },
+  {
+    "query": "thoughts on best approach",
+    "label": "chat"
+  },
+  {
+    "query": "Python script automation",
+    "label": "chat"
+  },
+  {
+    "query": "simplify technical documentation",
+    "label": "chat"
+  },
+  {
+    "query": "structure presentation slides",
+    "label": "chat"
+  },
+  {
+    "query": "feedback essay draft",
+    "label": "chat"
+  },
+  {
+    "query": "generate test cases function",
+    "label": "chat"
+  },
+  {
+    "query": "walkthrough debugging process",
+    "label": "chat"
+  },
+  {
+    "query": "alternatives current solution",
+    "label": "search"
+  },
+  {
+    "query": "expand bullet points",
+    "label": "chat"
+  },
+  {
+    "query": "capital of Japan written as a haiku",
+    "label": "chat"
+  },
+  {
+    "query": "list of top universities AND explain ranking methodology",
+    "label": "chat"
+  },
+  {
+    "query": "what is the best most efficient way to optimize database queries for postgresql with millions of rows",
+    "label": "chat"
+  },
+  {
+    "query": "translate hello to Spanish",
+    "label": "chat"
+  },
+  {
+    "query": "translate this paragraph into Japanese",
+    "label": "chat"
+  },
+  {
+    "query": "what are the symptoms of flu",
+    "label": "chat"
+  },
+  {
+    "query": "where can I learn Python",
+    "label": "chat"
+  },
+  {
+    "query": "how do I install Python",
+    "label": "chat"
+  },
+  {
+    "query": "what does this error mean",
+    "label": "chat"
+  },
+  {
+    "query": "I'm looking for Thai restaurants",
+    "label": "chat"
+  },
+  {
+    "query": "how to bake sourdough bread",
+    "label": "chat"
+  },
+  {
+    "query": "fix this Python function",
+    "label": "chat"
+  },
+  {
+    "query": "wether in tokyo",
+    "label": "search"
+  },
+  {
+    "query": "helpp me find restaurants",
+    "label": "chat"
+  },
+  {
+    "query": "pizza rn",
+    "label": "search"
+  },
+  {
+    "query": "whats capital france",
+    "label": "chat"
+  },
+  {
+    "query": "how",
+    "label": "chat"
+  },
+  {
+    "query": "weather",
+    "label": "search"
+  },
+  {
+    "query": "summarize",
+    "label": "chat"
+  },
+  {
+    "query": "help",
+    "label": "chat"
+  },
+  {
+    "query": "current price of Bitcoin in emoji form",
+    "label": "chat"
+  },
+  {
+    "query": "tell me the weather and then write a poem about it",
+    "label": "chat"
+  },
+  {
+    "query": "show me python tutorial videos on youtube specifically about async await",
+    "label": "search"
+  },
+  {
+    "query": "firefox",
+    "label": "search"
+  },
+  {
+    "query": "how do",
+    "label": "chat"
+  },
+  {
+    "query": "can you",
+    "label": "chat"
+  },
+  {
+    "query": "the best",
+    "label": "search"
+  },
+  {
+    "query": "!@#$%",
+    "label": "search"
+  },
+  {
+    "query": "weather in Berlin today",
+    "label": "search"
+  },
+  {
+    "query": "buy iPhone 15 pro",
+    "label": "search"
+  },
+  {
+    "query": "capital of New Zealand",
+    "label": "search"
+  },
+  {
+    "query": "python documentation",
+    "label": "search"
+  },
+  {
+    "query": "2024 election results",
+    "label": "search"
+  },
+  {
+    "query": "iPhone 15 vs Samsung S24",
+    "label": "chat"
+  },
+  {
+    "query": "how much does iPhone 15 cost",
+    "label": "chat"
+  },
+  {
+    "query": "restaurants near me",
+    "label": "search"
+  },
+  {
+    "query": "symptoms of flu",
+    "label": "chat"
+  },
+  {
+    "query": "latest Firefox update",
+    "label": "search"
+  },
+  {
+    "query": "python syntax for loops",
+    "label": "chat"
+  },
+  {
+    "query": "NBA scores today",
+    "label": "search"
+  },
+  {
+    "query": "best coffee shops Portland",
+    "label": "search"
+  },
+  {
+    "query": "mortgage calculator",
+    "label": "search"
+  },
+  {
+    "query": "write a haiku about Firefox",
+    "label": "chat"
+  },
+  {
+    "query": "summarize these meeting notes",
+    "label": "chat"
+  },
+  {
+    "query": "explain quantum computing like I'm 5",
+    "label": "chat"
+  },
+  {
+    "query": "help me debug this Python code",
+    "label": "chat"
+  },
+  {
+    "query": "write a professional email declining a meeting",
+    "label": "chat"
+  },
+  {
+    "query": "create a meal plan for this week",
+    "label": "chat"
+  },
+  {
+    "query": "rewrite this paragraph to be more concise",
+    "label": "chat"
+  },
+  {
+    "query": "brainstorm names for my startup",
+    "label": "chat"
+  },
+  {
+    "query": "compare these two approaches and recommend one",
+    "label": "chat"
+  },
+  {
+    "query": "write unit tests for this function",
+    "label": "chat"
+  },
+  {
+    "query": "help me understand this error message",
+    "label": "chat"
+  },
+  {
+    "query": "give me feedback on this essay",
+    "label": "chat"
+  },
+  {
+    "query": "make a study guide from these notes",
+    "label": "chat"
+  },
+  {
+    "query": "write a Python script to parse CSV files",
+    "label": "chat"
+  },
+  {
+    "query": "hourly weather Boston",
+    "label": "search"
+  },
+  {
+    "query": "10 day forecast Seattle",
+    "label": "search"
+  },
+  {
+    "query": "air quality index Los Angeles",
+    "label": "search"
+  },
+  {
+    "query": "coffee shops open now near me",
+    "label": "search"
+  },
+  {
+    "query": "gas stations near me",
+    "label": "search"
+  },
+  {
+    "query": "pharmacy hours near me",
+    "label": "search"
+  },
+  {
+    "query": "best sushi Manhattan",
+    "label": "search"
+  },
+  {
+    "query": "parking near Fenway Park",
+    "label": "search"
+  },
+  {
+    "query": "directions to Logan Airport",
+    "label": "search"
+  },
+  {
+    "query": "wireless headphones under $100",
+    "label": "search"
+  },
+  {
+    "query": "MacBook Air refurbished",
+    "label": "search"
+  },
+  {
+    "query": "running shoes sale",
+    "label": "search"
+  },
+  {
+    "query": "used Honda Civic 2022",
+    "label": "search"
+  },
+  {
+    "query": "iPhone 17 price",
+    "label": "search"
+  },
+  {
+    "query": "standing desk reviews",
+    "label": "search"
+  },
+  {
+    "query": "Firefox download",
+    "label": "search"
+  },
+  {
+    "query": "Mozilla support",
+    "label": "search"
+  },
+  {
+    "query": "MDN Web Docs",
+    "label": "search"
+  },
+  {
+    "query": "Gmail login",
+    "label": "search"
+  },
+  {
+    "query": "GitHub Firefox source code",
+    "label": "search"
+  },
+  {
+    "query": "Wikipedia Marie Curie",
+    "label": "search"
+  },
+  {
+    "query": "Python pathlib documentation",
+    "label": "search"
+  },
+  {
+    "query": "Rust cargo book",
+    "label": "search"
+  },
+  {
+    "query": "CSS grid MDN",
+    "label": "search"
+  },
+  {
+    "query": "JavaScript array map examples",
+    "label": "search"
+  },
+  {
+    "query": "React useEffect docs",
+    "label": "search"
+  },
+  {
+    "query": "npm express package",
+    "label": "search"
+  },
+  {
+    "query": "Bitcoin price USD",
+    "label": "search"
+  },
+  {
+    "query": "EUR USD exchange rate",
+    "label": "search"
+  },
+  {
+    "query": "stock market today",
+    "label": "search"
+  },
+  {
+    "query": "US inflation rate 2026",
+    "label": "search"
+  },
+  {
+    "query": "latest technology news",
+    "label": "search"
+  },
+  {
+    "query": "Red Sox score",
+    "label": "search"
+  },
+  {
+    "query": "NBA standings",
+    "label": "search"
+  },
+  {
+    "query": "Premier League schedule",
+    "label": "search"
+  },
+  {
+    "query": "concerts Boston this weekend",
+    "label": "search"
+  },
+  {
+    "query": "museum tickets New York",
+    "label": "search"
+  },
+  {
+    "query": "flights Boston to Lisbon",
+    "label": "search"
+  },
+  {
+    "query": "hotels near Yosemite",
+    "label": "search"
+  },
+  {
+    "query": "Amtrak Boston New York schedule",
+    "label": "search"
+  },
+  {
+    "query": "car rental Denver airport",
+    "label": "search"
+  },
+  {
+    "query": "visa requirements Japan US passport",
+    "label": "search"
+  },
+  {
+    "query": "Boston traffic map",
+    "label": "search"
+  },
+  {
+    "query": "mortgage rates today",
+    "label": "search"
+  },
+  {
+    "query": "USD to CAD calculator",
+    "label": "search"
+  },
+  {
+    "query": "sunrise time Portland Maine",
+    "label": "search"
+  },
+  {
+    "query": "FedEx tracking",
+    "label": "search"
+  },
+  {
+    "query": "USPS ZIP code lookup",
+    "label": "search"
+  },
+  {
+    "query": "IRS tax forms",
+    "label": "search"
+  },
+  {
+    "query": "Massachusetts DMV appointment",
+    "label": "search"
+  }
+]

@@ -34,7 +34,9 @@ class DcompSurfaceTexture final : public TextureData {
   ~DcompSurfaceTexture();
 
   bool Serialize(SurfaceDescriptor& aOutDescriptor) override;
-  void GetSubDescriptor(RemoteDecoderVideoSubDescriptor* aOutDesc) override;
+  RemoteDecoderVideoType GetRemoteDecoderVideoType() override {
+    return RemoteDecoderVideoType::DcompSurface;
+  }
   void FillInfo(TextureData::Info& aInfo) const {
     aInfo.size = mSize;
     aInfo.supportsMoz2D = false;
@@ -117,8 +119,12 @@ class DcompSurfaceHandleHost : public TextureHost {
     return true;
   }
 
+  SurfaceDescriptor GetSurfaceDescriptor() override;
+
  protected:
   ~DcompSurfaceHandleHost();
+
+  const SurfaceDescriptorDcompSurface mDescriptor;
 
   // Handle will be closed automatically when `UniqueFileHandle` gets destroyed.
   const mozilla::UniqueFileHandle mHandle;

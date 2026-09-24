@@ -1535,7 +1535,7 @@ PKIX_List_SetItem(
         PKIX_PL_Object *item,
         void *plContext)
 {
-        PKIX_List *element;
+        PKIX_List *element = NULL;
 
         PKIX_ENTER(LIST, "PKIX_List_SetItem");
         PKIX_NULLCHECK_ONE(list);

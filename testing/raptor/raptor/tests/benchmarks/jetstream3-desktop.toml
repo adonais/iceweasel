@@ -15,6 +15,9 @@ test_url = "http://<host>:<port>/"
 type = "benchmark"
 unit = "score"
 support_class = "jetstream3.py"
+# In CI the benchmark is downloaded by the `pgo-extended-corpus` fetch task
+# rather than cloned; locally we fall back to cloning the repository below.
+fetch_path = "pgo-extended-corpus/JetStream"
 repository = "https://github.com/webkit/jetstream"
 # Keep this in sync with the version used in PGO instrumentation by updating
 # `taskcluster/kinds/fetch/benchmarks.yml`.

@@ -81,7 +81,7 @@
   &:hover:active,
   &[open="true"] {
     background-color: var(--urlbar-box-background-color-active);
-    color: var(--urlbar-box-text-color-hover);
+    color: var(--urlbar-box-text-color-active);
     outline-color: var(--toolbarbutton-outline-color-active);
   }
 
@@ -119,7 +119,7 @@
 
   &:is(:hover:active, [open]) {
     background-color: var(--urlbar-box-background-color-active);
-    color: var(--urlbar-box-text-color-hover);
+    color: var(--urlbar-box-text-color-active);
   }
 }
 
@@ -359,6 +359,8 @@
     }
 
     &.has-blocked-trackers {
+      /* The tracker count below takes the box text color; a color here would recolor the shield. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/no-background-without-text-color */
       background-color: var(--urlbar-box-background-color);
 
       /* Only the count text takes the box color, so the shield keeps its fill. */

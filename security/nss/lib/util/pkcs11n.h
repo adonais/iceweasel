@@ -437,6 +437,7 @@
 
 /* Parameter set identifiers */
 #define CKP_NSS (CKM_VENDOR_DEFINED | NSSCK_VENDOR_NSS)
+/* deprecated: round-3 Kyber removed; value retained for ABI, no longer honored */
 #define CKP_NSS_KYBER_768_ROUND3 (CKP_NSS + 1)
 #define CKP_NSS_ML_KEM_768 (CKP_NSS + 2)
 

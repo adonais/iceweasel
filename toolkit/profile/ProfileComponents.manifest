@@ -1,0 +1,1 @@
+category browser-idle-startup moz-src:///toolkit/profile/ProfileMetrics.sys.mjs ProfileMetrics.init

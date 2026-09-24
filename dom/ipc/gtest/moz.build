@@ -5,6 +5,7 @@
 UNIFIED_SOURCES += [
     "JSIPCValueTest.cpp",
     "ProcessIsolationTest.cpp",
+    "RemoteTypeTest.cpp",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

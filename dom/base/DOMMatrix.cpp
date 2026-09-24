@@ -988,6 +988,26 @@ DOMMatrix* DOMMatrix::RotateAxisAngleSelf(double aX, double aY, double aZ,
   return this;
 }
 
+DOMMatrix* DOMMatrix::SkewSelf(double aSx, double aSy) {
+  if (fmod(aSx, 360) == 0 && fmod(aSy, 360) == 0) {
+    return this;
+  }
+
+  if (mMatrix3D) {
+    gfx::Matrix4x4Double m;
+    m._21 = tan(aSx * kRadPerDegree);
+    m._12 = tan(aSy * kRadPerDegree);
+    *mMatrix3D = m * *mMatrix3D;
+  } else {
+    gfx::MatrixDouble m;
+    m._21 = tan(aSx * kRadPerDegree);
+    m._12 = tan(aSy * kRadPerDegree);
+    *mMatrix2D = m * *mMatrix2D;
+  }
+
+  return this;
+}
+
 DOMMatrix* DOMMatrix::SkewXSelf(double aSx) {
   if (fmod(aSx, 360) == 0) {
     return this;
@@ -1020,6 +1040,13 @@ DOMMatrix* DOMMatrix::SkewYSelf(double aSy) {
     m._12 = tan(aSy * kRadPerDegree);
     *mMatrix2D = m * *mMatrix2D;
   }
+
+  return this;
+}
+
+DOMMatrix* DOMMatrix::PerspectiveSelf(double aDepth) {
+  Ensure3DMatrix();
+  mMatrix3D->Perspective(aDepth);
 
   return this;
 }

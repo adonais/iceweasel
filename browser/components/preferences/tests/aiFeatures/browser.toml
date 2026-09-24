@@ -32,6 +32,8 @@ tags = "os_integration"
 
 ["browser_aiFeatures_smart_window_telemetry.js"]
 
+["browser_aiFeatures_speech_recognition.js"]
+
 ["browser_aiFeatures_telemetry.js"]
 
 ["browser_aiFeatures_visibility.js"]

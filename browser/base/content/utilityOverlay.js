@@ -181,7 +181,9 @@ function checkForMiddleClick(node, event) {
 function createUserContextMenu(
   event,
   {
+    target = null,
     isContextMenu = false,
+    isPanelList = false,
     excludeUserContextId = 0,
     showDefaultTab = false,
     useAccessKeys = true,
@@ -190,24 +192,72 @@ function createUserContextMenu(
     containerSource = "unknown",
   } = {}
 ) {
-  while (event.target.hasChildNodes()) {
-    event.target.firstChild.remove();
+  target = target || event.target;
+  while (target.hasChildNodes()) {
+    target.firstChild.remove();
   }
 
   MozXULElement.insertFTLIfNeeded("toolkit/global/contextual-identity.ftl");
   let docfrag = document.createDocumentFragment();
+  let createSeparator = isPanelList
+    ? () => document.createElement("hr")
+    : () => document.createXULElement("menuseparator");
+  let onActivate = (item, callback) =>
+    item.addEventListener(isPanelList ? "click" : "command", activateEvent => {
+      if (!isPanelList) {
+        activateEvent.stopPropagation();
+      }
+      callback();
+    });
+
+  // panel-item takes its label from the message value, so the container labels
+  // have their own messages rather than the menuitem `.label` attribute ones.
+  let panelItemL10nIds = {
+    "user-context-new-tab": "user-context-new-tab-panel-item",
+    "user-context-personal": "user-context-personal-panel-item",
+    "user-context-work": "user-context-work-panel-item",
+    "user-context-banking": "user-context-banking-panel-item",
+    "user-context-shopping": "user-context-shopping-panel-item",
+    "user-context-add-container": "user-context-add-container-panel-item",
+    "user-context-manage-containers":
+      "user-context-manage-containers-panel-item",
+  };
+  let panelListReplacements = l10nId =>
+    (isPanelList && panelItemL10nIds[l10nId]) || l10nId;
+
+  let createMenuItem = ({ name = null, l10nId = null }) => {
+    let item = isPanelList
+      ? document.createElement("panel-item")
+      : document.createXULElement("menuitem");
+    let setLabel = label => {
+      if (isPanelList) {
+        item.textContent = label;
+      } else {
+        item.setAttribute("label", label);
+      }
+    };
+
+    if (name) {
+      setLabel(name);
+    } else if (useAccessKeys) {
+      if (isPanelList) {
+        item.setAttribute("data-l10n-attrs", "accesskey");
+      }
+      document.l10n.setAttributes(item, panelListReplacements(l10nId));
+    } else {
+      setLabel(
+        ContextualIdentityService.formatContextLabel(
+          panelListReplacements(l10nId)
+        )
+      );
+    }
+
+    return item;
+  };
 
   // Add an item for a tab without a container, labeled "New Tab".
   if (excludeUserContextId || showDefaultTab) {
-    let menuitem = document.createXULElement("menuitem");
-    if (useAccessKeys) {
-      document.l10n.setAttributes(menuitem, "user-context-new-tab");
-    } else {
-      const label = ContextualIdentityService.formatContextLabel(
-        "user-context-new-tab"
-      );
-      menuitem.setAttribute("label", label);
-    }
+    let menuitem = createMenuItem({ l10nId: "user-context-new-tab" });
     menuitem.setAttribute("data-usercontextid", "0");
     if (!isContextMenu) {
       menuitem.setAttribute("command", "Browser:NewUserContextTab");
@@ -215,9 +265,7 @@ function createUserContextMenu(
     }
 
     docfrag.appendChild(menuitem);
-
-    let menuseparator = document.createXULElement("menuseparator");
-    docfrag.appendChild(menuseparator);
+    docfrag.appendChild(createSeparator());
   }
 
   ContextualIdentityService.getPublicIdentities().forEach(identity => {
@@ -225,73 +273,60 @@ function createUserContextMenu(
       return;
     }
 
-    let menuitem = document.createXULElement("menuitem");
+    let menuitem = createMenuItem({
+      name: identity.name,
+      l10nId: identity.l10nId,
+    });
     menuitem.setAttribute("data-usercontextid", identity.userContextId);
-    if (identity.name) {
-      menuitem.setAttribute("label", identity.name);
-    } else if (useAccessKeys) {
-      document.l10n.setAttributes(menuitem, identity.l10nId);
-    } else {
-      const label = ContextualIdentityService.formatContextLabel(
-        identity.l10nId
-      );
-      menuitem.setAttribute("label", label);
-    }
-
-    menuitem.classList.add("menuitem-iconic");
-    menuitem.classList.add("identity-color-" + identity.color);
 
     if (!isContextMenu) {
       menuitem.setAttribute("command", "Browser:NewUserContextTab");
       menuitem.setAttribute("data-container-entrypoint", containerSource);
     }
 
-    menuitem.classList.add("identity-icon-" + identity.icon);
+    if (isPanelList) {
+      let iconUrl = ContextualIdentityService.getContainerIconURL(
+        identity.icon
+      );
+      menuitem.style.setProperty("--panel-item-icon", `url("${iconUrl}")`);
+      menuitem.style.setProperty(
+        "--panel-item-fill",
+        ContextualIdentityService.getContainerColorCode(identity.color)
+      );
+    } else {
+      menuitem.classList.add("menuitem-iconic");
+      menuitem.classList.add("identity-color-" + identity.color);
+      menuitem.classList.add("identity-icon-" + identity.icon);
+    }
 
     docfrag.appendChild(menuitem);
   });
 
   if (showAddContainer || showManageContainers) {
-    docfrag.appendChild(document.createXULElement("menuseparator"));
+    docfrag.appendChild(createSeparator());
   }
 
   if (showAddContainer) {
-    let menuitem = document.createXULElement("menuitem");
-    if (useAccessKeys) {
-      document.l10n.setAttributes(menuitem, "user-context-add-container");
-    } else {
-      const label = ContextualIdentityService.formatContextLabel(
-        "user-context-add-container"
-      );
-      menuitem.setAttribute("label", label);
-    }
-    menuitem.addEventListener("command", commandEvent => {
-      commandEvent.stopPropagation();
-      ContainerCreationPanel.open(window, containerSource);
-    });
+    let menuitem = createMenuItem({ l10nId: "user-context-add-container" });
+    onActivate(menuitem, () =>
+      ContainerCreationPanel.open(window, containerSource)
+    );
     docfrag.appendChild(menuitem);
   }
 
   if (showManageContainers) {
-    let menuitem = document.createXULElement("menuitem");
-    if (useAccessKeys) {
-      document.l10n.setAttributes(menuitem, "user-context-manage-containers");
-    } else {
-      const label = ContextualIdentityService.formatContextLabel(
-        "user-context-manage-containers"
-      );
-      menuitem.setAttribute("label", label);
-    }
-    menuitem.addEventListener("command", commandEvent => {
-      commandEvent.stopPropagation();
+    let menuitem = createMenuItem({
+      l10nId: "user-context-manage-containers",
+    });
+    onActivate(menuitem, () =>
       openPreferences("paneContainers", {
         urlParams: { entrypoint: containerSource },
-      });
-    });
+      })
+    );
     docfrag.appendChild(menuitem);
   }
 
-  event.target.appendChild(docfrag);
+  target.appendChild(docfrag);
   return true;
 }
 

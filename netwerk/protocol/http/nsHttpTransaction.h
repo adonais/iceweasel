@@ -80,7 +80,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   nsIEventTarget* ConsumerTarget() { return mConsumerTarget; }
 
   // Called to set/find out if the transaction generated a complete response.
-  void SetResponseIsComplete() { mResponseIsComplete = true; }
+  void SetResponseIsComplete();
 
   void EnableKeepAlive() { mCaps |= NS_HTTP_ALLOW_KEEPALIVE; }
   void MakeSticky() { mCaps |= NS_HTTP_STICKY_CONNECTION; }

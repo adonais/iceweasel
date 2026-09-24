@@ -219,6 +219,41 @@ broken_site_report.tab_info.antitracking:
     send_in_pings:
       - broken-site-report
 
+  btp_purge_history:
+    type: object
+    structure:
+      type: array
+      items:
+        type: object
+        properties:
+          purgedHost:
+            type: string
+          initialHost:
+            type: string
+          finalHost:
+            type: string
+          bounceHosts:
+            type: array
+            items:
+              type: string
+    expires: never
+    data_sensitivity:
+      - web_activity
+    description: >
+      List of recently purged bounce chain entries where the reported site
+      appears in the chain (as the purged site, initial host, final host,
+      or a bounce host). Each entry contains the purged host and the
+      bounce chain context (initial host, final host, bounce hosts).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019300
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019300
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    send_in_pings:
+      - broken-site-report
+
   etp_category:
     type: string
     expires: never

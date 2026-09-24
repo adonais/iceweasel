@@ -134,6 +134,7 @@ float SVGSVGElement::CurrentScale() const {
 
 void SVGSVGElement::SetCurrentScale(float aCurrentScale) {
   if (IsInner()) {
+    // currentScale values cannot be set on inner svg elements
     return;
   }
   // Prevent bizarre behaviour and maxing out of CPU and memory by clamping

@@ -33,6 +33,10 @@
         });
       });
 
+      add_task(async function testMozInputSearchRequiredProperty() {
+        await testHelpers.verifyRequired("moz-input-search");
+      });
+
       add_task(async function testMozInputSearchEvents() {
         await testHelpers.testTextBasedInputEvents("moz-input-search");
       });

@@ -11,8 +11,12 @@ data class Selector(
     val value: String,
     val secondaryValue: String? = null,
     val description: String,
-    val groups: List<String> = emptyList(),
-    val name: String? = null,
+    val groups: Set<SelectorGroup> = emptySet(),
+    val readiness: Set<PageReadinessProfile> = emptySet(),
+    val scrollDirection: SwipeDirection? = null,
+    val lifecycle: SelectorLifecycle = SelectorLifecycle.Active,
+    val appearsAfter: Set<SelectorId> = emptySet(),
+    val id: SelectorId? = null,
 ) {
     fun toResourceId(): Int {
         return try {
@@ -21,6 +25,27 @@ data class Selector(
             field.getInt(null)
         } catch (e: Exception) {
             throw IllegalArgumentException("Could not resolve resource ID for selector value: '$value' using R.id", e)
+        }
+    }
+}
+
+interface SelectorGroup
+
+@JvmInline
+value class SelectorId(val value: String) {
+    init {
+        require(value.isNotBlank()) { "Selector id cannot be blank" }
+    }
+
+    override fun toString(): String = value
+}
+
+sealed interface SelectorLifecycle {
+    data object Active : SelectorLifecycle
+
+    data class RemovedIn(val version: Int) : SelectorLifecycle {
+        init {
+            require(version > 0) { "Removed selector version must be positive" }
         }
     }
 }
@@ -44,6 +69,7 @@ enum class SelectorStrategy {
     COMPOSE_BY_TEXT_MERGED,
     COMPOSE_BY_TEXT_SUBSTRING,
     ESPRESSO_BY_ID,
+    ESPRESSO_BY_ID_WITH_DESCENDANT_TEXT,
     ESPRESSO_BY_ID_WITH_SIBLING_TEXT,
     ESPRESSO_BY_TEXT,
     ESPRESSO_BY_TEXT_WITH_SIBLING_TEXT,

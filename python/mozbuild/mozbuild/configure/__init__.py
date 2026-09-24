@@ -9,7 +9,6 @@ import os
 import re
 import sys
 import types
-from collections import OrderedDict
 from contextlib import contextmanager
 from functools import cache, cached_property, wraps
 
@@ -363,14 +362,14 @@ class ConfigureSandbox(dict):
         self._all_paths = set()
         self._templates = set()
         # Associate SandboxDependsFunctions to DependsFunctions.
-        self._depends = OrderedDict()
+        self._depends = {}
         self._seen = set()
         # Store the @imports added to a given function.
         self._imports = {}
 
-        self._options = OrderedDict()
+        self._options = {}
         # Store raw option (as per command line or environment) for each Option
-        self._raw_options = OrderedDict()
+        self._raw_options = {}
 
         # Store options added with `imply_option`, and the reason they were
         # added (which can either have been given to `imply_option`, or

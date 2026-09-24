@@ -23,6 +23,16 @@ UpdateProcessor
 # Used by `BackgroundClipboardContentAnalysisParent` to handle clipboard requests
 # from content processes.
 BkgrndClipboard
+# Used by `SpeechRecognitionBackend` to resample captured audio to the rate the
+# recognition engine runs at, off the real-time graph thread. Needs to be
+# a dedicated thread because some scheduling guarantees are necessary.
+SpeechResampler
+# Blocking thread calling into the parakeet.cpp library.
+Parakeet
+# Used by `SpeechRecognitionBackend` to send audio chunks and other commands to
+# the HWInference process. Needs to be a dedicated thread because some
+# scheduling guarantees are necessary.
+SpeechIPC
 
 ######
 # Thunderbird-only thread names

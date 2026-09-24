@@ -161,7 +161,7 @@ void MemoryTelemetry::Poke() {
 
   if (XRE_IsContentProcess()) {
     auto& remoteType = dom::ContentChild::GetSingleton()->GetRemoteType();
-    if (remoteType == PREALLOC_REMOTE_TYPE) {
+    if (remoteType.IsPrealloc()) {
       // Preallocated processes should stay dormant and not run this telemetry
       // code.
       return;

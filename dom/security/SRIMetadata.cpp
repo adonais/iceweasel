@@ -45,7 +45,6 @@ SRIMetadata::SRIMetadata(const nsACString& aToken)
 
   int32_t question = aToken.FindChar('?');
   if (question != -1) {
-    MOZ_ASSERT(question > 0);
     if (static_cast<uint32_t>(question) <= hashStart) {
       SRIMETADATAERROR(
           ("SRIMetadata::SRIMetadata, invalid (options w/o digest)"));

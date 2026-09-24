@@ -32,7 +32,14 @@ const flexItemSpec = generateActorSpec({
 const gridSpec = generateActorSpec({
   typeName: "grid",
 
-  methods: {},
+  methods: {
+    getFragments: {
+      request: {},
+      response: {
+        gridFragments: RetVal("json"),
+      },
+    },
+  },
 });
 
 const layoutSpec = generateActorSpec({

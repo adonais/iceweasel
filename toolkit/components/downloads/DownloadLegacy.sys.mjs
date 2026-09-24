@@ -265,7 +265,8 @@ DownloadLegacyTransfer.prototype = {
     aIsPrivate,
     aDownloadClassification,
     aReferrerInfo,
-    aOpenDownloadsListOnStart
+    aOpenDownloadsListOnStart,
+    aFilesFolder
   ) {
     return this._nsITransferInitInternal(
       aSource,
@@ -279,7 +280,8 @@ DownloadLegacyTransfer.prototype = {
       aIsPrivate,
       aDownloadClassification,
       aReferrerInfo,
-      aOpenDownloadsListOnStart
+      aOpenDownloadsListOnStart,
+      aFilesFolder
     );
   },
 
@@ -321,6 +323,7 @@ DownloadLegacyTransfer.prototype = {
       aDownloadClassification,
       aReferrerInfo,
       aOpenDownloadsListOnStart,
+      null,
       userContextId,
       browsingContextId,
       aHandleInternally,
@@ -340,7 +343,8 @@ DownloadLegacyTransfer.prototype = {
     isPrivate,
     aDownloadClassification,
     referrerInfo,
-    openDownloadsListOnStart = true,
+    openDownloadsListOnStart,
+    filesFolder,
     userContextId = 0,
     browsingContextId = 0,
     handleInternally = false,
@@ -388,6 +392,7 @@ DownloadLegacyTransfer.prototype = {
       target: {
         path: aTarget.QueryInterface(Ci.nsIFileURL).file.path,
         partFilePath: aTempFile && aTempFile.path,
+        filesFolderPath: filesFolder && filesFolder.path,
       },
       saver: "legacy",
       launchWhenSucceeded,

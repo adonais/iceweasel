@@ -8,7 +8,7 @@
 #include <cstdint>
 
 #include "EXIF.h"
-#include "ImageLogging.h"  // Must appear first.
+#include "ImageLogging.h"
 #include "Orientation.h"
 #include "SurfacePipeFactory.h"
 #include "gfxColor.h"

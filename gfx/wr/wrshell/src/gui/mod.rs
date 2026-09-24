@@ -8,6 +8,7 @@ mod shell;
 mod textures;
 mod composite_view;
 mod draw_calls;
+mod scene_tree;
 mod timeline;
 
 use eframe::egui;
@@ -74,6 +75,7 @@ struct DataModel {
     profile_graphs: HashMap<ProfileCounterId, Graph>,
     frame_log: FrameLog,
     timeline: timeline::Timeline,
+    scene_tree: scene_tree::SceneTreeState,
 }
 
 impl DataModel {
@@ -88,6 +90,7 @@ impl DataModel {
             profile_graphs: HashMap::new(),
             frame_log: FrameLog::new(),
             timeline: timeline::Timeline::new(),
+            scene_tree: scene_tree::SceneTreeState::new(),
         }
     }
 }
@@ -101,6 +104,7 @@ pub enum Tool {
     Preview,
     DrawCalls,
     Timeline,
+    SceneTree,
 }
 
 impl egui_tiles::Behavior<Tool> for Gui {
@@ -113,6 +117,7 @@ impl egui_tiles::Behavior<Tool> for Gui {
             Tool::Preview => { "Preview" }
             Tool::DrawCalls => { "Draw calls" }
             Tool::Timeline => { "Timeline" }
+            Tool::SceneTree => { "Scene" }
         };
 
         title.into()
@@ -131,6 +136,7 @@ impl egui_tiles::Behavior<Tool> for Gui {
                 Tool::Shell => { shell::ui(self, ui); }
                 Tool::DrawCalls => { draw_calls::ui(self, ui); }
                 Tool::Timeline => { timeline::ui(self, ui); }
+                Tool::SceneTree => { scene_tree::ui(self, ui); }
             }
         });
 
@@ -211,6 +217,7 @@ impl Gui {
                     tiles.insert_pane(Tool::Profiler),
                     tiles.insert_pane(Tool::Preview),
                     tiles.insert_pane(Tool::DrawCalls),
+                    tiles.insert_pane(Tool::SceneTree),
                 ];
                 let side = vec![
                     tiles.insert_pane(Tool::DebugFlags),
@@ -613,5 +620,5 @@ struct GuiSavedState {
 impl GuiSavedState {
     /// Update this number to reset the configuration. This ensures that new
     /// panels are added.
-    const VERSION: u32 = 2;
+    const VERSION: u32 = 3;
 }

@@ -92,16 +92,6 @@ interface nsIHttpChannelInternal : nsISupports
     void takeAllSecurityMessages(in securityMessagesArray aMessages);
 
     /**
-     * Helper method to set a cookie with a consumer-provided
-     * cookie header, _but_ using the channel's other information
-     * (URI's, prompters, date headers etc).
-     *
-     * @param aCookieHeader
-     *        The cookie header values to be parsed.
-     */
-    [must_use] void setCookieHeaders(in Array<ACString> aCookieHeaders);
-
-    /**
      * Returns true in case this channel is used for auth;
      * (the response header includes 'www-authenticate').
      */

@@ -1,6 +1,7 @@
 {
   "outline": {
     "@base": {
+      "ignoreFigma": "Figma only includes the width for this token value",
       "value": "{focus.outline.width} solid {focus.outline.color}"
     },
     "color": {
@@ -10,6 +11,7 @@
       }
     },
     "inset": {
+      "ignoreFigma": "Preserve the calc in case the focus outline width is changed via CSS",
       "value": "calc(-1 * {focus.outline.width})"
     },
     "offset": {

@@ -231,9 +231,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   // font face corresponding to the mFont/mFontFile *without* any DWrite
   // style simulations applied
-  RefPtr<IDWriteFontFace> mFontFace;
+  RefPtr<IDWriteFontFace> mFontFace MOZ_GUARDED_BY(mLock);
   // Extended fontface interface if supported, else null
-  RefPtr<IDWriteFontFace5> mFontFace5;
+  RefPtr<IDWriteFontFace5> mFontFace5 MOZ_GUARDED_BY(mLock);
 
   DWRITE_FONT_FACE_TYPE mFaceType;
 
@@ -249,9 +249,10 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   // faces can be reliably identified via a GDI LOGFONT structure.
   bool mMayUseGDIAccess = false;
 
-  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFont;
-  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite>
-      mUnscaledFontBold;
+  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFont
+      MOZ_GUARDED_BY(mLock);
+  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFontBold
+      MOZ_GUARDED_BY(mLock);
 };
 
 // custom text renderer used to determine the fallback font for a given char

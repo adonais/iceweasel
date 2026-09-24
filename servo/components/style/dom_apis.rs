@@ -45,7 +45,7 @@ where
     );
     context.scope_element = Some(element.opaque());
     context.current_host = element.containing_shadow_host().map(|e| e.opaque());
-    matching::matches_selector_list(selector_list, element, &mut context)
+    matching::matches_selector_list(selector_list, *element, &mut context)
 }
 
 /// <https://dom.spec.whatwg.org/#dom-element-closest>
@@ -72,13 +72,13 @@ where
 
     let mut current = Some(element);
     while let Some(element) = current.take() {
-        if matching::matches_selector_list(selector_list, &element, &mut context) {
+        if matching::matches_selector_list(selector_list, element, &mut context) {
             return Some(element);
         }
         current = element.parent_element();
     }
 
-    return None;
+    None
 }
 
 /// A selector query abstraction, in order to be generic over QuerySelector and
@@ -201,8 +201,8 @@ where
         for dependency in self.dependencies.iter() {
             target_vector.push(Invalidation::new(
                 dependency,
-                self.matching_context.current_host.clone(),
-                self.matching_context.scope_element.clone(),
+                self.matching_context.current_host,
+                self.matching_context.scope_element,
             ))
         }
 
@@ -219,7 +219,7 @@ where
 
     fn should_process_descendants(&mut self, _: E) -> bool {
         if Q::should_stop_after_first_match() {
-            return Q::is_empty(&self.results);
+            return Q::is_empty(self.results);
         }
 
         true
@@ -401,13 +401,13 @@ fn collect_elements_with_id<E, Q, F>(
 
 fn get_attr_name(component: &Component<SelectorImpl>) -> Option<&crate::LocalName> {
     let (name, name_lower) = match component {
-        Component::AttributeInNoNamespace { ref local_name, .. } => return Some(local_name),
+        Component::AttributeInNoNamespace { local_name, .. } => return Some(local_name),
         Component::AttributeInNoNamespaceExists {
-            ref local_name,
-            ref local_name_lower,
+            local_name,
+            local_name_lower,
             ..
         } => (local_name, local_name_lower),
-        Component::AttributeOther(ref attr) => {
+        Component::AttributeOther(attr) => {
             if attr.namespace.is_some() {
                 return None;
             }
@@ -424,11 +424,11 @@ fn get_attr_name(component: &Component<SelectorImpl>) -> Option<&crate::LocalNam
 fn get_id(component: &Component<SelectorImpl>) -> Option<&AtomIdent> {
     use selectors::attr::AttrSelectorOperator;
     Some(match component {
-        Component::ID(ref id) => id,
+        Component::ID(id) => id,
         Component::AttributeInNoNamespace {
-            ref operator,
-            ref local_name,
-            ref value,
+            operator,
+            local_name,
+            value,
             ..
         } => {
             if *local_name != local_name!("id") {
@@ -489,7 +489,7 @@ where
                 Operation::from(
                     *element.local_name()
                         == ***matching::select_name(
-                            &element,
+                            element,
                             &local_name.name,
                             &local_name.lower_name,
                         ),
@@ -530,7 +530,7 @@ where
                 }
 
                 Operation::from(element.has_attr_in_no_namespace(matching::select_name(
-                    &element,
+                    element,
                     local_name,
                     local_name_lower,
                 )))
@@ -559,7 +559,7 @@ where
                         operator,
                         case_sensitivity: matching::to_unconditional_case_sensitivity(
                             case_sensitivity,
-                            &element,
+                            element,
                         ),
                         value,
                     },
@@ -619,17 +619,16 @@ where
     let selector = &selector_list.slice()[0];
     let class_and_id_case_sensitivity = matching_context.classes_and_ids_case_sensitivity();
     // Let's just care about the easy cases for now.
-    if selector.len() == 1 {
-        if query_selector_single_query::<E, Q>(
+    if selector.len() == 1
+        && query_selector_single_query::<E, Q>(
             root,
             selector.iter().next().unwrap(),
             results,
             class_and_id_case_sensitivity,
         )
         .is_ok()
-        {
-            return Ok(());
-        }
+    {
+        return Ok(());
     }
 
     let mut iter = selector.iter();
@@ -641,7 +640,7 @@ where
     let mut simple_filter = None;
 
     'selector_loop: loop {
-        debug_assert!(combinator.map_or(true, |c| !c.is_sibling()));
+        debug_assert!(combinator.is_none_or(|c| !c.is_sibling()));
 
         'component_loop: for component in &mut iter {
             match *component {
@@ -673,7 +672,7 @@ where
                                 |e| {
                                     matching::matches_selector_list(
                                         selector_list,
-                                        &e,
+                                        e,
                                         matching_context,
                                     )
                                 },
@@ -721,17 +720,18 @@ where
                                 matching_context,
                             );
 
-                            if Q::should_stop_after_first_match() && !Q::is_empty(&results) {
+                            if Q::should_stop_after_first_match() && !Q::is_empty(results) {
                                 break;
                             }
                         }
 
                         return Ok(());
                     }
-                    if combinator.is_none() && simple_filter.is_none() {
-                        if let Some(attr_name) = get_attr_name(other) {
-                            simple_filter = Some(SimpleFilter::Attr(attr_name));
-                        }
+                    if combinator.is_none()
+                        && simple_filter.is_none()
+                        && let Some(attr_name) = get_attr_name(other)
+                    {
+                        simple_filter = Some(SimpleFilter::Attr(attr_name));
                     }
                 },
             }
@@ -765,7 +765,7 @@ where
     };
 
     match simple_filter {
-        SimpleFilter::Class(ref class) => {
+        SimpleFilter::Class(class) => {
             // Bloom filter can only be used when case sensitive.
             let bloom_hash = if class_and_id_case_sensitivity == CaseSensitivity::CaseSensitive {
                 Some(E::hash_for_bloom_filter(class.0.get_hash()))
@@ -780,13 +780,13 @@ where
                     element.has_class(class, class_and_id_case_sensitivity)
                         && matching::matches_selector_list(
                             selector_list,
-                            &element,
+                            element,
                             matching_context,
                         ),
                 )
             });
         },
-        SimpleFilter::LocalName(ref local_name) => {
+        SimpleFilter::LocalName(local_name) => {
             let hash = E::hash_for_bloom_filter(local_name.name.0.get_hash());
             let hash_lower = if local_name.name == local_name.lower_name {
                 hash
@@ -800,18 +800,18 @@ where
                     return Operation::RejectSkippingChildren;
                 }
                 if *element.local_name()
-                    != ***matching::select_name(&element, &local_name.name, &local_name.lower_name)
+                    != ***matching::select_name(element, &local_name.name, &local_name.lower_name)
                 {
                     return Operation::Reject;
                 }
                 Operation::from(matching::matches_selector_list(
                     selector_list,
-                    &element,
+                    element,
                     matching_context,
                 ))
             });
         },
-        SimpleFilter::Attr(ref local_name) => {
+        SimpleFilter::Attr(local_name) => {
             let hash = E::hash_for_bloom_filter(local_name.0.get_hash());
             collect_all_elements::<E, Q, _>(root, results, |element| {
                 if !element.bloom_may_have_hash(hash) {
@@ -822,7 +822,7 @@ where
                 }
                 Operation::from(matching::matches_selector_list(
                     selector_list,
-                    &element,
+                    element,
                     matching_context,
                 ))
             });
@@ -845,7 +845,7 @@ fn query_selector_slow<E, Q>(
     collect_all_elements::<E, Q, _>(root, results, |element| {
         Operation::from(matching::matches_selector_list(
             selector_list,
-            &element,
+            element,
             matching_context,
         ))
     });

@@ -341,6 +341,18 @@ StyleOptional<StyleUnitValue> CSSNumericValue::ToStyleUnitValue(
   return result;
 }
 
+StyleUnitValue CSSNumericValue::ToStyleUnitValue(
+    const nsACString& aUnit) const {
+  IgnoredErrorResult rv;
+  auto styleUnitValue = ToStyleUnitValue(aUnit, rv);
+  if (rv.Failed()) {
+    MOZ_ASSERT_UNREACHABLE("Failed to convert CSSNumericValue to unit");
+    return {StyleNumericType::Number(), 0.0, "number"_ns};
+  }
+
+  return *styleUnitValue;
+}
+
 const CSSNumericValue& CSSStyleValue::GetAsCSSNumericValue() const {
   MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::NumericValue);
 

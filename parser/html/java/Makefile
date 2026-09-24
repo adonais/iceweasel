@@ -38,7 +38,7 @@ translate:: translator \
 ; mkdir -p ../javasrc ; \
   java -jar translator.jar \
     htmlparser/src/nu/validator/htmlparser/impl \
-    .. ../../../xpcom/ds/StaticAtoms.py ../../../xpcom/ds/HTMLAtoms.py
+    .. ../../../xpcom/ds/StaticAtoms.py ../../../xpcom/ds/HTMLAtoms.py ../../../dom/base/AtomAttributes.h
 
 translate_from_snapshot:: translator \
 ; mkdir -p ../javasrc ; \

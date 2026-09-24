@@ -8433,6 +8433,42 @@ TEST_F(VideoStreamEncoderTest, MergesKeyFrameRequestsForMultipleLayers) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest,
+       KeyFrameRequestOnAnyLayerTriggersKeyFrameWhenSingleStream) {
+  // Setup encoder with a single stream (e.g., non-simulcast or SVC).
+  ResetEncoder("VP8", 1, 1, 1, false);
+  video_stream_encoder_->OnBitrateUpdatedAndWaitForManagedResources(
+      kTargetBitrate, kTargetBitrate, 0, 0, 0);
+  sink_.SetNumExpectedLayers(1);
+
+  // First frame is always keyframe.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey}));
+
+  // Insert delta frame.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  WaitForEncodedFrame(2);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameDelta}));
+
+  // Request keyframe on the second layer of a 3-layer RTP configuration.
+  // When only a single stream is encoded, any layer requesting a keyframe
+  // must trigger a keyframe on that stream.
+  video_stream_encoder_->SendKeyFrame({VideoFrameType::kVideoFrameDelta,
+                                       VideoFrameType::kVideoFrameKey,
+                                       VideoFrameType::kVideoFrameDelta});
+
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  WaitForEncodedFrame(3);
+
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey}));
+
+  video_stream_encoder_->Stop();
+}
+
 TEST_F(VideoStreamEncoderTest, DoesNotRewriteH264BitstreamWithOptimalSps) {
   // SPS contains VUI with restrictions on the maximum number of reordered
   // pictures, there is no need to rewrite the bitstream to enable faster

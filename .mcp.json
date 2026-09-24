@@ -6,8 +6,9 @@
     },
     "firefox-devtools": {
       "type": "stdio",
-      "command": "./mach",
+      "command": "${MACH_PYTHON:-python3}",
       "args": [
+        "mach",
         "--quiet",
         "firefox-devtools-mcp",
         "--pref",

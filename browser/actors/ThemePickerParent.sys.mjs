@@ -19,6 +19,21 @@ const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
  * and updates via AddonManager and prefs.
  */
 export class ThemePickerParent extends JSWindowActorParent {
+  themesManagers = new Map();
+
+  async getThemesManager(installSource) {
+    let managerPromise = this.themesManagers.get(installSource);
+    if (!managerPromise) {
+      managerPromise = lazy.getThemesList({ installSource }).catch(error => {
+        this.themesManagers.delete(installSource);
+        throw error;
+      });
+      this.themesManagers.set(installSource, managerPromise);
+    }
+
+    return managerPromise;
+  }
+
   async receiveMessage(message) {
     switch (message.name) {
       case "ThemePicker:GetInitialState":
@@ -47,11 +62,8 @@ export class ThemePickerParent extends JSWindowActorParent {
   }
 
   async getInitialState({ installSource, showInCompactLayout }) {
-    if (!this.themesManager) {
-      this.themesManager = await lazy.getThemesList({ installSource });
-    }
-
-    const themes = this.themesManager.getThemesInfo({ showInCompactLayout });
+    const themesManager = await this.getThemesManager(installSource);
+    const themes = themesManager.getThemesInfo({ showInCompactLayout });
     const { activeThemeId } = this.getActiveThemeId();
     const { nativeTheme } = this.getNativeTheme();
     const appearance = this.getAppearanceFromPref();
@@ -71,12 +83,13 @@ export class ThemePickerParent extends JSWindowActorParent {
     };
   }
 
-  async updateTheme({ themeId }) {
-    await this.themesManager.updateThemeState(themeId, true);
+  async updateTheme({ themeId, installsource, layout }) {
+    const themesManager = await this.getThemesManager(installsource);
+    await themesManager.updateThemeState(themeId, true, { layout });
     return this.getActiveThemeId();
   }
 
-  async updateAppearance({ appearance }) {
+  async updateAppearance({ appearance, installsource, layout }) {
     if (appearance === "device") {
       Services.prefs.clearUserPref(PREF_SYSTEM_USES_DARK);
     } else {
@@ -86,13 +99,29 @@ export class ThemePickerParent extends JSWindowActorParent {
       );
     }
 
-    return this.getAppearance();
+    const result = this.getAppearance();
+    Glean.themePicker.change.record({
+      source: installsource,
+      layout,
+      property: "appearance",
+      appearance: result.appearance,
+    });
+
+    return result;
   }
 
-  async updateNativeTheme({ nativeTheme }) {
+  async updateNativeTheme({ nativeTheme, installsource, layout }) {
     Services.prefs.setBoolPref(PREF_NATIVE_THEME, nativeTheme);
 
-    return this.getNativeTheme();
+    const result = this.getNativeTheme();
+    Glean.themePicker.change.record({
+      source: installsource,
+      layout,
+      property: "nativeTheme",
+      native_theme: result.nativeTheme,
+    });
+
+    return result;
   }
 
   getActiveThemeId() {

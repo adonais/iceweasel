@@ -100,7 +100,7 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
   void Render(gfxContext* aContext, RenderFlags aRenderComponents,
               const gfxMatrix& aTransform, imgDrawingParams& aImgParams);
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc,
@@ -146,12 +146,14 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
     // the SVGGeometryFrame inheritance hierarchy which provides actual
     // implementation details. The dryRun flag prevents serious side-effects.
     auto* frame = static_cast<SVGGeometryFrame*>(mFrame);
-    return frame->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
-                                          aDisplayListBuilder, this,
-                                          /*aDryRun=*/true);
+    return frame
+        ->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
+                                  aDisplayListBuilder, this,
+                                  /*aDryRun=*/true)
+        .isOk();
   }
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc,
@@ -161,10 +163,11 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
     // the SVGGeometryFrame inheritance hierarchy which provides actual
     // implementation details.
     auto* frame = static_cast<SVGGeometryFrame*>(mFrame);
-    bool result = frame->CreateWebRenderCommands(aBuilder, aResources, aSc,
-                                                 aManager, aDisplayListBuilder,
-                                                 this, /*aDryRun=*/false);
-    MOZ_ASSERT(result, "ShouldBeActive inconsistent with CreateWRCommands?");
+    WebRenderCommandsResult result = frame->CreateWebRenderCommands(
+        aBuilder, aResources, aSc, aManager, aDisplayListBuilder, this,
+        /*aDryRun=*/false);
+    MOZ_ASSERT(result.isOk(),
+               "ShouldBeActive inconsistent with CreateWRCommands?");
     return result;
   }
 

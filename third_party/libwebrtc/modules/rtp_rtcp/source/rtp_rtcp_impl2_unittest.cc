@@ -22,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "api/call/transport.h"
 #include "api/environment/environment.h"
+#include "api/frame_transformer_interface.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
@@ -370,10 +371,11 @@ class RtpRtcpImpl2Test : public ::testing::Test {
     bool success = module->impl_->OnSendingRtpFrame(
         rtp_timestamp, capture_time_ms, kPayloadType, true);
 
-    success &= sender->SendVideo(
-        kPayloadType, VideoCodecType::kVideoCodecVP8, rtp_timestamp,
-        Timestamp::Millis(capture_time_ms), payload, sizeof(payload),
-        rtp_video_header, TimeDelta::Zero(), {});
+    success &= sender->SendVideo(kPayloadType, VideoCodecType::kVideoCodecVP8,
+                                 RtpTimestampWithOffset{rtp_timestamp},
+                                 Timestamp::Millis(capture_time_ms), payload,
+                                 sizeof(payload), rtp_video_header,
+                                 TimeDelta::Zero(), {});
     return success;
   }
 

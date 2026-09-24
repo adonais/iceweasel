@@ -1,0 +1,19 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+[package]
+name = "pushnotificationhelper"
+version = "0.1.0"
+edition = "2024"
+license = "MPL-2.0"
+description = "Helper executable shipped alongside Firefox for delivering Windows push notifications when firefox is closed."
+
+[[bin]]
+name = "notification-helper"
+path = "src/main.rs"
+
+[dependencies]
+mozilla-central-workspace-hack = { version = "0.1", features = [
+  "pushnotificationhelper",
+], optional = true }

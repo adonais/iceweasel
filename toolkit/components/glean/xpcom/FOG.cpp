@@ -151,14 +151,16 @@ FOG::InitializeFOG(const nsACString& aDataPathOverride,
                    const bool aDisableInternalPings) {
   MOZ_ASSERT(XRE_IsParentProcess());
   gInitializeCalled = true;
-  RunOnShutdown(
-      [&] {
-        if (Preferences::GetBool("telemetry.glean.internal.finalInactive",
-                                 false)) {
-          glean::impl::fog_internal_glean_handle_client_inactive();
-        }
-      },
-      ShutdownPhase::AppShutdownConfirmed);
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    RunOnShutdown(
+        [&] {
+          if (Preferences::GetBool("telemetry.glean.internal.finalInactive",
+                                   false)) {
+            glean::impl::fog_internal_glean_handle_client_inactive();
+          }
+        },
+        ShutdownPhase::AppShutdownConfirmed);
+  }
 
   nsresult rv = glean::impl::fog_init(&aDataPathOverride, &aAppIdOverride,
                                       aDisableInternalPings);

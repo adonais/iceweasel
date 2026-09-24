@@ -56,9 +56,11 @@
 
   &[type="payment"] > autocomplete-row-item {
     /* Payment icons are credit-card network logos, which are wider than they
-       are tall, so use a wider width to preserve their aspect ratio. */
-    --icon-height: var(--icon-size-medium);
-    --icon-width: var(--icon-size-large);
+       are tall. Their aspect ratios differ (1:1 for the generic fallback icon
+       up to 44:30 for Visa), so give them room for the widest one and let
+       object-fit letterbox the rest. */
+    --icon-height: var(--icon-size);
+    --icon-width: calc(var(--icon-size) * 1.5);
   }
 
   &[originaltype="insecureWarning"] > autocomplete-row-item {
@@ -71,5 +73,26 @@
     flex: 1;
     border: var(--focus-outline-width) solid transparent;
     border-radius: var(--border-radius-large);
+  }
+}
+
+/* Smart Form Fill specific styles */
+#PopupAutoComplete[resultstyles~="smartFormFill"] > richlistbox {
+  min-width: var(--size-layout-medium);
+
+  > richlistitem > autocomplete-row-item {
+    /* Row metrics consumed inside the autocomplete-row-item shadow root. These
+     apply to every row in the popup, not just the Smart Form Fill one. */
+    --row-item-border-radius: var(--border-radius-medium);
+    --row-item-column-gap: var(--space-large);
+    --row-item-label-font-size: larger;
+    --row-item-padding: var(--space-large) var(--space-medium);
+    --sff-loader-image: url("chrome://browser/content/aiwindow/assets/loader.svg");
+  }
+
+  @media not (forced-colors) {
+    .autocomplete-row-item[originaltype~="autofill"] {
+      --button-icon-fill: light-dark(var(--color-violet-desaturated-90), currentColor);
+    }
   }
 }

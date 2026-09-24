@@ -157,6 +157,7 @@ UNIFIED_SOURCES += [
     "ReferrerInfoUtils.cpp",
     "RefMessageBodyService.cpp",
     "RemoteBrowser.cpp",
+    "RemoteType.cpp",
     "RemoteWebProgressRequest.cpp",
     "SharedMap.cpp",
     "SharedMessageBody.cpp",

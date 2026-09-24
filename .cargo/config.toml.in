@@ -20,19 +20,14 @@ git = "https://github.com/franziskuskiefer/cose-rust"
 rev = "43c22248d136c8b38fe42ea709d08da6355cf04b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=9b095f553c0701329b92a347f5ab02ec02e133fc"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "f7ebc076619e8e6f55def9a13199c1ccc02cc4b4"
+rev = "9b095f553c0701329b92a347f5ab02ec02e133fc"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
 git = "https://github.com/glandium/allocator-api2"
 rev = "ad5f3d56a5a4519eff52af4ff85293431466ef5c"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/glandium/rust-bindgen?rev=5274da5a06411accb266c10819b989ac25a81b7d"]
-git = "https://github.com/glandium/rust-bindgen"
-rev = "5274da5a06411accb266c10819b989ac25a81b7d"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/rust-objc?rev=4de89f5aa9851ceca4d40e7ac1e2759410c04324"]
@@ -43,11 +38,6 @@ replace-with = "vendored-sources"
 [source."git+https://github.com/hsivonen/any_all_workaround?rev=7fb1b7034c9f172aade21ee1c8554e8d8a48af80"]
 git = "https://github.com/hsivonen/any_all_workaround"
 rev = "7fb1b7034c9f172aade21ee1c8554e8d8a48af80"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/hsivonen/encoding_rs?rev=1236d1bc423e6ba35a06485f74a6304db2d703b5"]
-git = "https://github.com/hsivonen/encoding_rs"
-rev = "1236d1bc423e6ba35a06485f74a6304db2d703b5"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/hsivonen/rust-harfbuzz?rev=9d58a23a98772a197291d04af93f7041b7093d95"]
@@ -100,9 +90,9 @@ git = "https://github.com/mozilla/glean"
 tag = "v68.0.0"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/happy-eyeballs?tag=v0.11.0"]
+[source."git+https://github.com/mozilla/happy-eyeballs?tag=v1.0.0"]
 git = "https://github.com/mozilla/happy-eyeballs"
-tag = "v0.11.0"
+tag = "v1.0.0"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/memtest?rev=ad681ba425beb0aeba95f03e671432b4be932174"]
@@ -115,9 +105,9 @@ git = "https://github.com/mozilla/midir.git"
 rev = "54759f681f3b523e120d047adec2bb1a97152017"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127"]
+[source."git+https://github.com/mozilla/mls-platform-api?rev=eb1c880304127bcb7d0ee6d701fd4ca9ebc73403"]
 git = "https://github.com/mozilla/mls-platform-api"
-rev = "2a2e344019bfc76b7e566ee6e0549cf668d90127"
+rev = "eb1c880304127bcb7d0ee6d701fd4ca9ebc73403"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/mp4parse-rust?rev=215e238e633fa0df42cc25bfcf43a0f902692691"]
@@ -125,9 +115,9 @@ git = "https://github.com/mozilla/mp4parse-rust"
 rev = "215e238e633fa0df42cc25bfcf43a0f902692691"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.30.1"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.31.1"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.30.1"
+tag = "v0.31.1"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/nss-rs"]
@@ -139,9 +129,9 @@ git = "https://github.com/rust-minidump/minidump-writer.git"
 rev = "ee5b9d59d85bea1d4c6845f6b854e04fe204adf2"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/servo/rust-cssparser?rev=84af7967fc0093c81f44c2d03029fe6db546485e"]
+[source."git+https://github.com/servo/rust-cssparser?rev=ddccc070a0261cb94195ed0f74095c67b86a8550"]
 git = "https://github.com/servo/rust-cssparser"
-rev = "84af7967fc0093c81f44c2d03029fe6db546485e"
+rev = "ddccc070a0261cb94195ed0f74095c67b86a8550"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/servo/unicode-bidi?rev=ca612daf1c08c53abe07327cb3e6ef6e0a760f0c"]

@@ -939,7 +939,6 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   bool mOptionsFrozen = false;
   bool mIsMesa = false;
   bool mLoseContextOnMemoryPressure = false;
-  bool mCanLoseContextInForeground = true;
   bool mShouldPresent = false;
   bool mDisableFragHighP = false;
   bool mForceResizeOnPresent = false;

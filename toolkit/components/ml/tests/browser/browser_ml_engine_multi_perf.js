@@ -59,6 +59,28 @@ const ENGINES = {
   },
 };
 
+const SMART_WINDOW_INTENT_OPTIONS = {
+  engineId: "smart-intent-smoke",
+  featureId: "smart-intent",
+  taskName: "text-classification",
+  modelId: "mozilla/mobilebert-query-intent-detection",
+  modelRevision: "main",
+  modelHubUrlTemplate: "{model}/{revision}",
+  dtype: "q8",
+  timeoutMS: -1,
+};
+
+// Based on https://huggingface.co/datasets/Mozilla/query-intent-detection-golden-dataset,
+// with additional search examples for balanced coverage.
+const INTENT_DATA_ROOT =
+  "chrome://mochitests/content/browser/toolkit/components/ml/tests/browser/data/intent/";
+const INTENT_DATASET = "query-intent-golden.json";
+const SEARCH_SCORE_THRESHOLD = 0.8;
+const INTENT_METRIC_THRESHOLDS = {
+  chat: { precision: 0.9, recall: 0.9 },
+  search: { precision: 0.9, recall: 0.9 },
+};
+
 const perfMetadata = {
   owner: "GenAI Team",
   name: "browser_ml_engine_multi_perf.js",
@@ -185,4 +207,88 @@ async function runConcurrentEngines({ backend, tag }) {
 
   // Final metrics report
   reportMetrics(combinedJournal);
+}
+
+add_task(async function test_smart_window_intent_precision_and_recall() {
+  await runMLPerfTestForEachBackend({
+    name: "SMART-WINDOW-INTENT-PRECISION-AND-RECALL",
+    run: runSmartWindowIntentPrecisionAndRecall,
+  });
+});
+
+async function runSmartWindowIntentPrecisionAndRecall({ backend, tag }) {
+  const examples = JSON.parse(
+    await fetchFile(INTENT_DATA_ROOT, INTENT_DATASET)
+  );
+  Assert.greater(
+    examples.length,
+    0,
+    "The intent smoke corpus contains examples"
+  );
+
+  const { cleanup, engine } = await initializeEngine(
+    new PipelineOptions({ ...SMART_WINDOW_INTENT_OPTIONS, backend })
+  );
+
+  let result;
+  try {
+    result = await engine.run({
+      args: [examples.map(example => example.query)],
+    });
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+  }
+
+  const predictions = Array.isArray(result) ? result : result.output;
+  Assert.equal(
+    predictions.length,
+    examples.length,
+    "The model returned one prediction per intent example"
+  );
+
+  const tallies = {
+    chat: { actual: 0, predicted: 0, truePositive: 0 },
+    search: { actual: 0, predicted: 0, truePositive: 0 },
+  };
+  for (let i = 0; i < examples.length; i++) {
+    const output = Array.isArray(predictions[i])
+      ? predictions[i][0]
+      : predictions[i];
+    const predicted =
+      output.label.toLowerCase() === "search" &&
+      output.score >= SEARCH_SCORE_THRESHOLD
+        ? "search"
+        : "chat";
+    const expected = examples[i].label.toLowerCase();
+    const matches = predicted === expected;
+    tallies[expected].actual += 1;
+    tallies[predicted].predicted += 1;
+    tallies[expected].truePositive += matches ? 1 : 0;
+    info(
+      `[${tag}] ${examples[i].query}: expected ${expected}, got ${predicted} ` +
+        `(${output.label}, ${output.score})`
+    );
+  }
+
+  for (const [label, { actual, predicted, truePositive }] of Object.entries(
+    tallies
+  )) {
+    const precision = predicted ? truePositive / predicted : 0;
+    const recall = truePositive / actual;
+    info(
+      `[${tag}] ${label} precision: ${truePositive}/${predicted}; ` +
+        `recall: ${truePositive}/${actual}`
+    );
+    Assert.greaterOrEqual(
+      precision,
+      INTENT_METRIC_THRESHOLDS[label].precision,
+      `Smart Window ${label} precision ${truePositive}/${predicted} is above the smoke-test floor`
+    );
+    Assert.greaterOrEqual(
+      recall,
+      INTENT_METRIC_THRESHOLDS[label].recall,
+      `Smart Window ${label} recall ${truePositive}/${actual} is above the smoke-test floor`
+    );
+  }
 }

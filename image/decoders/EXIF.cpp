@@ -74,19 +74,17 @@ static Resolution ResolutionFromParsedData(const ParsedEXIFData& aData,
   Resolution resolution{ToDppx(*aData.resolutionX, *aData.resolutionUnit),
                         ToDppx(*aData.resolutionY, *aData.resolutionUnit)};
 
-  if (StaticPrefs::image_exif_density_correction_sanity_check_enabled()) {
-    if (!aData.pixelXDimension || !aData.pixelYDimension) {
-      return {};
-    }
+  if (!aData.pixelXDimension || !aData.pixelYDimension) {
+    return {};
+  }
 
-    const gfx::IntSize exifSize(*aData.pixelXDimension, *aData.pixelYDimension);
+  const gfx::IntSize exifSize(*aData.pixelXDimension, *aData.pixelYDimension);
 
-    gfx::IntSize scaledSize = aRealImageSize;
-    resolution.ApplyTo(scaledSize.width, scaledSize.height);
+  gfx::IntSize scaledSize = aRealImageSize;
+  resolution.ApplyTo(scaledSize.width, scaledSize.height);
 
-    if (exifSize != scaledSize) {
-      return {};
-    }
+  if (exifSize != scaledSize) {
+    return {};
   }
 
   return resolution;

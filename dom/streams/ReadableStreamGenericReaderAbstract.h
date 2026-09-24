@@ -12,8 +12,7 @@ namespace mozilla::dom::streams_abstract {
 bool ReadableStreamReaderGenericInitialize(ReadableStreamGenericReader* aReader,
                                            ReadableStream* aStream);
 
-void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
-                                        ErrorResult& aRv);
+void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader);
 
 }  // namespace mozilla::dom::streams_abstract
 

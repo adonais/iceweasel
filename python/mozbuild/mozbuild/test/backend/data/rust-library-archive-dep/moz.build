@@ -18,5 +18,6 @@ def RustLibrary(name, output_category=None):
 
 DIRS += [
     "archive",
+    "middle",
     "rust",
 ]

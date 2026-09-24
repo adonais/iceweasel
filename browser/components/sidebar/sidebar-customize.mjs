@@ -22,6 +22,7 @@ const l10nMap = new Map([
   ["viewBookmarksSidebar", "sidebar-menu-bookmarks-label"],
   ["viewOpenTabsSidebar", "sidebar-menu-open-tabs-label"],
   ["viewCPMSidebar", "sidebar-menu-contextual-password-manager-label"],
+  ["viewResourceMonitorSidebar", "sidebar-menu-resource-monitor-label"],
 ]);
 const VISIBILITY_SETTING_PREF = "sidebar.visibility";
 const EXPAND_ON_HOVER_PREF = "sidebar.expandOnHover";

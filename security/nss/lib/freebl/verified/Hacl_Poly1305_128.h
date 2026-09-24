@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_Poly1305_128_H
 #define __Hacl_Poly1305_128_H
 
@@ -44,15 +45,17 @@ void Hacl_Poly1305_128_poly1305_update1(Lib_IntVector_Intrinsics_vec128 *ctx, ui
 
 void
 Hacl_Poly1305_128_poly1305_update(
-    Lib_IntVector_Intrinsics_vec128 *ctx,
-    uint32_t len,
-    uint8_t *text);
+  Lib_IntVector_Intrinsics_vec128 *ctx,
+  uint32_t len,
+  uint8_t *text
+);
 
 void
 Hacl_Poly1305_128_poly1305_finish(
-    uint8_t *tag,
-    uint8_t *key,
-    Lib_IntVector_Intrinsics_vec128 *ctx);
+  uint8_t *tag,
+  uint8_t *key,
+  Lib_IntVector_Intrinsics_vec128 *ctx
+);
 
 void Hacl_Poly1305_128_poly1305_mac(uint8_t *tag, uint32_t len, uint8_t *text, uint8_t *key);
 

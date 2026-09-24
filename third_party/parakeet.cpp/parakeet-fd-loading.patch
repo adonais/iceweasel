@@ -1,0 +1,133 @@
+# Firefox-local: load Parakeet GGUF models from an already-open file
+# descriptor, for the sandboxed HWInference utility process which cannot
+# open paths.
+# Upstreamable to https://github.com/mudler/parakeet.cpp
+#
+--- a/src/model_loader.hpp
++++ b/src/model_loader.hpp
+@@ -77,6 +77,8 @@
+     ModelLoader() = default;
+     ~ModelLoader();
+     bool load(const std::string& path);
++    // Firefox-local: load from an already-open fd (sandboxed process).
++    bool load_fd(int fd);
+     const ParakeetConfig& config() const { return cfg_; }
+     const std::vector<std::string>& tokenizer_pieces() const { return cfg_.tokenizer_pieces; }
+     ggml_tensor* tensor(const std::string& name) const; // nullptr if absent
+@@ -94,6 +96,9 @@
+     bool realize_weights(ggml_backend_t backend);
+     bool weights_realized() const { return weights_buf_ != nullptr; }
+ private:
++    // Parse metadata + tensors from an already-opened gguf_. Shared by load()
++    // and load_fd().
++    bool parse_gguf();
+     ParakeetConfig cfg_;
+     gguf_context* gguf_ = nullptr;
+     ggml_context* ctx_ = nullptr;
+--- a/src/model_loader.cpp
++++ b/src/model_loader.cpp
+@@ -6,6 +6,7 @@
+ #include "ggml-cpu.h"
+ #include "gguf.h"
+ #include <cstring>
++#include <cstdio>
+ #include <vector>
+ #include <utility>
+ #include <stdexcept>
+@@ -125,6 +126,24 @@
+     struct gguf_init_params p{ /*no_alloc*/false, /*ctx*/&ctx_ };
+     gguf_ = gguf_init_from_file(path.c_str(), p);
+     if(!gguf_){ PK_LOG("gguf open failed: %s", path.c_str()); return false; }
++    return parse_gguf();
++}
++
++// Firefox-local addition (upstreamable): load the GGUF from an already-open
++// file descriptor. The sandboxed HWInference utility process is handed an fd by
++// the broker and cannot open paths itself. The fd stays owned by the caller.
++bool ModelLoader::load_fd(int fd){
++    struct gguf_init_params p{ /*no_alloc*/false, /*ctx*/&ctx_ };
++    FILE* f = fdopen(fd, "rb");
++    if(!f){ PK_LOG("fdopen failed for parakeet model fd"); return false; }
++    // gguf reads the whole file (no_alloc=false). Do NOT fclose(f): that would
++    // close the caller-owned fd.
++    gguf_ = gguf_init_from_file_ptr(f, p);
++    if(!gguf_){ PK_LOG("gguf open from fd failed"); return false; }
++    return parse_gguf();
++}
++
++bool ModelLoader::parse_gguf(){
+     cfg_.arch        = kv_str(gguf_, "parakeet.arch");
+     cfg_.feat_in     = kv_u32(gguf_, "parakeet.encoder.feat_in");
+     cfg_.d_model     = kv_u32(gguf_, "parakeet.encoder.d_model");
+--- a/src/model.hpp
++++ b/src/model.hpp
+@@ -24,6 +24,10 @@
+     // Loads the GGUF at `gguf_path`. Returns nullptr on failure (no throw).
+     static std::unique_ptr<Model> load(const std::string& gguf_path);
+ 
++    // Firefox-local: load the GGUF from an already-open fd, for the sandboxed
++    // HWInference process. Returns nullptr on failure (no throw).
++    static std::unique_ptr<Model> load_fd(int fd);
++
+     // Transcribe raw mono float PCM. If `sample_rate != 16000` the audio is
+     // linearly resampled to 16 kHz (via pk::resample_linear) before inference.
+     // `target_lang` selects the language prompt for multilingual (nemotron)
+--- a/src/model.cpp
++++ b/src/model.cpp
+@@ -52,6 +52,18 @@
+     return m;
+ }
+ 
++// Firefox-local: identical to load() but reads the GGUF from an already-open
++// file descriptor (the sandboxed HWInference process cannot open paths).
++std::unique_ptr<Model> Model::load_fd(int fd) {
++    std::unique_ptr<Model> m(new (std::nothrow) Model());
++    if (!m) return nullptr;
++    if (!m->loader_.load_fd(fd)) {
++        return nullptr;
++    }
++    ensure_weights_realized(m->loader_);
++    return m;
++}
++
+ // Forward declarations: subsampling-tiling helpers are defined below (after the
+ // batched staging helpers) but used by the single-clip transcribe entry points.
+ static int safe_mel_window(const pk::ParakeetConfig& cfg);
+--- a/include/parakeet_capi.h
++++ b/include/parakeet_capi.h
+@@ -46,6 +46,11 @@
+ // The returned context must be released with parakeet_capi_free.
+ parakeet_ctx* parakeet_capi_load(const char* gguf_path);
+ 
++// Firefox-local: load a GGUF model from an already-open file descriptor (for
++// sandboxed hosts that cannot open paths). The fd remains owned by the caller.
++// Returns an owning context, or NULL on failure.
++parakeet_ctx* parakeet_capi_load_fd(int fd);
++
+ // Free a context obtained from parakeet_capi_load. Safe on NULL.
+ void parakeet_capi_free(parakeet_ctx* ctx);
+ 
+--- a/src/parakeet_capi.cpp
++++ b/src/parakeet_capi.cpp
+@@ -225,6 +225,21 @@
+     }
+ }
+ 
++// Firefox-local: load from an already-open fd (sandboxed host).
++extern "C" parakeet_ctx* parakeet_capi_load_fd(int fd) {
++    if (fd < 0) return nullptr;
++    try {
++        std::unique_ptr<pk::Model> model = pk::Model::load_fd(fd);
++        if (!model) return nullptr;
++        auto* ctx = new (std::nothrow) parakeet_ctx();
++        if (!ctx) return nullptr;
++        ctx->model = std::move(model);
++        return ctx;
++    } catch (...) {
++        return nullptr;
++    }
++}
++
+ extern "C" void parakeet_capi_free(parakeet_ctx* ctx) {
+     delete ctx;  // safe on nullptr; ~unique_ptr releases the model.
+ }

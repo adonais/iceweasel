@@ -25,9 +25,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
  */
 @RunWith(Parameterized::class)
 class DownloadFileTypesTest(private val downloadFile: String) : BaseTest() {
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     companion object {
         // The test takes each file name as a parameter and runs it individually.
         @JvmStatic

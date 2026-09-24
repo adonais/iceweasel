@@ -37,6 +37,7 @@ export var CrashTestUtils = {
   CRASH_EXC_GUARD: 25,
   CRASH_STACK_OVERFLOW: 26,
   CRASH_STL_VECTOR_OOB: 27,
+  CRASH_SIGSYS: 28,
 
   // Constants for dumpHasStream()
   // From google_breakpad/common/minidump_format.h

@@ -4733,8 +4733,8 @@ preferences:
     type: string
     lifetime: application
     description: |
-      The theme the user has enabled. "light," "dark," "system," or "battery"
-      default: "system" for API 28+, else "light"
+      The theme the user has enabled. "light," "dark," "oled," "system," or
+      "battery" default: "system" for API 28+, else "light"
     send_in_pings:
       - metrics
     bugs:
@@ -6551,9 +6551,7 @@ history:
       time_group:
         type: string
         description: |
-          What time group does the history item belongs to.
-          Possible values: [Today], [Yesterday], [ThisWeek], [ThisMonth],
-          [Older].
+          The exact date of the history item in ISO 8601 format (YYYY-MM-DD).
       is_private:
         type: boolean
         description: |
@@ -7352,6 +7350,37 @@ tabs_tray:
       - android-probes@mozilla.com
     expires: never
 
+  tab_group_ungrouped:
+    type: event
+    description: |
+      Fired when a user confirms ungrouping a tab group, which deletes the
+      group but keeps its tabs.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064425
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064425
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  ungroup_confirmation_disabled:
+    type: event
+    description: |
+      Fired when a user checks "Don't ask again" in the ungroup confirmation
+      dialog. Only fires for the interaction in which the user opts out, not for
+      later ungroup actions that skip the dialog as a result.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064425
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2064425
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
   tab_group_closed:
     type: event
     description: |
@@ -7360,6 +7389,37 @@ tabs_tray:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_onboarding_shown:
+    type: event
+    description: |
+      Fired each time the tab group onboarding card is scrolled into view in the
+      tabs tray, including repeat impressions within a session.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069464
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069464
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_onboarding_dismissed:
+    type: event
+    description: |
+      Fired when a user dismisses the tab group onboarding card in the tabs
+      tray with its close button. Does NOT fire when the card is auto dismissed
+      for users who already have a tab group.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069464
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2069464
     data_sensitivity:
       - interaction
     notification_emails:
@@ -10054,6 +10114,28 @@ app_theme:
       - https://github.com/mozilla-mobile/fenix/pull/21316#issuecomment-944615938
       - https://github.com/mozilla-mobile/fenix/pull/27295
       - https://github.com/mozilla-mobile/firefox-android/pull/4039
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Themes
+  oled_theme_selected:
+    type: event
+    description: |
+      A user selected the Darkest ("OLED") theme
+    extra_keys:
+      source:
+        type: string
+        description: |
+          The source from where the Darkest theme was selected. The source can be
+          'SETTINGS'
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067019
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067019
     data_sensitivity:
       - interaction
     notification_emails:
@@ -14931,6 +15013,40 @@ broken_site_report.tab_info.antitracking:
       - webcompat-reporting-tool-telemetry@mozilla.com
     send_in_pings:
       - broken-site-report
+  btp_purge_history:
+    type: object
+    structure:
+      type: array
+      items:
+        type: object
+        properties:
+          purgedHost:
+            type: string
+          initialHost:
+            type: string
+          finalHost:
+            type: string
+          bounceHosts:
+            type: array
+            items:
+              type: string
+    expires: never
+    data_sensitivity:
+      - web_activity
+    description: >
+      List of recently purged bounce chain entries where the reported site
+      appears in the chain (as the purged site, initial host, final host,
+      or a bounce host). Each entry contains the purged host and the
+      bounce chain context (initial host, final host, bounce hosts).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019300
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2019300
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    send_in_pings:
+      - broken-site-report
   etp_category:
     type: string
     expires: never
@@ -16788,6 +16904,130 @@ vpn:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  location_update_error:
+    type: event
+    description:
+      Triggered when updating the list of available locations fails.
+    extra_keys:
+      error_code:
+        description:
+          The class name of the error associated with the failure, if available.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2059858
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D319380
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  location_selector_tapped:
+    type: event
+    description:
+      Triggered when the user taps the location row in VPN settings.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049043
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D326740
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+  location_changed:
+    type: event
+    description:
+      Triggered when a location is selected, restored, or reverted after a
+      failed switch.
+    extra_keys:
+      to:
+        description: >
+          The newly selected country code, or "recommended" for the automatic
+          location.
+        type: string
+      operation:
+        description: >
+          "user_action" when the user tapped a location in the location list, "restore" when a
+          saved location was applied at startup, "reset" when the previous location was put back
+          after a failed switch.
+        type: string
+      proxy_state:
+        description: >
+          Proxy state when the change happened. One of "uninitialized", "idle", "activating",
+          "active", "data_limit_reached", "connection_error".
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049043
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D326740
+    data_sensitivity:
+      - interaction
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+  location_reset:
+    type: event
+    description:
+      Triggered when a selection in effect is removed from a refreshed country list, or when a
+      saved selection is unavailable before it is applied.
+    extra_keys:
+      location:
+        description:
+          The country code of the selection that could not be honoured.
+        type: string
+      reason:
+        description: >
+          "missing" if the country left the list, "unavailable" if it is listed but not selectable.
+        type: string
+      operation:
+        description: >
+          "refresh" if a selection in effect vanished from a refreshed list, or "restore" if a
+          saved selection was unavailable before it was applied.
+        type: string
+      list_size:
+        description:
+          How many countries the refreshed list contained.
+        type: quantity
+      available_count:
+        description:
+          How many of those countries were selectable.
+        type: quantity
+      service_state:
+        description: >
+          Service state when the reset was recorded. One of "uninitialized", "unavailable",
+          "unauthenticated", "opted_out", "ready".
+        type: string
+      proxy_state:
+        description: >
+          Proxy state when the reset was recorded. One of "uninitialized", "idle", "activating",
+          "active", "data_limit_reached", "connection_error".
+        type: string
+      account_state:
+        description: >
+          Account status when the reset was recorded. One of "uninitialized", "warming_up",
+          "no_account", "needs_authentication", "requesting_authentication", "needs_authorization",
+          "requesting_authorization", "awaiting_authentication", "awaiting_authorization",
+          "awaiting_enrollment", "auth_failed", "authenticated", "enrolled_and_entitled",
+          "try_again".
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2049043
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D326740
+    data_sensitivity:
+      - interaction
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   trust_panel_try_it_tapped:
     type: event
     description:
@@ -16985,3 +17225,93 @@ pdf_viewer:
     data_sensitivity:
       - interaction
     expires: never
+
+browser_thumbnails:
+  capture_attempted:
+    type: labeled_counter
+    description: |
+      Increments on every BrowserThumbnails.requestScreenshot() call,
+      labeled by the trigger that fired it. Total gives the per-session
+      capture rate; the label breakdown shows where the pressure originates
+      so regressions can be attributed to a specific trigger source.
+    labels:
+      - load_completed
+      - tab_counter_click
+      - swipe_to_switch_tabs
+      - external_request
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  capture_result:
+    type: labeled_counter
+    description: |
+      Outcome of each capture attempt that reached the request path.
+      `succeeded` = engine returned a bitmap and the ContentAction.UpdateThumbnailAction
+      was dispatched. `null_bitmap` = engine returned no bitmap (typically the
+      compositor detach race). `low_memory` = the isLowOnMemory() gate skipped
+      the request before it reached the engine.
+    labels:
+      - succeeded
+      - null_bitmap
+      - low_memory
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  capture_duration:
+    type: timing_distribution
+    time_unit: millisecond
+    description: |
+      Wall-clock time from EngineView.captureThumbnail(...) call to its
+      onFinish callback. Includes engine compositor readback but not the
+      subsequent disk write. Long tails typically indicate the compositor
+      is struggling or the surface is mid-teardown.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  disk_write_duration:
+    type: timing_distribution
+    time_unit: millisecond
+    description: |
+      Wall-clock time from ThumbnailsMiddleware dispatching a
+      ThumbnailStorage.saveThumbnail(...) job to that job's completion.
+      Includes any queue-wait on ThumbnailStorage's worker pool plus the
+      actual disk write. Reveals disk pressure and I/O queue length.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067066
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - technical
+    expires: never
+    metadata:
+      tags:
+        - Tabs

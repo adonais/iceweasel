@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled()
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled(); test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // Regression test for bug 2043062: the wrapper function built for a
 // WebAssembly.Suspending import must be given the import's actual declared

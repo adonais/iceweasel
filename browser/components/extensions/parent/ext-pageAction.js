@@ -312,25 +312,47 @@ this.pageAction = class extends ExtensionAPIPersistent {
         return;
       }
 
-      this.popupNode = new PanelPopup(
+      // Hold the popup in a local: another activation while we await below
+      // would replace this.popupNode, and we must clean up the one we created.
+      let popup = (this.popupNode = new PanelPopup(
         extension,
         window.document,
         popupURL,
         this.browserStyle
-      );
+      ));
       // Remove popupNode when it is closed.
-      this.popupNode.panel.addEventListener(
+      popup.panel.addEventListener(
         "popuphiding",
         () => {
           this.popupNode = undefined;
         },
         { once: true }
       );
-      await this.popupNode.contentReady;
-      window.BrowserPageActions.togglePanelForAction(
-        this.browserPageAction,
-        this.popupNode.panel
-      );
+      await popup.contentReady;
+      if (popup.destroyed) {
+        // The extension shut down while its popup was loading, which destroyed
+        // the popup and removed the page action we would anchor it to.
+        if (this.popupNode === popup) {
+          this.popupNode = undefined;
+        }
+        ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
+        return;
+      }
+      try {
+        window.BrowserPageActions.togglePanelForAction(
+          this.browserPageAction,
+          popup.panel
+        );
+      } catch (e) {
+        // The popup's browser would otherwise keep a refresh driver ticking,
+        // and vsync enabled, for the lifetime of the window.
+        popup.destroy();
+        if (this.popupNode === popup) {
+          this.popupNode = undefined;
+        }
+        ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);
+        throw e;
+      }
       ExtensionTelemetry.pageActionPopupOpen.stopwatchFinish(extension, this);
     } else {
       ExtensionTelemetry.pageActionPopupOpen.stopwatchCancel(extension, this);

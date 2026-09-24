@@ -11,7 +11,6 @@
 #include "gfxFontUtils.h"
 #include "gfxUtils.h"
 #include "harfbuzz/hb-ot.h"
-#include "harfbuzz/hb.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/gfx/Helpers.h"
@@ -147,7 +146,7 @@ struct PaintState {
     const COLRHeader* v0;
     const COLRv1Header* v1;
   } mHeader;
-  const sRGBColor* mPalette;
+  const hb_color_t* mPalette;
   DrawTarget* mDrawTarget;
   ScaledFont* mScaledFont;
   const int* mCoords;
@@ -177,11 +176,17 @@ constexpr uint32_t kPaintRecursionLimit = 256;
 DeviceColor PaintState::GetColor(uint16_t aPaletteIndex, float aAlpha) const {
   sRGBColor color;
   if (aPaletteIndex < mNumColors) {
-    color = mPalette[uint16_t(aPaletteIndex)];
+    hb_color_t c = mPalette[uint16_t(aPaletteIndex)];
+    // Explicitly get the components from the hb_color_t, rather than assuming
+    // anything about its packing.
+    color = sRGBColor::FromU8(hb_color_get_red(c), hb_color_get_green(c),
+                              hb_color_get_blue(c), hb_color_get_alpha(c));
   } else if (aPaletteIndex == 0xffff) {
     color = mCurrentColor;
-  } else {  // Palette index out of range! Return transparent black.
-    color = sRGBColor();
+  } else {
+    // Palette index out-of-range (a font bug), or palette failed to load.
+    // Return partially-opaque gray, so shapes are at least somewhat visible.
+    color = sRGBColor(0, 0, 0, 0.25);
   }
   color.a *= aAlpha;
   return ToDeviceColor(color);
@@ -2464,7 +2469,7 @@ bool COLRFonts::PaintGlyphLayers(
     hb_blob_t* aCOLR, hb_face_t* aFace, const GlyphLayers* aLayers,
     DrawTarget* aDrawTarget, layout::TextDrawTarget* aTextDrawer,
     ScaledFont* aScaledFont, DrawOptions aDrawOptions, const Point& aPoint,
-    const sRGBColor& aCurrentColor, const nsTArray<sRGBColor>* aColors) {
+    const sRGBColor& aCurrentColor, const nsTArray<hb_color_t>* aColors) {
   const auto* glyphRecord = reinterpret_cast<const BaseGlyphRecord*>(aLayers);
   // Default to opaque rendering (non-webrender applies alpha with a layer)
   float alpha = 1.0;
@@ -2530,7 +2535,7 @@ bool COLRFonts::PaintGlyphGraph(
     hb_blob_t* aCOLR, hb_font_t* aFont, const GlyphPaintGraph* aPaintGraph,
     DrawTarget* aDrawTarget, layout::TextDrawTarget* aTextDrawer,
     ScaledFont* aScaledFont, DrawOptions aDrawOptions, const Point& aPoint,
-    const sRGBColor& aCurrentColor, const nsTArray<sRGBColor>* aColors,
+    const sRGBColor& aCurrentColor, const nsTArray<hb_color_t>* aColors,
     uint32_t aGlyphId, float aFontUnitsToPixels) {
   if (aTextDrawer) {
     // Currently we always punt to a blob for COLRv1 glyphs.
@@ -2612,7 +2617,7 @@ uint16_t COLRFonts::GetColrTableVersion(hb_blob_t* aCOLR) {
   return colr->version;
 }
 
-nsTArray<sRGBColor> COLRFonts::CreateColorPalette(
+nsTArray<hb_color_t> COLRFonts::CreateColorPalette(
     hb_face_t* aFace, const FontPaletteValueSet* aPaletteValueSet,
     nsAtom* aFontPalette, const nsACString& aFamilyName) {
   // Find the base color palette to use, if there are multiple available;
@@ -2659,27 +2664,28 @@ nsTArray<sRGBColor> COLRFonts::CreateColorPalette(
     }
   }
 
-  // Collect the palette colors and convert them to sRGBColor values.
+  // Collect the palette colors.
   count =
       hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, nullptr, nullptr);
-  nsTArray<hb_color_t> colors;
-  colors.SetLength(count);
-  hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, &count,
-                                 colors.Elements());
+  nsTArray<hb_color_t> palette;
+  // If palette allocation fails, it will remain zero-length, and GetColor()
+  // will just return semi-opaque gray for everything. This seems preferable
+  // to crashing the process on OOM here.
+  if (palette.SetLength(count, fallible)) {
+    hb_ot_color_palette_get_colors(aFace, paletteIndex, 0, &count,
+                                   palette.Elements());
 
-  nsTArray<sRGBColor> palette;
-  palette.SetCapacity(count);
-  for (const auto c : colors) {
-    palette.AppendElement(
-        sRGBColor(hb_color_get_red(c) / 255.0, hb_color_get_green(c) / 255.0,
-                  hb_color_get_blue(c) / 255.0, hb_color_get_alpha(c) / 255.0));
-  }
-
-  // Apply @font-palette-values overrides, if present.
-  if (fpv) {
-    for (const auto overrideColor : fpv->mOverrides) {
-      if (overrideColor.mIndex < palette.Length()) {
-        palette[overrideColor.mIndex] = overrideColor.mColor;
+    // Apply @font-palette-values overrides, if present.
+    if (fpv) {
+      for (const auto overrideColor : fpv->mOverrides) {
+        if (overrideColor.mIndex < palette.Length()) {
+          // Override colors contain nscolor, but the palette uses hb_color_t.
+          // They have different byte packing orders, so we have to explicitly
+          // map the components, not just assign as a 32-bit value.
+          nscolor c = overrideColor.mColor;
+          palette[overrideColor.mIndex] =
+              HB_COLOR(NS_GET_B(c), NS_GET_G(c), NS_GET_R(c), NS_GET_A(c));
+        }
       }
     }
   }

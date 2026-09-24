@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- -moz-scrollbar-inset-block on an embedder must reach the subdocument's viewport
+     scrollbar, which can't carry the property itself. Compared with != against
+     an identical iframe that has no inset: if the forwarding through
+     nsSubDocumentFrame -> BrowsingContext -> nsPresContext is broken, the two
+     render identically and this fails. -->
+<style>
+  iframe {
+    width: 200px;
+    height: 300px;
+    border: none;
+    -moz-scrollbar-inset-block: 40px 0;
+  }
+</style>
+<iframe src="scrollbar-inset-forward-inner.html"></iframe>

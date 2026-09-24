@@ -2,6 +2,8 @@
 
 The JavaScript command line provided by the Web Console offers a few built-in helper functions that make certain tasks easier.
 
+(web-console-helpers-dollar)=
+
 \$(selector, element)
 
 : Looks up a CSS selector string `selector` , returning the first node descended from `element` that matches. If unspecified, `element` defaults to `document`. Equivalent to [document.querySelector()](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector) or calls the \$ function in the page, if it exists.

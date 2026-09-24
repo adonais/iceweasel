@@ -260,6 +260,10 @@ ALL_PROCESSES += [
     DllBlocklistEntry("magicdsfilterQuest3s.dll", ALL_VERSIONS),
     DllBlocklistEntry("magicdsfilterQuest2.dll", ALL_VERSIONS),
     DllBlocklistEntry("magicdsfilterQuestPro.dll", ALL_VERSIONS),
+
+    # TubeDigger, bug 2069269
+    DllBlocklistEntry("TbdgHook.dll", (1, 8, 2, 0)),
+    DllBlocklistEntry("TbdgHook64.dll", (1, 8, 2, 0)),
 ]
 
 # Shell extensions that result in crashes when the file-dialog is opened. (These
@@ -403,10 +407,6 @@ CHILD_PROCESSES += [
 
     # Causes crashes in the content, gmp and utility processes, bug 1929333
     DllBlocklistEntry("ks3rdhmpg.dll", ALL_VERSIONS),
-
-    # Causes crashes in the content process with USER_RESTRICTED, bug 1930472
-    DllBlocklistEntry("TbdgHook.dll", (1, 5, 9, 0)),
-    DllBlocklistEntry("TbdgHook64.dll", (1, 5, 9, 0)),
 
     # Causes crashes in the content process with USER_RESTRICTED, bug 1930468
     DllBlocklistEntry("AppMonitorDll.dll", (36, 30, 0, 0)),

@@ -707,8 +707,6 @@ gDevTools.once("netmonitor-init").then(toolbox => {
 
 To build a sidebar in your tool, first, add a xul:tabbox where you want the sidebar to live:
 
-% rstcheck: ignore-languages=xml
-
 ```xml
 <splitter class="devtools-side-splitter"/>
 <tabbox id="mytool-sidebar" class="devtools-sidebar-tabs" hidden="true">

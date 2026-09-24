@@ -36,6 +36,12 @@
                     "type": "number",
                     "minimum": 0.0,
                     "maximum": 1000.0
+                },
+                "alertSeverity": {
+                    "description": "Severity level for alerts produced by this metric or suite",
+                    "title": "Alert severity",
+                    "enum": ["critical", "subcritical", "normal"],
+                    "type": "string"
                 }
             }
         },

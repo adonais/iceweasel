@@ -415,7 +415,12 @@ export var UITour = {
       }
 
       case "showNewTab": {
-        this.showNewTab(window, browser);
+        this.showNewTab(window, browser, data.hash);
+        break;
+      }
+
+      case "showHome": {
+        this.showHome(window, browser, data.hash);
         break;
       }
 
@@ -567,6 +572,14 @@ export var UITour = {
         if (shell) {
           shell.pinToTaskbar().catch(console.error);
         }
+        break;
+      }
+
+      case "setNewtabWallpaper": {
+        let prefix = "browser.newtabpage.activity-stream.newtabWallpapers.";
+        Services.prefs.setStringPref(prefix + "wallpaper", data.wallpaper);
+        Services.prefs.setStringPref(prefix + "initialWallpaper", "");
+        Services.prefs.setBoolPref(prefix + "user.enabled", true);
         break;
       }
 
@@ -1482,9 +1495,13 @@ export var UITour = {
     }
   },
 
-  showNewTab(aWindow, aBrowser) {
+  // Shared by showNewTab and showHome.
+  _showPage(aWindow, aBrowser, aBaseUrl, aHash) {
     aWindow.gURLBar.focus();
-    let url = "about:newtab";
+    let url = aBaseUrl;
+    if (typeof aHash == "string" && /^[a-zA-Z0-9_-]+$/.test(aHash)) {
+      url += "#" + aHash;
+    }
     aWindow.openLinkIn(url, "current", {
       targetBrowser: aBrowser,
       triggeringPrincipal:
@@ -1493,6 +1510,14 @@ export var UITour = {
           {}
         ),
     });
+  },
+
+  showNewTab(aWindow, aBrowser, aHash) {
+    this._showPage(aWindow, aBrowser, "about:newtab", aHash);
+  },
+
+  showHome(aWindow, aBrowser, aHash) {
+    this._showPage(aWindow, aBrowser, "about:home", aHash);
   },
 
   showProtectionReport(aWindow, aBrowser) {
@@ -1671,6 +1696,10 @@ export var UITour = {
           ),
           smartWindow: Services.prefs.getStringPref(
             "browser.ai.control.smartWindow",
+            "default"
+          ),
+          speechRecognition: Services.prefs.getStringPref(
+            "browser.ai.control.speechRecognition",
             "default"
           ),
         });

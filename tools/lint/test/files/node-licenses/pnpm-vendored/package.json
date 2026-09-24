@@ -1,0 +1,6 @@
+{
+  "description": "vendored with pnpm",
+  "devDependencies": {
+    "@mozilla/known-license": "0.0.1"
+  }
+}

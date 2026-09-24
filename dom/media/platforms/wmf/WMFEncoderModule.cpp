@@ -5,6 +5,7 @@
 #include "WMFEncoderModule.h"
 
 #include "EncoderConfig.h"
+#include "MFTEncoder.h"
 #include "WMFMediaDataEncoder.h"
 
 using mozilla::media::EncodeSupportSet;
@@ -19,6 +20,8 @@ static EncodeSupportSet IsSupported(const EncoderConfig& aConfig) {
   }
   return CanCreateWMFEncoder(aConfig);
 }
+
+void WMFEncoderModule::ClearCache() { MFTEncoder::ClearCache(); }
 
 EncodeSupportSet WMFEncoderModule::SupportsCodec(CodecType aCodecType) const {
   gfx::IntSize kDefaultSize(640, 480);

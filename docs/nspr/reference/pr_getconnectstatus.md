@@ -14,7 +14,7 @@ The function has the following parameter:
 
 `pd`
 
-: A pointer to a `PRPollDesc` satructure whose `fd` field is the
+: A pointer to a `PRPollDesc` structure whose `fd` field is the
   socket and whose `in_flags` field must contain `PR_POLL_WRITE`
   and `PR_POLL_EXCEPT`.
 

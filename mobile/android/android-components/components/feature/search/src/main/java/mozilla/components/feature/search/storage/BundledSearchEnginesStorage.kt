@@ -8,10 +8,8 @@ import android.content.Context
 import android.content.res.AssetManager
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
@@ -46,7 +44,6 @@ internal class BundledSearchEnginesStorage(private val context: Context) : Searc
                     searchEngineIdentifiers = searchEngineIdentifiers.distinct(),
                     type = SearchEngine.Type.BUNDLED,
                     searchExtraParams = searchExtraParams,
-                    coroutineContext = coroutineContext,
                 )
 
             // Reorder the list of search engines according to the configuration.
@@ -90,7 +87,6 @@ internal class BundledSearchEnginesStorage(private val context: Context) : Searc
                     searchEngineIdentifiers = ids.distinct(),
                     type = SearchEngine.Type.BUNDLED_ADDITIONAL,
                     searchExtraParams = searchExtraParams,
-                    coroutineContext = coroutineContext,
                 )
             }
         }
@@ -227,28 +223,22 @@ private fun applyOverridesIfNeeded(
     return searchEngineIdentifiers
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 private suspend fun loadSearchEnginesFromList(
     context: Context,
     searchEngineIdentifiers: List<String>,
     type: SearchEngine.Type,
     searchExtraParams: SearchExtraParams?,
-    coroutineContext: CoroutineContext,
 ): List<SearchEngine> {
     val assets = context.assets
     val reader = SearchEngineReader(context, type, searchExtraParams)
 
-    val deferredSearchEngines = mutableListOf<Deferred<SearchEngine?>>()
-
-    searchEngineIdentifiers.forEach { identifier ->
-        deferredSearchEngines.add(
-            GlobalScope.async(coroutineContext) {
-                loadSearchEngine(assets, reader, identifier)
+    return coroutineScope {
+        searchEngineIdentifiers
+            .map { identifier ->
+                async { loadSearchEngine(assets, reader, identifier) }
             }
-        )
+            .mapNotNull { it.await() }
     }
-
-    return deferredSearchEngines.mapNotNull { it.await() }
 }
 
 @Suppress("TooGenericExceptionCaught")

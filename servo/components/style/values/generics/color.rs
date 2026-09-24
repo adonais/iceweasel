@@ -5,14 +5,14 @@
 //! Generic types for color properties.
 
 use crate::color::ColorMixItemList;
-use crate::color::{mix::ColorInterpolationMethod, AbsoluteColor, ColorFunction};
+use crate::color::{AbsoluteColor, ColorFunction, mix::ColorInterpolationMethod};
 use crate::derives::*;
 use crate::values::generics::Optional;
 use crate::values::{
-    computed::ToComputedValue, specified::percentage::ToPercentage, ParseError, Parser,
+    ParseError, Parser, computed::ToComputedValue, specified::percentage::ToPercentage,
 };
 use std::fmt::{self, Write};
-use style_traits::{owned_slice::OwnedSlice, CssWriter, ToCss};
+use style_traits::{CssWriter, ToCss, owned_slice::OwnedSlice};
 
 /// This struct represents a combined color from a numeric color and
 /// the current foreground color (currentcolor keyword).
@@ -107,9 +107,9 @@ impl<Color: ToCss, Percentage: ToCss + ToPercentage> ToCss for ColorMix<Color, P
         // Per https://drafts.csswg.org/css-color-5/#serial-color-mix: omit every
         // percentage iff all are known (specified, non-calc) and equal to 100%/N.
         let omit_all = self.items.iter().all(|item| {
-            item.percentage.as_ref().map_or(false, |p| {
-                !p.is_calc() && p.to_percentage() == Some(uniform_value)
-            })
+            item.percentage
+                .as_ref()
+                .is_some_and(|p| !p.is_calc() && p.to_percentage() == Some(uniform_value))
         });
 
         for (index, item) in self.items.iter().enumerate() {

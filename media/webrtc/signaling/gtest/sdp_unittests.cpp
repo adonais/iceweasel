@@ -1670,7 +1670,7 @@ class NewSdpTest
                    const std::string& search_pt,
                    const SdpRtpmapAttributeList& rtpmaps) const {
     ASSERT_TRUE(rtpmaps.HasEntry(search_pt));
-    auto attr = rtpmaps.GetEntry(search_pt);
+    const auto& attr = rtpmaps.GetEntry(search_pt);
     ASSERT_EQ(expected_pt, attr.pt);
     ASSERT_EQ(codec, attr.codec);
     std::cout << "Codec = " << name << std::endl;
@@ -1683,7 +1683,7 @@ class NewSdpTest
                     uint16_t streams, const std::string& search_pt,
                     const SdpSctpmapAttributeList& sctpmaps) const {
     ASSERT_TRUE(sctpmaps.HasEntry(search_pt));
-    auto attr = sctpmaps.GetFirstEntry();
+    const auto& attr = sctpmaps.GetFirstEntry();
     ASSERT_EQ(expected_pt, search_pt);
     ASSERT_EQ(expected_pt, attr.pt);
     ASSERT_EQ(name, attr.name);
@@ -1802,8 +1802,7 @@ TEST_P(NewSdpTest, CheckGetBandwidth) {
   ParseSdp("v=0" CRLF "o=- 4294967296 2 IN IP4 127.0.0.1" CRLF "s=SIP Call" CRLF
            "c=IN IP4 198.51.100.7" CRLF "b=CT:5000" CRLF "b=FOOBAR:10" CRLF
            "b=AS:4" CRLF "t=0 0" CRLF "m=video 56436 RTP/SAVPF 120" CRLF
-           "a=rtpmap:120 VP8/90000" CRLF,
-           true, ::testing::get<1>(GetParam()));
+           "a=rtpmap:120 VP8/90000" CRLF);
   ASSERT_EQ(5000U, Sdp()->GetBandwidth("CT"))
       << "Wrong CT bandwidth in session";
   ASSERT_EQ(0U, Sdp()->GetBandwidth("FOOBAR"))
@@ -4180,33 +4179,6 @@ TEST_P(NewSdpTest, CheckAddMediaSection) {
   ASSERT_EQ(sdp::kIPv6, nextNewMediaSection.GetConnection().GetAddrType());
   ASSERT_EQ("2607:f8b0:4004:801::2013",
             nextNewMediaSection.GetConnection().GetAddress());
-
-  if (!ResultsAreFromSipcc()) {
-    // All following AddMediaSection calls are expected to fail
-    // SdpMediaSection::kDccpRtpAvp is expected to cause a failure
-    Sdp()->AddMediaSection(SdpMediaSection::kAudio,
-                           SdpDirectionAttribute::Direction::kSendonly, 14006,
-                           SdpMediaSection::kDccpRtpAvp, sdp::kIPv6,
-                           "2607:f8b0:4004:801::2013");
-    ASSERT_EQ(5U, Sdp()->GetMediaSectionCount())
-        << "Wrong number of media sections after adding media section";
-
-    // sdp::kAddrTypeNone is expected to cause a failure
-    Sdp()->AddMediaSection(SdpMediaSection::kAudio,
-                           SdpDirectionAttribute::Direction::kSendonly, 14006,
-                           SdpMediaSection::kDtlsSctp, sdp::kAddrTypeNone,
-                           "2607:f8b0:4004:801::2013");
-    ASSERT_EQ(5U, Sdp()->GetMediaSectionCount())
-        << "Wrong number of media sections after adding media section";
-
-    // "NOT:AN.IP.ADDRESS" is expected to cause a failure
-    Sdp()->AddMediaSection(SdpMediaSection::kAudio,
-                           SdpDirectionAttribute::Direction::kSendonly, 14006,
-                           SdpMediaSection::kTcpDtlsRtpSavpf, sdp::kIPv6,
-                           "NOT:AN.IP.ADDRESS");
-    ASSERT_EQ(5U, Sdp()->GetMediaSectionCount())
-        << "Wrong number of media sections after adding media section";
-  }
 }
 
 TEST_P(NewSdpTest, CheckAddDataChannel_Draft05) {

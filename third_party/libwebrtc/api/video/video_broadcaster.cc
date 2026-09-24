@@ -15,6 +15,7 @@
 #include <optional>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
@@ -23,7 +24,6 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video_track_source_constraints.h"
-#include "media/base/video_source_base.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -37,8 +37,9 @@ void VideoBroadcaster::AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
                                        const VideoSinkWants& wants) {
   RTC_DCHECK(sink != nullptr);
   MutexLock lock(&sinks_and_wants_lock_);
-  if (!FindSinkPair(sink)) {
-    // `Sink` is a new sink, which didn't receive previous frame.
+  SinkPair* sink_pair = FindSinkPair(sink);
+  if (!sink_pair) {
+    // `sink` is a new sink, which didn't receive previous frame.
     previous_frame_sent_to_all_sinks_ = false;
 
     if (last_constraints_.has_value()) {
@@ -47,15 +48,20 @@ void VideoBroadcaster::AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
                        << last_constraints_->max_fps.value_or(-1);
       sink->OnConstraintsChanged(*last_constraints_);
     }
+    sinks_.push_back(SinkPair(sink, wants));
+  } else {
+    sink_pair->wants = wants;
   }
-  VideoSourceBase::AddOrUpdateSink(sink, wants);
   UpdateWants();
 }
 
 void VideoBroadcaster::RemoveSink(VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(sink != nullptr);
   MutexLock lock(&sinks_and_wants_lock_);
-  VideoSourceBase::RemoveSink(sink);
+  RTC_DCHECK(FindSinkPair(sink));
+  std::erase_if(sinks_, [sink](const SinkPair& sink_pair) {
+    return sink_pair.sink == sink;
+  });
   UpdateWants();
 }
 
@@ -214,6 +220,17 @@ const scoped_refptr<VideoFrameBuffer>& VideoBroadcaster::GetBlackFrameBuffer(
   }
 
   return black_frame_buffer_;
+}
+
+VideoBroadcaster::SinkPair* VideoBroadcaster::FindSinkPair(
+    const VideoSinkInterface<VideoFrame>* sink) {
+  auto sink_pair_it = absl::c_find_if(
+      sinks_,
+      [sink](const SinkPair& sink_pair) { return sink_pair.sink == sink; });
+  if (sink_pair_it != sinks_.end()) {
+    return &*sink_pair_it;
+  }
+  return nullptr;
 }
 
 }  // namespace webrtc

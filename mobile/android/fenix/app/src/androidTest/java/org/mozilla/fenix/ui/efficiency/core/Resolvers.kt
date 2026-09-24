@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui.efficiency.core
 
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SemanticsNodeInteractionCollection
 import androidx.compose.ui.test.filter
@@ -14,11 +15,8 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
 import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -30,7 +28,6 @@ import androidx.test.uiautomator.UiSelector
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.containsString
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
 /**
  * One resolver per UI toolkit, each interpreting a [Locator].
@@ -39,41 +36,11 @@ import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
  * lookups with different arguments, and the duplication is what allowed two strategies to disagree about something the
  * caller never chose - which tree to search, or whether to prefix a resource id with the package.
  *
- * All four return null for "not present" and never throw, because every caller treats absence as a value. Espresso is
- * the exception by design: `onView` is a promise, not a lookup, so it returns an interaction that fails later at the
- * point of use.
+ * All four return null only for "not present". Resolver errors propagate so the host can distinguish them from absence.
+ * Espresso is the exception by design: `onView` is a promise, not a lookup, so it returns an interaction that may fail
+ * later at the point of use.
  */
 object Resolvers {
-
-    fun compose(
-        rule: AndroidComposeTestRule<*, *>,
-        locator: Locator,
-        selector: Selector,
-    ): SemanticsNodeInteraction? = runCatching {
-        val unmerged = locator.tree == Tree.UNMERGED
-        val second = selector.secondaryValue ?: ""
-        val base =
-            when (locator.handle) {
-                Handle.TAG -> hasTestTag(selector.value)
-                Handle.TEXT -> hasText(selector.value, substring = locator.match == Match.SUBSTRING)
-                Handle.DESC -> hasContentDescription(selector.value, substring = locator.match == Match.SUBSTRING)
-                else -> return null
-            }
-        val matcher =
-            when (locator.extra) {
-                Extra.TEXT -> base and hasText(second)
-                Extra.DESC_SUBSTRING -> base and hasContentDescription(second, substring = true)
-                Extra.EDITABLE_UNDER -> hasSetTextAction() and hasAnyAncestor(hasTestTag(selector.value))
-                else -> base
-            }
-        when {
-            locator.extra == Extra.CHILD_TEXT ->
-                rule.onAllNodes(matcher, useUnmergedTree = unmerged).filter(hasAnyChild(hasText(second))).onFirst()
-            locator.pick == Pick.FIRST_OF_ALL -> rule.onAllNodes(matcher, useUnmergedTree = unmerged).onFirst()
-            else -> rule.onNode(matcher, useUnmergedTree = unmerged)
-        }.also { if (locator.pick == Pick.FIRST_OF_ALL) it.assertExists() }
-    }
-        .getOrNull()
 
     /**
      * Espresso returns an interaction rather than an element, so "not found" cannot be detected here - only an
@@ -84,7 +51,7 @@ object Resolvers {
         val base =
             when (locator.handle) {
                 Handle.ID -> {
-                    val id = runCatching(resourceId).getOrDefault(0)
+                    val id = resourceId()
                     if (id == 0) return null
                     withId(id)
                 }
@@ -93,10 +60,10 @@ object Resolvers {
                 Handle.RES_NAME -> withResourceName(containsString(selector.value))
                 else -> return null
             }
-        return if (locator.extra == Extra.SIBLING_TEXT) {
-            onView(allOf(base, hasSibling(withText(second))))
-        } else {
-            onView(base)
+        return when (locator.extra) {
+            Extra.SIBLING_TEXT -> onView(allOf(base, hasSibling(withText(second))))
+            Extra.DESCENDANT_TEXT -> onView(allOf(base, hasDescendant(withText(second))))
+            else -> onView(base)
         }
     }
 
@@ -147,8 +114,7 @@ object Resolvers {
      * screen", which is what an interaction needs: text that renders in a panel and again in the address bar produces
      * two matches, and only one of them can be tapped.
      *
-     * Tries the strategy's historical primary tree first (text -> unmerged; tag and content-description -> merged),
-     * then the other, so a caller supplies a testTag/text/description and gets the node wherever it lives. The
+     * Tries the locator's declared tree first and then the other, retaining all compound selector constraints. The
      * merged/unmerged mismatch on COMPOSE_BY_TEXT is what broke navigation when this path was first introduced, and
      * content-description had the same latent trap.
      *
@@ -156,40 +122,55 @@ object Resolvers {
      */
     fun displayed(
         rule: AndroidComposeTestRule<*, *>,
+        locator: Locator,
         selector: Selector,
-    ): UiElement? {
-        fun candidates(unmerged: Boolean): SemanticsNodeInteractionCollection? =
-            when (selector.strategy) {
-                SelectorStrategy.COMPOSE_BY_TAG -> rule.onAllNodesWithTag(selector.value, useUnmergedTree = unmerged)
-                // Tag AND the node's own text. For an element whose text also renders elsewhere on screen,
-                // the tag disambiguates while the text still asserts the content - neither alone is enough.
-                SelectorStrategy.COMPOSE_BY_TAG_AND_TEXT ->
-                    rule.onAllNodes(
-                        hasTestTag(selector.value) and hasText(selector.secondaryValue ?: ""),
-                        useUnmergedTree = unmerged,
-                    )
-                SelectorStrategy.COMPOSE_BY_TEXT,
-                SelectorStrategy.COMPOSE_BY_TEXT_MERGED ->
-                    rule.onAllNodesWithText(selector.value, useUnmergedTree = unmerged)
-                SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION ->
-                    rule.onAllNodesWithContentDescription(selector.value, useUnmergedTree = unmerged)
-                else -> null
-            }
-
-        val primaryUnmerged = selector.strategy == SelectorStrategy.COMPOSE_BY_TEXT
+    ): SemanticsNodeInteraction? {
+        val primaryUnmerged = locator.tree == Tree.UNMERGED
         val node =
-            candidates(primaryUnmerged)?.let { firstDisplayed(it) }
-                ?: candidates(!primaryUnmerged)?.let { firstDisplayed(it) }
-        return node?.let { ComposeUiElement(it) }
+            composeCandidates(rule, locator, selector, primaryUnmerged)?.let { firstDisplayed(it) }
+                ?: composeCandidates(rule, locator, selector, !primaryUnmerged)?.let { firstDisplayed(it) }
+        return node
+    }
+
+    private fun composeMatcher(locator: Locator, selector: Selector): SemanticsMatcher? {
+        val second = selector.secondaryValue ?: ""
+        val base =
+            when (locator.handle) {
+                Handle.TAG -> hasTestTag(selector.value)
+                Handle.TEXT -> hasText(selector.value, substring = locator.match == Match.SUBSTRING)
+                Handle.DESC -> hasContentDescription(selector.value, substring = locator.match == Match.SUBSTRING)
+                else -> return null
+            }
+        return when (locator.extra) {
+            Extra.TEXT -> base and hasText(second)
+            Extra.DESC_SUBSTRING -> base and hasContentDescription(second, substring = true)
+            Extra.EDITABLE_UNDER -> hasSetTextAction() and hasAnyAncestor(hasTestTag(selector.value))
+            else -> base
+        }
+    }
+
+    private fun composeCandidates(
+        rule: AndroidComposeTestRule<*, *>,
+        locator: Locator,
+        selector: Selector,
+        unmerged: Boolean,
+    ): SemanticsNodeInteractionCollection? {
+        val matcher = composeMatcher(locator, selector) ?: return null
+        val candidates = rule.onAllNodes(matcher, useUnmergedTree = unmerged)
+        return if (locator.extra == Extra.CHILD_TEXT) {
+            candidates.filter(hasAnyChild(hasText(selector.secondaryValue ?: "")))
+        } else {
+            candidates
+        }
     }
 
     /** The first *displayed* node in a collection, else the first node, else null. */
     private fun firstDisplayed(collection: SemanticsNodeInteractionCollection): SemanticsNodeInteraction? {
-        val count = runCatching { collection.fetchSemanticsNodes().size }.getOrDefault(0)
+        val count = collection.fetchSemanticsNodes().size
         if (count == 0) return null
         for (i in 0 until count) {
             val node = collection[i]
-            if (ElementState.probe(node, ElementState.Trait.DISPLAYED)) return node
+            if (ElementState.probe(ComposeUiElement(node), ElementState.Trait.DISPLAYED)) return node
         }
         return collection[0]
     }

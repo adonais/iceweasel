@@ -32,6 +32,8 @@ add_task(
       );
     }
 
+    await assertRadioGroupAccessibleName(historyMode);
+
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 );

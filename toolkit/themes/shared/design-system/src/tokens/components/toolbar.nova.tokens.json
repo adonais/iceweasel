@@ -14,13 +14,6 @@
             "dark": "{color.gray.60}",
             "forcedColors": "ButtonText"
           }
-        },
-        "focus": {
-          "value": {
-            "nativeTheme": "color-mix(in srgb, {focus.outline.color} 50%, transparent)",
-            "default": "{focus.outline.color}",
-            "prefersContrast": "{focus.outline.color}"
-          }
         }
       }
     },
@@ -56,15 +49,6 @@
             "default": "{toolbar.field.text.color.@base}"
           }
         }
-      }
-    }
-  },
-  "background": {
-    "color": {
-      "value": {
-        "nativeTheme": "color-mix(in srgb, -moz-dialog 85%, {color.white.@base})",
-        "default": "{background.color.box.@base}",
-        "forcedColors": "Canvas"
       }
     }
   }

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __internal_Hacl_Spec_H
 #define __internal_Hacl_Spec_H
 

@@ -30,12 +30,11 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -48,6 +47,8 @@ import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.browser.state.state.selectedOrDefaultPrivateSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
+import mozilla.components.compose.base.theme.Theme
+import mozilla.components.compose.base.theme.Theme.Private
 import mozilla.components.concept.ai.controls.isEnabled
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.webextension.WebExtension
@@ -138,8 +139,6 @@ import org.mozilla.fenix.settings.doh.DefaultDohSettingsProvider
 import org.mozilla.fenix.settings.doh.DohSettingsProvider
 import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.theme.DefaultThemeProvider
-import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.Theme.Private
 import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
@@ -170,12 +169,27 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
     private val logger = Logger("FenixApplication")
 
-    open val components by lazy { Components(this) }
+    /**
+     * A [CoroutineScope] tied to the application's lifecycle.
+     *
+     * This scope is used for launching long-running or global asynchronous tasks that should survive the destruction of
+     * individual activities. It uses [Dispatchers.Main] as the default dispatcher and a [SupervisorJob] to ensure that
+     * a failure in one child coroutine does not cancel others.
+     */
+    private val applicationScope: CoroutineScope =
+        CoroutineScope(
+            SupervisorJob() +
+                Dispatchers.Main +
+                CoroutineExceptionHandler { _, throwable ->
+                    logger.error("ApplicationScope: Unhandled error: ${throwable.message}", throwable)
+                }
+        )
+
+    open val components by lazy { Components(this, applicationScope) }
 
     var visibilityLifecycleCallback: VisibilityLifecycleCallback? = null
         private set
 
-    protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     protected val ioDispatcher = Dispatchers.IO
 
     override fun onCreate() {
@@ -288,7 +302,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     // Begin initialization of Glean if we have data-upload consent, otherwise we will have to
     // wait until we do. Note that Glean initialization is asynchronous any may not be finished
     // when this method returns.
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun maybeInitializeGlean() {
         // We delay the Glean initialization until we have user consent from onboarding.
         // If onboarding is disabled (when in local builds), continue to initialize Glean.
@@ -350,8 +363,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         val store = components.core.store
 
         // StartupMetrics accesses shared preferences so do this off thread.
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(ioDispatcher) {
             setStartupMetrics(store, components.settings)
         }
 
@@ -443,22 +455,20 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun restoreBrowserState() =
-        GlobalScope.launch(Dispatchers.Main) {
-            val store = components.core.store
-            val sessionStorage = components.core.sessionStorage
+    private fun restoreBrowserState() = applicationScope.launch {
+        val store = components.core.store
+        val sessionStorage = components.core.sessionStorage
 
-            components.useCases.tabsUseCases.restore(sessionStorage, components.settings.getTabTimeout())
+        components.useCases.tabsUseCases.restore(sessionStorage, components.settings.getTabTimeout())
 
-            // Now that we have restored our previous state (if there's one) let's setup auto saving the state while
-            // the app is used.
-            sessionStorage
-                .autoSave(store)
-                .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
-                .whenGoingToBackground()
-                .whenSessionsChange()
-        }
+        // Now that we have restored our previous state (if there's one) let's setup auto saving the state while
+        // the app is used.
+        sessionStorage
+            .autoSave(store)
+            .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
+            .whenGoingToBackground()
+            .whenSessionsChange()
+    }
 
     private fun restoreDownloads() {
         components.useCases.downloadUseCases.restoreDownloads()
@@ -493,10 +503,9 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queue.runIfReadyOrQueue { block() }
     }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueInitStorageAndServices(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 logger.info("Running post-visual completeness tasks...")
                 logElapsedTime(logger, "Storage initialization") {
                     components.core.historyStorage.warmUp()
@@ -556,7 +565,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 )
             }
             // Account manager initialization needs to happen on the main thread.
-            GlobalScope.launch(Dispatchers.Main) {
+            applicationScope.launch {
                 logElapsedTime(logger, "Kicking-off account manager") {
                     components.backgroundServices.accountManager
                 }
@@ -575,29 +584,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             // Because it may be slow to capture the storage stats, it might be preferred to
             // create a WorkManager task for this metric, however, I ran out of
             // implementation time and WorkManager is harder to test.
-            StorageStatsMetrics.report(this.applicationContext)
+            StorageStatsMetrics.report(applicationContext, applicationScope)
         }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun queueEngineWarmup(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(Dispatchers.Main) {
+            applicationScope.launch {
                 components.core.engine.warmUp()
             }
         }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueIncrementNumberOfAppLaunches(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 components.settings.numberOfAppLaunches += 1
             }
         }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueRestoreLocale(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 components.useCases.localeUseCases.restore()
             }
         }
@@ -613,7 +619,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             components.core.autofillStorage.registerStorageMaintenanceWorker()
         }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) {
         // We want to avoid shipping this warmup into UI test builds to reduce quota impact, especially given
         // that the Integrity verdicts will always fail anyway.
@@ -621,26 +626,25 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             return
         }
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 components.integrityClient.warmUp()
             }
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class, ExperimentalAndroidComponentsApi::class) // GlobalScope usage
+    @OptIn(ExperimentalAndroidComponentsApi::class)
     private fun queueNimbusFetchInForeground(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             components.nimbus.geckoPrefHandler.start()
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 components.nimbus.sdk.maybeFetchExperiments(settings = components.settings)
                 components.nimbus.geckoPrefHandler.getPreferenceStateFromGecko().await()
             }
         }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueSuggestIngest(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            GlobalScope.launch(IO) {
+            applicationScope.launch(ioDispatcher) {
                 components.fxSuggest.storage.runStartupIngestion()
             }
         }
@@ -650,11 +654,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             downloadWallpapers()
         }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueCollectProcessExitInfo(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             if (SDK_INT >= Build.VERSION_CODES.R && components.settings.isTelemetryEnabled) {
-                GlobalScope.launch(IO) {
+                applicationScope.launch(ioDispatcher) {
                     ApplicationExitInfoMetrics.recordProcessExits(applicationContext)
                 }
             }
@@ -743,9 +746,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         AppServicesInitializer.init(AppServicesConfig(components.analytics.crashReporter))
     }
 
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun setupMegazordNetwork(): Deferred<Unit> {
-        return GlobalScope.async(IO) {
+        return applicationScope.async(ioDispatcher) {
             if (Config.channel.isDebug) {
                 RustHttpConfig.allowEmulatorLoopback()
             }
@@ -793,7 +795,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             settings.shouldUseLightTheme -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             }
-            settings.shouldUseDarkTheme -> {
+            settings.shouldUseDarkTheme || settings.shouldUseOledTheme -> {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             }
             SDK_INT < Build.VERSION_CODES.P && settings.shouldUseAutoBatteryTheme -> {
@@ -1165,6 +1167,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 when {
                     settings.shouldUseLightTheme -> "light"
                     settings.shouldUseDarkTheme -> "dark"
+                    settings.shouldUseOledTheme -> "oled"
                     settings.shouldFollowDeviceTheme -> "system"
                     settings.shouldUseAutoBatteryTheme -> "battery"
                     else -> ""
@@ -1180,8 +1183,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     private fun setAutofillMetrics() {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
+        applicationScope.launch(IO) {
             try {
                 val autoFillStorage = applicationContext.components.core.autofillStorage
                 Addresses.savedAll.set(autoFillStorage.countAllAddresses())
@@ -1269,9 +1271,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 )
                 .build()
 
-    @OptIn(DelicateCoroutinesApi::class)
+    /**
+     * Triggers the initialization of wallpapers by downloading any necessary assets. This is typically called during
+     * the application startup sequence once visual completeness is reached.
+     */
     open fun downloadWallpapers() {
-        GlobalScope.launch {
+        applicationScope.launch {
             components.useCases.wallpaperUseCases.initialize()
         }
     }

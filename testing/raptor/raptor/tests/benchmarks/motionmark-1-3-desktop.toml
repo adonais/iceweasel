@@ -16,7 +16,10 @@ owner = "Graphics Team"
 type = "benchmark"
 unit = "score"
 subtest_unit = "score"
+fetch_path = "motionmark"
 repository = "https://github.com/webkit/motionmark"
+# Keep this revision in sync with the fetch used in benchmarks.yml by updating:
+# taskcluster/kinds/fetch/benchmarks.yml
 repository_revision = "be2a5fea89b6ef411b053ebeb95a6302b3dc0ecb"
 test_url="http://<host>:<port>/MotionMark/developer.html?warmup-length=2000&warmup-frame-count=30&first-frame-minimum-length=0&test-interval=30&display=minimal&tiles=big&controller=ramp&system-frame-rate=60&frame-rate=60&time-measurement=performance"
 cold = true

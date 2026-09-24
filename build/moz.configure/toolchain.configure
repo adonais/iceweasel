@@ -183,9 +183,9 @@ def is_windows(target, host):
 
 include("windows-toolchain.configure", when=is_windows)
 
+
 @depends(android_toolchain_flags, windows_toolchain_flags)
-def extra_toolchain_flags(android_toolchain_flags,
-                          windows_toolchain_flags):
+def extra_toolchain_flags(android_toolchain_flags, windows_toolchain_flags):
     return (android_toolchain_flags or []) + (windows_toolchain_flags or [])
 
 
@@ -567,9 +567,7 @@ def get_compiler_info(configure_cache, compiler, language, wrapper=[]):
     """
     )
 
-    result = try_preprocess(
-        configure_cache, compiler, language, check, wrapper=wrapper
-    )
+    result = try_preprocess(configure_cache, compiler, language, check, wrapper=wrapper)
 
     if not result:
         raise FatalCheckError("Unknown compiler or compiler not supported.")
@@ -699,7 +697,11 @@ def check_compiler(
         # This makes clang define __ANDROID_API__ and use versioned library
         # directories from the NDK.
         toolchain = "%s%d" % (target.toolchain, android_version)
-    elif target.kernel == "WASI" and info.type == "clang" and info.version >= Version("22.1"):
+    elif (
+        target.kernel == "WASI"
+        and info.type == "clang"
+        and info.version >= Version("22.1")
+    ):
         # The wasm32-wasi target was renamed to wasm32-wasip1 in LLVM 22.1.
         toolchain = "wasm32-wasip1"
     else:
@@ -745,9 +747,7 @@ def check_compiler(
             flags.append("-m32")
         elif (info.cpu, target.cpu) in same_arch:
             flags.append("-m64")
-        elif info.type == "clang-cl" and target.cpu == "aarch64":
-            flags.append("--target=%s" % toolchain)
-        elif info.type == "clang":
+        elif info.type in ("clang", "clang-cl"):
             flags.append("--target=%s" % toolchain)
 
     return namespace(
@@ -1226,9 +1226,7 @@ def sysroot(host_or_target, target_sysroot=None):
     sysroot_input = depends(opt, when=when)(lambda x: x)
     bootstrap_sysroot = depends(bootstrap_when, sysroot_input)(
         # Only bootstrap when no flag was explicitly given (either --with or --without)
-        lambda bootstrap, input: bootstrap
-        and not input
-        and input.origin == "default"
+        lambda bootstrap, input: bootstrap and not input and input.origin == "default"
     )
 
     @depends(
@@ -2202,21 +2200,19 @@ def die_on_old_libstdcxx():
 
 try_compile(
     includes=["cstddef"],
-    body="\n".join(
-        [
-            # _GLIBCXX_RELEASE showed up in libstdc++ 7.
-            "#if defined(__GLIBCXX__) && !defined(_GLIBCXX_RELEASE)",
-            "#  error libstdc++ not new enough",
-            "#endif",
-            "#if defined(_GLIBCXX_RELEASE)",
-            "#  if _GLIBCXX_RELEASE < %d" % minimum_gcc_version().major,
-            "#    error libstdc++ not new enough",
-            "#  else",
-            "     (void) 0",
-            "#  endif",
-            "#endif",
-        ]
-    ),
+    body="\n".join([
+        # _GLIBCXX_RELEASE showed up in libstdc++ 7.
+        "#if defined(__GLIBCXX__) && !defined(_GLIBCXX_RELEASE)",
+        "#  error libstdc++ not new enough",
+        "#endif",
+        "#if defined(_GLIBCXX_RELEASE)",
+        "#  if _GLIBCXX_RELEASE < %d" % minimum_gcc_version().major,
+        "#    error libstdc++ not new enough",
+        "#  else",
+        "     (void) 0",
+        "#  endif",
+        "#endif",
+    ]),
     check_msg="for new enough STL headers from libstdc++",
     when=needs_libstdcxx_newness_check,
     onerror=die_on_old_libstdcxx,
@@ -2726,11 +2722,13 @@ def ubsan(options, optimize):
 def ubsan_flags(ubsan_checks, c_compiler, compilation_flags, linker_flags, build_env):
     ubsan_txt = os.path.join(build_env.topobjdir, "ubsan_blacklist.txt")
     with open(ubsan_txt, "w") as out_fd:
-        for blacklist in sorted(glob(
-            os.path.join(
-                build_env.topsrcdir, "build", "sanitizers", "ubsan_*_blacklist.txt"
+        for blacklist in sorted(
+            glob(
+                os.path.join(
+                    build_env.topsrcdir, "build", "sanitizers", "ubsan_*_blacklist.txt"
+                )
             )
-        )):
+        ):
             with open(blacklist) as in_fd:
                 shutil.copyfileobj(in_fd, out_fd)
 
@@ -2818,9 +2816,10 @@ def ub_unsigned_overflow_san_flags(
     compilation_flags.cflags.extend(flags)
     compilation_flags.cxxflags.extend(flags)
     if c_compiler.type != "clang-cl":
-        linker_flags.ldflags.extend(
-            ["-fsanitize=unsigned-integer-overflow", "-rdynamic"]
-        )
+        linker_flags.ldflags.extend([
+            "-fsanitize=unsigned-integer-overflow",
+            "-rdynamic",
+        ])
 
 
 #
@@ -2895,9 +2894,15 @@ def security_hardening_cflags(
             if (
                 c_compiler.type == "clang"
                 and target.os not in ("WINNT", "OSX", "OpenBSD", "iOS")
-                and ((c_compiler.version >= "11.0.1" and target.cpu in ("x86", "x86_64", "ppc64", "s390x"))
-                    or
-                     (c_compiler.version >= "18.1.0" and target.cpu == "aarch64"))
+                and (
+                    (
+                        c_compiler.version >= "11.0.1"
+                        and target.cpu in ("x86", "x86_64", "ppc64", "s390x")
+                    )
+                    or (c_compiler.version >= "18.1.0" and target.cpu == "aarch64")
+                    or (c_compiler.version >= "22.1.8" and target.cpu == "riscv64")
+                    or (c_compiler.version >= "23.1.0" and target.cpu == "loongarch64")
+                )
             ):
                 flags.append("-fstack-clash-protection")
                 ldflags.append("-fstack-clash-protection")
@@ -3807,9 +3812,10 @@ def path_remappings(target, build_env, sysroot_path, windows_sdk_dir, vc_path):
     if sysroot_path:
         path_remappings.append((sysroot_path, "k:/" if win else "/sysroot/"))
     if windows_sdk_dir:
-        path_remappings.append(
-            (windows_sdk_dir.path, "k:/" if win else "/windows_sdk/")
-        )
+        path_remappings.append((
+            windows_sdk_dir.path,
+            "k:/" if win else "/windows_sdk/",
+        ))
     if vc_path:
         path_remappings.append((vc_path, "v:/" if win else "/vc/"))
 
@@ -3855,7 +3861,14 @@ set_config(
     "AVXVNNI_FLAGS",
     ["-mavxvnni"],
     try_compile(
-        check_msg="for -mavxvnni support", flags=["-mavxvnni"], when=is_intel_target
+        check_msg="for -mavxvnni support",
+        flags=["-mavxvnni"],
+        includes=["immintrin.h"],
+        body="""
+          __m256i a = _mm256_set1_epi32(1);
+          return _mm256_extract_epi32(_mm256_dpbusd_avx_epi32(a, a, a), 0);
+        """,
+        when=is_intel_target,
     ),
 )
 set_config(
@@ -3864,6 +3877,11 @@ set_config(
     try_compile(
         check_msg="for -mavx512bw support",
         flags=["-mavx512bw", "-mavx512f", "-mavx512dq", "-mavx512cd"],
+        includes=["immintrin.h"],
+        body="""
+          __m512i a = _mm512_set1_epi8(1);
+          return _mm512_cvtsi512_si32(_mm512_maddubs_epi16(a, a));
+        """,
         when=is_intel_target,
     ),
 )
@@ -3876,6 +3894,11 @@ set_config(
     try_compile(
         check_msg="for -mavx512vnni support",
         flags=["-mavx512vnni", "-mavx512bw", "-mavx512f", "-mavx512dq", "-mavx512cd"],
+        includes=["immintrin.h"],
+        body="""
+          __m512i a = _mm512_set1_epi8(1);
+          return _mm512_cvtsi512_si32(_mm512_dpbusd_epi32(a, a, a));
+        """,
         when=is_intel_target,
     ),
 )
@@ -3887,6 +3910,11 @@ set_config(
     try_compile(
         check_msg="for i8mm target feature",
         flags=["-march=armv8.2-a+i8mm"],
+        includes=["arm_neon.h"],
+        body="""
+          int8x16_t a = vdupq_n_s8(1);
+          return vgetq_lane_s32(vmmlaq_s32(vdupq_n_s32(0), a, a), 0);
+        """,
         when=is_aarch64_target,
     ),
 )
@@ -3897,6 +3925,11 @@ set_config(
     try_compile(
         check_msg="for ARM SVE2 target feature",
         flags=["-march=armv9-a+sve2"],
+        includes=["arm_sve.h"],
+        body="""
+          svint32_t a = svdup_n_s32(1);
+          return svaddv_s32(svptrue_b32(), svaba_s32(a, a, a));
+        """,
         when=is_aarch64_target,
     ),
 )
@@ -3907,6 +3940,11 @@ set_config(
     try_compile(
         check_msg="for ARM dotprod target feature",
         flags=["-march=armv8.2-a+dotprod"],
+        includes=["arm_neon.h"],
+        body="""
+          int8x16_t a = vdupq_n_s8(1);
+          return vgetq_lane_s32(vdotq_s32(vdupq_n_s32(0), a, a), 0);
+        """,
         when=is_aarch64_target,
     ),
 )

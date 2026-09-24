@@ -12,3 +12,13 @@ support-files = [
 ]
 
 ["test_nested_modules.html"]
+
+["test_scriptDisabled_modules.html"]
+support-files = [
+  "!/dom/base/test/file_wasm_offthread_module.sjs",
+  "exports-fun.wasm",
+  "module_large1.mjs",
+  "scriptDisabledDiskCache_module.sjs",
+  "scriptDisabled_frame.html",
+  "scriptDisabled_module.mjs",
+]

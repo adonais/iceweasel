@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<script>
+  // Modules loaded by the tests push into this array when they run.
+  window.results = [];
+
+  // A caller that imports while script is disabled for this realm drops the
+  // returned promise: it can never settle, and nothing settles it afterwards.
+  window.importModule = url => import(url);
+
+  window.importSource = url => import.source(url);
+
+  window.startModuleScript = url => {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.src = url;
+    document.head.appendChild(script);
+    return script;
+  };
+</script>

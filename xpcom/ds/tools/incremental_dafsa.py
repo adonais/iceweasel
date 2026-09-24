@@ -10,12 +10,14 @@ functions for converting to a compatible structure. This legacy format is define
 in make_dafsa.py.
 """
 
+from __future__ import annotations
+
 from typing import Callable, Optional
 
 
 class Node:
-    children: dict[str, "Node"]
-    parents: dict[str, list["Node"]]
+    children: dict[str, Node]
+    parents: dict[str, list[Node]]
     character: str
     is_root_node: bool
     is_end_node: bool
@@ -74,14 +76,14 @@ class Node:
         for child in list(self.children.values()):
             child.remove_parent(self)
 
-    def remove_parent(self, parent_node: "Node"):
+    def remove_parent(self, parent_node: Node):
         parent_node.children.pop(self.character)
         parents_for_character = self.parents[parent_node.character]
         parents_for_character.remove(parent_node)
         if not parents_for_character:
             self.parents.pop(parent_node.character)
 
-    def copy_fork_node(self, fork_node: "Node", child_to_avoid: Optional["Node"]):
+    def copy_fork_node(self, fork_node: Node, child_to_avoid: Optional[Node]):
         """Shallow-copy a node's children.
 
         When adding a new word, sometimes previously-joined suffixes aren't perfect
@@ -104,7 +106,7 @@ class Node:
 
         return len(next(iter(self.parents.values()))) > 1
 
-    def is_replacement_for_prefix_end_node(self, old: "Node"):
+    def is_replacement_for_prefix_end_node(self, old: Node):
         """Check if this node is a valid replacement for an old end node.
 
         A node is a valid replacement if it maintains all existing child paths while
@@ -126,7 +128,7 @@ class Node:
 
         return True
 
-    def is_replacement_for_prefix_node(self, old: "Node"):
+    def is_replacement_for_prefix_node(self, old: Node):
         """Check if this node is a valid replacement for a non-end node.
 
         A node is a valid replacement if it:

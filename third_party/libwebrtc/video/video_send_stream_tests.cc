@@ -156,7 +156,7 @@ std::string ParamInfoToStr(
   StringBuilder sb;
   sb << std::get<0>(info.param).scalability_mode << "_"
      << (std::get<1>(info.param) ? "WithIdentifier" : "WithoutIdentifier");
-  return sb.str();
+  return sb.Release();
 }
 
 

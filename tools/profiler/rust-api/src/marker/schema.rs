@@ -164,7 +164,7 @@ impl MarkerSchema {
     /// - `key`: Element property name as streamed by `stream_json_marker_data()`.
     /// - `format`: How to format the data element value, see `Format` above.
     /// - `payload_flags`: Optional, /// They will be used to serialize special
-    ///    schema fields.
+    ///   schema fields.
     pub fn add_key_format_with_flags(
         &mut self,
         key: &str,
@@ -188,7 +188,7 @@ impl MarkerSchema {
     /// - `label`: Optional label. Defaults to the key name.
     /// - `format`: How to format the data element value, see `Format` above.
     /// - `payload_flags`: Optional, /// They will be used to serialize special
-    ///    schema fields.
+    ///   schema fields.
     pub fn add_key_label_format_with_flags(
         &mut self,
         key: &str,

@@ -21,6 +21,10 @@ describe("<WallpaperCategories>", () => {
         activeWallpaper=""
         dispatch={jest.fn()}
         setPref={jest.fn()}
+        showPanel={false}
+        activeCategory={null}
+        openPanel={jest.fn()}
+        closePanel={jest.fn()}
       />
     );
     expect(container.querySelector(".category-header")).toBeInTheDocument();

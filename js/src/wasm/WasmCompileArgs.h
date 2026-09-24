@@ -24,6 +24,7 @@
 
 #include "js/Utility.h"
 #include "js/WasmFeatures.h"
+#include "js/WasmModule.h"
 #include "wasm/WasmBinaryTypes.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmShareable.h"
@@ -223,7 +224,7 @@ struct CompileArgs;
 using MutableCompileArgs = RefPtr<CompileArgs>;
 using SharedCompileArgs = RefPtr<const CompileArgs>;
 
-struct CompileArgs : ShareableBase<CompileArgs> {
+struct CompileArgs : JS::WasmCompileArgs {
   ScriptedCaller scriptedCaller;
   UniqueChars sourceMapURL;
 

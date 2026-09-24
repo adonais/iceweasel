@@ -27,14 +27,14 @@ import androidx.compose.ui.unit.dp
 import java.text.DateFormat
 import java.util.Date
 import mozilla.components.compose.base.BottomSheetHandle
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.protection.dashboard.TrackerCategory
 import mozilla.components.feature.protection.dashboard.TrackerProtectionDashboard
 import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 
 /**
  * The trackers protections dashboard styled as a bottom sheet layout.

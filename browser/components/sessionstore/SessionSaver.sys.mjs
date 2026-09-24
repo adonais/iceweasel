@@ -276,7 +276,7 @@ var SessionSaverInternal = {
       // We want to restore closed windows that are marked with _shouldRestore.
       // We're doing this here because we want to control this only when saving
       // the file.
-      if (lazy.sessionStoreLogger.isDebug) {
+      if (lazy.sessionStoreLogger.debugEnabled) {
         lazy.sessionStoreLogger.debug(
           "SessionSaver._saveState, closed windows:"
         );

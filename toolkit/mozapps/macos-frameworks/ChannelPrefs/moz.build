@@ -24,7 +24,9 @@ OS_LIBS += [
 # upstream `-localbuild` framework in artifact builds.
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     if CONFIG["COMPILE_ENVIRONMENT"]:
-        FINAL_TARGET_FILES["ChannelPrefs.framework"] += [f"!/{FINAL_TARGET}/ChannelPrefs"]
+        FINAL_TARGET_FILES["ChannelPrefs.framework"] += [
+            f"!/{FINAL_TARGET}/ChannelPrefs"
+        ]
     elif CONFIG["MOZ_ARTIFACT_BUILDS"]:
         FINAL_TARGET_FILES["ChannelPrefs.framework"] += [
             "!/dist/update_framework_artifacts/ChannelPrefs-localbuild.framework/ChannelPrefs"

@@ -59,7 +59,8 @@ class DirectVideoFrameConverter : public VideoFrameConverter {
                             TestRTCStatsTimestampMaker(), aLockScaling) {}
 
   void SendVideoFrame(PlanarYCbCrImage* aImage, TimeStamp aTime) {
-    FrameToProcess frame(aImage, aTime, aImage->GetSize(), false);
+    FrameToProcess frame(aImage, aTime, aImage->GetSize(), false,
+                         mozilla::VideoRotation::kDegree_0);
     ProcessVideoFrame(frame);
   }
 };

@@ -608,6 +608,41 @@ onboarding-refresh-gratitude-subtitle = Thank you for using { -brand-short-name 
 # "has your back" is an idiom suggesting support and protection
 onboarding-refresh-gratitude-title = { -brand-short-name } has your back
 
+## First Run Onboarding refresh strings
+
+# "has your back" is an idiom suggesting support and protection
+onboarding-refresh-splash-screen-title = { -brand-product-name } has your back, starting now
+onboarding-refresh-hero-text = Built to protect you, not track you.
+onboarding-refresh-tou-default = Open all links with { -brand-short-name }
+onboarding-refresh-tou-pin = { PLATFORM() ->
+    [macos] Keep { -brand-short-name } in Dock
+   *[other] Add { -brand-short-name } to your taskbar
+}
+onboarding-refresh-tou-default-unchecked = Keep built-in protection every time you browse
+onboarding-refresh-tou-pin-unchecked = Keep the only major independent browser a click away
+onboarding-refresh-terms-of-use-with-links = By continuing, you agree to the <a data-l10n-name="terms_of_use">{ -brand-product-name } Terms of Use</a> and our <a data-l10n-name="privacy_notice">Privacy Notice</a>. To help improve the browser, { -brand-product-name } sends diagnostic and interaction data to { -vendor-short-name }.
+onboarding-refresh-data-collection-link = Manage data collection settings
+
+onboarding-refresh-primary-button = Continue
+
+onboarding-refresh-fro-import-header = Bring in your data
+onboarding-refresh-fro-import-body = Your personal data stays personal. { -brand-product-name } will never sell it.
+onboarding-refresh-fro-skip-button = Skip
+
+onboarding-refresh-fro-theme-header = Play with your look
+
+onboarding-refresh-tab-layout-header = Try a different tab layout
+onboarding-refresh-tab-layout-top = On top
+onboarding-refresh-tab-layout-side = On the side
+onboarding-refresh-tab-layout-minimal = Minimal
+# Tooltip displayed on hover for minimal tabs image
+onboarding-minimal-tabs-tooltip =
+    .title = A browser window displaying tabs as small icons along the side of the screen, in a minimized sidebar.
+
+# Description for minimal tabs image
+onboarding-minimal-tabs-description =
+    .aria-description = A browser window displaying tabs as small icons along the side of the screen, in a minimized sidebar.
+
 ## Smart window switcher callout
 
 smartwindow-switcher-callout = Switch between Smart and Classic Windows anytime.

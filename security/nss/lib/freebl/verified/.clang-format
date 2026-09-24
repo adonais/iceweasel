@@ -1,0 +1,4 @@
+# Vendored, generated HACL*/karamel code. It is diff-checked against upstream by
+# automation/taskcluster/scripts/run_hacl.sh, so NSS does not reformat it.
+DisableFormat: true
+SortIncludes: false

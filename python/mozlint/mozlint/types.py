@@ -157,7 +157,9 @@ class ExternalType(BaseType):
     batch = True
 
     def _lint(self, files, config, **lintargs):
-        func = findobject(config["payload"])
+        func = findobject(
+            config["payload"], config["path"], lintargs.get("linter_paths")
+        )
         return func(files, config, **lintargs)
 
 
@@ -179,8 +181,10 @@ class GlobalType(ExternalType):
         # them based on extensions and exclusions.
         files = list(expand_exclusions(files, config, lintargs["root"]))
         if not files:
-            return
-        func = findobject(config["payload"])
+            return []
+        func = findobject(
+            config["payload"], config["path"], lintargs.get("linter_paths")
+        )
         return func(files, config, **lintargs)
 
 
@@ -206,7 +210,9 @@ class StructuredLogType(BaseType):
             commandline.setup_logging(logger, {}, {"mach": sys.stdout})
         logger.add_handler(handler)
 
-        func = findobject(config["payload"])
+        func = findobject(
+            config["payload"], config["path"], lintargs.get("linter_paths")
+        )
         try:
             func(files, config, logger, **lintargs)
         except KeyboardInterrupt:

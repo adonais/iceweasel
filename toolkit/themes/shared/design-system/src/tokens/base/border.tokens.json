@@ -9,10 +9,20 @@
         "prefersContrast": "CanvasText",
         "platform": {
           "default": "color-mix(in srgb, currentColor 50%, transparent)"
+        },
+        "nova": {
+          "comment": "Maintain the brand/platform split and use prefersContrast over forcedColors",
+          "value": {
+            "brand": {
+              "light": "{color.gray.30}",
+              "dark": "{color.gray.40}"
+            }
+          }
         }
       }
     },
     "transparent": {
+      "ignoreFigma": "Use prefersContrast over forcedColors",
       "value": {
         "default": "transparent",
         "prefersContrast": "CanvasText"
@@ -29,7 +39,17 @@
             "default": "color-mix(in srgb, currentColor 24%, transparent)"
           },
           "prefersContrast": "currentColor",
-          "forcedColors": "ButtonText"
+          "forcedColors": "ButtonText",
+          "nova": {
+            "comment": "Maintain the brand/platform split",
+            "value": {
+              "brand": {
+                "light": "{color.gray.20}",
+                "dark": "{color.gray.50}"
+              },
+              "forcedColors": "CanvasText"
+            }
+          }
         }
       }
     },
@@ -44,6 +64,13 @@
           },
           "platform": {
             "default": "color-mix(in srgb, currentColor 15%, {color.gray.60})"
+          },
+          "nova": {
+            "comment": "Use prefersContrast over forcedColors",
+            "value": {
+              "light": "{color.gray.45}",
+              "dark": "{color.gray.40}"
+            }
           }
         }
       },
@@ -76,7 +103,14 @@
       "value": {
         "light": "{color.red.70}",
         "dark": "{color.red.20}",
-        "prefersContrast": "{border.color.@base}"
+        "prefersContrast": "{border.color.@base}",
+        "nova": {
+          "comment": "Use prefersContrast over forcedColors",
+          "value": {
+            "light": "{color.red.50}",
+            "dark": "{color.red.20}"
+          }
+        }
       }
     }
   },

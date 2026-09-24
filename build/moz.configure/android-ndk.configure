@@ -156,7 +156,7 @@ def android_toolchain(host, ndk, toolchain):
     toolchain = host_dir(host, os.path.join(ndk, "toolchains", "llvm", "prebuilt"))
     if toolchain:
         return toolchain
-    die("You have to specify --with-android-toolchain=" "/path/to/ndk/toolchain.")
+    die("You have to specify --with-android-toolchain=/path/to/ndk/toolchain.")
 
 
 @depends(target, android_toolchain)

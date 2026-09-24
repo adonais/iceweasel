@@ -27,6 +27,11 @@ category browser-before-ui-startup moz-src:///browser/modules/ObserverForwarder.
 #ifdef XP_WIN
 category browser-before-ui-startup moz-src:///browser/components/shell/StartupOSIntegration.sys.mjs StartupOSIntegration.applyCustomIconOnStartup
 #endif
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+category browser-before-ui-startup moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.init
+category browser-idle-startup moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.removeLeftoverEphemeralContainers
+category browser-quit-application-granted moz-src:///browser/modules/ASWebAuthSessionService.sys.mjs ASWebAuthSessionService.uninit
+#endif
 
 # Browser window lifecycle consumers
 category browser-window-before-initial-xul-layout-document-preparation chrome://browser/content/browser-customization.js AutoHideMenubar.init
@@ -185,6 +190,7 @@ category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys
 category browser-idle-startup chrome://global/content/ml/EngineProcess.sys.mjs EngineProcess.maybeReportNativeOnnxRuntimeAvailability
 category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
 category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
+category browser-idle-startup moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs ContextualIdentityService.load
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
 category browser-idle-startup resource:///modules/UpdatePolicyEnforcer.sys.mjs UpdatePolicyEnforcer.registerObservers

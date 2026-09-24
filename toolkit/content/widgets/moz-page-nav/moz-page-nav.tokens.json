@@ -87,7 +87,13 @@
       }
     },
     "padding": {
-      "value": "0px"
+      "value": {
+        "default": "0px",
+        "nova": {
+          "comment": "There is no equivalent value for this token in Figma",
+          "value": "calc({focus.outline.offset} + {focus.outline.width})"
+        }
+      }
     }
   },
   "gap": {

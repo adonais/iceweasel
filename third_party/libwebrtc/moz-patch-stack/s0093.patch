@@ -13,7 +13,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7017edc7cfc880bb1
  4 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/.gn b/.gn
-index 1d9b371ee0..44447d3a34 100644
+index 29f5cd76e4..9962d2845d 100644
 --- a/.gn
 +++ b/.gn
 @@ -18,7 +18,7 @@ script_executable = "python3"
@@ -26,7 +26,7 @@ index 1d9b371ee0..44447d3a34 100644
  # These are the targets to skip header checking by default. The files in targets
  # matching these patterns (see "gn help label_pattern" for format) will not have
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index b6b22553cd..0b695751ff 100644
+index 0ff8d91df1..a8f2e045b3 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -39,7 +39,7 @@ index b6b22553cd..0b695751ff 100644
  
  group("media") {
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 3fd3ddbae2..739e0ebe98 100644
+index 15339caace..f65ca9d8c2 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -7,7 +7,7 @@

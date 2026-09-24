@@ -119,7 +119,8 @@ const DownloadBehaviorType = {
  * @property {DownloadBehaviorType} type
  *     A type of download behavior to set.
  * @property {string=} destinationFolder
- *     Optional destination folder to save the downloaded file.
+ *     Destination folder to save the downloaded file. Mandatory when type is
+ *     "allowed", otherwise ignored.
  */
 
 class BrowserModule extends RootBiDiModule {
@@ -340,7 +341,7 @@ class BrowserModule extends RootBiDiModule {
 
       behavior = { allowed: type === "allowed" };
 
-      if (behavior.allowed && "destinationFolder" in downloadBehavior) {
+      if (behavior.allowed) {
         const destinationFolder = downloadBehavior.destinationFolder;
         lazy.assert.string(
           destinationFolder,

@@ -48,7 +48,7 @@
   gap: var(--message-bar-text-content-gap);
   flex-wrap: wrap;
   word-break: break-word;
-  padding-block: var(--message-bar-icon-container-padding);
+  padding-block: calc(var(--message-bar-icon-container-padding) - var(--message-bar-icon-container-padding-offset));
 }
 
 /* MozMessageBar icon style */
@@ -61,8 +61,8 @@
   border: var(--message-bar-icon-container-border);
   border-radius: var(--message-bar-icon-container-border-radius);
   background-color: var(--message-bar-icon-background-color);
-  padding: calc(var(--message-bar-icon-container-padding));
-  margin-block-start: var(--message-bar-icon-container-margin-block-start);
+  padding: calc(var(--message-bar-icon-container-padding) - var(--message-bar-icon-container-padding-offset));
+  margin-block-start: calc(var(--message-bar-icon-container-margin-block-start) + var(--message-bar-icon-container-margin-block-start-offset));
 }
 
 .icon {

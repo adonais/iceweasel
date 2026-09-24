@@ -19,12 +19,12 @@ const lazy = XPCOMUtils.declareLazy({
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   separatePrivateDefaultEnabledPrefValue: {
-    pref: "browser.search.separatePrivateDefault.ui.enabled",
+    pref: "browser.search.separatePrivateDefault.featureGate",
     default: false,
     onUpdate: () => window.gSearchPane._engineStore.notifyRebuildViews(),
   },
   separatePrivateDefaultPrefValue: {
-    pref: "browser.search.separatePrivateDefault",
+    pref: "browser.search.separatePrivateDefault.enabled",
     default: false,
     onUpdate: () => window.gSearchPane._engineStore.notifyRebuildViews(),
   },

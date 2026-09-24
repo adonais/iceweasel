@@ -4,7 +4,7 @@
 
 // @nova-cleanup(move-directory): Move to components/CustomizeMenu/WidgetsManagementPanel/ after Nova ships
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
@@ -12,7 +12,6 @@ import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { CSSTransition } from "react-transition-group";
 
 function WidgetsManagementPanel({
-  onSubpanelToggle,
   togglePanel,
   showPanel,
   enabledSections,
@@ -33,13 +32,6 @@ function WidgetsManagementPanel({
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
-
-  // Notify parent menu when subpanel opens/closes
-  useEffect(() => {
-    if (onSubpanelToggle) {
-      onSubpanelToggle(showPanel);
-    }
-  }, [showPanel, onSubpanelToggle]);
 
   const handlePanelEntered = () => {
     arrowButtonRef.current?.focus();
@@ -152,6 +144,7 @@ function WidgetsManagementPanel({
                 type="ghost"
                 className="arrow-button"
                 iconSrc={arrowIconSrc}
+                data-l10n-id="newtab-customize-panel-back-button"
                 onClick={togglePanel}
               ></moz-button>
               <h2 data-l10n-id="newtab-widget-manage-title"></h2>

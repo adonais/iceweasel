@@ -178,10 +178,10 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   // Win, macOS, Linux, Android, Emacs
     {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   // Win, macOS, Linux, Android, Emacs
 
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_paste"},  // Win, macOS, Linux, Android, Emacs
+    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},  // Win, macOS, Linux, Android, Emacs
 // Mac uses Option+Shift+Command+V for Paste and Match Style
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_paste"},  // macOS
+    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},  // macOS
 #endif  // MOZ_WIDGET_COCOA
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) ||\
@@ -321,10 +321,10 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_INSERT", nullptr, u"shift",   u"cmd_paste"},  // Win, Emacs
 #endif  // XP_WIN || USE_EMACS_KEY_BINDINGS
 
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_paste"},  // Win, macOS, Linux, Android, Emacs
+    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},  // Win, macOS, Linux, Android, Emacs
 // Mac uses Option+Shift+Command+V for Paste and Match Style
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_paste"},  // macOS
+    {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},  // macOS
 #endif  // MOZ_WIDGET_COCOA
 
     /**************************************************************************

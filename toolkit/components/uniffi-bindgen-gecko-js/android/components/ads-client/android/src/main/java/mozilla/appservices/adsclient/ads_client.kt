@@ -2618,6 +2618,8 @@ public object FfiConverterTypeMozAdsPlacementRequestWithCount: FfiConverterRustB
 
 
 data class MozAdsRequestOptions (
+    var `blocks`: List<kotlin.String> = listOf() 
+    , 
     var `cachePolicy`: MozAdsCachePolicy?
     , 
     var `flags`: Map<kotlin.String, kotlin.Boolean> = mapOf() 
@@ -2639,6 +2641,7 @@ data class MozAdsRequestOptions (
 public object FfiConverterTypeMozAdsRequestOptions: FfiConverterRustBuffer<MozAdsRequestOptions> {
     override fun read(buf: ByteBuffer): MozAdsRequestOptions {
         return MozAdsRequestOptions(
+            FfiConverterSequenceString.read(buf),
             FfiConverterOptionalTypeMozAdsCachePolicy.read(buf),
             FfiConverterMapStringBoolean.read(buf),
             FfiConverterBoolean.read(buf),
@@ -2646,12 +2649,14 @@ public object FfiConverterTypeMozAdsRequestOptions: FfiConverterRustBuffer<MozAd
     }
 
     override fun allocationSize(value: MozAdsRequestOptions) = (
+            FfiConverterSequenceString.allocationSize(value.`blocks`) +
             FfiConverterOptionalTypeMozAdsCachePolicy.allocationSize(value.`cachePolicy`) +
             FfiConverterMapStringBoolean.allocationSize(value.`flags`) +
             FfiConverterBoolean.allocationSize(value.`ohttp`)
     )
 
     override fun write(value: MozAdsRequestOptions, buf: ByteBuffer) {
+            FfiConverterSequenceString.write(value.`blocks`, buf)
             FfiConverterOptionalTypeMozAdsCachePolicy.write(value.`cachePolicy`, buf)
             FfiConverterMapStringBoolean.write(value.`flags`, buf)
             FfiConverterBoolean.write(value.`ohttp`, buf)

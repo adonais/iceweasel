@@ -7,6 +7,7 @@ loader: gecko_taskgraph.loader.test:loader
 kind-dependencies:
     - build
     - fetch
+    - openh264-plugin
     - toolchain
 
 transforms:
@@ -21,7 +22,17 @@ task-defaults:
     run-on-repo-type: [hg]
     attributes:
         retrigger: true
-    use-python: system
+    use-python:
+        by-test-platform:
+            # android-hw tasks are driven by the host's script.py wrapper,
+            # which imports mozdevice from the host environment; a fetched CI
+            # Python would shadow the host Python on PATH and break that import.
+            android-hw.*: system
+            # Fetched CI python is x86_64; under Rosetta it forces the universal
+            # mac Firefox onto its x86_64 slice and hits a Rosetta hang.  Keep mac
+            # on the native system python until there's an arm64 fetched python.
+            macosx.*: system
+            default: default
     use-uv: true
     require-signed-extensions:
         by-release-type:
@@ -241,8 +252,17 @@ tasks:
         chunks: dynamic
         default-chunks: 1
         max-run-time: 1800
-        variants: []  # We don't need sw or nofis testing.
-        run-on-projects: built-projects
+        # We don't need sw or nofis testing, but running with a real OpenH264
+        # plugin will provide better release coverage.
+        variants:
+            - openh264
+        run-on-projects:
+            by-variant:
+                openh264:
+                    by-test-platform:
+                        linux2404-64/.*: ['autoland', 'mozilla-central']
+                        default: []
+                default: built-projects
         mozharness:
             chunked: true
             extra-options:
@@ -259,6 +279,24 @@ tasks:
         chunks: dynamic
         default-chunks: 1
         max-run-time: 1800
+        fetches:
+            fetch:
+                by-test-platform:
+                    macosx.*-aarch64.*:
+                        - widevine-mac-arm64
+                    macosx.*-64.*:
+                        - widevine-mac
+                    windows.*-aarch64.*:
+                        - widevine-win-arm64
+                    windows.*-64.*:
+                        - widevine-win64
+                    windows.*-32.*:
+                        - widevine-win32
+                    linux.*-aarch64.*:
+                        - widevine-linux-arm64
+                    linux.*-64.*:
+                        - widevine-linux
+                    default: []
         variants:
             - eme-wmf
         run-on-projects:
@@ -269,17 +307,32 @@ tasks:
                         default: []
                 default:
                     by-test-platform:
-                        android.*: []
+                        android-em.*/debug-isolated-process: []
                         .*-wayland.*: []
                         windows1.*: []
                         default: built-projects
         mozharness:
             chunked: true
             extra-options:
-                - --test-type=testharness
-                - --default-exclude
-                - --tag=eme
-                - --no-update-status-on-crash
+                by-test-platform:
+                    android.*:
+                        - --test-type=testharness
+                        - --default-exclude
+                        - --tag=eme
+                        - --no-update-status-on-crash
+                        - --setpref=network.socket.allowed_nonlocal_domains='lic.staging.drmtoday.com,www.googleapis.com'
+                    windows.*:
+                        - --test-type=testharness
+                        - --default-exclude
+                        - --tag=eme
+                        - --no-update-status-on-crash
+                        - --setpref=network.socket.allowed_nonlocal_domains='lic.staging.drmtoday.com,test.playready.microsoft.com'
+                    default:
+                        - --test-type=testharness
+                        - --default-exclude
+                        - --tag=eme
+                        - --no-update-status-on-crash
+                        - --setpref=network.socket.allowed_nonlocal_domains='lic.staging.drmtoday.com'
 
     web-platform-tests-webrtc:
         description: "Web platform webrtc test run"
@@ -292,9 +345,14 @@ tasks:
         # Runs in socket-process mode by default, no need for spi variants.
         # We don't *really* need to be running these in nofis either.
         # We do some things differently in private browsing mode though.
+        # Running with a real OpenH264 plugin reflects release best.
         variants:
             - privatebrowsing
-        run-on-projects: built-projects
+            - openh264
+        run-on-projects:
+            by-variant:
+                openh264: []
+                default: built-projects
         mozharness:
             chunked: true
             extra-options:
@@ -774,19 +832,11 @@ tasks:
                 default: default
         fetches:
             toolchain:
-                by-test-platform:
-                    linux2204.*:
-                        - linux64-geckodriver
-                        - linux64-minidump-stackwalk
-                        - linux64-fix-stacks
-                        - linux64-2204-pygobject
-                        - linux64-2204-pycairo
-                    default:
-                        - linux64-minidump-stackwalk
-                        - linux64-fix-stacks
-                        - linux64-geckodriver
-                        - linux64-2404-pygobject
-                        - linux64-2404-pycairo
+                - linux64-minidump-stackwalk
+                - linux64-fix-stacks
+                - linux64-geckodriver
+                - linux64-python3.10-pygobject
+                - linux64-python3.10-pycairo
 
     web-platform-tests-crashtest:
         description: "Web platform crashtests run"

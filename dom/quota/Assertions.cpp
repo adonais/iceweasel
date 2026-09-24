@@ -6,11 +6,17 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/dom/quota/AssertionsImpl.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "nsIThread.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::dom::quota {
+
+uint64_t ClampToZero(int64_t aValue, const nsACString& aContext) {
+  AssertNotNegative(aValue, aContext);
+  return aValue < 0 ? 0 : static_cast<uint64_t>(aValue);
+}
 
 bool ShouldReportDiagnostic(const nsACString& aContext) {
   static StaticDataMutex<nsTHashMap<nsCStringHashKey, uint32_t>> sCounters(

@@ -622,7 +622,7 @@ export class ONNXPipeline {
    *
    * @param {object} mlEngineWorker - Implements the Cache interface and used to get models
    * @param {object} config - The configuration options
-   * @param {*} errorFactory - error class passed by the backend factory.
+   * @param {any} errorFactory - error class passed by the backend factory.
    */
   constructor(mlEngineWorker, config, errorFactory) {
     this.#errorFactory = errorFactory;
@@ -794,7 +794,7 @@ export class ONNXPipeline {
    * @param {object} mlEngineWorker - Implements the Cache interface and used to get models
    * @param {ArrayBuffer} runtime - The runtime wasm file.
    * @param {PipelineOptions} options - The options for initialization.
-   * @param {*} errorFactory - error class passed by the backend factory.
+   * @param {any} errorFactory - error class passed by the backend factory.
    * @returns {Promise<Pipeline>} The initialized pipeline instance.
    */
   static async initialize(mlEngineWorker, runtime, options, errorFactory) {

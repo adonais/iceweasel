@@ -25,7 +25,7 @@ object InteractionCaseGenerator {
             // pageName=${case.pageName}, property=${case.pagePropertyName}, paths=${case.pathCount}
             // interaction=${case.interactionSelectorName}
             // description=${case.interactionDescription}
-            // expectedGroup=${case.expectedGroup}
+            // expectedResultOf=${case.expectedResultOf}
             // expectedSelectors=${case.expectedSelectorNames}
 
             InteractionCase(

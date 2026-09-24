@@ -939,15 +939,19 @@ impl Http3ReverseProxyServer {
         let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build_http();
         let resp = client.request(request).await?;
         out_header.push(Header::new(":status", resp.status().as_str()));
-        for (key, value) in resp.headers() {
-            out_header.push(Header::new(
-                key.as_str().to_ascii_lowercase(),
-                match value.to_str() {
-                    Ok(str) => str,
-                    _ => "",
-                },
-            ));
-        }
+        out_header.extend(resp.headers().iter().filter_map(|(key, value)| {
+            let name = key.as_str().to_ascii_lowercase();
+            // Connection-specific header fields make an HTTP/3 message malformed
+            // (RFC 9114, Section 4.2: https://www.rfc-editor.org/rfc/rfc9114#section-4.2);
+            // drop them when forwarding an HTTP/1.1 response.
+            if matches!(
+                name.as_str(),
+                "connection" | "keep-alive" | "proxy-connection" | "transfer-encoding" | "upgrade"
+            ) {
+                return None;
+            }
+            Some(Header::new(name, value.to_str().unwrap_or("")))
+        }));
 
         let mut body = resp.into_body();
         while let Some(frame) = body.frame().await {

@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: available() is cached after a real install()</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// Uses the real local model hub (serve_model.py), not the in-process mock,
+// so the download and the cache check both go through the genuine
+// ModelHub/MLModelHubService code path.
+//
+// Requires (headless): python3 testing/tools/serve_model.py (see
+// test_parakeet_e2e.html); started automatically for the parakeet-asr tag.
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for a real model download from serve_model.py");
+
+// Requests observed via the parent-process http-on-modify-request topic,
+// proxied to content as specialpowers-http-notify-request.
+let requestsToHub = [];
+const httpObserver = {
+  observe(subject, topic, data) {
+    if (topic !== "specialpowers-http-notify-request") {
+      return;
+    }
+    if (data.includes(`localhost:${SERVER_PORT}`)) {
+      requestsToHub.push(data);
+    }
+  },
+};
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  SpecialPowers.addObserver(httpObserver, "specialpowers-http-notify-request");
+  try {
+    const opts = { langs: [LANG], processLocally: true };
+
+    let status = await SpeechRecognition.available(opts);
+    info(`initial availability: ${status}`);
+
+    // install() requires transient user activation (it can trigger a large
+    // download); synthesize it since this call isn't from a real user gesture.
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    const installed = await SpeechRecognition.install(opts);
+    ok(installed, "Model installed successfully from the real model hub");
+
+    status = await SpeechRecognition.available(opts);
+    is(status, "available", "Model reports available right after install()");
+
+    // The regression: repeated availability checks on an installed model
+    // must be served from the cache, not the network.
+    requestsToHub = [];
+    for (let i = 0; i < 3; i++) {
+      status = await SpeechRecognition.available(opts);
+      is(status, "available", `available() call #${i + 1} reports available`);
+    }
+
+    is(requestsToHub.length, 0,
+       "No network requests to the model hub for an already-cached model: " +
+       JSON.stringify(requestsToHub));
+
+    SimpleTest.finish();
+  } catch (e) {
+    ok(false, "Test threw: " + e + "\n" + e.stack);
+    SimpleTest.finish();
+  } finally {
+    SpecialPowers.removeObserver(httpObserver, "specialpowers-http-notify-request");
+  }
+});
+</script>
+</pre>
+</body>
+</html>

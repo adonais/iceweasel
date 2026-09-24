@@ -107,6 +107,10 @@ const TAB_GROUP_COLORS = [
 
 const DEFAULT_FAVICON_URL = "chrome://global/skin/icons/defaultFavicon.svg";
 
+function normalizeLabel(label) {
+  return label.trim().toLocaleLowerCase();
+}
+
 /**
  * The suggestion engine for the Smart Window "Organize Tabs" feature: the only
  * code that talks to the on-device clustering model. Given a window it picks
@@ -227,9 +231,11 @@ export const AutoTabGroupingSuggestions = {
    * Run clustering + labeling and return the top proposals.
    *
    * @param {MozTabbrowserTab[]} candidates
+   * @param {string[]} [takenLabels] - Names of the groups the user already
+   *   has, which no proposal may repeat.
    * @returns {Promise<Array<{label: string, tabs: MozTabbrowserTab[]}>>}
    */
-  async buildProposals(candidates) {
+  async buildProposals(candidates, takenLabels = []) {
     const result = await this.manager.generateClusters(candidates, null, 0);
     const clusters = this.selectClusters(result?.clusterRepresentations);
     if (!clusters.length) {
@@ -254,7 +260,28 @@ export const AutoTabGroupingSuggestions = {
     );
     // Drop groups the model left unlabeled: an empty title usually flags
     // content it declined to label (often a Trust & Safety case).
-    return labeled.filter(proposal => proposal.label);
+    const taken = new Set(takenLabels.map(normalizeLabel));
+    return labeled
+      .filter(proposal => proposal.label)
+      .map(proposal => ({
+        ...proposal,
+        label: this.uniqueLabel(proposal.label, taken),
+      }));
+  },
+
+  /**
+   * @param {string} label
+   * @param {Set<string>} taken - Normalized labels in use; the one chosen is
+   *   added, so the suggestions of one run stay distinct from each other too.
+   * @returns {string}
+   */
+  uniqueLabel(label, taken) {
+    let candidate = label;
+    for (let n = 2; taken.has(normalizeLabel(candidate)); n++) {
+      candidate = `${label} ${n}`;
+    }
+    taken.add(normalizeLabel(candidate));
+    return candidate;
   },
 
   /**

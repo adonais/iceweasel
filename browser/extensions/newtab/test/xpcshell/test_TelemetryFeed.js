@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
   GleanSessionType: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
+  isAdEligiblePositionSupported: "resource://newtab/lib/TelemetryFeed.sys.mjs",
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -345,6 +346,140 @@ add_task(async function test_topsites_change_display_event() {
   });
 });
 
+add_task(async function test_wallpaper_saved_click_event() {
+  info(
+    "TelemetryFeed should record a wallpaper_saved_click event that can tell " +
+      "saved images apart, which wallpaper_click cannot"
+  );
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port-saved-click";
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.handleWallpaperUserEvent({
+    type: actionTypes.WALLPAPER_SAVED_APPLIED,
+    meta: { fromTarget: PORT_ID },
+    data: { saved_wallpaper_count: 4 },
+  });
+
+  const events = Glean.newtab.wallpaperSavedClick.testGetValue();
+  Assert.equal(events.length, 1, "One wallpaper_saved_click event");
+  Assert.deepEqual(events[0].extra, {
+    saved_wallpaper_count: "4",
+    newtab_visit_id: session.session_id,
+  });
+
+  Assert.equal(
+    Glean.newtab.wallpaperClick.testGetValue(),
+    null,
+    "It is its own event, so nothing was added to one that cannot train-hop"
+  );
+});
+
+add_task(async function test_wallpaper_saved_click_not_recorded_elsewhere() {
+  info(
+    "TelemetryFeed should not record wallpaper_saved_click for a wallpaper " +
+      "picked outside Your images"
+  );
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port-builtin-click";
+  let instance = new TelemetryFeed();
+  instance.addSession(PORT_ID);
+
+  instance.handleWallpaperUserEvent({
+    type: actionTypes.WALLPAPER_CLICK,
+    meta: { fromTarget: PORT_ID },
+    data: {
+      selected_wallpaper: "celestial-1",
+      had_previous_wallpaper: false,
+      had_uploaded_previously: false,
+    },
+  });
+
+  Assert.equal(
+    Glean.newtab.wallpaperSavedClick.testGetValue(),
+    null,
+    "Nothing recorded for a shipped wallpaper"
+  );
+  Assert.equal(
+    Glean.newtab.wallpaperClick.testGetValue().length,
+    1,
+    "The existing event still fires"
+  );
+});
+
+add_task(async function test_wallpaper_saved_remove_event() {
+  info("TelemetryFeed should record removing a saved wallpaper");
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port-saved-remove";
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.onAction({
+    type: actionTypes.WALLPAPER_SAVED_REMOVED,
+    meta: { fromTarget: PORT_ID },
+    data: { saved_wallpaper_count: 2, was_applied: true },
+  });
+
+  const events = Glean.newtab.wallpaperSavedRemove.testGetValue();
+  Assert.equal(events.length, 1, "One wallpaper_saved_remove event");
+  Assert.deepEqual(
+    events[0].extra,
+    {
+      saved_wallpaper_count: "2",
+      was_applied: "true",
+      newtab_visit_id: session.session_id,
+    },
+    "The counts are recorded and the filename is not"
+  );
+});
+
+add_task(async function test_no_saved_wallpaper_events_without_the_parent() {
+  info(
+    "Asking to apply or remove records nothing: only the parent knows whether " +
+      "it happened"
+  );
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port-requested-only";
+  let instance = new TelemetryFeed();
+  instance.addSession(PORT_ID);
+
+  instance.handleWallpaperUserEvent({
+    type: actionTypes.WALLPAPER_CLICK,
+    meta: { fromTarget: PORT_ID },
+    data: {
+      selected_wallpaper: "custom",
+      had_previous_wallpaper: true,
+      had_uploaded_previously: true,
+    },
+  });
+  instance.onAction({
+    type: actionTypes.WALLPAPER_REMOVE_UPLOAD,
+    meta: { fromTarget: PORT_ID },
+    data: { filename: "v1-custom-dark-center-abc" },
+  });
+
+  Assert.equal(
+    Glean.newtab.wallpaperSavedClick.testGetValue(),
+    null,
+    "Nothing is recorded for a request to apply"
+  );
+  Assert.equal(
+    Glean.newtab.wallpaperSavedRemove.testGetValue(),
+    null,
+    "Nor for a request to remove"
+  );
+  Assert.equal(
+    Glean.newtab.wallpaperClick.testGetValue().length,
+    1,
+    "The existing click event is untouched"
+  );
+});
+
 add_task(async function test_topsites_change_display_event_no_session() {
   info(
     "TelemetryFeed.handleSetPref should not record a topsites.change_display " +
@@ -363,6 +498,86 @@ add_task(async function test_topsites_change_display_event_no_session() {
     Glean.topsites.changeDisplay.testGetValue(),
     null,
     "No change_display event was recorded"
+  );
+});
+
+add_task(async function test_customize_panel_open_event() {
+  info("handleUserEvent records newtab.customize_panel_open with the visit id");
+  Services.fog.testResetFOG();
+  const PORT_ID = "port123";
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.handleUserEvent({
+    meta: { fromTarget: PORT_ID },
+    data: { event: "SHOW_PERSONALIZE" },
+  });
+
+  let events = Glean.newtab.customizePanelOpen.testGetValue();
+  Assert.equal(events.length, 1, "One customize_panel_open event");
+  Assert.deepEqual(events[0].extra, { newtab_visit_id: session.session_id });
+});
+
+add_task(async function test_customize_panel_subpanel_open_event() {
+  info(
+    "handleUserEvent records newtab.customize_panel_subpanel_open with the panel"
+  );
+  Services.fog.testResetFOG();
+  const PORT_ID = "port123";
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.handleUserEvent({
+    meta: { fromTarget: PORT_ID },
+    data: { event: "SHOW_PERSONALIZE_SUBPANEL", source: "themes_management" },
+  });
+
+  let events = Glean.newtab.customizePanelSubpanelOpen.testGetValue();
+  Assert.equal(events.length, 1, "One customize_panel_subpanel_open event");
+  Assert.deepEqual(events[0].extra, {
+    newtab_visit_id: session.session_id,
+    panel: "themes_management",
+  });
+});
+
+add_task(async function test_explore_more_themes_click_event() {
+  info("handleUserEvent records newtab.appearance_explore_more_themes_click");
+  Services.fog.testResetFOG();
+  const PORT_ID = "port123";
+  let instance = new TelemetryFeed();
+  let session = instance.addSession(PORT_ID);
+
+  instance.handleUserEvent({
+    meta: { fromTarget: PORT_ID },
+    data: { event: "EXPLORE_MORE_THEMES_CLICK" },
+  });
+
+  let events = Glean.newtab.appearanceExploreMoreThemesClick.testGetValue();
+  Assert.equal(events.length, 1, "One explore_more_themes_click event");
+  Assert.deepEqual(events[0].extra, { newtab_visit_id: session.session_id });
+});
+
+add_task(async function test_customize_panel_events_need_a_session() {
+  info("None of the customize panel events record without a session");
+  Services.fog.testResetFOG();
+  let instance = new TelemetryFeed();
+  const meta = { fromTarget: "port-with-no-session" };
+
+  instance.handleUserEvent({ meta, data: { event: "SHOW_PERSONALIZE" } });
+  instance.handleUserEvent({
+    meta,
+    data: { event: "SHOW_PERSONALIZE_SUBPANEL", source: "themes_management" },
+  });
+  instance.handleUserEvent({
+    meta,
+    data: { event: "EXPLORE_MORE_THEMES_CLICK" },
+  });
+
+  Assert.equal(Glean.newtab.customizePanelOpen.testGetValue(), null);
+  Assert.equal(Glean.newtab.customizePanelSubpanelOpen.testGetValue(), null);
+  Assert.equal(
+    Glean.newtab.appearanceExploreMoreThemesClick.testGetValue(),
+    null
   );
 });
 
@@ -1281,7 +1496,7 @@ add_task(async function test_sendPageTakeoverData_newtab_category_custom() {
   sandbox.restore();
 });
 
-add_task(async function test_sendPageTakeoverData_newtab_category_custom() {
+add_task(async function test_sendPageTakeoverData_no_custom_url() {
   info(
     "TelemetryFeed.sendPageTakeoverData should not set home|newtab " +
       "category if neither about:{home,newtab} are set to custom URL"
@@ -1454,6 +1669,46 @@ add_task(
     } catch (e) {
       Assert.ok(true, "Should have thrown for a missing session.");
     }
+  }
+);
+
+add_task(
+  async function test_handleDiscoveryStreamImpressionStats_is_ad_eligible_position() {
+    info(
+      "TelemetryFeed.handleDiscoveryStreamImpressionStats should record " +
+        "is_ad_eligible_position on the pocket.impression event"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    instance.handleDiscoveryStreamImpressionStats("port123", {
+      tiles: [
+        { id: 1, pos: 0, is_ad_eligible_position: true },
+        // selectLayoutRender only flags eligible positions, so an unflagged
+        // card is what a non-eligible one actually looks like here.
+        { id: 2, pos: 1 },
+      ],
+    });
+
+    let impressions = Glean.pocket.impression.testGetValue();
+    Assert.equal(impressions.length, 2, "Should have recorded 2 impressions");
+    Assert.equal(
+      impressions[0].extra.is_ad_eligible_position,
+      String(true),
+      "An ad-eligible position should be flagged"
+    );
+    Assert.equal(
+      impressions[1].extra.is_ad_eligible_position,
+      undefined,
+      "An unflagged card should omit the key"
+    );
+
+    sandbox.restore();
   }
 );
 
@@ -1748,6 +2003,121 @@ add_task(
     sandbox.restore();
   }
 );
+
+add_task(
+  async function test_handleTopSitesOrganicImpressionStats_is_ad_eligible_position() {
+    info(
+      "TelemetryFeed.handleTopSitesOrganicImpressionStats should report " +
+        "an organic tile sitting in an ad-eligible position"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    await instance.handleTopSitesOrganicImpressionStats({
+      data: {
+        type: "impression",
+        source: "newtab",
+        position: 0,
+        is_ad_eligible_position: true,
+      },
+    });
+    // TopSitesFeed only flags eligible positions, so an unflagged tile is what
+    // a non-eligible one actually looks like here.
+    await instance.handleTopSitesOrganicImpressionStats({
+      data: { type: "impression", source: "newtab", position: 1 },
+    });
+
+    let impressions = Glean.topsites.impression.testGetValue();
+    Assert.equal(impressions.length, 2, "Recorded 2 impressions");
+    Assert.equal(
+      impressions[0].extra.is_ad_eligible_position,
+      String(true),
+      "An ad-eligible position should be flagged"
+    );
+    Assert.equal(
+      impressions[1].extra.is_ad_eligible_position,
+      undefined,
+      "An unflagged tile should omit the key"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_handleTopSitesSponsoredImpressionStats_is_ad_eligible_position() {
+    info(
+      "TelemetryFeed.handleTopSitesSponsoredImpressionStats should report " +
+        "is_ad_eligible_position on the topsites.impression event"
+    );
+
+    let sandbox = sinon.createSandbox();
+    let instance = new TelemetryFeed();
+    Services.fog.testResetFOG();
+
+    const SESSION_ID = "decafc0ffee";
+    sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
+
+    await instance.handleTopSitesSponsoredImpressionStats({
+      data: {
+        type: "impression",
+        tile_id: 42,
+        source: "newtab",
+        position: 1,
+        advertiser: "adnoid ads",
+        is_ad_eligible_position: true,
+      },
+    });
+
+    let impressions = Glean.topsites.impression.testGetValue();
+    Assert.equal(impressions.length, 1, "Recorded 1 impression");
+    Assert.equal(
+      impressions[0].extra.is_ad_eligible_position,
+      String(true),
+      "A sponsored tile in an ad-eligible position should be flagged"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(async function test_isAdEligiblePositionSupported() {
+  info(
+    "is_ad_eligible_position should only be sent on hosts whose schema has it"
+  );
+
+  // A train-hopped XPI on a host older than 157 must not send the key, or
+  // glean-core rejects the extras and drops the whole event.
+  Assert.ok(
+    !isAdEligiblePositionSupported("155.0"),
+    "Should not send on a 155 host"
+  );
+  Assert.ok(
+    !isAdEligiblePositionSupported("156.0"),
+    "Should not send on a 156 host"
+  );
+  Assert.ok(
+    isAdEligiblePositionSupported("157.0a1"),
+    "Should send on the 157 nightly it landed in"
+  );
+  Assert.ok(
+    isAdEligiblePositionSupported("157.0b4"),
+    "Should send on 157 beta"
+  );
+  Assert.ok(
+    isAdEligiblePositionSupported("157.0"),
+    "Should send on 157 release"
+  );
+  Assert.ok(
+    isAdEligiblePositionSupported("158.0a1"),
+    "Should send on a newer host"
+  );
+});
 
 add_task(
   async function test_handleTopSitesOrganicImpressionStats_record_glean_topsites_click() {
@@ -2613,6 +2983,51 @@ add_task(function test_randomizeOrganicContentEvent() {
   result = instance.randomizeOrganicContentEvent(allRecs[0]);
   Assert.equal(probUsed, decideStub.lastCall.args[0]);
   Assert.deepEqual(result, allRecs[3]);
+
+  sandbox.restore();
+});
+
+add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
+  info(
+    "randomizeOrganicContentEvent should set layout_name to the swapped " +
+      "section's layout"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+
+  const item = {
+    corpus_item_id: "orig",
+    topic: "a",
+    is_sponsored: false,
+    section: "orig-section",
+    section_position: 0,
+    layout_name: "orig-layout",
+  };
+  const randomItem = {
+    corpus_item_id: "swapped",
+    topic: "b",
+    is_sponsored: false,
+    section: "swapped-section",
+  };
+  sandbox.stub(instance, "getRecommendationCount").returns(10);
+  sandbox.stub(instance, "getAllRecommendations").returns([randomItem]);
+  sandbox
+    .stub(instance, "getAllSections")
+    .returns([
+      { sectionKey: "swapped-section", layout: { name: "swapped-layout" } },
+    ]);
+  instance._privateRandomContentTelemetryProbablityValues = { epsilon: 30 };
+  sandbox.stub(NewTabContentPing, "decideWithProbability").returns(false);
+  sandbox.stub(NewTabContentPing, "secureRandIntInRange").returns(0);
+
+  const result = instance.randomizeOrganicContentEvent(item);
+
+  Assert.equal(result.section, "swapped-section", "section is swapped");
+  Assert.equal(
+    result.layout_name,
+    "swapped-layout",
+    "layout_name tracks the swapped section"
+  );
 
   sandbox.restore();
 });
@@ -4071,6 +4486,45 @@ add_task(async function test_user_interaction_observers_registered() {
     null,
     "Notifications no longer reach the feed after uninit"
   );
+
+  sandbox.restore();
+});
+
+add_task(async function test_wallpaper_reset_removes_upload_without_counts() {
+  info("Resetting with the library off must not throw or record a remove");
+  Services.fog.testResetFOG();
+
+  const PORT_ID = "port-reset-no-library";
+  let instance = new TelemetryFeed();
+  instance.addSession(PORT_ID);
+
+  instance.onAction({
+    type: actionTypes.WALLPAPER_REMOVE_UPLOAD,
+    meta: { fromTarget: PORT_ID },
+  });
+
+  Assert.equal(
+    Glean.newtab.wallpaperSavedRemove.testGetValue(),
+    null,
+    "No wallpaper_saved_remove event without counts"
+  );
+});
+
+add_task(async function test_wallpaper_category_click_reaches_its_handler() {
+  const sandbox = sinon.createSandbox();
+  const feed = new TelemetryFeed();
+  const handler = sandbox.stub(feed, "handleWallpaperUserEvent");
+  const setPref = sandbox.stub(feed, "handleSetPref");
+
+  info("A category click must not fall through into the pref handler");
+
+  await feed.onAction({
+    type: actionTypes.WALLPAPER_CATEGORY_CLICK,
+    data: {},
+  });
+
+  Assert.ok(handler.calledOnce, "The wallpaper handler is the one that runs");
+  Assert.ok(setPref.notCalled, "And the pref handler is not");
 
   sandbox.restore();
 });

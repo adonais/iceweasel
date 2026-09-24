@@ -687,6 +687,22 @@ bool Decoder::decodeOp17(const Instruction* instruction) const {
       return formatRdRkRj("amand_db.w", word);
     case op_amand_w:
       return formatRdRkRj("amand.w", word);
+    case op_amcas_b:
+      return formatRdRkRj("amcas.b", word);
+    case op_amcas_d:
+      return formatRdRkRj("amcas.d", word);
+    case op_amcas_h:
+      return formatRdRkRj("amcas.h", word);
+    case op_amcas_w:
+      return formatRdRkRj("amcas.w", word);
+    case op_amcas_db_b:
+      return formatRdRkRj("amcas_db.b", word);
+    case op_amcas_db_d:
+      return formatRdRkRj("amcas_db.d", word);
+    case op_amcas_db_h:
+      return formatRdRkRj("amcas_db.h", word);
+    case op_amcas_db_w:
+      return formatRdRkRj("amcas_db.w", word);
     case op_ammax_d:
       return formatRdRkRj("ammax.d", word);
     case op_ammax_db_d:

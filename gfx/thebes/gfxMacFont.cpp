@@ -206,6 +206,34 @@ gfxFont::RunMetrics gfxMacFont::Measure(const gfxTextRun* aTextRun,
   return metrics;
 }
 
+void gfxMacFont::InitMetricsByGlyphMeasurement(CFDataRef aCmap,
+                                               gfxFloat aConvFactor) {
+  uint32_t glyphID;
+  // Measure/calculate additional metrics, independent of whether we used
+  // the tables directly or ATS metrics APIs
+  if (mMetrics.aveCharWidth <= 0) {
+    mMetrics.aveCharWidth = GetCharWidth(aCmap, 'x', &glyphID, aConvFactor);
+    if (glyphID == 0) {
+      // we didn't find 'x', so use maxAdvance rather than zero
+      mMetrics.aveCharWidth = mMetrics.maxAdvance;
+    }
+  }
+
+  mMetrics.spaceWidth = GetCharWidth(aCmap, ' ', &glyphID, aConvFactor);
+  if (glyphID == 0) {
+    // no space glyph?!
+    mMetrics.spaceWidth = mMetrics.aveCharWidth;
+  }
+  mSpaceGlyph = glyphID;
+
+  mMetrics.ideographicWidth =
+      GetCharWidth(aCmap, kWaterIdeograph, &glyphID, aConvFactor);
+  if (glyphID == 0) {
+    // Indicate "not found".
+    mMetrics.ideographicWidth = -1.0;
+  }
+}
+
 void gfxMacFont::InitMetrics() {
   mIsValid = false;
   ::memset(&mMetrics, 0, sizeof(mMetrics));
@@ -271,20 +299,33 @@ void gfxMacFont::InitMetrics() {
     return;
   }
 
-  if (mMetrics.xHeight == 0.0) {
-    mMetrics.xHeight = ::CGFontGetXHeight(mCGFont) * cgConvFactor;
-  }
-  if (mMetrics.capHeight == 0.0) {
-    mMetrics.capHeight = ::CGFontGetCapHeight(mCGFont) * cgConvFactor;
-  }
+  // Helper to get glyph measurements that font-size-adjust may depend on.
+  // (InitMetricsFromSkrifa handles these, so this is only called if we don't
+  // have a skrifa font.)
+  AutoCFTypeRef<CFDataRef> cmap;
+  auto MeasureGlyphsForFontSizeAdjust = [&]() {
+    if (mMetrics.xHeight == 0.0) {
+      mMetrics.xHeight = ::CGFontGetXHeight(mCGFont) * cgConvFactor;
+    }
+    if (mMetrics.capHeight == 0.0) {
+      mMetrics.capHeight = ::CGFontGetCapHeight(mCGFont) * cgConvFactor;
+    }
+    if (!cmap) {
+      cmap.Reset(
+          ::CGFontCopyTableForTag(mCGFont, TRUETYPE_TAG('c', 'm', 'a', 'p')));
+    }
+    uint32_t glyphID;
+    mMetrics.zeroWidth = GetCharWidth(cmap, '0', &glyphID, cgConvFactor);
+    if (glyphID == 0) {
+      mMetrics.zeroWidth = -1.0;  // indicates not found
+    }
+  };
 
-  AutoCFTypeRef<CFDataRef> cmap(
-      ::CGFontCopyTableForTag(mCGFont, TRUETYPE_TAG('c', 'm', 'a', 'p')));
-
-  uint32_t glyphID;
-  mMetrics.zeroWidth = GetCharWidth(cmap, '0', &glyphID, cgConvFactor);
-  if (glyphID == 0) {
-    mMetrics.zeroWidth = -1.0;  // indicates not found
+#if MOZ_FONTATIONS
+  if (!mFontEntry->GetSkrifaFont())
+#endif
+  {
+    MeasureGlyphsForFontSizeAdjust();
   }
 
   if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
@@ -328,7 +369,11 @@ void gfxMacFont::InitMetrics() {
         cgConvFactor = mFUnitsConvFactor;
       }
       mMetrics.xHeight = 0.0;
-      if (!InitMetricsFromSfntTables(mMetrics) &&
+      if (
+#if MOZ_FONTATIONS
+          !InitMetricsFromSkrifa(mMetrics) &&
+#endif
+          !InitMetricsFromSfntTables(mMetrics) &&
           (!mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont())) {
         InitMetricsFromPlatform();
       }
@@ -337,16 +382,12 @@ void gfxMacFont::InitMetrics() {
         // the size-adjust factor! But check anyway, for paranoia's sake.
         return;
       }
-      // Update metrics from the re-scaled font.
-      if (mMetrics.xHeight == 0.0) {
-        mMetrics.xHeight = ::CGFontGetXHeight(mCGFont) * cgConvFactor;
-      }
-      if (mMetrics.capHeight == 0.0) {
-        mMetrics.capHeight = ::CGFontGetCapHeight(mCGFont) * cgConvFactor;
-      }
-      mMetrics.zeroWidth = GetCharWidth(cmap, '0', &glyphID, cgConvFactor);
-      if (glyphID == 0) {
-        mMetrics.zeroWidth = -1.0;  // indicates not found
+#if MOZ_FONTATIONS
+      if (!mFontEntry->GetSkrifaFont())
+#endif
+      {
+        // Update metrics from the re-scaled font.
+        MeasureGlyphsForFontSizeAdjust();
       }
     }
   }
@@ -357,29 +398,13 @@ void gfxMacFont::InitMetrics() {
 
   mMetrics.emHeight = mAdjustedSize;
 
-  // Measure/calculate additional metrics, independent of whether we used
-  // the tables directly or ATS metrics APIs
-
-  if (mMetrics.aveCharWidth <= 0) {
-    mMetrics.aveCharWidth = GetCharWidth(cmap, 'x', &glyphID, cgConvFactor);
-    if (glyphID == 0) {
-      // we didn't find 'x', so use maxAdvance rather than zero
-      mMetrics.aveCharWidth = mMetrics.maxAdvance;
-    }
-  }
-
-  mMetrics.spaceWidth = GetCharWidth(cmap, ' ', &glyphID, cgConvFactor);
-  if (glyphID == 0) {
-    // no space glyph?!
-    mMetrics.spaceWidth = mMetrics.aveCharWidth;
-  }
-  mSpaceGlyph = glyphID;
-
-  mMetrics.ideographicWidth =
-      GetCharWidth(cmap, kWaterIdeograph, &glyphID, cgConvFactor);
-  if (glyphID == 0) {
-    // Indicate "not found".
-    mMetrics.ideographicWidth = -1.0;
+#if MOZ_FONTATIONS
+  if (!mFontEntry->GetSkrifaFont())
+#endif
+  {
+    // InitMetricsFromSkrifa would have handled these, but if we're not using
+    // it then take the Core Text-based path.
+    InitMetricsByGlyphMeasurement(cmap, cgConvFactor);
   }
 
   CalculateDerivedMetrics(mMetrics);

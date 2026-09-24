@@ -342,7 +342,7 @@ class nsDisplaySelectionOverlay final : public nsPaintedDisplayItem {
   MOZ_COUNTED_DTOR_FINAL(nsDisplaySelectionOverlay)
 
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -391,7 +391,7 @@ void nsDisplaySelectionOverlay::Paint(nsDisplayListBuilder* aBuilder,
   aDrawTarget.FillRect(rect, color);
 }
 
-bool nsDisplaySelectionOverlay::CreateWebRenderCommands(
+WebRenderCommandsResult nsDisplaySelectionOverlay::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc,
@@ -402,7 +402,7 @@ bool nsDisplaySelectionOverlay::CreateWebRenderCommands(
       mFrame->PresContext()->AppUnitsPerDevPixel()));
   aBuilder.PushRect(bounds, bounds, !BackfaceIsHidden(), false, false,
                     wr::ToColorF(mColor));
-  return true;
+  return Ok();
 }
 
 void nsContainerFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,

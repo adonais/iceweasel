@@ -4,10 +4,10 @@
 
 //! Computed time values.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::typed_om::{NumericType, NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::CSSFloat;
-use crate::Zero;
 use std::fmt::{self, Write};
 use std::ops::AddAssign;
 use style_traits::{CssString, CssWriter, ToCss};

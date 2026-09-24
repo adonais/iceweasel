@@ -22,6 +22,7 @@ OS_LIBS += [
     "oleaut32",
     "ole32",
     "rpcrt4",
+    "runtimeobject",
     "shlwapi",
     "version",
 ]

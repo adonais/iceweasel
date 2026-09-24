@@ -111,7 +111,7 @@ class nsDisplayFieldSetBorder final : public nsPaintedDisplayItem {
   MOZ_COUNTED_DTOR_FINAL(nsDisplayFieldSetBorder)
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -139,7 +139,7 @@ nsRect nsDisplayFieldSetBorder::GetBounds(nsDisplayListBuilder* aBuilder,
   return Frame()->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
 }
 
-bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
+WebRenderCommandsResult nsDisplayFieldSetBorder::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc,
@@ -193,9 +193,9 @@ bool nsDisplayFieldSetBorder::CreateWebRenderCommands(
       this, mFrame, rect, aBuilder, aResources, aSc, aManager,
       aDisplayListBuilder);
   if (drawResult == ImgDrawResult::NOT_SUPPORTED) {
-    return false;
+    return Err("fieldset border is not WebRender-representable");
   }
-  return true;
+  return Ok();
 };
 
 }  // namespace mozilla

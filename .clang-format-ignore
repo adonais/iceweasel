@@ -1,5 +1,5 @@
-# Uses the LLVM coding style
-build/clang-plugin/.*
+# Mess up line matching tests
+build/clang-plugin/tests/*
 # The two templates cannot be formatted
 config/gcc-stl-wrapper.template.h
 config/msvc-stl-wrapper.template.h
@@ -88,12 +88,6 @@ dom/media/platforms/ffmpeg/libav53/.*
 dom/media/platforms/ffmpeg/libav54/.*
 dom/media/platforms/ffmpeg/libav55/.*
 dom/media/webrtc/transport/third_party/.*
-dom/media/webspeech/recognition/endpointer.cc
-dom/media/webspeech/recognition/endpointer.h
-dom/media/webspeech/recognition/energy_endpointer.cc
-dom/media/webspeech/recognition/energy_endpointer.h
-dom/media/webspeech/recognition/energy_endpointer_params.cc
-dom/media/webspeech/recognition/energy_endpointer_params.h
 dom/webauthn/winwebauthn/webauthn.h
 editor/libeditor/tests/browserscope/lib/richtext/.*
 editor/libeditor/tests/browserscope/lib/richtext2/.*

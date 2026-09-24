@@ -711,14 +711,6 @@ skip script test262/built-ins/Error/prototype/stack/getter-receiver-is-proxy.js
 skip script test262/built-ins/Error/prototype/stack/getter-error-prototype.js
 skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
 
-# Bug 2062666 (Iterator take/drop RangeError failures)
-skip script test262/built-ins/Iterator/prototype/take/limit-rangeerror.js
-skip script test262/built-ins/Iterator/prototype/take/argument-effect-order.js
-skip script test262/built-ins/Iterator/prototype/take/argument-validation-failure-closes-underlying.js
-skip script test262/built-ins/Iterator/prototype/drop/limit-rangeerror.js
-skip script test262/built-ins/Iterator/prototype/drop/argument-effect-order.js
-skip script test262/built-ins/Iterator/prototype/drop/argument-validation-failure-closes-underlying.js
-
 ###########################################################
 # Tests disabled due to issues in test262 importer script #
 ###########################################################

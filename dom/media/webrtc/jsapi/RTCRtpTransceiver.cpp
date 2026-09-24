@@ -782,6 +782,37 @@ void RTCRtpTransceiver::NegotiatedDetailsToAudioCodecConfigs(
   }
 }
 
+/*static*/
+void RTCRtpTransceiver::EarlyRecvCodecsToAudioCodecConfigs(
+    JsepTrack& aTrack, std::vector<AudioCodecConfig>* aConfigs) {
+  Maybe<AudioCodecConfig> telephoneEvent;
+
+  aTrack.ForEachEarlyRecvCodec(
+      [&](const UniquePtr<JsepCodecDescription>& codec) {
+        if (!codec->mEnabled || codec->Type() != SdpMediaSection::kAudio ||
+            !codec->DirectionSupported(sdp::kRecv)) {
+          return;
+        }
+        Maybe<AudioCodecConfig> config;
+        const JsepAudioCodecDescription& audio =
+            static_cast<const JsepAudioCodecDescription&>(*codec);
+        JsepCodecDescToAudioCodecConfig(audio, &config);
+        if (!config) {
+          return;
+        }
+        if (config->mName == "telephone-event") {
+          telephoneEvent = std::move(config);
+        } else {
+          aConfigs->push_back(std::move(*config));
+        }
+      });
+
+  // Put telephone event at the back, because webrtc.org crashes if we don't
+  if (telephoneEvent) {
+    aConfigs->push_back(std::move(*telephoneEvent));
+  }
+}
+
 auto RTCRtpTransceiver::GetActivePayloadTypes() const
     -> RefPtr<ActivePayloadTypesPromise> {
   if (!mConduit) {
@@ -901,6 +932,25 @@ void RTCRtpTransceiver::NegotiatedDetailsToVideoCodecConfigs(
       aConfigs->push_back(std::move(config));
     });
   }
+}
+
+/*static*/
+void RTCRtpTransceiver::EarlyRecvCodecsToVideoCodecConfigs(
+    JsepTrack& aTrack, std::vector<VideoCodecConfig>* aConfigs) {
+  aTrack.ForEachEarlyRecvCodec(
+      [&](const UniquePtr<JsepCodecDescription>& codec) {
+        if (!codec->mEnabled || codec->Type() != SdpMediaSection::kVideo ||
+            !codec->DirectionSupported(sdp::kRecv)) {
+          return;
+        }
+        const JsepVideoCodecDescription& video =
+            static_cast<const JsepVideoCodecDescription&>(*codec);
+
+        JsepCodecDescToVideoCodecConfig(video).apply(
+            [&](VideoCodecConfig config) {
+              aConfigs->push_back(std::move(config));
+            });
+      });
 }
 
 /* static */

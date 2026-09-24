@@ -1087,6 +1087,20 @@ class Path : public external::AtomicRefCounted<Path> {
 
   virtual bool IsEmpty() const = 0;
 
+  struct Circle {
+    Point origin;
+    float radius;
+    bool closed = false;
+  };
+
+  struct Line {
+    Point origin;
+    Point destination;
+  };
+
+  virtual Maybe<Circle> AsCircle() const { return Nothing(); }
+  virtual Maybe<Line> AsLine() const { return Nothing(); }
+
  protected:
   Path();
   void EnsureFlattenedPath();
@@ -1105,9 +1119,14 @@ class PathBuilder : public PathSink {
    */
   virtual already_AddRefed<Path> Finish() = 0;
 
+  virtual bool Reset(FillRule aFillRule) { return false; }
+
   virtual BackendType GetBackendType() const = 0;
 
   virtual bool IsActive() const = 0;
+
+  virtual Maybe<Path::Circle> AsCircle() const { return Nothing(); }
+  virtual Maybe<Path::Line> AsLine() const { return Nothing(); }
 };
 
 inline void Path::Transform(RefPtr<Path>& aPath, const Matrix& aTransform) {

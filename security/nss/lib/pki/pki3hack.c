@@ -1054,22 +1054,26 @@ get_stan_trust(unsigned int t, PRBool isClientAuth)
     return nssTrustLevel_MustVerify;
 }
 
-NSS_EXTERN NSSCertificate *
-STAN_GetNSSCertificate(CERTCertificate *cc)
+/* Build the NSSCertificate for a CERTCertificate that does not have one yet.
+ *
+ * The caller must hold the temp/perm lock. Holding it here is what makes the
+ * check-and-create in STAN_GetNSSCertificate() atomic; see the comment there.
+ * Nothing in this function may call out to code that can re-enter that lock or
+ * block on a token. The only PKCS#11 call below, PK11Slot_GetNSSToken(), takes
+ * a per-slot lock around an atomic refcount and nothing else.
+ *
+ * 'c' is not reachable by any other thread until the caller publishes it, so
+ * taking its own object lock in nssPKIObject_AddInstance() cannot contend with
+ * the paths that take an object lock before this one.
+ */
+static NSSCertificate *
+stan_CreateNSSCertificateLocked(CERTCertificate *cc)
 {
     NSSCertificate *c;
     nssCryptokiInstance *instance;
     nssPKIObject *pkiob;
     NSSArena *arena;
-    CERT_LockCertTempPerm(cc);
-    c = cc->nssCertificate;
-    CERT_UnlockCertTempPerm(cc);
-    if (c) {
-        return c;
-    }
-    /* i don't think this should happen.  but if it can, need to create
-     * NSSCertificate from CERTCertificate values here.  */
-    /* Yup, it can happen. */
+
     arena = NSSArena_Create();
     if (!arena) {
         return NULL;
@@ -1132,8 +1136,30 @@ STAN_GetNSSCertificate(CERTCertificate *cc)
         nssPKIObject_AddInstance(&c->object, instance);
     }
     c->decoding = create_decoded_pkix_cert_from_nss3cert(NULL, cc);
+    if (!c->decoding) {
+        nssArena_Destroy(arena);
+        return NULL;
+    }
+    return c;
+}
+
+NSS_EXTERN NSSCertificate *
+STAN_GetNSSCertificate(CERTCertificate *cc)
+{
+    NSSCertificate *c;
+
+    /* Creating the NSSCertificate has to be atomic with the check for one.
+     * nssPKIObject_Create() mints it with a reference count of one, and that
+     * reference stands for the CERTCertificate itself. If two threads each
+     * created one, that reference would be minted twice while every later
+     * CERT_DestroyCertificate() decremented whichever of the two was published
+     * last, taking its count below zero. */
     CERT_LockCertTempPerm(cc);
-    cc->nssCertificate = c;
+    c = cc->nssCertificate;
+    if (!c) {
+        c = stan_CreateNSSCertificateLocked(cc);
+        cc->nssCertificate = c;
+    }
     CERT_UnlockCertTempPerm(cc);
     return c;
 }

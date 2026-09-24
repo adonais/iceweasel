@@ -36,6 +36,7 @@
   // Once the context menu is open, make sure the menu button background is reset to default
   > moz-button::part(button) {
     background-color: var(--button-background-color);
+    color: var(--button-text-color);
   }
 }
 
@@ -48,6 +49,7 @@
   .context-menu-open {
     > moz-button::part(button) {
       background-color: var(--button-background-color-ghost-hover);
+      color: var(--button-text-color-ghost-hover);
     }
   }
 }

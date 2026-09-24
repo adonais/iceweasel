@@ -8,6 +8,7 @@
 interface nsINotificationActionStorageEntry : nsISupports {
   readonly attribute AString name;
   readonly attribute AString title;
+  readonly attribute ACString navigate;
 };
 
 [scriptable, uuid(c772e1b9-d4b0-4e23-8481-4a8b7dbbfe92)]
@@ -19,6 +20,7 @@ interface nsINotificationStorageEntry : nsISupports {
   readonly attribute AString body;
   readonly attribute AString tag;
   readonly attribute ACString icon;
+  readonly attribute ACString navigate;
   readonly attribute boolean requireInteraction;
   readonly attribute boolean silent;
   readonly attribute AString dataSerialized;

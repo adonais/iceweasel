@@ -30,6 +30,7 @@ DIRS += [
 ]
 
 EXTRA_JS_MODULES += [
+    "AutocompleteRemoveRecord.sys.mjs",
     "FillHelpers.sys.mjs",
     "FormHistory.sys.mjs",
     "FormHistoryAutoComplete.sys.mjs",

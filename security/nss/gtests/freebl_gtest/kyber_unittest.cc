@@ -9,7 +9,6 @@
 #include "blapi.h"
 #include "json_reader.h"
 #include "nss_scoped_ptrs.h"
-#include "kat/kyber768_kat.h"
 #include "testvectors_base/test-structs.h"
 #include "testvectors/ml-kem-keygen-vectors.h"
 #include "testvectors/ml-kem-encap-vectors.h"
@@ -20,8 +19,10 @@ namespace nss_test {
 size_t get_ciphertext_length(KyberParams param) {
   size_t len = 0;
   switch (param) {
-    case params_kyber768_round3:
-    case params_kyber768_round3_test_mode:
+    case params_ml_kem512:
+    case params_ml_kem512_test_mode:
+      len = MLKEM512_CIPHERTEXT_BYTES;
+      break;
     case params_ml_kem768:
     case params_ml_kem768_test_mode:
       len = KYBER768_CIPHERTEXT_BYTES;
@@ -30,7 +31,8 @@ size_t get_ciphertext_length(KyberParams param) {
     case params_ml_kem1024_test_mode:
       len = MLKEM1024_CIPHERTEXT_BYTES;
       break;
-    case params_ml_kem512:
+    case params_kyber768_round3:
+    case params_kyber768_round3_test_mode:
     case params_kyber_invalid:
       break;
   }
@@ -40,8 +42,10 @@ size_t get_ciphertext_length(KyberParams param) {
 size_t get_private_key_length(KyberParams param) {
   size_t len = 0;
   switch (param) {
-    case params_kyber768_round3:
-    case params_kyber768_round3_test_mode:
+    case params_ml_kem512:
+    case params_ml_kem512_test_mode:
+      len = MLKEM512_PRIVATE_KEY_BYTES;
+      break;
     case params_ml_kem768:
     case params_ml_kem768_test_mode:
       len = KYBER768_PRIVATE_KEY_BYTES;
@@ -50,7 +54,8 @@ size_t get_private_key_length(KyberParams param) {
     case params_ml_kem1024_test_mode:
       len = MLKEM1024_PRIVATE_KEY_BYTES;
       break;
-    case params_ml_kem512:
+    case params_kyber768_round3:
+    case params_kyber768_round3_test_mode:
     case params_kyber_invalid:
       break;
   }
@@ -60,8 +65,10 @@ size_t get_private_key_length(KyberParams param) {
 size_t get_public_key_length(KyberParams param) {
   size_t len = 0;
   switch (param) {
-    case params_kyber768_round3:
-    case params_kyber768_round3_test_mode:
+    case params_ml_kem512:
+    case params_ml_kem512_test_mode:
+      len = MLKEM512_PUBLIC_KEY_BYTES;
+      break;
     case params_ml_kem768:
     case params_ml_kem768_test_mode:
       len = KYBER768_PUBLIC_KEY_BYTES;
@@ -70,7 +77,8 @@ size_t get_public_key_length(KyberParams param) {
     case params_ml_kem1024_test_mode:
       len = MLKEM1024_PUBLIC_KEY_BYTES;
       break;
-    case params_ml_kem512:
+    case params_kyber768_round3:
+    case params_kyber768_round3_test_mode:
     case params_kyber_invalid:
       break;
   }
@@ -149,6 +157,15 @@ TEST_P(KyberSelfTest, InvalidParameterTest) {
   rv = Kyber_Encapsulate(param, nullptr, publicKey.get(), ciphertext.get(),
                          secret.get());
   EXPECT_EQ(SECSuccess, rv);
+
+  // Only the test-mode parameter sets accept caller-supplied encapsulation
+  // randomness; these are the production sets, so the seed must be refused
+  // rather than silently used in place of the RNG.
+  ScopedSECItem encSeed(
+      SECITEM_AllocItem(nullptr, nullptr, KYBER_ENC_COIN_BYTES));
+  rv = Kyber_Encapsulate(param, encSeed.get(), publicKey.get(),
+                         ciphertext.get(), secret.get());
+  EXPECT_EQ(SECFailure, rv);
 
   rv = Kyber_Decapsulate(params_kyber_invalid, privateKey.get(),
                          ciphertext.get(), secret.get());
@@ -294,11 +311,7 @@ TEST_P(KyberSelfTest, InvalidPrivateKeyTest) {
 
   rv = Kyber_Decapsulate(param, privateKey.get(), ciphertext.get(),
                          secret2.get());
-  if (param == params_kyber768_round3) {
-    EXPECT_EQ(SECSuccess, rv);
-  } else {
-    EXPECT_EQ(SECFailure, rv);
-  }
+  EXPECT_EQ(SECFailure, rv);
 
   // Fix the key again.
   privateKey->data[pk_pos] = pk_pos_old;
@@ -311,11 +324,7 @@ TEST_P(KyberSelfTest, InvalidPrivateKeyTest) {
 
   rv = Kyber_Decapsulate(param, privateKey.get(), ciphertext.get(),
                          secret2.get());
-  if (param == params_kyber768_round3) {
-    EXPECT_EQ(SECSuccess, rv);
-  } else {
-    EXPECT_EQ(SECFailure, rv);
-  }
+  EXPECT_EQ(SECFailure, rv);
 }
 
 TEST_P(KyberSelfTest, DecapsulationWithModifiedRejectionKeyTest) {
@@ -387,68 +396,9 @@ TEST_P(KyberSelfTest, DecapsulationWithModifiedRejectionKeyTest) {
   EXPECT_NE(0, memcmp(secret2->data, secret3->data, KYBER_SHARED_SECRET_BYTES));
 }
 
-#ifdef NSS_DISABLE_KYBER
 INSTANTIATE_TEST_SUITE_P(SelfTests, KyberSelfTest,
-                         ::testing::Values(params_ml_kem768,
+                         ::testing::Values(params_ml_kem512, params_ml_kem768,
                                            params_ml_kem1024));
-#else
-INSTANTIATE_TEST_SUITE_P(SelfTests, KyberSelfTest,
-                         ::testing::Values(params_ml_kem768, params_ml_kem1024,
-                                           params_kyber768_round3));
-#endif
-
-TEST(Kyber768Test, KnownAnswersTest) {
-  ScopedSECItem privateKey(
-      SECITEM_AllocItem(nullptr, nullptr, MAX_ML_KEM_PRIVATE_KEY_LENGTH));
-  ScopedSECItem publicKey(
-      SECITEM_AllocItem(nullptr, nullptr, MAX_ML_KEM_PUBLIC_KEY_LENGTH));
-  ScopedSECItem ciphertext(
-      SECITEM_AllocItem(nullptr, nullptr, MAX_ML_KEM_CIPHER_LENGTH));
-  ScopedSECItem secret(
-      SECITEM_AllocItem(nullptr, nullptr, KYBER_SHARED_SECRET_BYTES));
-  ScopedSECItem secret2(
-      SECITEM_AllocItem(nullptr, nullptr, KYBER_SHARED_SECRET_BYTES));
-
-  SECStatus rv;
-  uint8_t digest[SHA256_LENGTH];
-
-  for (const auto& kat : KyberKATs) {
-    SECItem keypair_seed = {siBuffer, (unsigned char*)kat.newKeySeed,
-                            sizeof kat.newKeySeed};
-    SECItem enc_seed = {siBuffer, (unsigned char*)kat.encapsSeed,
-                        sizeof kat.encapsSeed};
-
-    privateKey->len = get_private_key_length(kat.params);
-    publicKey->len = get_public_key_length(kat.params);
-    ciphertext->len = get_ciphertext_length(kat.params);
-
-    rv = Kyber_NewKey(kat.params, &keypair_seed, privateKey.get(),
-                      publicKey.get());
-    EXPECT_EQ(SECSuccess, rv);
-
-    SHA256_HashBuf(digest, privateKey->data, privateKey->len);
-    EXPECT_EQ(0, memcmp(kat.privateKeyDigest, digest, sizeof digest));
-
-    SHA256_HashBuf(digest, publicKey->data, publicKey->len);
-    EXPECT_EQ(0, memcmp(kat.publicKeyDigest, digest, sizeof digest));
-
-    rv = Kyber_Encapsulate(kat.params, &enc_seed, publicKey.get(),
-                           ciphertext.get(), secret.get());
-    EXPECT_EQ(SECSuccess, rv);
-
-    SHA256_HashBuf(digest, ciphertext->data, ciphertext->len);
-    EXPECT_EQ(0, memcmp(kat.ciphertextDigest, digest, sizeof digest));
-
-    EXPECT_EQ(secret->len, KYBER_SHARED_SECRET_BYTES);
-    EXPECT_EQ(0, memcmp(kat.secret, secret->data, secret->len));
-
-    rv = Kyber_Decapsulate(kat.params, privateKey.get(), ciphertext.get(),
-                           secret2.get());
-    EXPECT_EQ(SECSuccess, rv);
-    EXPECT_EQ(secret2->len, KYBER_SHARED_SECRET_BYTES);
-    EXPECT_EQ(0, memcmp(secret->data, secret2->data, secret2->len));
-  }
-}
 
 TEST(MlKemKeyGen, KnownAnswersTest) {
   ScopedSECItem privateKey(
@@ -700,6 +650,9 @@ class MlKemWycheproofTest : public ::testing::Test {
 
   std::string ParameterSetName() {
     switch (params_) {
+      case params_ml_kem512:
+      case params_ml_kem512_test_mode:
+        return "ML-KEM-512";
       case params_ml_kem768:
       case params_ml_kem768_test_mode:
         return "ML-KEM-768";
@@ -737,6 +690,8 @@ class MlKemWycheproofTest : public ::testing::Test {
         [this](const MlKemTestVector& t) { Decaps(t); });                    \
   }
 
+ML_KEM_WYCHEPROOF_TESTS(MlKem512, 512, params_ml_kem512,
+                        params_ml_kem512_test_mode)
 ML_KEM_WYCHEPROOF_TESTS(MlKem768, 768, params_ml_kem768,
                         params_ml_kem768_test_mode)
 ML_KEM_WYCHEPROOF_TESTS(MlKem1024, 1024, params_ml_kem1024,

@@ -13,11 +13,11 @@ use crate::computed_values::transform_style::T as TransformStyle;
 use crate::dom::TElement;
 use crate::matching::{StyleChange, StyleDifference};
 use crate::properties::{
-    restyle_damage_rebuild_box, restyle_damage_rebuild_stacking_context,
-    restyle_damage_recalculate_overflow, restyle_damage_repaint, style_structs, ComputedValues,
+    ComputedValues, restyle_damage_rebuild_box, restyle_damage_rebuild_stacking_context,
+    restyle_damage_recalculate_overflow, restyle_damage_repaint, style_structs,
 };
-use crate::values::computed::basic_shape::ClipPath;
 use crate::values::computed::Perspective;
+use crate::values::computed::basic_shape::ClipPath;
 use crate::values::generics::transform::{GenericRotate, GenericScale, GenericTranslate};
 use std::fmt;
 

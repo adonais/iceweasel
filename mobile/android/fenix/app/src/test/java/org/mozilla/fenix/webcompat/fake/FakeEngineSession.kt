@@ -96,6 +96,12 @@ internal class FakeEngineSession(private val jsonString: String) : EngineSession
         onException: (Throwable) -> Unit,
     ) {}
 
+    override fun addSignatureToPdf(
+        text: String,
+        onResult: () -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {}
+
     override fun requestTranslate(
         fromLanguage: String,
         toLanguage: String,

@@ -101,8 +101,10 @@ EXPORTS.mozilla.dom += [
     "XULCommandEvent.h",
 ]
 
-if CONFIG["MOZ_WEBSPEECH"]:
-    EXPORTS.mozilla.dom += ["SpeechRecognitionError.h"]
+# The speech recognition backend isn't built on Android; see
+# dom/media/webspeech/moz.build.
+if CONFIG["MOZ_WEBSPEECH"] and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    EXPORTS.mozilla.dom += ["SpeechRecognitionErrorEvent.h"]
 
 UNIFIED_SOURCES += [
     "AnimationEvent.cpp",
@@ -170,8 +172,8 @@ SOURCES += [
     "EventStateManager.cpp",
 ]
 
-if CONFIG["MOZ_WEBSPEECH"]:
-    UNIFIED_SOURCES += ["SpeechRecognitionError.cpp"]
+if CONFIG["MOZ_WEBSPEECH"] and CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    UNIFIED_SOURCES += ["SpeechRecognitionErrorEvent.cpp"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

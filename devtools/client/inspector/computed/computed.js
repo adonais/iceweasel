@@ -1847,7 +1847,7 @@ class ComputedViewTool {
       this.onPanelSelected,
       opts
     );
-    this.inspector.styleChangeTracker.on(
+    this.inspector.on(
       "style-changed",
       () => {
         // `refresh` may not actually update the styles if the computed panel is hidden

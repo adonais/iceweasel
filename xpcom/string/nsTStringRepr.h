@@ -526,18 +526,6 @@ inline constexpr bool operator!=(const mozilla::detail::nsTStringRepr<T>& aLhs,
 }
 
 template <typename T>
-inline bool operator<(const mozilla::detail::nsTStringRepr<T>& aLhs,
-                      const mozilla::detail::nsTStringRepr<T>& aRhs) {
-  return Compare(aLhs, aRhs) < 0;
-}
-
-template <typename T>
-inline bool operator<=(const mozilla::detail::nsTStringRepr<T>& aLhs,
-                       const mozilla::detail::nsTStringRepr<T>& aRhs) {
-  return Compare(aLhs, aRhs) <= 0;
-}
-
-template <typename T>
 inline bool operator==(const mozilla::detail::nsTStringRepr<T>& aLhs,
                        const mozilla::detail::nsTStringRepr<T>& aRhs) {
   return aLhs.Equals(aRhs);
@@ -550,15 +538,10 @@ inline bool operator==(const mozilla::detail::nsTStringRepr<T>& aLhs,
 }
 
 template <typename T>
-inline bool operator>=(const mozilla::detail::nsTStringRepr<T>& aLhs,
-                       const mozilla::detail::nsTStringRepr<T>& aRhs) {
-  return Compare(aLhs, aRhs) >= 0;
-}
-
-template <typename T>
-inline bool operator>(const mozilla::detail::nsTStringRepr<T>& aLhs,
-                      const mozilla::detail::nsTStringRepr<T>& aRhs) {
-  return Compare(aLhs, aRhs) > 0;
+inline std::strong_ordering operator<=>(
+    const mozilla::detail::nsTStringRepr<T>& aLhs,
+    const mozilla::detail::nsTStringRepr<T>& aRhs) {
+  return Compare(aLhs, aRhs) <=> 0;
 }
 
 template <typename Char>

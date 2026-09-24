@@ -812,7 +812,10 @@ rm_dash_r(char *path)
 
         /* Recursively delete all entries in the directory */
         while ((entry = PR_ReadDir(dir, PR_SKIP_BOTH)) != NULL) {
-            snprintf(filename, sizeof(filename), "%s/%s", path, entry->name);
+            if (snprintf(filename, sizeof(filename), "%s/%s", path, entry->name) >= sizeof(filename)) {
+                PR_CloseDir(dir);
+                return -1;
+            }
             if (rm_dash_r(filename)) {
                 PR_CloseDir(dir);
                 return -1;

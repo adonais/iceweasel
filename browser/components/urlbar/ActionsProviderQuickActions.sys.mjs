@@ -2,10 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import {
-  ActionsProvider,
-  ActionsResult,
-} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
+import { ActionsProvider } from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
+
+/**
+ * @import {ActionsResult} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs"
+ */
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -88,7 +89,7 @@ class ProviderQuickActions extends ActionsProvider {
 
     return [...results].map(key => {
       let action = this.#actions.get(key);
-      return new ActionsResult({
+      return /** @type {ActionsResult} */ ({
         providerName: this.name,
         key,
         l10nId: action.label,

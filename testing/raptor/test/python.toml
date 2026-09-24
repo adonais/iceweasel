@@ -3,6 +3,8 @@ subsuite = "raptor"
 
 ["test_addon_utils.py"]
 
+["test_benchmark.py"]
+
 ["test_chrome_trace.py"]
 
 ["test_cmdline.py"]

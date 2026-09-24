@@ -63,6 +63,17 @@ class nsCopySupport {
       mozilla::dom::Selection* aSelection, mozilla::dom::Document* aDocument,
       nsITransferable** aTransferable);
 
+  // Get the document's source URL that will be added to the tranferable used
+  // for copying. The source URL might be empty for chrome pages or censored in
+  // private browsing mode.
+  static nsString GetDocumentSourceURL(mozilla::dom::Document& aDocument);
+
+  /**
+   * Adds a browser-owned source URL to the transferable.
+   */
+  static nsresult AppendSourceURL(nsITransferable& aTransferable,
+                                  const nsAString& aSourceURL);
+
   // Same as GetTransferableForSelection, but doesn't skip invisible content.
   // @param aNode Needs to be not nullptr.
   // @param aDoc Needs to be not nullptr.

@@ -10,11 +10,15 @@ import android.os.SystemClock
 import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.ActivationOperation
+import mozilla.components.feature.ipprotection.store.CachedLocationStatus
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.Location
 import mozilla.components.feature.ipprotection.store.state.ProxyStatus
+import mozilla.components.feature.ipprotection.store.state.Recommended
 import mozilla.components.feature.ipprotection.store.state.Uninitialized
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
@@ -49,10 +53,17 @@ internal class IPProtectionTelemetryMiddleware(
         // prominent case when user is navigating into VPN auth flow from the onboarding card in bug 2057032, but there
         // is nothing stopping them accessing the feature very quickly through the menu or settings, and running into
         // the said problem.
-        if (action is IPProtectionAction.ToggleFailed) {
-            handleToggleFailedAction(store.state, action.error, action.operation)
-        } else if (action is IPProtectionAction.LocationSwitchFailed) {
-            handleLocationSwitchFailed(action.error)
+        when (action) {
+            is IPProtectionAction.ToggleFailed -> handleToggleFailedAction(store.state, action.error, action.operation)
+            is IPProtectionAction.LocationSwitchFailed -> handleLocationSwitchFailed(store.state, action.error)
+            is IPProtectionAction.LocationUpdateFailed -> handleLocationUpdateFailed(action.error)
+            is IPProtectionAction.LocationChanged -> handleLocationChanged(store.state, action)
+            is IPProtectionAction.LocationReset -> handleLocationReset(store.state, action)
+            is IPProtectionAction.PersistedLocationUnavailable ->
+                handlePersistedLocationUnavailable(store.state, action)
+            else -> {
+                // no-op
+            }
         }
 
         val previousStatus = store.state.accountState.status
@@ -146,8 +157,65 @@ internal class IPProtectionTelemetryMiddleware(
         )
     }
 
-    private fun handleLocationSwitchFailed(error: Throwable?) {
+    private fun handleLocationChanged(state: IPProtectionState, action: IPProtectionAction.LocationChanged) {
+        val operation = if (action.userAction) LocationChangeOperation.UserAction else LocationChangeOperation.Restore
+        Vpn.locationChanged.record(
+            Vpn.LocationChangedExtra(
+                to = action.location.label,
+                operation = operation.label,
+                proxyState = state.proxyStatus.label,
+            )
+        )
+    }
+
+    private fun handleLocationReset(state: IPProtectionState, action: IPProtectionAction.LocationReset) {
+        val countryCode = action.countryCode ?: return
+        recordLocationReset(state, countryCode, action.status, LocationResetOperation.Refresh)
+    }
+
+    private fun handlePersistedLocationUnavailable(
+        state: IPProtectionState,
+        action: IPProtectionAction.PersistedLocationUnavailable,
+    ) {
+        recordLocationReset(state, action.countryCode, action.status, LocationResetOperation.Restore)
+    }
+
+    private fun recordLocationReset(
+        state: IPProtectionState,
+        countryCode: String,
+        status: CachedLocationStatus,
+        operation: LocationResetOperation,
+    ) {
+        val countries = state.locationState.locations.filterIsInstance<Country>()
+        Vpn.locationReset.record(
+            Vpn.LocationResetExtra(
+                location = countryCode,
+                reason = status.label,
+                operation = operation.label,
+                listSize = countries.size,
+                availableCount = countries.count { it.available },
+                serviceState = state.serviceStatus.label,
+                proxyState = state.proxyStatus.label,
+                accountState = state.accountState.status.label,
+            )
+        )
+    }
+
+    private fun handleLocationSwitchFailed(state: IPProtectionState, error: Throwable?) {
         Vpn.locationSwitchError.record(extra = Vpn.LocationSwitchErrorExtra(errorCode = errorCodeOf(error)))
+        Vpn.locationChanged.record(
+            Vpn.LocationChangedExtra(
+                to = (state.locationState.previousLocation ?: Recommended).label,
+                operation = LocationChangeOperation.Reset.label,
+                proxyState = state.proxyStatus.label,
+            )
+        )
+    }
+
+    // The location list is fetched over the GeckoView event dispatcher, which rejects with an
+    // exception that carries no message, so we report the class name instead of an error code.
+    private fun handleLocationUpdateFailed(error: Throwable) {
+        Vpn.locationUpdateError.record(extra = Vpn.LocationUpdateErrorExtra(errorCode = error::class.simpleName))
     }
 
     // FIXME(IPP) the engine should pass the error code through: https://bugzilla.mozilla.org/show_bug.cgi?id=2066553
@@ -176,6 +244,42 @@ private val ActivationOperation.label: String
         when (this) {
             ActivationOperation.Activate -> "activate"
             ActivationOperation.Deactivate -> "deactivate"
+        }
+
+private val Location.label: String
+    get() = countryCode ?: "recommended"
+
+private enum class LocationChangeOperation {
+    UserAction,
+    Restore,
+    Reset,
+}
+
+private val LocationChangeOperation.label: String
+    get() =
+        when (this) {
+            LocationChangeOperation.UserAction -> "user_action"
+            LocationChangeOperation.Restore -> "restore"
+            LocationChangeOperation.Reset -> "reset"
+        }
+
+private enum class LocationResetOperation {
+    Refresh,
+    Restore,
+}
+
+private val LocationResetOperation.label: String
+    get() =
+        when (this) {
+            LocationResetOperation.Refresh -> "refresh"
+            LocationResetOperation.Restore -> "restore"
+        }
+
+private val CachedLocationStatus.label: String
+    get() =
+        when (this) {
+            CachedLocationStatus.Missing -> "missing"
+            CachedLocationStatus.Unavailable -> "unavailable"
         }
 
 private val ServiceState.label: String

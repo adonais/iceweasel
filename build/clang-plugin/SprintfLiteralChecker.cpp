@@ -9,15 +9,15 @@ void SprintfLiteralChecker::registerMatchers(MatchFinder *AstMatcher) {
   AstMatcher->addMatcher(
       callExpr(
           isSnprintfLikeFunc(),
-          hasArgument(
-                    0, ignoringParenImpCasts(declRefExpr().bind("buffer"))),
-                anyOf(hasArgument(1, sizeOfExpr(has(ignoringParenImpCasts(
-                                         declRefExpr().bind("size"))))),
-                      hasArgument(1, integerLiteral().bind("immediate")),
-                      hasArgument(1, declRefExpr(to(varDecl(
-                                         hasType(isConstQualified()),
-                                         hasInitializer(integerLiteral().bind(
-                                             "constant"))))))),isFirstParty())
+          hasArgument(0, ignoringParenImpCasts(declRefExpr().bind("buffer"))),
+          anyOf(hasArgument(1, sizeOfExpr(has(ignoringParenImpCasts(
+                                   declRefExpr().bind("size"))))),
+                hasArgument(1, integerLiteral().bind("immediate")),
+                hasArgument(1, declRefExpr(to(
+                                   varDecl(hasType(isConstQualified()),
+                                           hasInitializer(integerLiteral().bind(
+                                               "constant"))))))),
+          isFirstParty())
           .bind("funcCall"),
       this);
 }

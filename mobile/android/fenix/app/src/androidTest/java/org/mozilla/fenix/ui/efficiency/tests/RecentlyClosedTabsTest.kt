@@ -12,9 +12,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.BaseTest
 
 class RecentlyClosedTabsTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     @Ignore("Covered by verifyNavigationReachability[0: RecentlyClosedTabsPage (TBD) — Navigation Reachability]")
     @Test
     fun verifyEmptyRecentlyClosedTabsSectionTest() {

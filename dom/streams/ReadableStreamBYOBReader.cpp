@@ -335,10 +335,7 @@ void ReadableStreamBYOBReaderRelease(JSContext* aCx,
                                      ReadableStreamBYOBReader* aReader,
                                      ErrorResult& aRv) {
   // Step 1. Perform ! ReadableStreamReaderGenericRelease(reader).
-  ReadableStreamReaderGenericRelease(aReader, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
+  ReadableStreamReaderGenericRelease(aReader);
 
   // Step 2. Let e be a new TypeError exception.
   ErrorResult rv;

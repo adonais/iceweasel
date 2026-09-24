@@ -385,7 +385,9 @@ add_task(async function test_portal_unavailable() {
 
   let logged = false;
   function listener(msg) {
-    logged ||= /Native messaging portal is not available/.test(msg.message);
+    logged ||= /Native messaging proxy\/portal is not available/.test(
+      msg.message
+    );
   }
   Services.console.registerListener(listener);
   registerCleanupFunction(() => {

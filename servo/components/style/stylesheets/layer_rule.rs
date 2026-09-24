@@ -29,12 +29,12 @@ pub struct LayerOrder(u16);
 impl LayerOrder {
     /// The order of the root layer.
     pub const fn root() -> Self {
-        Self(std::u16::MAX - 1)
+        Self(u16::MAX - 1)
     }
 
     /// The order of the style attribute layer.
     pub const fn style_attribute() -> Self {
-        Self(std::u16::MAX)
+        Self(u16::MAX)
     }
 
     /// Returns whether this layer is for the style attribute, which behaves
@@ -56,7 +56,7 @@ impl LayerOrder {
     /// Increment the cascade layer order.
     #[inline]
     pub fn inc(&mut self) {
-        if self.0 != std::u16::MAX - 1 {
+        if self.0 != u16::MAX - 1 {
             self.0 += 1;
         }
     }
@@ -110,7 +110,7 @@ impl Parse for LayerName {
                 }
 
                 let name = match input.next_including_whitespace()? {
-                    Token::Ident(ref ident) => ident,
+                    Token::Ident(ident) => ident,
                     other => {
                         let _ = other.clone();
                         return Err(ParseError::unexpected_token());
@@ -184,7 +184,7 @@ impl DeepCloneWithLock for LayerBlockRule {
                         .deep_clone_with_lock(lock, guard),
                 ),
             ),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }

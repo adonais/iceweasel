@@ -4,6 +4,8 @@
 
 #include "CookieStorage.h"
 
+#include <limits>
+
 #include "Cookie.h"
 #include "CookieCommons.h"
 #include "CookieLogging.h"
@@ -1051,6 +1053,29 @@ void CookieStorage::CreateOrUpdatePurgeList(nsCOMPtr<nsIArray>& aPurgedList,
   }
 }
 
+void CookieStorage::PurgeExpiredCookies() {
+  if (!mCookieCount) {
+    return;
+  }
+
+  // Passing the largest possible cookie limit keeps the eviction pass of
+  // PurgeCookies() a no-op, so only expired cookies are dropped here.
+  nsCOMPtr<nsIArray> purgedList = PurgeCookies(
+      PR_Now(), std::numeric_limits<uint16_t>::max(), mCookiePurgeAge);
+  if (!purgedList) {
+    return;
+  }
+
+  uint32_t purgedLength = 0;
+  purgedList->GetLength(&purgedLength);
+  if (!purgedLength) {
+    return;
+  }
+
+  NotifyChanged(purgedList, nsICookieNotification::COOKIES_BATCH_DELETED,
+                ""_ns);
+}
+
 // purges expired and old cookies in a batch operation.
 already_AddRefed<nsIArray> CookieStorage::PurgeCookiesWithCallbacks(
     int64_t aCurrentTimeInUsec, uint16_t aMaxNumberOfCookies,
@@ -1160,7 +1185,7 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookiesWithCallbacks(
 
 // remove a cookie from the hashtable, and update the iterator state.
 void CookieStorage::RemoveCookieFromList(const CookieListIter& aIter) {
-  RemoveCookieFromDB(*aIter.Cookie());
+  RemoveCookieFromDB(aIter.Cookie());
   RemoveCookieFromListInternal(aIter);
 }
 
@@ -1212,6 +1237,7 @@ CookieStorage::Observe(nsISupports* aSubject, const char* aTopic,
     }
   } else if (!strcmp(aTopic, OBSERVER_TOPIC_IDLE_DAILY)) {
     CollectCookieJarSizeData();
+    PurgeExpiredCookies();
   }
 
   return NS_OK;

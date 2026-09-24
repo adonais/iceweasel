@@ -10,13 +10,17 @@
   </g>
 
   <g fill="lime">
-    <text id="hanging" x="70" y="70" dy="0">hanging</text>
-    <text id="mathematical" x="70" y="140" dy="0">mathematical</text>
+    <text id="hanging" dominant-baseline="text-before-edge" x="70" y="70" dy="0">hanging</text>
+    <text id="mathematical" dominant-baseline="text-before-edge" x="70" y="140" dy="0">mathematical</text>
   </g>
 
   <style><![CDATA[
+  @font-face {
+    font-family: test;
+    src: url(../fonts/Ahem.ttf);
+  }
   text {
-    font: bold 30px Verdana, Helvetica, Arial, sans-serif;
+    font: 25px test;
   }
   ]]></style>
   <script>
@@ -25,25 +29,31 @@
     element.dy.baseVal[0].value = offset;
     let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     let bbox = element.getBBox();
-    rect.x.baseVal.value = bbox.x;
-    rect.y.baseVal.value = bbox.y;
-    rect.width.baseVal.value = bbox.width;
-    rect.height.baseVal.value = bbox.height;
+    // Inflate by a couple pixels, to prevent antialiasing failures.
+    rect.x.baseVal.value = bbox.x - 2;
+    rect.y.baseVal.value = bbox.y - 2;
+    rect.width.baseVal.value = bbox.width + 4;
+    rect.height.baseVal.value = bbox.height + 4;
     element.parentElement.appendChild(rect);
   }
   onload = function() {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.font = 'bold 30px Verdana, Helvetica, Arial, sans-serif';
+    document.fonts.ready.then(() => {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.font = '25px test';
 
-    let text = 'h';
-    let textMetrics = ctx.measureText(text);
+      // GetBaselinePosition() in layout/svg/SVGTextFrame.cpp puts the hanging
+      // and the mathematical baselines at 0.2 and 0.5 of the text run's ascent
+      // below the text-before-edge baseline, which is the one the covering
+      // text uses.
+      let ascent = ctx.measureText('h').fontBoundingBoxAscent;
 
-    cover("hanging", textMetrics.actualBoundingBoxAscent * 1.1);
+      cover("hanging", -0.2 * ascent);
 
-    cover("mathematical", textMetrics.actualBoundingBoxAscent / 2 * 1.4);
+      cover("mathematical", -0.5 * ascent);
 
-    document.documentElement.removeAttribute('class');
+      document.documentElement.removeAttribute('class');
+    });
   }
   </script>
 </svg>

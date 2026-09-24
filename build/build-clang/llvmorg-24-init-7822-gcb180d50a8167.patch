@@ -1,0 +1,96 @@
+From cb180d50a81674b467887eab836f563607ae89e8 Mon Sep 17 00:00:00 2001
+From: Ryan VanderMeulen <ryanvm@gmail.com>
+Date: Tue, 8 Sep 2026 09:59:03 -0400
+Subject: [PATCH] [cmake] FindLibXml2: keep user-provided LIBXML2_DEFINITIONS
+ (#221294)
+
+LLVM's `FindLibXml2.cmake` (added in #166867) unconditionally does
+`set(LIBXML2_DEFINITIONS ${PC_LIBXML_CFLAGS_OTHER})` and puts
+`PC_LIBXML_CFLAGS_OTHER` on the imported targets. CMake's own
+`FindLibXml2` module only takes pkg-config's flags when the library it
+found is the one pkg-config describes; otherwise it keeps whatever
+`LIBXML2_DEFINITIONS` the user passed and exposes it through
+`INTERFACE_COMPILE_OPTIONS`.
+
+This matters when cross-compiling against a static libxml2 on Windows.
+Passing `-DLIBXML2_DEFINITIONS=-DLIBXML_STATIC
+-DLIBXML2_LIBRARIES=.../libxml2s.lib` worked with LLVM 22 (CMake's
+module): the define reached both the `xmlReadMemory` configure check and
+the consumers of `LibXml2::LibXml2`. With LLVM 23 it is silently
+dropped, `xmlexports.h` declares the API `__declspec(dllimport)`, the
+check fails to link against the static library and
+`LLVM_ENABLE_LIBXML2=FORCE_ON` aborts with `Failed to configure
+libxml2`. (pkg-config on the Linux host finds the host's libxml2, so
+`PC_LIBXML_CFLAGS_OTHER` is empty and unrelated to the library actually
+being used.)
+
+Mirror CMake's behaviour: keep the user's definitions unless pkg-config
+found the same library, and attach them to both `LibXml2::LibXml2` and
+`LibXml2::LibXml2Static`.
+
+Seen while building the Firefox clang 23 toolchains (x86_64 and aarch64
+`-pc-windows-msvc`, cross-compiled from Linux with
+`LLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON`).
+
+---
+**AI tool use disclosure** (per the [LLVM AI Tool Use
+Policy](https://llvm.org/docs/AIToolPolicy.html)): this change was
+developed with Claude Code assisting in the analysis and drafting. The
+root cause was established against real 23.1.0 binaries; this cmake
+change itself has so far only been verified to apply to 23.1.0 and main
+and by code reading, while Firefox's CI validated the equivalent
+workaround of passing -DLIBXML_STATIC via the compiler flags. The author
+reviewed the change and is accountable for and able to answer questions
+about it. Commits carry an `Assisted-by:` trailer.
+---
+ llvm/cmake/modules/FindLibXml2.cmake | 15 ++++++++++++---
+ 1 file changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/llvm/cmake/modules/FindLibXml2.cmake b/llvm/cmake/modules/FindLibXml2.cmake
+index cbfafc7ecf577..f3f761606260d 100644
+--- a/llvm/cmake/modules/FindLibXml2.cmake
++++ b/llvm/cmake/modules/FindLibXml2.cmake
+@@ -59,6 +59,16 @@ if(NOT PC_LIBXML_VERSION AND LIBXML2_INCLUDE_DIR AND
+   unset(_libxml2_version_str)
+ endif()
+ 
++# Only take pkg-config's flags if it describes the library we found; otherwise
++# keep any user-provided LIBXML2_DEFINITIONS, like CMake's own module does.
++unset(LIBXML2_DEFINITIONS)
++foreach(libxml2_pc_lib_dir IN LISTS PC_LIBXML_LIBDIR PC_LIBXML_LIBRARY_DIRS)
++  if(LIBXML2_LIBRARY MATCHES "^${libxml2_pc_lib_dir}")
++    set(LIBXML2_DEFINITIONS ${PC_LIBXML_CFLAGS_OTHER})
++    break()
++  endif()
++endforeach()
++
+ find_package_handle_standard_args(LibXml2
+   REQUIRED_VARS LIBXML2_LIBRARY LIBXML2_INCLUDE_DIR
+   VERSION_VAR PC_LIBXML_VERSION
+@@ -69,14 +79,14 @@ if(LibXml2_FOUND)
+     add_library(LibXml2::LibXml2 UNKNOWN IMPORTED)
+     set_target_properties(LibXml2::LibXml2 PROPERTIES
+         INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
+-        INTERFACE_COMPILE_OPTIONS "${PC_LIBXML_CFLAGS_OTHER}"
++        INTERFACE_COMPILE_OPTIONS "${LIBXML2_DEFINITIONS}"
+         IMPORTED_LOCATION "${LIBXML2_LIBRARY}")
+   endif()
+   if(LIBXML2_STATIC_LIBRARY AND NOT TARGET LibXml2::LibXml2Static)
+     add_library(LibXml2::LibXml2Static STATIC IMPORTED)
+     set_target_properties(LibXml2::LibXml2Static PROPERTIES
+         INTERFACE_INCLUDE_DIRECTORIES "${LIBXML2_INCLUDE_DIR}"
+-        INTERFACE_COMPILE_OPTIONS "${PC_LIBXML_CFLAGS_OTHER}"
++        INTERFACE_COMPILE_OPTIONS "${LIBXML2_DEFINITIONS}"
+         IMPORTED_LOCATION "${LIBXML2_STATIC_LIBRARY}")
+     # Static libraries need their transitive dependencies for linking.
+     set(LIBXML2_STATIC_DEPS)
+@@ -94,6 +104,5 @@ endif()
+ 
+ set(LIBXML2_INCLUDE_DIRS ${LIBXML2_INCLUDE_DIR})
+ set(LIBXML2_LIBRARIES ${LIBXML2_LIBRARY})
+-set(LIBXML2_DEFINITIONS ${PC_LIBXML_CFLAGS_OTHER})
+ 
+ mark_as_advanced(LIBXML2_INCLUDE_DIR LIBXML2_LIBRARY LIBXML2_STATIC_LIBRARY)
+-- 
+2.55.0.806.gb8242b093d.dirty
+

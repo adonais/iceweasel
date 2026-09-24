@@ -3,60 +3,77 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 MOCHITEST_MANIFESTS += ["test/mochitest.toml"]
+BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
 
-XPIDL_MODULE = "dom_webspeechrecognition"
+GENERATED_FILES += [
+    "SpeechRecognitionModelDisplayInfo.sys.mjs",
+    "SpeechRecognitionModels.h",
+]
+speech_models = GENERATED_FILES["SpeechRecognitionModels.h"]
+speech_models.script = "gen_speech_models.py:gen_models_header"
+speech_models.inputs = ["models.yaml"]
 
-XPIDL_SOURCES = ["nsISpeechRecognitionService.idl"]
+speech_models_display_info = GENERATED_FILES[
+    "SpeechRecognitionModelDisplayInfo.sys.mjs"
+]
+speech_models_display_info.script = "gen_speech_models.py:gen_models_display_info"
+speech_models_display_info.inputs = ["models.yaml"]
 
 EXPORTS.mozilla.dom += [
-    "OnlineSpeechRecognitionService.h",
     "SpeechGrammar.h",
     "SpeechGrammarList.h",
     "SpeechRecognition.h",
     "SpeechRecognitionAlternative.h",
+    "SpeechRecognitionBackend.h",
+    "SpeechRecognitionModelMapping.h",
+    "SpeechRecognitionPhrase.h",
     "SpeechRecognitionResult.h",
     "SpeechRecognitionResultList.h",
     "SpeechTrackListener.h",
 ]
 
-EXPORTS += [
-    "endpointer.h",
-    "energy_endpointer.h",
-    "energy_endpointer_params.h",
+EXPORTS.mozilla += [
+    "AudioCaptureTiming.h",
 ]
 
-if CONFIG["MOZ_WEBSPEECH_TEST_BACKEND"]:
-    EXPORTS.mozilla.dom += [
-        "test/FakeSpeechRecognitionService.h",
-    ]
+EXPORTS.mozilla.hwinference += [
+    "SpeechRecognitionChild.h",
+    "SpeechRecognitionParent.h",
+]
 
 UNIFIED_SOURCES += [
-    "endpointer.cc",
-    "energy_endpointer.cc",
-    "energy_endpointer_params.cc",
-    "OnlineSpeechRecognitionService.cpp",
     "SpeechGrammar.cpp",
     "SpeechGrammarList.cpp",
+    "SpeechModelDownloadPermissionRequest.cpp",
+    "SpeechModelResolver.cpp",
     "SpeechRecognition.cpp",
     "SpeechRecognitionAlternative.cpp",
+    "SpeechRecognitionBackend.cpp",
+    "SpeechRecognitionChild.cpp",
+    "SpeechRecognitionModelMapping.cpp",
+    "SpeechRecognitionParent.cpp",
+    "SpeechRecognitionPhrase.cpp",
     "SpeechRecognitionResult.cpp",
     "SpeechRecognitionResultList.cpp",
     "SpeechTrackListener.cpp",
 ]
 
-if CONFIG["MOZ_WEBSPEECH_TEST_BACKEND"]:
-    UNIFIED_SOURCES += [
-        "test/FakeSpeechRecognitionService.cpp",
-    ]
-
-USE_LIBS += [
-    "jsoncpp",
+IPDL_SOURCES = [
+    "PSpeechRecognition.ipdl",
 ]
 
-LOCAL_INCLUDES += [
-    "/dom/base",
-    "/toolkit/components/jsoncpp/include",
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
+
+EXTRA_JS_MODULES += [
+    "!SpeechRecognitionModelDisplayInfo.sys.mjs",
+    "SpeechRecognitionFeature.sys.mjs",
+]
+
+# Bug 1244242 is about enabling on Android
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    DIRS += ["/third_party/parakeet.cpp"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

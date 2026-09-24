@@ -15,3 +15,5 @@ run-if = [
 ["test_request-utils-js-getFormattedProtocol.js"]
 
 ["test_request-utils-parseJSON.js"]
+
+["test_request-utils-parseJSONL.js"]

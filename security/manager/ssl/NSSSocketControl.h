@@ -310,6 +310,7 @@ class NSSSocketControl final : public CommonSocketControl {
   bool mFalseStartCallbackCalled;
   bool mFalseStarted;
   bool mIsFullHandshake;
+  bool mDrewResumptionToken;
   bool mNotedTimeUntilReady;
   EchExtensionStatus mEchExtensionStatus;  // Currently only used for telemetry.
 

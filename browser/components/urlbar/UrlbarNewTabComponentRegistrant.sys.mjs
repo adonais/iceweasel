@@ -9,6 +9,7 @@ import {
 import { UrlbarPrefs } from "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs";
 
 const FEATURE_GATE = "newtabFeatureGate";
+const NOVA_PREF = "browser.nova.enabled";
 
 /**
  * A registrant that adds `<moz-urlbar>` to about:newtab / about:home while the
@@ -33,6 +34,12 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
     }
   }
 
+  onPrefChanged(pref) {
+    if (pref == NOVA_PREF) {
+      this.updated();
+    }
+  }
+
   getComponents() {
     if (!UrlbarPrefs.get(FEATURE_GATE)) {
       return [];
@@ -41,17 +48,13 @@ export class UrlbarNewTabComponentRegistrant extends BaseAboutNewTabComponentReg
     return [
       {
         type: AboutNewTabComponentRegistry.TYPES.SEARCH,
-        l10nURLs: [
-          "browser/browser.ftl",
-          "browser/search.ftl",
-          "preview/enUS-searchFeatures.ftl",
-        ],
+        l10nURLs: ["browser/browser.ftl", "preview/enUS-searchFeatures.ftl"],
         componentURL: "chrome://browser/content/urlbar/UrlbarInput.mjs",
         tagName: "moz-urlbar",
         attributes: {
           class: "urlbar",
+          role: "group",
           pageproxystate: "invalid",
-          popover: "manual",
           "in-page": "",
           "sap-name": "newtab_searchbar",
           "unifiedsearchbutton-available": "",

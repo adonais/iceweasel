@@ -15,8 +15,10 @@ export const ReportBrokenSiteHelpers = {
     if (!sendBlockedUrls || sendNoData) {
       if (nullify) {
         data.antitracking.blockedOrigins.value = null;
+        data.antitracking.btpPurgeHistory.value = null;
       } else {
         delete data.antitracking.blockedOrigins;
+        delete data.antitracking.btpPurgeHistory;
       }
     }
     if (!sendTabSpecificInfo || sendNoData) {

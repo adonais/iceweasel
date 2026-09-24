@@ -41,6 +41,7 @@ UNIFIED_SOURCES += [
     "TestAudioSampleFormat.cpp",
     "TestAudioSegment.cpp",
     "TestAudioSinkWrapper.cpp",
+    "TestAudioStream.cpp",
     "TestAudioTrackEncoder.cpp",
     "TestAudioTrackGraph.cpp",
     "TestBitWriter.cpp",
@@ -119,6 +120,7 @@ if CONFIG["OS_TARGET"] != "Android":
         "TestGMPCrossOrigin.cpp",
         "TestGMPPluginScan.cpp",
         "TestGMPRemoveAndDelete.cpp",
+        "TestSpeechModelMapping.cpp",
     ]
 
 if CONFIG["MOZ_APPLEMEDIA"]:
@@ -161,6 +163,7 @@ TEST_HARNESS_FILES.gtest += [
     "../test/gizmo.mp4",
     "../test/reftest/color_quads/720p.png.bt2020.pq.tv.yuv420p10.hevc.mp4",
     "../test/vp9cake.webm",
+    "av1-color-metadata.mp4",
     "dash_dashinit.mp4",
     "id3v2header.mp3",
     "negative_duration.mp4",

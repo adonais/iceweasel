@@ -68,7 +68,7 @@ export class UrlbarProviderHeuristicFallback extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
 
-    if (queryContext.sapName != "searchbar") {
+    if (queryContext.navigationEnabled) {
       let result =
         UrlbarProviderHeuristicFallback.matchUnknownUrl(queryContext);
       if (result) {

@@ -9,7 +9,10 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import {
+  UrlbarProvider,
+  UrlbarUtils,
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 const lazy = {};
@@ -154,8 +157,9 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
    * @param {UrlbarQueryContext} queryContext
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
+   * @param {UrlbarParentController} controller The controller instance.
    */
-  async startQuery(queryContext, addCallback) {
+  async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;
 
     let tip = this.currentTip;
@@ -163,7 +167,7 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
     this.currentTip = UrlbarShared.SEARCH_TIP_TYPE.NONE;
 
     let defaultEngine = await lazy.SearchService.getDefault();
-    let icon = await defaultEngine.getIconURL();
+    let icon = await UrlbarUtils.getEngineIconUrl(defaultEngine, controller);
     if (instance != this.queryInstance) {
       return;
     }
@@ -223,6 +227,11 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
     );
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     this.#pickResult(details.result, controller.browserWindow);
   }

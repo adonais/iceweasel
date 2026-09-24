@@ -699,6 +699,9 @@ void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
       static_cast<FrameWithInstances*>(resumeTarget_->framePointer),
       resumeTarget_->resumePC);
 
+  // Make sure we don't have a pending exitInstance.
+  MOZ_RELEASE_ASSERT(!iter.exitInstance());
+
 #  ifdef ENABLE_WASM_JSPI
   // Inferred ContObject to Debugger.Frame edges are traced only while marking;
   // see DebugAPI::traceWasmContFrame for why generic tracers must skip them.

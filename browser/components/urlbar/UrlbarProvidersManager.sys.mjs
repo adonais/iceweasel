@@ -54,7 +54,7 @@ var localProviderModules = [
     name: "UrlbarProviderGlobalActions",
     module:
       "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
-    supportedSAPs: ["searchbar", "urlbar"],
+    supportedSAPs: ["searchbar", "urlbar", "smartbar"],
   },
   {
     name: "UrlbarProviderAliasEngines",
@@ -589,7 +589,8 @@ export class ProvidersManager {
 
     // On the message path the parent's view has no results; the caller passes
     // the results shown content-side. Fall back to the view for the direct path.
-    visibleResults = visibleResults ?? controller.view?.visibleResults ?? [];
+    visibleResults ??=
+      "visibleResults" in controller.view ? controller.view.visibleResults : [];
     const visibleResultsByProviderName = new Map();
 
     visibleResults.forEach((result, index) => {

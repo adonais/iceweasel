@@ -11,12 +11,6 @@ const CONTENT = (() => {
   return c;
 })();
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-});
-
 add_task(async function () {
   // First test with text with the text/html mimetype.
   info("Testing text/html");

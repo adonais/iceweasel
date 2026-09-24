@@ -70,6 +70,7 @@ import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.view.createWindowInsetsController
 import mozilla.components.support.ktx.android.view.toScope
@@ -84,6 +85,7 @@ import org.mozilla.fenix.GleanMetrics.HomeScreen
 import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
+import org.mozilla.fenix.OnLongPressedListener
 import org.mozilla.fenix.R
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
@@ -194,7 +196,7 @@ import org.mozilla.fenix.wallpapers.Wallpaper
 
 /** The home screen. */
 @Suppress("TooManyFunctions", "LargeClass")
-class HomeFragment : Fragment() {
+class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
     private val args by navArgs<HomeFragmentArgs>()
 
     @VisibleForTesting internal lateinit var bundleArgs: Bundle
@@ -451,6 +453,7 @@ class HomeFragment : Fragment() {
         homeNavigationBar =
             HomeNavigationBar(
                 toolbarStore = toolbarStore,
+                appStore = activity.components.appStore,
                 browsingModeManager = activity.browsingModeManager,
                 settings = activity.components.settings,
                 hideWhenKeyboardShown = true,
@@ -1138,6 +1141,50 @@ class HomeFragment : Fragment() {
         findNavController().removeOnDestinationChangedListener(destinationChangedListener)
     }
 
+    override fun onBackPressed(): Boolean {
+        if (context == null || !requireComponents.settings.enableHomepageAsNewTab) {
+            return false
+        }
+
+        return goBackFromHomepage(
+            browserStore = store,
+            navController = findNavController(),
+        )
+    }
+
+    override fun onBackLongPressed(): Boolean {
+        if (context == null || !requireComponents.settings.enableHomepageAsNewTab) {
+            return false
+        }
+
+        navigateToGlobalTabHistoryDialogFragment(navController = findNavController())
+        return true
+    }
+
+    override fun onForwardPressed(): Boolean {
+        if (context == null || !requireComponents.settings.enableHomepageAsNewTab) {
+            return false
+        }
+
+        return goForwardFromHomepage(
+            browserStore = store,
+            navController = findNavController(),
+        )
+    }
+
+    override fun onForwardLongPressed(): Boolean {
+        if (context == null || !requireComponents.settings.enableHomepageAsNewTab) {
+            return false
+        }
+
+        navigateToGlobalTabHistoryDialogFragment(navController = findNavController())
+        return true
+    }
+
+    private fun navigateToGlobalTabHistoryDialogFragment(navController: NavController) {
+        navController.navigate(NavGraphDirections.actionGlobalTabHistoryDialogFragment(activeSessionId = null))
+    }
+
     private fun subscribeToTabCollections(): Observer<List<TabCollection>> {
         return Observer<List<TabCollection>> {
                 requireComponents.core.tabCollectionStorage.cachedTabCollections = it
@@ -1393,6 +1440,7 @@ class HomeFragment : Fragment() {
                     tabsUseCases = requireComponents.useCases.tabsUseCases,
                     sendTabUseCases = SendTabUseCases(requireComponents.backgroundServices.accountManager),
                     customTabSessionId = null,
+                    applicationScope = requireComponents.applicationScope,
                     viewHasFocus = { view.hasWindowFocus() },
                 ),
             owner = this,

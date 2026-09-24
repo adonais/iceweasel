@@ -8,6 +8,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "nsISocketProvider.h"
 #include "nsNSSCallbacks.h"
@@ -39,6 +40,7 @@ NSSSocketControl::NSSSocketControl(
       mFalseStartCallbackCalled(false),
       mFalseStarted(false),
       mIsFullHandshake(false),
+      mDrewResumptionToken(false),
       mNotedTimeUntilReady(false),
       mEchExtensionStatus(EchExtensionStatus::kNotPresent),
       mIsShortWritePending(false),
@@ -130,6 +132,14 @@ void NSSSocketControl::SetHandshakeCompleted() {
         .EnumGet(
             static_cast<glean::ssl::ResumedSessionLabel>(!IsFullHandshake()))
         .Add();
+
+    if (mDrewResumptionToken) {
+      glean::network::ssl_token_resumption_outcome
+          .Get(mSessionCacheInfo.isNothing() ? "rejected"_ns
+               : IsFullHandshake()           ? "not_resumed"_ns
+                                             : "resumed"_ns)
+          .Add();
+    }
 
     using glean::tls_handshake::CompletedLabel;
     CompletedLabel handshakeType =
@@ -714,6 +724,7 @@ nsresult NSSSocketControl::SetResumptionTokenFromExternalCache(PRFileDesc* fd) {
 
       return rv;
     }
+    mDrewResumptionToken = true;
 
     SECStatus srv =
         SSL_SetResumptionToken(fd, token.Elements(), token.Length());

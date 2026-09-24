@@ -10,7 +10,6 @@ const { UrlbarProviderSearchSuggestions } = ChromeUtils.importESModule(
 const KEYWORD_ENABLED = "keyword.enabled";
 const SUGGEST_ENABLED = "browser.search.suggest.enabled";
 const URLBAR_SUGGEST = "browser.urlbar.suggest.searches";
-const SEARCH_BAR_SAPS = ["searchbar", "newtab_searchbar"];
 
 add_setup(async function () {
   await SearchService.init();
@@ -42,17 +41,41 @@ add_task(async function test_allowRemoteSuggestions() {
     "Remote suggestions should be disabled with keyword disabled"
   );
 
-  context = createContext("bacon", {
-    isPrivate: false,
-    sapName: "searchbar",
-    sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
-  });
-  Assert.ok(
-    suggestionsProvider._allowRemoteSuggestions(context),
-    "Remote suggestions should still be enabled on searchbar"
-  );
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
+    context = createContext("bacon", {
+      isPrivate: false,
+      sapName,
+      sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+    });
+    Assert.ok(
+      suggestionsProvider._allowRemoteSuggestions(context),
+      `Remote suggestions should still be enabled on ${sapName}`
+    );
+  }
 
   Services.prefs.clearUserPref(KEYWORD_ENABLED);
+});
+
+// A URL typed in New Tab's search bar is a visit, so it keeps the address
+// bar's restriction; the toolbar's search bar can only search, so it doesn't.
+add_task(async function test_allowRemoteSuggestionsForURL() {
+  let suggestionsProvider = new UrlbarProviderSearchSuggestions();
+
+  for (let [sapName, expected] of [
+    ["searchbar", true],
+    ["newtab_searchbar", false],
+  ]) {
+    let context = createContext("https://example.com/", {
+      isPrivate: false,
+      sapName,
+      sources: [UrlbarShared.RESULT_SOURCE.SEARCH],
+    });
+    Assert.equal(
+      suggestionsProvider._allowRemoteSuggestions(context),
+      expected,
+      `Remote suggestions for a URL on ${sapName}`
+    );
+  }
 });
 
 add_task(async function test_allowSuggestions() {
@@ -68,7 +91,7 @@ add_task(async function test_allowSuggestions() {
     "Suggestions in the urlbar should be enabled by default"
   );
 
-  for (let sapName of SEARCH_BAR_SAPS) {
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
     context = createContext("bacon eggs", {
       isPrivate: false,
       sapName,
@@ -93,7 +116,7 @@ add_task(async function test_allowSuggestions() {
     "Suggestions in the urlbar should be disabled"
   );
 
-  for (let sapName of SEARCH_BAR_SAPS) {
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
     context = createContext("bacon eggs", {
       isPrivate: false,
       sapName,
@@ -118,7 +141,7 @@ add_task(async function test_allowSuggestions() {
     "Suggestions in the urlbar should be disabled"
   );
 
-  for (let sapName of SEARCH_BAR_SAPS) {
+  for (let sapName of UrlbarShared.SEARCHBAR_SAPS) {
     context = createContext("bacon eggs", {
       isPrivate: false,
       sapName,

@@ -43,6 +43,8 @@ run-if = [
 
 ["browser_fxa_menu_profiles.js"]
 
+["browser_fxa_menu_profiles_telemetry.js"]
+
 ["browser_icon_avatar_test.js"]
 
 ["browser_menubar_profiles.js"]
@@ -60,8 +62,9 @@ skip-if = [
 
 ["browser_preferences.js"]
 
-["browser_refresh_button.js"]
+["browser_profiles_theme_picker_shown_telemetry_test.js"]
 
+["browser_refresh_button.js"]
 
 ["browser_test_last_tab.js"]
 skip-if = [

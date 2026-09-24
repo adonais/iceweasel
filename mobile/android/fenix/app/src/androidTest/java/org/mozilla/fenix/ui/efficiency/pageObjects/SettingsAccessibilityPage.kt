@@ -17,8 +17,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
-import org.mozilla.fenix.ui.efficiency.helpers.Selector
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationOptions
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAccessibilitySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
@@ -27,20 +27,22 @@ class SettingsAccessibilityPage(composeRule: AndroidComposeTestRule<HomeActivity
     BasePage(composeRule) {
     override val pageName = "SettingsAccessibilityPage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = pageName,
             to = "SettingsPage",
             steps = listOf(NavigationStep.Click(SettingsSelectors.GO_BACK_BUTTON)),
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SettingsAccessibilitySelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SettingsAccessibilitySelectors
 
-    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsAccessibilityPage {
-        super.navigateToPage(url, forceNavigation)
+    override fun navigateToPage(
+        url: String,
+        forceNavigation: Boolean,
+        navigationOptions: NavigationOptions,
+    ): SettingsAccessibilityPage {
+        super.navigateToPage(url, forceNavigation, navigationOptions)
         return this
     }
 

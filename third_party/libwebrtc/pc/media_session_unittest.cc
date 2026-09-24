@@ -752,15 +752,11 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
         codec_lookup_helper_1_(env_.field_trials()),
         codec_lookup_helper_2_(env_.field_trials()),
         f1_(env_,
-            nullptr,
-            false,
             &ssrc_generator1,
             &tdf1_,
             &sctp_factory_1_,
             &codec_lookup_helper_1_),
         f2_(env_,
-            nullptr,
-            false,
             &ssrc_generator2,
             &tdf2_,
             &sctp_factory_2_,
@@ -1039,8 +1035,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioOffer) {
 }
 
 // With the RRTR field trial enabled (default), an offer enables non-sender
-// RTT on the negotiated description. The wire-format translation (rtcp-xr and
-// the legacy rtcp-fb rrtr) is covered in webrtc_sdp_unittest.
+// RTT on the negotiated description. Serialization to a=rtcp-xr:rcvr-rtt is
+// covered in webrtc_sdp_unittest.
 TEST_F(MediaSessionDescriptionFactoryTest,
        CreateAudioOfferEnablesReceiveNonSenderRtt) {
   std::unique_ptr<SessionDescription> offer =
@@ -5188,15 +5184,11 @@ class MediaProtocolTest : public testing::TestWithParam<const char*> {
         codec_lookup_helper_1_(env_.field_trials()),
         codec_lookup_helper_2_(env_.field_trials()),
         f1_(env_,
-            nullptr,
-            false,
             &ssrc_generator1,
             &tdf1_,
             &sctp_factory_1_,
             &codec_lookup_helper_1_),
         f2_(env_,
-            nullptr,
-            false,
             &ssrc_generator2,
             &tdf2_,
             &sctp_factory_2_,
@@ -5265,8 +5257,8 @@ void TestAudioCodecsOffer(RtpTransceiverDirection direction) {
   UniqueRandomIdGenerator ssrc_generator;
   CodecLookupHelperForTesting codec_lookup_helper(env.field_trials());
   FakeSctpTransportFactory sctpf;
-  MediaSessionDescriptionFactory sf(env, nullptr, false, &ssrc_generator, &tdf,
-                                    &sctpf, &codec_lookup_helper);
+  MediaSessionDescriptionFactory sf(env, &ssrc_generator, &tdf, &sctpf,
+                                    &codec_lookup_helper);
   const std::vector<Codec> send_codecs(kAudioCodecs1.begin(),
                                        kAudioCodecs1.end());
   const std::vector<Codec> recv_codecs(kAudioCodecs2.begin(),
@@ -5379,13 +5371,13 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
       std::unique_ptr<SSLIdentity>(new FakeSSLIdentity("answer_id"))));
   UniqueRandomIdGenerator ssrc_generator1, ssrc_generator2;
   CodecLookupHelperForTesting offer_codec_lookup_helper(env.field_trials());
-  MediaSessionDescriptionFactory offer_factory(
-      env, nullptr, false, &ssrc_generator1, &offer_tdf, &offer_sctpf,
-      &offer_codec_lookup_helper);
+  MediaSessionDescriptionFactory offer_factory(env, &ssrc_generator1,
+                                               &offer_tdf, &offer_sctpf,
+                                               &offer_codec_lookup_helper);
   CodecLookupHelperForTesting answer_codec_lookup_helper(env.field_trials());
-  MediaSessionDescriptionFactory answer_factory(
-      env, nullptr, false, &ssrc_generator2, &answer_tdf, &answer_sctpf,
-      &answer_codec_lookup_helper);
+  MediaSessionDescriptionFactory answer_factory(env, &ssrc_generator2,
+                                                &answer_tdf, &answer_sctpf,
+                                                &answer_codec_lookup_helper);
 
   offer_codec_lookup_helper.SetAudioCodecs(
       VectorFromIndices(kOfferAnswerCodecs, kOfferSendCodecs),
@@ -5531,15 +5523,11 @@ class VideoCodecsOfferH265LevelIdTest : public testing::Test {
         tdf_offerer_(env_.field_trials()),
         tdf_answerer_(env_.field_trials()),
         sf_offerer_(env_,
-                    nullptr,
-                    false,
                     &ssrc_generator_offerer_,
                     &tdf_offerer_,
                     &sctpf_offerer_,
                     &codec_lookup_helper_offerer_),
         sf_answerer_(env_,
-                     nullptr,
-                     false,
                      &ssrc_generator_answerer_,
                      &tdf_answerer_,
                      &sctpf_answerer_,

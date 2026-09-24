@@ -45,6 +45,9 @@ class FenceD3D11 final : public Fence {
 
   // Check if ID3D11Device suppors ID3D11Fence creation.
   static bool IsSupported(ID3D11Device* aDevice);
+  static bool WaitD3D11Fence(RefPtr<Fence>& aFence, ID3D11Device* aDevice);
+  static void WaitD3D11Fences(const std::vector<RefPtr<Fence>>& aFences,
+                              ID3D11Device* aDevice);
 
   RefPtr<FenceD3D11> CloneFromHandle();
 

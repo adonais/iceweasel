@@ -98,6 +98,7 @@ fun ExpandedTabGroup(
             onCloseTabGroupClick = {}, // Ignore tab group closes
             onShareTabGroupClick = {}, // Ignore tab group shares
             onDeleteTabGroupClick = {}, // Ignore tab group deletes
+            onUngroupTabGroupClick = {}, // Ignore tab group ungroups
             onTabGroupOnboardingDismiss = {}, // Ignore onboarding dismissals - onboarding is not shown in this layout
             contentPadding = PaddingValues(0.dp), // TabLayout should not have its own content padding inside this view
             listHorizontalPadding = 0.dp, // The list layout should not add its own horizontal padding inside this view
@@ -170,7 +171,7 @@ private fun ViewTabGroupHeader(
             onEditTabGroupClick = actions.onEditTabGroupClick,
             onCloseTabGroupClick = actions.onCloseTabGroupClick,
             onShareTabGroupClick = actions.onShareTabGroupClick,
-            onUngroupTabGroupClick = {},
+            onUngroupTabGroupClick = actions.onUngroupTabGroupClick,
         )
     }
 }
@@ -209,6 +210,7 @@ private fun ExpandedTabGroupPreview(
                         onDeleteTabGroupClick = {},
                         onEditTabGroupClick = {},
                         onCloseTabGroupClick = {},
+                        onUngroupTabGroupClick = {},
                         onAddNewTabClick = {},
                         onShareTabGroupClick = {},
                     ),
@@ -328,6 +330,7 @@ private class ExpandedTabGroupPreviewProvider : PreviewParameterProvider<Expande
  * @property onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @property onEditTabGroupClick Invoked when the user clicks to edit the group.
  * @property onCloseTabGroupClick Invoked when the user clicks to close a tab group.
+ * @property onUngroupTabGroupClick Invoked when the user clicks to ungroup a tab group.
  * @property onAddNewTabClick Invoked when the user clicks to add a new tab to the group. When null, the add-tab button
  *   is hidden.
  * @property onShareTabGroupClick Invoked when the user clicks to share the group.
@@ -338,6 +341,7 @@ data class ExpandedTabGroupActions(
     val onDeleteTabGroupClick: () -> Unit,
     val onEditTabGroupClick: () -> Unit,
     val onCloseTabGroupClick: () -> Unit,
+    val onUngroupTabGroupClick: () -> Unit,
     val onAddNewTabClick: (() -> Unit)?,
     val onShareTabGroupClick: () -> Unit,
 )

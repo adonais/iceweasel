@@ -6,7 +6,7 @@ binutils-2.31.1:
     description: binutils 2.31.1 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/binutils/binutils-2.31.1.tar.xz
+        url: https://ftp.gnu.org/gnu/binutils/binutils-2.31.1.tar.xz
         sha256: 5d20086ecf5752cc7d9134246e9588fa201740d540f7eb84d795b1f7a93bca86
         size: 20467996
         gpg-signature:
@@ -20,7 +20,7 @@ binutils-2.41:
     description: binutils 2.41 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/binutils/binutils-2.41.tar.xz
+        url: https://ftp.gnu.org/gnu/binutils/binutils-2.41.tar.xz
         sha256: ae9a5789e23459e59606e6714723f2d3ffc31c03174191ef0d015bdf06007450
         size: 26765692
         gpg-signature:
@@ -34,7 +34,7 @@ gcc-8.5.0:
     description: GCC 8.5.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-8.5.0/gcc-8.5.0.tar.xz
+        url: https://ftp.gnu.org/gnu/gcc/gcc-8.5.0/gcc-8.5.0.tar.xz
         sha256: d308841a511bb830a6100397b0042db24ce11f642dab6ea6ee44842e5325ed50
         size: 63841008
         gpg-signature:
@@ -48,7 +48,7 @@ gcc-9.5.0:
     description: GCC 9.5.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-9.5.0/gcc-9.5.0.tar.xz
+        url: https://ftp.gnu.org/gnu/gcc/gcc-9.5.0/gcc-9.5.0.tar.xz
         sha256: 27769f64ef1d4cd5e2be8682c0c93f9887983e6cfd1a927ce5a0a2915a95cf8f
         size: 72462752
         gpg-signature:
@@ -62,7 +62,7 @@ gcc-10.5.0:
     description: GCC 10.5.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-10.5.0/gcc-10.5.0.tar.xz
+        url: https://ftp.gnu.org/gnu/gcc/gcc-10.5.0/gcc-10.5.0.tar.xz
         sha256: 25109543fdf46f397c347b5d8b7a2c7e5694a5a51cce4b9c6e1ea8a71ca307c1
         size: 77846412
         gpg-signature:
@@ -72,16 +72,16 @@ gcc-10.5.0:
         strip-components: 1
         add-prefix: gcc-source/
 
-gcc-11.4.0:
-    description: GCC 11.4.0 source code
+gcc-11.5.0:
+    description: GCC 11.5.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-11.4.0/gcc-11.4.0.tar.xz
-        sha256: 3f2db222b007e8a4a23cd5ba56726ef08e8b1f1eb2055ee72c1402cea73a8dd9
-        size: 79837032
+        url: https://ftp.gnu.org/gnu/gcc/gcc-11.5.0/gcc-11.5.0.tar.xz
+        sha256: a6e21868ead545cf87f0c01f84276e4b5281d672098591c1c896241f09363478
+        size: 82399864
         gpg-signature:
             sig-url: "{url}.sig"
-            key-path: build/unix/build-gcc/D3A93CAD751C2AF4F8C7AD516C35B99309B5FA62.key
+            key-path: build/unix/build-gcc/7F74F97C103468EE5D750B583AB00996FC26A641.key
         artifact-name: gcc-source.tar.zst
         strip-components: 1
         add-prefix: gcc-source/
@@ -90,7 +90,7 @@ gcc-14.2.0:
     description: GCC 14.2.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz
+        url: https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz
         sha256: a7b39bc69cbf9e25826c5a60ab26477001f7c08d85cec04bc0e29cabed6f3cc9
         size: 92306460
         gpg-signature:
@@ -105,13 +105,13 @@ sixgill:
     fetch:
         type: git
         repo: https://github.com/mozilla-spidermonkey/sixgill
-        revision: f8ace7cffffe9fd2b35a53a8260199c85f685336
+        revision: 71e44e994765d680ab51574871eac36f4b45097d
 
 gmp-6.1.0:
     description: GMP 6.1.0 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/gmp/gmp-6.1.0.tar.bz2
+        url: https://ftp.gnu.org/gnu/gmp/gmp-6.1.0.tar.bz2
         sha256: 498449a994efeba527885c10405993427995d3f86b8768d8cdf8d9dd7c6b73e8
         size: 2383840
         gpg-signature:
@@ -136,7 +136,7 @@ mpc-1.0.3:
     description: mpc 1.0.3 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz
+        url: https://ftp.gnu.org/gnu/mpc/mpc-1.0.3.tar.gz
         sha256: 617decc6ea09889fb08ede330917a00b16809b8db88c29c31bfbb49cbf88ecc3
         size: 669925
         gpg-signature:
@@ -150,7 +150,7 @@ mpfr-3.1.4:
     description: mpfr 3.1.4 source code
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.bz2
+        url: https://ftp.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.bz2
         sha256: d3103a80cdad2407ed581f3618c4bed04e0c92d1cf771a65ead662cc397f7775
         size: 1279284
         gpg-signature:
@@ -413,6 +413,13 @@ clang-22:
         repo: https://github.com/llvm/llvm-project
         revision: ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
 
+clang-23:
+    description: clang 23.1.1 source code
+    fetch:
+        type: git
+        repo: https://github.com/llvm/llvm-project
+        revision: 6dfe1677ab8dffbc6ec13d53a1e0215d75147689
+
 clang-trunk:
     description: clang main branch source code
     attributes:
@@ -443,12 +450,13 @@ rust-nightly:
         repo: https://github.com/rust-lang/rust/
         branch: main
 
+# Keep WASI_SDK_VERSION in taskcluster/scripts/misc/build-wasi-sdk.sh in sync.
 wasi-sdk:
-    description: wasi-sdk-20 source code
+    description: wasi-sdk-34 source code
     fetch:
         type: git
         repo: https://github.com/WebAssembly/wasi-sdk
-        revision: 935fe1acd2fcd7ea4aed2d5ee4527482862b6344
+        revision: 5a0bf653a1a06e1c18867567c5937006d3394a69
 
 macosx64-ninja:
     description: ninja 1.13.2
@@ -692,7 +700,7 @@ gnumake:
     description: GNU make source
     fetch:
         type: static-url
-        url: https://ftpmirror.gnu.org/gnu/make/make-4.4.1.tar.gz
+        url: https://ftp.gnu.org/gnu/make/make-4.4.1.tar.gz
         sha256: dd16fb1d67bfab79a72f5e8390735c49e3e8e70b4945a15ab1f81ddb78658fb3
         size: 2348200
         artifact-name: make.tar.zst
@@ -738,6 +746,17 @@ symbol-scrapers:
         repo: https://github.com/mozilla/symbol-scrapers
         revision: 7070f9a4fa7a71413d84c80b3a53ae233e72ee55
 
+openssl-1.1.1w:
+    description: openssl 1.1.1w source code
+    fetch:
+        type: static-url
+        url: https://github.com/openssl/openssl/releases/download/OpenSSL_1_1_1w/openssl-1.1.1w.tar.gz
+        sha256: cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
+        size: 9893384
+        artifact-name: openssl-source.tar.zst
+        strip-components: 1
+        add-prefix: openssl-source/
+
 xz:
     description: xz 5.8.3 source code
     fetch:
@@ -749,25 +768,25 @@ xz:
         strip-components: 1
         add-prefix: xz-source/
 
-cpython-3.9.13:
-    description: cpython 3.9.13 source code
+cpython-3.10.11:
+    description: cpython 3.10.11 source code
     fetch:
         type: static-url
-        url: https://www.python.org/ftp/python/3.9.13/Python-3.9.13.tgz
-        sha256: 829b0d26072a44689a6b0810f5b4a3933ee2a0b8a4bfc99d7c5893ffd4f97c44
-        size: 26355887
+        url: https://www.python.org/ftp/python/3.10.11/Python-3.10.11.tgz
+        sha256: f3db31b668efa983508bd67b5712898aa4247899a346f2eb745734699ccd3859
+        size: 26085141
         artifact-name: cpython-source.tar.zst
         strip-components: 1
         add-prefix: cpython-source/
 
-cpython-3.9.13.exe:
-    description: cpython 3.9.13 installer
+cpython-3.10.11.exe:
+    description: cpython 3.10.11 installer
     fetch:
         type: static-url
-        url: https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe
-        sha256: fb3d0466f3754752ca7fd839a09ffe53375ff2c981279fd4bc23a005458f7f5d
-        size: 29235432
-        artifact-name: python-3.9.13-amd64.exe
+        url: https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe
+        sha256: d8dede5005564b408ba50317108b765ed9c3c510342a598f9fd42681cbe0648b
+        size: 29037240
+        artifact-name: python-3.10.11-amd64.exe
 
 cpython-3.11.7:
     description: cpython 3.11.7 source code

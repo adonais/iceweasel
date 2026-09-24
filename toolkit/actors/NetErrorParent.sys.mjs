@@ -25,13 +25,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 // Reasons this decision layer adds on top of the ones URLKeywordAnalyzer can
 // reach on its own. The analyzer cannot see these, because they depend on the
-// frame tree or the search service instead of the failed URL.
+// frame tree, the search service, or how long the decision took, instead of on
+// the failed URL.
 const DECISION_REASONS = Object.freeze({
   NOT_TOP_LEVEL: "not-top-level",
   SEARCH_UNAVAILABLE: "search-unavailable",
   ENGINE_NOT_GENERAL: "engine-not-general",
   CONNECTIVITY_UNCONFIRMED: "connectivity-unconfirmed",
+  DECISION_TIMED_OUT: "decision-timed-out",
 });
+
+/**
+ * The no-CTA answer, for the paths that stop before a query is derived.
+ *
+ * @param {string} reason A DECISION_REASONS value.
+ * @returns {object} The { action, query, reason, hasEngine } the page expects.
+ */
+function noSearchCTA(reason) {
+  return {
+    action: lazy.SEARCH_CTA_ACTIONS.NONE,
+    query: "",
+    reason,
+    hasEngine: false,
+  };
+}
 
 // The search access point this page reports to search telemetry. The source is
 // added to BrowserSearchTelemetry's KNOWN_SEARCH_SOURCES in bug 2061005, which
@@ -255,14 +272,22 @@ export class NetErrorParent extends EscapablePageParent {
   /**
    * Resolve the data the online dnsNotFound Search CTA needs from the failed
    * URL: the derived search action/query/reason (from the query-derivation
-   * module), the registrable domain shown in the page intro, and whether a
-   * usable default search engine exists. Content-free and computed locally.
+   * module) and whether a usable default search engine exists. The host shown
+   * in the page intro is not part of this. Content-free and computed locally.
    * Nothing is sent to the network here.
+   *
+   * The page doesn't render until this answer arrives, so it renders once with
+   * the final state without an intermediate placeholders (bug 2067882). If no
+   * answer is received before the deadline we show no CTA. Giving up early
+   * doesn't drastically reduce the number of users who see the CTA, since
+   * every slow path in here resolves to no CTA anyway. The deadline only
+   * shortens how long the page waits before falling back to its Reload-only
+   * form.
    *
    * A document inside a frame stops here, before any of that work happens.
    *
    * @param {string} failedURL The address that failed to resolve.
-   * @returns {Promise<object>} { action, query, reason, domain, hasEngine }
+   * @returns {Promise<object>} { action, query, reason, hasEngine }
    */
   async getSearchCTAInfo(failedURL) {
     // Most eligible dnsNotFound loads sit in frames the user never sees. Check
@@ -274,28 +299,65 @@ export class NetErrorParent extends EscapablePageParent {
         DECISION_REASONS.NOT_TOP_LEVEL,
         false
       );
-      return {
-        action: lazy.SEARCH_CTA_ACTIONS.NONE,
-        query: "",
-        reason: DECISION_REASONS.NOT_TOP_LEVEL,
-        domain: null,
-        hasEngine: false,
-      };
+      return noSearchCTA(DECISION_REASONS.NOT_TOP_LEVEL);
     }
 
+    const timeoutMs = Services.prefs.getIntPref(
+      "browser.netError.searchCTA.decisionTimeoutMs",
+      300
+    );
+
+    // The two steps that can be slow are a captive-portal re-check and a
+    // search service that can't be asked to hurry, so only an outer cap
+    // covers both. 0 waits indefinitely.
+    let decision;
+    if (timeoutMs > 0) {
+      let timer;
+      decision = await Promise.race([
+        this.decideSearchCTA(failedURL),
+        new Promise(resolve => {
+          timer = lazy.setTimeout(() => resolve(null), timeoutMs);
+        }),
+      ]);
+      lazy.clearTimeout(timer);
+    } else {
+      decision = await this.decideSearchCTA(failedURL);
+    }
+
+    // Record once, here, for the answer the page actually got. A decision that
+    // lands after the deadline is dropped, telemetry included, so reasons stay
+    // one per eligible page load and keep summing to search_cta_action.
+    if (!decision) {
+      this.recordSearchCTADecision(
+        lazy.SEARCH_CTA_ACTIONS.NONE,
+        DECISION_REASONS.DECISION_TIMED_OUT,
+        false
+      );
+      return noSearchCTA(DECISION_REASONS.DECISION_TIMED_OUT);
+    }
+
+    this.recordSearchCTADecision(
+      decision.action,
+      decision.reason,
+      decision.hasEngine,
+      decision.engineUnsupported
+    );
+
+    const { action, query, reason, hasEngine } = decision;
+    return { action, query, reason, hasEngine };
+  }
+
+  /**
+   * The CTA decision itself, with no deadline and no telemetry of its own.
+   * getSearchCTAInfo() owns both, so a decision that arrives too late to reach
+   * the page is not recorded either. (bug 2067882)
+   *
+   * @param {string} failedURL The address that failed to resolve.
+   * @returns {Promise<object>} { action, query, reason, hasEngine,
+   *   engineUnsupported }
+   */
+  async decideSearchCTA(failedURL) {
     const { action, query, reason } = lazy.analyzeURL(failedURL);
-
-    // The intro names the registrable domain, so "xyz.example.com" is shown as
-    // "example.com", even when the derived query is keyword-based.
-    let domain = null;
-    try {
-      domain = Services.eTLD.getBaseDomain(Services.io.newURI(failedURL));
-    } catch (e) {
-      // Unparseable URL, IP literal, single-label host, and so on. Content
-      // falls back to the hostname it already has, and the analyzer blocks the
-      // CTA for these hosts anyway.
-      domain = null;
-    }
 
     // Connectivity freshness guard (bug 2055712): a stale "online" reading can
     // show the CTA while the user is actually offline. When the CTA would
@@ -306,18 +368,7 @@ export class NetErrorParent extends EscapablePageParent {
       action !== lazy.SEARCH_CTA_ACTIONS.NONE &&
       !(await this.ensureFreshConnectivity())
     ) {
-      this.recordSearchCTADecision(
-        lazy.SEARCH_CTA_ACTIONS.NONE,
-        DECISION_REASONS.CONNECTIVITY_UNCONFIRMED,
-        false
-      );
-      return {
-        action: lazy.SEARCH_CTA_ACTIONS.NONE,
-        query: "",
-        reason: DECISION_REASONS.CONNECTIVITY_UNCONFIRMED,
-        domain,
-        hasEngine: false,
-      };
+      return noSearchCTA(DECISION_REASONS.CONNECTIVITY_UNCONFIRMED);
     }
 
     let hasEngine = false;
@@ -335,9 +386,7 @@ export class NetErrorParent extends EscapablePageParent {
       } catch (e) {}
     }
 
-    this.recordSearchCTADecision(action, reason, hasEngine, engineUnsupported);
-
-    return { action, query, reason, domain, hasEngine };
+    return { action, query, reason, hasEngine, engineUnsupported };
   }
 
   /**

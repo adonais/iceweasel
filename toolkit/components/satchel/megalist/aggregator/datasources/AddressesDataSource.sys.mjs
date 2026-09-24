@@ -5,32 +5,11 @@
 import { DataSourceBase } from "resource://gre/modules/megalist/aggregator/datasources/DataSourceBase.sys.mjs";
 import { formAutofillStorage } from "resource://autofill/FormAutofillStorage.sys.mjs";
 
-async function updateAddress(address, field, value) {
-  try {
-    const newAddress = {
-      ...address,
-      [field]: value ?? "",
-    };
-
-    formAutofillStorage.INTERNAL_FIELDS.forEach(
-      name => delete newAddress[name]
-    );
-    formAutofillStorage.addresses.VALID_COMPUTED_FIELDS.forEach(
-      name => delete newAddress[name]
-    );
-
-    if (address.guid) {
-      await formAutofillStorage.addresses.update(address.guid, newAddress);
-    } else {
-      await formAutofillStorage.addresses.add(newAddress);
-    }
-  } catch (error) {
-    //todo
-    console.error("failed to modify address", error);
-    return false;
-  }
-
-  return true;
+async function updateAddress(_address, _field, _value) {
+  // Not implemented: Megalist has no address UI. What to write back is the UI's
+  // decision -- a record read from storage carries the derived fields too, and
+  // sending those back rebuilds the field just edited.
+  throw new Error("Editing addresses in Megalist is not implemented");
 }
 
 /**

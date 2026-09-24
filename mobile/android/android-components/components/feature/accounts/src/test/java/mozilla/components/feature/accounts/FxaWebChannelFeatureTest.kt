@@ -673,6 +673,49 @@ class FxaWebChannelFeatureTest {
     }
 
     @Test
+    fun `COMMAND_STATUS includes keys_optional=true in the response when KEYS_OPTIONAL capability is configured`() {
+        val port: Port = mock()
+        val responseToTheWebChannel = argumentCaptor<JSONObject>()
+
+        val messageHandler =
+            startedMessageHandler(
+                ext = mock(),
+                port = port,
+                engineSession = mock(),
+                fxaCapabilities = setOf(FxaCapability.CHOOSE_WHAT_TO_SYNC, FxaCapability.KEYS_OPTIONAL),
+                accountManager = mock(),
+            )
+
+        messageHandler.onPortMessage(jsonFxaStatus(), port)
+        verify(port).postMessage(responseToTheWebChannel.capture())
+
+        assertEquals(true, responseToTheWebChannel.value.getKeysOptional())
+    }
+
+    @Test
+    fun `COMMAND_STATUS does not include keys_optional in the response when there is no KEYS_OPTIONAL capability`() {
+        val port: Port = mock()
+        val responseToTheWebChannel = argumentCaptor<JSONObject>()
+
+        val messageHandler =
+            startedMessageHandler(
+                ext = mock(),
+                port = port,
+                engineSession = mock(),
+                fxaCapabilities = setOf(FxaCapability.CHOOSE_WHAT_TO_SYNC),
+                accountManager = mock(),
+            )
+
+        messageHandler.onPortMessage(jsonFxaStatus(), port)
+        verify(port).postMessage(responseToTheWebChannel.capture())
+
+        assertNull(
+            "Expected keys_optional to be absent from the response",
+            responseToTheWebChannel.value.getKeysOptional(),
+        )
+    }
+
+    @Test
     fun `COMMAND_PAIR_OAUTH_START must respond with the oauth parameters from the auth url`() = runTest {
         val port: Port = mock()
         val accountManager: FxaAccountManager = mock()
@@ -1337,6 +1380,17 @@ class FxaWebChannelFeatureTest {
         return try {
             this.getJSONObject("message").getJSONObject("data").getJSONObject("capabilities").getInt("pairingVersion")
         } catch (e: JSONException) {
+            null
+        }
+    }
+
+    private fun JSONObject.getKeysOptional(): Boolean? {
+        return try {
+            this.getJSONObject("message")
+                .getJSONObject("data")
+                .getJSONObject("capabilities")
+                .getBoolean("keys_optional")
+        } catch (_: JSONException) {
             null
         }
     }

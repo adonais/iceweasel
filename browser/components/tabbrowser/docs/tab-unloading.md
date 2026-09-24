@@ -4,6 +4,10 @@ Tab Unloading is a feature that automatically unloads tabs to prevent Firefox
 from crashing due to insufficient memory when the system’s available memory is
 low.
 
+Unloading a tab discards its browser and leaves the tab lazy.
+{doc}`lazy-browsers` covers what that tears down, what the tab can still be
+asked for afterwards, and what brings the browser back.
+
 The feature consists of two parts: memory pressure detector and tab unloader.
 When the memory pressure detector detects a low memory situation, it triggers
 the tab unloader that prioritizes tabs and chooses a tab to unload, or if there

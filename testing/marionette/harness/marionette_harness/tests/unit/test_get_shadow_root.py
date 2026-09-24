@@ -45,9 +45,9 @@ class TestShadowDom(MarionetteTestCase):
             By.CSS_SELECTOR, "custom-checkbox-element"
         )
         shadow_root = element.shadow_root
-        assert isinstance(
-            shadow_root, ShadowRoot
-        ), "Should have received ShadowRoot but got {}".format(shadow_root)
+        assert isinstance(shadow_root, ShadowRoot), (
+            "Should have received ShadowRoot but got {}".format(shadow_root)
+        )
 
     def test_can_get_closed_shadow_root(self):
         self.marionette.navigate(inline(checkbox_dom % "closed"))
@@ -55,9 +55,9 @@ class TestShadowDom(MarionetteTestCase):
             By.CSS_SELECTOR, "custom-checkbox-element"
         )
         shadow_root = element.shadow_root
-        assert isinstance(
-            shadow_root, ShadowRoot
-        ), "Should have received ShadowRoot but got {}".format(shadow_root)
+        assert isinstance(shadow_root, ShadowRoot), (
+            "Should have received ShadowRoot but got {}".format(shadow_root)
+        )
 
     def test_cannot_find_shadow_root(self):
         element = self.marionette.find_element(By.CSS_SELECTOR, "style")

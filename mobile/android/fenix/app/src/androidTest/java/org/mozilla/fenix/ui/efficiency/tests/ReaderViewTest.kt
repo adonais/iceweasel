@@ -15,9 +15,6 @@ import org.mozilla.fenix.ui.efficiency.selectors.ToolbarSelectors
 
 class ReaderViewTest : BaseTest() {
 
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
-
     private val estimatedReadingTime = "1 - 2 minutes"
 
     // ReaderViewPage is not part of PageContext (the appearance controls are a transient overlay the
@@ -33,7 +30,7 @@ class ReaderViewTest : BaseTest() {
     fun verifyReaderModeControlsTest() {
         val readerViewPage = mockWebServer.loremIpsumAsset
 
-        // Reader-view appearance prefs persist across runs/retries; reset them so the baseline
+        // Reader-view appearance prefs persist across test attempts; reset them so the baseline
         // assertions (font size 3) are deterministic regardless of prior state on the device.
         readerView.resetAppearancePrefsToDefault()
 

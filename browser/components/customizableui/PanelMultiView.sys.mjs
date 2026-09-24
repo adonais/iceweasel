@@ -382,7 +382,7 @@ export var PanelMultiView = class extends AssociatedToNode {
    * @memberof PanelMultiView
    * @param {DOMNode} panelNode
    *   The <panel> node that is to be opened.
-   * @param {...*} args
+   * @param {...any} args
    *   Additional arguments to be forwarded to the openPopup method of the
    *   panel.
    * @returns {Promise<boolean, Exception>|boolean}
@@ -627,7 +627,7 @@ export var PanelMultiView = class extends AssociatedToNode {
    * @param {StringOrOpenPopupOptions} options
    *   Either options to use or a string position. This is forwarded to
    *   the openPopup method of the panel.
-   * @param {...*} args
+   * @param {...any} args
    *   Additional arguments to be forwarded to the openPopup method of the
    *   panel.
    * @returns {Promise<boolean, Exception>}
@@ -1699,7 +1699,7 @@ export var PanelView = class extends AssociatedToNode {
    * correct method is called on CustomizableWidget if applicable.
    *
    * @see AssociatedToNode.dispatchCustomEvent
-   * @param {...*} args
+   * @param {...any} args
    *   Additional arguments to be forwarded to the dispatchCustomEvent method of
    *   AssociatedToNode.
    */
@@ -1967,6 +1967,7 @@ export var PanelView = class extends AssociatedToNode {
    * navigate to the previous view, functioning as a shortcut for the view's
    * back button.
    * Thus, in LTR mode:
+   *
    *  - The Right key functions the same as the Enter key, simulating a click
    *  - The Left key triggers a navigation back to the previous view.
    *

@@ -15,15 +15,15 @@ to the firefox source docs.
 3. Run pandoc the following way:
 
 ```shell
-$ pandoc -t rst https://github.com/mdn/archived-content/tree/main/files/en-us/mozilla/firefox/performance_best_practices_for_firefox_fe_engineers > doc.rst
+$ pandoc -t gfm https://github.com/mdn/archived-content/tree/main/files/en-us/mozilla/firefox/performance_best_practices_for_firefox_fe_engineers > doc.md
 ```
 
-4. In the new doc.rst, identify the images and wget/curl them into `img/`.
+4. In the new doc.md, identify the images and wget/curl them into `img/`.
 5. Verify the syntax using [./mach lint -l md]
 6) If relevant, remove unbreakable spaces (rendered with a "!" on Phabricator)
 
 ```shell
-sed -i -e 's/\xc2\xa0/ /g' doc.rst
+sed -i -e 's/\xc2\xa0/ /g' doc.md
 ```
 
 [./mach lint -l md]: /code-quality/lint/linters/md.md

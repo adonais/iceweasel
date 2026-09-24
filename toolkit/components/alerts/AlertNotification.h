@@ -55,7 +55,8 @@ class AlertAction : public nsIAlertAction {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIALERTACTION
 
-  AlertAction(const nsAString& aAction, const nsAString& aTitle);
+  AlertAction(const nsAString& aAction, const nsAString& aTitle,
+              nsIURI* aNavigate);
   static Result<already_AddRefed<AlertAction>, nsresult> Copy(
       nsIAlertAction& aAction);
 
@@ -64,6 +65,7 @@ class AlertAction : public nsIAlertAction {
 
   nsString mAction;
   nsString mTitle;
+  nsCOMPtr<nsIURI> mNavigate;
 };
 
 }  // namespace mozilla

@@ -540,3 +540,36 @@ add_task(async function test_overflow_chevron_visible_while_collapsed() {
 
   await SpecialPowers.popPrefEnv();
 });
+
+// Disabling expand on hover has to restore the height on the same element it
+// collapsed. See bug 1971922.
+add_task(async function test_tools_height_restored_on_disable() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SIDEBAR_VISIBILITY_PREF, "expand-on-hover"]],
+  });
+
+  const { sidebarMain: main, _state: state } = SidebarController;
+  main.expanded = false;
+  await main.updateComplete;
+  state.collapsedToolsHeight = 120;
+
+  await SidebarController.toggleExpandOnHover(true);
+  await SidebarController.waitUntilStable();
+  Assert.equal(
+    main.buttonsWrapper.style.height,
+    "0px",
+    "Enabling expand on hover collapses the tools."
+  );
+
+  await SidebarController.toggleExpandOnHover(false);
+  await SidebarController.waitUntilStable();
+  Assert.equal(
+    main.buttonsWrapper.style.height,
+    "120px",
+    "Disabling expand on hover restores the stored height, with units."
+  );
+
+  state.collapsedToolsHeight = undefined;
+  state.updateToolsHeight();
+  await SpecialPowers.popPrefEnv();
+});

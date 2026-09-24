@@ -330,6 +330,7 @@ button.chip {
   color: var(--text-color);
   font-size: var(--font-size-small);
   height: var(--size-item-small);
+  line-height: var(--size-item-small);
   mask-image: linear-gradient(to left, transparent, var(--color-black) var(--chip-label-mask-size));
   white-space: nowrap;
 

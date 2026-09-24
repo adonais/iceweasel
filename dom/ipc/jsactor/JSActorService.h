@@ -105,8 +105,8 @@ class JSActorProtocol : public nsISupports {
 
  protected:
   explicit JSActorProtocol(const nsACString& aName) : mName(aName) {}
-  void LogMatch(const nsACString& aRemoteType);
-  bool RemoteTypePrefixMatches(const nsACString& aRemoteType);
+  void LogMatch(const RemoteType& aRemoteType);
+  bool RemoteTypeMatches(const RemoteType& aRemoteType);
 
   nsCString mName;
   nsTArray<nsCString> mRemoteTypes;

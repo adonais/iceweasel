@@ -15,8 +15,7 @@ struct Value {
   Value() : m(unsigned(-1)) {}
   explicit Value(unsigned a) : m(a) {}
 
-  bool operator==(const Value& aOther) const { return m == aOther.m; }
-  bool operator!=(const Value& aOther) const { return m != aOther.m; }
+  bool operator==(const Value& aOther) const = default;
 
   unsigned m;
 };

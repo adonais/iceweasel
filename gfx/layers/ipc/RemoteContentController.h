@@ -35,7 +35,7 @@ class RemoteContentController final : public GeckoContentController,
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteContentController, final);
 
-  RemoteContentController();
+  explicit RemoteContentController(const LayersId& aLayersId);
 
   void NotifyLayerTransforms(nsTArray<MatrixMessage>&& aTransforms) override;
 
@@ -97,6 +97,7 @@ class RemoteContentController final : public GeckoContentController,
  private:
   virtual ~RemoteContentController();
 
+  const LayersId mLayersId;
   nsCOMPtr<nsISerialEventTarget> mCompositorThread;
   bool mCanSend;
 
@@ -108,7 +109,7 @@ class RemoteContentController final : public GeckoContentController,
       TapType aTapType, LayoutDevicePoint aPoint, Modifiers aModifiers,
       ScrollableLayerGuid aGuid, uint64_t aInputBlockId,
       const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
-  void NotifyPinchGestureOnCompositorThread(
+  void NotifyPinchGestureOnGPUProcessMainThread(
       PinchGestureInput::PinchGestureType aType,
       const ScrollableLayerGuid& aGuid, const LayoutDevicePoint& aFocusPoint,
       LayoutDeviceCoord aSpanChange, Modifiers aModifiers);

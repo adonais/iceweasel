@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __internal_Hacl_P256_H
 #define __internal_Hacl_P256_H
 
@@ -44,9 +45,10 @@ bool Hacl_Impl_P256_DH_ecp256dh_i(uint8_t *public_key, uint8_t *private_key);
 
 bool
 Hacl_Impl_P256_DH_ecp256dh_r(
-    uint8_t *shared_secret,
-    uint8_t *their_pubkey,
-    uint8_t *private_key);
+  uint8_t *shared_secret,
+  uint8_t *their_pubkey,
+  uint8_t *private_key
+);
 
 #if defined(__cplusplus)
 }

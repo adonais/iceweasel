@@ -2,11 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import {
-  html,
-  nothing,
-  repeat,
-} from "chrome://global/content/vendor/lit.all.mjs";
+import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { SmartwindowOverflowRowMixin } from "chrome://browser/content/aiwindow/components/SmartwindowOverflowRow.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -155,10 +151,8 @@ export class ChatAssistantCitations extends SmartwindowOverflowRowMixin(
               @hidden=${() => (this.isPanelOpen = false)}
               @AIChatContent:OpenLink=${this.#onPanelOpenLink}
             >
-              ${repeat(
-                citationsOverflow,
-                citation => citation.url,
-                citation => this.#renderPill(citation, { itemRole: "menuitem" })
+              ${citationsOverflow.map(citation =>
+                this.#renderPill(citation, { itemRole: "menuitem" })
               )}
             </smartwindow-panel-list>`
           : nothing}

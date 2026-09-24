@@ -129,7 +129,8 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
 
   FT_MM_Var* mMMVar = nullptr;
 
-  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
+  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont
+      MOZ_GUARDED_BY(mLock);
 
   nsTHashSet<uint32_t> mAvailableTables;
 

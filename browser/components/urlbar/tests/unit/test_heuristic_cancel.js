@@ -96,7 +96,7 @@ add_task(async function timerIsCancelled() {
     providers: [slowProvider.name, fastProvider.name],
   });
 
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let queryRecieved, queryCancelled;
   const controllerListener = {
     onQueryResults(queryContext) {
@@ -197,7 +197,7 @@ add_task(async function autofillIsCleared() {
   });
 
   // Set up controller to observe queries.
-  let controller = UrlbarTestUtils.newMockController();
+  let controller = UrlbarTestUtils.mockChildController();
   let queryRecieved, queryCancelled;
   const controllerListener = {
     onQueryResults(queryContext) {

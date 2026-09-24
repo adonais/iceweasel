@@ -424,7 +424,7 @@ aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
   }
   sb << "]";
 
-  RTC_LOG(LS_WARNING) << __FUNCTION__ << sb.str();
+  RTC_LOG(LS_WARNING) << __FUNCTION__ << sb.Release();
 
   return ref_frame_config;
 }
@@ -529,7 +529,7 @@ aom_svc_params_t GetSvcParams(
     sb << "]";
   }
 
-  RTC_LOG(LS_WARNING) << sb.str();
+  RTC_LOG(LS_WARNING) << sb.Release();
 
   return svc_params;
 }

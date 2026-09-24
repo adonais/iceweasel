@@ -194,14 +194,7 @@ static void AssignSourceNameHelper(nsCString& aSourceNameDest,
     return;
   }
 
-  aSourceNameDest.Assign(aSourceNameSrc);
-
-  nsCOMPtr<nsIURI> uri;
-  nsAutoCString pass;
-  if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), aSourceNameSrc)) &&
-      NS_SUCCEEDED(uri->GetPassword(pass)) && !pass.IsEmpty()) {
-    NS_GetSanitizedURIStringFromURI(uri, aSourceNameDest);
-  }
+  NS_GetSanitizedSpecFromSpec(aSourceNameSrc, aSourceNameDest);
 }
 
 static void AssignSourceNameHelper(nsIURI* aSourceURI,

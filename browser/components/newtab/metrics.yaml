@@ -362,6 +362,111 @@ newtab:
     send_in_pings:
       - newtab
 
+  wallpaper_saved_add:
+    type: event
+    description: >
+      Recorded when an image is added to the "Your images" folder. Sent by the
+      parent process once the image is really saved, so an upload the parent
+      refuses is not counted. Covers an image someone added and a Picture of
+      the Day they kept. A Firefox wallpaper kept for them when it was retired
+      is saved during a background sync with no page to attribute it to, so it
+      is not counted here. Applying a picture already saved is reported as a
+      selection rather than another save.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dgrant@mozilla.com
+    expires: never
+    extra_keys:
+      wallpaper_source:
+        description: >
+          Where the image came from: "custom" for an image someone added,
+          "potd" for a Picture of the Day they kept
+        type: string
+      saved_wallpaper_count:
+        description: >
+          How many wallpapers the user has saved once this one is in
+        type: quantity
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  wallpaper_saved_click:
+    type: event
+    description: >
+      Recorded when a wallpaper from the "Your images" folder has been applied.
+      Sent by the parent process once the image is really applied, so a request
+      the parent refuses is not counted. A saved wallpaper can be a file the
+      user uploaded, a Picture of the Day they chose to keep, or a Firefox
+      wallpaper kept for them when it was retired. Recorded in addition to
+      wallpaper_click, which reports every saved wallpaper as "custom" and so
+      cannot tell them apart; the two together describe one selection, not two.
+      Carries no name of any kind. An image someone added is known only by a
+      number, and a kept picture is known by its own description.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dgrant@mozilla.com
+    expires: never
+    extra_keys:
+      saved_wallpaper_count:
+        description: >
+          How many wallpapers the user has saved at the time of the click
+        type: quantity
+      wallpaper_source:
+        description: >
+          Where the picked image came from: "custom" for an image someone
+          added, "potd" for a Picture of the Day they kept, "builtin" for a
+          Firefox wallpaper kept for them when it was retired
+        type: string
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  wallpaper_saved_remove:
+    type: event
+    description: >
+      Recorded when a wallpaper has been removed from the "Your images" folder.
+      Sent by the parent process once the image is really gone, so a removal
+      that fails is not counted. A saved wallpaper can be a file the user
+      uploaded, a Picture of the Day they chose to keep, or a Firefox wallpaper
+      kept for them when it was retired. Carries no name of any kind.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2067845
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dgrant@mozilla.com
+    expires: never
+    extra_keys:
+      saved_wallpaper_count:
+        description: >
+          How many wallpapers the user has saved after the removal
+        type: quantity
+      was_applied:
+        description: >
+          Whether the removed wallpaper was the one currently on the page
+        type: boolean
+      wallpaper_source:
+        description: >
+          Where the removed image came from: "custom" for a file the user
+          uploaded, "potd" for a Picture of the Day they kept, or "builtin"
+          for a Firefox wallpaper kept when it was retired
+        type: string
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
   wallpaper_highlight_cta_click:
     type: event
     description: >
@@ -416,6 +521,71 @@ newtab:
         description: >
           Which wallpaper category selected by user
         type: string
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  customize_panel_open:
+    type: event
+    description: >
+      Recorded when the customize panel becomes visible, whichever control
+      or message opened it.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npypchenko@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  customize_panel_subpanel_open:
+    type: event
+    description: >
+      Recorded when one of the customize panel's subpanels becomes visible,
+      whether opened from the panel, from a widget's context menu, or by a
+      message deep link.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npypchenko@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      panel:
+        description: >
+          Which subpanel opened. One of themes_management,
+          wallpaper_categories, sections_management, widgets_management,
+          the ids of CUSTOMIZE_SUBPANELS in
+          browser/extensions/newtab/content-src/lib/constants.mjs.
+        type: string
+    send_in_pings:
+      - newtab
+
+  appearance_explore_more_themes_click:
+    type: event
+    description: >
+      Recorded when the user clicks Explore more themes in the customize
+      panel's themes subpanel, which opens the about:addons themes list.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066344
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - npypchenko@mozilla.com
+    expires: never
+    extra_keys:
       newtab_visit_id: *newtab_visit_id
     send_in_pings:
       - newtab
@@ -860,6 +1030,35 @@ newtab:
       topic_position:
         description: >
           position of the topic within the inline selection component (index point starting at 0)
+        type: string
+    send_in_pings:
+      - newtab
+
+  topic_navigation_click:
+    type: event
+    description: >
+      Recorded when a topic in the topic navigation strip above the stories is
+      clicked, scrolling the page to that section.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066897
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2066897
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - ini@mozilla.com
+      - sdowne@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      topic:
+        description: >
+          Key of the section the clicked topic scrolls to
+        type: string
+      event_source:
+        description: >
+          Whether the click came from the topic strip ("TOPIC_STRIP")
+          or the More dropdown ("OVERFLOW_MENU")
         type: string
     send_in_pings:
       - newtab
@@ -1728,6 +1927,14 @@ topsites:
       smart_weights: &smart_weights
         description: stringified json storing weights for each feature during smart shortcut ranking
         type: string
+      is_ad_eligible_position:
+        description: >
+          Recorded as true when the position this tile occupied is one an ad is
+          allowed to fill, and omitted otherwise. Independent of `is_sponsored`,
+          which reports whether this particular tile is an ad: an ad-eligible
+          position that no ad was available for is filled with an organic or
+          pinned tile and still reports true.
+        type: boolean
     send_in_pings:
       - newtab
 
@@ -2207,6 +2414,21 @@ pocket:
         type: string
       is_section_followed: *is_section_followed
       layout_name: *layout_name
+      card_column: &card_column
+        description: >
+          The 1-based grid column the card occupied at the time of the event.
+          A card spanning several columns reports its leftmost one.
+        type: quantity
+      is_ad_eligible_position:
+        description: >
+          Recorded as true when the position this card occupied is one an ad is
+          allowed to fill, and omitted otherwise. Never recorded when sponsored
+          content is turned off, either by the user or by Mozilla, since no
+          position can hold an ad then. Independent of `is_sponsored`, which
+          reports whether this particular card is an ad: an ad-eligible position
+          that no ad was available for is filled with organic content and still
+          reports true.
+        type: boolean
       content_redacted:
         description: >
           Are content details sent separately in the newtab_content ping
@@ -2263,6 +2485,7 @@ pocket:
       is_section_followed: *is_section_followed
       layout_name: *layout_name
       event_source: *event_source
+      card_column: *card_column
       content_redacted:
         description: >
           Are content details sent separately in the newtab_content ping
@@ -2650,14 +2873,11 @@ newtab_content:
         description: >
           If click belongs in a section, the name of the section
         type: string
-      section_position:
-        description: >
-          If click belongs in a section, the numberic position of the section
-        type: string
       is_section_followed:
         description: >
           If click belongs in a section, if that section is followed
         type: boolean
+      layout_name: *layout_name
     send_in_pings:
       - newtab-content
 
@@ -2701,14 +2921,11 @@ newtab_content:
         description: >
           If click belongs in a section, the name of the section
         type: string
-      section_position:
-        description: >
-          If click belongs in a section, the numberic position of the section
-        type: string
       is_section_followed:
         description: >
           If click belongs in a section, if that section is followed
         type: boolean
+      layout_name: *layout_name
     send_in_pings:
       - newtab-content
 

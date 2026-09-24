@@ -4,73 +4,35 @@
 
 #include "sdp/SipccSdpMediaSection.h"
 
-#include <ostream>
-
 #include "sdp/SdpParser.h"
 
 extern "C" {
 #include "sipcc_sdp.h"
 }
 
-#ifdef CRLF
-#  undef CRLF
-#endif
-#define CRLF "\r\n"
-
 namespace mozilla {
+
+bool LoadBandwidths(sdp_t* sdp, const uint16_t level, InternalResults& results,
+                    SdpBandwidths& bandwidths) {
+  size_t count = sdp_get_num_bw_lines(sdp, level);
+  for (size_t i = 1; i <= count; ++i) {
+    sdp_bw_modifier_e bwtype = sdp_get_bw_modifier(sdp, level, i);
+    uint32_t bandwidth = sdp_get_bw_value(sdp, level, i);
+    if (bwtype != SDP_BW_MODIFIER_UNSUPPORTED) {
+      const char* typeName = sdp_get_bw_modifier_name(bwtype);
+      bandwidths[typeName] = bandwidth;
+    }
+  }
+
+  return true;
+}
 
 SipccSdpMediaSection::SipccSdpMediaSection(
     const SipccSdpMediaSection& aOrig,
     const SipccSdpAttributeList* sessionLevel)
-    : SdpMediaSection(aOrig),
-      mMediaType(aOrig.mMediaType),
-      mPort(aOrig.mPort),
-      mPortCount(aOrig.mPortCount),
-      mProtocol(aOrig.mProtocol),
-      mFormats(aOrig.mFormats),
-      mConnection(MakeUnique<SdpConnection>(*aOrig.mConnection)),
-      mBandwidths(aOrig.mBandwidths),
-      mAttributeList(aOrig.mAttributeList, sessionLevel) {}
-
-unsigned int SipccSdpMediaSection::GetPort() const { return mPort; }
-
-void SipccSdpMediaSection::SetPort(const unsigned int port) { mPort = port; }
-
-unsigned int SipccSdpMediaSection::GetPortCount() const { return mPortCount; }
-
-SdpMediaSection::Protocol SipccSdpMediaSection::GetProtocol() const {
-  return mProtocol;
-}
-
-const SdpConnection& SipccSdpMediaSection::GetConnection() const {
-  return *mConnection;
-}
-
-SdpConnection& SipccSdpMediaSection::GetConnection() { return *mConnection; }
-
-uint32_t SipccSdpMediaSection::GetBandwidth(const std::string& type) const {
-  auto found = mBandwidths.find(type);
-  if (found == mBandwidths.end()) {
-    return 0;
-  }
-  return found->second;
-}
-
-const std::vector<std::string>& SipccSdpMediaSection::GetFormats() const {
-  return mFormats;
-}
-
-const SdpAttributeList& SipccSdpMediaSection::GetAttributeList() const {
-  return mAttributeList;
-}
-
-SdpAttributeList& SipccSdpMediaSection::GetAttributeList() {
-  return mAttributeList;
-}
-
-SdpDirectionAttribute SipccSdpMediaSection::GetDirectionAttribute() const {
-  return SdpDirectionAttribute(mAttributeList.GetDirection());
-}
+    : SdpMediaSectionImpl(
+          aOrig, UniquePtr<SdpAttributeListImpl>(new SipccSdpAttributeList(
+                     aOrig.SipccAttributeList(), sessionLevel))) {}
 
 bool SipccSdpMediaSection::Load(sdp_t* sdp, const uint16_t level,
                                 InternalResults& results) {
@@ -115,7 +77,7 @@ bool SipccSdpMediaSection::Load(sdp_t* sdp, const uint16_t level,
     return false;
   }
 
-  if (!mAttributeList.Load(sdp, level, results)) {
+  if (!SipccAttributeList().Load(sdp, level, results)) {
     return false;
   }
 
@@ -123,7 +85,7 @@ bool SipccSdpMediaSection::Load(sdp_t* sdp, const uint16_t level,
     return false;
   }
 
-  if (!mBandwidths.Load(sdp, level, results)) {
+  if (!LoadBandwidths(sdp, level, results, mBandwidths)) {
     return false;
   }
 
@@ -301,103 +263,6 @@ bool SipccSdpMediaSection::LoadConnection(sdp_t* sdp, uint16_t level,
   }
   mConnection = MakeUnique<SdpConnection>(addrType, address, ttl, numAddr);
   return true;
-}
-
-void SipccSdpMediaSection::AddCodec(const std::string& pt,
-                                    const std::string& name,
-                                    const uint32_t clockrate,
-                                    const uint16_t channels) {
-  mFormats.push_back(pt);
-
-  auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
-  if (mAttributeList.HasAttribute(SdpAttribute::kRtpmapAttribute)) {
-    const SdpRtpmapAttributeList& old = mAttributeList.GetRtpmap();
-    for (auto it = old.mRtpmaps.begin(); it != old.mRtpmaps.end(); ++it) {
-      rtpmap->mRtpmaps.push_back(*it);
-    }
-  }
-  SdpRtpmapAttributeList::CodecType codec = SdpRtpmapAttributeList::kOtherCodec;
-  if (name == "opus") {
-    codec = SdpRtpmapAttributeList::kOpus;
-  } else if (name == "G722") {
-    codec = SdpRtpmapAttributeList::kG722;
-  } else if (name == "PCMU") {
-    codec = SdpRtpmapAttributeList::kPCMU;
-  } else if (name == "PCMA") {
-    codec = SdpRtpmapAttributeList::kPCMA;
-  } else if (name == "VP8") {
-    codec = SdpRtpmapAttributeList::kVP8;
-  } else if (name == "VP9") {
-    codec = SdpRtpmapAttributeList::kVP9;
-  } else if (name == "H264") {
-    codec = SdpRtpmapAttributeList::kH264;
-  }
-
-  rtpmap->PushEntry(pt, codec, name, clockrate, channels);
-  mAttributeList.SetAttribute(std::move(rtpmap));
-}
-
-void SipccSdpMediaSection::ClearCodecs() {
-  mFormats.clear();
-  mAttributeList.RemoveAttribute(SdpAttribute::kRtpmapAttribute);
-  mAttributeList.RemoveAttribute(SdpAttribute::kFmtpAttribute);
-  mAttributeList.RemoveAttribute(SdpAttribute::kSctpmapAttribute);
-  mAttributeList.RemoveAttribute(SdpAttribute::kRtcpFbAttribute);
-}
-
-void SipccSdpMediaSection::AddDataChannel(const std::string& name,
-                                          const uint16_t port,
-                                          const uint16_t streams,
-                                          const uint32_t message_size) {
-  // Only one allowed, for now. This may change as the specs (and deployments)
-  // evolve.
-  mFormats.clear();
-  if ((mProtocol == kUdpDtlsSctp) || (mProtocol == kTcpDtlsSctp)) {
-    // new data channel format according to draft 21
-    mFormats.push_back(name);
-    mAttributeList.SetAttribute(
-        MakeUnique<SdpNumberAttribute>(SdpAttribute::kSctpPortAttribute, port));
-    if (message_size) {
-      mAttributeList.SetAttribute(MakeUnique<SdpNumberAttribute>(
-          SdpAttribute::kMaxMessageSizeAttribute, message_size));
-    }
-  } else {
-    // old data channels format according to draft 05
-    std::string port_str = std::to_string(port);
-    mFormats.push_back(port_str);
-    auto sctpmap = MakeUnique<SdpSctpmapAttributeList>();
-    sctpmap->PushEntry(port_str, name, streams);
-    mAttributeList.SetAttribute(std::move(sctpmap));
-    if (message_size) {
-      // This is a workaround to allow detecting Firefox's w/o EOR support
-      mAttributeList.SetAttribute(MakeUnique<SdpNumberAttribute>(
-          SdpAttribute::kMaxMessageSizeAttribute, message_size));
-    }
-  }
-}
-
-void SipccSdpMediaSection::Serialize(std::ostream& os) const {
-  os << "m=" << mMediaType << " " << mPort;
-  if (mPortCount) {
-    os << "/" << mPortCount;
-  }
-  os << " " << mProtocol;
-  for (auto i = mFormats.begin(); i != mFormats.end(); ++i) {
-    os << " " << (*i);
-  }
-  os << CRLF;
-
-  // We don't do i=
-
-  if (mConnection) {
-    os << *mConnection;
-  }
-
-  mBandwidths.Serialize(os);
-
-  // We don't do k= because they're evil
-
-  os << mAttributeList;
 }
 
 }  // namespace mozilla

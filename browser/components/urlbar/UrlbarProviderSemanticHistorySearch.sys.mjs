@@ -270,6 +270,11 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
     return 0;
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
     if (details.selType == "dismiss") {

@@ -597,6 +597,10 @@ NSS=trustOrder=100
         HOSTDIR=${TESTDIR}/${HOST}'.'$version
 
         mkdir -p ${HOSTDIR}
+
+        # Stable path to the most recent run, so that callers do not have to
+        # sort the numbered directories themselves.
+        ln -sfn ${HOST}'.'$version ${TESTDIR}/latest 2>/dev/null
     fi
 
 #result and log file and filename init,

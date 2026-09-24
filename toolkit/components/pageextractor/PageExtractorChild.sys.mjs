@@ -45,6 +45,13 @@ const lazy = XPCOMUtils.declareLazy({
  */
 export class PageExtractorChild extends JSWindowActorChild {
   /**
+   * True once this actor has waited for its document to become page-ready.
+   *
+   * @type {boolean}
+   */
+  #isPageReady = false;
+
+  /**
    * Route the messages coming from the parent process.
    *
    * @param {object} message
@@ -56,7 +63,9 @@ export class PageExtractorChild extends JSWindowActorChild {
   async receiveMessage({ name, data }) {
     switch (name) {
       case "PageExtractorParent:GetText":
-        await this.waitForPageReady();
+        if (!this.#isPageReady) {
+          await this.waitForPageReady();
+        }
         return this.getText(data);
       case "PageExtractorParent:WaitForPageReady":
         return this.waitForPageReady();
@@ -113,6 +122,7 @@ export class PageExtractorChild extends JSWindowActorChild {
     await new Promise(resolve => {
       win.requestAnimationFrame(() => win.requestAnimationFrame(resolve));
     });
+    this.#isPageReady = true;
   }
 
   /**

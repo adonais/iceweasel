@@ -41,6 +41,7 @@
   <string name="menu_settings">Ke´i</string>
   <string name="menu_about">Jiee ya´a</string>
   <string name="menu_help">Chinei</string>
+  <string name="menu_terms_of_use">Tutu kachi naja ni\'io ya\'a</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -114,6 +115,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="BrandUsage,IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s taji kajinu.</p>\n<p>Ni´ima kua iin nuu nánuku yu´u:\n<ul>\n<li>Nánuku jee kaka nuu ka̱a̱ ya´a</li>\n<li>Chiyu´u daa a nita no´o (a xíín kaji kuvi kuntadaja noo´o)</li>\n<li>Xina saa kuvi naá cokies jii daa tu´un nnánukunu</li>\n</ul> </p>\n<p>%1$s kuviji iin nsa´a Mozilla. Nukudani iin internet vii jee va´a.<br/>\n<a href=\"%2$s\">Ka´vi ku´eka</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Ka´vi kue´eka</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privacidad jii seguridad</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -273,6 +276,8 @@
   <string name="preference_licensing_info">Tutu nákani saa kuantiñunu ya´a</string>
   <!-- Link to Focus licensing information from other libraries that we use. -->
   <string name="preference_libraries_we_use">Bibliotecas a ni´idani</string>
+  <!-- Link to Focus Crash reports list. -->
+  <string name="preference_crashes">Fallos</string>
   <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="open_source_licenses_title">%s | Bibliotecas OSS</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
@@ -334,6 +339,24 @@
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">Ñama. Iyo yu´u. Ntu iyo tixi.</string>
   <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Tu kɨ´ɨnɨ, kuka\'nu ininu da %1$s.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Tu\'un kachi naja ni\'io Firefox</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link_2">Tu´un xitu a nejika kumio</string>
+  <!-- New Onboarding flow first screen button label -->
+  <string name="onboarding_first_screen_button_agree_and_continue_2">Kɨ´ɨ</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">Link disponible</string>
+  <!--
     Onboarding second screen: Title
 
     %1$s will be replaced by the app short name(Focus)
@@ -386,11 +409,22 @@
   <string name="notification_browsing_session_channel_description">Daa notificación kuvi xita daa sesión nuu %1$s nejika kuaxinu. Ntu nejika sinenu ka̱a̱ saa kune´yanu a nune nu ka̱a̱ nánuku.</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
   <string name="tabs_tray_action_erase_other">Nakasɨ da inka pestaña</string>
+  <!-- Label for the option in the Focus "tabs tray" to add a new tab. -->
+  <string name="tabs_tray_action_add_new_tab">Tee pestaña jíía</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Xinuun Firefox</string>
+  <!--
+    Text shown in Security Information Popup
+
+    %1$s will be replaced with the organization for which the certificate
+    used by the site was issued. For example, the certificate in use by
+    the site https://eidas.ec.europa.eu/ was issued to "The European
+    Commission".
+  -->
+  <string name="qualified_identity">Certificado ntava %1$s</string>
   <string name="preference_autocomplete_duplicate_url_error">URL ya´a a íyo</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Nánuku nuu página</string>

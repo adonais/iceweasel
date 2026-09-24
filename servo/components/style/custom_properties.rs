@@ -6,6 +6,7 @@
 //!
 //! [custom]: https://drafts.csswg.org/css-variables/
 
+use crate::FxHashMap;
 use crate::custom_properties_map::{CustomPropertiesMap, OwnMap};
 use crate::device::Device;
 use crate::dom::AttributeTracker;
@@ -18,8 +19,8 @@ use crate::properties_and_values::{
         SpecifiedValue as SpecifiedRegisteredValue,
     },
 };
-use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylesheets::UrlExtraData;
+use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylist::Stylist;
 use crate::typed_om::{
     ToTyped, TypedValue, UnparsedSegment, UnparsedValue, VariableReferenceValue,
@@ -27,11 +28,8 @@ use crate::typed_om::{
 use crate::values::computed;
 use crate::values::generics::calc::SortKey as AttrUnit;
 use crate::values::specified::{NoCalcLength, ParsedNamespace};
-use crate::{derives::*, Atom, LocalName, Namespace, Prefix};
-use cssparser::{
-    CowRcStr, Delimiter, Parser, ParserInput, SourcePosition, Token, TokenSerializationType,
-};
-use rustc_hash::FxHashMap;
+use crate::{Atom, LocalName, Namespace, Prefix, derives::*};
+use cssparser::{CowRcStr, Delimiter, Parser, SourcePosition, Token, TokenSerializationType};
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
 use smallvec::SmallVec;
@@ -215,8 +213,7 @@ impl CssEnvironment {
                 .0
                 .iter()
                 .find(|p| p.name.0 == *name)?;
-            let mut input = cssparser::ParserInput::new(param.value.0.as_ref());
-            let mut parser = cssparser::Parser::new(&mut input);
+            let mut parser = cssparser::Parser::new(param.value.0.as_ref());
             // need to carry around full variable value https://bugzilla.mozilla.org/show_bug.cgi?id=2028998
             return VariableValue::parse(&mut parser, None, url_data).ok();
         }
@@ -241,7 +238,7 @@ pub type Name = Atom;
 
 impl LocalName {
     #[cfg(feature = "gecko")]
-    fn with_name<'a, R>(name: &'a Name, callback: impl FnOnce(&Self) -> R) -> R {
+    fn with_name<R>(name: &Name, callback: impl FnOnce(&Self) -> R) -> R {
         callback(Self::cast(name))
     }
 
@@ -399,7 +396,7 @@ fn reify_variable_value_range(
         }
 
         let (fallback, has_fallback) = if let Some(fallback) = &reference.fallback {
-            debug_assert!(fallback.start.get() <= reference.end - 1);
+            debug_assert!(fallback.start.get() < reference.end);
 
             (
                 reify_variable_value_range(
@@ -1091,8 +1088,8 @@ impl VariableValue {
                 // references here.
                 references.insert(r.name.clone().into());
                 let lowercase = r.name.to_ascii_lowercase();
-                if r.name != lowercase {
-                    references.insert(lowercase.into());
+                if *lowercase != *r.name {
+                    references.insert(Atom::from(lowercase).into());
                 }
             }
         })
@@ -1205,21 +1202,19 @@ fn parse_declaration_value_block(
                     let mut input_end_position = None;
                     let fallback = input.parse_nested_block(|input| {
                         let mut namespace = ParsedNamespace::Known(Namespace::default());
-                        if substitution_kind == SubstitutionFunctionKind::Attr {
-                            if let Some(namespaces) = namespaces {
-                                if let Ok(ns) = input
-                                    .try_parse(|input| ParsedNamespace::parse(namespaces, input))
-                                {
-                                    namespace = ns;
-                                    let prev = input.state();
-                                    let next = match *input.next_including_whitespace()? {
-                                        Token::Ident(_) => Ok(()),
-                                        _ => Err(ParseError::unexpected_token()),
-                                    };
-                                    input.reset(&prev);
-                                    next?;
-                                }
-                            }
+                        if substitution_kind == SubstitutionFunctionKind::Attr
+                            && let Some(namespaces) = namespaces
+                            && let Ok(ns) =
+                                input.try_parse(|input| ParsedNamespace::parse(namespaces, input))
+                        {
+                            namespace = ns;
+                            let prev = input.state();
+                            let next = match *input.next_including_whitespace()? {
+                                Token::Ident(_) => Ok(()),
+                                _ => Err(ParseError::unexpected_token()),
+                            };
+                            input.reset(&prev);
+                            next?;
                         }
                         // TODO(emilio): For env() this should be <custom-ident> per spec, but no other browser does
                         // that, see https://github.com/w3c/csswg-drafts/issues/3262.
@@ -1263,7 +1258,7 @@ fn parse_declaration_value_block(
                                 kind: attribute_kind,
                                 namespace,
                             },
-                            substitution_kind: substitution_kind.clone(),
+                            substitution_kind,
                         });
 
                         let mut fallback = None;
@@ -1308,7 +1303,7 @@ fn parse_declaration_value_block(
                         Ok(fallback)
                     })?;
                     if input_end_position.unwrap() == input.position() {
-                        missing_closing_characters.push_str(")");
+                        missing_closing_characters.push(')');
                     }
                     prev_reference_index = Some(our_ref_index);
                     let reference = &mut references.refs[our_ref_index];
@@ -1360,10 +1355,10 @@ fn parse_declaration_value_block(
                     // Check the value in case the final backslash was itself escaped.
                     // Serialize as escaped U+FFFD, which is also interpreted as U+FFFD.
                     // (Unescaped U+FFFD would also work, but removing the backslash is annoying.)
-                    missing_closing_characters.push_str("�")
+                    missing_closing_characters.push('�')
                 }
                 if is_unquoted_url && !input.slice_from(token_start).ends_with(")") {
-                    missing_closing_characters.push_str(")");
+                    missing_closing_characters.push(')');
                 }
             },
             _ => {},
@@ -1378,12 +1373,10 @@ fn parse_attr_type(input: &mut Parser) -> AttributeType {
     input
         .try_parse(|input| {
             Ok(match input.next()? {
-                Token::Function(ref name) if name.eq_ignore_ascii_case("type") => {
-                    AttributeType::Type(
-                        input.parse_nested_block(SyntaxDescriptor::from_css_parser)?,
-                    )
-                },
-                Token::Ident(ref ident) => {
+                Token::Function(name) if name.eq_ignore_ascii_case("type") => AttributeType::Type(
+                    input.parse_nested_block(SyntaxDescriptor::from_css_parser)?,
+                ),
+                Token::Ident(ident) => {
                     if ident.eq_ignore_ascii_case("raw-string") {
                         AttributeType::RawString
                     } else if let Ok(unit) = AttrUnit::from_ident(ident) {
@@ -1414,10 +1407,9 @@ pub fn get_attr_value_for_cycle_resolution(
     let attr = LocalName::with_name(name, |local_name| {
         attribute_tracker.query(local_name, namespace).ok_or(())
     })?;
-    let mut input = ParserInput::new(&attr);
-    let mut parser = Parser::new(&mut input);
+    let mut parser = Parser::new(&attr);
     // TODO(Bug 2021110): Support namespaced attributes in chained references.
-    let value = VariableValue::parse(&mut parser, None, &url_data).map_err(|_| ())?;
+    let value = VariableValue::parse(&mut parser, None, url_data).map_err(|_| ())?;
     Ok(ComputedRegisteredValue::universal(Arc::new(value)))
 }
 
@@ -1440,21 +1432,20 @@ pub fn handle_invalid_at_computed_value_time(
                 );
                 return;
             }
-        } else if let Some(ref initial_value) = registration.initial_value {
-            if let Ok(initial_value) = compute_value(
+        } else if let Some(ref initial_value) = registration.initial_value
+            && let Ok(initial_value) = compute_value(
                 &initial_value.css,
                 &initial_value.url_data,
                 registration,
                 context,
                 AttrTaint::default(),
-            ) {
-                context.builder.substitution_functions.insert_var(
-                    registration,
-                    name,
-                    initial_value,
-                );
-                return;
-            }
+            )
+        {
+            context
+                .builder
+                .substitution_functions
+                .insert_var(registration, name, initial_value);
+            return;
         }
     }
     context
@@ -1474,7 +1465,7 @@ pub fn substitute_references_if_needed_and_apply(
 ) {
     debug_assert_ne!(kind, SubstitutionFunctionKind::Env);
     let is_var = matches!(kind, SubstitutionFunctionKind::Var);
-    let registration = stylist.get_custom_property_registration(&name);
+    let registration = stylist.get_custom_property_registration(name);
     if is_var && !value.has_references() && registration.is_universal() {
         // Trivial path: no references and no need to compute the value, just apply it directly.
         let computed_value = ComputedRegisteredValue::universal(Arc::clone(value));
@@ -1510,8 +1501,7 @@ pub fn substitute_references_if_needed_and_apply(
     if is_var {
         let css = &substitution.css;
         let css_wide_kw = {
-            let mut input = ParserInput::new(&css);
-            let mut input = Parser::new(&mut input);
+            let mut input = Parser::new(css);
             input.try_parse(CSSWideKeyword::parse)
         };
 
@@ -1674,9 +1664,7 @@ fn compute_value(
 ) -> Result<ComputedRegisteredValue, ()> {
     debug_assert!(!registration.is_universal());
 
-    let mut input = ParserInput::new(&css);
-    let mut input = Parser::new(&mut input);
-
+    let mut input = Parser::new(css);
     SpecifiedRegisteredValue::compute(
         &mut input,
         registration,
@@ -1735,8 +1723,8 @@ fn do_substitute_chunk<'a>(
     let mut next_token_type = first_token_type;
     let mut cur_pos = start;
     let mut attr_tainted = false;
-    let mut references = references.iter();
-    while let Some(reference) = references.next() {
+    let references = references.iter();
+    for reference in references {
         if reference.start != cur_pos {
             substituted.push(
                 &css[cur_pos..reference.start],
@@ -1908,8 +1896,7 @@ fn substitute_one_reference<'a>(
                         } else {
                             attr
                         };
-                        let mut input = ParserInput::new(&attr);
-                        let mut parser = Parser::new(&mut input);
+                        let mut parser = Parser::new(&attr);
                         match &reference.attribute_data.kind {
                             AttributeType::Unit(unit) => {
                                 let css = {
@@ -1933,7 +1920,7 @@ fn substitute_one_reference<'a>(
                             AttributeType::Type(syntax) => {
                                 let value = SpecifiedRegisteredValue::parse(
                                     &mut parser,
-                                    &syntax,
+                                    syntax,
                                     url_data,
                                     None,
                                     AllowComputationallyDependent::Yes,
@@ -1988,7 +1975,7 @@ fn substitute_internal<'a>(
     computed_context: &computed::Context,
     attribute_tracker: &mut AttributeTracker,
     seen: &mut SmallVec<[&'a Name; 8]>,
-    mut attr_taint: Option<&mut AttrTaint>,
+    attr_taint: Option<&mut AttrTaint>,
 ) -> Result<Substitution<'a>, ()> {
     do_substitute_chunk(
         &variable_value.css,
@@ -2003,7 +1990,7 @@ fn substitute_internal<'a>(
         &variable_value.references.refs,
         attribute_tracker,
         seen,
-        attr_taint.as_deref_mut(),
+        attr_taint,
     )
 }
 

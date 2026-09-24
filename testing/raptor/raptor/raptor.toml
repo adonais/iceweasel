@@ -61,6 +61,12 @@
 ["include:tests/custom/browsertime-indexeddb.toml"]
 # Custom indexeddb test
 
+["include:tests/custom/browsertime-media-playback.toml"]
+# Custom media playback power test, hardware-decode track
+
+["include:tests/custom/browsertime-media-playback-sw.toml"]
+# Custom media playback power test, software-decode track
+
 ["include:tests/custom/browsertime-media-seek.toml"]
 # Custom media seek-latency test
 

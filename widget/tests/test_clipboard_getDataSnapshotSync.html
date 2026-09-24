@@ -15,5 +15,14 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1858627
 <pre id="test"></pre>
 <!-- Tests are in file_test_clipboard_getDataSnapshotSync.js -->
 <script src="file_test_clipboard_getDataSnapshotSync.js"></script>
+<script>
+  add_setup(async function init() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["dom.events.testing.asyncClipboard", true],
+      ],
+    });
+  });
+</script>
 </body>
 </html>

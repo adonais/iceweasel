@@ -613,7 +613,7 @@ class nsDisplayVideo final : public nsPaintedDisplayItem {
     return container.forget();
   }
 
-  bool CreateWebRenderCommands(
+  WebRenderCommandsResult CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc,
@@ -624,7 +624,7 @@ class nsDisplayVideo final : public nsPaintedDisplayItem {
     nsRect dest;
     RefPtr<ImageContainer> container = GetImageContainer(destGFXRect, dest);
     if (!container) {
-      return true;
+      return Ok();
     }
 
     container->SetRotation(element->RotationDegrees());
@@ -639,7 +639,7 @@ class nsDisplayVideo final : public nsPaintedDisplayItem {
 
     dom::ContainerTimingHelpers::MaybeProcessPaintForContainer(element, Frame(),
                                                                dest);
-    return true;
+    return Ok();
   }
 
   // For opaque videos, we will want to override GetOpaqueRegion here.

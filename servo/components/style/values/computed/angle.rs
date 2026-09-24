@@ -4,15 +4,14 @@
 
 //! Computed angles.
 
+use crate::Zero;
 use crate::derives::*;
 use crate::typed_om::{NumericType, NumericValue, ToTyped, TypedValue, UnitValue};
-use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::CSSFloat;
-use crate::Zero;
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use std::f64::consts::PI;
 use std::fmt::{self, Write};
 use std::ops::{AddAssign, Neg};
-use std::{f32, f64};
 use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;
 

@@ -48,8 +48,9 @@ will lead to a smoother, more rapid process of review and acceptance.
 - All caught exceptions should be logged at the appropriate level,
   bearing in mind personally identifiable information, but also
   considering the expense of computing and recording log output.
-  [Fennec: Checking for log levels is expensive unless you're using
-  Logger.]
+  Fenix: prefer the android-components `Logger` over
+  `android.util.Log`; its `message` parameter is eagerly evaluated, so
+  don't build expensive strings inline.
 - Error messages that appear in web platform environments should
   explain the reason for the error, and use web platform terminology
   (as opposed to internal Firefox terminology). More details can be
@@ -82,8 +83,8 @@ will lead to a smoother, more rapid process of review and acceptance.
 
 - There should be no logging of URLs or content from which URLs may be
   inferred.
-- [Fennec: Android Services has Logger.pii() for this purpose (e.g.,
-  logging profile dir)].
+- Fenix: there is no PII-safe logging helper; keep URLs and profile
+  paths out of log messages entirely.
 - Tag for privacy review if needed.
 
 ## Resource leaks
@@ -93,27 +94,24 @@ will lead to a smoother, more rapid process of review and acceptance.
   sitting in a queue.
 - In C++, cycle-collect as needed. If JavaScript can see your object,
   it probably needs to be cycle-collected.
-- [Fennec: If your custom view does animations, it's better to clean up
-  runnables in onDetachFromWindow().]
+- Fenix: if your custom view does animations, clean up runnables in
+  onDetachedFromWindow().
 - Ensure all file handles and other closeable resources are closed
   appropriately.
-- [Fennec: When writing tests that use PaintedSurface, ensure the
-  PaintedSurface is closed when you're done with it.]
 
 ## Performance impact
 
-- Check for main-thread IO [Fennec: Android may warn about this with
-  strictmode].
+- Check for main-thread IO. Fenix: Android may warn about this with
+  StrictMode.
 - Remove debug logging that is not needed in production.
 
 ## Threading issues
 
 - Enormous: correct use of locking and volatility; livelock and
   deadlock; ownership.
-- [Fennec: All view methods should be touched only on UI thread.]
-- \[Fennec: Activity lifecycle awareness (works with "never keep
-  activities"). Also test with oom-fennec
-  ([https://hg.mozilla.org/users/blassey_mozilla.com/oom-fennec/)](https://hg.mozilla.org/users/blassey_mozilla.com/oom-fennec/%29)\].
+- Fenix: all view methods should be touched only on the UI thread.
+- Fenix: activity lifecycle awareness -- test with "Don't keep
+  activities" enabled in Android developer options.
 
 ## Compatibility
 
@@ -122,7 +120,8 @@ will lead to a smoother, more rapid process of review and acceptance.
 - IDL UUIDs are updated when the interface is updated.
 - Android permissions should be 'grouped' into a common release to
   avoid breaking auto-updates.
-- Android APIs added since Froyo should be guarded by a version check.
+- Android APIs newer than the minimum supported SDK level should be
+  guarded by a version check.
 
 ## Preffability
 
@@ -132,10 +131,10 @@ will lead to a smoother, more rapid process of review and acceptance.
   behavior.
 - Consider adding prefs to disable the feature entirely in case bugs
   are found later in the release cycle.
-- [Fennec: "Prefs" can be Gecko prefs, SharedPreferences values, or
+- Fenix: "prefs" can be Gecko prefs, SharedPreferences values, or
   build-time flags. Which one you choose depends on how the feature is
   implemented: a pure Java service can't easily check Gecko prefs, for
-  example.]
+  example.
 
 ## Strings
 
@@ -162,8 +161,8 @@ will lead to a smoother, more rapid process of review and acceptance.
 - For HTML pages, images should have the alt attribute set when
   appropriate. Similarly, a button that is not a native HTML button
   should have role="button" and the aria-label attribute set.
-- [Fennec: Make sure contentDescription is set for parts of the UI that
-  should be accessible]
+- Fenix: make sure contentDescription is set for parts of the UI that
+  should be accessible.
 
 ## Landing the patch
 

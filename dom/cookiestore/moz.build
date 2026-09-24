@@ -38,6 +38,8 @@ IPDL_SOURCES += [
     "PCookieStore.ipdl",
 ]
 
+TEST_DIRS += ["test/gtest"]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"

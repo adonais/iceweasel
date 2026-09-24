@@ -108,10 +108,6 @@ SearchTestUtils.init(this);
 SearchUITestUtils.init(this);
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   // Install the primary visual search engine via the search config.
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
   await SearchTestUtils.updateRemoteSettingsConfig(SEARCH_CONFIG);

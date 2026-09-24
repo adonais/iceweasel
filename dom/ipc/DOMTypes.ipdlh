@@ -62,6 +62,7 @@ using mozilla::dom::ForceMediaDocument from "mozilla/dom/LoadURIOptionsBinding.h
 using mozilla::dom::NavigationHistoryBehavior from "mozilla/dom/NavigationBinding.h";
 [RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 [RefCounted] using class nsStructuredCloneContainer from "nsStructuredCloneContainer.h";
+using struct mozilla::dom::RemoteType from "mozilla/dom/RemoteType.h";
 
 namespace mozilla {
 namespace dom {
@@ -156,13 +157,13 @@ struct DocShellLoadStateInit
 
   // The provided remote type of the process responsible for causing the load to
   // occur. Validated in the parent process.
-  nsCString TriggeringRemoteType;
+  RemoteType TriggeringRemoteType;
 
   nsString SrcdocData; // useless without sourcedocshell
 
   nsCString? OriginalURIString;
 
-  nsCString? RemoteTypeOverride;
+  RemoteType? RemoteTypeOverride;
 
   LoadingSessionHistoryInfo? loadingSessionHistoryInfo;
 
@@ -330,6 +331,7 @@ struct IPCImage {
 struct IPCNotificationAction {
   nsString name;
   nsString title;
+  nullable nsIURI navigate;
 };
 
 // Mostly same as NotificationOptions except:
@@ -344,6 +346,7 @@ struct IPCNotificationOptions {
   nsString body;
   nsString tag;
   nullable nsIURI icon;
+  nullable nsIURI navigate;
   bool requireInteraction;
   bool silent;
   uint32_t[] vibrate;

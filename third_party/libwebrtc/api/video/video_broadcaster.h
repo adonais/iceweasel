@@ -12,6 +12,7 @@
 #define API_VIDEO_VIDEO_BROADCASTER_H_
 
 #include <optional>
+#include <vector>
 
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
@@ -19,7 +20,6 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video_track_source_constraints.h"
-#include "media/base/video_source_base.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -30,7 +30,7 @@ namespace webrtc {
 // VideoSinkInterface. The class is threadsafe; methods may be called on
 // any thread. This is needed because VideoStreamEncoder calls AddOrUpdateSink
 // both on the worker thread and on the encoder task queue.
-class VideoBroadcaster : public VideoSourceBase,
+class VideoBroadcaster : public VideoSourceInterface<VideoFrame>,
                          public VideoSinkInterface<VideoFrame> {
  public:
   VideoBroadcaster();
@@ -77,6 +77,22 @@ class VideoBroadcaster : public VideoSourceBase,
       true;
   std::optional<VideoTrackSourceConstraints> last_constraints_
       RTC_GUARDED_BY(sinks_and_wants_lock_);
+
+  struct SinkPair {
+    SinkPair(VideoSinkInterface<VideoFrame>* sink, VideoSinkWants wants)
+        : sink(sink), wants(wants) {}
+    VideoSinkInterface<VideoFrame>* sink;
+    VideoSinkWants wants;
+  };
+  SinkPair* FindSinkPair(const VideoSinkInterface<VideoFrame>* sink)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
+
+  const std::vector<SinkPair>& sink_pairs() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_) {
+    return sinks_;
+  }
+
+  std::vector<SinkPair> sinks_ RTC_GUARDED_BY(sinks_and_wants_lock_);
 };
 
 }  //  namespace webrtc

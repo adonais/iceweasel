@@ -5,34 +5,34 @@
 #include "IPv4Parser.h"
 
 #include "mozilla/EndianUtils.h"
-#include "nsTArray.h"
 
 namespace mozilla::net::IPv4Parser {
 
 // https://url.spec.whatwg.org/#ends-in-a-number-checker
 bool EndsInANumber(const nsCString& input) {
   // 1. Let parts be the result of strictly splitting input on U+002E (.).
-  nsTArray<nsDependentCSubstring> parts;
-  for (const nsDependentCSubstring& part : input.Split('.')) {
-    parts.AppendElement(part);
-  }
-
-  if (parts.Length() == 0) {
+  // Only the last part is ever used, so rather than materializing parts we
+  // scan back from the end of input for the final separator.
+  if (input.IsEmpty()) {
     return false;
   }
 
   // 2.If the last item in parts is the empty string, then:
   //    1. If parts’s size is 1, then return false.
   //    2. Remove the last item from parts.
-  if (parts.LastElement().IsEmpty()) {
-    if (parts.Length() == 1) {
-      return false;
-    }
-    (void)parts.PopLastElement();
+  // A trailing separator is the only way for the last part to be empty, and
+  // it is dropped exactly once.
+  uint32_t length = input.Length();
+  if (input.Last() == '.') {
+    length--;
   }
+  nsDependentCSubstring remaining(input, 0, length);
 
-  // 3. Let last be the last item in parts.
-  const nsDependentCSubstring& last = parts.LastElement();
+  // 3. Let last be the last item in parts. An input of just "." leaves an
+  // empty last, which steps 4 and 5 then reject.
+  int32_t separator = remaining.RFindChar('.');
+  const nsDependentCSubstring last =
+      separator < 0 ? remaining : Substring(remaining, separator + 1);
 
   // 4. If last is non-empty and contains only ASCII digits, then return true.
   // The erroneous input "09" will be caught by the IPv4 parser at a later

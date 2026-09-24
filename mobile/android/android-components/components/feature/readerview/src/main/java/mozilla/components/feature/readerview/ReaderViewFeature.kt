@@ -10,24 +10,17 @@ import java.lang.ref.WeakReference
 import java.net.URLEncoder
 import java.util.Locale
 import java.util.UUID
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.ReaderAction
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
-import mozilla.components.concept.engine.EngineSession
-import mozilla.components.concept.engine.pageextraction.ContentParams
-import mozilla.components.concept.engine.pageextraction.PageMetadata
 import mozilla.components.concept.engine.webextension.MessageHandler
 import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.feature.readerview.internal.ReaderViewConfig
@@ -47,17 +40,6 @@ typealias onReaderViewStatusChange = (available: Boolean, active: Boolean) -> Un
 typealias UUIDCreator = () -> String
 
 /**
- * Data class representing the result of a listen action.
- *
- * @property text The extracted text content of the article.
- * @property language The language of the article.
- */
-data class ListenResult(
-    val text: String,
-    val language: String,
-)
-
-/**
  * Feature implementation that provides a reader view for the selected session, based on a web extension.
  *
  * @property context a reference to the context.
@@ -68,8 +50,8 @@ data class ListenResult(
  * @property onReaderViewStatusChange a callback invoked to indicate whether or not reader view is available and active
  *   for the page loaded by the currently selected session. The callback will be invoked when a page is loaded or
  *   refreshed, on any navigation (back or forward), and when the selected session changes.
- * @property onListenClicked a callback invoked when the user clicks the listen button. The callback will be invoked
- *   with a [Result] containing the article's text and language if successful, or an error otherwise.
+ * @property onListenClicked a callback invoked when the user clicks the listen button. Consumers are expected to start
+ *   a listening session, for example by dispatching to their own store.
  */
 class ReaderViewFeature(
     private val context: Context,
@@ -79,7 +61,7 @@ class ReaderViewFeature(
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val createUUID: UUIDCreator = { UUID.randomUUID().toString() },
     private val onReaderViewStatusChange: onReaderViewStatusChange = { _, _ -> },
-    private val onListenClicked: (Result<ListenResult>) -> Unit = {},
+    private val onListenClicked: () -> Unit = {},
 ) : LifecycleAwareFeature, UserInteractionHandler {
 
     private var scope: CoroutineScope? = null
@@ -103,10 +85,7 @@ class ReaderViewFeature(
         }
 
     private val controlsPresenter = ReaderViewControlsPresenter(controlsView, config)
-    private val controlsInteractor =
-        ReaderViewControlsInteractor(controlsView, config) {
-            handleListenClicked()
-        }
+    private val controlsInteractor = ReaderViewControlsInteractor(controlsView, config, onListenClicked)
 
     enum class FontType(val value: String) {
         SANSSERIF("sans-serif"),
@@ -216,41 +195,6 @@ class ReaderViewFeature(
     /** Hides the reader view appearance controls. */
     fun hideControls() {
         controlsPresenter.hide()
-    }
-
-    @VisibleForTesting
-    @Suppress("TooGenericExceptionCaught")
-    internal fun handleListenClicked() {
-        val tabId = store.state.selectedTabId ?: return
-        val engineSession = store.state.selectedTab?.engineState?.engineSession ?: return
-
-        scope?.launch(mainDispatcher) {
-            try {
-                val metadata = engineSession.awaitPageMetadata()
-
-                if (store.state.selectedTabId != tabId) {
-                    return@launch
-                }
-
-                val content =
-                    engineSession.awaitPageContent(
-                        ContentParams(
-                            removeBoilerplate = false,
-                            useSimpleText = true,
-                        )
-                    )
-
-                if (store.state.selectedTabId != tabId) {
-                    return@launch
-                }
-
-                onListenClicked(Result.success(ListenResult(content, metadata.language)))
-            } catch (e: Throwable) {
-                if (store.state.selectedTabId == tabId) {
-                    onListenClicked(Result.failure(e))
-                }
-            }
-        }
     }
 
     @VisibleForTesting
@@ -439,20 +383,4 @@ class ReaderViewFeature(
             return JSONObject().put(ACTION_MESSAGE_KEY, ACTION_HIDE)
         }
     }
-}
-
-private suspend fun EngineSession.awaitPageContent(options: ContentParams): String =
-    suspendCancellableCoroutine { continuation ->
-        getPageContent(
-            options = options,
-            onResult = { content -> continuation.resume(content) },
-            onException = { error -> continuation.resumeWithException(error) },
-        )
-    }
-
-private suspend fun EngineSession.awaitPageMetadata(): PageMetadata = suspendCancellableCoroutine { continuation ->
-    getPageMetadata(
-        onResult = { metadata -> continuation.resume(metadata) },
-        onException = { error -> continuation.resumeWithException(error) },
-    )
 }

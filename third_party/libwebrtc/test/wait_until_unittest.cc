@@ -207,5 +207,18 @@ TEST(WaiterTest, ReturnsFalseWhenTimeoutIsReached) {
   EXPECT_EQ(clock.CurrentTime(), Timestamp::Millis(1100));
 }
 
+TEST(WaitUntilTest, RunsPendingTasksOnCurrentThreadWithSimulatedClock) {
+  test::RunLoop thread;
+  SimulatedClock fake_clock(Timestamp::Millis(1337));
+
+  bool condition = false;
+  thread.PostTask([&] { condition = true; });
+
+  EXPECT_TRUE(WaitUntil([&] { return condition; },
+                        {.timeout = TimeDelta::Millis(10),
+                         .polling_interval = TimeDelta::Millis(1),
+                         .clock = &fake_clock}));
+}
+
 }  // namespace
 }  // namespace webrtc

@@ -2415,6 +2415,25 @@ TEST_F(Strings, printf) {
 #undef verify_printf_strings
 #undef create_printf_strings
 
+TEST(String, SpaceshipCompare)
+{
+  nsAutoCString a("A");
+  nsCString b("B");
+  EXPECT_EQ(a <=> a, std::strong_ordering::equal);
+  EXPECT_EQ(a <=> b, std::strong_ordering::less);
+  EXPECT_EQ(b <=> a, std::strong_ordering::greater);
+  EXPECT_EQ(b <=> b, std::strong_ordering::equal);
+
+  nsLiteralCString ab = "AB"_ns;
+  EXPECT_EQ(a <=> ab, std::strong_ordering::less);
+  EXPECT_EQ(b <=> ab, std::strong_ordering::greater);
+
+  a.Append("B");
+  EXPECT_EQ(a <=> a, std::strong_ordering::equal);
+  EXPECT_EQ(a <=> b, std::strong_ordering::less);
+  EXPECT_EQ(a <=> ab, std::strong_ordering::equal);
+}
+
 // Note the five calls in the loop, so divide by 100k
 MOZ_GTEST_BENCH_F(Strings, PerfStripWhitespace, [this] {
   nsCString test1(mExample1Utf8);

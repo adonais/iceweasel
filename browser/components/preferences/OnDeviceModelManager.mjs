@@ -18,6 +18,8 @@ const lazy = XPCOMUtils.declareLazy({
   PdfJsGuessAltTextFeature: "resource://pdf.js/PdfJsAIFeature.sys.mjs",
   SmartTabGroupingManager:
     "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
+  SpeechRecognitionFeature:
+    "resource://gre/modules/SpeechRecognitionFeature.sys.mjs",
   TranslationsFeature:
     "chrome://global/content/translations/TranslationsFeature.sys.mjs",
 });
@@ -32,6 +34,7 @@ const OnDeviceModelFeatures = Object.freeze({
   Translations: "translations",
   SidebarChatbot: "sidebarChatbot",
   SmartWindow: "smartWindow",
+  SpeechRecognition: "speechRecognition",
 });
 
 /** @type {Record<OnDeviceModelFeaturesEnum, string[]>} */
@@ -65,6 +68,13 @@ const FeaturePrefs = Object.freeze({
     // unpredictable order. This is triggered e.g. when UITour overrides
     // this pref externally.
     "browser.ai.control.smartWindow",
+  ],
+  // Speech recognition has no separate feature pref: the AI Controls pref is
+  // the source of truth, and the C++ SpeechRecognition implementation reads it
+  // directly to gate available()/install()/start(). Observe the control pref so
+  // the AI Controls UI reflects state changes; no JS teardown is needed.
+  [OnDeviceModelFeatures.SpeechRecognition]: [
+    "browser.ai.control.speechRecognition",
   ],
 });
 
@@ -135,6 +145,8 @@ export const OnDeviceModelManager = {
         return lazy.GenAI;
       case OnDeviceModelFeatures.SmartWindow:
         return lazy.AIWindow;
+      case OnDeviceModelFeatures.SpeechRecognition:
+        return lazy.SpeechRecognitionFeature;
       default:
         throw new Error(`Unknown feature "${feature}"`);
     }
@@ -159,6 +171,8 @@ export const OnDeviceModelManager = {
         return "browser.ai.control.sidebarChatbot";
       case OnDeviceModelFeatures.SmartWindow:
         return "browser.ai.control.smartWindow";
+      case OnDeviceModelFeatures.SpeechRecognition:
+        return "browser.ai.control.speechRecognition";
       default:
         throw new Error(`Unknown feature "${feature}"`);
     }

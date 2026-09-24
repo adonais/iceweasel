@@ -627,7 +627,10 @@ const MR_ABOUT_WELCOME_DEFAULT = {
       content: {
         fullscreen: true,
         position: "split",
-        tiles: { type: "theme-picker" },
+        tiles: {
+          type: "theme-picker",
+          data: { installSource: "about:welcome" },
+        },
         title: {
           string_id: "onboarding-theme-picker-title",
         },

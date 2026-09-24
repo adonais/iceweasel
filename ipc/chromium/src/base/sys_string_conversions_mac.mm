@@ -78,19 +78,6 @@ static OutStringType STLStringToSTLStringWithEncodingsT(
                                                          out_encoding);
 }
 
-// Given an STL string |in| with an encoding specified by |in_encoding|,
-// return it as a CFStringRef.  Returns NULL on failure.
-template <typename StringType>
-static CFStringRef STLStringToCFStringWithEncodingsT(
-    const StringType& in, CFStringEncoding in_encoding) {
-  typename StringType::size_type in_length = in.length();
-  if (in_length == 0) return CFSTR("");
-
-  return CFStringCreateWithBytes(
-      kCFAllocatorDefault, reinterpret_cast<const UInt8*>(in.data()),
-      in_length * sizeof(typename StringType::value_type), in_encoding, false);
-}
-
 // Specify the byte ordering explicitly, otherwise CFString will be confused
 // when strings don't carry BOMs, as they typically won't.
 static const CFStringEncoding kNarrowStringEncoding = kCFStringEncodingUTF8;

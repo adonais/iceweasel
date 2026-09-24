@@ -1022,14 +1022,6 @@ child:
     async DestroyPrintClone(MaybeDiscardedBrowsingContext aStaticCloneBrowsingContext);
 
     /**
-     * Update the child with the tab's current top-level native window handle.
-     * This is used by a11y objects who must expose their native window.
-     *
-     * @param aNewHandle The native window handle of the tab's top-level window.
-     */
-    async UpdateNativeWindowHandle(uintptr_t aNewHandle);
-
-    /**
      * Tell the BrowserChild to allow scripts in the docshell to close the window.
      */
     async AllowScriptsToClose();

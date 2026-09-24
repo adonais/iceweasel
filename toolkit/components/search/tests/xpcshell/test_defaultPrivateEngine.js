@@ -84,15 +84,16 @@ add_setup(async () => {
 
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
 
-  Services.prefs.setCharPref(SearchUtils.BROWSER_SEARCH_PREF + "region", "US");
+  Services.prefs.setCharPref("browser.search.region", "US");
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
 
   useHttpServer();
 
@@ -362,7 +363,7 @@ add_task(async function test_defaultPrivateEngine_turned_off() {
 
   let promise = promiseDefaultNotification("private");
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     false
   );
   Assert.equal(
@@ -452,7 +453,7 @@ add_task(async function test_defaultPrivateEngine_turned_off() {
   );
   Assert.equal(
     Services.prefs.getBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       false
     ),
     true,
@@ -507,7 +508,7 @@ add_task(async function test_defaultPrivateEngine_ui_turned_off() {
   engine1.hidden = false;
   engine2.hidden = false;
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
 
@@ -530,7 +531,7 @@ add_task(async function test_defaultPrivateEngine_ui_turned_off() {
 
   let promise = promiseDefaultNotification("private");
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
   Assert.equal(
@@ -579,12 +580,13 @@ add_task(async function test_defaultPrivateEngine_ui_turned_off() {
 });
 
 add_task(async function test_defaultPrivateEngine_same_engine_toggle_pref() {
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
 
@@ -608,7 +610,7 @@ add_task(async function test_defaultPrivateEngine_same_engine_toggle_pref() {
 
   // Disable pref
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     false
   );
   Assert.equal(
@@ -637,7 +639,7 @@ add_task(async function test_defaultPrivateEngine_same_engine_toggle_pref() {
   // turned off, so it falls back to appPrivateDefault.
   let reEnablePromise = promiseDefaultNotification("private");
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
   Assert.equal(
@@ -669,12 +671,13 @@ add_task(async function test_defaultPrivateEngine_same_engine_toggle_pref() {
 });
 
 add_task(async function test_defaultPrivateEngine_same_engine_toggle_ui_pref() {
+  Services.prefs.setBoolPref("browser.search.separatePrivateDefault", true);
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
 
@@ -698,7 +701,7 @@ add_task(async function test_defaultPrivateEngine_same_engine_toggle_ui_pref() {
 
   // Disable UI pref
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     false
   );
   Assert.equal(
@@ -727,7 +730,7 @@ add_task(async function test_defaultPrivateEngine_same_engine_toggle_ui_pref() {
   // turned off, so it falls back to appPrivateDefault.
   let reEnablePromise = promiseDefaultNotification("private");
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Assert.equal(
@@ -765,7 +768,7 @@ add_task(
     // default from the app's distinct private default or from the
     // customized normal default.
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       false
     );
     await SearchService.setDefault(
@@ -775,7 +778,7 @@ add_task(
 
     let promise = promiseDefaultNotification("private");
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       true
     );
     Assert.equal(
@@ -812,14 +815,14 @@ add_task(async function test_no_private_default_falls_back_to_normal_default() {
   await SearchService.init();
 
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    "browser.search.separatePrivateDefault.featureGate",
     true
   );
   Services.prefs.setBoolPref(
-    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+    "browser.search.separatePrivateDefault.enabled",
     true
   );
-  Services.prefs.setCharPref(SearchUtils.BROWSER_SEARCH_PREF + "region", "US");
+  Services.prefs.setCharPref("browser.search.region", "US");
 
   await SearchService.init();
 
@@ -855,7 +858,7 @@ add_task(
     let otherEngine = SearchService.getEngineById("other");
 
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       false
     );
     await SearchService.setDefault(
@@ -864,7 +867,7 @@ add_task(
     );
 
     Services.prefs.setBoolPref(
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      "browser.search.separatePrivateDefault.enabled",
       true
     );
 

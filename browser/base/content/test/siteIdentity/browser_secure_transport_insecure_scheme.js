@@ -136,7 +136,7 @@ add_task(async function () {
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
 
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   // Start the proxy and configure Firefox to trust its certificate.
   let server = startServer(cert);
   certOverrideService.rememberValidityOverride(

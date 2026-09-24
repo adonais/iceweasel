@@ -1,7 +1,6 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",
   DoHTestUtils: "resource://testing-common/DoHTestUtils.sys.mjs",
@@ -68,15 +67,6 @@ const prefs = {
     "doh-rollout.heuristics-throttle-rate-limit",
 };
 
-const CFR_PREF = "browser.newtabpage.activity-stream.asrouter.providers.cfr";
-const CFR_JSON = {
-  id: "cfr",
-  enabled: true,
-  type: "local",
-  localProvider: "CFRMessageProvider",
-  categories: ["cfrAddons", "cfrFeatures"],
-};
-
 async function setup() {
   try {
     await DoHController._uninit();
@@ -99,9 +89,6 @@ async function setup() {
   });
   Services.fog.testResetFOG();
   _resetConsumed();
-
-  // Enable the CFR.
-  Services.prefs.setStringPref(CFR_PREF, JSON.stringify(CFR_JSON));
 
   // Tell DoHController that this isn't real life.
   Services.prefs.setBoolPref(prefs.TESTING_PREF, true);
@@ -165,12 +152,6 @@ async function setup() {
     Services.fog.testResetFOG();
     _resetConsumed();
     gDNSOverride.clearOverrides();
-    if (ASRouter.state.messageBlockList.includes("DOH_ROLLOUT_CONFIRMATION")) {
-      await ASRouter.unblockMessageById("DOH_ROLLOUT_CONFIRMATION");
-    }
-    // The CFR pref is set to an empty array in user.js for testing profiles,
-    // so "reset" it back to that value.
-    Services.prefs.setStringPref(CFR_PREF, "[]");
     await DoHController._uninit();
     Services.fog.testResetFOG();
     _resetConsumed();
@@ -390,21 +371,17 @@ function setFailingHeuristics() {
   gDNSOverride.addIPOverride("sitereview.zscaler.com.", "213.152.228.242");
 }
 
-async function waitForDoorhanger() {
-  const popupID = "contextual-feature-recommendation";
-  const bucketID = "DOH_ROLLOUT_CONFIRMATION";
-  let panel;
-  await BrowserTestUtils.waitForEvent(document, "popupshown", true, event => {
-    panel = event.originalTarget;
-    let popupNotification = event.originalTarget.firstChild;
-    return (
-      popupNotification &&
-      popupNotification.notification &&
-      popupNotification.notification.id == popupID &&
-      popupNotification.getAttribute("data-notification-bucket") == bucketID
-    );
-  });
-  return panel;
+// Mirrors what the ACCEPT_DOH / DISABLE_DOH special message actions set.
+function simulateUserDecision(accepted) {
+  if (accepted) {
+    Services.prefs.setStringPref(prefs.DOORHANGER_USER_DECISION_PREF, "UIOk");
+    return;
+  }
+  Services.prefs.setStringPref(
+    prefs.DOORHANGER_USER_DECISION_PREF,
+    "UIDisabled"
+  );
+  Services.prefs.setIntPref(prefs.NETWORK_TRR_MODE_PREF, 5);
 }
 
 function simulateNetworkChange() {

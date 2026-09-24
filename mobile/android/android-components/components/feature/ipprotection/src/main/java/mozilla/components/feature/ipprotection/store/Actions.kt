@@ -12,6 +12,7 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.Location
+import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
 import mozilla.components.lib.state.Action
 
 /** Actions that can be dispatched to [IPProtectionStore]. */
@@ -28,12 +29,35 @@ sealed class IPProtectionAction : Action {
     /**
      * Reports a newly selected location by the user from the location list.
      *
-     * @param location The selected location.
+     * @property location The selected location.
+     * @property userAction Whether the user picked the location, as opposed to the app restoring a persisted one.
      */
-    data class LocationChanged(val location: Location) : IPProtectionAction()
+    data class LocationChanged(
+        val location: Location,
+        val userAction: Boolean,
+    ) : IPProtectionAction()
 
-    /** Reports a location reset, due to the previously selected location being unavailable. */
-    object LocationReset : IPProtectionAction()
+    /**
+     * Reports a location reset, due to the previously selected location being unavailable.
+     *
+     * @property countryCode The cached country code that was not available, or null when no country code was cached.
+     * @property status What the refreshed country list reported about the cached location.
+     */
+    data class LocationReset(
+        val countryCode: String?,
+        val status: CachedLocationStatus,
+    ) : IPProtectionAction()
+
+    /**
+     * Reports that a persisted location could not be restored because it is no longer available.
+     *
+     * @property countryCode The cached country code that could not be restored.
+     * @property status What the refreshed country list reported about the cached location.
+     */
+    data class PersistedLocationUnavailable(
+        val countryCode: String,
+        val status: CachedLocationStatus,
+    ) : IPProtectionAction()
 
     /** Reports a change in whether the user is signed in to a Firefox Account. */
     data class AccountStateChanged(val state: AccountStatus) : IPProtectionAction()
@@ -70,10 +94,27 @@ sealed class IPProtectionAction : Action {
     data class LocationSwitchFailed(val error: Throwable? = null) : IPProtectionAction()
 
     /**
+     * Reports that the engine accepted a queued activation request.
+     *
+     * @property request The request the engine accepted, so that a request queued after it is not cleared by mistake.
+     */
+    data class ActivationRequestCompleted(val request: PendingActivationRequest.Activate) : IPProtectionAction()
+
+    /**
+     * Reports that a location list update has failed.
+     *
+     * @property error The [Throwable] the engine rejected the request with.
+     */
+    data class LocationUpdateFailed(val error: Throwable) : IPProtectionAction()
+
+    /**
      * Checks if an account has already been entitled. If so, this will lead to a token exchange that gives us a new
      * refresh token with increased scopes. If not, we do nothing.
      */
     object CheckAccount : IPProtectionAction()
+
+    /** Checks if the list of available locations needs to be updated due to a previously failed attempt. */
+    object CheckLocations : IPProtectionAction()
 }
 
 /** Internal actions that can be dispatched to [IPProtectionStore]. */
@@ -115,4 +156,13 @@ enum class ActivationOperation {
 
     /** A `deactivate` request. */
     Deactivate,
+}
+
+/** What a refreshed country list reported about the cached location. */
+enum class CachedLocationStatus {
+    /** The cached country was absent from the refreshed list. */
+    Missing,
+
+    /** The cached country was in the refreshed list and not selectable. */
+    Unavailable,
 }

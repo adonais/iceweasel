@@ -176,3 +176,18 @@ TEST(AOMDecoder, ReadMetadataOBUHDR_WrongCLLSize)
   auto result = AOMDecoder::ReadMetadataOBUHDR(span);
   EXPECT_TRUE(result.isNothing());
 }
+
+TEST(AOMDecoder, ReadOBUsTemporalId)
+{
+  // FrameHeader OBU with an extension header carrying temporal_id 5.
+  constexpr uint8_t data[] = {0x1e, 0xa0, 0x00};
+  auto span = Span<const uint8_t>(data);
+  auto iter = AOMDecoder::ReadOBUs(span);
+
+  ASSERT_TRUE(iter.HasNext());
+  AOMDecoder::OBUInfo obu = iter.Next();
+  EXPECT_EQ(obu.mType, AOMDecoder::OBUType::FrameHeader);
+  EXPECT_TRUE(obu.mExtensionFlag);
+  EXPECT_EQ(obu.mTemporalId, 5u);
+  EXPECT_FALSE(iter.HasNext());
+}

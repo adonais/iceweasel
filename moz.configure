@@ -102,9 +102,9 @@ set_define("ENABLE_TESTS", enable_tests)
 
 
 option(
-    "--disable-legacy-l10n",
+    "--enable-legacy-l10n",
     env="MOZ_USE_LEGACY_L10N",
-    help="Disable the legacy (recursive-make) l10n driver",
+    help="Enable the legacy (recursive-make) l10n driver",
 )
 
 

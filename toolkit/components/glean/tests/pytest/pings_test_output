@@ -118,6 +118,10 @@ pub static ridealong_test: Lazy<Ping> = Lazy::new(|| {
 ///                 assigned to the identified application.
 #[doc(hidden)]
 pub fn register_pings(application_id: Option<&str>) {
+    extern "C" {
+        fn JOG_MaybeReload();
+    }
+
     match application_id {
         _ => {
             let _ = &*not_baseline;
@@ -127,9 +131,6 @@ pub fn register_pings(application_id: Option<&str>) {
             let _ = &*not_ohttp;
             let _ = &*ridealong_test;
         }
-    }
-    extern "C" {
-        fn JOG_MaybeReload();
     }
     unsafe {
       JOG_MaybeReload();
@@ -158,7 +159,7 @@ pub(crate) fn submit_ping_by_id(id: u32, reason: Option<&str>) {
             ping.submit(reason);
         } else {
             // TODO: instrument this error.
-            log::error!("Cannot submit unknown dynamic ping {} by id.", id);
+            log::error!("Cannot submit unknown dynamic ping {id} by id.");
         }
         return;
     }
@@ -171,7 +172,7 @@ pub(crate) fn submit_ping_by_id(id: u32, reason: Option<&str>) {
         6 => ridealong_test.submit(reason),
         _ => {
             // TODO: instrument this error.
-            log::error!("Cannot submit unknown ping {} by id.", id);
+            log::error!("Cannot submit unknown ping {id} by id.");
         }
     }
 }
@@ -186,7 +187,7 @@ pub(crate) fn set_ping_enabled_by_id(id: u32, enabled: bool) {
             ping.set_enabled(enabled);
         } else {
             // TODO: instrument this error.
-            log::error!("Cannot set_enabled on unknown dynamic ping {} by id.", id);
+            log::error!("Cannot set_enabled on unknown dynamic ping {id} by id.");
         }
         return;
     }
@@ -199,7 +200,7 @@ pub(crate) fn set_ping_enabled_by_id(id: u32, enabled: bool) {
         6 => ridealong_test.set_enabled(enabled),
         _ => {
             // TODO: instrument this error.
-            log::error!("Cannot set_enabled on unknown ping {} by id.", id);
+            log::error!("Cannot set_enabled on unknown ping {id} by id.");
         }
     }
 }

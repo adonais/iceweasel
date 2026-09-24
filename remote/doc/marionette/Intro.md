@@ -53,8 +53,8 @@ need to download a Marionette client or use the in-tree client.
 * Tips on [debugging][4] Marionette code
 * [Protocol definition][5]
 
-[1]: /python/marionette_driver.rst
-[2]: /python/marionette_driver.rst
+[1]: /python/marionette_driver.md
+[2]: /python/marionette_driver.md
 [3]: PythonTests.md
 [4]: Debugging.md
 [5]: Protocol.md

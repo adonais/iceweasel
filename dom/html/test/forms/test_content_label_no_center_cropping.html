@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that label center cropping is not allowed in normal content documents</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <style>
+    body {
+      color: black;
+    }
+
+    .with-center-cropping-styles {
+      max-width: 10ch;
+      text-wrap: nowrap;
+    }
+  </style>
+  <script>
+    add_task(async function test_no_center_cropping_with_value() {
+      let label = document.querySelector("#test-label");
+      let childTextNodes = SpecialPowers.InspectorUtils.getChildrenForNode(label, true, false);
+      is(childTextNodes.length, 0, "Should have found no children nodes.");
+    });
+
+    add_task(async function test_no_center_cropping_with_preexisting_text() {
+      let label = document.querySelector("#test-label-with-preexisting-text");
+      let childTextNodes = SpecialPowers.InspectorUtils.getChildrenForNode(label, true, false);
+      is(childTextNodes.length, 1, "Should have found the pre-existing text node.");
+      is(childTextNodes[0].nodeValue, "Pre-existing text", "Should have rendered the pre-existing text.");
+    });
+  </script>
+</head>
+<body>
+<p id="display"></p>
+<div id="content">
+  <label id="test-label" crop="center" value="This is a very long string and it should NOT cropped by center cropping." class="with-center-cropping-styles"></label>
+  <label id="test-label-with-preexisting-text" crop="center" value="This is a very long string and it should NOT cropped by center cropping." class="with-center-cropping-styles">Pre-existing text</label>
+</div>
+<pre id="test"></pre>
+</body>
+</html>

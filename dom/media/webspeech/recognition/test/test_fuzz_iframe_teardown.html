@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: interleaved iframe teardown stress</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<pre id="test">
+<script>
+"use strict";
+
+// Fuzz-style stress test: call available()/install() from iframes that are
+// removed mid-flight (before or during the async IPC round trip), and
+// interleave several of these across concurrent iframes.
+//
+// Stress net: asserts survival (no crash/hang in the parent document), not a
+// single specific bug.
+
+SimpleTest.waitForExplicitFinish();
+SimpleTest.requestFlakyTimeout("stress test intentionally detaches frames mid-IPC");
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+SpecialPowers.pushPrefEnv({
+  set: [
+    ["media.webspeech.recognition.enable", true],
+    ["browser.ml.modelHub.testing", true],
+    ["media.webspeech.recognition.model-download.prompt.testing", true],
+    ["media.navigator.permission.disabled", true],
+  ],
+}, async () => {
+  try {
+    const pending = [];
+    for (let i = 0; i < 20; i++) {
+      const iframe = document.createElement("iframe");
+      document.body.appendChild(iframe);
+      const frameWindow = iframe.contentWindow;
+      const FrameSR = frameWindow.SpeechRecognition ||
+        frameWindow.webkitSpeechRecognition;
+
+      const opts = { langs: ["en-US"], processLocally: true };
+      const action = pick(["available", "install"]);
+
+      let p;
+      try {
+        if (action === "available") {
+          p = FrameSR.available(opts);
+        } else {
+          frameWindow.document.notifyUserGestureActivation();
+          p = FrameSR.install(opts);
+        }
+      } catch (e) {
+        p = Promise.resolve();
+      }
+      pending.push(p.catch(() => {}));
+
+      // Remove the iframe at a randomized point relative to the call: some
+      // immediately (matching the WPT subtest), some after a microtask tick,
+      // some left alive.
+      const when = pick(["sync", "microtask", "macrotask", "never"]);
+      if (when === "sync") {
+        iframe.remove();
+      } else if (when === "microtask") {
+        Promise.resolve().then(() => iframe.remove());
+      } else if (when === "macrotask") {
+        setTimeout(() => iframe.remove(), 0);
+      }
+      // "never": leave it attached; cleaned up in bulk below.
+    }
+
+    await Promise.all(pending);
+
+    for (const iframe of document.querySelectorAll("iframe")) {
+      iframe.remove();
+    }
+
+    ok(true, "Survived interleaved iframe teardown stress without crashing");
+  } catch (e) {
+    ok(false, "Unexpected exception: " + e);
+  }
+  SimpleTest.finish();
+});
+</script>
+</pre>
+</body>
+</html>

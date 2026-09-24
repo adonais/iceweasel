@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !largeArrayBufferSupported(); allow-oom
+// |jit-test| skip-if: !largeArrayBufferSupported(); allow-oom; test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
 
 // Test i32 index register is zero-extended.
 

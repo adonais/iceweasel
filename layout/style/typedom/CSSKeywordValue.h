@@ -40,6 +40,8 @@ class CSSKeywordValue final : public CSSStyleValue {
   static RefPtr<CSSKeywordValue> Create(nsCOMPtr<nsISupports> aParent,
                                         const StyleKeywordValue& aKeywordValue);
 
+  const nsACString& GetValue() const { return mValue; }
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 

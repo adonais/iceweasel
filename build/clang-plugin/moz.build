@@ -13,6 +13,7 @@ HOST_SOURCES += [
     "CustomAttributes.cpp",
     "CustomTypeAnnotation.cpp",
     "DanglingOnTemporaryChecker.cpp",
+    "DefaultEqualChecker.cpp",
     "DiagnosticsMatcher.cpp",
     "EnumSerializerChecker.cpp",
     "ExplicitImplicitChecker.cpp",

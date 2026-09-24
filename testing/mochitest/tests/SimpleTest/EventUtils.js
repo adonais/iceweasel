@@ -1810,7 +1810,7 @@ function synthesizeAndWaitNativeMouseMove(
  * @param {number} [aEvent.repeat]
  *        If you emulate auto-repeat, you should set the count of repeat.
  *        This method will automatically synthesize keydown (and keypress).
- * @param {*} aEvent.location
+ * @param {any} aEvent.location
  *        If you want to specify this, you can specify this explicitly.
  *        However, if you don't specify this value, it will be computed
  *        from code value.
@@ -3468,7 +3468,7 @@ function synthesizeDragOver(
  * Emulate the drop event and mouseup event.
  * This should be called after synthesizeDragOver.
  *
- * @param {*} aResult
+ * @param {any} aResult
  *        The first element of the array returned from ``synthesizeDragOver``.
  * @param {DataTransfer} aDataTransfer
  *        The second element of the array returned from ``synthesizeDragOver``.

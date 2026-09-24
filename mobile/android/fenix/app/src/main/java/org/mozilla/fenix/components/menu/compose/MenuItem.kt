@@ -186,6 +186,7 @@ internal fun MenuItem(
  * @param label The label in the menu item.
  * @param modifier [Modifier] to be applied to the layout.
  * @param description An optional description text below the label.
+ * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param iconPainter [Painter] used to display an [Icon] after the list item.
  * @param enabled Controls the enabled state of the list item. When `false`, the list item will not be clickable.
  * @param onClick Invoked when the user clicks on the item.
@@ -195,6 +196,7 @@ internal fun MenuTextItem(
     label: String,
     modifier: Modifier = Modifier,
     description: String? = null,
+    maxDescriptionLines: Int = 1,
     iconPainter: Painter? = null,
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
@@ -203,6 +205,7 @@ internal fun MenuTextItem(
         label = label,
         maxLabelLines = 2,
         description = description,
+        maxDescriptionLines = maxDescriptionLines,
         enabled = enabled,
         minHeight =
             if (description != null) {

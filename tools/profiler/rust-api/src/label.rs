@@ -19,8 +19,9 @@ pub struct AutoProfilerLabel<'a>(&'a mut mozilla::AutoProfilerLabel);
 impl<'a> AutoProfilerLabel<'a> {
     /// Creates a new AutoProfilerLabel with the specified label type.
     ///
-    /// unsafe since the caller must ensure that `label` is allocated on the
-    /// stack.
+    /// # Safety
+    ///
+    /// The caller must ensure that `label` is allocated on the stack.
     #[inline]
     pub unsafe fn new(
         label: &mut std::mem::MaybeUninit<mozilla::AutoProfilerLabel>,

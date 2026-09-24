@@ -80,7 +80,7 @@ class SerializeableMap extends Map {
  *        reports. If `null`, then `name` will be used instead.
  * @param {StructuredCloneHolder|*} value
  *        A value to serialize.
- * @returns {*}
+ * @returns {any}
  */
 function serialize(name, anonymizedName, value) {
   if (value && typeof value === "object" && !isStructuredCloneHolder(value)) {

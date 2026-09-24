@@ -14,6 +14,7 @@ import MozInputText from "chrome://global/content/elements/moz-input-text.mjs";
  * @property {string} value - The value of the textarea control.
  * @property {boolean} disabled - The disabled state of the textarea control.
  * @property {boolean} readonly - The readonly state of the textarea control.
+ * @property {boolean} required - The required state of the textarea control
  * @property {string} description - The text for the description element that helps describe the textarea control.
  * @property {string} supportPage - Name of the SUMO support page to link to.
  * @property {string} placeholder - Text to display when the textarea has no value.
@@ -53,6 +54,7 @@ export default class MozTextarea extends MozInputText {
         .value=${this.value}
         ?disabled=${this.disabled || this.parentDisabled}
         ?readonly=${this.readonly}
+        ?required=${this.required}
         accesskey=${ifDefined(this.accessKey)}
         placeholder=${ifDefined(this.placeholder)}
         aria-label=${ifDefined(this.ariaLabel ?? undefined)}

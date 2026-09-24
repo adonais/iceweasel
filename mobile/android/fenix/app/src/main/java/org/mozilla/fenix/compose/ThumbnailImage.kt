@@ -104,7 +104,7 @@ fun ThumbnailImage(
     if (inComposePreview || LocalUnderTest.current) {
         Box(modifier = modifier, contentAlignment = Alignment.Center) {
             Image(
-                painter = painterResource(id = R.drawable.ic_japan_onboarding_favicon),
+                painter = painterResource(id = R.drawable.ic_firefox),
                 contentDescription = null,
                 modifier = modifier.size(FallbackIconSize),
                 contentScale = contentScale,

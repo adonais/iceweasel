@@ -956,12 +956,13 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
     tracks.AppendElements(std::move(audioTracks));
   }
 
-  // On Windows, the MediaDataDecoder expects to be created on a thread
-  // supporting MTA, which the main thread doesn't. So we use our task queue
-  // to create such decoder and perform initialization.
+  // PDMFactory::Supports must be called off-main-thread for accurate results.
   RefPtr<TaskQueue> taskQueue =
       TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
                         "MediaCapabilities::TaskQueue");
+  // Only needed by the decoder-creation fallback in CheckVideoDecodingInfo
+  // (when media.mediacapabilities.codec-support-cache.enabled is false), but it
+  // must be obtained here on the main thread.
   RefPtr<layers::KnowsCompositor> compositor = GetCompositor();
   const bool shouldResistFingerprinting =
       mParent->ShouldResistFingerprinting(RFPTarget::MediaCapabilities);
@@ -1093,21 +1094,40 @@ void MediaCapabilities::CreateNonWebRTCDecodingInfo(
       // if such codec is supported. We do need to call the
       // PDMFactory::Supports API outside the main thread to get accurate
       // results.
-      promises.AppendElement(
-          InvokeAsync(taskQueue, __func__, [config = std::move(config)]() {
+      promises.AppendElement(InvokeAsync(
+          taskQueue, __func__,
+          [config = std::move(config)]() -> RefPtr<CapabilitiesPromise> {
             SupportDecoderParams params{*config};
-            if (PDMFactorySupport::IsSupported(params,
-                                               nullptr /* decoder doctor */)
-                    .isEmpty()) {
-              return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                          __func__);
-            }
-            MediaCapabilitiesDecodingInfo info;
-            info.mSupported = true;
-            info.mSmooth = true;
-            info.mPowerEfficient = true;
-            return CapabilitiesPromise::CreateAndResolve(std::move(info),
-                                                         __func__);
+            // There's no need to create an audio decoder as we only want to
+            // know if such codec is supported. We do need to call the
+            // PDMFactory::Supports API outside the main thread to get accurate
+            // results.
+            RefPtr<PDMSupportsDecoderPromise> promise =
+                StaticPrefs::
+                        media_mediacapabilities_codec_support_cache_enabled()
+                    ? PDMFactorySupport::IsSupportedAsync(params)
+                    : PDMSupportsDecoderPromise::CreateAndResolve(
+                          PDMFactorySupport::IsSupported(
+                              params, nullptr /* decoder doctor */),
+                          __func__);
+            return promise->Then(
+                GetCurrentSerialEventTarget(), __func__,
+                [](media::DecodeSupportSet aSupport) {
+                  if (aSupport.isEmpty()) {
+                    return CapabilitiesPromise::CreateAndReject(
+                        NS_ERROR_FAILURE, __func__);
+                  }
+                  MediaCapabilitiesDecodingInfo info;
+                  info.mSupported = true;
+                  info.mSmooth = true;
+                  info.mPowerEfficient = true;
+                  return CapabilitiesPromise::CreateAndResolve(std::move(info),
+                                                               __func__);
+                },
+                [](nsresult) -> RefPtr<CapabilitiesPromise> {
+                  return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                              __func__);
+                });
           }));
       continue;
     }
@@ -1179,8 +1199,51 @@ MediaCapabilities::CheckVideoDecodingInfo(
        frameRate = aFrameRate,
        shouldResistFingerprinting = aShouldResistFingerprinting,
        config = std::move(aConfig)]() mutable -> RefPtr<CapabilitiesPromise> {
-        // MediaDataDecoder keeps a reference to the config object, so we must
-        // keep it alive until the decoder has been shutdown.
+        if (StaticPrefs::
+                media_mediacapabilities_codec_support_cache_enabled()) {
+          // Query the cached codec-support snapshot, waiting asynchronously for
+          // remote processes to report accurate hardware support. No decoder is
+          // created.
+          const nsCString type = config->mMimeType;
+          LOG("Using decoder support cache for codec mime type '{}'", type);
+          SupportDecoderParams params{*config,
+                                      media::VideoFrameRate(frameRate)};
+          return PDMFactorySupport::IsSupportedAsync(params)->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [config = std::move(config),
+               shouldResistFingerprinting](media::DecodeSupportSet aSupport)
+                  -> RefPtr<CapabilitiesPromise> {
+                LOG("Decoder support cache request for codec mime type '{}' "
+                    "resolved with sw={}, hw={}",
+                    config->mMimeType,
+                    aSupport.contains(media::DecodeSupport::SoftwareDecode),
+                    aSupport.contains(media::DecodeSupport::HardwareDecode));
+                if (aSupport.isEmpty()) {
+                  return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                              __func__);
+                }
+                bool hwAccel =
+                    aSupport.contains(media::DecodeSupport::HardwareDecode);
+                return CapabilitiesPromise::CreateAndResolve(
+                    CreateVideoDecodingInfo(*config, shouldResistFingerprinting,
+                                            hwAccel),
+                    __func__);
+              },
+              [type](nsresult aRv) -> RefPtr<CapabilitiesPromise> {
+                LOG("Decoder support cache request for codec mime type '{}' "
+                    "rejected with {}",
+                    type, aRv);
+                return CapabilitiesPromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                            __func__);
+              });
+        }
+
+        // Strict path: create a decoder and query it directly for hardware
+        // acceleration. MediaDataDecoder keeps a reference to the
+        // config object, so we must keep it alive until the decoder has
+        // been shutdown.
+        LOG("Using strict decoder probing for codec mime type '{}'",
+            config->mMimeType);
         static Atomic<uint32_t> sTrackingIdCounter(0);
         TrackingId trackingId(TrackingId::Source::MediaCapabilities,
                               sTrackingIdCounter++,
@@ -1539,7 +1602,11 @@ already_AddRefed<layers::KnowsCompositor> MediaCapabilities::GetCompositor() {
     return nullptr;
   }
   RefPtr<layers::KnowsCompositor> knows = renderer->AsKnowsCompositor();
-  if (NS_WARN_IF(!knows)) {
+  if (!knows) {
+    // The compositor bridge may not be established yet (e.g. a not-yet-painted
+    // tab), which is expected and not worth warning about; see how
+    // MediaDecoder.cpp treats the same case.
+    LOG("No compositor available yet for window {}", window->WindowID());
     return nullptr;
   }
   return knows->GetForMedia().forget();

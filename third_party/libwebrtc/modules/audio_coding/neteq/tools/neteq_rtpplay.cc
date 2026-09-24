@@ -286,13 +286,13 @@ std::optional<std::string> CreateOptionalOutputFileName(
     // Override the automatic assignment.
     webrtc::StringBuilder sb(basename);
     sb << suffix;
-    return sb.str();
+    return sb.Release();
   }
   if (!output_audio_filename.empty()) {
     // Automatically assign name.
     webrtc::StringBuilder sb(output_audio_filename);
     sb << suffix;
-    return sb.str();
+    return sb.Release();
   }
   std::cout << "Error: invalid text log file parameters.";
   return std::nullopt;

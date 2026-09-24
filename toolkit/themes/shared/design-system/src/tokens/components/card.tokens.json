@@ -13,6 +13,7 @@
       "value": "{border.width}"
     },
     "color": {
+      "ignoreFigma": "color-mix with currentColor cannot be expressed in Figma",
       "value": {
         "light": "color-mix(in srgb, currentColor 10%, transparent)",
         "dark": "color-mix(in srgb, currentColor 6%, transparent)",

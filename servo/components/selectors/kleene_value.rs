@@ -17,11 +17,7 @@ pub enum KleeneValue {
 
 impl From<bool> for KleeneValue {
     fn from(b: bool) -> Self {
-        if b {
-            Self::True
-        } else {
-            Self::False
-        }
+        if b { Self::True } else { Self::False }
     }
 }
 

@@ -4,7 +4,7 @@
 
 //! Various stuff for CSS property use counters.
 
-use crate::properties::{property_counts, CountedUnknownProperty, NonCustomPropertyId};
+use crate::properties::{CountedUnknownProperty, NonCustomPropertyId, property_counts};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[cfg(target_pointer_width = "64")]
@@ -16,14 +16,13 @@ const BITS_PER_ENTRY: usize = 32;
 /// One bit per each non-custom CSS property.
 #[derive(Debug, Default)]
 pub struct CountedUnknownPropertyUseCounters {
-    storage:
-        [AtomicUsize; (property_counts::COUNTED_UNKNOWN + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; property_counts::COUNTED_UNKNOWN.div_ceil(BITS_PER_ENTRY)],
 }
 
 /// One bit per each non-custom CSS property.
 #[derive(Debug, Default)]
 pub struct NonCustomPropertyUseCounters {
-    storage: [AtomicUsize; (property_counts::NON_CUSTOM + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; property_counts::NON_CUSTOM.div_ceil(BITS_PER_ENTRY)],
 }
 
 /// A custom style use counter that we may want to record.
@@ -50,8 +49,7 @@ impl CustomUseCounter {
 /// One bit for each custom use counter.
 #[derive(Debug, Default)]
 pub struct CustomUseCounters {
-    storage:
-        [AtomicUsize; ((CustomUseCounter::Last as usize) + BITS_PER_ENTRY - 1) / BITS_PER_ENTRY],
+    storage: [AtomicUsize; (CustomUseCounter::Last as usize).div_ceil(BITS_PER_ENTRY)],
 }
 
 macro_rules! use_counters_methods {

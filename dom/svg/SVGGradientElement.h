@@ -51,7 +51,7 @@ class SVGGradientElement : public SVGGradientElementBase {
   nsStaticAtom* GetTransformListAttrName() const override {
     return nsGkAtoms::gradientTransform;
   }
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   // WebIDL
   already_AddRefed<DOMSVGAnimatedEnumeration> GradientUnits();

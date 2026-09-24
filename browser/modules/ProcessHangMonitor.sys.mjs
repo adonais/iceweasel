@@ -551,11 +551,13 @@ export var ProcessHangMonitor = {
     }
 
     // Show the "debug script" button unconditionally if we are in Developer or Nightly
-    // editions, or if DevTools are opened on the slow tab.
+    // editions, or if DevTools are opened on the slow tab. Never offer it when
+    // DevTools are disabled by policy, as debugging would be refused anyway.
     if (
-      AppConstants.MOZ_DEV_EDITION ||
-      AppConstants.NIGHTLY_BUILD ||
-      report.scriptBrowser.browsingContext.watchedByDevTools
+      !Services.prefs.getBoolPref("devtools.policy.disabled", false) &&
+      (AppConstants.MOZ_DEV_EDITION ||
+        AppConstants.NIGHTLY_BUILD ||
+        report.scriptBrowser.browsingContext.watchedByDevTools)
     ) {
       buttons.push({
         label: bundle.getString("processHang.button_debug.label"),

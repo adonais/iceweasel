@@ -477,6 +477,77 @@ add_task(async function test_pointer_selection_cleared_over_gap() {
   );
 });
 
+add_task(async function test_pointerselected_reflects_selection_mode() {
+  const url = `data:text/html,<input type="text" name="field1">`;
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url },
+    async function (browser) {
+      const {
+        autoCompletePopup,
+        autoCompletePopup: { richlistbox: itemsBox },
+      } = browser;
+      const mockHistory = [
+        { op: "add", fieldname: "field1", value: "value1" },
+        { op: "add", fieldname: "field1", value: "value2" },
+        { op: "add", fieldname: "field1", value: "value3" },
+        { op: "add", fieldname: "field1", value: "value4" },
+      ];
+
+      await FormHistory.update([{ op: "remove" }, ...mockHistory]);
+      await SpecialPowers.spawn(browser, [], async function () {
+        const input = content.document.querySelector("input");
+
+        input.focus();
+      });
+
+      // show popup
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+      await TestUtils.waitForCondition(() => {
+        return autoCompletePopup.popupOpen;
+      });
+
+      // keyboard-select the first item
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+      const listItemElems = itemsBox.querySelectorAll(".autocomplete-row-item");
+      const firstRowItem = listItemElems[0].querySelector(
+        "autocomplete-row-item"
+      );
+      Assert.ok(
+        firstRowItem.selected,
+        "keyboard-selected row item is selected"
+      );
+      Assert.ok(
+        !firstRowItem.hasAttribute("pointerselected"),
+        "keyboard selection should not mark the row item pointerselected"
+      );
+
+      // move the pointer over a different item
+      EventUtils.synthesizeMouseAtCenter(listItemElems[1], {
+        type: "mousemove",
+      });
+      const secondRowItem = listItemElems[1].querySelector(
+        "autocomplete-row-item"
+      );
+      await TestUtils.waitForCondition(() => secondRowItem.selected);
+      Assert.ok(
+        secondRowItem.hasAttribute("pointerselected"),
+        "pointer selection should mark the row item pointerselected"
+      );
+      Assert.ok(
+        !firstRowItem.selected,
+        "the keyboard-selected row item should be deselected"
+      );
+
+      // close popup
+      await SpecialPowers.spawn(browser, [], async function () {
+        const input = content.document.querySelector("input");
+
+        input.blur();
+      });
+    }
+  );
+});
+
 add_task(async function test_scroll_reset_on_fresh_search() {
   const url = `data:text/html,<input type="text" name="field1">`;
   await BrowserTestUtils.withNewTab(

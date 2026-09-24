@@ -27,5 +27,9 @@ support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 ["browser_trust_panel_pages.js"]
 https_first_disabled = true
 
+["browser_trust_panel_privacy_metrics_alignment.js"]
+https_first_disabled = true
+support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+
 ["browser_trust_panel_security_view.js"]
 https_first_disabled = true

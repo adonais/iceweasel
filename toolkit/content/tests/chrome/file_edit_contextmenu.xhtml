@@ -36,6 +36,25 @@ window.testItemSet = EditContextMenu.addItems({
     item.setAttribute("data-shown-for", input.localName);
   },
   after: "edit-contextmenu-paste",
+  // Ignored, since after is given too.
+  before: "edit-contextmenu-undo",
+});
+
+// A second consumer, for the items that go above the standard ones.
+window.testItemSetBefore = EditContextMenu.addItems({
+  matches: input => input.localName == "textarea",
+  createItems() {
+    let fragment = document.createDocumentFragment();
+    let item = document.createXULElement("menuitem");
+    item.id = "test-item-before";
+    item.setAttribute("label", "Test before");
+    fragment.appendChild(item);
+    return fragment;
+  },
+  onShowing(input, items, event) {
+    window.testContextmenuEvent = event;
+  },
+  before: "edit-contextmenu-undo",
 });
 </script>
 <commandset id="editMenuCommands">

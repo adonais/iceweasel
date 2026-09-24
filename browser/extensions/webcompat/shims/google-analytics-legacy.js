@@ -2,6 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/**
+ * Bug 1487072 - Shim Google Analytics (legacy ga.js)
+ *
+ * Pages using the legacy Google Analytics API push commands onto the _gaq
+ * array and may also call tracker methods directly. When ga.js is blocked
+ * those calls throw and can break unrelated page logic. This shim defines a
+ * no-op _gaq and tracker surface so that the rest of the page keeps working.
+ */
+
 // based on https://github.com/gorhill/uBlock/blob/6f49e079db0262e669b70f4169924f796ac8db7c/src/web_accessible_resources/google-analytics_ga.js
 
 "use strict";

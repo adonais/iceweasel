@@ -718,6 +718,10 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual void SetReadFence(Fence* aReadFence) {}
 
+  virtual SurfaceDescriptor GetSurfaceDescriptor() {
+    return SurfaceDescriptor();
+  }
+
   // Our WebRender backend may impose restrictions on whether textures are
   // prepared as native textures or not, or it may have no restriction at
   // all. This enumerates those possibilities.

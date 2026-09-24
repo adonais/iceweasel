@@ -1884,6 +1884,14 @@ DownloadTarget.prototype = {
   partFilePath: null,
 
   /**
+   * String containing the path of the directory holding the additional files
+   * of a download that involves multiple files, like a complete web page saved
+   * to disk, or null if the download has no such directory. When the data of
+   * the download is removed, this directory is removed as well.
+   */
+  filesFolderPath: null,
+
+  /**
    * Indicates whether the target file exists.
    *
    * This is a dynamic property updated when the download finishes or when the
@@ -1964,11 +1972,19 @@ DownloadTarget.prototype = {
    */
   toSerializable() {
     // Simplify the representation if we don't have other details.
-    if (!this.partFilePath && !this._unknownProperties) {
+    if (
+      !this.partFilePath &&
+      !this.filesFolderPath &&
+      !this._unknownProperties
+    ) {
       return this.path;
     }
 
-    let serializable = { path: this.path, partFilePath: this.partFilePath };
+    let serializable = {
+      path: this.path,
+      partFilePath: this.partFilePath,
+      filesFolderPath: this.filesFolderPath,
+    };
     serializeUnknownProperties(this, serializable);
     return serializable;
   },
@@ -1984,6 +2000,9 @@ DownloadTarget.prototype = {
  *        {
  *          path: String containing the path of the target file.
  *          partFilePath: optional string containing the part file path.
+ *          filesFolderPath: optional string containing the path of the
+ *                           directory holding the additional files of the
+ *                           download.
  *        }
  *
  * @return The newly created DownloadTarget object.
@@ -2003,11 +2022,17 @@ DownloadTarget.fromSerializable = function (aSerializable) {
     if ("partFilePath" in aSerializable) {
       target.partFilePath = aSerializable.partFilePath;
     }
+    if ("filesFolderPath" in aSerializable) {
+      target.filesFolderPath = aSerializable.filesFolderPath;
+    }
 
     deserializeUnknownProperties(
       target,
       aSerializable,
-      property => property != "path" && property != "partFilePath"
+      property =>
+        property != "path" &&
+        property != "partFilePath" &&
+        property != "filesFolderPath"
     );
   }
   return target;
@@ -2954,9 +2979,9 @@ DownloadCopySaver.prototype = {
    */
   async removeData(canRemoveFinalTarget = false) {
     // Defined inline so removeData can be shared with DownloadLegacySaver.
-    async function _tryToRemoveFile(path) {
+    async function _tryToRemoveFile(path, recursive = false) {
       try {
-        await IOUtils.remove(path);
+        await IOUtils.remove(path, { recursive });
       } catch (ex) {
         // On Windows we may get an access denied error instead of a no such
         // file error if the file existed before, and was recently deleted. This
@@ -2978,6 +3003,12 @@ DownloadCopySaver.prototype = {
         (await isPlaceholder(this.download.target.path))
       ) {
         await _tryToRemoveFile(this.download.target.path);
+        // A download that saved a complete web page also created a directory
+        // holding the additional files of the page, that has to be removed
+        // along with the main file.
+        if (this.download.target.filesFolderPath) {
+          await _tryToRemoveFile(this.download.target.filesFolderPath, true);
+        }
       }
       this.download.target.exists = false;
       this.download.target.size = 0;

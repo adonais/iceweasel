@@ -255,7 +255,6 @@ class MapAndIndex {
   inline PropertyInfo propertyInfo() const;
 
   bool operator==(const MapAndIndex<T>& other) const = default;
-  bool operator!=(const MapAndIndex<T>& other) const = default;
 } JS_HAZ_GC_POINTER;
 using PropMapAndIndex = MapAndIndex<PropMap>;
 using SharedPropMapAndIndex = MapAndIndex<SharedPropMap>;

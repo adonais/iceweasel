@@ -42,7 +42,6 @@ struct NumberPart {
   size_t endIndex;
 
   bool operator==(const NumberPart& rhs) const = default;
-  bool operator!=(const NumberPart& rhs) const = default;
 };
 
 using NumberPartVector = mozilla::Vector<NumberPart, 8>;

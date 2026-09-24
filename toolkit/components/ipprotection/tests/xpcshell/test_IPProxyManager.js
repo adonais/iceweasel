@@ -421,6 +421,52 @@ add_task(async function test_IPPProxyManager_non_string_error_normalized() {
 });
 
 /**
+ * Tests the source reported with an error state. FOG is reset between the
+ * cases because each one asserts on the single event it just recorded.
+ */
+add_task(async function test_IPPProxyManager_error_source() {
+  const source = () =>
+    Glean.ipprotection.error.testGetValue()?.at(-1).extra.source;
+
+  Services.fog.testResetFOG();
+  const error = new Error("boom");
+  error.stack = [
+    "activate@moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs:1:2",
+    "onClick@https://example.com/page.js:3:4",
+    "run@resource://gre/modules/Foo.sys.mjs:5:6",
+    "start@chrome://browser/content/ipprotection/ipprotection-content.mjs:7:8",
+  ].join("\n");
+  IPPProxyManager.setErrorState(error);
+  Assert.equal(
+    source(),
+    [
+      "activate@IPPProxyManager.sys.mjs:1:2",
+      "run@Foo.sys.mjs:5:6",
+      "start@ipprotection-content.mjs:7:8",
+    ].join("\n"),
+    "A thrown error reports its privileged frames, without paths"
+  );
+
+  Services.fog.testResetFOG();
+  IPPProxyManager.setErrorState({ code: 500 });
+  Assert.stringContains(
+    source() ?? "",
+    "@IPPProxyManager.sys.mjs:",
+    "An error that was never thrown reports where we handled it"
+  );
+
+  Services.fog.testResetFOG();
+  IPPProxyManager.setErrorState(ERRORS.SERVER_NOT_FOUND);
+  Assert.equal(
+    source(),
+    "ProxyManager",
+    "One of our error codes reports the module"
+  );
+
+  Services.fog.testResetFOG();
+});
+
+/**
  * Tests that a non-string provider error does not reach the activation result,
  * where it would not survive serialization to GeckoView.
  */

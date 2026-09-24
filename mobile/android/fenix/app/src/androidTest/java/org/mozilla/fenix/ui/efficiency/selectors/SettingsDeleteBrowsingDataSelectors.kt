@@ -6,17 +6,30 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object SettingsDeleteBrowsingDataSelectors {
+object SettingsDeleteBrowsingDataSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        DATA_TYPE_CHECK_BOXES,
+        DELETE_BROWSING_DATA_DIALOG,
+    }
+
+    val TOOLBAR_TITLE =
+        navigationToolbarTitle(
+            title = getStringResource(R.string.preferences_delete_browsing_data),
+            description = "Delete browsing data toolbar title",
+        )
 
     val DELETE_BROWSING_DATA_BUTTON =
         Selector(
             strategy = SelectorStrategy.ESPRESSO_BY_ID,
             value = "delete_data",
             description = "Delete browsing data button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     // Each data-type row is a CheckBox (R.id.checkbox) beside its title TextView; match the checkbox by
@@ -27,7 +40,7 @@ object SettingsDeleteBrowsingDataSelectors {
             value = "checkbox",
             secondaryValue = getStringResource(labelResId),
             description = description,
-            groups = listOf("dataTypeCheckBoxes"),
+            groups = setOf(Group.DATA_TYPE_CHECK_BOXES),
         )
 
     val OPEN_TABS_CHECKBOX = checkBox(R.string.preferences_delete_browsing_data_tabs_title_2, "Open tabs check box")
@@ -48,7 +61,7 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = getStringResource(R.string.delete_browsing_data_prompt_message_3),
             description = "Delete browsing data dialog message",
-            groups = listOf("deleteBrowsingDataDialog"),
+            groups = setOf(Group.DELETE_BROWSING_DATA_DIALOG),
         )
 
     // UiObject2 (not UiObject): tapping these dismisses the dialog, a window change that UiObject's
@@ -59,7 +72,7 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
             value = getStringResource(R.string.delete_browsing_data_prompt_cancel),
             description = "Delete browsing data dialog Cancel button",
-            groups = listOf("deleteBrowsingDataDialog"),
+            groups = setOf(Group.DELETE_BROWSING_DATA_DIALOG),
         )
 
     val DELETE_DIALOG_DELETE_BUTTON =
@@ -67,7 +80,7 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR2_BY_TEXT,
             value = getStringResource(R.string.delete_browsing_data_prompt_allow),
             description = "Delete browsing data dialog Delete button",
-            groups = listOf("deleteBrowsingDataDialog"),
+            groups = setOf(Group.DELETE_BROWSING_DATA_DIALOG),
         )
 
     val DELETION_SNACKBAR =
@@ -75,7 +88,6 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = getStringResource(R.string.preferences_delete_browsing_data_snackbar),
             description = "Browsing data deleted snackbar",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -84,7 +96,6 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
             value = "$count tabs",
             description = "Open tabs summary: $count tabs",
-            groups = listOf(),
         )
 
     @Suppress("FunctionName")
@@ -93,23 +104,5 @@ object SettingsDeleteBrowsingDataSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = "$addresses addresses",
             description = "Browsing history summary: $addresses addresses",
-            groups = listOf(),
-        )
-
-    val all =
-        listOf(
-            DELETE_BROWSING_DATA_BUTTON,
-            OPEN_TABS_CHECKBOX,
-            BROWSING_HISTORY_CHECKBOX,
-            COOKIES_CHECKBOX,
-            CACHED_FILES_CHECKBOX,
-            SITE_PERMISSIONS_CHECKBOX,
-            DOWNLOADS_CHECKBOX,
-            DELETE_DIALOG_MESSAGE,
-            DELETE_DIALOG_CANCEL_BUTTON,
-            DELETE_DIALOG_DELETE_BUTTON,
-            DELETION_SNACKBAR,
-            OPEN_TABS_DETAILS(),
-            BROWSING_HISTORY_DETAILS(),
         )
 }

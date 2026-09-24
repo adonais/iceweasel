@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui.efficiency.devtools
 
-import org.mozilla.fenix.ui.efficiency.generation.NavigationGraphBootstrap
 import org.mozilla.fenix.ui.efficiency.generation.behavior.BehaviorCasePlan
 import org.mozilla.fenix.ui.efficiency.generation.behavior.BehaviorContextManifest
 import org.mozilla.fenix.ui.efficiency.generation.behavior.BehaviorContextMatrix
@@ -241,8 +240,6 @@ object BehaviorCaseGenerator {
     }
 
     private fun buildPlans(profile: BehaviorMatrixProfile): List<BehaviorCasePlan> {
-        NavigationGraphBootstrap.ensureInitialized()
-
         return BehaviorTestPlanner.buildBehaviorCasePlans(contexts = BehaviorContextMatrix.variants(profile))
     }
 

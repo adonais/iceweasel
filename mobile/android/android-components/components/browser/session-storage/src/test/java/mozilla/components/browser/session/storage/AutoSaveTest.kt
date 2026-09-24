@@ -11,7 +11,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -41,7 +40,6 @@ import org.mockito.Mockito.`when`
 class AutoSaveTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val scope = CoroutineScope(testDispatcher)
 
     @Test
     fun `AutoSave - when going to background`() {
@@ -60,8 +58,12 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
                     .whenGoingToBackground(lifecycle)
+
+            assertNull(autoSave.saveJob)
 
             verifyNoMoreInteractions(sessionStorage)
 
@@ -70,13 +72,15 @@ class AutoSaveTest {
             lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
             lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
 
+            testDispatcher.scheduler.advanceUntilIdle()
+
             verifyNoMoreInteractions(sessionStorage)
 
             lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
 
-            autoSave.saveJob!!.join()
+            testDispatcher.scheduler.advanceUntilIdle()
 
-            verify(sessionStorage).save(state)
+            verify(sessionStorage).save(any())
         }
     }
 
@@ -93,8 +97,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -105,9 +111,8 @@ class AutoSaveTest {
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            autoSave.saveJob?.join()
-
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
@@ -133,8 +138,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -145,9 +152,8 @@ class AutoSaveTest {
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            autoSave.saveJob?.join()
-
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
@@ -173,8 +179,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -185,9 +193,8 @@ class AutoSaveTest {
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            autoSave.saveJob?.join()
-
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
@@ -209,8 +216,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -220,9 +229,8 @@ class AutoSaveTest {
             store.dispatch(TabListAction.RemoveTabAction("firefox"))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            autoSave.saveJob?.join()
-
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
@@ -248,8 +256,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -259,10 +269,10 @@ class AutoSaveTest {
             store.dispatch(TabListAction.SelectTabAction("mozilla"))
 
             testDispatcher.scheduler.advanceUntilIdle()
-
-            autoSave.saveJob?.join()
+            autoSave.saveJob?.cancel()
 
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
@@ -284,8 +294,10 @@ class AutoSaveTest {
                         store = store,
                         sessionStorage = sessionStorage,
                         minimumIntervalMs = 0,
+                        applicationScope = this,
+                        ioDispatcher = testDispatcher,
                     )
-                    .whenSessionsChange(scope)
+                    .whenSessionsChange()
 
             store.dispatch(
                 ContentAction.UpdateLoadingStateAction(
@@ -308,14 +320,13 @@ class AutoSaveTest {
 
             testDispatcher.scheduler.advanceUntilIdle()
 
-            autoSave.saveJob?.join()
-
             verify(sessionStorage).save(any())
+            autoSave.monitoringJob?.cancel()
         }
     }
 
     @Test
-    fun `AutoSave - periodically in foreground`() {
+    fun `AutoSave - periodically in foreground`() = runTest {
         val engine: Engine = mock()
         val scheduler: ScheduledExecutorService = mock()
         val scheduledFuture = mock(ScheduledFuture::class.java)
@@ -337,12 +348,14 @@ class AutoSaveTest {
 
         val state = BrowserState()
         val store = BrowserStore(state)
-        val storage = SessionStorage(testContext, engine)
+        val storage = SessionStorage(testContext, engine, applicationScope = this)
         storage.autoSave(store).periodicallyInForeground(300, TimeUnit.SECONDS, scheduler, lifecycle)
 
         verifyNoMoreInteractions(scheduler)
 
         lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START)
+
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(scheduler)
             .scheduleAtFixedRate(
@@ -356,46 +369,54 @@ class AutoSaveTest {
 
         lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
 
+        testDispatcher.scheduler.advanceUntilIdle()
+
         verify(scheduledFuture).cancel(false)
     }
 
     @Test
-    fun `AutoSave - No new job triggered while save in flight`() {
-        val sessionStorage: SessionStorage = mock()
+    fun `AutoSave - No new job triggered while save in flight`() =
+        runTest(testDispatcher) {
+            val sessionStorage: SessionStorage = mock()
 
-        val state = BrowserState()
-        val store = BrowserStore(state)
-        val autoSave =
-            AutoSave(
-                store = store,
-                sessionStorage = sessionStorage,
-                minimumIntervalMs = 0,
-            )
+            val state = BrowserState()
+            val store = BrowserStore(state)
+            val autoSave =
+                AutoSave(
+                    store = store,
+                    sessionStorage = sessionStorage,
+                    minimumIntervalMs = 0,
+                    applicationScope = this,
+                    ioDispatcher = testDispatcher,
+                )
 
-        val runningJob: Job = mock()
-        doReturn(true).`when`(runningJob).isActive
+            val runningJob: Job = mock()
+            doReturn(true).`when`(runningJob).isActive
 
-        val saveJob = autoSave.triggerSave()
-        assertSame(saveJob, saveJob)
-    }
+            val saveJob = autoSave.triggerSave()
+            assertSame(saveJob, saveJob)
+        }
 
     @Test
-    fun `AutoSave - New job triggered if current job is done`() {
-        val sessionStorage: SessionStorage = mock()
+    fun `AutoSave - New job triggered if current job is done`() =
+        runTest(testDispatcher) {
+            val sessionStorage: SessionStorage = mock()
 
-        val state = BrowserState()
-        val store = BrowserStore(state)
-        val autoSave =
-            AutoSave(
-                store = store,
-                sessionStorage = sessionStorage,
-                minimumIntervalMs = 0,
-            )
+            val state = BrowserState()
+            val store = BrowserStore(state)
+            val autoSave =
+                AutoSave(
+                    store = store,
+                    sessionStorage = sessionStorage,
+                    minimumIntervalMs = 0,
+                    applicationScope = this,
+                    ioDispatcher = testDispatcher,
+                )
 
-        val completed: Job = mock()
-        doReturn(false).`when`(completed).isActive
+            val completed: Job = mock()
+            doReturn(false).`when`(completed).isActive
 
-        val saveJob = autoSave.triggerSave()
-        assertNotSame(completed, saveJob)
-    }
+            val saveJob = autoSave.triggerSave()
+            assertNotSame(completed, saveJob)
+        }
 }

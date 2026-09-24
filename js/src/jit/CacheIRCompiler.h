@@ -118,7 +118,6 @@ class BaselineFrameSlot {
   uint32_t slot() const { return slot_; }
 
   bool operator==(const BaselineFrameSlot& other) const = default;
-  bool operator!=(const BaselineFrameSlot& other) const = default;
 };
 
 // OperandLocation represents the location of an OperandId. The operand is

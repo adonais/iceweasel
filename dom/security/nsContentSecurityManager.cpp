@@ -690,7 +690,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
   if (httpChannel || MOZ_LOG_TEST(sCSMLog, LogLevel::Verbose)) {
     MOZ_LOG(sCSMLog, LogLevel::Verbose, ("doContentSecurityCheck:\n"));
 
-    nsAutoCString remoteType;
+    RemoteType remoteType;
     if (XRE_IsParentProcess()) {
       nsCOMPtr<nsIParentChannel> parentChannel;
       NS_QueryNotificationCallbacks(aChannel, parentChannel);
@@ -698,11 +698,10 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
         parentChannel->GetRemoteType(remoteType);
       }
     } else {
-      remoteType.Assign(
-          mozilla::dom::ContentChild::GetSingleton()->GetRemoteType());
+      remoteType = mozilla::dom::ContentChild::GetSingleton()->GetRemoteType();
     }
     MOZ_LOG(sCSMLog, LogLevel::Verbose,
-            ("  processType: \"%s\"\n", remoteType.get()));
+            ("  processType: \"%s\"\n", remoteType.Stringify().get()));
 
     nsCOMPtr<nsIURI> channelURI;
     nsAutoCString channelSpec;
@@ -790,7 +789,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
 
 /* static */
 void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
-    nsILoadInfo* aLoadInfo, nsIURI* aFinalURI, const nsACString& aRemoteType) {
+    nsILoadInfo* aLoadInfo, nsIURI* aFinalURI, const RemoteType& aRemoteType) {
   if (!StaticPrefs::dom_security_unexpected_system_load_telemetry_enabled()) {
     return;
   }
@@ -845,9 +844,10 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
   if (fileNameTypeAndDetails.second.isSome()) {
     loggedFileDetails.Assign(fileNameTypeAndDetails.second.value());
   }
-  // sanitize remoteType because it may contain sensitive
-  // info, like URLs. e.g. `webIsolated=https://example.com`
-  nsAutoCString loggedRemoteType(dom::RemoteTypePrefix(aRemoteType));
+  // We only include the kind part of the remote type, as the rest of the
+  // remote type may contain sensitive information like URLs. e.g.
+  // `webIsolated=https://example.com`
+  nsCString loggedRemoteType = aRemoteType.StringifyKind();
   nsAutoCString loggedContentType(NS_CP_ContentTypeName(contentPolicyType));
 
   MOZ_LOG(sUELLog, LogLevel::Debug, ("UnexpectedPrivilegedLoadTelemetry:\n"));
@@ -995,7 +995,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   // URI_IS_UI_RESOURCE, first remove layers of view-source:, if present.
   nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(finalURI);
 
-  nsAutoCString remoteType;
+  RemoteType remoteType;
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIParentChannel> parentChannel;
     NS_QueryNotificationCallbacks(aChannel, parentChannel);
@@ -1003,8 +1003,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
       parentChannel->GetRemoteType(remoteType);
     }
   } else {
-    remoteType.Assign(
-        mozilla::dom::ContentChild::GetSingleton()->GetRemoteType());
+    remoteType = mozilla::dom::ContentChild::GetSingleton()->GetRemoteType();
   }
 
   // GetInnerURI can return null for malformed nested URIs like moz-icon:trash
@@ -1113,7 +1112,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInPrivilegedAboutContext(
     return NS_OK;
   }
 
-  nsAutoCString remoteType;
+  RemoteType remoteType;
   if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIParentChannel> parentChannel;
     NS_QueryNotificationCallbacks(aChannel, parentChannel);
@@ -1121,12 +1120,11 @@ nsresult nsContentSecurityManager::CheckAllowLoadInPrivilegedAboutContext(
       parentChannel->GetRemoteType(remoteType);
     }
   } else {
-    remoteType.Assign(
-        mozilla::dom::ContentChild::GetSingleton()->GetRemoteType());
+    remoteType = mozilla::dom::ContentChild::GetSingleton()->GetRemoteType();
   }
 
   // only perform check for privileged about process
-  if (!remoteType.Equals(PRIVILEGEDABOUT_REMOTE_TYPE)) {
+  if (!remoteType.IsPrivilegedAbout()) {
     return NS_OK;
   }
 
@@ -1332,7 +1330,7 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  nsAutoCString triggeringRemoteType;
+  RemoteType triggeringRemoteType;
   nsresult rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1347,7 +1345,7 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
       loadInfo->PrincipalToInherit()->GetOrigin(origin);
       MOZ_LOG(sUELLog, LogLevel::Warning,
               ("Unexpected PrincipalToInherit %s for remote %s", origin.get(),
-               triggeringRemoteType.get()));
+               triggeringRemoteType.Stringify().get()));
     }
     return NS_ERROR_CONTENT_BLOCKED;
   }
@@ -1368,7 +1366,7 @@ static nsresult CheckAllowLoadByTriggeringRemoteType(nsIChannel* aChannel) {
 
   // For now, only restrict loads coming from web remote types. In the future we
   // may want to expand this a bit.
-  if (!StringBeginsWith(triggeringRemoteType, WEB_REMOTE_TYPE)) {
+  if (!triggeringRemoteType.IsWeb()) {
     return NS_OK;
   }
 
@@ -1808,12 +1806,12 @@ nsresult nsContentSecurityManager::CheckForIncoherentResultPrincipal(
       return NS_ERROR_CONTENT_BLOCKED;
     }
 
-    nsAutoCString triggeringRemoteType;
+    RemoteType triggeringRemoteType;
     rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (triggeringRemoteType != NOT_REMOTE_TYPE &&
-        triggeringRemoteType != EXTENSION_REMOTE_TYPE) {
+    if (!triggeringRemoteType.IsNotRemote() &&
+        !triggeringRemoteType.IsExtension()) {
       MOZ_ASSERT_UNREACHABLE(
           "Generated addon background page in incorrect process");
       return NS_ERROR_CONTENT_BLOCKED;

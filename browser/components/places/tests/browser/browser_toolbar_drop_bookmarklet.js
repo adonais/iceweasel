@@ -9,6 +9,7 @@ const sandbox = sinon.createSandbox();
 const URL1 = "https://example.com/1/";
 const URL2 = "https://example.com/2/";
 const BOOKMARKLET_URL = `javascript: (() => {alert('Hello, World!');})();`;
+const BOOKMARKLET_URL_MIXED_CASE = `JavaScript: (() => {})();`;
 let bookmarks;
 
 registerCleanupFunction(async function () {
@@ -34,12 +35,18 @@ add_task(async function test() {
   Assert.ok(placesItems, "PlacesToolbarItems should not be null");
 
   /**
-   * Simulates a drop of a bookmarklet URI onto the bookmarks bar.
+   * Simulates a drop of a bookmarklet URI onto the bookmarks bar and verifies
+   * the speedbump dialog appears.
    *
    * @param {string} aEffect
    *        The effect to use for the drop operation: move, copy, or link.
+   * @param {string} aBookmarkletUrl
+   *        The bookmarklet URL to be dropped onto the bookmarks bar.
    */
-  let simulateDragDrop = async function (aEffect) {
+  let simulateBookmarkletDragDrop = async function (
+    aEffect,
+    aBookmarkletUrl = BOOKMARKLET_URL
+  ) {
     info("Simulates drag/drop of a new javascript:URL to the bookmarks");
     await withBookmarksDialog(
       true,
@@ -47,7 +54,7 @@ add_task(async function test() {
         EventUtils.synthesizeDrop(
           toolbar,
           placesItems,
-          [[{ type: "text/x-moz-url", data: BOOKMARKLET_URL }]],
+          [[{ type: "text/x-moz-url", data: aBookmarkletUrl }]],
           aEffect,
           window
         );
@@ -61,11 +68,21 @@ add_task(async function test() {
 
         Assert.equal(
           location,
-          BOOKMARKLET_URL,
+          aBookmarkletUrl.trim().replace(/^javascript/i, "javascript"),
           "Should have opened the ShowBookmarksDialog with the correct bookmarklet url to be bookmarked"
         );
       }
     );
+  };
+
+  for (let effect of ["copy", "link"]) {
+    for (let bookmarkletUrl of [
+      BOOKMARKLET_URL,
+      BOOKMARKLET_URL_MIXED_CASE,
+      ` javascript: (() => {})();`,
+    ]) {
+      await simulateBookmarkletDragDrop(effect, bookmarkletUrl);
+    }
 
     info("Simulates drag/drop of a new URL to the bookmarks");
     let spy = sandbox
@@ -81,18 +98,13 @@ add_task(async function test() {
       toolbar,
       placesItems,
       [[{ type: "text/x-moz-url", data: URL1 }]],
-      aEffect,
+      effect,
       window
     );
 
     await promise;
     Assert.ok(spy.notCalled, "ShowBookmarksDialog on drop not called for url");
     sandbox.restore();
-  };
-
-  let effects = ["copy", "link"];
-  for (let effect of effects) {
-    await simulateDragDrop(effect);
   }
 
   info("Move of existing bookmark / bookmarklet on toolbar");

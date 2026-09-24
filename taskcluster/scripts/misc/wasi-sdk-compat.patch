@@ -1,0 +1,21 @@
+# wasi-sdk is fetched without .git, to avoid shallow submodule fetch failures on
+# git.savannah.gnu.org, so git describe can't work. Fall back to $WASI_SDK_VERSION.
+# https://github.com/WebAssembly/wasi-sdk/issues/505
+
+diff --git a/version.py b/version.py
+--- a/version.py
++++ b/version.py
+@@ -80,9 +80,12 @@
+ assert parse_git_version('wasi-sdk-23-tag.rc1-1-g100') == '23.1-tag.rc1g100'
+
+ def git_version():
+-    version = exec(['git', 'describe', '--long', '--candidates=999',
+-                    '--match=wasi-sdk-*', '--dirty=+m', f'--abbrev={GIT_REF_LEN}'],
+-                    os.path.dirname(sys.argv[0]))
++    try:
++        version = exec(['git', 'describe', '--long', '--candidates=999',
++                        '--match=wasi-sdk-*', '--dirty=+m', f'--abbrev={GIT_REF_LEN}'],
++                        os.path.dirname(sys.argv[0]))
++    except subprocess.CalledProcessError:
++        return os.environ.get('WASI_SDK_VERSION', '0') + '.0'
+     return parse_git_version(version)

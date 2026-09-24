@@ -70,8 +70,8 @@ def execute_node_cmd(node_cmd_list):
         # XXX Starting with an empty list means that node scripts can
         # (intentionally or inadvertently) remove deps.  Do we want this?
         deps = []
-        for line in stdout.splitlines():
-            line = line.decode()
+        for raw_line in stdout.splitlines():
+            line = raw_line.decode()
             if "dep:" in line:
                 deps.append(line.replace("dep:", ""))
             else:
@@ -86,10 +86,9 @@ def execute_node_cmd(node_cmd_list):
         # disambiguate this from real "Permission denied" errors so that we
         # can log such problems more clearly?
         print(
-            """Failed with %s.  Be sure to check that your mozconfig doesn't
+            f"""Failed with {err}.  Be sure to check that your mozconfig doesn't
             have --disable-nodejs in it.  If it does, try removing that line and
-            building again."""
-            % str(err),
+            building again.""",
             file=sys.stderr,
         )
         sys.exit(1)

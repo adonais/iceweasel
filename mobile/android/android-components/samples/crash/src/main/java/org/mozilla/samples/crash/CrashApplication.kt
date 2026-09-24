@@ -12,9 +12,9 @@ import android.widget.Toast
 import java.util.Calendar
 import java.util.TimeZone
 import java.util.UUID
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
@@ -43,6 +43,8 @@ internal object GleanBuildInfo {
 
 class CrashApplication : Application() {
     internal lateinit var crashReporter: CrashReporter
+
+    private val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
@@ -83,58 +85,62 @@ class CrashApplication : Application() {
     companion object {
         const val NON_FATAL_CRASH_BROADCAST = "org.mozilla.samples.crash.CRASH"
     }
-}
 
-@OptIn(DelicateCoroutinesApi::class)
-private fun createDummyCrashService(context: Context): CrashReporterService {
-    // For this sample we create a dummy service. In a real application this would be an instance of SentryCrashService
-    // or SocorroCrashService.
-    return object : CrashReporterService {
-        override val id: String = "dummy"
+    private fun createDummyCrashService(context: Context): CrashReporterService {
+        // For this sample we create a dummy service.
+        // In a real application this would be an instance of SentryCrashService or SocorroCrashService.
+        return object : CrashReporterService {
+            override val id: String = "dummy"
 
-        override val name: String = "Dummy"
+            override val name: String = "Dummy"
 
-        override fun createCrashReportUrl(identifier: String): String? {
-            return "https://example.org/$identifier"
-        }
-
-        override fun report(crash: Crash.UncaughtExceptionCrash): String? {
-            GlobalScope.launch(Dispatchers.Main) {
-                Toast.makeText(context, "Uploading uncaught exception crash...", Toast.LENGTH_SHORT).show()
+            override fun createCrashReportUrl(identifier: String): String? {
+                return "https://example.org/$identifier"
             }
-            return createDummyId()
-        }
 
-        override fun report(crash: Crash.NativeCodeCrash): String? {
-            GlobalScope.launch(Dispatchers.Main) {
-                Toast.makeText(context, "Uploading native crash...", Toast.LENGTH_SHORT).show()
+            override fun report(crash: Crash.UncaughtExceptionCrash): String? {
+                applicationScope.launch(Dispatchers.Main) {
+                    Toast.makeText(
+                            context,
+                            "Uploading uncaught exception crash...",
+                            Toast.LENGTH_SHORT,
+                        )
+                        .show()
+                }
+                return createDummyId()
             }
-            return createDummyId()
-        }
 
-        override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? {
-            GlobalScope.launch(Dispatchers.Main) {
-                Toast.makeText(context, "Uploading caught exception...", Toast.LENGTH_SHORT).show()
+            override fun report(crash: Crash.NativeCodeCrash): String? {
+                applicationScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Uploading native crash...", Toast.LENGTH_SHORT).show()
+                }
+                return createDummyId()
             }
-            return createDummyId()
-        }
 
-        private fun createDummyId(): String {
-            return "dummy${UUID.randomUUID().toString().hashCode()}"
+            override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? {
+                applicationScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Uploading caught exception...", Toast.LENGTH_SHORT).show()
+                }
+                return createDummyId()
+            }
+
+            private fun createDummyId(): String {
+                return "dummy${UUID.randomUUID().toString().hashCode()}"
+            }
         }
     }
-}
 
-private fun createNonFatalPendingIntent(context: Context): PendingIntent {
-    // The PendingIntent can launch whatever you want - an activity, a service... Here we pick a broadcast. Our main
-    // activity will listener for the broadcast and show an in-app snackbar to ask the user whether we should send
-    // this crash report.
-    return PendingIntent.getBroadcast(
-        context,
-        0,
-        Intent(CrashApplication.NON_FATAL_CRASH_BROADCAST),
-        PendingIntent.FLAG_IMMUTABLE,
-    )
+    private fun createNonFatalPendingIntent(context: Context): PendingIntent {
+        // The PendingIntent can launch whatever you want - an activity, a service... Here we pick a broadcast. Our main
+        // activity will listener for the broadcast and show an in-app snackbar to ask the user whether we should send
+        // this crash report.
+        return PendingIntent.getBroadcast(
+            context,
+            0,
+            Intent(CrashApplication.NON_FATAL_CRASH_BROADCAST),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
 }
 
 val Context.crashReporter: CrashReporter

@@ -287,8 +287,12 @@
   <string name="browser_menu_summarize_page">ページを要約</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">新機能</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">新機能</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">動作しないサイトを報告</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">グループに追加</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">翻訳済み</string>
   <!-- Browser menu label for the print feature -->
@@ -1308,6 +1312,12 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">タブバーを表示する</string>
+  <!-- Preference for tab bar placement (top or bottom of the screen) -->
+  <string name="preference_tab_strip_location_header">タブバーの配置</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">画面上部</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">画面下部</string>
   <!--
     Gestures Preferences
 

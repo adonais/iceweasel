@@ -9,6 +9,23 @@ ChromeUtils.defineESModuleGetters(this, {
 
 SearchTestUtils.init(this);
 
+/**
+ * Decode ui.key.contentAccess into the modifier set a content access key needs,
+ * so tests synthesize the right combination on every platform (Alt+Shift on
+ * Windows and Linux, Control+Option on macOS).
+ *
+ * @returns {object} Modifiers for EventUtils.synthesizeKey().
+ */
+function getAccessKeyModifiers() {
+  const contentAccess = Services.prefs.getIntPref("ui.key.contentAccess", 5);
+  return {
+    shiftKey: !!(contentAccess & 1),
+    ctrlKey: !!(contentAccess & 2),
+    altKey: !!(contentAccess & 4),
+    metaKey: !!(contentAccess & 8),
+  };
+}
+
 // Force the search CTA to accept the test's default engine as a supported
 // general-purpose engine. installSearchExtension() creates addon engines, which
 // report isGeneralPurposeEngine=false, so without this the CTA would be
@@ -19,6 +36,14 @@ function stubSearchCTASupportedEngine() {
     .stub(NetErrorParent.prototype, "isSupportedSearchEngine")
     .returns(true);
   registerCleanupFunction(() => sandbox.restore());
+}
+
+// The search CTA decision has a deadline, which the page waits out before
+// rendering without a CTA (bug 2067882). The deadline has its own tests.
+function pinSearchCTADecisionDeadline() {
+  const pref = "browser.netError.searchCTA.decisionTimeoutMs";
+  Services.prefs.setIntPref(pref, 0);
+  registerCleanupFunction(() => Services.prefs.clearUserPref(pref));
 }
 
 /**

@@ -499,24 +499,12 @@ nsresult PasteNoFormattingCommand::DoCommand(Command aCommand,
   MOZ_ASSERT(nsContentUtils::PrincipalHasPermission(*subjectPrincipal,
                                                     nsGkAtoms::clipboardRead));
 #endif
-  nsresult rv;
-  if (HTMLEditor* htmlEditor = aEditorBase.GetAsHTMLEditor()) {
-    // Known live because we hold a ref above in "editor"
-    rv = MOZ_KnownLive(htmlEditor)
-             ->PasteNoFormattingAsAction(nsIClipboard::kGlobalClipboard,
-                                         EditorBase::DispatchPasteEvent::Yes,
-                                         nullptr, aPrincipal);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::PasteNoFormattingAsAction("
-                         "DispatchPasteEvent::Yes) failed");
-  } else {
-    rv = aEditorBase.PasteAsAction(nsIClipboard::kGlobalClipboard,
-                                   EditorBase::DispatchPasteEvent::Yes, nullptr,
-                                   aPrincipal);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "EditorBase::PasteAsAction(nsIClipboard::"
-                         "kGlobalClipboard, DispatchPasteEvent::Yes) failed");
-  }
+  nsresult rv = aEditorBase.PasteNoFormattingAsAction(
+      nsIClipboard::kGlobalClipboard, EditorBase::DispatchPasteEvent::Yes,
+      nullptr, aPrincipal);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::PasteNoFormattingAsAction(nsIClipboard::"
+                       "kGlobalClipboard, DispatchPasteEvent::Yes) failed");
   return rv;
 }
 

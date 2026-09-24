@@ -1543,13 +1543,12 @@ SECU_PrintMLKEMPublicKey(FILE *out, SECKEYPublicKey *pk, char *m, int level)
     fprintf(out, "%s:\n", m);
 
     switch (pk->u.kyber.params) {
-        case params_kyber768_round3:
-            SECU_Indent(out, level);
-            fprintf(out, "Parameter Set: KYBER-768-ROUND3\n");
+        case params_ml_kem512:
+            SECU_PrintOidTag(out, SEC_OID_ML_KEM_512, "Parameter Set", level + 1);
             break;
-        case params_kyber768_round3_test_mode:
-            SECU_Indent(out, level);
-            fprintf(out, "Parameter Set (test mode): KYBER-768-ROUND3\n");
+        case params_ml_kem512_test_mode:
+            SECU_PrintOidTag(out, SEC_OID_ML_KEM_512, "Parameter Set (test mode)",
+                             level + 1);
             break;
         case params_ml_kem768:
             SECU_PrintOidTag(out, SEC_OID_ML_KEM_768, "Parameter Set", level + 1);
@@ -1564,9 +1563,6 @@ SECU_PrintMLKEMPublicKey(FILE *out, SECKEYPublicKey *pk, char *m, int level)
         case params_ml_kem1024_test_mode:
             SECU_PrintOidTag(out, SEC_OID_ML_KEM_1024, "Parameter Set (test mode)",
                              level + 1);
-            break;
-        case params_ml_kem512:
-            SECU_PrintOidTag(out, SEC_OID_ML_KEM_512, "Parameter Set", level + 1);
             break;
         case params_kyber_invalid:
             SECU_Indent(out, level);
@@ -4292,9 +4288,6 @@ static const struct SSLNamedGroupString {
     { NAME_AND_LEN("FF4096"), ssl_grp_ffdhe_4096 },
     { NAME_AND_LEN("FF6144"), ssl_grp_ffdhe_6144 },
     { NAME_AND_LEN("FF8192"), ssl_grp_ffdhe_8192 },
-#ifndef NSS_DISABLE_KYBER
-    { NAME_AND_LEN("xyber76800"), ssl_grp_kem_xyber768d00 },
-#endif
     { NAME_AND_LEN("x25519mlkem768"), ssl_grp_kem_mlkem768x25519 },
     { NAME_AND_LEN("secp256r1mlkem768"), ssl_grp_kem_secp256r1mlkem768 },
     { NAME_AND_LEN("secp384r1mlkem1024"), ssl_grp_kem_secp384r1mlkem1024 },

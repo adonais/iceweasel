@@ -117,6 +117,7 @@ formautofill:
       Captures the method of user interaction initiating the prompt and the result of the prompt.
       Possible triggers include:
         "autofill" when a user attempts to autofill a payment method.
+        "delete_autocomplete" when a user deletes a payment method from the form autocomplete dropdown
         "edit" when a user edits a login in about:preferences
         "toggle_pref_os_auth" when a user toggles "Autofill / Require device sign in" in about:preferences
       Possible results include:
@@ -906,7 +907,12 @@ address:
         type: string
       mlversion:
         description: >
-          ml model version
+          Revision of the ML field classifier configured for this client, or
+          empty when the feature is off. Recorded on every detection, including
+          forms the classifier did not label, so that version cohorts are not
+          conditioned on the model having succeeded. The two-engine classifier
+          reports both revisions joined by "/", the single-engine one reports a
+          single revision.
         type: string
 
   filled_address_form_ext:
@@ -1660,3 +1666,154 @@ formautofill.addresses:
       - passwords-dev@mozilla.org
     expires: never
     unit: address autofill profiles
+
+  migrate_to_rust:
+    type: event
+    description: >
+      Recorded once per attempt to copy a profile's addresses from the store
+      serving them into the other one, which is what has to succeed before that
+      store starts serving. Both directions report here, told apart by
+      `direction`. Tracks how often the copy succeeds, on how many records, and
+      how long it takes.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzil.la/2058441
+    data_reviews:
+      - https://bugzil.la/2058441
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        description: >
+          A fresh id per run, so that the migrate_record_divergence events a run
+          emitted join to it unambiguously.
+        type: string
+      direction:
+        description: >
+          Which way the addresses were copied: "to_rust" for the migration into
+          the Rust store, "to_json" for the copy back when the pref that chooses
+          the store is turned off again. A profile can do both, so this is what
+          keeps the two apart.
+        type: string
+      attempt:
+        description: >
+          How many launches had already tried and failed before this one, 0 on
+          the first. A retry emits an otherwise identical event, so this is
+          what separates a profile that failed once from one failing every
+          time. The migrator gives up after 3.
+        type: quantity
+      result:
+        description: >
+          "ok" when the store copied into ended up holding exactly what the
+          source holds -- every record arrived and nothing the source lacks
+          survived, compared by guid rather than by count -- so the profile
+          could be handed to it; otherwise "error".
+        type: string
+      source_total:
+        description: >
+          Number of address records the migration tried to copy, as counted in
+          the store copied from.
+        type: quantity
+      target_total:
+        description: >
+          Number of records the store copied into held once the copy finished,
+          read back rather than counted as it went. Equal to `migrated` when the
+          copy is sound; lower means records reported as written are not there.
+          0 if the migration threw before reading back.
+        type: quantity
+      migrated:
+        description: >
+          Number of records the import reported as written. A record the store
+          copied into already held under the same timeLastModified is left
+          alone, so source_total minus migrated minus failed is the number that
+          needed nothing doing.
+        type: quantity
+      failed:
+        description: >
+          Number of records the import rejected. Why is summarized in
+          error_message.
+        type: quantity
+      failed_deletions:
+        description: >
+          Number of deletions the copy could not apply, whether removing a
+          record the source no longer has or importing a tombstone for one it
+          had already deleted. `result` tells the two apart: a record that
+          would not delete is still in the store copied into, so the run fails
+          on it, while a tombstone that would not import leaves that store
+          correct and costs a deletion coming back at the next sync.
+        type: quantity
+      diverged:
+        description: >
+          Number of records the store copied into accepted and then held with a
+          different value in a field it stores: the copy is complete but not
+          faithful. Fields it derives on read, or has no column for, are not
+          compared -- neither was carried by the copy, so neither says anything
+          about it. Which fields disagreed is in migrate_record_divergence.
+          Does not fail the migration. 0 if the migration threw before
+          verifying.
+        type: quantity
+      duration_ms:
+        description: Wall-clock duration of the migration, in milliseconds.
+        type: quantity
+      error_code:
+        description: >
+          The UniFFI error variant when the migration threw, for grouping.
+          Absent otherwise, including when records were rejected or came up
+          short: the counts already describe that.
+        type: string
+      error_message:
+        description: >
+          A normalized, PII-stripped message: the first reason a record was
+          rejected, or the error text where the migration threw. One example to
+          read rather than a set to aggregate -- rejected records in one batch
+          nearly always share a cause. Absent when the counts say it all.
+        type: string
+
+  migrate_record_divergence:
+    type: event
+    description: >
+      Recorded once per address record that came out of a migration held
+      differently from the way the store copied from held it, naming the fields
+      that disagreed and which way each of them went. One event per record,
+      however many of its fields disagreed; join to migrate_to_rust on run_id
+      for the direction and for `diverged`, the total.
+
+      Catches the failure the counts cannot: both stores accepting a write and
+      then holding different values, since the Rust store normalises names,
+      phone numbers, regions and countries itself. Only the fields that store
+      keeps are compared.
+
+      Only field names are recorded, never values.
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzil.la/2058441
+    data_reviews:
+      - https://bugzil.la/2058441
+    notification_emails:
+      - autofill@lists.mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        description: The migrate_to_rust run this record was copied by.
+        type: string
+      changed:
+        description: >
+          Comma-separated names of the fields both stores hold, with different
+          values -- a normalised name, phone number, region or country lands
+          here. Absent when there are none.
+        type: string
+      dropped:
+        description: >
+          Comma-separated names of the fields the store copied from holds and
+          the one copied into came back empty on: the copy losing something.
+          Absent when there are none.
+        type: string
+      added:
+        description: >
+          Comma-separated names of the fields the store copied from left empty
+          and the one copied into came back with, most often ones it derives on
+          read. Absent when there are none.
+        type: string

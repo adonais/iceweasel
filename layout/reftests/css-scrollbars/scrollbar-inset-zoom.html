@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<!-- The forwarded inset must be a fixed physical size, so full-zooming the
+     subdocument must not change it. The reference is the same iframe at zoom 1.
+
+     This only isolates the inset because the subdocument is sized in vh: the
+     thumb's device-pixel size and the scrollbar's thickness are already
+     zoom-invariant. If the inset were carried in CSS pixels instead of device
+     pixels it would double at zoom 2 and the thumb would start lower. -->
+<style>
+  iframe {
+    width: 200px;
+    height: 300px;
+    border: none;
+    -moz-scrollbar-inset-block: 40px 0;
+  }
+</style>
+<iframe src="scrollbar-inset-forward-inner.html"></iframe>
+<script>
+  const iframe = document.querySelector("iframe");
+  iframe.addEventListener("load", () => {
+    iframe.frameLoader.browsingContext.fullZoom = 2.0;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.documentElement.removeAttribute("class")));
+  });
+</script>

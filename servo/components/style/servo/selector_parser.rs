@@ -6,6 +6,7 @@
 
 //! Servo's selector parser.
 
+use crate::FxHashMap;
 use crate::attr::{AttrIdentifier, AttrValue};
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::derives::*;
@@ -19,11 +20,10 @@ use crate::selector_parser::{PseudoElementCascadeType, SelectorParser};
 use crate::values::{AtomIdent, AtomString};
 use crate::{Atom, CaseSensitivityExt, LocalName, Namespace, Prefix};
 use cssparser::{
-    match_ignore_ascii_case, serialize_identifier, CowRcStr, Parser as CssParser, SourcePosition,
-    ToCss,
+    CowRcStr, Parser as CssParser, SourcePosition, ToCss, match_ignore_ascii_case,
+    serialize_identifier,
 };
 use dom::{DocumentState, ElementState};
-use rustc_hash::FxHashMap;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt;
@@ -38,7 +38,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
     Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, ToShmem,
 )]
 #[allow(missing_docs)]
-#[repr(usize)]
+#[repr(u8)]
 pub enum PseudoElement {
     // Eager pseudos. Keep these first so that eager_index() works.
     After = 0,
@@ -148,8 +148,9 @@ impl PseudoElement {
     /// Creates a pseudo-element from an eager index.
     #[inline]
     pub fn from_eager_index(i: usize) -> Self {
+        const _: () = assert!(EAGER_PSEUDO_COUNT <= (u8::MAX as usize));
         assert!(i < EAGER_PSEUDO_COUNT);
-        let result: PseudoElement = unsafe { mem::transmute(i) };
+        let result: PseudoElement = unsafe { mem::transmute(i as u8) };
         debug_assert!(result.is_eager());
         result
     }
@@ -289,7 +290,7 @@ impl PseudoElement {
     pub fn property_restriction(&self) -> Option<PropertyFlags> {
         Some(match self {
             PseudoElement::FirstLetter => PropertyFlags::APPLIES_TO_FIRST_LETTER,
-            PseudoElement::Marker if static_prefs::pref!("layout.css.marker.restricted") => {
+            PseudoElement::Marker if crate::pref!("layout.css.marker.restricted") => {
                 PropertyFlags::APPLIES_TO_MARKER
             },
             PseudoElement::Placeholder => PropertyFlags::APPLIES_TO_PLACEHOLDER,
@@ -313,6 +314,12 @@ impl PseudoElement {
 
     /// Whether this pseudo-element is the ::highlight pseudo.
     pub fn is_highlight(&self) -> bool {
+        false
+    }
+
+    /// Whether this pseudo-element takes an argument.
+    #[inline]
+    pub fn has_argument(&self) -> bool {
         false
     }
 
@@ -576,7 +583,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 
     #[inline]
     fn parse_nth_child_of(&self) -> bool {
-        false
+        crate::pref!("layout.css.nth-child-of.enabled")
     }
 
     #[inline]
@@ -586,7 +593,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 
     #[inline]
     fn parse_has(&self) -> bool {
-        false
+        crate::pref!("layout.css.has-selector.enabled")
     }
 
     #[inline]
@@ -848,8 +855,7 @@ impl ServoElementSnapshot {
 
     fn get_attr(&self, namespace: &Namespace, name: &LocalName) -> Option<&AttrValue> {
         self.attrs
-            .as_ref()
-            .unwrap()
+            .as_ref()?
             .iter()
             .find(|&&(ref ident, _)| ident.local_name == *name && ident.namespace == *namespace)
             .map(|&(_, ref v)| v)
@@ -870,11 +876,11 @@ impl ServoElementSnapshot {
     where
         F: FnMut(&AttrValue) -> bool,
     {
-        self.attrs
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|&(ref ident, ref v)| ident.local_name == *name && f(v))
+        self.attrs.as_ref().is_some_and(|attrs| {
+            attrs
+                .iter()
+                .any(|&(ref ident, ref v)| ident.local_name == *name && f(v))
+        })
     }
 }
 

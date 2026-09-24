@@ -76,6 +76,16 @@ export class BrowserToolboxLauncher extends EventEmitter {
     return processes.size !== 0;
   }
 
+  /**
+   * Close every open Browser Toolbox process. Used to tear down
+   * the Browser Toolbox when DevTools become disabled.
+   */
+  static closeAll() {
+    for (const launcher of [...processes]) {
+      launcher.close();
+    }
+  }
+
   #closed;
   #devToolsServer;
   #dbgProfilePath;

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,11 +48,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.modifier.rightClickable
+import mozilla.components.compose.base.theme.PreviewThemeProvider
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
@@ -63,10 +65,9 @@ import org.mozilla.fenix.compose.MenuItem
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.topsites.TopSitesTestTag.TOP_SITE_CARD_FAVICON
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
-import org.mozilla.fenix.home.topsites.ui.AddShortcutItem
+import org.mozilla.fenix.home.topsites.ui.Shortcuts
+import org.mozilla.fenix.home.ui.horizontalMargin
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.PreviewThemeProvider
-import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperState
 
 /** The size of a top site item. */
@@ -74,7 +75,6 @@ const val TOP_SITES_ITEM_SIZE = 84
 
 internal const val TOP_SITES_TO_SHOW = 8
 internal const val TOP_SITES_PER_ROW = 4
-private const val TOP_SITES_ROW_WIDTH = TOP_SITES_PER_ROW * TOP_SITES_ITEM_SIZE
 internal const val TOP_SITES_FAVICON_CARD_SIZE = 60
 internal const val TOP_SITES_FAVICON_SIZE = 36
 
@@ -178,20 +178,27 @@ fun TopSites(
                 .testTag(TopSitesTestTag.TOP_SITES),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        TopSitesGrid(
+        Shortcuts(
             topSites = if (isExpanded) topSites else topSites.take(TOP_SITES_TO_SHOW),
             topSiteColors = topSiteColors,
             showAddShortcut = showAddShortcut,
+            scrollable = false,
+            menuItems = { topSite ->
+                getMenuItems(
+                    topSite = topSite,
+                    onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
+                    onEditTopSiteClicked = onEditTopSiteClicked,
+                    onRemoveTopSiteClicked = onRemoveTopSiteClicked,
+                    onSettingsClicked = onSettingsClicked,
+                    onSponsorPrivacyClicked = onSponsorPrivacyClicked,
+                )
+            },
             onTopSiteClick = onTopSiteClick,
             onTopSiteLongClick = onTopSiteLongClick,
             onTopSiteImpression = onTopSiteImpression,
-            onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
-            onEditTopSiteClicked = onEditTopSiteClicked,
-            onRemoveTopSiteClicked = onRemoveTopSiteClicked,
-            onSettingsClicked = onSettingsClicked,
-            onSponsorPrivacyClicked = onSponsorPrivacyClicked,
             onTopSitesItemBound = onTopSitesItemBound,
             onAddShortcutClicked = onAddShortcutClicked,
+            modifier = Modifier.padding(horizontal = horizontalMargin),
         )
 
         if (showExpandToggle) {
@@ -242,120 +249,6 @@ private fun TopSitesExpandToggle(
             style = FirefoxTheme.typography.button,
             maxLines = 1,
         )
-    }
-}
-
-@Suppress("LongParameterList")
-@Composable
-private fun TopSitesGrid(
-    topSites: List<TopSite>,
-    topSiteColors: TopSiteColors,
-    showAddShortcut: Boolean,
-    onTopSiteClick: (TopSite) -> Unit,
-    onTopSiteLongClick: (TopSite) -> Unit,
-    onTopSiteImpression: (TopSite.Provided, Int) -> Unit,
-    onOpenInPrivateTabClicked: (TopSite) -> Unit,
-    onEditTopSiteClicked: (TopSite) -> Unit,
-    onRemoveTopSiteClicked: (TopSite) -> Unit,
-    onSettingsClicked: () -> Unit,
-    onSponsorPrivacyClicked: () -> Unit,
-    onTopSitesItemBound: () -> Unit,
-    onAddShortcutClicked: () -> Unit,
-) {
-    val topSiteRows = topSites.chunked(TOP_SITES_PER_ROW)
-    val addShortcutInCurrentRow =
-        showAddShortcut && topSiteRows.isNotEmpty() && topSiteRows.last().size < TOP_SITES_PER_ROW
-    val addShortcutInNewRow = showAddShortcut && !addShortcutInCurrentRow
-
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            topSiteRows.forEachIndexed { rowIndex, items ->
-                val isLastRow = rowIndex == topSiteRows.lastIndex
-
-                TopSiteGridRow(
-                    items = items,
-                    topSiteColors = topSiteColors,
-                    showAddShortcut = isLastRow && addShortcutInCurrentRow,
-                    onTopSiteClick = onTopSiteClick,
-                    onTopSiteLongClick = onTopSiteLongClick,
-                    onTopSiteImpression = onTopSiteImpression,
-                    onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
-                    onEditTopSiteClicked = onEditTopSiteClicked,
-                    onRemoveTopSiteClicked = onRemoveTopSiteClicked,
-                    onSettingsClicked = onSettingsClicked,
-                    onSponsorPrivacyClicked = onSponsorPrivacyClicked,
-                    onTopSitesItemBound = onTopSitesItemBound,
-                    onAddShortcutClicked = onAddShortcutClicked,
-                )
-
-                if (!isLastRow || addShortcutInNewRow) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-
-            if (addShortcutInNewRow) {
-                Row(modifier = Modifier.defaultMinSize(minWidth = TOP_SITES_ROW_WIDTH.dp)) {
-                    AddShortcutItem(
-                        topSiteColors = topSiteColors,
-                        onClick = onAddShortcutClicked,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Suppress("LongParameterList")
-@Composable
-private fun TopSiteGridRow(
-    items: List<TopSite>,
-    topSiteColors: TopSiteColors,
-    showAddShortcut: Boolean,
-    onTopSiteClick: (TopSite) -> Unit,
-    onTopSiteLongClick: (TopSite) -> Unit,
-    onTopSiteImpression: (TopSite.Provided, Int) -> Unit,
-    onOpenInPrivateTabClicked: (TopSite) -> Unit,
-    onEditTopSiteClicked: (TopSite) -> Unit,
-    onRemoveTopSiteClicked: (TopSite) -> Unit,
-    onSettingsClicked: () -> Unit,
-    onSponsorPrivacyClicked: () -> Unit,
-    onTopSitesItemBound: () -> Unit,
-    onAddShortcutClicked: () -> Unit,
-) {
-    Row(modifier = Modifier.defaultMinSize(minWidth = TOP_SITES_ROW_WIDTH.dp)) {
-        items.forEachIndexed { position, topSite ->
-            TopSiteItem(
-                topSite = topSite,
-                menuItems =
-                    getMenuItems(
-                        topSite = topSite,
-                        onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
-                        onEditTopSiteClicked = onEditTopSiteClicked,
-                        onRemoveTopSiteClicked = onRemoveTopSiteClicked,
-                        onSettingsClicked = onSettingsClicked,
-                        onSponsorPrivacyClicked = onSponsorPrivacyClicked,
-                    ),
-                position = position,
-                topSiteColors = topSiteColors,
-                onTopSiteClick = onTopSiteClick,
-                onTopSiteLongClick = onTopSiteLongClick,
-                onTopSiteImpression = onTopSiteImpression,
-                onTopSitesItemBound = onTopSitesItemBound,
-            )
-        }
-
-        if (showAddShortcut) {
-            AddShortcutItem(
-                topSiteColors = topSiteColors,
-                onClick = onAddShortcutClicked,
-            )
-        }
     }
 }
 
@@ -410,6 +303,7 @@ data class TopSiteColors(
  * @param onTopSiteLongClick Invoked when the user long clicks on a top site.
  * @param onTopSiteImpression Invoked when the user sees a provided top site.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param itemLayout The sizes to lay the top site out with, adapted to the available width.
  */
 @Suppress(
     "LongMethod",
@@ -426,6 +320,7 @@ fun TopSiteItem(
     onTopSiteLongClick: (TopSite) -> Unit,
     onTopSiteImpression: (TopSite.Provided, Int) -> Unit,
     onTopSitesItemBound: () -> Unit,
+    itemLayout: TopSiteItemLayout = TopSiteItemLayout.sizes(),
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     val onLongClick = {
@@ -453,10 +348,10 @@ fun TopSiteItem(
                         indication = null,
                         onRightClick = onLongClick,
                     )
-                    .width(TOP_SITES_ITEM_SIZE.dp),
+                    .width(itemLayout.itemWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(TOP_SITES_ITEM_TOP_SPACING))
 
             Box(
                 modifier = Modifier.wrapContentSize(),
@@ -465,6 +360,8 @@ fun TopSiteItem(
                 TopSiteFaviconCard(
                     topSite = topSite,
                     backgroundColor = topSiteColors.faviconCardBackgroundColor,
+                    faviconCardSize = itemLayout.faviconCardSize,
+                    faviconSize = itemLayout.faviconSize,
                 )
 
                 if (topSite is TopSite.Pinned || topSite is TopSite.Default) {
@@ -481,38 +378,14 @@ fun TopSiteItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(TOP_SITES_ITEM_BOTTOM_SPACING))
 
-            Row(
-                modifier = Modifier.width(TOP_SITES_ITEM_SIZE.dp),
-                horizontalArrangement = Arrangement.Absolute.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    modifier =
-                        Modifier.semantics {
-                                testTagsAsResourceId = true
-                            }
-                            .padding(horizontal = 4.dp)
-                            .testTag(TopSitesTestTag.TOP_SITE_TITLE),
-                    text = topSite.title ?: topSite.url,
-                    color = topSiteColors.titleTextColor,
-                    textAlign = TextAlign.Center,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = topSite.getMaxLinesForTitle(),
-                    style = FirefoxTheme.typography.caption.copy(fontWeight = FontWeight.W700),
-                )
-            }
-
-            Text(
-                text = if (topSite is TopSite.Provided) stringResource(id = R.string.top_sites_sponsored_label) else "",
-                modifier = Modifier.width(TOP_SITES_ITEM_SIZE.dp),
-                color = topSiteColors.sponsoredTextColor,
-                fontSize = 10.sp,
-                textAlign = TextAlign.Center,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-                style = FirefoxTheme.typography.caption,
+            TopSiteItemText(
+                title = topSite.title ?: topSite.url,
+                maxTitleLines = topSite.getMaxLinesForTitle(),
+                isSponsored = topSite is TopSite.Provided,
+                topSiteColors = topSiteColors,
+                itemWidth = itemLayout.itemWidth,
             )
         }
 
@@ -536,15 +409,70 @@ fun TopSiteItem(
 }
 
 /**
+ * The title and sponsored label a shortcut lays out under its favicon.
+ *
+ * @param title The shortcut's title.
+ * @param maxTitleLines Lines the title may wrap onto.
+ * @param isSponsored Whether to label the shortcut as sponsored. The label is laid out either way so every shortcut is
+ *   the same height.
+ * @param topSiteColors The color set defined by [TopSiteColors] used to style a top site.
+ * @param itemWidth Width of the shortcut cell, which bounds the text.
+ */
+@Composable
+internal fun TopSiteItemText(
+    title: String,
+    maxTitleLines: Int,
+    isSponsored: Boolean,
+    topSiteColors: TopSiteColors,
+    itemWidth: Dp,
+) {
+    Row(
+        modifier = Modifier.width(itemWidth),
+        horizontalArrangement = Arrangement.Absolute.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier =
+                Modifier.semantics {
+                        testTagsAsResourceId = true
+                    }
+                    .padding(horizontal = 4.dp)
+                    .testTag(TopSitesTestTag.TOP_SITE_TITLE),
+            text = title,
+            color = topSiteColors.titleTextColor,
+            textAlign = TextAlign.Center,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = maxTitleLines,
+            style = FirefoxTheme.typography.caption.copy(fontWeight = FontWeight.W700),
+        )
+    }
+
+    Text(
+        text = if (isSponsored) stringResource(id = R.string.top_sites_sponsored_label) else "",
+        modifier = Modifier.width(itemWidth),
+        color = topSiteColors.sponsoredTextColor,
+        fontSize = 10.sp,
+        textAlign = TextAlign.Center,
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1,
+        style = FirefoxTheme.typography.caption,
+    )
+}
+
+/**
  * The top site favicon card.
  *
  * @param topSite The [TopSite] to display.
  * @param backgroundColor The background [Color] of the card.
+ * @param faviconCardSize The size of the card.
+ * @param faviconSize The size of the favicon image inside the card.
  */
 @Composable
 private fun TopSiteFaviconCard(
     topSite: TopSite,
     backgroundColor: Color,
+    faviconCardSize: Dp = TOP_SITES_FAVICON_CARD_SIZE.dp,
+    faviconSize: Dp = TOP_SITES_FAVICON_SIZE.dp,
 ) {
     Card(
         modifier =
@@ -552,7 +480,7 @@ private fun TopSiteFaviconCard(
                     testTagsAsResourceId = true
                     testTag = TOP_SITE_CARD_FAVICON
                 }
-                .size(TOP_SITES_FAVICON_CARD_SIZE.dp),
+                .size(faviconCardSize),
         shape = CircleShape,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
@@ -562,29 +490,32 @@ private fun TopSiteFaviconCard(
             contentAlignment = Alignment.Center,
         ) {
             Surface(
-                modifier = Modifier.size(TOP_SITES_FAVICON_SIZE.dp),
+                modifier = Modifier.size(faviconSize),
                 color = backgroundColor,
                 shape = MaterialTheme.shapes.extraSmall,
             ) {
-                TopSiteFavicon(topSite = topSite)
+                TopSiteFavicon(topSite = topSite, faviconSize = faviconSize)
             }
         }
     }
 }
 
 @Composable
-private fun TopSiteFavicon(topSite: TopSite) {
+private fun TopSiteFavicon(
+    topSite: TopSite,
+    faviconSize: Dp = TOP_SITES_FAVICON_SIZE.dp,
+) {
     when (val favicon = getTopSitesFavicon(topSite)) {
         is TopSitesFavicon.ImageUrl ->
             Favicon(
                 url = topSite.url,
-                size = TOP_SITES_FAVICON_SIZE.dp,
+                size = faviconSize,
                 imageUrl = favicon.imageUrl,
             )
 
         is TopSitesFavicon.Drawable ->
             Favicon(
-                size = TOP_SITES_FAVICON_SIZE.dp,
+                size = faviconSize,
                 imageResource = favicon.drawableResId,
             )
     }

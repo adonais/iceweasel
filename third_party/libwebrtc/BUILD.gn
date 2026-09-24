@@ -655,10 +655,6 @@ if (!build_with_chromium) {
       deps += [ "sdk:videocapture_objc" ]
     }
 
-    if (rtc_enable_protobuf) {
-      deps += [ "logging:rtc_event_log_proto" ]
-    }
-
     if (rtc_include_internal_audio_device) {
       deps += [ "api/audio:create_audio_device_module" ]
     }

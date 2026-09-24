@@ -334,7 +334,7 @@ class LcovFile:
 
     def format_functions(self, record):
         # Sorting results gives deterministic output (and is a lot faster than
-        # using OrderedDict).
+        # using dict).
         fns = []
         for start_lineno, fn_name in sorted(record.functions.items()):
             fns.append("FN:%s,%s" % (start_lineno, fn_name))

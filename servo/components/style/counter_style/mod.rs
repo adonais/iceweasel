@@ -6,16 +6,16 @@
 //!
 //! [counter-style]: https://drafts.csswg.org/css-counter-styles/
 
+use crate::Atom;
 use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
 use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use crate::values::specified::Integer;
 use crate::values::{AtomString, CustomIdent};
-use crate::Atom;
 use cssparser::{
-    ascii_case_insensitive_phf_map, match_ignore_ascii_case, CowRcStr, Parser, RuleBodyParser,
-    SourceLocation, Token,
+    CowRcStr, Parser, RuleBodyParser, SourceLocation, Token, ascii_case_insensitive_phf_map,
+    match_ignore_ascii_case,
 };
 use std::fmt::{self, Write};
 use std::mem;
@@ -99,7 +99,7 @@ impl CounterStyle {
     #[inline]
     pub fn is_bullet(&self) -> bool {
         match self {
-            CounterStyle::Name(CustomIdent(ref name)) => {
+            CounterStyle::Name(CustomIdent(name)) => {
                 name == &atom!("disc")
                     || name == &atom!("circle")
                     || name == &atom!("square")
@@ -139,16 +139,16 @@ impl CounterStyle {
     ) -> Result<Self, ParseError> {
         use self::CounterStyleParsingFlags as Flags;
         match input.next()? {
-            Token::QuotedString(ref string) if flags.intersects(Flags::ALLOW_STRING) => {
+            Token::QuotedString(string) if flags.intersects(Flags::ALLOW_STRING) => {
                 Ok(Self::String(AtomString::from(string.as_ref())))
             },
-            Token::Ident(ref ident) => {
+            Token::Ident(ident) => {
                 if flags.intersects(Flags::ALLOW_NONE) && ident.eq_ignore_ascii_case("none") {
                     return Ok(Self::None);
                 }
                 Ok(Self::Name(counter_style_name_from_ident(ident)?))
             },
-            Token::Function(ref name) if name.eq_ignore_ascii_case("symbols") => {
+            Token::Function(name) if name.eq_ignore_ascii_case("symbols") => {
                 input.parse_nested_block(|input| {
                     let symbols_type = input
                         .try_parse(SymbolsType::parse)
@@ -266,8 +266,8 @@ pub fn parse_counter_style_body(
             context,
             descriptors: &mut rule.descriptors,
         };
-        let mut iter = RuleBodyParser::new(input, &mut parser);
-        while let Some(declaration) = iter.next() {
+        let iter = RuleBodyParser::new(input, &mut parser);
+        for declaration in iter {
             if let Err((error, slice, location)) = declaration {
                 let error = ContextualParseError::UnsupportedCounterStyleDescriptorDeclaration(
                     slice, error,
@@ -331,7 +331,7 @@ impl ToCssWithGuard for CounterStyleRule {
 impl CounterStyleRule {
     fn empty(name: CustomIdent, source_location: SourceLocation) -> Self {
         Self {
-            name: name,
+            name,
             generation: Wrapping(0),
             descriptors: Descriptors::default(),
             source_location,
@@ -496,7 +496,7 @@ impl ToCss for System {
                     dest.write_str("fixed")
                 }
             },
-            System::Extends(ref other) => {
+            System::Extends(other) => {
                 dest.write_str("extends ")?;
                 other.to_css(dest)
             },
@@ -590,7 +590,7 @@ impl Parse for CounterRanges {
         let ranges = input.parse_comma_separated(|input| {
             let start = parse_bound(context, input)?;
             let end = parse_bound(context, input)?;
-            if let (CounterBound::Integer(ref s), CounterBound::Integer(ref e)) = (&start, &end) {
+            if let (CounterBound::Integer(s), CounterBound::Integer(e)) = (&start, &end) {
                 // Rejects calc expressions that cannot be resolved at parse time,
                 // since @counter-style descriptors require concrete values.
                 let s = s.resolve();
@@ -732,7 +732,7 @@ impl Parse for SpeakAs {
         let mut is_spell_out = false;
         let result = input.try_parse(|input| {
             let ident = input.expect_ident().map_err(|_| ())?;
-            match_ignore_ascii_case! { &*ident,
+            match_ignore_ascii_case! { ident,
                 "auto" => Ok(SpeakAs::Auto),
                 "bullets" => Ok(SpeakAs::Bullets),
                 "numbers" => Ok(SpeakAs::Numbers),

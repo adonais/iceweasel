@@ -19,6 +19,7 @@
 #include "js/friend/ErrorMessages.h"  // JSMSG_*
 #include "js/Modules.h"  // JS::GetModulePrivate, JS::ModuleDynamicImportHook, JS::ModuleType
 #include "vm/EqualityOperations.h"  // js::SameValue
+#include "vm/GeneratorObject.h"     // js::GetGeneratorObjectForModule
 #include "vm/Interpreter.h"    // Execute, Lambda, ReportRuntimeLexicalError
 #include "vm/ModuleBuilder.h"  // js::ModuleBuilder
 #include "vm/Modules.h"
@@ -29,6 +30,7 @@
 #include "wasm/WasmJS.h"       // js::WasmModuleObject
 
 #include "gc/GCContext-inl.h"
+#include "gc/StableCellHasher-inl.h"
 #include "vm/EnvironmentObject-inl.h"  // EnvironmentObject::setAliasedBinding
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
@@ -1185,11 +1187,11 @@ bool ModuleObject::initScriptSlots(JSContext* cx, HandleScript script) {
   MOZ_ASSERT(script->sourceObject());
   MOZ_ASSERT(script->filename());
   initReservedSlotTyped(SCRIPT_SLOT, PrivateGCThingValue(script));
-  cyclicModuleFields()->scriptSourceObject = script->sourceObject();
+  ScriptSourceObject* sso = script->sourceObject();
+  cyclicModuleFields()->scriptSourceObject = sso;
   auto& sources = ObjectRealm::get(this).moduleScriptSources;
-  WeakHeapPtr<ScriptSourceObject*> key(script->sourceObject());
-  auto p = sources.lookupForAdd(key);
-  if (!p.found() && !sources.add(p, key)) {
+  auto p = sources.lookupForAdd(sso);
+  if (!p.found() && !sources.add(p, WeakHeapPtr<ScriptSourceObject*>(sso))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -1573,6 +1575,17 @@ bool ModuleObject::execute(JSContext* cx, Handle<ModuleObject*> self) {
 
 /* static */
 void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
+  // A module's evaluation can finish while its top-level-await generator is
+  // still suspended at an await: a rejected async dependency settles it in
+  // AsyncModuleExecutionRejected, and a debugger can force a throw out of an
+  // await. The pending await reaction resumes the generator afterwards and
+  // needs the script, so keep the slot here. It is cleared once the generator
+  // is closed, in AbstractGeneratorObject::setClosed.
+  AbstractGeneratorObject* genObj = GetGeneratorObjectForModule(module);
+  if (genObj && genObj->isSuspended()) {
+    return;
+  }
+
   // SCRIPT_SLOT is used by debugger to access environments during evaluating
   // the top-level script.
   // Clear the reference at exit to prevent us keeping this alive unnecessarily.
@@ -1893,7 +1906,7 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
           }
         }
       }
-    } else if (exp.importNameValueType == ImportNameValueType::AllButDefault) {
+    } else if (exp.importNameValueType == ImportNameValueType::All) {
       MOZ_ASSERT(!exp.exportName);
       if (!metadata.starExportEntries.append(exp)) {
         js::ReportOutOfMemory(fc_);

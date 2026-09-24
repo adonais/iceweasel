@@ -2852,6 +2852,10 @@ bool nsGlobalWindowOuter::AreDialogsEnabled() {
     nsCOMPtr<nsIDocumentViewer> viewer;
     mDocShell->GetDocViewer(getter_AddRefs(viewer));
 
+    if (!viewer) {
+      return false;
+    }
+
     bool isHidden;
     viewer->GetIsHidden(&isHidden);
     if (isHidden) {
@@ -4887,7 +4891,15 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
   if (treeOwnerAsWin && (canFocus || isActive)) {
     bool isEnabled = true;
     if (NS_SUCCEEDED(treeOwnerAsWin->GetEnabled(&isEnabled)) && !isEnabled) {
-      NS_WARNING("Should not try to set the focus on a disabled window");
+      // A system caller is typically another application handing us an URL.
+      // It should bring us to the front.
+      if (aCallerType == CallerType::System) {
+        if (nsCOMPtr<nsIWidget> widget = treeOwnerAsWin->GetMainWidget()) {
+          widget->SetFocus(nsIWidget::Raise::Yes, aCallerType);
+        }
+      } else {
+        NS_WARNING("Should not try to set the focus on a disabled window");
+      }
       return;
     }
   }
@@ -6929,8 +6941,6 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
   NS_ENSURE_TRUE(wwatch, rv);
 
-  NS_ConvertUTF16toUTF8 name(windowName);
-
   nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
   NS_ENSURE_STATE(pwwatch);
 
@@ -6965,7 +6975,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     if (!aCalledNoScript) {
       // We asserted at the top of this function that aNavigate is true for
       // !aCalledNoScript.
-      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, windowName, options, modifiers,
                                 /* aCalledFromScript = */ true, aDialog,
                                 aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,
@@ -6981,7 +6991,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       // when it tries to compute the caller principal to associate with dialog
       // arguments. That whole setup just really needs to be rewritten. :-(
       AutoNoJSAPI nojsapi;
-      rv = pwwatch->OpenWindow2(this, uri, name, options, modifiers,
+      rv = pwwatch->OpenWindow2(this, uri, windowName, options, modifiers,
                                 /* aCalledFromScript = */ false, aDialog,
                                 aNavigate, aArguments, isPopupSpamWindow,
                                 forceNoOpener, forceNoReferrer, wwPrintKind,

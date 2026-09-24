@@ -75,10 +75,10 @@ mozilla::ipc::IPCResult UtilityProcessParent::RecvGeckoTraceExport(
 
 #if defined(XP_WIN)
 mozilla::ipc::IPCResult UtilityProcessParent::RecvGetModulesTrust(
-    ModulePaths&& aModPaths, bool aRunAtNormalPriority,
+    ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority,
     GetModulesTrustResolver&& aResolver) {
   RefPtr<DllServices> dllSvc(DllServices::Get());
-  dllSvc->GetModulesTrust(std::move(aModPaths), aRunAtNormalPriority)
+  dllSvc->GetModulesTrust(std::move(aModIdents), aRunAtNormalPriority)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [aResolver](ModulesMapResult&& aResult) {
@@ -134,6 +134,18 @@ mozilla::ipc::IPCResult UtilityProcessParent::RecvRecordDiscardedData(
 mozilla::ipc::IPCResult UtilityProcessParent::RecvInitCompleted() {
   MOZ_ASSERT(mHost);
   mHost->ResolvePromise();
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult UtilityProcessParent::RecvShutdownProfile(
+    mozilla::ProfileAndAdditionalInformation&&
+        aProfileAndAdditionalInformation) {
+  profiler_received_exit_profile(std::move(aProfileAndAdditionalInformation));
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult UtilityProcessParent::RecvFinishShutdown() {
+  Close();
   return IPC_OK();
 }
 

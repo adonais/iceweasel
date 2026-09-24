@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import json
-from collections import OrderedDict
 
 
 class Mod:
@@ -21,7 +20,7 @@ class Mod:
         Mod.active = None
 
 
-modules = OrderedDict()
+modules = {}
 
 # To add error code to your module, you need to do the following:
 #
@@ -123,7 +122,7 @@ def SUCCESS(code):
 # Errors is an ordered dictionary, so that we can recover the order in which
 # they were defined. This is important for determining which name is the
 # canonical name for an error code.
-errors = OrderedDict()
+errors = {}
 
 # Standard "it worked" return value
 errors["NS_OK"] = 0
@@ -590,7 +589,6 @@ with modules["NETWORK"]:
 with modules["PLUGINS"]:
     errors["NS_ERROR_PLUGINS_PLUGINSNOTCHANGED"] = FAILURE(1000)
     errors["NS_ERROR_PLUGIN_DISABLED"] = FAILURE(1001)
-    errors["NS_ERROR_PLUGIN_BLOCKLISTED"] = FAILURE(1002)
     errors["NS_ERROR_PLUGIN_TIME_RANGE_NOT_SUPPORTED"] = FAILURE(1003)
     errors["NS_ERROR_PLUGIN_CLICKTOPLAY"] = FAILURE(1004)
 

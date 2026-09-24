@@ -26,9 +26,7 @@ def element_direction_doc(direction):
             height: 100px;
           }}
         </style>
-        <div class='element'></div>""".format(
-            direction
-        )
+        <div class='element'></div>""".format(direction)
     )
 
 

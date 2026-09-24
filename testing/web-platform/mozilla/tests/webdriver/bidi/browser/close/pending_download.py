@@ -33,12 +33,12 @@ async def test_close_with_pending_download(
 
     remove_listener = bidi_session.add_event_listener(DOWNLOAD_WILL_BEGIN, on_event)
 
-    result = await bidi_session.browsing_context.locate_nodes(
+    nodes = await bidi_session.browsing_context.locate_nodes(
         context=new_tab["context"], locator={"type": "css", "value": "#download_link"}
     )
 
     await bidi_session.script.call_function(
-        arguments=[result["nodes"][0]],
+        arguments=[nodes[0]],
         function_declaration="(link) => link.click()",
         target=ContextTarget(new_tab["context"]),
         await_promise=True,

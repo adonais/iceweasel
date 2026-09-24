@@ -103,7 +103,6 @@ struct FontMatchType {
   inline FontMatchType& operator|=(const FontMatchType& aOther);
 
   bool operator==(const FontMatchType& aOther) const = default;
-  bool operator!=(const FontMatchType& aOther) const = default;
 
   MOZ_IMPLICIT FontMatchType() = default;
   MOZ_IMPLICIT FontMatchType(Kind aKind) : kind(aKind) {}

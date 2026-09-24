@@ -16,8 +16,8 @@ void ParamTraitsEnumChecker::registerMatchers(MatchFinder *AstMatcher) {
               isDerivedFrom("EnumSerializer"),
               // Exclude nsresult specifically, which has a legitimate
               // ParamTraitsMozilla specialization.
-              hasTemplateArgument(
-                  0, refersToType(hasDeclaration(namedDecl(hasName("nsresult"))))))))
+              hasTemplateArgument(0, refersToType(hasDeclaration(
+                                         namedDecl(hasName("nsresult"))))))))
           .bind("decl"),
       this);
 }

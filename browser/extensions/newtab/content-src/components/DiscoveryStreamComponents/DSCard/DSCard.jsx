@@ -6,7 +6,11 @@ import { actionCreators as ac } from "common/Actions.mjs";
 import { DSImage } from "../DSImage/DSImage.jsx";
 import { DSLinkMenu } from "../DSLinkMenu/DSLinkMenu";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
-import { getActiveCardSize, getNovaColumnLayout } from "../../../lib/utils";
+import {
+  getActiveCardSize,
+  getCardColumn,
+  getNovaColumnLayout,
+} from "../../../lib/utils";
 import React from "react";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
 import {
@@ -294,6 +298,7 @@ export class _DSCard extends React.PureComponent {
 
   onLinkClick() {
     const matchesSelectedTopic = this.doesLinkTopicMatchSelectedTopic();
+    const cardColumn = getCardColumn(this.contextMenuButtonHostElement);
     if (this.props.dispatch) {
       this.props.dispatch(
         ac.DiscoveryStreamUserEvent({
@@ -316,6 +321,7 @@ export class _DSCard extends React.PureComponent {
             matches_selected_topic: matchesSelectedTopic,
             selected_topics: this.props.selectedTopics,
             attribution: this.props.attribution,
+            ...(cardColumn ? { card_column: cardColumn } : {}),
             ...(this.props.format
               ? { format: this.props.format }
               : {
@@ -703,6 +709,7 @@ export class _DSCard extends React.PureComponent {
                 topic: this.props.topic,
                 features: this.props.features,
                 ...(format ? { format } : {}),
+                is_ad_eligible_position: this.props.is_ad_eligible_position,
                 category: this.props.category,
                 attribution: this.props.attribution,
                 ...(this.props.section

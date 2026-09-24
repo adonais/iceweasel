@@ -85,6 +85,8 @@ class UtilityProcessChild final : public PUtilityProcessChild {
   mozilla::ipc::IPCResult RecvUnblockUntrustedModulesThread();
 #endif  // defined(XP_WIN)
 
+  mozilla::ipc::IPCResult RecvShutdown();
+
   AsyncBlockers& AsyncShutdownService() { return mShutdownBlockers; }
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)

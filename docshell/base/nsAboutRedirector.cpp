@@ -60,7 +60,7 @@ class CrashChannel final : public nsBaseChannel {
       using ContentParent = mozilla::dom::ContentParent;
       nsTArray<RefPtr<ContentParent>> toKill;
       for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-        if (cp->GetRemoteType() == EXTENSION_REMOTE_TYPE) {
+        if (cp->GetRemoteType().IsExtension()) {
           toKill.AppendElement(cp);
         }
       }

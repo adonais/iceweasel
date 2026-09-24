@@ -47,7 +47,7 @@ class MainAsCurrent : public webrtc::TaskQueueBase {
   MainAsCurrent()
       : mTaskQueue(CreateWebrtcTaskQueueWrapper(
             do_AddRef(GetMainThreadSerialEventTarget()), "MainAsCurrent"_ns,
-            false)),
+            TailDispatchPolicy::NoTailDispatch)),
         mWebrtcTaskQueue(([&] {
           // Shady but fine, as this raw pointer points to the WebrtcTaskQueue
           // owned and kept alive by mTaskQueue.

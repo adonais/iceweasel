@@ -17,6 +17,7 @@
       let ThemePicker;
       let ThemePickerStorybookController;
       let ThemePickerDirectController;
+      let ThemePickerRemoteController;
 
       const PREF_SYSTEM_USES_DARK = "ui.systemUsesDarkTheme";
       const PREF_NATIVE_THEME = "browser.theme.native-theme";
@@ -55,12 +56,18 @@
         Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, activeThemeId);
       }
 
-      async function renderThemePicker({ layout = "full" } = {}) {
+      async function renderThemePicker({
+        layout = "full",
+        installsource,
+      } = {}) {
         await customElements.whenDefined("theme-picker");
         let content = document.getElementById("content");
         content.textContent = "";
         let picker = document.createElement("theme-picker");
         picker.layout = layout;
+        if (installsource) {
+          picker.setAttribute("installsource", installsource);
+        }
         content.append(picker);
         // The direct controller loads its theme list asynchronously, so wait for
         // it before asserting on rendered state.
@@ -79,6 +86,8 @@
           await import("chrome://global/content/elements/theme-picker-storybook-controller.mjs"));
         ({ ThemePickerDirectController } =
           await import("chrome://global/content/elements/theme-picker-direct-controller.mjs"));
+        ({ ThemePickerRemoteController } =
+          await import("chrome://global/content/elements/theme-picker-remote-controller.mjs"));
 
         originalCreateController = ThemePicker.createController;
         let originalActiveThemeId = Services.prefs.getCharPref(
@@ -393,6 +402,222 @@
         ok(!picker.nativeTheme, "The host native theme is turned off.");
       });
 
+      add_task(
+        async function testRemoteControllerForwardsHostLayoutAndSource() {
+          let host = document.createElement("div");
+          host.addController = () => {};
+          host.layout = "compact";
+          host.setAttribute("installsource", "test-source");
+
+          let details = new Map();
+          for (const eventType of [
+            "ThemePickerUpdateTheme",
+            "ThemePickerUpdateAppearance",
+            "ThemePickerUpdateNativeTheme",
+            "ThemePickerShown",
+          ]) {
+            host.addEventListener(eventType, event => {
+              details.set(eventType, event.detail);
+            });
+          }
+
+          let controller = new ThemePickerRemoteController(host);
+          controller.hostConnected();
+          controller.onThemechange({
+            property: "theme",
+            value: "nova-sun@mozilla.org",
+          });
+          controller.onThemechange({ property: "appearance", value: "dark" });
+          controller.onThemechange({ property: "nativeTheme", value: true });
+          host.dispatchEvent(new CustomEvent("themepickershown"));
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateTheme"),
+            {
+              themeId: "nova-sun@mozilla.org",
+              installsource: "test-source",
+              layout: "compact",
+            },
+            "Theme updates carry the host source and layout."
+          );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateAppearance"),
+            {
+              appearance: "dark",
+              installsource: "test-source",
+              layout: "compact",
+            },
+            "Appearance updates carry the host source and layout."
+          );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerUpdateNativeTheme"),
+            {
+              nativeTheme: true,
+              installsource: "test-source",
+              layout: "compact",
+            },
+            "Native-theme updates carry the host source and layout."
+          );
+          SimpleTest.isDeeply(
+            details.get("ThemePickerShown"),
+            { source: "test-source", layout: "compact" },
+            "Shown events carry the host source and layout."
+          );
+
+          controller.hostDisconnected();
+        }
+      );
+
+      add_task(async function testThemePickerShownDispatchesSemanticEvent() {
+        useController(ThemePickerStorybookController);
+        let picker = await renderThemePicker();
+        let content = document.getElementById("content");
+        let receivedEvent;
+        content.addEventListener(
+          "themepickershown",
+          event => {
+            receivedEvent = event;
+          },
+          { once: true }
+        );
+
+        picker.shown();
+
+        ok(receivedEvent, "themepickershown bubbles to an ancestor.");
+        ok(receivedEvent?.bubbles, "themepickershown is configured to bubble.");
+        ok(receivedEvent?.composed, "themepickershown is composed.");
+        is(
+          receivedEvent?.detail,
+          null,
+          "themepickershown carries no telemetry detail."
+        );
+      });
+      add_task(async function testDirectControllerRecordsShownForEveryCall() {
+        useController(ThemePickerDirectController);
+        let picker = await renderThemePicker({
+          layout: "compact",
+          installsource: "test-source",
+        });
+        let secondPicker = document.createElement("theme-picker");
+        secondPicker.layout = "full";
+        secondPicker.setAttribute("installsource", "second-source");
+        document.getElementById("content").append(secondPicker);
+        await waitForCondition(
+          () => secondPicker.themes.length,
+          "The second theme picker is populated with themes."
+        );
+        await secondPicker.updateComplete;
+        await Services.fog.testFlushAllChildren();
+        Services.fog.testResetFOG();
+
+        picker.shown();
+        picker.shown();
+        secondPicker.shown();
+
+        await Services.fog.testFlushAllChildren();
+        let events = Glean.themePicker.shown.testGetValue();
+        is(events?.length, 3, "theme_picker.shown is recorded for every call.");
+        SimpleTest.isDeeply(
+          events?.map(event => event.extra),
+          [
+            { source: "test-source", layout: "compact" },
+            { source: "test-source", layout: "compact" },
+            { source: "second-source", layout: "full" },
+          ],
+          "Shown events retain every call's source and layout."
+        );
+      });
+
+      add_task(async function testDirectControllerRecordsChangesForEveryCall() {
+        useController(ThemePickerDirectController);
+        let picker = await renderThemePicker({
+          layout: "full",
+          installsource: "test-source",
+        });
+        await Services.fog.testFlushAllChildren();
+        Services.fog.testResetFOG();
+
+        let updateThemeStatePromise;
+        let { themesManager } = picker.controller;
+        let updateThemeState =
+          themesManager.updateThemeState.bind(themesManager);
+        themesManager.updateThemeState = (...args) => {
+          updateThemeStatePromise = updateThemeState(...args);
+          return updateThemeStatePromise;
+        };
+
+        picker.dispatchChange("appearance", "dark");
+        picker.dispatchChange("appearance", "dark");
+        picker.dispatchChange("appearance", "light");
+        picker.dispatchChange("appearance", "device");
+        picker.dispatchChange("nativeTheme", true);
+        picker.dispatchChange("nativeTheme", true);
+        picker.dispatchChange("nativeTheme", false);
+        picker.dispatchChange("theme", DEFAULT_THEME_ID);
+        await updateThemeStatePromise;
+
+        await Services.fog.testFlushAllChildren();
+        let events = Glean.themePicker.change.testGetValue();
+        is(
+          events?.length,
+          8,
+          "theme_picker.change is recorded for every call."
+        );
+        SimpleTest.isDeeply(
+          events?.map(event => event.extra),
+          [
+            {
+              source: "test-source",
+              layout: "full",
+              property: "appearance",
+              appearance: "dark",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "appearance",
+              appearance: "dark",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "appearance",
+              appearance: "light",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "appearance",
+              appearance: "device",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "nativeTheme",
+              native_theme: "true",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "nativeTheme",
+              native_theme: "true",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "nativeTheme",
+              native_theme: "false",
+            },
+            {
+              source: "test-source",
+              layout: "full",
+              property: "theme",
+              theme_id: DEFAULT_THEME_ID,
+            },
+          ],
+          "Change events retain every call's source, layout, property, and value."
+        );
+      });
+
       // Selecting a theme delegates to the themes manager and reflects the
       // resulting active theme. The manager's install/enable behavior (which
       // talks to AddonManager) is covered by FirefoxThemesList tests, so it is
@@ -409,9 +634,10 @@
         let requested = [];
         picker.controller.themesManager.updateThemeState = async (
           themeId,
-          enabled
+          enabled,
+          options
         ) => {
-          requested.push({ themeId, enabled });
+          requested.push({ themeId, enabled, options });
           Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
           return true;
         };
@@ -431,8 +657,14 @@
 
         SimpleTest.isDeeply(
           requested,
-          [{ themeId: "nova-sun@mozilla.org", enabled: true }],
-          "The themes manager is asked to enable the selected theme."
+          [
+            {
+              themeId: "nova-sun@mozilla.org",
+              enabled: true,
+              options: { layout: "full" },
+            },
+          ],
+          "The themes manager is asked to enable the selected theme with the host layout."
         );
       });
 
@@ -483,7 +715,13 @@
         });
         let picker = await renderThemePicker({ layout: "compact" });
 
-        picker.controller.themesManager.updateThemeState = async themeId => {
+        let requested = [];
+        picker.controller.themesManager.updateThemeState = async (
+          themeId,
+          enabled,
+          options
+        ) => {
+          requested.push({ themeId, enabled, options });
           Services.prefs.setCharPref(PREF_ACTIVE_THEME_ID, themeId);
           return true;
         };
@@ -500,6 +738,17 @@
         await waitForCondition(
           () => picker.activeThemeId == secondTheme.id,
           "The active theme is updated after clicking."
+        );
+        SimpleTest.isDeeply(
+          requested,
+          [
+            {
+              themeId: secondTheme.id,
+              enabled: true,
+              options: { layout: "compact" },
+            },
+          ],
+          "The themes manager is asked to enable the selected theme with the compact layout."
         );
 
         let picker2 = await renderThemePicker({ layout: "compact" });

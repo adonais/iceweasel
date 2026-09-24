@@ -285,6 +285,7 @@ static inline void* MapMemory(size_t length) {
   return MapInternal<commit, retry>(nullptr, length);
 }
 
+#ifdef JS_64BIT
 /*
  * Attempts to map memory at the given address, but allows the system
  * to return a different address that may still be suitable.
@@ -298,6 +299,7 @@ static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
   // returned address might not match the requested address.
   return MapInternal<commit>(desired, length);
 }
+#endif
 
 /*
  * Attempts to map memory at the given address, returning nullptr if

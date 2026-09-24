@@ -489,7 +489,7 @@ impl nsACString {
         let written = {
             let buffer = handle.as_mut_slice();
             if num_ascii != 0 {
-                (&mut buffer[old_len..old_len_plus_num_ascii]).copy_from_slice(&other[..num_ascii]);
+                buffer[old_len..old_len_plus_num_ascii].copy_from_slice(&other[..num_ascii]);
             }
             convert_utf8_to_latin1_lossy(&other[num_ascii..], &mut buffer[old_len_plus_num_ascii..])
         };
@@ -586,7 +586,7 @@ impl nsACString {
             let new_len = filled.checked_add(needed).ok_or(())?;
             let mut handle = unsafe { self.bulk_write(new_len, old_len, false)? };
             if num_ascii != 0 {
-                (&mut handle.as_mut_slice()[old_len..filled]).copy_from_slice(&other[..num_ascii]);
+                handle.as_mut_slice()[old_len..filled].copy_from_slice(&other[..num_ascii]);
             }
             (filled, num_ascii, handle)
         } else {

@@ -174,6 +174,68 @@ impl PictureCompositeMode {
         }
     }
 
+    /// The region of this surface's own space that has to be rasterized in order
+    /// to produce `dest_rect` of its output: the inverse of `get_coverage`.
+    ///
+    /// Larger than `dest_rect` for the modes that sample outside their
+    /// destination. Culling against a rect derived without this would drop
+    /// content that is off-screen itself but visible through a blur or a shadow.
+    pub fn get_required_source_rect(
+        &self,
+        surface: &SurfaceInfo,
+        dest_rect: LayoutRect,
+    ) -> LayoutRect {
+        match self {
+            PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate, .. }) => {
+                // A blur that doesn't inflate is a backdrop filter: its source is
+                // the captured backdrop rather than primitives drawn into this
+                // surface, and it samples with `BlurEdgeMode::Mirror`, so it
+                // needs nothing from outside `dest_rect`.
+                if *should_inflate {
+                    let (width_factor, height_factor) = surface.clamp_blur_radius(*width, *height);
+
+                    dest_rect.inflate(
+                        width_factor.ceil() * BLUR_SAMPLE_SCALE,
+                        height_factor.ceil() * BLUR_SAMPLE_SCALE,
+                    )
+                } else {
+                    dest_rect
+                }
+            }
+            PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
+                // Output at a point comes from the surface at that point (the
+                // unshifted copy) and, blurred, from that point less the shadow
+                // offset - the same relationship `get_coverage` walks forwards.
+                let mut rect = dest_rect;
+
+                for shadow in shadows {
+                    let (blur_radius_x, blur_radius_y) = surface.clamp_blur_radius(
+                        shadow.blur_radius,
+                        shadow.blur_radius,
+                    );
+
+                    let shadow_source_rect = dest_rect
+                        .translate(-shadow.offset)
+                        .inflate(
+                            blur_radius_x * BLUR_SAMPLE_SCALE,
+                            blur_radius_y * BLUR_SAMPLE_SCALE,
+                        );
+
+                    rect = rect.union(&shadow_source_rect);
+                }
+
+                rect
+            }
+            PictureCompositeMode::SVGFEGraph(ref filters, _) => {
+                let filters = map_svgfe_subregions(filters, &surface.svgfe_source_map);
+                get_coverage_source_svgfe(&filters, dest_rect)
+            }
+            _ => {
+                dest_rect
+            }
+        }
+    }
+
     pub fn write_gpu_blocks(
         &self,
         gpu_buffers: &mut GpuBufferBuilder,

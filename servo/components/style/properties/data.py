@@ -22,49 +22,47 @@ LOGICAL_AXES = ["block", "inline"]
 SYSTEM_FONT_LONGHANDS = """font_family font_size font_style
                            font_width font_weight""".split()
 
-PRIORITARY_PROPERTIES = set(
-    [
-        # The writing-mode group has the most priority of all property groups, as
-        # sizes like font-size can depend on it.
-        "writing-mode",
-        "direction",
-        "text-orientation",
-        # The fonts and colors group has the second priority, as all other lengths
-        # and colors depend on them.
-        #
-        # There are some interdependencies between these, but we fix them up in
-        # Cascade::fixup_font_stuff.
-        # Needed to properly compute the zoomed font-size.
-        "-x-text-scale",
-        # Needed to do font-size computation in a language-dependent way.
-        "-x-lang",
-        # Needed for ruby to respect language-dependent min-font-size
-        # preferences properly, see bug 1165538.
-        "-moz-min-font-size-ratio",
-        # font-size depends on math-depth's computed value.
-        "math-depth",
-        # Needed to compute the first available font and its used size,
-        # in order to compute font-relative units correctly.
-        "font-size",
-        "font-size-adjust",
-        "font-weight",
-        "font-width",
-        "font-style",
-        "font-family",
-        # color-scheme affects how system colors and light-dark() resolve.
-        "color-scheme",
-        # forced-color-adjust affects whether colors are adjusted.
-        "forced-color-adjust",
-        # Zoom affects all absolute lengths.
-        "zoom",
-        # Line height lengths depend on this.
-        "line-height",
-        # appearance and -moz-default-appearance control whether
-        # @appearance-base rules apply.
-        "-moz-default-appearance",
-        "appearance",
-    ]
-)
+PRIORITARY_PROPERTIES = set([
+    # The writing-mode group has the most priority of all property groups, as
+    # sizes like font-size can depend on it.
+    "writing-mode",
+    "direction",
+    "text-orientation",
+    # The fonts and colors group has the second priority, as all other lengths
+    # and colors depend on them.
+    #
+    # There are some interdependencies between these, but we fix them up in
+    # Cascade::fixup_font_stuff.
+    # Needed to properly compute the zoomed font-size.
+    "-x-text-scale",
+    # Needed to do font-size computation in a language-dependent way.
+    "-x-lang",
+    # Needed for ruby to respect language-dependent min-font-size
+    # preferences properly, see bug 1165538.
+    "-moz-min-font-size-ratio",
+    # font-size depends on math-depth's computed value.
+    "math-depth",
+    # Needed to compute the first available font and its used size,
+    # in order to compute font-relative units correctly.
+    "font-size",
+    "font-size-adjust",
+    "font-weight",
+    "font-width",
+    "font-style",
+    "font-family",
+    # color-scheme affects how system colors and light-dark() resolve.
+    "color-scheme",
+    # forced-color-adjust affects whether colors are adjusted.
+    "forced-color-adjust",
+    # Zoom affects all absolute lengths.
+    "zoom",
+    # Line height lengths depend on this.
+    "line-height",
+    # appearance and -moz-default-appearance control whether
+    # @appearance-base rules apply.
+    "-moz-default-appearance",
+    "appearance",
+])
 
 # Set of prioritary properties and dependencies between them.
 #
@@ -133,29 +131,27 @@ PRIORITARY_PROPERTY_DEPENDENCIES = {
 
 PRIORITARY_PROPERTIES = set(PRIORITARY_PROPERTY_DEPENDENCIES.keys())
 
-VISITED_DEPENDENT_PROPERTIES = set(
-    [
-        "column-rule-color",
-        "text-emphasis-color",
-        "-webkit-text-fill-color",
-        "-webkit-text-stroke-color",
-        "text-decoration-color",
-        "fill",
-        "stroke",
-        "caret-color",
-        "background-color",
-        "border-top-color",
-        "border-right-color",
-        "border-bottom-color",
-        "border-left-color",
-        "border-block-start-color",
-        "border-inline-end-color",
-        "border-block-end-color",
-        "border-inline-start-color",
-        "outline-color",
-        "color",
-    ]
-)
+VISITED_DEPENDENT_PROPERTIES = set([
+    "column-rule-color",
+    "text-emphasis-color",
+    "-webkit-text-fill-color",
+    "-webkit-text-stroke-color",
+    "text-decoration-color",
+    "fill",
+    "stroke",
+    "caret-color",
+    "background-color",
+    "border-top-color",
+    "border-right-color",
+    "border-bottom-color",
+    "border-left-color",
+    "border-block-start-color",
+    "border-inline-end-color",
+    "border-block-end-color",
+    "border-inline-start-color",
+    "outline-color",
+    "color",
+])
 
 # Bitfield values for all rule types which can have property declarations.
 STYLE_RULE = 1 << 0
@@ -237,7 +233,7 @@ class Vector(object):
         self,
         need_index=False,
         none_value=None,
-        separator='Comma',
+        separator="Comma",
         animation_type=None,
         simple_bindings=False,
     ):
@@ -262,7 +258,7 @@ class Keyword(object):
         gecko_inexhaustive=None,
     ):
         self.name = name
-        self.values = values;
+        self.values = values
         assert isinstance(values, list), name
         if gecko_constant_prefix and gecko_enum_prefix:
             raise TypeError(
@@ -272,12 +268,16 @@ class Keyword(object):
         self.gecko_constant_prefix = gecko_constant_prefix
         self.gecko_enum_prefix = gecko_enum_prefix
         if not gecko_constant_prefix and not gecko_enum_prefix:
-            self.gecko_enum_prefix = "Style" + to_camel_case(name.replace("-moz-", "").replace("-webkit-", ""))
+            self.gecko_enum_prefix = "Style" + to_camel_case(
+                name.replace("-moz-", "").replace("-webkit-", "")
+            )
         self.extra_gecko_values = extra_gecko_values or []
         self.extra_servo_values = extra_servo_values or []
         self.gecko_aliases = parse_aliases(gecko_aliases or [])
         self.servo_aliases = parse_aliases(servo_aliases or [])
-        self.gecko_inexhaustive = gecko_inexhaustive or self.gecko_constant_prefix is not None
+        self.gecko_inexhaustive = (
+            gecko_inexhaustive or self.gecko_constant_prefix is not None
+        )
 
     def values_for(self, engine):
         if engine == "gecko":
@@ -413,7 +413,7 @@ class Longhand(Property):
         name,
         initial_value=None,
         initial_specified_value=None,
-        parse_method='parse',
+        parse_method="parse",
         spec=None,
         animation_type="normal",
         keyword=None,
@@ -867,7 +867,15 @@ class StyleStruct(object):
 
 
 class Descriptor(object):
-    def __init__(self, name, type, parser=None, gecko_pref=None, ignore_malloc_size_of=None, aliases=[]):
+    def __init__(
+        self,
+        name,
+        type,
+        parser=None,
+        gecko_pref=None,
+        ignore_malloc_size_of=None,
+        aliases=[],
+    ):
         self.name = name
         self.aliases = aliases
         self.type = type
@@ -918,33 +926,39 @@ class PropertiesData(object):
             StyleStruct("XUL", inherited=False),
         ]
 
-        longhands_toml = toml.loads(open(os.path.join(os.path.dirname(__file__), "longhands.toml")).read())
+        longhands_toml = toml.loads(
+            open(os.path.join(os.path.dirname(__file__), "longhands.toml")).read()
+        )
         for name, args in longhands_toml.items():
             style_struct = self.style_struct_by_name_lower(args["struct"])
-            del args['struct']
+            del args["struct"]
 
             # Handle keyword properties
-            if 'keyword' in args:
-                keyword_dict = args.pop('keyword')
-                if 'values' not in keyword_dict:
+            if "keyword" in args:
+                keyword_dict = args.pop("keyword")
+                if "values" not in keyword_dict:
                     raise TypeError(f"{name}: keyword should have 'values'")
-                values = keyword_dict.pop('values')
+                values = keyword_dict.pop("values")
                 keyword = Keyword(name, values, **keyword_dict)
                 self.declare_longhand(style_struct, name, keyword=keyword, **args)
             else:
                 # Handle predefined_type properties
-                if 'type' not in args:
+                if "type" not in args:
                     raise TypeError(f"{name} should have a type")
-                args['predefined_type'] = args.pop('type')
-                if 'initial' not in args and not args.get('vector'):
-                    raise TypeError(f"{name} should have an initial value (only vector properties should lack one)")
-                args['initial_value'] = args.pop('initial', None)
+                args["predefined_type"] = args.pop("type")
+                if "initial" not in args and not args.get("vector"):
+                    raise TypeError(
+                        f"{name} should have an initial value (only vector properties should lack one)"
+                    )
+                args["initial_value"] = args.pop("initial", None)
                 self.declare_longhand(style_struct, name, **args)
 
         for group, props in self.logical_groups.items():
             logical_count = sum(1 for p in props if p.logical)
             if logical_count * 2 != len(props):
-                raise RuntimeError(f"Logical group {group} has unbalanced logical / physical properties")
+                raise RuntimeError(
+                    f"Logical group {group} has unbalanced logical / physical properties"
+                )
 
         # After this code, `data.longhands` is sorted in the following order:
         # - first all keyword variants and all variants known to be Copy,
@@ -969,7 +983,9 @@ class PropertiesData(object):
         # and `PropertyDeclaration` to be defined in the exact same order,
         # with the exception of `CSSWideKeyword`, `WithVariables` and `Custom`,
         # which don't exist in `LonghandId`.
-        for ty, group in groupby(sorted(self.declaration_variants, key=keyfunc), keyfunc):
+        for ty, group in groupby(
+            sorted(self.declaration_variants, key=keyfunc), keyfunc
+        ):
             group = list(group)
             groups[ty] = group
             for v in group:
@@ -1006,16 +1022,23 @@ class PropertiesData(object):
             self.declaration_variants.append(v)
             groups[v["type"]] = [v]
 
-        shorthands_toml = toml.loads(open(os.path.join(os.path.dirname(__file__), "shorthands.toml")).read())
+        shorthands_toml = toml.loads(
+            open(os.path.join(os.path.dirname(__file__), "shorthands.toml")).read()
+        )
         for name, args in shorthands_toml.items():
             self.declare_shorthand(name, **args)
         self.declare_all_shorthand()
 
-        self.font_face_descriptors = self._load_descriptors("font_face_descriptors.toml")
-        self.counter_style_descriptors = self._load_descriptors("counter_style_descriptors.toml")
+        self.font_face_descriptors = self._load_descriptors(
+            "font_face_descriptors.toml"
+        )
+        self.counter_style_descriptors = self._load_descriptors(
+            "counter_style_descriptors.toml"
+        )
         self.property_descriptors = self._load_descriptors("property_descriptors.toml")
-        self.view_transition_descriptors = self._load_descriptors("view_transition_descriptors.toml")
-
+        self.view_transition_descriptors = self._load_descriptors(
+            "view_transition_descriptors.toml"
+        )
 
     def declare_all_shorthand(self):
         # We don't define the 'all' shorthand using the regular helpers:shorthand
@@ -1034,12 +1057,12 @@ class PropertiesData(object):
         logical_longhands = []
         other_longhands = []
         for p in self.longhands:
-            if p.name in ['direction', 'unicode-bidi']:
-                continue;
+            if p.name in ["direction", "unicode-bidi"]:
+                continue
             if not p.enabled_in_content() and not p.experimental(self.engine):
-                continue;
+                continue
             if "style" not in p.rule_types_allowed_names():
-                continue;
+                continue
             if p.logical:
                 logical_longhands.append(p)
             else:
@@ -1059,9 +1082,8 @@ class PropertiesData(object):
         self.declare_shorthand(
             "all",
             all_names,
-            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand"
+            spec="https://drafts.csswg.org/css-cascade-3/#all-shorthand",
         )
-
 
     def _load_descriptors(self, filename):
         path = os.path.join(os.path.dirname(__file__), filename)
@@ -1081,11 +1103,13 @@ class PropertiesData(object):
         for prefix, pref in property.extra_prefixes:
             property.aliases.append(("-%s-%s" % (prefix, property.name), pref))
 
-    def declare_longhand(self, style_struct, name, extra_gecko_aliases=None, engine=None, **kwargs):
+    def declare_longhand(
+        self, style_struct, name, extra_gecko_aliases=None, engine=None, **kwargs
+    ):
         if engine and self.engine != engine:
             return
         if extra_gecko_aliases and self.engine == "gecko":
-            kwargs.setdefault('aliases', []).extend(extra_gecko_aliases)
+            kwargs.setdefault("aliases", []).extend(extra_gecko_aliases)
         longhand = Longhand(style_struct, name, **kwargs)
         self.add_prefixed_aliases(longhand)
         longhand.aliases = [Alias(xp[0], longhand, xp[1]) for xp in longhand.aliases]
@@ -1094,20 +1118,27 @@ class PropertiesData(object):
         self.longhands.append(longhand)
         self.longhands_by_name[name] = longhand
         if longhand.logical_group:
-            self.logical_groups.setdefault(
-                longhand.logical_group, []
-            ).append(longhand)
+            self.logical_groups.setdefault(longhand.logical_group, []).append(longhand)
 
         return longhand
 
-    def declare_shorthand(self, name, sub_properties, extra_gecko_sub_properties=None, extra_gecko_aliases=None, engine=None, *args, **kwargs):
+    def declare_shorthand(
+        self,
+        name,
+        sub_properties,
+        extra_gecko_sub_properties=None,
+        extra_gecko_aliases=None,
+        engine=None,
+        *args,
+        **kwargs,
+    ):
         if engine and self.engine != engine:
             return
         if self.engine == "gecko":
             if extra_gecko_sub_properties:
                 sub_properties.extend(extra_gecko_sub_properties)
             if extra_gecko_aliases:
-                kwargs.setdefault('aliases', []).extend(extra_gecko_aliases)
+                kwargs.setdefault("aliases", []).extend(extra_gecko_aliases)
         sub_properties = [self.longhands_by_name[s] for s in sub_properties]
         shorthand = Shorthand(name, sub_properties, *args, **kwargs)
         self.add_prefixed_aliases(shorthand)
@@ -1124,7 +1155,12 @@ class PropertiesData(object):
         return self.longhand_aliases + self.shorthand_aliases
 
     def all_properties_and_aliases(self):
-        return self.longhands + self.shorthands + self.longhand_aliases + self.shorthand_aliases
+        return (
+            self.longhands
+            + self.shorthands
+            + self.longhand_aliases
+            + self.shorthand_aliases
+        )
 
 
 def _add_logical_props(data, props):
@@ -1180,36 +1216,32 @@ class PropertyRestrictions:
     # https://svgwg.org/svg2-draft/propidx.html
     @staticmethod
     def svg_text_properties():
-        props = set(
-            [
-                "fill",
-                "fill-opacity",
-                "fill-rule",
-                "paint-order",
-                "stroke",
-                "stroke-dasharray",
-                "stroke-dashoffset",
-                "stroke-linecap",
-                "stroke-linejoin",
-                "stroke-miterlimit",
-                "stroke-opacity",
-                "stroke-width",
-                "text-rendering",
-                "vector-effect",
-            ]
-        )
+        props = set([
+            "fill",
+            "fill-opacity",
+            "fill-rule",
+            "paint-order",
+            "stroke",
+            "stroke-dasharray",
+            "stroke-dashoffset",
+            "stroke-linecap",
+            "stroke-linejoin",
+            "stroke-miterlimit",
+            "stroke-opacity",
+            "stroke-width",
+            "text-rendering",
+            "vector-effect",
+        ])
         return props
 
     @staticmethod
     def webkit_text_properties():
-        return set(
-            [
-                # Kinda like css-text?
-                "-webkit-text-stroke-width",
-                "-webkit-text-fill-color",
-                "-webkit-text-stroke-color",
-            ]
-        )
+        return set([
+            # Kinda like css-text?
+            "-webkit-text-stroke-width",
+            "-webkit-text-fill-color",
+            "-webkit-text-stroke-color",
+        ])
 
     # https://drafts.csswg.org/css-pseudo/#first-letter-styling
     @staticmethod

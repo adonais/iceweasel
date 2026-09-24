@@ -91,7 +91,6 @@ pk11_getKeyTypeFromPKCS11KeyType(CK_KEY_TYPE pk11KeyType)
         case CKK_EC_EDWARDS:
             keyType = edKey;
             break;
-        case CKK_NSS_KYBER:
         case CKK_NSS_ML_KEM:
         case CKK_ML_KEM:
             keyType = kyberKey;
@@ -355,12 +354,6 @@ PK11_ImportPublicKey(PK11SlotInfo *slot, SECKEYPublicKey *pubKey,
                 break;
             case kyberKey:
                 keyType = CKK_ML_KEM;
-#ifndef NSS_DISABLE_KYBER
-                if ((pubKey->u.kyber.params == params_kyber768_round3) ||
-                    (pubKey->u.kyber.params == params_kyber768_round3_test_mode)) {
-                    keyType = CKK_NSS_KYBER;
-                }
-#endif
                 PK11_SETATTRS(attrs, CKA_ENCAPSULATE, &cktrue, sizeof(CK_BBOOL));
                 attrs++;
                 kemParams = seckey_GetMLKEMPkcs11ParamsByKyberParams(
@@ -993,9 +986,6 @@ PK11_ExtractPublicKey(PK11SlotInfo *slot, KeyType keyType, CK_OBJECT_HANDLE id)
             }
 
             switch (pk11KeyType) {
-#ifndef NSS_DISABLE_KYBER
-                case CKK_NSS_KYBER:
-#endif
                 case CKK_NSS_ML_KEM:
                 case CKK_ML_KEM:
                     break;
@@ -1717,9 +1707,7 @@ PK11_GenerateKeyPairWithOpFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                 test_mech2.mechanism = CKM_ECDSA;
             }
             break;
-#ifndef NSS_DISABLE_KYBER
         case CKM_NSS_KYBER_KEY_PAIR_GEN:
-#endif
         case CKM_NSS_ML_KEM_KEY_PAIR_GEN:
         case CKM_ML_KEM_KEY_PAIR_GEN:
             kemParams = (CK_NSS_KEM_PARAMETER_SET_TYPE *)param;

@@ -334,6 +334,7 @@
         'libcrux/libcrux_sha3_portable.c',
         'libcrux/libcrux_mlkem_core.c',
         'libcrux/libcrux_mlkem_portable.c',
+        'libcrux/libcrux_mlkem512_portable.c',
         'libcrux/libcrux_mlkem768_portable.c',
         'libcrux/libcrux_mlkem1024_portable.c',
         'libcrux/libcrux_mldsa_core.c',

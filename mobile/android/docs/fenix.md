@@ -101,9 +101,10 @@ You can pass an extra argument `--fix` to autofix certain types of reported issu
 It is advisable to run your tests before submitting your patch. You can do this using Mozilla’s `try` server.
 The following commands will ensure that all the required tests are run based on the changes made:
 
-- `./mach try --preset fenix` - will run Fenix test suites
-- `./mach try --preset firefox-android` - will run AC and Fenix test suites
+- `./mach try --preset android-fenix` - will run Fenix test suites
+- `./mach try --preset android-frontend` - will run AC and Fenix test suites
 - `./mach try --preset android-geckoview` - will run GeckoView test suites
+- `./mach try --preset android-fullstack` - will run GeckoView, AC, Focus, and Fenix test suites
 
 Failures on `try` will show up with the test name highlighted in orange. Select the test to find out more.
 Intermittent failures occasionally occur due to issues with the test harness. Retriggering the test is a good way to confirm it is an intermittent failure and not due to the patch.
@@ -115,7 +116,7 @@ Currently, the CI builds GeckoView even if your commit doesn't impact it.
 
 If you know your changes don't impact GeckoView, you can try using the following option: `--use-existing-tasks` or `-E`. For example:
 
-`./mach try --preset firefox-android -E`
+`./mach try --preset android-frontend -E`
 
 This will try to reuse a GeckoView build from a previous CI job, and thus reduce the CI time.
 

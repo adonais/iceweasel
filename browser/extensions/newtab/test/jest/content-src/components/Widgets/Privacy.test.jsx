@@ -67,6 +67,16 @@ function stateWithMessage(message, trackersToday = 87, sitesToday = 9) {
   };
 }
 
+function atLargeSize(state) {
+  return {
+    ...state,
+    Prefs: {
+      ...state.Prefs,
+      values: { ...state.Prefs.values, "widgets.privacy.size": "large" },
+    },
+  };
+}
+
 function renderPrivacy(dispatch = jest.fn(), props = {}, state = mockState) {
   const tree = currentState => (
     <WrapWithProvider state={currentState}>
@@ -176,11 +186,88 @@ describe("Privacy widget", () => {
     expect(container.querySelector(".privacy-count")).toBeFalsy();
   });
 
+  describe("is-count-only state class", () => {
+    const rootClassName = state =>
+      renderPrivacy(jest.fn(), {}, state).container.querySelector(
+        "article.privacy"
+      ).className;
+
+    it("is set on a count with no tip or streak copy", () => {
+      expect(rootClassName(stateWithTrackers(42))).toContain("is-count-only");
+    });
+
+    it("is set on the blank variant, which is a count plus a CTA", () => {
+      expect(
+        rootClassName(
+          stateWithMessage({
+            variant: "blank",
+            icon: "shieldCheck",
+            cta: { type: "OPEN_ABOUT_PAGE", data: { args: "protections" } },
+          })
+        )
+      ).toContain("is-count-only");
+    });
+
+    it("is not set when a tip shares the card", () => {
+      expect(
+        rootClassName(
+          stateWithMessage({
+            variant: "tip",
+            messageId: "newtab-privacy-message-info-4",
+            icon: "planet",
+          })
+        )
+      ).not.toContain("is-count-only");
+    });
+
+    it("is not set when a streak shares the card", () => {
+      expect(
+        rootClassName(
+          stateWithMessage({
+            variant: "streak",
+            messageId: "newtab-privacy-message-streak",
+            icon: "kit",
+            countArg: { count: 5 },
+          })
+        )
+      ).not.toContain("is-count-only");
+    });
+
+    it("is not set in the empty state", () => {
+      expect(rootClassName(stateWithTrackers(0))).not.toContain(
+        "is-count-only"
+      );
+    });
+
+    it("is not set when ETP is off", () => {
+      expect(rootClassName(stateWithEtpOff())).not.toContain("is-count-only");
+    });
+
+    it("is not set before the feed has initialized", () => {
+      // Needs a non-zero count: at the default of 0 the empty state would
+      // clear the class on its own and the initialized guard would go untested.
+      const pending = stateWithTrackers(42);
+      expect(
+        rootClassName({
+          ...pending,
+          PrivacyWidget: { ...pending.PrivacyWidget, initialized: false },
+        })
+      ).not.toContain("is-count-only");
+    });
+  });
+
   it("shows the empty state when no trackers are blocked today", () => {
     const { container } = renderPrivacy(jest.fn(), {}, stateWithTrackers(0));
     expect(container.querySelector("article.privacy").className).toContain(
       "is-empty"
     );
+    const messages = container.querySelectorAll(
+      ".privacy-empty-message-wrapper p"
+    );
+    expect([...messages].map(p => p.getAttribute("data-l10n-id"))).toEqual([
+      "newtab-privacy-empty-state",
+      "newtab-privacy-empty-state-tally",
+    ]);
     expect(container.querySelector(".privacy-empty-message")).toBeTruthy();
     expect(container.querySelector(".privacy-count")).toBeFalsy();
   });
@@ -434,9 +521,27 @@ describe("Privacy widget", () => {
     expect(button.getAttribute("data-l10n-id")).toBe(
       "newtab-privacy-message-info-1-cta"
     );
+    expect(button.getAttribute("size")).toBe("small");
     // Still no tip/divider — it's the count-only layout plus the CTA.
     expect(container.querySelector(".privacy-tip")).toBeFalsy();
     expect(container.querySelector(".privacy-divider")).toBeFalsy();
+  });
+
+  it("renders the blank state CTA at its default size when the widget is large", () => {
+    const { container } = renderPrivacy(
+      jest.fn(),
+      {},
+      atLargeSize(
+        stateWithMessage({
+          variant: "blank",
+          icon: "shieldCheck",
+          cta: { type: "OPEN_ABOUT_PAGE", data: { args: "protections" } },
+        })
+      )
+    );
+    const button = container.querySelector(".privacy-cta");
+    expect(button).toBeTruthy();
+    expect(button.hasAttribute("size")).toBe(false);
   });
 
   it("renders the tip variant via its l10n id and mapped icon", () => {
@@ -517,6 +622,25 @@ describe("Privacy widget", () => {
     expect(button.getAttribute("data-l10n-id")).toBe(
       "newtab-privacy-message-info-1-cta"
     );
+    expect(button.getAttribute("size")).toBe("small");
+  });
+
+  it("renders the tip CTA at its default size when the widget is large", () => {
+    const { container } = renderPrivacy(
+      jest.fn(),
+      {},
+      atLargeSize(
+        stateWithMessage({
+          variant: "tip",
+          messageId: "newtab-privacy-message-info-1",
+          icon: "shield",
+          cta: { type: "OPEN_ABOUT_PAGE", data: { args: "protections" } },
+        })
+      )
+    );
+    const button = container.querySelector(".privacy-cta");
+    expect(button).toBeTruthy();
+    expect(button.hasAttribute("size")).toBe(false);
   });
 
   it("renders no CTA button when the decision has no cta", () => {
@@ -737,9 +861,9 @@ describe("Privacy widget", () => {
     });
 
     it("does not log a message impression in the empty state", () => {
-      // The selector sets messageId to "newtab-privacy-empty" in the empty
-      // state, so the fixture mirrors that — otherwise this passes vacuously and
-      // wouldn't catch a spurious empty-state impression (Dré).
+      // The selector sets messageId to "newtab-privacy-empty-state" in the
+      // empty state, so the fixture mirrors that — otherwise this passes
+      // vacuously and wouldn't catch a spurious empty-state impression (Dré).
       const dispatch = jest.fn();
       renderPrivacy(
         dispatch,
@@ -747,7 +871,7 @@ describe("Privacy widget", () => {
         stateWithMessage(
           {
             variant: "empty",
-            messageId: "newtab-privacy-empty",
+            messageId: "newtab-privacy-empty-state",
             icon: "shield",
           },
           0

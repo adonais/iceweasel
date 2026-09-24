@@ -4,7 +4,7 @@
 
 use darling::{FromDeriveInput, FromField, FromVariant};
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, TokenStreamExt};
+use quote::{TokenStreamExt, quote};
 use syn::parse_quote;
 use syn::{self, AngleBracketedGenericArguments, AssocType, DeriveInput, Field};
 use syn::{GenericArgument, GenericParam, Ident, Path};
@@ -141,14 +141,14 @@ pub(crate) fn fmap_trait_output(
                 .params
                 .iter()
                 .map(|arg| match arg {
-                    &GenericParam::Lifetime(ref data) => {
+                    GenericParam::Lifetime(data) => {
                         GenericArgument::Lifetime(data.lifetime.clone())
                     },
-                    &GenericParam::Type(ref data) => {
+                    GenericParam::Type(data) => {
                         let ident = &data.ident;
                         GenericArgument::Type(parse_quote!(<#ident as #trait_path>::#trait_output))
                     },
-                    &GenericParam::Const(ref inner) => {
+                    GenericParam::Const(inner) => {
                         let ident = &inner.ident;
                         GenericArgument::Const(parse_quote!(#ident))
                     },
@@ -188,7 +188,7 @@ where
             elems: inner
                 .elems
                 .iter()
-                .map(|ty| map_type_params(&ty, params, self_type, f))
+                .map(|ty| map_type_params(ty, params, self_type, f))
                 .collect(),
             ..inner.clone()
         }),
@@ -197,7 +197,7 @@ where
             ref path,
         }) => {
             if let Some(ident) = path_to_ident(path) {
-                if params.iter().any(|ref param| &param.ident == ident) {
+                if params.iter().any(|param| &param.ident == ident) {
                     return f(ident);
                 }
                 if ident == "Self" {
@@ -259,10 +259,10 @@ where
                                 .iter()
                                 .map(|arg| match arg {
                                     ty @ &GenericArgument::Lifetime(_) => ty.clone(),
-                                    &GenericArgument::Type(ref data) => GenericArgument::Type(
+                                    GenericArgument::Type(data) => GenericArgument::Type(
                                         map_type_params(data, params, self_type, f),
                                     ),
-                                    &GenericArgument::AssocType(ref data) => {
+                                    GenericArgument::AssocType(data) => {
                                         GenericArgument::AssocType(AssocType {
                                             ty: map_type_params(&data.ty, params, self_type, f),
                                             ..data.clone()
@@ -396,9 +396,9 @@ pub(crate) fn to_scream_case(css_case: &str) -> String {
 
 /// Given "FooBar", returns "Foo" and sets `camel_case` to "Bar".
 fn split_camel_segment<'input>(camel_case: &mut &'input str) -> Option<&'input str> {
-    let index = match camel_case.chars().next() {
-        None => return None,
-        Some(ch) => ch.len_utf8(),
+    let index = {
+        let ch = camel_case.chars().next()?;
+        ch.len_utf8()
     };
     let end_position = camel_case[index..]
         .find(char::is_uppercase)

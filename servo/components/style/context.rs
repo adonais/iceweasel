@@ -4,6 +4,7 @@
 
 //! The context within which style is calculated.
 
+use crate::FxHashMap;
 #[cfg(feature = "servo")]
 use crate::animation::DocumentAnimationSet;
 use crate::bloom::StyleBloom;
@@ -19,7 +20,7 @@ use crate::properties::ComputedValues;
 use crate::properties::PropertyId;
 use crate::rule_cache::RuleCache;
 use crate::rule_tree::{RuleCascadeFlags, StrongRuleNode};
-use crate::selector_parser::{SnapshotMap, EAGER_PSEUDO_COUNT};
+use crate::selector_parser::{EAGER_PSEUDO_COUNT, SnapshotMap};
 use crate::shared_lock::StylesheetGuards;
 use crate::sharing::StyleSharingCache;
 use crate::stylist::Stylist;
@@ -28,21 +29,20 @@ use crate::traversal::DomTraversal;
 use crate::traversal_flags::TraversalFlags;
 use crate::values::computed::TreeCountingResult;
 use app_units::Au;
-use euclid::default::Size2D;
 use euclid::Scale;
-use rustc_hash::FxHashMap;
-use selectors::context::SelectorCaches;
+use euclid::default::Size2D;
 use selectors::OpaqueElement;
+use selectors::context::SelectorCaches;
 #[cfg(feature = "gecko")]
 use servo_arc::Arc;
 use std::fmt;
 use std::ops;
 use std::time::{Duration, Instant};
-use style_traits::dom::OpaqueNode;
 use style_traits::CSSPixel;
 use style_traits::DevicePixel;
 #[cfg(feature = "servo")]
 use style_traits::SpeculativePainter;
+use style_traits::dom::OpaqueNode;
 #[cfg(feature = "servo")]
 use stylo_atoms::Atom;
 
@@ -663,6 +663,12 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     pub selector_caches: SelectorCaches,
     /// Caches for speeding up tree-counting function evaluations.
     pub tree_counting_caches: TreeCountingCaches,
+}
+
+impl<E: TElement> Default for ThreadLocalStyleContext<E> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<E: TElement> ThreadLocalStyleContext<E> {

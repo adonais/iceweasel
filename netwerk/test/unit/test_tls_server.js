@@ -285,7 +285,7 @@ const versions = [
 ];
 
 add_task(async function () {
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   ok(!!cert, "Got self-signed cert");
   for (let v of versions) {
     prefs.setIntPref("security.tls.version.max", v.prefValue);

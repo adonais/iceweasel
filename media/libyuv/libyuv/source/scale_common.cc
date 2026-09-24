@@ -1474,8 +1474,18 @@ void ScalePlaneVertical(int src_height,
   void (*InterpolateRow)(uint8_t* dst_argb, const uint8_t* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  const int64_t max_y =
-      (src_height > 1) ? (((int64_t)src_height - 1) << 16) - 1 : 0;
+  const bool interpolate = filtering == kFilterBilinear;
+  int64_t max_y = 0;
+  if (src_height > 1) {
+    max_y = ((int64_t)src_height - 1) << 16;
+    if (interpolate) {
+      --max_y;
+    }
+  }
+  // Without vertical interpolation, InterpolateRow() copies one row. A zero
+  // stride keeps it from forming a second source row pointer past the end when
+  // y is clamped to the last row.
+  const ptrdiff_t interpolate_stride = interpolate ? src_stride : 0;
   int64_t y64 = y;
   int j;
   assert(bpp >= 1 && bpp <= 4);
@@ -1530,9 +1540,9 @@ void ScalePlaneVertical(int src_height,
       y64 = max_y;
     }
     yi = (int)(y64 >> 16);
-    yf = filtering ? (int)((y64 >> 8) & 255) : 0;
-    InterpolateRow(dst_argb, src_argb + yi * (ptrdiff_t)src_stride, src_stride,
-                   dst_width_bytes, yf);
+    yf = interpolate ? (int)((y64 >> 8) & 255) : 0;
+    InterpolateRow(dst_argb, src_argb + yi * (ptrdiff_t)src_stride,
+                   interpolate_stride, dst_width_bytes, yf);
     dst_argb += dst_stride;
     y64 += dy;
   }
@@ -1555,8 +1565,18 @@ void ScalePlaneVertical_16(int src_height,
   void (*InterpolateRow)(uint16_t* dst_argb, const uint16_t* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_16_C;
-  const int64_t max_y =
-      (src_height > 1) ? (((int64_t)src_height - 1) << 16) - 1 : 0;
+  const bool interpolate = filtering == kFilterBilinear;
+  int64_t max_y = 0;
+  if (src_height > 1) {
+    max_y = ((int64_t)src_height - 1) << 16;
+    if (interpolate) {
+      --max_y;
+    }
+  }
+  // Without vertical interpolation, InterpolateRow() copies one row. A zero
+  // stride keeps it from forming a second source row pointer past the end when
+  // y is clamped to the last row.
+  const ptrdiff_t interpolate_stride = interpolate ? src_stride : 0;
   int64_t y64 = y;
   int j;
   assert(wpp >= 1 && wpp <= 2);
@@ -1600,9 +1620,9 @@ void ScalePlaneVertical_16(int src_height,
       y64 = max_y;
     }
     yi = (int)(y64 >> 16);
-    yf = filtering ? (int)((y64 >> 8) & 255) : 0;
-    InterpolateRow(dst_argb, src_argb + yi * (ptrdiff_t)src_stride, src_stride,
-                   dst_width_words, yf);
+    yf = interpolate ? (int)((y64 >> 8) & 255) : 0;
+    InterpolateRow(dst_argb, src_argb + yi * (ptrdiff_t)src_stride,
+                   interpolate_stride, dst_width_words, yf);
     dst_argb += dst_stride;
     y64 += dy;
   }
@@ -1622,7 +1642,8 @@ enum FilterMode ScaleFilterReduce(int src_width,
   }
   if (filtering == kFilterBox) {
     // If scaling either axis to 0.5 or larger, switch from Box to Bilinear.
-    if (dst_width * 2 >= src_width || dst_height * 2 >= src_height) {
+    if ((int64_t)dst_width * 2 >= src_width ||
+        (int64_t)dst_height * 2 >= src_height) {
       filtering = kFilterBilinear;
     }
   }
@@ -1631,7 +1652,7 @@ enum FilterMode ScaleFilterReduce(int src_width,
       filtering = kFilterLinear;
     }
     // TODO(fbarchard): Detect any odd scale factor and reduce to Linear.
-    if (dst_height == src_height || dst_height * 3 == src_height) {
+    if (dst_height == src_height || (int64_t)dst_height * 3 == src_height) {
       filtering = kFilterLinear;
     }
     // TODO(fbarchard): Remove 1 pixel wide filter restriction, which is to
@@ -1645,7 +1666,7 @@ enum FilterMode ScaleFilterReduce(int src_width,
       filtering = kFilterNone;
     }
     // TODO(fbarchard): Detect any odd scale factor and reduce to None.
-    if (dst_width == src_width || dst_width * 3 == src_width) {
+    if (dst_width == src_width || (int64_t)dst_width * 3 == src_width) {
       filtering = kFilterNone;
     }
   }

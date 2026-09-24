@@ -1,0 +1,230 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SpeechRecognition: what stop(), and stop() then abort(), report</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<div id="content"></div>
+<pre id="test">
+<script>
+"use strict";
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-stop
+// "The speech service must attempt to return a recognition result (or a
+// nomatch) based on the audio that it has already collected for this
+// recognition."
+//
+// So a stopped session must report one of the two, and must do so before "end"
+// ("end" is fired once the service has disconnected). This feeds silence, which
+// finalizes no words, so the nomatch branch is the one normally taken; the
+// assertions cover either branch so a model that hallucinates on silence
+// reports a mismatch in behaviour rather than a spurious failure.
+//
+// Requires (headless): pipewire + pipewire-pulse + wireplumber and
+// python3 testing/tools/serve_model.py (see test_parakeet_e2e.html).
+
+const SERVER_PORT = 8766;
+const LANG = "en-US";
+// Silence fed after the session is listening, before stop() is called.
+const LISTEN_MS = 3000;
+const EVENT_TIMEOUT_MS = 30000;
+// Grace period after "end" in the abort task, for the flush still in flight.
+const AFTER_END_MS = 3000;
+
+SimpleTest.requestCompleteLog();
+SimpleTest.requestFlakyTimeout("waiting for parakeet session init");
+
+// Bounded waits: a session that never reports back should fail with a named
+// event rather than hang until the harness' own timeout.
+function withTimeout(promise, what) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error(`timed out waiting for ${what}`)),
+      EVENT_TIMEOUT_MS)),
+  ]);
+}
+
+add_setup(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["media.webspeech.recognition.enable", true],
+      ["browser.ml.modelHubRootUrl", `http://localhost:${SERVER_PORT}/`],
+      ["media.webspeech.recognition.model-download.prompt.testing", true],
+      ["media.navigator.permission.disabled", true],
+    ],
+  });
+});
+
+add_task(async function stop_reports_result_or_nomatch_before_end() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+
+  // Silence: no speech, so the engine finalizes nothing and stop() has only a
+  // nomatch to report. The graph carries silence as null chunks, which also
+  // makes this cover the backend feeding those to the recognizer as zeros
+  // rather than dropping them - dropped, they would never reach "audiostart".
+  const silence = ctx.createBufferSource();
+  silence.buffer = ctx.createBuffer(1, 2048, ctx.sampleRate);
+  silence.loop = true;
+  const dst = ctx.createMediaStreamDestination();
+  silence.connect(dst);
+  silence.connect(ctx.destination);
+  silence.start(0);
+
+  const track = dst.stream.getAudioTracks()[0];
+  ok(track, "Got audio track");
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.lang = LANG;
+
+  const order = [];
+  let resultCount = 0;
+  let nomatchCount = 0;
+  let errorFired = null;
+
+  sr.onerror = e => { errorFired = e.error; };
+  sr.onresult = e => {
+    order.push("result");
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        resultCount++;
+        info(`final result: "${e.results[i][0].transcript}"`);
+      }
+    }
+  };
+  sr.onnomatch = e => {
+    order.push("nomatch");
+    nomatchCount++;
+    is(e.results.length, 0, "nomatch carries no results");
+  };
+  const audioStarted = new Promise(r => { sr.onaudiostart = r; });
+  const ended = new Promise(r => {
+    sr.onend = () => { order.push("end"); r(); };
+  });
+
+  sr.start(track);
+  await withTimeout(audioStarted, "audiostart");
+  info("session is listening, feeding silence");
+
+  await new Promise(r => setTimeout(r, LISTEN_MS));
+
+  sr.stop();
+  await withTimeout(ended, "end");
+  is(errorFired, null, "the session produced no error");
+
+  silence.stop();
+  await ctx.close();
+
+  info(`event order: ${order.join(", ")}`);
+  is(order.at(-1), "end", "end is the last event: nothing is delivered after it");
+  if (resultCount) {
+    is(nomatchCount, 0,
+       `${resultCount} final result(s) were returned, so no nomatch`);
+  } else {
+    is(nomatchCount, 1, "nothing was finalized, so stop() returned a nomatch");
+  }
+});
+
+// https://webaudio.github.io/web-speech-api/#dom-speechrecognition-abort
+// "The abort method is a request to immediately stop listening and stop
+// recognizing and do not return any information but that the system is done."
+//
+// stop() is ignored only when stop() was called before, and abort() only when
+// abort() was, so an abort() that follows a stop() takes effect: it ends the
+// session rather than waiting for the flush the stop() asked for, and that
+// flush, which finishes after "end", must not be reported.
+//
+// Speech rather than the silence above, and interim results on, so there is an
+// utterance in flight when the calls come: that is what stop() would have
+// finalized, and what the abort() has to suppress.
+add_task(async function abort_after_stop_reports_nothing() {
+  const installed = await ensureModelInstalled([LANG]);
+  ok(installed, "Model installed successfully");
+  if (!installed) {
+    return;
+  }
+
+  const ctx = await createResumedAudioContext();
+  const audio = await loadTestAudio("kennedy-appolo.opus");
+  const src = ctx.createMediaElementSource(audio);
+  const dst = ctx.createMediaStreamDestination();
+  src.connect(dst);
+  src.connect(ctx.destination);
+
+  const sr = new SpeechRecognition();
+  sr.continuous = true;
+  sr.interimResults = true;
+  sr.lang = LANG;
+
+  const order = [];
+  for (const name of ["audiostart", "soundstart", "speechstart", "speechend",
+                      "soundend", "audioend", "nomatch", "end"]) {
+    sr.addEventListener(name, () => order.push(name));
+  }
+  sr.addEventListener("result", e => {
+    const res = e.results[e.results.length - 1];
+    order.push(`result isFinal=${res.isFinal}`);
+  });
+  let errorFired = null;
+  sr.onerror = e => { errorFired = e.error; order.push(`error=${e.error}`); };
+
+  const ended = new Promise(r => sr.addEventListener("end", r));
+  const gotResult = new Promise(r =>
+    sr.addEventListener("result", r, { once: true }));
+  // Events are fired from individual tasks, so this microtask runs before the
+  // next one can be delivered: whatever follows the marker is what the aborted
+  // session reported.
+  gotResult.then(e => {
+    const res = e.results[e.results.length - 1];
+    info(`utterance in flight: "${res[0].transcript}"`);
+    order.push("stop(); abort()");
+    sr.stop();
+    sr.abort();
+  });
+
+  sr.start(dst.stream.getAudioTracks()[0]);
+  await audio.play();
+  // A second `then` on gotResult, so it runs after the one calling stop() and
+  // abort() above.
+  await withTimeout(gotResult, "the first result");
+  await withTimeout(ended, "end");
+  // The flush is still in flight here; wait for it, since that is when a
+  // trailing result or nomatch would show up.
+  await new Promise(r => setTimeout(r, AFTER_END_MS));
+
+  audio.pause();
+  await ctx.close();
+
+  const before = order.slice(0, order.indexOf("stop(); abort()"));
+  const after = order.slice(order.indexOf("stop(); abort()") + 1);
+  info(`event order: ${order.join(", ")}`);
+  is(errorFired, null, "the session produced no error");
+  is(after.filter(e => e.startsWith("result") || e === "nomatch").join(", "), "",
+     "the aborted session reports no result and no nomatch, not even for the " +
+     "utterance that was in flight");
+  // The events closing the audio lifecycle are not results, so they are still
+  // owed: each pair the session opened gets closed, and audioend reports that
+  // capture is over, all before "end".
+  is(after.includes("audioend"), before.includes("audiostart"),
+     "audioend closes the audiostart");
+  is(after.includes("soundend"), before.includes("soundstart"),
+     "soundend closes the soundstart");
+  is(after.includes("speechend"), before.includes("speechstart"),
+     "speechend closes the speechstart");
+  is(after.at(-1), "end", "end is the last event");
+});
+</script>
+</pre>
+</body>
+</html>

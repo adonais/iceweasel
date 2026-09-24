@@ -169,7 +169,6 @@ class PropertyInfoBase {
   T toRaw() const { return slotAndFlags_; }
 
   bool operator==(const PropertyInfoBase<T>& other) const = default;
-  bool operator!=(const PropertyInfoBase<T>& other) const = default;
 };
 
 using PropertyInfo = PropertyInfoBase<uint32_t>;

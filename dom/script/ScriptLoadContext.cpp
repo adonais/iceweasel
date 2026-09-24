@@ -130,7 +130,7 @@ void ScriptLoadContext::MaybeCancelOffThreadScript() {
     return;
   }
 
-  // Cancel the task if it hasn't been started yet or wait for it to finish.
+  // Nulling the task makes OffThreadCompilationCompleteTask discard the result.
   mCompileOrDecodeTask->Cancel();
   mCompileOrDecodeTask = nullptr;
 
@@ -284,7 +284,24 @@ already_AddRefed<JS::Stencil> ScriptLoadContext::StealOffThreadResult(
   RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
       mCompileOrDecodeTask.forget();
 
-  return compileOrDecodeTask->StealResult(aCx, aInstantiationStorage);
+  StencilCompileOrDecodeTask* task =
+      compileOrDecodeTask->AsStencilCompileOrDecodeTask();
+  RefPtr<JS::Stencil> stencil = task->StealResult(aCx, aInstantiationStorage);
+
+  if (mRequest->IsRetrievedAsSerializedStencil()) {
+    mRequest->RestoreSRIAndSerializedStencil(
+        task->TakeSRIAndSerializedStencil());
+  }
+
+  return stencil.forget();
+}
+
+bool ScriptLoadContext::StealOffThreadWasmResult(
+    JSContext* aCx, JS::MutableHandle<JSObject*> aModuleOut) {
+  RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
+      mCompileOrDecodeTask.forget();
+
+  return compileOrDecodeTask->AsWasmCompileTask()->StealResult(aCx, aModuleOut);
 }
 
 }  // namespace mozilla::dom

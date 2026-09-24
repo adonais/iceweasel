@@ -190,6 +190,16 @@ Similar to SpeedIndex, except that it uses the structural similarity index measu
   * **Mobile**: {ref}`allrecipes <allrecipes-m>`, {ref}`amazon <amazon-m>`, {ref}`amazon-search <amazon-search-m>`, {ref}`bild-de <bild-de-m>`, {ref}`bing <bing-m>`, {ref}`bing-search-restaurants <bing-search-restaurants-m>`, {ref}`booking <booking-m>`, {ref}`cnn <cnn-m>`, {ref}`cnn-ampstories <cnn-ampstories-m>`, {ref}`dailymail <dailymail-m>`, {ref}`ebay-kleinanzeigen <ebay-kleinanzeigen-m>`, {ref}`ebay-kleinanzeigen-search <ebay-kleinanzeigen-search-m>`, {ref}`espn <espn-m>`, {ref}`facebook <facebook-m>`, {ref}`facebook-cristiano <facebook-cristiano-m>`, {ref}`google <google-m>`, {ref}`google-maps <google-maps-m>`, {ref}`google-search-restaurants <google-search-restaurants-m>`, {ref}`imdb <imdb-m>`, {ref}`instagram <instagram-m>`, {ref}`microsoft-support <microsoft-support-m>`, {ref}`reddit <reddit-m>`, {ref}`sina <sina-m>`, {ref}`stackoverflow <stackoverflow-m>`, {ref}`wikipedia <wikipedia-m>`, {ref}`youtube <youtube-m>`, {ref}`youtube-watch <youtube-watch-m>`
 
 
+### Power Usage
+
+Energy in microwatt-hours consumed over the measured interval, read from the platform's own energy counters. The package channel covers the whole chip and is the steadiest of the three; the core and GPU planes are narrower and noisier. Sampled system-wide by a separate process rather than from inside the browser, which is what makes the measurement independent of which browser is under test.
+
+
+* **Aliases**: powerUsage_cpu_cores, powerUsage_cpu_package, powerUsage_gpu
+* **Tests using it**:
+  * **Custom**: {ref}`mp-1080p30-av1-hw <mp-1080p30-av1-hw-c>`, {ref}`mp-1080p30-av1-sw <mp-1080p30-av1-sw-c>`, {ref}`mp-1080p30-h264-hw <mp-1080p30-h264-hw-c>`, {ref}`mp-1080p30-h264-sw <mp-1080p30-h264-sw-c>`, {ref}`mp-1080p30-vp9-hw <mp-1080p30-vp9-hw-c>`, {ref}`mp-1080p30-vp9-sw <mp-1080p30-vp9-sw-c>`, {ref}`mp-2160p30-av1-hw <mp-2160p30-av1-hw-c>`, {ref}`mp-2160p30-h264-hw <mp-2160p30-h264-hw-c>`, {ref}`mp-2160p30-vp9-hw <mp-2160p30-vp9-hw-c>`
+
+
 ### Seek Latency
 
 Time (in ms) from issuing a buffered currentTime seek to the seeked event, measured with the video decoder warm (kept playing) and cold (released while paused and recreated per seek).

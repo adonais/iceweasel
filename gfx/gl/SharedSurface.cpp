@@ -14,11 +14,13 @@
 #include "SharedSurfaceGL.h"
 #include "VRManagerChild.h"
 #include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/gfx/CanvasRenderThread.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
 #include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/TextureHost.h"
 #include "nsThreadUtils.h"
 
 #ifdef XP_WIN
@@ -50,7 +52,23 @@ SharedSurface::SharedSurface(const SharedSurfaceDesc& desc,
                              UniquePtr<MozFramebuffer> fb)
     : mDesc(desc), mFb(std::move(fb)) {}
 
-SharedSurface::~SharedSurface() = default;
+SharedSurface::~SharedSurface() {
+  MOZ_ASSERT_IF(mTextureHost,
+                gfx::CanvasRenderThread::IsInCanvasRenderThread());
+}
+
+RefPtr<layers::TextureHost> SharedSurface::GetTextureHost() {
+  return mTextureHost;
+}
+
+void SharedSurface::SetTextureHost(layers::TextureHost* aTextureHost) {
+  MOZ_ASSERT(aTextureHost);
+  MOZ_ASSERT(!mTextureHost);
+
+  mTextureHost = aTextureHost;
+}
+
+void SharedSurface::ClearTextureHost() { mTextureHost = nullptr; }
 
 void SharedSurface::LockProd() {
   MOZ_ASSERT(!mIsLocked);

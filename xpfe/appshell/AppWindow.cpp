@@ -2452,21 +2452,13 @@ void AppWindow::SizeShell() {
     specHeight += windowDiff.height;
   }
 
-  bool positionSet = !mIgnoreXULPosition;
   nsCOMPtr<nsIAppWindow> parentWindow(do_QueryReferent(mParentWindow));
-#if defined(XP_UNIX) && !defined(XP_MACOSX)
-  // don't override WM placement on unix for independent, top-level windows
-  // (however, we think the benefits of intelligent dependent window placement
-  // trump that override.)
-  if (!parentWindow) positionSet = false;
-#endif
-  if (positionSet) {
-    // We have to do this before sizing the window, because sizing depends
-    // on the resolution of the screen we're on. But positioning needs to
-    // know the size so that it can constrain to screen bounds.... as an
-    // initial guess here, we'll use the specified size (if any).
-    positionSet = LoadPositionFromXUL(specWidth, specHeight);
-  }
+  // We have to do this before sizing the window, because sizing depends
+  // on the resolution of the screen we're on. But positioning needs to
+  // know the size so that it can constrain to screen bounds.... as an
+  // initial guess here, we'll use the specified size (if any).
+  bool positionSet =
+      !mIgnoreXULPosition && LoadPositionFromXUL(specWidth, specHeight);
 
   if (gotSize) {
     SetSpecifiedSize(specWidth, specHeight);

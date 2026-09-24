@@ -31,7 +31,7 @@ installation process are fine.
 
 ### A Firefox nightly or release
 
-You need a Firefox version for which symbols are availables from the
+You need a Firefox version for which symbols are available from the
 {ref}`symbol server <Using The Mozilla Symbol Server>` to use
 with WinDbg. You can use any [official nightly
 build](https://ftp.mozilla.org/pub/firefox/nightly/) or released

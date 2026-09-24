@@ -68,6 +68,30 @@ class TabHistoryControllerTest {
     }
 
     @Test
+    fun `WHEN the user requests to go to the homepage THEN handleGoToHistoryItem brings the user to the homepage`() {
+        val controller =
+            DefaultTabHistoryController(
+                navController = navController,
+                goToHistoryIndexUseCase = goToHistoryIndexUseCase,
+            )
+        val currentItem =
+            TabHistoryItem(
+                index = 0,
+                title = "Homepage",
+                url = "about:home",
+                isSelected = true,
+            )
+
+        controller.handleGoToHistoryItem(currentItem)
+
+        verify { navController.navigateUp() }
+        captureActionsMiddleware.assertFirstAction(EngineAction.GoToHistoryIndexAction::class) { action ->
+            assertEquals(tab.id, action.tabId)
+            assertEquals(0, action.index)
+        }
+    }
+
+    @Test
     fun handleGoToHistoryIndexCustomTab() {
         val customTabId = "customTabId"
 

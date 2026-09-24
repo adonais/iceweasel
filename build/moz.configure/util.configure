@@ -234,7 +234,7 @@ def find_program(file, paths=None, allow_spaces=False):
     if paths:
         if not isinstance(paths, (list, tuple)):
             die(
-                "Paths provided to find_program must be a list of strings, " "not %r",
+                "Paths provided to find_program must be a list of strings, not %r",
                 paths,
             )
         paths = pathsep.join(paths)
@@ -283,7 +283,7 @@ def try_invoke_compiler(
             return configure_cache[compiler_path][key]
 
     if not isinstance(flags, (list, tuple)):
-        die("Flags provided to try_compile must be a list of strings, " "not %r", flags)
+        die("Flags provided to try_compile must be a list of strings, not %r", flags)
 
     suffix = {
         "C": ".c",

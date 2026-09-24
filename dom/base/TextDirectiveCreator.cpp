@@ -26,6 +26,7 @@ TextDirectiveCreator::TextDirectiveCreator(Document* aDocument,
       mFinder(WrapNotNull(new nsFind())),
       mWatchdog(aWatchdog) {
   mFinder->SetNodeIndexCache(&mNodeIndexCache);
+  mFinder->SetSkipNativeAnonymousContent(true);
 }
 
 TextDirectiveCreator::~TextDirectiveCreator() {

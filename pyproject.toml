@@ -5,6 +5,7 @@ target-version = "py38"
 lint.select = [
   "E", "W",    # pycodestyle
   "F",         # pyflakes
+  "FA102",     # flake8-future-annotations
   "I",         # isort
   "PL",        # pylint
   "UP",        # pyupgrade
@@ -24,26 +25,49 @@ lint.ignore = [
   "E1", "E4", "E5", "W1", "W2", "W5",
 ]
 builtins = ["gdb"]
-extend-include = ["*.configure"]
+extend-include = ["*.configure", "*.build", "*.mozbuild"]
+# Only here to override ruff's built-in defaults, which include `build`, a
+# real source directory here. But also to list things to be skipped by
+# both `ruff check` and `ruff format`.
 exclude = [
+  "node_modules",
+  "tools/lint/test/files",
+  # Vendored subtrees in here carry their own ruff config, so this has to prune
+  # the walk rather than filter paths; `lint.exclude` would not stop ruff
+  # descending into them. Excluded from formatting too, as it was under `black`.
+  "testing/web-platform/tests",
+  # mako files are not really python files
+  "*.mako.py",
+]
+
+# Paths skipped by `rust check` only. `ruff format` does not use this list.
+#
+# Unlike `exclude` above, entries here are matched as globs against each file
+# path rather than pruned during directory traversal, so a directory MUST be
+# written as `some/dir/**`; `some/dir` silently matches nothing.
+lint.exclude = [
+  # Only `ruff format` looks at these, see `extend-include` above.
+  "*.build",
+  "*.mozbuild",
+
   # These paths should be triaged and either fixed or moved to the list below.
-  "devtools/shared",
+  "devtools/shared/**",
   "dom/bindings/Codegen.py",
   "dom/bindings/parser/WebIDL.py",
   "dom/bindings/parser/tests/test_arraybuffer.py",
   "dom/bindings/parser/tests/test_securecontext_extended_attribute.py",
-  "gfx/tests",
-  "layout/base/tests/marionette",
-  "layout/reftests/border-image",
-  "layout/reftests/fonts",
-  "layout/reftests/w3c-css",
-  "layout/style",
+  "gfx/tests/**",
+  "layout/base/tests/marionette/**",
+  "layout/reftests/border-image/**",
+  "layout/reftests/fonts/**",
+  "layout/reftests/w3c-css/**",
+  "layout/style/**",
   "media/libdav1d/generate_source.py",
   "netwerk/dns/prepare_tlds.py",
   "netwerk/protocol/http/make_incoming_tables.py",
-  "python/l10n/fluent_migrations",
-  "security/manager/ssl/tests/unit",
-  "servo/components/style",
+  "python/l10n/fluent_migrations/**",
+  "security/manager/ssl/tests/unit/**",
+  "servo/components/style/**",
   "testing/condprofile/condprof/android.py",
   "testing/condprofile/condprof/creator.py",
   "testing/condprofile/condprof/desktop.py",
@@ -54,57 +78,58 @@ exclude = [
   "testing/condprofile/condprof/helpers.py",
   "testing/jsshell/benchmark.py",
   "testing/marionette/mach_commands.py",
-  "testing/mozharness/docs",
-  "testing/mozharness/examples",
-  "testing/mozharness/external_tools",
+  "testing/mozharness/docs/**",
+  "testing/mozharness/examples/**",
+  "testing/mozharness/external_tools/**",
   "testing/mozharness/mach_commands.py",
-  "testing/mozharness/manifestparser",
-  "testing/mozharness/mozprocess",
+  "testing/mozharness/manifestparser/**",
+  "testing/mozharness/mozprocess/**",
   "testing/mozharness/setup.py",
   "testing/parse_build_tests_ccov.py",
   "testing/tools/iceserver/iceserver.py",
   "testing/tools/websocketprocessbridge/websocketprocessbridge.py",
   "toolkit/content/tests/chrome/file_about_networking_wsh.py",
   "toolkit/library/build/dependentlibs.py",
-  "toolkit/mozapps",
+  "toolkit/mozapps/**",
   "toolkit/moz.configure",
   "toolkit/nss.configure",
 
   # Can be removed once remaining CI workers updated past Python 3.8
   "python/mozbuild/mozbuild/action/tooltool.py",
 
-  # mako files are not really python files
-  "*.mako.py",
-
   # These paths are intentionally excluded (not necessarily for good reason).
   "build/moz.configure/*.configure",
-  "build/pymake/",
-  "browser/extensions/mortar/ppapi/",
+  "build/pymake/**",
+  "browser/extensions/mortar/ppapi/**",
   "browser/moz.configure",
-  "dom/canvas/test/webgl-conf/checkout/closure-library/",
-  "editor/libeditor/tests/browserscope/",
-  "intl/icu/",
-  "ipc/chromium/src/third_party/",
+  "dom/canvas/test/webgl-conf/checkout/closure-library/**",
+  "editor/libeditor/tests/browserscope/**",
+  "intl/icu/**",
+  "ipc/chromium/src/third_party/**",
   "js/*.configure",
   "gfx/angle/vendor_from_git.py",
-  "gfx/harfbuzz",
-  "gfx/skia/",
+  "gfx/harfbuzz/**",
+  "gfx/skia/**",
   "memory/moz.configure",
   "mobile/android/*.configure",
-  "node_modules",
-  "python/mozbuild/mozbuild/test/configure/data",
-  "security/nss/",
-  "testing/marionette/harness/marionette_harness/runner/mixins",
-  "testing/marionette/harness/marionette_harness/tests",
-  "testing/mochitest/pywebsocket3",
+  "python/mozbuild/mozbuild/test/configure/data/**",
+  "security/nss/**",
+  "testing/marionette/harness/marionette_harness/runner/mixins/**",
+  "testing/marionette/harness/marionette_harness/tests/**",
+  "testing/mochitest/pywebsocket3/**",
   "testing/mozharness/configs/test/test_malformed.py",
-  "testing/web-platform/tests",
-  "tools/lint/test/files",
   # Vendored verbatim from bugbug; style is owned upstream.
   "tools/lint/python/review_context_schema.py",
   "tools/crashreporter/*.configure",
   ".ycm_extra_conf.py",
 ]
+
+[tool.ruff.lint.pyupgrade]
+# Modules with `from __future__ import annotations` would otherwise have
+# pyupgrade rewrite Optional and Union to the PEP 604 spelling, which breaks
+# anything evaluating those annotations on the target version. Drop this once
+# target-version reaches py310, where the rewrite applies everywhere anyway.
+keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 # These paths are intentionally excluded.
@@ -120,6 +145,10 @@ exclude = [
 "testing/mozbase/mozinfo/mozinfo/mozinfo.py" = ["PLE0605"]
 "testing/mozbase/mozlog/tests/test_formatters.py" = ["E501"]
 "testing/mozharness/configs/*" = ["E501"]
+# taskgraph's msgspec based Schema evaluates annotations at runtime, so these
+# packages cannot take `from __future__ import annotations`.
+"taskcluster/android_taskgraph/**" = ["FA102"]
+"taskcluster/gecko_taskgraph/**" = ["FA102"]
 "**/*.configure" = ["F821"]
 # These paths contain Python-2 only syntax.
 "build/compare-mozconfig/compare-mozconfigs.py" = ["F821"]
@@ -140,3 +169,15 @@ exclude = [
 # TODO: Remove preview once these features are in the stable release.
 preview = true
 docstring-code-format = true
+
+# Paths skipped by `rust format` only. `ruff check` does not use this list.
+#
+# Entries here are matched as globs against each file path rather than pruned
+# during directory traversal, so a directory MUST be written as `some/dir/**`;
+# `some/dir` silently matches nothing.
+exclude = [
+  "gfx/harfbuzz/src/meson.build",
+  "python/mozbuild/mozbuild/test/frontend/data/reader-error-syntax/moz.build",
+  "testing/mozharness/configs/test/test_malformed.py",
+  "tools/lint/python/review_context_schema.py",
+]

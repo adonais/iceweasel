@@ -1,0 +1,22 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+---
+# GGUF models for the local speech recognition (parakeet) tests. Fetched ahead
+# of time into MOZ_FETCHES_DIR so the tests never hit the network; a local model
+# hub serves them and the test points browser.ml.modelHubRootUrl at it.
+parakeet-eou-120m:
+    description: Parakeet realtime EOU 120M streaming model (q5_k), English speech recognition
+    fetch:
+        type: static-url
+        url: https://storage.googleapis.com/moz-model-hub/speech-recognition/parakeet/main/realtime_eou_120m-v1-q5_k.gguf
+        sha256: e6e83c13a41751d6130cde836690304cbc143347bdf12577e419018df2235398
+        size: 141151648
+
+parakeet-nemotron-0.6b:
+    description: NVIDIA nemotron-3.5 multilingual streaming ASR model (q5_k), speech recognition
+    fetch:
+        type: static-url
+        url: https://storage.googleapis.com/moz-model-hub/speech-recognition/parakeet/main/nemotron-3.5-asr-streaming-0.6b-q5_k.gguf
+        sha256: 7bb14605a707f821560952521034002c91653d676272a80dca0cd2aa886d0ab2
+        size: 784801888

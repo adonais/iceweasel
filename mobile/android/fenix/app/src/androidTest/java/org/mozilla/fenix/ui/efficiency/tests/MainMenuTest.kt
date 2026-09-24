@@ -23,6 +23,7 @@ import org.mozilla.fenix.ui.efficiency.selectors.BookmarksSelectors.DELETE_BOOKM
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.CollectionsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.DownloadsSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.HistorySelectors.NAVIGATE_BACK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -34,14 +35,13 @@ import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.DESKTOP_SITE_
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.EDIT_BOOKMARK_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors.FORWARD_BUTTON
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsAddonsManagerSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.SettingsSavedPasswordsSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
+import org.mozilla.fenix.ui.efficiency.selectors.ShareOverlaySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.TabHistorySelectors
 import org.mozilla.fenix.ui.efficiency.selectors.WebCompatReporterSelectors
 
 class MainMenuTest : BaseTest() {
-
-    private val mockWebServer
-        get() = fenixTestRule.mockWebServer
 
     @Before
     fun disablePromptAbuserDetector() {
@@ -71,7 +71,7 @@ class MainMenuTest : BaseTest() {
     @SmokeTest
     @Test
     fun verifyMainMenuItemsTest() {
-        on.mainMenu.navigateToPage().mozVerifyElementsByGroup("homePageMainMenuItems")
+        on.mainMenu.navigateToPage().mozVerifyElementsByGroup(MainMenuSelectors.Group.HOME_PAGE_MAIN_MENU_ITEMS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080124
@@ -81,7 +81,7 @@ class MainMenuTest : BaseTest() {
         val website = mockWebServer.getGenericAsset(1)
 
         on.browserPage.navigateToPage(website.url.toString())
-        on.mainMenu.navigateToPage().mozVerifyElementsByGroup("browserViewMainMenuItems")
+        on.mainMenu.navigateToPage().mozVerifyElementsByGroup(MainMenuSelectors.Group.BROWSER_VIEW_MAIN_MENU_ITEMS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080110
@@ -94,14 +94,14 @@ class MainMenuTest : BaseTest() {
         on.mainMenu
             .navigateToPage()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
-            .mozVerifyElementsByGroup("moreMainMenuSubList")
+            .mozVerifyElementsByGroup(MainMenuSelectors.Group.MORE_MAIN_MENU_SUB_LIST)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080172
     @SmokeTest
     @Test
     fun verifyTheExtensionsMenuOptionTest() {
-        on.settingsAddonsManager.navigateToPage().mozVerifyElementsByGroup("addOns")
+        on.settingsAddonsManager.navigateToPage().mozVerifyElementsByGroup(SettingsAddonsManagerSelectors.Group.ADD_ONS)
         on.home.navigateToPage()
     }
 
@@ -126,9 +126,11 @@ class MainMenuTest : BaseTest() {
             .mozClick(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)
             .mozClick(MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON)
             .mozClick(BrowserPageSelectors.SNACKBAR_ACTION_BUTTON)
-        on.bookmarks.mozVerifyElementsByGroup("bookmarkEdit").mozClick(BookmarksSelectors.DELETE_BOOKMARK_BUTTON)
+        on.bookmarks
+            .mozVerifyElementsByGroup(BookmarksSelectors.Group.EDIT_BOOKMARKS_VIEW)
+            .mozClick(BookmarksSelectors.DELETE_BOOKMARK_BUTTON)
         on.browserPage.mozClick(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)
-        on.mainMenu.mozVerifyElementsByGroup("bookmarkActions")
+        on.mainMenu.mozVerifyElementsByGroup(MainMenuSelectors.Group.BOOKMARK_ACTIONS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080138
@@ -138,7 +140,7 @@ class MainMenuTest : BaseTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
         on.browserPage.navigateToPage(testPage.url.toString())
-        on.downloads.navigateToPage().mozVerifyElementsByGroup("emptyDownloads")
+        on.downloads.navigateToPage().mozVerifyElementsByGroup(DownloadsSelectors.Group.EMPTY_DOWNLOADS)
         on.browserPage.navigateToPage().verifyPageContent(testPage.content)
     }
 
@@ -152,7 +154,9 @@ class MainMenuTest : BaseTest() {
         on.mainMenu.navigateToPage().mozClick(BOOKMARK_THIS_PAGE_BUTTON)
         on.browserPage.navigateToPage()
         on.mainMenu.navigateToPage().mozClick(EDIT_BOOKMARK_BUTTON)
-        on.bookmarks.mozVerifyElementsByGroup("editBookmarksView").mozClick(DELETE_BOOKMARK_BUTTON)
+        on.bookmarks
+            .mozVerifyElementsByGroup(BookmarksSelectors.Group.EDIT_BOOKMARKS_VIEW)
+            .mozClick(DELETE_BOOKMARK_BUTTON)
         on.browserPage.navigateToPage()
         on.mainMenu.navigateToPage().mozVerify(BOOKMARK_THIS_PAGE_BUTTON)
     }
@@ -166,7 +170,7 @@ class MainMenuTest : BaseTest() {
         on.browserPage.navigateToPage(testPage.url.toString())
         on.history
             .navigateToPage()
-            .mozVerifyElementsByGroup("historyMenuViewWithHistoryItems")
+            .mozVerifyElementsByGroup(HistorySelectors.Group.HISTORY_MENU_VIEW_WITH_HISTORY_ITEMS)
             .mozClick(NAVIGATE_BACK_BUTTON)
         on.browserPage.verifyPageContent(testPage.content)
     }
@@ -188,7 +192,9 @@ class MainMenuTest : BaseTest() {
         val testPage = mockWebServer.getGenericAsset(1)
 
         on.browserPage.navigateToPage(testPage.url.toString())
-        on.settingsSavedPasswords.navigateToPage().mozVerifyElementsByGroup("emptySavedPasswordsList")
+        on.settingsSavedPasswords
+            .navigateToPage()
+            .mozVerifyElementsByGroup(SettingsSavedPasswordsSelectors.Group.EMPTY_SAVED_PASSWORDS_LIST)
         on.browserPage.navigateToPage().verifyPageContent(testPage.content)
     }
 
@@ -310,7 +316,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.ADD_TO_SHORTCUTS_BUTTON)
-        on.browserPage.navigateToPage().mozVerifyElementsByGroup("addedToShortcutsSnackbar")
+        on.browserPage.navigateToPage().mozVerifyElementsByGroup(BrowserPageSelectors.Group.ADDED_TO_SHORTCUTS_SNACKBAR)
         on.home
             .navigateToPage()
             .mozVerify(HomeSelectors.TOP_SITE_ITEM(testPage.title))
@@ -353,7 +359,7 @@ class MainMenuTest : BaseTest() {
             .mozClick(MainMenuSelectors.MORE_BUTTON)
             .mozClick(MainMenuSelectors.SAVE_AS_PDF_BUTTON)
         on.downloads
-            .mozVerifyElementsByGroup("downloadDialog")
+            .mozVerifyElementsByGroup(DownloadsSelectors.Group.DOWNLOAD_DIALOG)
             .mozClick(DownloadsSelectors.DOWNLOAD_DIALOG_CONFIRM_BUTTON)
             .mozVerify(DownloadsSelectors.DOWNLOAD_COMPLETE_SNACKBAR, timeout = 15_000)
             .mozClick(DownloadsSelectors.DOWNLOAD_SNACK_BAR_OPEN_BUTTON)
@@ -368,7 +374,7 @@ class MainMenuTest : BaseTest() {
 
         on.browserPage.navigateToPage(testPage.url.toString())
         on.mainMenu.navigateToPage().mozClick(MainMenuSelectors.SHARE_BUTTON)
-        on.shareOverlay.mozVerifyElementsByGroup("shareTabLayout")
+        on.shareOverlay.mozVerifyElementsByGroup(ShareOverlaySelectors.Group.SHARE_TAB_LAYOUT)
         on.shareOverlay.verifySharingWithSelectedApp(
             appName = Constants.GMAIL_APP_NAME,
             appPackageName = Constants.PackageName.GMAIL_APP,
@@ -460,7 +466,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-            .mozVerifyElementsByGroup("expandedExtensionsMenuItems")
+            .mozVerifyElementsByGroup(MainMenuSelectors.Group.EXPANDED_EXTENSIONS_MENU_ITEMS)
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080134
@@ -475,7 +481,7 @@ class MainMenuTest : BaseTest() {
             .navigateToPage()
             .mozVerify(MainMenuSelectors.TRY_RECOMMENDED_EXTENSION_BUTTON)
             .mozClick(MainMenuSelectors.EXTENSIONS_CHEVRON)
-            .mozVerifyElementsByGroup("expandedExtensionsMenuItems")
+            .mozVerifyElementsByGroup(MainMenuSelectors.Group.EXPANDED_EXTENSIONS_MENU_ITEMS)
             .mozClick(MainMenuSelectors.EXTENSIONS_CHEVRON)
             .mozVerifyElementAbsent(MainMenuSelectors.DISCOVER_MORE_EXTENSIONS_BUTTON)
         // Parity gap: legacy verifyTheRecommendedAddons asserted three named addons, each with its own
@@ -500,13 +506,8 @@ class MainMenuTest : BaseTest() {
 
         // Remove it through Manage extensions -> the add-ons manager.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
-        on.mainMenu
-            .navigateToPage()
-            .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-            .mozClick(MainMenuSelectors.MANAGE_EXTENSIONS_BUTTON)
-        on.settingsAddonsManager
-            .removeInstalledExtension(addonTitle)
-            .mozClick(SettingsAddonsManagerSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON)
+        on.mainMenu.navigateToPage()
+        on.settingsAddonsManager.navigateToPage().removeInstalledExtension(addonTitle)
 
         // With no extensions installed, the "Try a recommended extension" entry point is shown again.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
@@ -531,11 +532,9 @@ class MainMenuTest : BaseTest() {
         // Parity: legacy verifyAddonIsInstalled asserted the addon's install (+) button was invisible;
         // the extension appearing under the Enabled section is the equivalent "installed & enabled" signal.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
-        on.mainMenu
-            .navigateToPage()
-            .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-            .mozClick(MainMenuSelectors.MANAGE_EXTENSIONS_BUTTON)
+        on.mainMenu.navigateToPage()
         on.settingsAddonsManager
+            .navigateToPage()
             .mozVerify(SettingsAddonsManagerSelectors.ADD_ONS_LIST)
             .mozVerify(SettingsAddonsManagerSelectors.ENABLED_SECTION_TITLE)
             .mozVerify(SettingsAddonsManagerSelectors.INSTALLED_ADDON_ITEM(addonTitle))
@@ -584,14 +583,8 @@ class MainMenuTest : BaseTest() {
 
         // Open the installed extension's detail from Manage extensions and disable it.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
-        on.mainMenu
-            .navigateToPage()
-            .mozClick(MainMenuSelectors.EXTENSIONS_BUTTON_UIAUTOMATOR)
-            .mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonTitle))
-            .mozClick(MainMenuSelectors.MANAGE_EXTENSIONS_BUTTON)
-        on.settingsAddonsManager
-            .disableInstalledExtension(addonTitle)
-            .mozClick(SettingsAddonsManagerSelectors.NAVIGATE_BACK_TOOLBAR_BUTTON)
+        on.mainMenu.navigateToPage().mozVerify(MainMenuSelectors.EXTENSIONS_BUTTON_WITH_INSTALLED_EXTENSION(addonTitle))
+        on.settingsAddonsManager.navigateToPage().disableInstalledExtension(addonTitle)
 
         // With the only extension disabled, the menu advertises the "no extensions enabled" entry point.
         on.browserPage.navigateToPage(genericURL.url.toString(), forceNavigation = true)
@@ -642,6 +635,6 @@ class MainMenuTest : BaseTest() {
             .mozVerify(WebCompatReporterSelectors.REPORTED_SITE_URL(defaultWebPage.url.toString()))
             .mozVerify(WebCompatReporterSelectors.REPORTED_BROKEN_SITE_REASON("Site doesn’t load"))
             .mozVerifyElementIsNotChecked(WebCompatReporterSelectors.ITEMS_BLOCKED_BY_TRACKING_PROTECTION_CHECKBOX)
-            .mozVerifyElementsByGroup("reporterForm")
+            .mozVerifyElementsByGroup(WebCompatReporterSelectors.Group.REPORTER_FORM)
     }
 }

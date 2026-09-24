@@ -452,6 +452,7 @@ object ScreenDump {
                     // where the harness thought it was on HomePage and the elements say otherwise
                     // is a navigation bug; one where they agree is not.
                     .put("harnessPage", PageStateTracker.currentPageName)
+                    .put("navigationFacts", PageStateTracker.currentFacts.map { it.name }.sorted())
                     .put("elements", elements)
             File(filesDir, "eff-screendump.json").writeText(root.toString())
             Log.i(TAG, "DONE: wrote ${elements.length()} elements to $filesDir")

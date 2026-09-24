@@ -3,11 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTHashSet.h"
 #include "HWInferenceParent.h"
-#include "HWInferenceManagerParent.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/ipc/FileDescriptor.h"
@@ -52,6 +52,15 @@ extern LazyLogModule gHWInferenceLog;
 StaticRefPtr<HWInferenceParent> HWInferenceParent::sInstance;
 
 static StaticAutoPtr<nsTHashSet<nsCString>> sMockInstalledModels;
+
+// The mock hub's contents live only as long as browser.ml.modelHub.testing is
+// on, so a test that pushes that pref starts from an empty hub rather than
+// inheriting whatever an earlier test in the same run installed.
+static void ClearMockInstalledModels(const char*, void*) {
+  if (sMockInstalledModels) {
+    sMockInstalledModels->Clear();
+  }
+}
 
 static nsCString MockModelKey(const nsACString& aModel,
                               const nsACString& aRevision,
@@ -120,7 +129,7 @@ class ModelDownloadCallbacks final
     LOGD("{} - model={} revision={}", __func__, NS_ConvertUTF16toUTF8(aModel),
          NS_ConvertUTF16toUTF8(aRevision));
     Notify(100, 0, 0, 0, true, true);
-    mResolver(true);
+    mResolver(ModelInstallResult::Installed);
     return NS_OK;
   }
 
@@ -128,7 +137,7 @@ class ModelDownloadCallbacks final
     LOGE("{} - Error when downloading {}", __func__,
          NS_ConvertUTF16toUTF8(aError));
     Notify(0, 0, 0, 0, true, false);
-    mResolver(false);
+    mResolver(ModelInstallResult::Failed);
     return NS_OK;
   }
 
@@ -167,18 +176,18 @@ NS_IMPL_ISUPPORTS(ModelDownloadCallbacks, nsIMLModelDownloadProgressCallback,
 RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   AssertIsOnMainThread();
 
-  // Evict an instance whose process is already gone. Its PHWInference channel
-  // is separate from PUtilityProcess, so it keeps reporting CanSend() until
-  // the peer actually dies and the channel errors, one main-thread dispatch
-  // later. Handing it out in that window would make StartUtility take its
-  // CanSend() fast path and resolve success on a doomed actor rather than
-  // relaunching. Checked here rather than at teardown so it covers an
-  // unexpected process death too, not just CleanShutdown.
-  if (sInstance && sInstance->CanSend()) {
+  // Evict an instance bound to a process that is no longer the current one.
+  // PHWInference is separate from PUtilityProcess, so it keeps reporting
+  // CanSend() for a main-thread dispatch after the peer died, and handing it
+  // out in that window would have StartUtility resolve on a doomed actor.
+  // Comparing the bound process also covers process death, not just
+  // CleanShutdown.
+  if (sInstance && sInstance->mUtilityParent) {
     RefPtr<ipc::UtilityProcessManager> upm =
         ipc::UtilityProcessManager::GetIfExists();
-    if (!upm || !upm->Process(ipc::SandboxingKind::HW_INFERENCE)) {
-      LOGD("{} - evicting stale instance", __func__);
+    if (!upm || upm->GetProcessParent(ipc::SandboxingKind::HW_INFERENCE) !=
+                    sInstance->mUtilityParent) {
+      LOGD("{} - evicting instance bound to a gone process", __func__);
       RefPtr<HWInferenceParent> stale = sInstance;
       sInstance = nullptr;
       // Synchronously runs ActorDestroy, so CanSend() is false on return.
@@ -193,8 +202,30 @@ RefPtr<HWInferenceParent> HWInferenceParent::GetSingleton() {
   return sInstance;
 }
 
+/* static */
+void HWInferenceParent::StartContentSpeechRecognition(
+    Endpoint<PSpeechRecognitionParent>&& aEndpoint,
+    dom::ContentParentId aChildId) {
+  RefPtr<HWInferenceParent> self = GetSingleton();
+  self->WhenReady()->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, endpoint = std::move(aEndpoint), aChildId]() mutable {
+        if (!self->SendNewContentSpeechRecognition(std::move(endpoint),
+                                                   aChildId)) {
+          LOGD("Failed to send endpoint to utility process");
+        }
+      },
+      []() {
+        LOGD("HWInference never came up: dropping the speech endpoint");
+      });
+}
+
 void HWInferenceParent::ActorDestroy(ActorDestroyReason aReason) {
   LOGD("{}", __func__);
+  // A no-op once bound: let go of anyone waiting on an actor that never made it
+  // to its process.
+  mReadyPromise->Reject(NS_ERROR_NOT_AVAILABLE, __func__);
+  mUtilityParent = nullptr;
   // Only clear ourselves: a late ActorDestroy from a superseded instance must
   // not evict the replacement created after it.
   if (sInstance == this) {
@@ -220,6 +251,8 @@ nsresult HWInferenceParent::BindToUtilityProcess(
 
   LOGD("StartHWInferenceService sent successfully, binding parent endpoint");
   MOZ_ALWAYS_TRUE(parentEnd.Bind(this));
+  mUtilityParent = aUtilityParent;
+  mReadyPromise->Resolve(true, __func__);
   return NS_OK;
 }
 
@@ -333,11 +366,13 @@ static void PerformModelInstall(
     if (!sMockInstalledModels) {
       sMockInstalledModels = new nsTHashSet<nsCString>();
       ClearOnShutdown(&sMockInstalledModels);
+      Preferences::RegisterCallback(ClearMockInstalledModels,
+                                    "browser.ml.modelHub.testing");
     }
     sMockInstalledModels->Insert(MockModelKey(aModel, aRevision, aFilename));
     LOGD("PerformModelInstall - testing mock: installed {}",
          MockModelKey(aModel, aRevision, aFilename));
-    aResolver(true);
+    aResolver(ModelInstallResult::Installed);
     return;
   }
 
@@ -346,7 +381,7 @@ static void PerformModelInstall(
 
   if (!modelHubService) {
     LOGE("PerformModelInstall - Failed to get ModelHub XPCOM service");
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return;
   }
 
@@ -404,7 +439,7 @@ class ModelDownloadAuthorizationCallback final
     if (!aAllow) {
       LOGD("ModelDownloadAuthorizationCallback - download of {} not authorized",
            mModel);
-      resolver(false);
+      resolver(ModelInstallResult::Denied);
       return NS_OK;
     }
     PerformModelInstall(mEngine, mTask, mModel, mRevision, mFilename,
@@ -415,7 +450,7 @@ class ModelDownloadAuthorizationCallback final
  private:
   ~ModelDownloadAuthorizationCallback() {
     if (mResolver) {
-      mResolver(false);
+      mResolver(ModelInstallResult::Failed);
     }
   }
 
@@ -440,7 +475,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   nsCOMPtr<nsIMLModelResolver> resolver =
       ResolveModelId(aTask, aId, engine, model, revision, filename);
   if (!resolver) {
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return IPC_OK();
   }
 
@@ -451,7 +486,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   if (aContentId != 0 && (!window || window->ContentParentId() != aContentId)) {
     LOGE("{} - window {} not owned by requester {}", __func__, aInnerWindowId,
          uint64_t(aContentId));
-    aResolver(false);
+    aResolver(ModelInstallResult::Failed);
     return IPC_OK();
   }
 
@@ -460,7 +495,7 @@ ipc::IPCResult HWInferenceParent::RecvInstallModel(
   if (StaticPrefs::browser_ml_modelHub_testing() && sMockInstalledModels &&
       sMockInstalledModels->Contains(MockModelKey(model, revision, filename))) {
     LOGD("{} - testing mock: already installed", __func__);
-    aResolver(true);
+    aResolver(ModelInstallResult::Installed);
     return IPC_OK();
   }
 

@@ -21,6 +21,7 @@ pub mod generated {
     include!(concat!(env!("OUT_DIR"), "/properties.rs"));
 }
 
+use crate::FxHashMap;
 use crate::applicable_declarations::RevertKind;
 use crate::custom_properties::{self, ComputedSubstitutionFunctions, SubstitutionResult};
 use crate::derives::*;
@@ -35,8 +36,7 @@ use crate::stylist::Stylist;
 use crate::typed_om::{ToTyped, TypedValue};
 use crate::values::{computed, serialize_atom_name};
 use arrayvec::{ArrayVec, Drain as ArrayVecDrain};
-use cssparser::{match_ignore_ascii_case, Parser, ParserInput};
-use rustc_hash::FxHashMap;
+use cssparser::{Parser, match_ignore_ascii_case};
 use servo_arc::Arc;
 use std::{
     borrow::Cow,
@@ -129,7 +129,7 @@ impl CSSWideKeyword {
             "unset" => Self::Unset,
             "revert" => Self::Revert,
             "revert-layer" => Self::RevertLayer,
-            "revert-rule" if static_prefs::pref!("layout.css.revert-rule.enabled") => Self::RevertRule,
+            "revert-rule" if crate::pref!("layout.css.revert-rule.enabled") => Self::RevertRule,
             _ => return Err(()),
         })
     }
@@ -281,7 +281,7 @@ impl NonCustomPropertyId {
     #[inline]
     pub fn as_longhand(self) -> Option<LonghandId> {
         if self.0 < property_counts::LONGHANDS as u16 {
-            return Some(unsafe { mem::transmute(self.0 as u16) });
+            return Some(unsafe { mem::transmute(self.0) });
         }
         None
     }
@@ -336,6 +336,11 @@ impl NonCustomPropertyId {
     pub const fn from_alias(id: AliasId) -> Self {
         Self((id as u16) + (property_counts::LONGHANDS_AND_SHORTHANDS as u16))
     }
+
+    /// Iterate over all non-custom properties in arbitrary order.
+    pub fn iter() -> impl Iterator<Item = Self> {
+        (0..property_counts::NON_CUSTOM as u16).map(Self)
+    }
 }
 
 impl From<LonghandId> for NonCustomPropertyId {
@@ -361,7 +366,7 @@ impl From<AliasId> for NonCustomPropertyId {
 
 /// Representation of a CSS property, that is, either a longhand, a shorthand, or a custom
 /// property.
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
 pub enum PropertyId {
     /// An alias for a shorthand property.
     NonCustom(NonCustomPropertyId),
@@ -531,7 +536,7 @@ impl PropertyId {
                 return !context
                     .nesting_context
                     .rule_types
-                    .contains(CssRuleType::PositionTry)
+                    .contains(CssRuleType::PositionTry);
             },
             Some(id) => id,
         };
@@ -697,7 +702,7 @@ impl ShorthandId {
         self,
         declarations: &'a [&'b PropertyDeclaration],
     ) -> Option<AppendableValue<'a, 'b>> {
-        let first_declaration = declarations.get(0)?;
+        let first_declaration = declarations.first()?;
         let rest = || declarations.iter().skip(1);
 
         // https://drafts.csswg.org/css-variables/#variables-in-shorthands
@@ -767,13 +772,15 @@ fn parse_non_custom_property_declaration_value_into(
     let mut starts_with_curly_block = false;
     if let Ok(token) = input.next() {
         match token {
-            cssparser::Token::Ident(ref ident) => match CSSWideKeyword::from_ident(ident) {
-                Ok(wk) => {
-                    if input.expect_exhausted().is_ok() {
-                        return Ok(parsed_wide_keyword(declarations, wk));
-                    }
-                },
-                Err(()) => {},
+            cssparser::Token::Ident(ident) => {
+                if let Ok(wk) = CSSWideKeyword::from_ident(ident)
+                    && input.expect_exhausted().is_ok()
+                {
+                    return {
+                        parsed_wide_keyword(declarations, wk);
+                        Ok(())
+                    };
+                }
             },
             cssparser::Token::CurlyBracketBlock => {
                 starts_with_curly_block = true;
@@ -782,7 +789,7 @@ fn parse_non_custom_property_declaration_value_into(
         }
     };
 
-    input.reset(&start);
+    input.reset(start);
     input.look_for_arbitrary_substitution_functions(ARBITRARY_SUBSTITUTION_FUNCTIONS);
 
     let mut saw_arbitrary_substitution_functions = false;
@@ -822,7 +829,7 @@ fn parse_non_custom_property_declaration_value_into(
     let value = custom_properties::VariableValue::parse(
         input,
         Some(&context.namespaces.prefixes),
-        &context.url_data,
+        context.url_data,
     )?;
     parsed_custom(declarations, value);
     Ok(())
@@ -921,7 +928,7 @@ impl PropertyDeclaration {
                         custom_properties::VariableValue::parse(
                             input,
                             Some(&context.namespaces.prefixes),
-                            &context.url_data,
+                            context.url_data,
                         )?,
                     )),
                 };
@@ -1149,7 +1156,7 @@ impl<'a> PropertyDeclarationId<'a> {
     pub fn to_physical(&self, wm: WritingMode) -> Self {
         match self {
             Self::Longhand(id) => Self::Longhand(id.to_physical(wm)),
-            Self::Custom(_) => self.clone(),
+            Self::Custom(_) => *self,
         }
     }
 
@@ -1239,8 +1246,10 @@ impl IndexedId for PrioritaryPropertyId {
 
     #[inline(always)]
     unsafe fn from_index_release_unchecked(index: usize) -> Self {
-        debug_assert!(index < Self::COUNT);
-        std::mem::transmute(index as u8)
+        unsafe {
+            debug_assert!(index < Self::COUNT);
+            std::mem::transmute(index as u8)
+        }
     }
 
     #[inline(always)]
@@ -1254,8 +1263,10 @@ impl IndexedId for LonghandId {
 
     #[inline(always)]
     unsafe fn from_index_release_unchecked(index: usize) -> Self {
-        debug_assert!(index < Self::COUNT);
-        std::mem::transmute(index as u16)
+        unsafe {
+            debug_assert!(index < Self::COUNT);
+            std::mem::transmute(index as u16)
+        }
     }
 
     #[inline(always)]
@@ -1406,9 +1417,7 @@ impl<Id: IndexedId, const W: usize> IdSet<Id, W> {
     /// Clear all bits
     #[inline]
     pub fn clear(&mut self) {
-        for cell in &mut self.storage {
-            *cell = 0
-        }
+        self.storage.fill(0);
     }
 
     /// Returns whether the set is empty.
@@ -1642,8 +1651,7 @@ impl UnparsedValue {
             attr_taint,
         );
 
-        let mut input = ParserInput::new(&css);
-        let mut input = Parser::new(&mut input);
+        let mut input = Parser::new(&css);
         input.skip_whitespace();
 
         if let Ok(keyword) = input.try_parse(CSSWideKeyword::parse) {
@@ -1656,7 +1664,7 @@ impl UnparsedValue {
                 {
                     Ok(decl) => Cow::Owned(decl),
                     Err(..) => invalid_at_computed_value_time(),
-                }
+                };
             },
             Some(shorthand) => shorthand,
         };
@@ -1701,19 +1709,15 @@ impl UnparsedValue {
     }
 }
 /// A parsed all-shorthand value.
+#[derive(Default)]
 pub enum AllShorthand {
     /// Not present.
+    #[default]
     NotSet,
     /// A CSS-wide keyword.
     CSSWideKeyword(CSSWideKeyword),
     /// An all shorthand with var() references that we can't resolve right now.
     WithVariables(Arc<UnparsedValue>),
-}
-
-impl Default for AllShorthand {
-    fn default() -> Self {
-        Self::NotSet
-    }
 }
 
 impl AllShorthand {
@@ -1841,7 +1845,7 @@ impl<'a> Iterator for TransitionPropertyIterator<'a> {
                     return Some(TransitionPropertyIteration {
                         property: OwnedPropertyDeclarationId::Custom(name),
                         index,
-                    })
+                    });
                 },
                 TransitionProperty::Unsupported(..) => {},
             }

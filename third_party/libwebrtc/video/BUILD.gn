@@ -183,6 +183,7 @@ rtc_library("video") {
     "config:encoder_config",
     "render:incoming_video_stream",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/base:nullability",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
   ]
@@ -305,7 +306,6 @@ rtc_library("video_stream_buffer_controller") {
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base:macromagic",
-    "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/system:no_unique_address",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/base:core_headers",
@@ -346,13 +346,11 @@ rtc_library("frame_decode_timing") {
     "frame_decode_timing.h",
   ]
   deps = [
-    "../api:field_trials_view",
     "../api/units:time_delta",
     "../api/units:timestamp",
     "../modules/video_coding/timing:timing_module",
     "../rtc_base:checks",
     "../rtc_base:logging",
-    "../rtc_base/experiments:field_trial_parser",
     "../system_wrappers",
   ]
 }
@@ -1464,6 +1462,7 @@ if (rtc_include_tests) {
       ":video",
       "../api:field_trials",
       "../api:field_trials_view",
+      "../api/environment",
       "../api/units:frequency",
       "../api/units:time_delta",
       "../api/units:timestamp",
@@ -1471,6 +1470,7 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base/containers:flat_map",
       "../system_wrappers",
+      "../test:create_test_environment",
       "../test:create_test_field_trials",
       "../test:test_support",
       "//call",
@@ -1682,7 +1682,6 @@ if (rtc_include_tests) {
       "../modules/rtp_rtcp:rtp_video_header",
       "../modules/video_coding:codec_globals_headers",
       "../modules/video_coding:nack_requester",
-      "../rtc_base:byte_buffer",
       "../rtc_base:copy_on_write_buffer",
       "../system_wrappers",
       "../test:create_test_field_trials",
@@ -1691,8 +1690,6 @@ if (rtc_include_tests) {
       "../test:test_support",
       "../test/time_controller",
       "../test/time_controller:time_controller_impl",
-      "//call",
-      "//call:call_interfaces",
     ]
   }
 
@@ -1995,6 +1992,7 @@ if (rtc_include_tests) {
       ":task_queue_frame_decode_scheduler",
       ":video_stream_buffer_controller",
       "../api:field_trials",
+      "../api/environment",
       "../api/metronome/test:fake_metronome",
       "../api/units:frequency",
       "../api/units:time_delta",
@@ -2004,6 +2002,7 @@ if (rtc_include_tests) {
       "../modules/video_coding/timing:timing_module",
       "../rtc_base:checks",
       "../system_wrappers",
+      "../test:create_test_environment",
       "../test:create_test_field_trials",
       "../test:fake_encoded_frame",
       "../test:test_support",
@@ -2232,6 +2231,7 @@ if (rtc_include_tests) {
       ":video_stream_encoder_unittest",
       "corruption_detection:corruption_detection_unittests",
       "corruption_detection/evaluation:corruption_detection_eval_unittests",
+      "config:video_config_tests",
     ]
   }
 }

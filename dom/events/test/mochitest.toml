@@ -479,6 +479,8 @@ skip-if = [
 
 ["test_disabled_events.html"]
 
+["test_dispatch_click_in_dirty_frame_in_subdoc.html"]
+
 ["test_dnd_with_modifiers.html"]
 tags = "os_integration"
 
@@ -667,6 +669,8 @@ skip-if = [
 ["test_submitevent_on_form.html"]
 
 ["test_text_event_in_content.html"]
+
+["test_touchmove_once_per_target.html"]
 
 ["test_unbound_before_in_active_chain.html"]
 

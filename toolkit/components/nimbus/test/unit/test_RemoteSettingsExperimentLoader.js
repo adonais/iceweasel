@@ -68,10 +68,9 @@ add_task(async function test_init_with_opt_in() {
 
 add_task(async function test_updateRecipes() {
   const passRecipe = NimbusTestUtils.factories.recipe("pass", {
-    bucketConfig: {
-      ...NimbusTestUtils.factories.recipe.bucketConfig,
+    bucketConfig: NimbusTestUtils.factories.bucketConfig({
       count: 0,
-    },
+    }),
     targeting: "true",
   });
   const failRecipe = NimbusTestUtils.factories.recipe("fail", {

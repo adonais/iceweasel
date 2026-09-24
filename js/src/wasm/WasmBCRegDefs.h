@@ -60,14 +60,14 @@ static constexpr FloatRegister RabaldrScratchF32{FloatRegisters::s30,
                                                  FloatRegisters::Single};
 static constexpr FloatRegister RabaldrScratchF64{FloatRegisters::d30,
                                                  FloatRegisters::Double};
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 static constexpr FloatRegister RabaldrScratchV128{FloatRegisters::d30,
                                                   FloatRegisters::Simd128};
 #  endif
 
 static_assert(RabaldrScratchF32 != ScratchFloat32Reg_, "Too busy");
 static_assert(RabaldrScratchF64 != ScratchDoubleReg_, "Too busy");
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
 static_assert(RabaldrScratchV128 != ScratchSimd128Reg, "Too busy");
 #  endif
 #endif
@@ -130,7 +130,7 @@ static constexpr Register RabaldrScratchI32 = CallTempReg2;
 
 template <MIRType t>
 struct RegTypeOf {
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   static_assert(t == MIRType::Float32 || t == MIRType::Double ||
                     t == MIRType::Simd128,
                 "Float mask type");
@@ -148,7 +148,7 @@ template <>
 struct RegTypeOf<MIRType::Double> {
   static constexpr RegTypeName value = RegTypeName::Float64;
 };
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 template <>
 struct RegTypeOf<MIRType::Simd128> {
   static constexpr RegTypeName value = RegTypeName::Vector128;
@@ -223,7 +223,7 @@ struct RegF64 : public FloatRegister {
   static RegF64 Invalid() { return RegF64(); }
 };
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 struct RegV128 : public FloatRegister {
   RegV128() {}
   explicit RegV128(FloatRegister reg) : FloatRegister(reg) {
@@ -241,7 +241,7 @@ struct AnyReg {
     RegRef ref_;
     RegF32 f32_;
     RegF64 f64_;
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     RegV128 v128_;
 #endif
   };
@@ -252,7 +252,7 @@ struct AnyReg {
     REF,
     F32,
     F64,
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
     V128
 #endif
   } tag;
@@ -273,7 +273,7 @@ struct AnyReg {
     tag = F64;
     f64_ = r;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   explicit AnyReg(RegV128 r) {
     tag = V128;
     v128_ = r;
@@ -300,7 +300,7 @@ struct AnyReg {
     MOZ_ASSERT(tag == F64);
     return f64_;
   }
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   RegV128 v128() const {
     MOZ_ASSERT(tag == V128);
     return v128_;
@@ -317,7 +317,7 @@ struct AnyReg {
         return AnyRegister(f32_);
       case F64:
         return AnyRegister(f64_);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
       case V128:
         return AnyRegister(v128_);
 #endif
@@ -648,7 +648,7 @@ class BaseRegAlloc {
 
   bool isAvailableF64(RegF64 r) { return isAvailableFPU(r); }
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   bool isAvailableV128(RegV128 r) { return isAvailableFPU(r); }
 #endif
 
@@ -670,7 +670,7 @@ class BaseRegAlloc {
   [[nodiscard]] inline RegF64 needF64();
   inline void needF64(RegF64 specific);
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   [[nodiscard]] inline RegV128 needV128();
   inline void needV128(RegV128 specific);
 #endif
@@ -681,7 +681,7 @@ class BaseRegAlloc {
   inline void freePtr(RegPtr r);
   inline void freeF64(RegF64 r);
   inline void freeF32(RegF32 r);
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
   inline void freeV128(RegV128 r);
 #endif
 
@@ -729,7 +729,7 @@ class BaseRegAlloc {
 
     void addKnownF64(RegF64 r) { knownFPU_.add(r); }
 
-#  ifdef ENABLE_WASM_SIMD
+#  ifdef ENABLE_JIT_SIMD
     void addKnownV128(RegV128 r) { knownFPU_.add(r); }
 #  endif
 
@@ -766,7 +766,7 @@ class BaseScratchRegister {
 #endif
 };
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  ifdef RABALDR_SCRATCH_V128
 class ScratchV128 : public BaseScratchRegister {
  public:

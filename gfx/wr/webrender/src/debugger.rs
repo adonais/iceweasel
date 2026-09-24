@@ -11,7 +11,7 @@ use api::channel::{Sender, unbounded_channel};
 use api::{DebugFlags, RenderBackendId, TextureCacheCategory};
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
 use api::debugger::{FrameLogMessage, InitProfileCountersMessage, ProfileCounterId};
-use api::debugger::{CompositorDebugInfo, CompositorDebugTile, RenderDocReply};
+use api::debugger::{CompositorDebugInfo, CompositorDebugTile, RenderDocReply, SceneDebugOverride};
 use std::thread;
 use base64::prelude::*;
 use sha1::{Sha1, Digest};
@@ -70,6 +70,8 @@ pub enum DebugQueryKind {
     CompositorView {},
     /// Query the content of GPU textures
     Textures { category: Option<TextureCacheCategory> },
+    /// Query the picture / primitive tree of the current built scene
+    Scene {},
 }
 
 /// Details about the debug query being requested
@@ -305,6 +307,37 @@ async fn handle_request(
             );
             Ok(status_response(200))
         }
+        "/scene-override" => {
+            // Replace the per-primitive debug override (disabled and
+            // highlighted primitives) and re-render with it applied.
+            match request.method() {
+                &hyper::Method::POST => {
+                    let content = request_to_string(request).await.unwrap();
+                    let debug_override: SceneDebugOverride = match serde_json::from_str(&content) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            return Ok(string_response(format!("Invalid scene override: {}", err)));
+                        }
+                    };
+                    let (tx, rx) = unbounded_channel();
+                    api.send_debug_cmd(
+                        DebugCommand::SetSceneDebugOverride(debug_override, tx)
+                    );
+                    let reply = match rx.recv() {
+                        Ok(Ok(())) => {
+                            api.send_debug_cmd(DebugCommand::GenerateFrame);
+                            "ok".to_string()
+                        }
+                        Ok(Err(msg)) => msg,
+                        Err(..) => "No response received from WR".to_string(),
+                    };
+                    Ok(string_response(reply))
+                }
+                _ => {
+                    Ok(status_response(403))
+                }
+            }
+        }
         "/renderdoc-capture" => {
             // Capture the next composited frame with RenderDoc, replying with
             // the path of the written .rdc (or an error message).
@@ -340,6 +373,7 @@ async fn handle_request(
                 Some("target-textures") => DebugQueryKind::Textures { category: Some(TextureCacheCategory::RenderTarget) },
                 Some("tile-textures") => DebugQueryKind::Textures { category: Some(TextureCacheCategory::PictureTile) },
                 Some("standalone-textures") => DebugQueryKind::Textures { category: Some(TextureCacheCategory::Standalone) },
+                Some("scene") => DebugQueryKind::Scene {},
                 _ => {
                     return Ok(string_response("Unknown query"));
                 }

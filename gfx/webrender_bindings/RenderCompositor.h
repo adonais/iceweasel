@@ -32,6 +32,7 @@ namespace wr {
 
 class RenderCompositorLayersSWGL;
 class RenderCompositorD3D11SWGL;
+class RenderTextureHost;
 
 class RenderCompositor {
  public:
@@ -133,7 +134,7 @@ class RenderCompositor {
   virtual void CompositorBeginFrame() {}
   virtual void CompositorEndFrame() {}
   virtual void Bind(wr::NativeTileId aId, wr::DeviceIntPoint* aOffset,
-                    uint32_t* aFboId, wr::DeviceIntRect aDirtyRect,
+                    uint64_t* aSurfaceHandle, wr::DeviceIntRect aDirtyRect,
                     wr::DeviceIntRect aValidRect) {}
   virtual void Unbind() {}
   virtual bool MapTile(wr::NativeTileId aId, wr::DeviceIntRect aDirtyRect,
@@ -242,6 +243,8 @@ class RenderCompositor {
   virtual RefPtr<layers::Fence> GetAndResetReleaseFence() { return nullptr; }
 
   virtual bool IsPaused() { return false; }
+
+  virtual void MaybeWaitingForPendingReadFence(RenderTextureHost* aTexture) {}
 
  protected:
   // We default this to 2, so that mLatestRenderFrameId.Prev() is always valid.

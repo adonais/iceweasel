@@ -32,13 +32,12 @@ add_task(async function test_searchmode_switcher_exposed_once() {
   let accService = Cc["@mozilla.org/accessibilityService;1"].getService(
     Ci.nsIAccessibilityService
   );
-  let container = gURLBar.querySelector(".urlbar-input-container");
   let button = switcher.shadowRoot.querySelector("button");
-  let containerAcc, buttonAcc;
+  let barAcc, buttonAcc;
   await TestUtils.waitForCondition(() => {
-    containerAcc = accService.getAccessibleFor(container);
+    barAcc = accService.getAccessibleFor(gURLBar);
     buttonAcc = accService.getAccessibleFor(button);
-    return containerAcc && buttonAcc;
+    return barAcc && buttonAcc;
   }, "Waiting for the accessibility service to expose the search mode switcher");
 
   is(
@@ -48,8 +47,8 @@ add_task(async function test_searchmode_switcher_exposed_once() {
   );
   is(
     buttonAcc.parent,
-    containerAcc,
-    "The button's host contributes no accessible of its own"
+    barAcc,
+    "The button's host and the input container contribute no accessible of their own"
   );
   let dropmarkerLabel = switcher.querySelector(
     ".searchmode-switcher-dropmarker"

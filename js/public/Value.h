@@ -924,8 +924,6 @@ class Value {
 
   bool operator==(const Value& rhs) const = default;
 
-  bool operator!=(const Value& rhs) const = default;
-
   friend inline bool SameType(const Value& lhs, const Value& rhs);
 
   /*** Extract the value's typed payload ***/

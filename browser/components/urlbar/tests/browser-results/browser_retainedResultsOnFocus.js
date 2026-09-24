@@ -427,12 +427,12 @@ add_task(async function test_rowReuse() {
     win.gURLBar.blur();
   });
 
-  // Wait until breakout-extend stops.
+  // Wait until the bar collapses.
   // This will test if row caching based on the urlbar width works
-  // even when the width changes due to breakout-extend (bug 2037933).
+  // even when the width changes with the popover (bug 2037933).
   await TestUtils.waitForCondition(
-    () => !win.gURLBar.hasAttribute("breakout-extend"),
-    "Wait for breakout-extend to finish"
+    () => !win.gURLBar.matches(":popover-open"),
+    "Wait for the popover to close"
   );
 
   // Don't use promiseAutocompleteResultPopup.

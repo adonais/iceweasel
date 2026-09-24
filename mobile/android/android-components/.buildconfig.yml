@@ -425,6 +425,23 @@ projects:
     - components:support-utils
     - components:tooling-lint
     - components:ui-icons
+  components:compose-menu:
+    description: A customizable menu using Jetpack Compose.
+    path: components/compose/menu
+    publish: true
+    upstream_dependencies:
+    - components:compose-base
+    - components:concept-base
+    - components:concept-fetch
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:support-base
+    - components:support-ktx
+    - components:support-test
+    - components:support-utils
+    - components:tooling-lint
+    - components:ui-colors
+    - components:ui-icons
   components:compose-tabstray:
     description: A customizable tabs tray using Jetpack Compose.
     path: components/compose/tabstray
@@ -803,7 +820,25 @@ projects:
     path: components/feature/automotive
     publish: true
     upstream_dependencies:
+    - components:browser-errorpages
+    - components:browser-state
+    - components:concept-awesomebar
+    - components:concept-base
+    - components:concept-engine
+    - components:concept-fetch
+    - components:concept-storage
+    - components:concept-storage-bookmarks
+    - components:feature-media
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:service-nimbus
+    - components:support-base
+    - components:support-ktx
+    - components:support-locale
+    - components:support-test
+    - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
   components:feature-awesomebar:
     description: Component connecting a concept-toolbar with a concept-awesomebar.
     path: components/feature/awesomebar
@@ -1190,21 +1225,14 @@ projects:
     path: components/feature/listentopage
     publish: true
     upstream_dependencies:
-    - components:browser-errorpages
-    - components:browser-state
     - components:compose-base
-    - components:concept-awesomebar
     - components:concept-base
-    - components:concept-engine
     - components:concept-fetch
-    - components:concept-storage
-    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
     - components:support-ktx
     - components:support-test
-    - components:support-test-libstate
     - components:support-utils
     - components:tooling-lint
     - components:ui-colors
@@ -2628,7 +2656,9 @@ projects:
     path: components/service/firefox-accounts
     publish: true
     upstream_dependencies:
+    - components:browser-errorpages
     - components:concept-base
+    - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
     - components:concept-storage-bookmarks
@@ -2639,9 +2669,11 @@ projects:
     - components:support-base
     - components:support-ktx
     - components:support-test
+    - components:support-test-fakes
     - components:support-test-libstate
     - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
   components:service-firefox-relay:
     description: A library to communicate with the Relay services API
     path: components/service/firefox-relay

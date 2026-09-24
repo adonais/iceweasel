@@ -1204,14 +1204,6 @@ bool nsWindow::WorkspaceManagementDisabled() {
   return desktop.EqualsLiteral("bspwm") || desktop.EqualsLiteral("i3");
 }
 
-void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
-  workspaceID.Truncate();
-}
-
-void nsWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
-  LOG("  MoveToWorkspace disabled, quit");
-}
-
 void nsWindow::SetUserTimeAndStartupTokenForActivatedWindow() {
   nsGTKToolkit* toolkit = nsGTKToolkit::GetToolkit();
   if (!toolkit) {
@@ -3199,6 +3191,9 @@ void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
     // dispatching an activation notification if the widget is already
     // active.
     gFocusWindow = this;
+    if (mIMContext) {
+      mIMContext->OnFocusWindow(this);
+    }
   }
 
   LOG("Events sent from focus in event");
@@ -4169,7 +4164,10 @@ nsCString nsWindow::GetPopupTypeName() {
 Window nsWindow::GetX11Window() {
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
-    return gdk_x11_window_get_xid(mGdkWindow);
+    // mGdkWindow is set on realize signal at nsWindow::Create()
+    // and removed on nsWindow::::Destroy(). Looks like we're painting
+    // outside of that rendering window.
+    return mGdkWindow ? gdk_x11_window_get_xid(mGdkWindow) : (Window) nullptr;
   }
 #endif
   return (Window) nullptr;

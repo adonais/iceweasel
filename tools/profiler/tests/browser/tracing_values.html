@@ -9,6 +9,14 @@
 
     run(42);
     run(document.createElement("div"));
+
+    // More properties than JS::ValueSummary::MAX_COLLECTION_VALUES, so that
+    // the recorded shape gets truncated. See bug 1995443.
+    const manyProperties = {};
+    for (let i = 0; i < 20; i++) {
+      manyProperties["prop" + i] = i;
+    }
+    run(manyProperties);
   </script>
 </head>
 <body testAttr="foo">

@@ -12,8 +12,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <memory>
-#include <optional>
 #include <span>
 
 #include "api/make_ref_counted.h"
@@ -21,27 +19,11 @@
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/sframe/sframe_types.h"
+#include "modules/sframe/sframe_context_factory.h"
 #include "third_party/sframe/src/include/sframe/result.h"
 #include "third_party/sframe/src/include/sframe/sframe.h"
 
 namespace webrtc {
-
-namespace {
-sframe::CipherSuite ToSframeCipherSuite(SframeCipherSuite suite) {
-  switch (suite) {
-    case SframeCipherSuite::kAes128CtrHmacSha256_80:
-      return sframe::CipherSuite::AES_128_CTR_HMAC_SHA256_80;
-    case SframeCipherSuite::kAes128CtrHmacSha256_64:
-      return sframe::CipherSuite::AES_128_CTR_HMAC_SHA256_64;
-    case SframeCipherSuite::kAes128CtrHmacSha256_32:
-      return sframe::CipherSuite::AES_128_CTR_HMAC_SHA256_32;
-    case SframeCipherSuite::kAes128GcmSha256_128:
-      return sframe::CipherSuite::AES_GCM_128_SHA256;
-    case SframeCipherSuite::kAes256GcmSha512_128:
-      return sframe::CipherSuite::AES_GCM_256_SHA512;
-  }
-}
-}  // namespace
 
 scoped_refptr<SframeEncryptor> SframeEncryptor::Create(
     SframeMode mode,
@@ -53,8 +35,7 @@ SframeEncryptor::SframeEncryptor(SframeMode mode,
                                  SframeCipherSuite cipher_suite)
     : sequence_checker_(SequenceChecker::kDetached),
       mode_(mode),
-      context_(std::make_unique<sframe::Context>(
-          ToSframeCipherSuite(cipher_suite))) {}
+      context_(CreateSframeContext(cipher_suite)) {}
 
 SframeEncryptor::~SframeEncryptor() = default;
 

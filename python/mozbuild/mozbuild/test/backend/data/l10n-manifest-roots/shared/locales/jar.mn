@@ -1,0 +1,4 @@
+#filter substitution
+
+@AB_CD@.jar:
+  locale/@AB_CD@/shared/shared.properties (en-US/shared.properties)

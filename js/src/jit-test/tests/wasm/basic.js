@@ -1,3 +1,5 @@
+// |jit-test| test-also=--setpref=wasm_baseline_debug=true; skip-variant-if: --setpref=wasm_baseline_debug=true, wasmCompileMode() == "ion"
+
 const { LinkError } = WebAssembly;
 
 // ----------------------------------------------------------------------------
@@ -221,8 +223,14 @@ wasmValidateText('(module (func (nop)) (func (call 0)))');
 wasmValidateText('(module (func (param i32) (nop)) (func (call 0 (i32.const 0))))');
 
 wasmFullPass('(module (func (result i32) (i32.const 42)) (func (result i32) (call 0)) (export "run" (func 1)))', 42);
-assertThrowsInstanceOf(() => wasmEvalText('(module (func (call 0)) (export "" (func 0)))').exports[""](), InternalError);
-assertThrowsInstanceOf(() => wasmEvalText('(module (func (call 1)) (func (call 0)) (export "" (func 0)))').exports[""](), InternalError);
+
+// These two both get stack overflows, and take a long time (> 1 min) to run on
+// an optimised, debug build, when wasm_baseline_debug==true.  So skip in that case.
+// See bug 2068514.
+if (getPrefValue("wasm_baseline_debug") === false) {
+  assertThrowsInstanceOf(() => wasmEvalText('(module (func (call 0)) (export "" (func 0)))').exports[""](), InternalError);
+  assertThrowsInstanceOf(() => wasmEvalText('(module (func (call 1)) (func (call 0)) (export "" (func 0)))').exports[""](), InternalError);
+}
 
 wasmValidateText('(module (func (param i32 f32)) (func (call 0 (i32.const 0) (f32.const nan))))');
 wasmFailValidateText('(module (func (param i32 f32)) (func (call 0 (i32.const 0) (i32.const 0))))', mismatchError("i32", "f32"));

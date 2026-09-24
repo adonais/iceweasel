@@ -140,7 +140,6 @@ static FILE* gInFile = nullptr;
 
 static int gExitCode = 0;
 static bool gQuitting = false;
-static bool reportWarnings = true;
 static bool compileOnly = false;
 
 static JSPrincipals* gJSPrincipals = nullptr;
@@ -888,11 +887,7 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
     }
     switch (argv[i][1]) {
       case 'W':
-        reportWarnings = false;
-        break;
       case 'w':
-        reportWarnings = true;
-        break;
       case 'x':
         break;
       case 'd':

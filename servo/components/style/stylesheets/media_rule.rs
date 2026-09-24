@@ -6,14 +6,14 @@
 //!
 //! [media]: https://drafts.csswg.org/css-conditional/#at-ruledef-media
 
+use crate::Atom;
 use crate::derives::*;
 use crate::media_queries::MediaList;
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
 use crate::shared_lock::{DeepCloneWithLock, Locked};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::stylesheets::CssRules;
-use crate::values::{computed, DashedIdent};
-use crate::Atom;
+use crate::values::{DashedIdent, computed};
 use cssparser::Parser;
 use cssparser::SourceLocation;
 #[cfg(feature = "gecko")]
@@ -65,7 +65,7 @@ impl DeepCloneWithLock for MediaRule {
         MediaRule {
             media_queries: Arc::new(lock.wrap(media_queries.clone())),
             rules: Arc::new(lock.wrap(rules.deep_clone_with_lock(lock, guard))),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }
@@ -96,9 +96,7 @@ impl DeepCloneWithLock for CustomMediaCondition {
         match self {
             Self::True => Self::True,
             Self::False => Self::False,
-            Self::MediaList(ref m) => {
-                Self::MediaList(Arc::new(lock.wrap(m.read_with(guard).clone())))
-            },
+            Self::MediaList(m) => Self::MediaList(Arc::new(lock.wrap(m.read_with(guard).clone()))),
         }
     }
 }
@@ -120,7 +118,7 @@ impl DeepCloneWithLock for CustomMediaRule {
         Self {
             name: self.name.clone(),
             condition: self.condition.deep_clone_with_lock(lock, guard),
-            source_location: self.source_location.clone(),
+            source_location: self.source_location,
         }
     }
 }
@@ -180,7 +178,7 @@ impl<'a> CustomMediaEvaluator<'a> {
         let media = match condition {
             CustomMediaCondition::True => return KleeneValue::True,
             CustomMediaCondition::False => return KleeneValue::False,
-            CustomMediaCondition::MediaList(ref m) => m,
+            CustomMediaCondition::MediaList(m) => m,
         };
         if !self.currently_evaluating.insert(ident.0.clone()) {
             // Found a cycle while evaluating this rule.
@@ -188,6 +186,6 @@ impl<'a> CustomMediaEvaluator<'a> {
         }
         let result = media.read_with(guard).matches(context, self);
         self.currently_evaluating.remove(&ident.0);
-        result.into()
+        result
     }
 }

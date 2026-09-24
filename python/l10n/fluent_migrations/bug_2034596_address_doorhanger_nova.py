@@ -14,7 +14,9 @@ def migrate(ctx):
         [
             FTL.Message(
                 id=FTL.Identifier("address-capture-edit-address-link"),
-                value=COPY_PATTERN(path, "address-capture-edit-address-button.aria-label"),
+                value=COPY_PATTERN(
+                    path, "address-capture-edit-address-button.aria-label"
+                ),
                 attributes=[
                     FTL.Attribute(
                         id=FTL.Identifier("aria-label"),

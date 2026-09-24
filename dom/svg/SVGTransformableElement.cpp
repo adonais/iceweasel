@@ -21,10 +21,10 @@ SVGTransformableElement::Transform() {
 //----------------------------------------------------------------------
 // nsIContent methods
 
-bool SVGTransformableElement::IsAttributeMapped(
+bool SVGTransformableElement::IsNoNamespaceAttrMapped(
     const nsAtom* aAttribute) const {
   return aAttribute == nsGkAtoms::transform ||
-         SVGElement::IsAttributeMapped(aAttribute);
+         SVGElement::IsNoNamespaceAttrMapped(aAttribute);
 }
 
 bool SVGTransformableElement::IsEventAttributeNameInternal(nsAtom* aName) {

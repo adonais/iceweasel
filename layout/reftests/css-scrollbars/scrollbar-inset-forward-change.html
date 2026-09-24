@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html class="reftest-wait">
+<!-- Applies the embedder's inset after the subdocument has loaded and laid out.
+     Matches the statically-inset reference only if the change propagates and
+     reflows the subdocument's scrollbar, i.e. SetEmbedderScrollbarInset ->
+     MarkScrollbarsDirtyForReflow. Uses a class toggle because CSSOM
+     setProperty() is a silent no-op for chrome-only properties. -->
+<style>
+  iframe {
+    width: 200px;
+    height: 300px;
+    border: none;
+  }
+  iframe.inset {
+    -moz-scrollbar-inset-block: 40px 0;
+  }
+</style>
+<iframe src="scrollbar-inset-forward-inner.html"></iframe>
+<script>
+  const iframe = document.querySelector("iframe");
+  iframe.addEventListener("load", () => {
+    // Force the un-inset scrollbar geometry to be computed first.
+    iframe.contentDocument.documentElement.offsetHeight;
+    iframe.classList.add("inset");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.documentElement.removeAttribute("class")));
+  });
+</script>

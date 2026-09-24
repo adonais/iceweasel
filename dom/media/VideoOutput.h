@@ -5,6 +5,7 @@
 #ifndef VideoOutput_h
 #define VideoOutput_h
 
+#include "MediaInfo.h"
 #include "MediaTrackListener.h"
 #include "VideoFrameContainer.h"
 
@@ -99,11 +100,11 @@ class VideoOutput : public DirectMediaTrackListener {
         // We ignore null images.
         continue;
       }
-      ImageContainer::NonOwningImage nonOwningImage(
+      images.AppendElement(ImageContainer::NonOwningImage(
           image, chunk.mTimeStamp, frameId, mProducerID,
           chunk.mProcessingDuration, chunk.mMediaTime, chunk.mWebrtcCaptureTime,
-          chunk.mWebrtcReceiveTime, chunk.mRtpTimestamp);
-      images.AppendElement(std::move(nonOwningImage));
+          chunk.mWebrtcReceiveTime, chunk.mRtpTimestamp,
+          Some(chunk.mRotation)));
 
       lastPrincipalHandle = chunk.GetPrincipalHandle();
 
@@ -132,6 +133,7 @@ class VideoOutput : public DirectMediaTrackListener {
 
     mVideoFrameContainer->SetCurrentFrames(
         mFrames[0].second.mFrame.GetIntrinsicSize(), images);
+
     mMainThread->Dispatch(NewRunnableMethod("VideoFrameContainer::Invalidate",
                                             mVideoFrameContainer,
                                             &VideoFrameContainer::Invalidate));

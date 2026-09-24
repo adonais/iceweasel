@@ -5,11 +5,22 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
   _AdsClient: "resource://newtab/lib/AdsClient.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 const PREF_UNIFIED_ADS_ADSCLIENT_ENABLED = "unifiedAds.adsClient.enabled";
+
+let gSandbox;
+add_setup(() => {
+  gSandbox = lazy.sinon.createSandbox();
+  registerCleanupFunction(() => {
+    gSandbox.restore();
+  });
+});
 
 add_setup(function test_setup_fog() {
   do_get_profile();
@@ -182,4 +193,67 @@ add_task(function test_buildTelemetry_resolvesMetricsLate() {
     "recorded once available",
     "the late-registered category is used without rebuilding the client"
   );
+});
+
+add_task(async function test_shutdown_blocker() {
+  Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
+
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(
+    !adsClient.hasShutdown,
+    "adsClient should not be uninitialized yet"
+  );
+
+  const client = adsClient.getClient();
+  Assert.ok(client, "getClient builds and returns a MozAdsClient");
+
+  await lazy.TestUtils.waitForTick();
+  gSandbox.spy(adsClient, "uninit");
+
+  // Simulate shutdown.
+  lazy.AsyncShutdown.profileChangeTeardown._trigger();
+  await lazy.TestUtils.waitForTick();
+  await lazy.TestUtils.waitForCondition(
+    () => adsClient.uninit.calledOnce,
+    "The `uninit` function should be called on shutdown"
+  );
+  Assert.ok(adsClient.hasShutdown, "adsClient should now be uninitialized");
+
+  lazy.AsyncShutdown.profileChangeTeardown._reset();
+  Services.prefs.clearUserPref("toolkit.asyncshutdown.testing");
+  gSandbox.restore();
+});
+
+add_task(async function test_dont_register_blocker_if_in_shutdown() {
+  // Test a corner case: the AdsClient is initialized during shutdown.
+  //
+  // In this case it shouldn't register a shutdown blocker, because it's too late to do that.
+  // Instead, it should just stop the initialization (which is lazy and only triggers on getClient()) and return `null`.
+  //
+  // See adjacent bug for ContextRelevancyManager https://bugzilla.mozilla.org/show_bug.cgi?id=1990569
+  Services.prefs.setBoolPref("toolkit.asyncshutdown.testing", true);
+  await lazy.TestUtils.waitForTick();
+
+  const adsClient = new lazy._AdsClient();
+  Assert.ok(!adsClient.hasShutdown, "adsClient not be uninitialized yet");
+  gSandbox.spy(adsClient, "uninit");
+
+  // Simulate shutdown.
+  lazy.AsyncShutdown.profileChangeTeardown._trigger();
+  Assert.ok(
+    !adsClient.hasShutdown,
+    "adsClient should not have shut down before creation"
+  );
+
+  // Now attempt to create instance, but ensure it doesn't create.
+  // `uninit` function will not get called here.
+  Assert.equal(
+    adsClient.getClient(),
+    null,
+    "adsClient should be null on creation if past profileChangeTeardown"
+  );
+
+  lazy.AsyncShutdown.profileChangeTeardown._reset();
+  Services.prefs.clearUserPref("toolkit.asyncshutdown.testing");
+  gSandbox.restore();
 });

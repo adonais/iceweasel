@@ -182,7 +182,7 @@ class gfxWindowsPlatform final : public gfxPlatform {
   void InitWebRenderConfig() override;
   void InitPlatformHardwareVideoConfig() override;
 #ifdef MOZ_WMF_CDM
-  void InitPlatformHardwarDRMConfig() override;
+  void InitPlatformHardwareDRMConfig() override;
 #endif
 
   void InitializeDevices();

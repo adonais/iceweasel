@@ -6,10 +6,17 @@ support-files = [
 
 ["browser_autocomplete.js"]
 
+["browser_autocomplete_color_scheme.js"]
+
 ["browser_close_tab.js"]
 
 
 ["browser_popup_mouseover.js"]
+skip-if = [
+  "verify-standalone",
+]
+
+["browser_popup_secondary_action.js"]
 skip-if = [
   "verify-standalone",
 ]

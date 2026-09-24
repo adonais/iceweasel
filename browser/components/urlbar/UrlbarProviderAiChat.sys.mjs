@@ -3,11 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * @typedef {import("../aiwindow/ui/actors/AISmartBarParent.sys.mjs").AISmartBarParent} AISmartBarParent
+ * @import {AISmartBarParent} from "moz-src:///browser/components/aiwindow/ui/actors/AISmartBarParent.sys.mjs"
+ * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
  */
 import {
   SkippableTimer,
   UrlbarProvider,
+  UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
@@ -104,10 +106,11 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
    *   The query context object
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
+   * @param {UrlbarParentController} controller The controller instance.
    * @returns {Promise<void>}
    * @abstract
    */
-  async startQuery(queryContext, addCallback) {
+  async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;
     let canReturnHeuristicResult = queryContext.sapName != "urlbar";
 
@@ -155,7 +158,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
       let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
         queryContext.isPrivate
       );
-      let icon = await engine.getIconURL();
+      let icon = await UrlbarUtils.getEngineIconUrl(engine, controller);
       if (instance != this.queryInstance) {
         return;
       }
@@ -179,6 +182,11 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController & {input: SmartbarInput}} controller
+   * @param {object} details
+   */
   async onEngagement(queryContext, controller, details) {
     let win = controller.input.inputField.documentGlobal;
     /** @type {AISmartBarParent} */
@@ -202,6 +210,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
           browser.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
       }
     } else {
+      // @ts-expect-error bug 1957626
       actor = win.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
     }
     if (!actor) {

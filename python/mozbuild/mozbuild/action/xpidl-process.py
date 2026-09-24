@@ -59,9 +59,9 @@ def process(
         idl = p.parse(idl_data, filename=path)
         idl.resolve(inc_paths, p, webidlconfig)
 
-        header_path = os.path.join(header_dir, "%s.h" % stem)
-        rs_rt_path = os.path.join(xpcrs_dir, "rt", "%s.rs" % stem)
-        rs_bt_path = os.path.join(xpcrs_dir, "bt", "%s.rs" % stem)
+        header_path = os.path.join(header_dir, f"{stem}.h")
+        rs_rt_path = os.path.join(xpcrs_dir, "rt", f"{stem}.rs")
+        rs_bt_path = os.path.join(xpcrs_dir, "bt", f"{stem}.rs")
 
         xpts.append(jsonxpt.build_typelib(idl))
         ts_data.append(typescript.ts_source(idl))
@@ -92,7 +92,7 @@ def process(
     # files to be changed in any way. This means that make will re-run us every
     # time a build is run whether or not anything changed. To fix this we
     # unconditionally write out the file.
-    xpt_path = os.path.join(xpt_dir, "%s.xpt" % module)
+    xpt_path = os.path.join(xpt_dir, f"{module}.xpt")
     with open(xpt_path, "w", encoding="utf-8", newline="\n") as fh:
         jsonxpt.write(jsonxpt.link(xpts), fh)
 
@@ -105,7 +105,7 @@ def process(
 
     rule.add_targets([xpt_path])
     if deps_dir:
-        deps_path = os.path.join(deps_dir, "%s.pp" % module)
+        deps_path = os.path.join(deps_dir, f"{module}.pp")
         with FileAvoidWrite(deps_path) as fh:
             mk.dump(fh)
 

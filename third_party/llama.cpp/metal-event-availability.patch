@@ -1,0 +1,32 @@
+# Firefox-local: -[MTLSharedEvent waitUntilSignaledValue:timeoutMS:] is only
+# available on macOS 12, and we deploy down to 10.15 (11.0 on aarch64), so the
+# unguarded call is a -Wunguarded-availability-new error and a missing selector
+# at runtime. Guard it and poll on older systems.
+#
+--- a/ggml/src/ggml-metal/ggml-metal-device-m.m
++++ b/ggml/src/ggml-metal/ggml-metal-device-m.m
+@@ -1030,9 +1030,21 @@
+ 
+ void ggml_metal_device_event_synchronize(ggml_metal_device_t dev, ggml_metal_event_t ev) {
+     id<MTLSharedEvent> event = ev->obj;
+-    const bool res = [event waitUntilSignaledValue:atomic_load_explicit(&ev->value, memory_order_relaxed) timeoutMS:60000];
+-    if (!res) {
+-        GGML_ABORT("%s: failed to wait for event\n", __func__);
++    const uint64_t value = atomic_load_explicit(&ev->value, memory_order_relaxed);
++
++    if (@available(macOS 12.0, iOS 15.0, tvOS 15.0, visionOS 1.0, *)) {
++        if (![event waitUntilSignaledValue:value timeoutMS:60000]) {
++            GGML_ABORT("%s: failed to wait for event\n", __func__);
++        }
++    } else {
++        // -waitUntilSignaledValue:timeoutMS: is only available on macOS 12,
++        // below the deployment target, so poll for the same 60 seconds.
++        for (int i = 0; event.signaledValue < value; i++) {
++            if (i == 60000) {
++                GGML_ABORT("%s: failed to wait for event\n", __func__);
++            }
++            usleep(1000);
++        }
+     }
+ 
+     GGML_UNUSED(dev);

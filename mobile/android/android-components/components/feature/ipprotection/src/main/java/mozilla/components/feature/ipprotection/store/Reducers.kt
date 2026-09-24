@@ -13,6 +13,7 @@ import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.Country
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.feature.ipprotection.store.state.LocationListUpdateState
 import mozilla.components.feature.ipprotection.store.state.LocationState
 import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
 import mozilla.components.feature.ipprotection.store.state.ProxyActivation
@@ -87,6 +88,16 @@ internal fun iPProtectionReducer(
                     else -> state.proxyActivation
                 }
 
+            val newLocationState =
+                if (
+                    action.info.serviceState == ServiceState.Ready &&
+                        state.locationState.updateState == LocationListUpdateState.NotRequested
+                ) {
+                    state.locationState.copy(updateState = LocationListUpdateState.Requested)
+                } else {
+                    state.locationState
+                }
+
             state.copy(
                 remainingDataBytes = action.info.remaining,
                 maxDataBytes = action.info.max,
@@ -97,6 +108,7 @@ internal fun iPProtectionReducer(
                 lastError = action.info.lastError,
                 proxyActivation = newProxyActivation,
                 pendingActivationRequest = newPendingActivationRequest,
+                locationState = newLocationState,
             )
         }
 
@@ -111,6 +123,7 @@ internal fun iPProtectionReducer(
                                     Country(countryCode = it.code, available = it.available)
                                 },
                         previousLocation = state.locationState.previousLocation,
+                        updateState = LocationListUpdateState.Updated,
                     )
             )
         }
@@ -222,6 +235,15 @@ internal fun iPProtectionReducer(
             state.copy(pendingActivationRequest = null, accountState = accountState)
         }
 
+        is IPProtectionAction.ActivationRequestCompleted -> {
+            // Only clear the request this reply is for. A different one may have been queued in the meantime.
+            if (state.pendingActivationRequest == action.request) {
+                state.copy(pendingActivationRequest = null)
+            } else {
+                state
+            }
+        }
+
         is IPProtectionAction.LocationSwitchFailed -> {
             state.copy(
                 pendingActivationRequest = null,
@@ -231,6 +253,24 @@ internal fun iPProtectionReducer(
                         previousLocation = null,
                     ),
             )
+        }
+
+        is IPProtectionAction.LocationUpdateFailed -> {
+            // Edge case: the user might log out while the request is in progress. Logging out does
+            // reset the update state, so a failed request after a reset should be ignored.
+            if (state.locationState.updateState == LocationListUpdateState.Requested) {
+                state.copy(locationState = state.locationState.copy(updateState = LocationListUpdateState.Failed))
+            } else {
+                state
+            }
+        }
+
+        is IPProtectionAction.CheckLocations -> {
+            if (state.locationState.updateState == LocationListUpdateState.Failed) {
+                state.copy(locationState = state.locationState.copy(updateState = LocationListUpdateState.Requested))
+            } else {
+                state
+            }
         }
 
         is IPProtectionAction.CheckAccount -> {
@@ -248,10 +288,8 @@ internal fun iPProtectionReducer(
                 pendingActivationRequest =
                     // Authorized.Activating state could be problematic here: if the user turns vpn on and that toggle
                     // is taking a lot of time, then changing a country won't make an additional request, but the UI
-                    // will be showing the newly selected country. We already had problems with spamming activation
-                    // request to the toolkit code while it's still processing the previous one, we probably want to
-                    // prevent user from being able to toggle the countries while the proxy is in activating state,
-                    // but that requires UX change - tracked here: https://bugzilla.mozilla.org/show_bug.cgi?id=2065317
+                    // will be showing the newly selected country. The location picker is disabled while an activation
+                    // is in flight so the user cannot reach this, but a location restored from the cache still can.
                     if (state.proxyStatus == Authorized.Active) {
                         PendingActivationRequest.Activate(action.location.countryCode, isLocationSwitch = true)
                     } else {
@@ -262,6 +300,7 @@ internal fun iPProtectionReducer(
                         selectedLocation = action.location,
                         locations = state.locationState.locations,
                         previousLocation = state.locationState.selectedLocation,
+                        updateState = state.locationState.updateState,
                     ),
             )
 
@@ -271,8 +310,11 @@ internal fun iPProtectionReducer(
                     LocationState(
                         selectedLocation = Recommended,
                         locations = state.locationState.locations,
+                        updateState = state.locationState.updateState,
                     )
             )
+
+        is IPProtectionAction.PersistedLocationUnavailable -> state
 
         is InternalAction -> internalReducer(state, action)
     }
@@ -360,6 +402,7 @@ private fun IPProtectionState.clearProfileData(action: InternalAction.AccountMan
         proxyActivation = ProxyActivation.Idle,
         pendingActivationRequest = PendingActivationRequest.Deactivate,
         accountState = accountState.copy(status = action.status),
+        locationState = LocationState(),
     )
 }
 

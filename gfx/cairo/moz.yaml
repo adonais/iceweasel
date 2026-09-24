@@ -94,6 +94,7 @@ vendoring:
     - patches/0048-Bug-2054626-type2-decode-integer.patch
     - patches/0049-Bug-2054627-skip-token-check.patch
     - patches/0050-Bug-2065397-array-bounds-check.patch
+    - patches/0051-Bug-2068367-bitmap-surface-tmp-buffer.patch
 
 updatebot:
   maintainer-phab: "#gfx-reviewers"

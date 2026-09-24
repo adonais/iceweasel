@@ -19,6 +19,17 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
     super();
   }
 
+  /**
+   * Gets the value of the pref
+   * browser.ipProtection.features.siteInclusions.
+   */
+  get isSiteInclusionsFeatureEnabled() {
+    return Services.prefs.getBoolPref(
+      "browser.ipProtection.features.siteInclusions",
+      false
+    );
+  }
+
   handleOptIn() {
     this.dispatchEvent(
       new CustomEvent("IPProtection:OptIn", { bubbles: true, composed: true })
@@ -83,6 +94,11 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
               ></a>
             </span>
           </li>
+          ${this.isSiteInclusionsFeatureEnabled
+            ? html`<li id="unauthenticated-site-rules" class="with-icon">
+                <span data-l10n-id="unauthenticated-site-rules-message"></span>
+              </li>`
+            : null}
           <li id="unauthenticated-choose-location" class="with-icon">
             <span
               data-l10n-id="unauthenticated-choose-location-message-1"

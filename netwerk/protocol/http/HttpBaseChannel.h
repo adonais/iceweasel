@@ -254,8 +254,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetDocumentURI(nsIURI* aDocumentURI) override;
   NS_IMETHOD GetRequestVersion(uint32_t* major, uint32_t* minor) override;
   NS_IMETHOD GetResponseVersion(uint32_t* major, uint32_t* minor) override;
-  NS_IMETHOD SetCookieHeaders(
-      const nsTArray<nsCString>& aCookieHeaders) override;
   NS_IMETHOD GetThirdPartyFlags(uint32_t* aForce) override;
   NS_IMETHOD SetThirdPartyFlags(uint32_t aForce) override;
   NS_IMETHOD GetForceAllowThirdPartyCookie(bool* aForce) override;
@@ -689,6 +687,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
   void MaybeFlushConsoleReports();
 
   bool IsBrowsingContextDiscarded() const;
+
+  // Sets cookies on the cookie service using consumer-provided Set-Cookie
+  // header values, but using this channel's other information (URI,
+  // prompters, date headers etc).
+  nsresult SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders);
 
   nsresult ProcessCrossOriginEmbedderPolicyHeader();
 

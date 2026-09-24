@@ -97,6 +97,7 @@ class DeviceManagerDx final {
 
   void PostUpdateMonitorInfo();
   void UpdateMonitorInfo();
+  uint32_t MonitorColorSpaceBitfield();
   bool SystemHDREnabled();
   bool WindowHDREnabled(HWND aWindow);
   bool MonitorHDREnabled(HMONITOR aMonitor);
@@ -222,6 +223,7 @@ class DeviceManagerDx final {
   Maybe<DeviceResetReason> mDeviceResetReason MOZ_GUARDED_BY(mDeviceLock);
   RefPtr<Runnable> mUpdateMonitorInfoRunnable MOZ_GUARDED_BY(mDeviceLock);
   Maybe<bool> mSystemHdrEnabled MOZ_GUARDED_BY(mDeviceLock);
+  uint32_t mMonitorColorSpaceBitfield MOZ_GUARDED_BY(mDeviceLock) = 0;
   std::set<HMONITOR> mHdrMonitors MOZ_GUARDED_BY(mDeviceLock);
   std::unordered_map<HMONITOR, DXGI_HDR_METADATA_HDR10> mHdrMetadatas
       MOZ_GUARDED_BY(mDeviceLock);

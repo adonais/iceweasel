@@ -16,6 +16,7 @@ import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -39,11 +40,15 @@ import androidx.test.uiautomator.By.textContains
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.compose.browser.awesomebar.AwesomeBarTestTags
+import mozilla.components.compose.browser.awesomebar.AwesomeBarTestTags.CURRENT_URL_IN_SITE_DETAILS
+import mozilla.components.compose.browser.awesomebar.AwesomeBarTestTags.EDIT_CURRENT_SITE_URL_BUTTON
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.SEARCH_SELECTOR
 import mozilla.components.feature.qr.R as qrR
+import mozilla.components.support.ktx.util.URLStringUtils
 import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_PLACEHOLDER
@@ -54,6 +59,7 @@ import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.SPEECH_RECOGNITION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
@@ -233,11 +239,11 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
                 "verifySearchSuggestionsAreDisplayed: Waiting for $waitingTime ms until $searchSuggestion search suggestion exists.",
             )
             composeTestRule.waitUntilAtLeastOneExists(
-                hasTestTag("mozac.awesomebar.suggestion") and hasText(searchSuggestion, substring = true),
+                hasTestTag(AwesomeBarTestTags.SUGGESTION) and hasText(searchSuggestion, substring = true),
                 waitingTime,
             )
             composeTestRule
-                .onAllNodesWithTag("mozac.awesomebar.suggestion")
+                .onAllNodesWithTag(AwesomeBarTestTags.SUGGESTION)
                 .assertAny(hasText(searchSuggestion, substring = true))
             Log.i(TAG, "verifySearchSuggestionsAreDisplayed: Verified $searchSuggestion search suggestion exists.")
         }
@@ -276,7 +282,7 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
                 "verifySuggestionsAreNotDisplayed: Trying to verify that there are no $searchSuggestion related search suggestions",
             )
             this@SearchRobot.composeTestRule
-                .onAllNodesWithTag("mozac.awesomebar.suggestions")
+                .onAllNodesWithTag(AwesomeBarTestTags.SUGGESTIONS)
                 .assertAny(hasText(searchSuggestion).not())
             Log.i(
                 TAG,
@@ -312,7 +318,7 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
                     "verifySearchSuggestionsCount: Compose test rule is waiting for $waitingTime ms until the note count equals to: $numberOfSuggestions",
                 )
                 this@SearchRobot.composeTestRule.waitUntilNodeCount(
-                    hasTestTag("mozac.awesomebar.suggestion"),
+                    hasTestTag(AwesomeBarTestTags.SUGGESTION),
                     numberOfSuggestions,
                     waitingTime,
                 )
@@ -325,7 +331,7 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
                     "verifySearchSuggestionsCount: Trying to verify that the count of the search suggestions equals: $numberOfSuggestions",
                 )
                 this@SearchRobot.composeTestRule
-                    .onAllNodesWithTag("mozac.awesomebar.suggestion")
+                    .onAllNodesWithTag(AwesomeBarTestTags.SUGGESTION)
                     .assertCountEquals(numberOfSuggestions)
                 Log.i(
                     TAG,
@@ -626,6 +632,14 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "longClickToolbar: Performed long click on the toolbar")
     }
 
+    fun clickEditUrlButton() {
+        Log.i(TAG, "clickEditURLButton: Trying to tap the \"Edit URL\" button in the awesomebar")
+        composeTestRule.waitForIdle()
+        mDevice.waitForIdle()
+        composeTestRule.onNodeWithTag(EDIT_CURRENT_SITE_URL_BUTTON).performTouchInput { click() }
+        Log.i(TAG, "clickEditURLButton: tapped the \"Edit URL\" button in the awesomebar")
+    }
+
     fun clickPasteText() {
         for (i in 1..RETRY_COUNT) {
             Log.i(TAG, "clickPasteText: Started try #$i")
@@ -673,13 +687,35 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyTypedToolbarText(expectedText: String, exists: Boolean) {
-        Log.i(TAG, "verifyTypedToolbarText: Waiting for $waitingTime until the edit mode toolbar search box exists")
-        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_SEARCH_BOX), waitingTime)
-        Log.i(TAG, "verifyTypedToolbarText: Waited for $waitingTime until the edit mode toolbar search box exists")
+        Log.i(TAG, "verifyTypedToolbarText: Waiting for $waitingTime until the edited URL exists")
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(ADDRESSBAR_SEARCH_BOX) or hasText(CURRENT_URL_IN_SITE_DETAILS),
+            waitingTime,
+        )
+        Log.i(TAG, "verifyTypedToolbarText: Waited for $waitingTime until the edited URL exists")
         Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
-        val normalizedExpectedText = normalizeWhitespace(expectedText)
+        val normalizedExpectedText =
+            normalizeWhitespace(expectedText).let {
+                when (settings.showAddressBarInFocusMode) {
+                    true -> URLStringUtils.toDisplayUrl(it).toString()
+                    else -> it
+                }
+            }
         val actualText =
-            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).fetchSemanticsNode().config.toNormalizedToolbarText()
+            when (settings.showAddressBarInFocusMode) {
+                true ->
+                    composeTestRule
+                        .onNodeWithTag(CURRENT_URL_IN_SITE_DETAILS, true)
+                        .fetchSemanticsNode()
+                        .config
+                        .toNormalizedToolbarText()
+                false ->
+                    composeTestRule
+                        .onNodeWithTag(ADDRESSBAR_SEARCH_BOX)
+                        .fetchSemanticsNode()
+                        .config
+                        .toNormalizedToolbarText()
+            }
 
         assertTrue(
             "Expected toolbar text '$normalizedExpectedText' to ${if (exists) "exist" else "not exist"} in '$actualText'",

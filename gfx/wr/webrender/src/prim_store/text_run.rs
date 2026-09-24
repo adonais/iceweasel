@@ -3,8 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace};
-use api::units::{LayoutToWorldTransform, DevicePixelScale};
+use api::units::LayoutToWorldTransform;
 use api::units::*;
+use crate::space::SpaceSnapper;
 use crate::scene_building::{IsVisible};
 use glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, SubpixelDirection, FONT_SIZE_LIMIT};
 use crate::intern;
@@ -185,9 +186,6 @@ impl intern::Internable for TextRun {
 }
 
 impl InternablePrimitive for TextRun {
-    // Text renders in device space; its clips must not snap (bug 2050692).
-    const SNAP_CLIPS: bool = false;
-
     fn into_key(
         self,
         info: &LayoutPrimitiveInfo,
@@ -235,6 +233,11 @@ pub struct TextRunScratch {
     /// in `PrimitiveHeader.pattern_rect` that `request_resources` used to
     /// compute those offsets.
     pub pattern_rect: LayoutRect,
+    /// The run's clip rect, quantised to the device grid on the axes the glyph
+    /// pen is snapped on (see `snap_bias`). This is the rect the shader clamps
+    /// the glyph quad to: the clamp is a hard, pixel-centre test, so it is only
+    /// lossless if the clip sits on the same grid the glyphs landed on.
+    pub snapped_clip_rect: LayoutRect,
     /// Per-instance GPU buffer address for the color block followed by the
     /// per-glyph offset blocks (two glyphs per block). In device mode these are
     /// glyph pen positions snapped to the device grid, relative to the
@@ -405,9 +408,10 @@ impl TextRunTemplate {
         &self,
         prim_spatial_node_index: SpatialNodeIndex,
         low_quality_pinch_zoom: bool,
-        device_pixel_scale: DevicePixelScale,
+        surface: &SurfaceInfo,
         spatial_tree: &SpatialTree,
     ) -> RasterSpace {
+        let device_pixel_scale = surface.device_pixel_scale;
         let prim_spatial_node = spatial_tree.get_spatial_node(prim_spatial_node_index);
         if prim_spatial_node.is_ancestor_or_self_zooming && low_quality_pinch_zoom {
             // In low-quality mode, we set the scale to be 1.0. However, the device-pixel
@@ -429,15 +433,22 @@ impl TextRunTemplate {
             // glyphs jitter as they cross pixel boundaries (bug 637852 - the device
             // text path added in bug 2044211 otherwise misses that policy). Quantize
             // the scale up to the nearest power of 2 (capped at 8) so the glyphs
-            // aren't re-rasterized as the scale sweeps through fractional values,
-            // and undo the device-pixel scale since the picture cache tiles are
-            // raster roots.
-            let root_spatial_node_index = spatial_tree.root_reference_frame_index();
+            // aren't re-rasterized as the scale sweeps through fractional values.
+            //
+            // The scale to quantize is the one the glyphs are composited at: the
+            // prim to raster transform of the surface being drawn into, times that
+            // surface's device pixel scale. `compute_font_instance` multiplies the
+            // local scale returned here by that device pixel scale, so divide it
+            // back out.
             let scale_factors = spatial_tree
-                .get_relative_transform(prim_spatial_node_index, root_spatial_node_index)
+                .get_relative_transform(
+                    prim_spatial_node_index,
+                    surface.raster_spatial_node_index,
+                )
                 .scale_factors();
 
-            let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
+            let device_scale = scale_factors.0.max(scale_factors.1) * device_pixel_scale.0;
+            let scale = device_scale.min(8.0).max(1.0);
             let rounded_up = 2.0f32.powf(scale.log2().ceil());
 
             RasterSpace::Local(rounded_up / device_pixel_scale.0)
@@ -454,6 +465,7 @@ impl TextRunTemplate {
     pub fn request_resources(
         &self,
         pattern_rect: LayoutRect,
+        local_clip_rect: LayoutRect,
         transform: &LayoutToWorldTransform,
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
@@ -467,7 +479,7 @@ impl TextRunTemplate {
         let raster_space = self.get_raster_space_for_prim(
             spatial_node_index,
             low_quality_pinch_zoom,
-            surface.device_pixel_scale,
+            surface,
             spatial_tree,
         );
 
@@ -527,6 +539,39 @@ impl TextRunTemplate {
             SubpixelDirection::Horizontal => DeviceVector2D::new(0.125, 0.5),
             SubpixelDirection::Vertical => DeviceVector2D::new(0.5, 0.125),
             SubpixelDirection::Mixed => DeviceVector2D::new(0.125, 0.125),
+        };
+
+        // Quantise the clip the way the glyphs are quantised, per axis. A 0.5
+        // bias above means the pen is rounded to a whole device pixel on that
+        // axis, so round the clip to nearest there too and the shader's hard
+        // clamp lands on the same grid the glyphs did; a 0.125 bias means the
+        // axis carries a quarter-pixel offset in the glyph key, so the clip has
+        // to stay exact or it cuts sub-pixel positioned ink (bug 2050692).
+        //
+        // Local-raster mode snaps in raster space rather than on the device
+        // grid, so leave its clip alone.
+        //
+        // A bitmap-strike run is really `None` (both axes grid-placed), but that
+        // needs the resolved glyph format, so it is treated as its unlimited
+        // direction here. That only leaves the horizontal clip exact, i.e.
+        // today's behaviour, so it is safe - just not the additional fix a
+        // strike's grid-placed pen would allow (bug 2056856).
+        let (snap_clip_x, snap_clip_y) = if local_raster {
+            (false, false)
+        } else {
+            match subpx_dir {
+                SubpixelDirection::None => (true, true),
+                SubpixelDirection::Horizontal => (false, true),
+                SubpixelDirection::Vertical => (true, false),
+                SubpixelDirection::Mixed => (false, false),
+            }
+        };
+        let snapped_clip_rect = if snap_clip_x || snap_clip_y {
+            let mut snapper = SpaceSnapper::new(surface, spatial_tree);
+            snapper.set_target_spatial_node(spatial_node_index, spatial_tree);
+            snapper.snap_rect_axes(&local_clip_rect, snap_clip_x, snap_clip_y)
+        } else {
+            local_clip_rect
         };
 
         // World-space run anchor (device mode only).
@@ -599,6 +644,7 @@ impl TextRunTemplate {
             used_font,
             glyph_keys_range,
             pattern_rect,
+            snapped_clip_rect,
             gpu_address,
             raster_scale,
             local_raster,
@@ -618,6 +664,6 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 80, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 80, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 112, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 112, "TextRunKey size changed");
 }

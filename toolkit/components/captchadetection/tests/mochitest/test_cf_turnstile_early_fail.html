@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cloudflare Turnstile detection when the result is already shown</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+    <script src="/tests/SimpleTest/GleanTest.js"></script>
+    <script src="CaptchaTestingUtils.js"></script>
+  </head>
+  <body>
+    <p id="display"></p>
+    <div id="content" style="display: none"></div>
+    <pre id="test"></pre>
+
+    <script>
+      // The captcha result is shown while the iframe is still parsing, so it is
+      // already visible when the actor is created on DOMContentLoaded and
+      // starts observing. A MutationObserver only reports later mutations, so
+      // detection has to check the current state when it starts observing.
+      add_task(async function () {
+        await GleanTest.testResetFOG();
+
+        const metricSet = CaptchaTestingUtils.waitForMetricSet();
+        await CaptchaTestingUtils.createIframeAndWaitForMessage(
+          "cf_turnstile.html?state=fail",
+          document.body,
+          "ready"
+        );
+        await metricSet;
+
+        const puzzleCompletedCount =
+          await GleanTest.captchaDetection.cloudflareTurnstileCf.testGetValue();
+        is(puzzleCompletedCount, 1, "The puzzle completion count should be 1");
+
+        const occurredCount =
+          await GleanTest.captchaDetection.cloudflareTurnstileOc.testGetValue();
+        is(occurredCount, 1, "We should have detected the occurrence");
+
+        await CaptchaTestingUtils.clearPrefs();
+      });
+    </script>
+  </body>
+</html>

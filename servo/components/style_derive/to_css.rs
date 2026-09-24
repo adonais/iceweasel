@@ -172,7 +172,7 @@ fn derive_variant_arm(variant: &VariantInfo, generics: &mut Option<WhereClause>)
     };
 
     if let Some(function) = variant_attrs.function {
-        let mut identifier = function.explicit().map_or(identifier, |name| name);
+        let mut identifier = function.explicit().unwrap_or(identifier);
         identifier.push('(');
         expr = quote! {
             std::fmt::Write::write_str(dest, #identifier)?;
@@ -191,7 +191,7 @@ fn derive_variant_fields_expr(
     let mut iter = bindings
         .iter()
         .filter_map(|binding| {
-            let attrs = cg::parse_field_attrs::<CssFieldAttrs>(&binding.ast());
+            let attrs = cg::parse_field_attrs::<CssFieldAttrs>(binding.ast());
             if attrs.skip {
                 return None;
             }

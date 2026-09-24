@@ -7,6 +7,7 @@ use proc_macro2::TokenStream;
 use syn::{DeriveInput, Ident, Path};
 use synstructure::{BindStyle, BindingInfo};
 
+#[allow(clippy::too_many_arguments)]
 pub fn derive_to_value(
     mut input: DeriveInput,
     trait_path: Path,
@@ -75,7 +76,7 @@ pub fn derive_to_value(
 
         for variant in s.variants() {
             for binding in variant.bindings() {
-                let attrs = binding_attrs(&binding);
+                let attrs = binding_attrs(binding);
                 assert!(
                     !attrs.field_bound,
                     "It is default on a non-generic implementation",
@@ -104,18 +105,18 @@ pub fn derive_to_value(
         (to_body, from_body)
     } else {
         let to_body = cg::fmap_match(&input, bind_style, |binding| {
-            let attrs = binding_attrs(&binding);
+            let attrs = binding_attrs(binding);
             assert!(
                 !attrs.no_field_bound,
                 "It doesn't make sense on a generic implementation"
             );
             if attrs.field_bound {
-                add_field_bound(&binding);
+                add_field_bound(binding);
             }
-            call_to(&binding)
+            call_to(binding)
         });
 
-        let from_body = cg::fmap_match(&input, bind_style, |binding| call_from(&binding));
+        let from_body = cg::fmap_match(&input, bind_style, |binding| call_from(binding));
 
         let self_ = if moves {
             quote! { self }
@@ -179,7 +180,7 @@ pub fn derive(input: DeriveInput) -> TokenStream {
         parse_quote!(ComputedValue),
         BindStyle::Ref,
         |binding| {
-            let attrs = cg::parse_field_attrs::<ComputedValueAttrs>(&binding.ast());
+            let attrs = cg::parse_field_attrs::<ComputedValueAttrs>(binding.ast());
             ToValueAttrs {
                 field_bound: attrs.field_bound,
                 no_field_bound: attrs.no_field_bound,

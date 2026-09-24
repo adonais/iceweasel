@@ -35,8 +35,8 @@ void HTMLParagraphElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLParagraphElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLParagraphElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {
       sDivAlignAttributeMap,
       sCommonAttributeMap,

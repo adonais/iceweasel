@@ -33,9 +33,10 @@ class XPCOMThreadWrapper final : public AbstractThread,
                                  public nsIThreadObserver,
                                  public nsIDirectTaskDispatcher {
  public:
-  XPCOMThreadWrapper(nsIThreadInternal* aThread, bool aRequireTailDispatch,
+  XPCOMThreadWrapper(nsIThreadInternal* aThread,
+                     enum TailDispatchPolicy aTailDispatchPolicy,
                      bool aOnThread)
-      : AbstractThread(aRequireTailDispatch),
+      : AbstractThread(aTailDispatchPolicy),
         mThread(aThread),
         mDirectTaskDispatcher(do_QueryInterface(aThread)),
         mOnThread(aOnThread) {
@@ -116,9 +117,8 @@ class XPCOMThreadWrapper final : public AbstractThread,
     MOZ_ASSERT(IsCurrentThreadIn());
     MOZ_ASSERT(IsTailDispatcherAvailable());
     if (!mTailDispatcher) {
-      mTailDispatcher =
-          std::make_unique<AutoTaskDispatcher>(mDirectTaskDispatcher,
-                                               /* aIsTailDispatcher = */ true);
+      mTailDispatcher = std::make_unique<AutoTaskDispatcher>(
+          mDirectTaskDispatcher, mTailDispatcherPolicy);
       mThread->AddObserver(this);
     }
 
@@ -322,7 +322,7 @@ void AbstractThread::InitMainThread() {
     MOZ_CRASH();
   }
   sMainThread = new XPCOMThreadWrapper(mainThread.get(),
-                                       /* aRequireTailDispatch = */ true,
+                                       TailDispatchPolicy::ConsistentOrdering,
                                        true /* onThread */);
 }
 

@@ -305,12 +305,16 @@ def cargo(
 
     for crate in crates:
         crate_info = crates_and_roots.get(crate, None)
+        package_arg = ""
         if not crate_info:
-            print(
-                "Cannot locate crate %s.  Please check your spelling or "
-                "add the crate information to the list." % crate
-            )
-            return 1
+            # Not one of the top-level crates we know how to build directly, assume it's
+            # other crate in the gkrust workspace and target it explicitly via `-p`.
+            #
+            # gkrust's features and lib/bin targets don't apply to an individual crate,
+            # so pass the target explicitly instead, and let the makefiles skip the
+            # automatically-computed arguments via CARGO_NO_AUTO_ARG below.
+            crate_info = crates_and_roots["gkrust"]
+            package_arg = f"-p {crate} --target={{arch}} "
 
         targets = [
             "force-cargo-library-%s" % cargo_command,
@@ -331,9 +335,12 @@ def cargo(
             "topsrcdir": str(topsrcdir),
         }
 
-        if subcommand_args:
+        extra_cli_flags = (
+            package_arg + subcommand_args if subcommand_args else package_arg
+        )
+        if extra_cli_flags:
             targets = targets + [
-                "cargo_extra_cli_flags=%s" % (subcommand_args.format(**subst))
+                "cargo_extra_cli_flags=%s" % (extra_cli_flags.format(**subst))
             ]
         if cargo_build_flags:
             targets = targets + [
@@ -347,12 +354,8 @@ def cargo(
             append_env["USE_CARGO_JSON_MESSAGE_FORMAT"] = "1"
         if continue_on_error:
             append_env["CARGO_CONTINUE_ON_ERROR"] = "1"
-        if cargo_build_flags:
+        if cargo_build_flags or package_arg:
             append_env["CARGO_NO_AUTO_ARG"] = "1"
-        else:
-            append_env["ADD_RUST_LTOABLE"] = (
-                f"force-cargo-library-{cargo_command:s} force-cargo-program-{cargo_command:s}"
-            )
 
         ret = command_context._run_make(
             srcdir=False,

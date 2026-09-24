@@ -85,6 +85,10 @@ class GfxInfoBase : public nsIGfxInfo,
 #ifdef DEBUG
   NS_IMETHOD SpoofMonitorInfo(uint32_t aScreenCount, int32_t aMinRefreshRate,
                               int32_t aMaxRefreshRate) override;
+  NS_IMETHOD SpoofVendorID2(const nsAString& aVendorID) override;
+  NS_IMETHOD SpoofDeviceID2(const nsAString& aDeviceID) override;
+  NS_IMETHOD SpoofDriverVendor2(const nsAString& aDriverVendor) override;
+  NS_IMETHOD SpoofDriverVersion2(const nsAString& aDriverVersion) override;
 #endif
 
   // Non-XPCOM method to get IPC data:
@@ -232,6 +236,16 @@ class GfxInfoBase : public nsIGfxInfo,
   int32_t mMinRefreshRate = 0;
   int32_t mMaxRefreshRate = 0;
   nsCString mCodecSupportInfo;
+
+#ifdef DEBUG
+  // A spoofed secondary adapter, substituted for the real one (if any) when
+  // matching blocklist entries.
+  bool mSpoofedAdapter2 = false;
+  nsString mSpoofedAdapterVendorID2;
+  nsString mSpoofedAdapterDeviceID2;
+  nsString mSpoofedAdapterDriverVendor2;
+  nsString mSpoofedAdapterDriverVersion2;
+#endif
 
  private:
   virtual int32_t FindBlocklistedDeviceInList(

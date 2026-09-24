@@ -12,7 +12,7 @@ transforms:
 
 kind-dependencies:
     - repackage-rpm-signing
-    - shippable-l10n-signing
+    - l10n-signing
     - l10n
 
 only-for-build-platforms:

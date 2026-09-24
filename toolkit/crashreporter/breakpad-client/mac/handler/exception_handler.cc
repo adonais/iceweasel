@@ -193,19 +193,20 @@ boolean_t mach_exc_server(mach_msg_header_t* InHeadP,
   Request* In0P = (Request*)InHeadP;
   Reply* OutP = (Reply*)OutHeadP;
 
+  OutP->NDR = NDR_record;
   if (In0P->task.name != mach_task_self()) {
     // This exception was not meant for us, we avoid forwarding it (because it
-    // could cause a loop in the exception handler) and simply ignore it
-    // instead.
-    return TRUE;
+    // could cause a loop in the exception handler) and tell the kernel we
+    // did not handle it, so delivery continues instead of stopping with us.
+    OutP->RetCode = KERN_FAILURE;
   }
-
-  OutP->RetCode = ForwardException(In0P->task.name,
-                                   In0P->thread.name,
-                                   In0P->exception,
-                                   In0P->code,
-                                   In0P->codeCnt);
-  OutP->NDR = NDR_record;
+  else {
+    OutP->RetCode = ForwardException(In0P->task.name,
+                                     In0P->thread.name,
+                                     In0P->exception,
+                                     In0P->code,
+                                     In0P->codeCnt);
+  }
   return TRUE;
 }
 
@@ -728,6 +729,18 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
   return NULL;
 }
 
+// The signals we catch are all reported as EXC_SOFTWARE exceptions, this maps
+// them to the matching exception code.
+static int64_t ExceptionCodeForSignal(int sig) {
+  switch (sig) {
+    case SIGSYS:
+      return MD_EXCEPTION_CODE_MAC_BAD_SYSCALL;
+    case SIGABRT:
+    default:
+      return MD_EXCEPTION_CODE_MAC_ABORT;
+  }
+}
+
 // static
 void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
 #if USE_PROTECTED_ALLOCATIONS
@@ -736,7 +749,7 @@ void ExceptionHandler::SignalHandler(int sig, siginfo_t* info, void* uc) {
 #endif
   gProtectedData.handler->WriteMinidumpWithException(
       EXC_SOFTWARE,
-      MD_EXCEPTION_CODE_MAC_ABORT,
+      ExceptionCodeForSignal(sig),
       0,
       static_cast<breakpad_ucontext_t*>(uc),
       mach_thread_self(),
@@ -774,15 +787,19 @@ bool ExceptionHandler::InstallHandler() {
   struct sigaction sa;
   memset(&sa, 0, sizeof(sa));
   sigemptyset(&sa.sa_mask);
-  sigaddset(&sa.sa_mask, SIGABRT);
+  for (int sig : kCaughtSignals) {
+    sigaddset(&sa.sa_mask, sig);
+  }
   sa.sa_sigaction = ExceptionHandler::SignalHandler;
   sa.sa_flags = SA_SIGINFO;
 
-  scoped_ptr<struct sigaction> old(new struct sigaction);
-  if (sigaction(SIGABRT, &sa, old.get()) == -1) {
-    return false;
+  for (size_t i = 0; i < kCaughtSignals.size(); ++i) {
+    scoped_ptr<struct sigaction> old(new struct sigaction);
+    if (sigaction(kCaughtSignals[i], &sa, old.get()) == -1) {
+      return false;
+    }
+    old_handlers_[i].swap(old);
   }
-  old_handler_.swap(old);
   gProtectedData.handler = this;
 #if USE_PROTECTED_ALLOCATIONS
   assert(((size_t)(gProtectedData.protected_buffer) & PAGE_MASK) == 0);
@@ -829,19 +846,23 @@ bool ExceptionHandler::InstallHandler() {
 bool ExceptionHandler::UninstallHandler(bool in_exception) {
   kern_return_t result = KERN_SUCCESS;
 
-  if (old_handler_.get()) {
-    sigaction(SIGABRT, old_handler_.get(), NULL);
+  if (old_handlers_.front().get()) {
+    for (size_t i = 0; i < kCaughtSignals.size(); ++i) {
+      sigaction(kCaughtSignals[i], old_handlers_[i].get(), NULL);
+    }
 #if USE_PROTECTED_ALLOCATIONS
     mprotect(gProtectedData.protected_buffer, PAGE_SIZE,
         PROT_READ | PROT_WRITE);
 #endif
-    // If we're handling an exception, leak the sigaction struct
+    // If we're handling an exception, leak the sigaction structs
     // because it is unsafe to delete objects while in exception
     // handling context.
-    if (in_exception) {
-      old_handler_.release();
-    } else {
-      old_handler_.reset();
+    for (auto& old_handler : old_handlers_) {
+      if (in_exception) {
+        old_handler.release();
+      } else {
+        old_handler.reset();
+      }
     }
     gProtectedData.handler = NULL;
   }

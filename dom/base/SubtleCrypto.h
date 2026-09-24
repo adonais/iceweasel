@@ -89,6 +89,26 @@ class SubtleCrypto final : public nsISupports, public nsWrapperCache {
                                        const Nullable<uint32_t>& length,
                                        ErrorResult& aRv);
 
+  already_AddRefed<Promise> EncapsulateBits(
+      JSContext* cx, const ObjectOrString& encapsulationAlgorithm,
+      CryptoKey& encapsulationKey, ErrorResult& aRv);
+
+  already_AddRefed<Promise> EncapsulateKey(
+      JSContext* cx, const ObjectOrString& encapsulationAlgorithm,
+      CryptoKey& encapsulationKey, const ObjectOrString& sharedKeyAlgorithm,
+      bool extractable, const Sequence<nsString>& keyUsages, ErrorResult& aRv);
+
+  already_AddRefed<Promise> DecapsulateBits(
+      JSContext* cx, const ObjectOrString& decapsulationAlgorithm,
+      CryptoKey& decapsulationKey, const CryptoOperationData& ciphertext,
+      ErrorResult& aRv);
+
+  already_AddRefed<Promise> DecapsulateKey(
+      JSContext* cx, const ObjectOrString& decapsulationAlgorithm,
+      CryptoKey& decapsulationKey, const CryptoOperationData& ciphertext,
+      const ObjectOrString& sharedKeyAlgorithm, bool extractable,
+      const Sequence<nsString>& keyUsages, ErrorResult& aRv);
+
   already_AddRefed<Promise> WrapKey(JSContext* cx, const nsAString& format,
                                     CryptoKey& key, CryptoKey& wrappingKey,
                                     const ObjectOrString& wrapAlgorithm,

@@ -45,6 +45,7 @@ EXPORTS.mozilla += [
 ]
 
 EXPORTS.mozilla.widget += [
+    "BufferSurface.h",
     "CompositorWidgetChild.h",
     "CompositorWidgetParent.h",
     "DMABufDevice.h",
@@ -62,6 +63,7 @@ EXPORTS.mozilla.widget += [
 
 UNIFIED_SOURCES += [
     "AsyncClipboardRequest.cpp",
+    "BufferSurface.cpp",
     "CompositorWidgetChild.cpp",
     "CompositorWidgetParent.cpp",
     "DMABufDevice.cpp",
@@ -116,6 +118,7 @@ if CONFIG["MOZ_WAYLAND"]:
         "nsWaylandDisplay.cpp",
         "RetrievalContextGtk.cpp",
         "RetrievalContextWayland.cpp",
+        "SHMBufSurface.cpp",
         "WaylandBuffer.cpp",
         "WaylandSurface.cpp",
         "WindowSurfaceCairo.cpp",

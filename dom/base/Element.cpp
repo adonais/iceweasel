@@ -2185,12 +2185,14 @@ Element* Element::GetAttrAssociatedElementInternal(nsAtom* aAttr,
     return nullptr;
   }
 
-  Element* resolved = attrEl->ResolveReferenceTarget();
-  if (resolved && aForBindings) {
+  if (aForBindings) {
+    // <https://whatpr.org/html/10995/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:get-the-unresolved-attribute-target-element>
+    // The getter steps are to return the result of running this's get the
+    // unresolved attribute target element.
     return attrEl;
   }
 
-  return resolved;
+  return attrEl->ResolveReferenceTarget();
 }
 
 Element* Element::GetAttrAssociatedElementForBindings(nsAtom* aAttr) const {
@@ -2199,29 +2201,38 @@ Element* Element::GetAttrAssociatedElementForBindings(nsAtom* aAttr) const {
 
 Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
     nsAtom* aAttr, bool aForBindings) {
-  // https://whatpr.org/html/10995/common-microsyntaxes.html#attr-associated-elements
+  if (aForBindings || !StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return GetUnresolvedAttributeTargetElements(aAttr);
+  } else {
+    return GetResolvedAttributeTargetElements(aAttr);
+  }
+}
+
+Maybe<nsTArray<RefPtr<Element>>> Element::GetUnresolvedAttributeTargetElements(
+    nsAtom* aAttr) {
+  // https://whatpr.org/html/10995/common-microsyntaxes.html#unresolved-attribute-target-elements
+  // note that step 1 is handled further below.
+  // 2. Let unresolvedTargets be « ».
   nsTArray<RefPtr<Element>> elements;
   auto& [explicitlySetAttrElements, _] =
       ExtendedDOMSlots()->mAttrElementsMap.LookupOrInsert(aAttr);
 
   if (explicitlySetAttrElements) {
-    // 3. If element has an explicitly set attr-elements which
+    // 3. If element has an explicitly set attr-elements:
     for (const nsWeakPtr& weakEl : *explicitlySetAttrElements) {
-      // For each attrElement in reflectedTarget's explicitly set
-      // attr-elements:
+      // 3.1. For each attrElement of element's explicitly set attr-elements:
       if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
-        // If attrElement is not a descendant of any of element's
+        // 3.1.1. If attrElement is not a descendant of any of element's
         // shadow-including ancestors, then continue.
         if (!HasSharedRoot(attrEl)) {
           continue;
         }
-        // Append attrElement to elements.
+        // 3.1.2. Append attrElement to unresolvedTargets.
         elements.AppendElement(std::move(attrEl));
       }
     }
   } else {
-    // 4. Otherwise
-    // 4.1. Let value be the attribute value.
+    // 4. Let value be the attribute value.
     const nsAttrValue* value = GetParsedAttr(aAttr);
     // 1. If the attribute is not specified on element, return null.
     if (!value || value->GetAtomCount() == 0) {
@@ -2231,41 +2242,49 @@ Maybe<nsTArray<RefPtr<Element>>> Element::GetAttrAssociatedElementsInternal(
     MOZ_ASSERT(value->Type() == nsAttrValue::eAtomArray ||
                    value->Type() == nsAttrValue::eAtom,
                "Attribute used for accessible relations must be parsed.");
-    // 4.2. Let tokens be value, split on ASCII whitespace.
-    // 4.3. For each id of tokens:
+    // 5. Let tokens be value, split on ASCII whitespace.
+    // 6. For each id of tokens:
     for (uint32_t i = 0; i < value->GetAtomCount(); i++) {
-      // 4.3.1 Let candidate be the first element, in tree order, that meets the
-      // following criteria:
-      // - candidate's root is the same as element's root; and
-      // - candidate's ID is id.
+      // 6.1. Let unresolvedTarget be the first element, in tree order, that
+      // meets the following criteria:
+      // - unresolvedTarget's root is the same as element's root; and
+      // - unresolvedTarget's ID is id.
       if (auto* candidate = GetElementByIdInDocOrSubtree(
               value->AtomAt(static_cast<int32_t>(i)))) {
-        // Append candidate to elements.
+        // 6.2. Append unresolvedTarget to unresolvedTargets.
         elements.AppendElement(candidate);
       }
     }
   }
-  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
-    return Some(std::move(elements));
-  }
+  // 7. Return unresolvedTargets.
+  return Some(std::move(elements));
+}
 
-  // 5. Let resolvedCandidates be an empty list.
+Maybe<nsTArray<RefPtr<Element>>> Element::GetResolvedAttributeTargetElements(
+    nsAtom* aAttr) {
+  // https://whatpr.org/html/10995/common-microsyntaxes.html#resolved-attribute-target-elements
+  // 1. Let unresolvedTargets be the unresolved attribute target elements for
+  // attribute and element.
+  Maybe<nsTArray<RefPtr<Element>>> maybeUnresolvedTargets =
+      GetUnresolvedAttributeTargetElements(aAttr);
+  if (maybeUnresolvedTargets.isNothing()) {
+    return Nothing();
+  }
+  nsTArray<RefPtr<Element>> unresolvedTargets =
+      maybeUnresolvedTargets.extract();
+  // 2. Let resolvedTargets be « ».
   nsTArray<RefPtr<Element>> resolvedElements;
-  // 6. For each candidate in candidates:
-  for (const RefPtr<Element>& element : elements) {
-    // 6.1 Let resolvedCandidate be the result of resolving the reference target
-    // on candidate.
+  // 3. For each unresolvedTarget of unresolvedTargets:
+  for (const RefPtr<Element>& element : unresolvedTargets) {
+    // 3.1. Let resolvedTarget be the result of resolving the reference target
+    // on unresolvedTarget.
     if (Element* resolvedCandidate = element->ResolveReferenceTarget()) {
-      // 6.2 If resolvedCandidate is not null:
-      if (aForBindings) {
-        // 6.2.1 If retarget is true, append candidate to resolvedCandidates
-        resolvedElements.AppendElement(element);
-      } else {
-        // 6.2.2 Otherwise, append resolvedCandidate to resolvedCandidates
-        resolvedElements.AppendElement(resolvedCandidate);
-      }
+      // 3.2. If resolvedTarget is not null, then append resolvedTarget to
+      // resolvedTargets.
+      resolvedElements.AppendElement(resolvedCandidate);
     }
   }
+  // 4. Return resolvedTargets.
   return Some(std::move(resolvedElements));
 }
 
@@ -3426,14 +3445,24 @@ nsresult Element::SetInlineStyleDeclaration(StyleLockedDeclarationBlock&,
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP_(bool)
-Element::IsAttributeMapped(const nsAtom* aAttribute) const { return false; }
-
-nsMapRuleToAttributesFunc Element::GetAttributeMappingFunction() const {
-  return &MapNoAttributesInto;
+bool Element::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
+  return false;
 }
 
-void Element::MapNoAttributesInto(mozilla::MappedDeclarationsBuilder&) {}
+nsMapRuleToAttributesFunc Element::GetAttributeMappingFunction() const {
+  return &MapXmlLangAttrInto;
+}
+
+void Element::MapXmlLangAttrInto(mozilla::MappedDeclarationsBuilder& aBuilder) {
+  const auto* value = aBuilder.GetAttr(kNameSpaceID_XML, nsGkAtoms::lang);
+  if (!value) {
+    return;
+  }
+  MOZ_ASSERT(value->Type() == nsAttrValue::eAtom);
+  // We set it unconditionally, if xml:lang and lang are both specified, this
+  // one wins, and is the caller's responsibility to call this last.
+  aBuilder.SetIdentAtomValue(eCSSProperty__x_lang, value->GetAtomValue());
+}
 
 nsChangeHint Element::GetAttributeChangeHint(const nsAtom* aAttribute,
                                              AttrModType) const {
@@ -4047,14 +4076,18 @@ nsresult Element::SetNoNameSpaceAttrOnNewlyCreatedElement(
   const nsAttrValue* valuePtr =
       mAttrs.AddNewAttributeAssumeAvailableSlot(nameRef, value);
   UpdateSubtreeBloomFilterForAttribute(namePtr);
-  if (!aIsPendingMappedAttributeEvaluation && IsAttributeMapped(namePtr)) {
+  if (!aIsPendingMappedAttributeEvaluation &&
+      IsNoNamespaceAttrMapped(namePtr)) {
     aIsPendingMappedAttributeEvaluation = true;
     mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
     // Not calling `Document::ScheduleForPresAttrEvaluation` since not in doc.
   }
 
   // No `dir` handling, because the element has neither ancestors nor
-  // descendants, yet.
+  // descendants, yet. Except we might need to invalidate DefinitelyLTR.
+  if (namePtr == nsGkAtoms::dir) {
+    MaybeSetDocNeedsDirHandling(this, valuePtr);
+  }
 
   // No check for `HasElementCreatedFromPrototypeAndHasUnmodifiedL10n()`, since
   // we only call this from the HTML parser and not from the prototype content
@@ -4095,18 +4128,19 @@ nsresult Element::SetAttrAndNotify(
       hadValidDir = HasValidDir() || IsHTMLElement(nsGkAtoms::bdi);
       hadDirAuto = HasDirAuto();  // already takes bdi into account
     }
-
     MOZ_TRY(SetAndSwapAttr(aName, aParsedValue, &oldValueSet, aIsKnownNew));
-    if (IsAttributeMapped(aName) && !IsPendingMappedAttributeEvaluation()) {
-      mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
-      if (Document* doc = GetComposedDoc()) {
-        doc->ScheduleForPresAttrEvaluation(this);
-      }
-    }
   } else {
     RefPtr<mozilla::dom::NodeInfo> ni = NodeInfoManager()->GetNodeInfo(
         aName, aPrefix, aNamespaceID, ATTRIBUTE_NODE);
     MOZ_TRY(SetAndSwapAttr(ni, aParsedValue, &oldValueSet, aIsKnownNew));
+  }
+
+  if (IsAttrMapped(aNamespaceID, aName) &&
+      !IsPendingMappedAttributeEvaluation()) {
+    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
+    if (Document* doc = GetComposedDoc()) {
+      doc->ScheduleForPresAttrEvaluation(this);
+    }
   }
 
   // If the old value owns its own data, we know it is OK to keep using it.
@@ -4197,11 +4231,6 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
     return true;
   }
 
-  if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for) {
-    aResult.ParseAtom(aValue);
-    return true;
-  }
-
   if (aNamespaceID == kNameSpaceID_None) {
     if (NS_IS_ATOM_ARRAY_ATTRIBUTE(aAttribute)) {
       aResult.ParseAtomArray(aValue);
@@ -4213,15 +4242,16 @@ bool Element::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return true;
     }
 
-    if (aAttribute == nsGkAtoms::aria_activedescendant) {
-      // String in aria-activedescendant is an id, so store as an atom.
+    if (aAttribute == nsGkAtoms::form || aAttribute == nsGkAtoms::_for ||
+        aAttribute == nsGkAtoms::aria_activedescendant) {
+      // Strings here are ids, so parse as an atom.
       aResult.ParseAtom(aValue);
       return true;
     }
 
     if (aAttribute == nsGkAtoms::id) {
       // Store id as an atom.  id="" means that the element has no id,
-      // not that it has an emptystring as the id.
+      // not that it has an empty string as the id.
       if (aValue.IsEmpty()) {
         return false;
       }
@@ -4479,16 +4509,16 @@ nsresult Element::UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify) {
   bool hadValidDir = false;
   bool hadDirAuto = false;
 
-  if (aNameSpaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::dir) {
-      hadValidDir = HasValidDir() || IsHTMLElement(nsGkAtoms::bdi);
-      hadDirAuto = HasDirAuto();  // already takes bdi into account
-    }
-    if (IsAttributeMapped(aName) && !IsPendingMappedAttributeEvaluation()) {
-      mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
-      if (Document* doc = GetComposedDoc()) {
-        doc->ScheduleForPresAttrEvaluation(this);
-      }
+  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::dir) {
+    hadValidDir = HasValidDir() || IsHTMLElement(nsGkAtoms::bdi);
+    hadDirAuto = HasDirAuto();  // already takes bdi into account
+  }
+
+  if (IsAttrMapped(aNameSpaceID, aName) &&
+      !IsPendingMappedAttributeEvaluation()) {
+    mAttrs.InfallibleMarkAsPendingPresAttributeEvaluation();
+    if (Document* doc = GetComposedDoc()) {
+      doc->ScheduleForPresAttrEvaluation(this);
     }
   }
 
@@ -5029,6 +5059,30 @@ bool Element::Matches(const nsACString& aSelector, ErrorResult& aResult) {
   }
 
   return Servo_SelectorList_Matches(this, list);
+}
+
+static constexpr nsAttrValue::EnumTableEntry kReferrerPolicyTable[] = {
+    {GetEnumString(ReferrerPolicy::No_referrer).get(),
+     static_cast<int16_t>(ReferrerPolicy::No_referrer)},
+    {GetEnumString(ReferrerPolicy::Origin).get(),
+     static_cast<int16_t>(ReferrerPolicy::Origin)},
+    {GetEnumString(ReferrerPolicy::Origin_when_cross_origin).get(),
+     static_cast<int16_t>(ReferrerPolicy::Origin_when_cross_origin)},
+    {GetEnumString(ReferrerPolicy::No_referrer_when_downgrade).get(),
+     static_cast<int16_t>(ReferrerPolicy::No_referrer_when_downgrade)},
+    {GetEnumString(ReferrerPolicy::Unsafe_url).get(),
+     static_cast<int16_t>(ReferrerPolicy::Unsafe_url)},
+    {GetEnumString(ReferrerPolicy::Strict_origin).get(),
+     static_cast<int16_t>(ReferrerPolicy::Strict_origin)},
+    {GetEnumString(ReferrerPolicy::Same_origin).get(),
+     static_cast<int16_t>(ReferrerPolicy::Same_origin)},
+    {GetEnumString(ReferrerPolicy::Strict_origin_when_cross_origin).get(),
+     static_cast<int16_t>(ReferrerPolicy::Strict_origin_when_cross_origin)},
+};
+
+bool Element::ParseReferrerAttribute(const nsAString& aString,
+                                     nsAttrValue& aResult) {
+  return aResult.ParseEnumValue(aString, kReferrerPolicyTable, false);
 }
 
 static constexpr nsAttrValue::EnumTableEntry kCORSAttributeTable[] = {
@@ -6012,7 +6066,7 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
 }
 
 ReferrerPolicy Element::GetReferrerPolicyAsEnum() const {
-  if (IsHTMLElement()) {
+  if (IsHTMLElement() || IsSVGElement()) {
     return ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy));
   }
   return ReferrerPolicy::_empty;

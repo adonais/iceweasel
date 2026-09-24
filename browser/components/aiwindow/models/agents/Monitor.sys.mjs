@@ -78,6 +78,10 @@ export class MonitorRunError extends Error {
     this.code = code;
   }
 }
+// Fired once per monitor run that meets its condition, with the monitor id as
+// the data. Unlike the desktop notification this is not suppressed by muting,
+// it drives the passive dot on the monitor toolbar button.
+export const MONITOR_CONDITION_MET_TOPIC = "smartwindow-monitor-condition-met";
 
 const MONITOR_RESULT_SCHEMA = {
   type: "object",

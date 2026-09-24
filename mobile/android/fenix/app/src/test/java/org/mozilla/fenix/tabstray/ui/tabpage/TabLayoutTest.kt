@@ -28,6 +28,7 @@ import junit.framework.TestCase.assertEquals
 import kotlin.math.ceil
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.utils.LocalUnderTest
 import org.junit.Rule
 import org.junit.Test
@@ -38,7 +39,6 @@ import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridColumnCountKey
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
 
 // Number of tabs supplied to the layout under test.
 private const val TAB_COUNT = 10
@@ -170,6 +170,65 @@ class TabLayoutTest {
         displayTabGroupOnboarding = false
 
         composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_ONBOARDING_LIST_ITEM).assertDoesNotExist()
+    }
+
+    @Test
+    fun `GIVEN the tab groups onboarding card is shown in grid view THEN the shown callback fires once`() {
+        var shownCount = 0
+        var trackersBlockedCount by mutableStateOf<Int?>(null)
+        composeTestRule.setContent {
+            ComposableUnderTest(
+                displayTabsInGrid = true,
+                displayTabGroupOnboarding = true,
+                trackersBlockedCount = trackersBlockedCount,
+                onTabGroupOnboardingShown = { shownCount++ },
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertEquals(1, shownCount)
+
+        // Changing an unrelated param recomposes TabLayout, so the keyed SideEffect should not re-fire
+        trackersBlockedCount = 5
+        composeTestRule.waitForIdle()
+        assertEquals(1, shownCount)
+    }
+
+    @Test
+    fun `GIVEN the tab groups onboarding card is shown in list view THEN the shown callback fires once`() {
+        var shownCount = 0
+        var trackersBlockedCount by mutableStateOf<Int?>(null)
+        composeTestRule.setContent {
+            ComposableUnderTest(
+                displayTabsInGrid = false,
+                displayTabGroupOnboarding = true,
+                trackersBlockedCount = trackersBlockedCount,
+                onTabGroupOnboardingShown = { shownCount++ },
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertEquals(1, shownCount)
+
+        // Changing an unrelated param recomposes TabLayout, so the keyed SideEffect should not re-fire
+        trackersBlockedCount = 5
+        composeTestRule.waitForIdle()
+        assertEquals(1, shownCount)
+    }
+
+    @Test
+    fun `GIVEN the tab groups onboarding card is not shown THEN the shown callback is not invoked`() {
+        var shownCount = 0
+        composeTestRule.setContent {
+            ComposableUnderTest(
+                displayTabsInGrid = true,
+                displayTabGroupOnboarding = false,
+                onTabGroupOnboardingShown = { shownCount++ },
+            )
+        }
+
+        composeTestRule.waitForIdle()
+        assertEquals(0, shownCount)
     }
 
     @Test
@@ -350,6 +409,7 @@ class TabLayoutTest {
             onCloseTabGroupClick = { _ -> },
             onShareTabGroupClick = { _ -> },
             onDeleteTabGroupClick = { _ -> },
+            onUngroupTabGroupClick = { _ -> },
             onTabGroupOnboardingDismiss = {},
             onPrivacyReportTapped = {},
             liveReorderEnabled = false,
@@ -381,6 +441,7 @@ class TabLayoutTest {
         displayTabGroupOnboarding: Boolean = false,
         header: (@Composable () -> Unit)? = null,
         trackersBlockedCount: Int? = null,
+        onTabGroupOnboardingShown: () -> Unit = {},
     ) {
         CompositionLocalProvider(LocalUnderTest provides true) {
             FirefoxTheme(theme = Theme.Light) {
@@ -401,7 +462,9 @@ class TabLayoutTest {
                         onEditTabGroupClick = { _ -> },
                         onCloseTabGroupClick = { _ -> },
                         onShareTabGroupClick = { _ -> },
+                        onUngroupTabGroupClick = { _ -> },
                         onTabGroupOnboardingDismiss = {},
+                        onTabGroupOnboardingShown = onTabGroupOnboardingShown,
                         liveReorderEnabled = false,
                         header = header,
                         trackersBlockedCount = trackersBlockedCount,

@@ -28,6 +28,8 @@ class ManufacturerCodesTest {
         assertFalse(ManufacturerCodes.isLG)
 
         assertFalse(ManufacturerCodes.isOppo)
+
+        assertFalse(ManufacturerCodes.isRealme)
     }
 
     @Test
@@ -46,6 +48,8 @@ class ManufacturerCodesTest {
         assertFalse(ManufacturerCodes.isLG)
 
         assertFalse(ManufacturerCodes.isOppo)
+
+        assertFalse(ManufacturerCodes.isRealme)
     }
 
     @Test
@@ -64,6 +68,8 @@ class ManufacturerCodesTest {
         assertFalse(ManufacturerCodes.isLG)
 
         assertFalse(ManufacturerCodes.isOppo)
+
+        assertFalse(ManufacturerCodes.isRealme)
     }
 
     @Test
@@ -82,6 +88,8 @@ class ManufacturerCodesTest {
         assertFalse(ManufacturerCodes.isLG)
 
         assertFalse(ManufacturerCodes.isOppo)
+
+        assertFalse(ManufacturerCodes.isRealme)
     }
 
     @Test
@@ -100,6 +108,8 @@ class ManufacturerCodesTest {
         assertTrue(buildManufacturerChecker.isLG())
 
         assertFalse(ManufacturerCodes.isOppo)
+
+        assertFalse(ManufacturerCodes.isRealme)
     }
 
     @Test
@@ -118,5 +128,27 @@ class ManufacturerCodesTest {
 
         assertTrue(ManufacturerCodes.isOppo)
         assertTrue(buildManufacturerChecker.isOppo())
+
+        assertFalse(ManufacturerCodes.isRealme)
+    }
+
+    @Test
+    fun testIsRealme() {
+        manufacturer = "realMe" // expected value for realme devices
+
+        assertFalse(ManufacturerCodes.isHuawei)
+
+        assertFalse(ManufacturerCodes.isSamsung)
+
+        assertFalse(ManufacturerCodes.isXiaomi)
+
+        assertFalse(ManufacturerCodes.isOnePlus)
+
+        assertFalse(ManufacturerCodes.isLG)
+
+        assertFalse(ManufacturerCodes.isOppo)
+
+        assertTrue(ManufacturerCodes.isRealme)
+        assertTrue(buildManufacturerChecker.isRealme())
     }
 }

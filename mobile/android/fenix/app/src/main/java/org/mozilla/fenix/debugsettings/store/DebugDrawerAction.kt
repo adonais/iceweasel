@@ -10,6 +10,7 @@ import org.mozilla.fenix.debugsettings.autofill.AutofillTools
 import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
 import org.mozilla.fenix.debugsettings.distributions.DistributionTools as DistributionScreen
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
+import org.mozilla.fenix.debugsettings.ipprotection.IPProtectionLocationTools as IPProtectionLocationToolsScreen
 import org.mozilla.fenix.debugsettings.logins.LoginsTools as LoginsScreen
 import org.mozilla.fenix.debugsettings.region.RegionTools as RegionScreen
 import org.mozilla.fenix.debugsettings.tabs.TabTools as TabToolsScreen
@@ -74,6 +75,12 @@ sealed class DebugDrawerAction : Action {
 
         /** [NavigateTo] action fired when the debug drawer needs to navigate to [DistributionScreen]. */
         object DistributionTools : NavigateTo()
+
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [IPProtectionLocationToolsScreen]. */
+        object IPProtectionLocationTools : NavigateTo()
+
+        /** [NavigateTo] action fired when the debug drawer needs to navigate to [ListenToPageTools]. */
+        object ListenToPageTools : NavigateTo()
     }
 
     /** [DebugDrawerAction] fired when a back navigation event occurs. */

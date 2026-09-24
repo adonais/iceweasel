@@ -21,10 +21,7 @@ export class SimpleURIUnknownSchemesRemoteObserver {
   #initialized = false;
   #bypassListSettings;
   classID = Components.ID("{86606ba1-de17-4df4-9013-e571ab94fd94}");
-  QueryInterface = ChromeUtils.generateQI([
-    "nsIObserver",
-    "nsISimpleURIUnknownSchemesRemoteObserver",
-  ]);
+  QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
 
   observe(subject, topic) {
     // signal selected because RemoteSettingsClient is first getting initialised

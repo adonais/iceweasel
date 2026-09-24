@@ -470,10 +470,15 @@ SECStatus ConfigSecureServerWithNamedCert(
     return SECFailure;
   }
 
-  if (extraData) {
+  // SSL_ConfigServerCert is the preferred way to configure the server
+  // certificate, but it is too strict for the inadequate key usage tests.
+  SSLKEAType certKEA = NSS_FindCertKEAType(cert.get());
+  if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
     SSLExtraServerCertData dataCopy = {ssl_auth_null, nullptr, nullptr,
                                        nullptr,       nullptr, nullptr};
-    memcpy(&dataCopy, extraData, sizeof(dataCopy));
+    if (extraData) {
+      memcpy(&dataCopy, extraData, sizeof(dataCopy));
+    }
     dataCopy.certChain = certList.get();
 
     if (SSL_ConfigServerCert(fd, cert.get(), key.get(), &dataCopy,
@@ -481,19 +486,16 @@ SECStatus ConfigSecureServerWithNamedCert(
       PrintPRError("SSL_ConfigServerCert failed");
       return SECFailure;
     }
-
   } else {
-    // This is the deprecated setup mechanism, to be cleaned up in Bug 1569222
-    SSLKEAType certKEA = NSS_FindCertKEAType(cert.get());
     if (SSL_ConfigSecureServerWithCertChain(fd, cert.get(), certList.get(),
                                             key.get(), certKEA) != SECSuccess) {
-      PrintPRError("SSL_ConfigSecureServer failed");
+      PrintPRError("SSL_ConfigSecureServerWithCertChain failed");
       return SECFailure;
     }
+  }
 
-    if (keaOut) {
-      *keaOut = certKEA;
-    }
+  if (keaOut) {
+    *keaOut = certKEA;
   }
 
   if (certOut) {

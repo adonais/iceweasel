@@ -9,6 +9,7 @@ import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
+import { CUSTOMIZE_SUBPANELS } from "content-src/lib/constants";
 import {
   Base as ConnectedBase,
   _Base as Base,
@@ -195,7 +196,7 @@ describe("<BaseContent>", () => {
     ).toBeInTheDocument();
   });
 
-  it("should dispatch a user event when the customize menu is opened or closed", () => {
+  it("dispatches SHOW_PERSONALIZE on open and HIDE_PERSONALIZE with its user event on close", () => {
     const dispatch = jest.fn();
     const ref = React.createRef();
     renderBaseContent(
@@ -208,14 +209,239 @@ describe("<BaseContent>", () => {
     );
     ref.current.openCustomizationMenu();
     expect(dispatch).toHaveBeenCalledWith({ type: at.SHOW_PERSONALIZE });
-    expect(dispatch).toHaveBeenCalledWith(
-      ac.UserEvent({ event: "SHOW_PERSONALIZE" })
-    );
     ref.current.closeCustomizationMenu();
     expect(dispatch).toHaveBeenCalledWith({ type: at.HIDE_PERSONALIZE });
     expect(dispatch).toHaveBeenCalledWith(
       ac.UserEvent({ event: "HIDE_PERSONALIZE" })
     );
+  });
+
+  it("opens and closes the wallpapers subpanel through Base state", () => {
+    const ref = React.createRef();
+    renderBaseContent(DEFAULT_PROPS, ref);
+
+    act(() => {
+      ref.current.openWallpapersPanel("celestial");
+    });
+    expect(ref.current.state).toMatchObject({
+      activeSubpanel: CUSTOMIZE_SUBPANELS.WALLPAPERS,
+      wallpapersPanelCategory: "celestial",
+    });
+
+    act(() => {
+      ref.current.closeWallpapersPanel();
+    });
+    expect(ref.current.state.activeSubpanel).toBeNull();
+    // Retained so the heading and list keep their content while the
+    // subpanel slides out.
+    expect(ref.current.state.wallpapersPanelCategory).toBe("celestial");
+  });
+
+  it("toggles a subpanel open and closed", () => {
+    const ref = React.createRef();
+    renderBaseContent(DEFAULT_PROPS, ref);
+
+    act(() => {
+      ref.current.toggleThemesPanel();
+    });
+    expect(ref.current.state.activeSubpanel).toBe(CUSTOMIZE_SUBPANELS.THEMES);
+    act(() => {
+      ref.current.toggleThemesPanel();
+    });
+    expect(ref.current.state.activeSubpanel).toBeNull();
+  });
+
+  it("keeps at most one subpanel open", () => {
+    const ref = React.createRef();
+    renderBaseContent(DEFAULT_PROPS, ref);
+
+    act(() => {
+      ref.current.toggleSectionsMgmtPanel();
+    });
+    act(() => {
+      ref.current.toggleWidgetsManagementPanel();
+    });
+    expect(ref.current.state.activeSubpanel).toBe(CUSTOMIZE_SUBPANELS.WIDGETS);
+    act(() => {
+      ref.current.openWallpapersPanel("celestial");
+    });
+    expect(ref.current.state.activeSubpanel).toBe(
+      CUSTOMIZE_SUBPANELS.WALLPAPERS
+    );
+    act(() => {
+      ref.current.openWidgetsPanel();
+    });
+    expect(ref.current.state).toMatchObject({
+      activeSubpanel: CUSTOMIZE_SUBPANELS.WIDGETS,
+      wallpapersPanelCategory: "celestial",
+    });
+  });
+
+  it("closeSubpanels closes the open subpanel and clears the wallpaper category", () => {
+    const ref = React.createRef();
+    renderBaseContent(DEFAULT_PROPS, ref);
+
+    act(() => {
+      ref.current.openWallpapersPanel("celestial");
+    });
+    act(() => {
+      ref.current.closeSubpanels();
+    });
+    expect(ref.current.state).toMatchObject({
+      activeSubpanel: null,
+      wallpapersPanelCategory: null,
+    });
+  });
+
+  it("closeWallpapersPanel leaves another open subpanel alone", () => {
+    const ref = React.createRef();
+    renderBaseContent(DEFAULT_PROPS, ref);
+
+    act(() => {
+      ref.current.toggleThemesPanel();
+    });
+    act(() => {
+      ref.current.closeWallpapersPanel();
+    });
+    expect(ref.current.state.activeSubpanel).toBe(CUSTOMIZE_SUBPANELS.THEMES);
+  });
+
+  describe("subpanel wiring through the DOM", () => {
+    let originalShowModal;
+    let originalClose;
+    beforeEach(() => {
+      originalShowModal = HTMLDialogElement.prototype.showModal;
+      originalClose = HTMLDialogElement.prototype.close;
+      HTMLDialogElement.prototype.showModal = jest.fn();
+      HTMLDialogElement.prototype.close = jest.fn();
+      jest.useFakeTimers({ doNotFake: ["performance"] });
+    });
+    afterEach(() => {
+      HTMLDialogElement.prototype.showModal = originalShowModal;
+      HTMLDialogElement.prototype.close = originalClose;
+      jest.useRealTimers();
+    });
+
+    describe.each([
+      ["classic", {}],
+      ["Nova", { "nova.enabled": true }],
+    ])("wallpaper subpanel wiring, %s layout", (_layout, layoutPrefs) => {
+      it("opens a category through Base state and resets it when the panel closes", () => {
+        const prefValues = {
+          "newtabWallpapers.enabled": true,
+          ...layoutPrefs,
+        };
+        const store = makeStore(prefValues, {
+          Wallpapers: {
+            ...INITIAL_STATE.Wallpapers,
+            wallpaperList: [
+              { title: "moon", category: "celestial", theme: "light" },
+            ],
+            categories: ["celestial"],
+          },
+        });
+        const ref = React.createRef();
+        const props = {
+          ...DEFAULT_PROPS,
+          Prefs: { values: prefValues },
+          App: {
+            initialized: true,
+            customizeMenuVisible: true,
+            isForStartupCache: {},
+          },
+        };
+        const { container, rerender } = render(
+          <Provider store={store}>
+            <BaseContent Wallpapers={MOUNT_WALLPAPERS} {...props} ref={ref} />
+          </Provider>
+        );
+
+        act(() => {
+          ref.current.openWallpapersPanel("celestial");
+        });
+        expect(
+          container.querySelector(
+            '.wallpaper-list [data-l10n-id="newtab-wallpaper-category-title-celestial"]'
+          )
+        ).toBeInTheDocument();
+        expect(container.querySelector(".customize-menu-content")).toHaveClass(
+          "subpanel-open"
+        );
+
+        rerender(
+          <Provider store={store}>
+            <BaseContent
+              Wallpapers={MOUNT_WALLPAPERS}
+              {...props}
+              App={{
+                initialized: true,
+                customizeMenuVisible: false,
+                isForStartupCache: {},
+              }}
+              ref={ref}
+            />
+          </Provider>
+        );
+        act(() => {
+          jest.advanceTimersByTime(250);
+        });
+        expect(ref.current.state).toMatchObject({
+          activeSubpanel: null,
+          wallpapersPanelCategory: null,
+        });
+        expect(
+          container.querySelector(".customize-menu-content")
+        ).not.toHaveClass("subpanel-open");
+      });
+    });
+
+    it("opening the themes subpanel replaces the wallpaper subpanel", () => {
+      const prefValues = {
+        "newtabWallpapers.enabled": true,
+        "nova.enabled": true,
+        browserNovaEnabled: true,
+      };
+      const store = makeStore(prefValues, {
+        Wallpapers: {
+          ...INITIAL_STATE.Wallpapers,
+          wallpaperList: [
+            { title: "moon", category: "celestial", theme: "light" },
+          ],
+          categories: ["celestial"],
+        },
+      });
+      const ref = React.createRef();
+      const props = {
+        ...DEFAULT_PROPS,
+        Prefs: { values: prefValues },
+        App: {
+          initialized: true,
+          customizeMenuVisible: true,
+          isForStartupCache: {},
+        },
+      };
+      const { container } = render(
+        <Provider store={store}>
+          <BaseContent Wallpapers={MOUNT_WALLPAPERS} {...props} ref={ref} />
+        </Provider>
+      );
+
+      act(() => {
+        ref.current.openWallpapersPanel("celestial");
+      });
+      expect(container.querySelector(".wallpaper-list")).toBeInTheDocument();
+
+      act(() => {
+        ref.current.toggleThemesPanel();
+      });
+      expect(container.querySelector(".themes-mgmt-panel")).toBeInTheDocument();
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+      expect(
+        container.querySelector(".wallpaper-list")
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("should render only search if no Sections are enabled", () => {
@@ -1810,6 +2036,39 @@ describe("<BaseContent> wallpaper transitions (Bug 2057217)", () => {
     expect(setPropertySpy).not.toHaveBeenCalledWith(
       "--newtab-wallpaper",
       expect.anything()
+    );
+  });
+
+  it("crops a saved wallpaper the way its position pref says", async () => {
+    const filename =
+      "v1-builtin-dark-topright-1-550e8400-e29b-41d4-a716-446655440000";
+    const inst = makeInstance({
+      wallpaper: "custom",
+      uploadedWallpaper: `moz-newtab-wallpaper://${filename}`,
+    });
+    inst.props.Prefs.values["newtabWallpapers.customWallpaper.uuid"] = filename;
+    inst.props.Prefs.values["newtabWallpapers.customWallpaper.position"] =
+      "top right";
+
+    await inst.updateWallpaper();
+
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      "--newtab-wallpaper-backgroundPosition",
+      "top right"
+    );
+  });
+
+  it("centers an uploaded wallpaper, which has no crop of its own", async () => {
+    const inst = makeInstance({
+      wallpaper: "custom",
+      uploadedWallpaper: "custom-wallpaper.jpg",
+    });
+
+    await inst.updateWallpaper();
+
+    expect(setPropertySpy).toHaveBeenCalledWith(
+      "--newtab-wallpaper-backgroundPosition",
+      "center"
     );
   });
 

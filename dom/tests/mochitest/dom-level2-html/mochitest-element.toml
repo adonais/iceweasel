@@ -1,4 +1,5 @@
 [DEFAULT]
+prefs = ["dom.navigation.navigationRateLimit.count=0"]
 support-files = [
   "DOMTestCase.js",
   "files/anchor.html",

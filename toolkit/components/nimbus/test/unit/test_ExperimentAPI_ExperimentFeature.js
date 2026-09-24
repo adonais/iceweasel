@@ -218,25 +218,23 @@ add_task(async function test_allow_multiple_exposure_events() {
 
 add_task(async function test_onUpdate_after_store_ready() {
   const { sandbox, manager, cleanup } = await setupTest();
-  const stub = sandbox.stub();
 
-  const rollout = NimbusTestUtils.factories.rollout("foo", {
-    branch: {
-      slug: "slug",
-      features: [
-        {
-          featureId: "foo",
-          value: {
-            title: "hello",
-            enabled: true,
-          },
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "foo",
+      {
+        featureId: "foo",
+        value: {
+          title: "hello",
+          enabled: true,
         },
-      ],
-    },
-  });
+      },
+      { isRollout: true }
+    ),
+    "test"
+  );
 
-  sandbox.stub(manager.store, "getAllActiveRollouts").returns([rollout]);
-
+  const stub = sandbox.stub();
   NimbusFeatures.foo.onUpdate(stub);
 
   Assert.ok(stub.calledOnce, "Callback called");
@@ -258,5 +256,6 @@ add_task(async function test_onUpdate_after_store_ready() {
     "Returns the NimbusTestUtils rollout default value"
   );
 
+  await NimbusTestUtils.cleanupManager(["foo"]);
   await cleanup();
 });

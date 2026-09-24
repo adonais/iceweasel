@@ -5,7 +5,13 @@ subsuite = "mozbuild"
 
 ["action/test_buildlist.py"]
 
+["action/test_fat_aar.py"]
+
+["action/test_generate_archive_symbols.py"]
+
 ["action/test_html_fragment_preprocessor.py"]
+
+["action/test_l10n_stage.py"]
 
 ["action/test_langpack_manifest.py"]
 
@@ -153,3 +159,5 @@ subsuite = "mozbuild"
 skip-if = ["os == 'win'"] # Windows doesn't have the same path seperator as linux, and we just don't need to run it there
 
 ["vendor/test_vendor_manifest.py"]
+
+["vendor/test_vendor_node.py"]

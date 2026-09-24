@@ -20,12 +20,14 @@ async function run_test() {
   await setupUpdaterTest(FILE_PARTIAL_MAR, true);
   await stageUpdate(STATE_AFTER_STAGE, true);
   checkPostUpdateRunningFile(false);
+  checkNoUpdateTelemetry();
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
   checkUpdateLogContents(LOG_PARTIAL_SUCCESS, true, false, true);
   // Switch the application to the staged application that was updated.
   runUpdate(STATE_SUCCEEDED, true, 0, true);
   await checkPostUpdateAppLog();
   checkAppBundleModTime();
+  checkUpdateTelemetry();
   await testPostUpdateProcessing();
   checkPostUpdateRunningFile(true);
   checkFilesAfterUpdateSuccess(getApplyDirFile, false, true);

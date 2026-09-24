@@ -401,13 +401,14 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   nsCOMPtr<nsILoadInfo> loadInfo;
 
   // FIXME: We don't know the remote type of the process which provided these
-  // LoadInfoArgs. Pass in `NOT_REMOTE_TYPE` as the origin process to blindly
-  // accept whatever value was passed by the other side for now, as we aren't
-  // using it for security checks here.
+  // LoadInfoArgs. Pass in `RemoteType::NotRemote()` as the origin process to
+  // blindly accept whatever value was passed by the other side for now, as we
+  // aren't using it for security checks here.
   // If this code ever starts checking the triggering remote type, this needs to
   // be changed.
   rv = ipc::LoadInfoArgsToLoadInfo(mProxyConfig->loadInfoArgs(),
-                                   NOT_REMOTE_TYPE, getter_AddRefs(loadInfo));
+                                   dom::RemoteType::NotRemote(),
+                                   getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     LOG("WebrtcTCPSocket {}: could not init load info\n", fmt::ptr(this));
     return rv;

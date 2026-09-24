@@ -34,11 +34,11 @@ async def test_insecure_certificate(
     # If the error page hasn't fully loaded yet, running a BiDi command
     # in most of the cases will trigger an error like:
     #     `AbortError: Actor 'MessageHandlerFrame' destroyed before query`
-    result = await bidi_session.browsing_context.locate_nodes(
+    nodes = await bidi_session.browsing_context.locate_nodes(
         context=contexts[0]["context"],
         locator={"type": "css", "value": "body"},
     )
-    assert len(result["nodes"]) > 0
+    assert len(nodes) > 0
 
 
 async def test_invalid_content_encoding(bidi_session, new_tab, inline):
@@ -52,8 +52,8 @@ async def test_invalid_content_encoding(bidi_session, new_tab, inline):
     # If the error page hasn't fully loaded yet, running a BiDi command
     # in most of the cases will trigger an error like:
     #     `AbortError: Actor 'MessageHandlerFrame' destroyed before query`
-    result = await bidi_session.browsing_context.locate_nodes(
+    nodes = await bidi_session.browsing_context.locate_nodes(
         context=new_tab["context"],
         locator={"type": "css", "value": "body"},
     )
-    assert len(result["nodes"]) > 0
+    assert len(nodes) > 0

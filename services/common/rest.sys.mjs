@@ -319,7 +319,7 @@ RESTRequest.prototype = {
       }
 
       this._log.debug(method + " Length: " + data.length);
-      if (this._log.level <= Log.Level.Trace) {
+      if (this._log.traceEnabled) {
         this._log.trace(method + " Body: " + data);
       }
 
@@ -480,7 +480,7 @@ RESTRequest.prototype = {
         this.method + " " + uri + " failed: " + statusCode + " - " + message
       );
       // Additionally give the full response body when Trace logging.
-      if (this._log.level <= Log.Level.Trace) {
+      if (this._log.traceEnabled) {
         this._log.trace(this.method + " body", this.response.body);
       }
       this._deferred.reject(error);

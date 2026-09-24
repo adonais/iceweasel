@@ -82,7 +82,7 @@ details summary,
      (--space-large). The custom chevron is drawn in this gutter for expandable
      folders below. */
   padding-inline: calc(var(--space-small) + var(--space-medium) + var(--space-large)) var(--space-small);
-  border-radius: var(--border-radius-small);
+  border-radius: var(--border-radius-circle);
   grid-column: span 9;
 
   &:hover {
@@ -105,7 +105,6 @@ details summary,
     display: inline-block;
     width: var(--size-item-small);
     height: var(--size-item-small);
-    vertical-align: middle;
     margin-inline-end: var(--space-small);
     -moz-context-properties: fill;
     fill: currentColor;
@@ -113,9 +112,15 @@ details summary,
     background-size: contain;
     background-repeat: no-repeat;
   }
+
+  @media not -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-small);
+  }
 }
 
 details > summary {
+  display: flex;
+  align-items: center;
   /* Replace the native <details> triangle with a custom chevron drawn in the
      reserved leading gutter, so folder icons stay vertically aligned. */
   list-style: none;

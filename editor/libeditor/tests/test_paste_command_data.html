@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+<head>
+  <title>Test whether the paste event carries the correct data for the paste command</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="/tests/SimpleTest/ChromeTask.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<input type="text">
+<textarea></textarea>
+<div contenteditable="true"></div>
+<script>
+
+const htmlPrefix = navigator.platform.includes("Win")
+  ? "<html><body>\n<!--StartFragment-->"
+  : "";
+const htmlPostfix = navigator.platform.includes("Win")
+  ? "<!--EndFragment-->\n</body>\n</html>"
+  : "";
+
+let isWayland = false;
+
+async function getWindowProtocol() {
+  return await SpecialPowers.spawnChrome([], () => {
+    try {
+      return Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo)
+        .windowProtocol;
+    } catch {
+      return "";
+    }
+  });
+}
+
+async function initializeClipboardData() {
+  const text = `Text-${Math.random()}`;
+  const html = `<span>Text-${Math.random()}</span>`;
+
+  await SimpleTest.promiseClipboardChange(
+    text,
+    () => {
+      document.body.focus();
+      document.addEventListener("copy", (e) => {
+        e.preventDefault();
+        e.clipboardData.setData('text/html', html);
+        e.clipboardData.setData('text/plain', text);
+      }, { once: true });
+      SpecialPowers.doCommand(window, "cmd_copy");
+    }
+  );
+
+  if (isWayland) {
+    // Wait for clipboard state stable (see bug 2005351).
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  return {text, html};
+}
+
+add_setup(async function init() {
+  isWayland = (await getWindowProtocol()) === "wayland";
+
+  if (isWayland) {
+    SimpleTest.requestFlakyTimeout("Timeouts are needed to wait for clipboard state stable for Wayland (see bug 2005351)");
+  }
+});
+
+document.querySelectorAll("input, textarea, div[contenteditable]").forEach((element) => {
+  add_task(async function test_paste_command() {
+    info("test for " + element);
+    if (element.isContentEditable) {
+      element.innerHTML = "";
+    } else {
+      element.value = "";
+    }
+
+    info("Waiting for initializing clipboard...");
+    let {text, html} = await initializeClipboardData();
+
+    let pasteEventFired = false;
+    element.addEventListener("paste", (e) => {
+      pasteEventFired = true;
+      // Check clipboard content.
+      let dataTransfer = e.clipboardData;
+      isDeeply(dataTransfer.types, ['text/html', 'text/plain'], "Check clipboard data types");
+      is(dataTransfer.getData('text/plain'), text, "Check clipboard plain text data");
+      is(dataTransfer.getData('text/html'), `${htmlPrefix}${html}${htmlPostfix}`, "Check clipboard HTML data");
+    }, { once: true });
+
+    let beforeInputEventFired = false;
+    element.addEventListener("beforeinput", (e) => {
+      beforeInputEventFired = true;
+      // Check beforeinput event.
+      is(e.inputType, "insertFromPaste", "Check input type");
+      is(e.data, element.isContentEditable ? null : text, "Check data");
+
+      let dataTransfer = e.dataTransfer;
+      if (element.isContentEditable) {
+        isDeeply(dataTransfer.types, ['text/html', 'text/plain'], "Check dataTransfer types");
+        is(dataTransfer.getData('text/plain'), text, "Check dataTransfer plain text data");
+        is(dataTransfer.getData('text/html'), `${htmlPrefix}${html}${htmlPostfix}`, "Check dataTransfer HTML data");
+      } else {
+        is(dataTransfer, null, "Check dataTransfer");
+      }
+    }, { once: true });
+
+    element.focus();
+    SpecialPowers.doCommand(window, "cmd_paste");
+
+    // Check editor content.
+    ok(pasteEventFired, "paste event should be fired");
+    ok(beforeInputEventFired, "beforeinput event should be fired");
+    if (element.isContentEditable) {
+      is(element.innerHTML, html, "Check HTML editor content");
+    } else {
+      is(element.value, text, "Check text editor content");
+    }
+  });
+
+  add_task(async function test_pasteNoFormatting_command() {
+    info("test for " + element);
+    if (element.isContentEditable) {
+      element.innerHTML = "";
+    } else {
+      element.value = "";
+    }
+
+    info("Waiting for initializing clipboard...");
+    let {text} = await initializeClipboardData();
+
+    let pasteEventFired = false;
+    element.addEventListener("paste", (e) => {
+      pasteEventFired = true;
+      // Check clipboard content.
+      let dataTransfer = e.clipboardData;
+      isDeeply(dataTransfer.types, ['text/plain'], "Check clipboard data types");
+      is(dataTransfer.getData('text/plain'), text, "Check clipboard plain text data");
+      is(dataTransfer.getData('text/html'), '', "Check clipboard HTML data");
+    }, { once: true });
+
+    let beforeInputEventFired = false;
+    element.addEventListener("beforeinput", (e) => {
+      beforeInputEventFired = true;
+      // Check beforeinput event.
+      is(e.inputType, "insertFromPaste", "Check input type");
+      is(e.data, element.isContentEditable ? null : text, "Check data");
+
+      let dataTransfer = e.dataTransfer;
+      if (element.isContentEditable) {
+        isDeeply(dataTransfer.types, ['text/plain'], "Check dataTransfer types");
+        is(dataTransfer.getData('text/plain'), text, "Check dataTransfer plain text data");
+        is(dataTransfer.getData('text/html'), '', "Check dataTransfer HTML data");
+      } else {
+        is(dataTransfer, null, "Check dataTransfer");
+      }
+    }, { once: true });
+
+    element.focus();
+    SpecialPowers.doCommand(window, "cmd_pasteNoFormatting");
+
+    // Check editor content.
+    ok(pasteEventFired, "paste event should be fired");
+    ok(beforeInputEventFired, "beforeinput event should be fired");
+    is(element.isContentEditable ? element.textContent : element.value, text, "Check editor content");
+  });
+})
+</script>
+</body>
+</html>

@@ -1,51 +1,101 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Jan 2025 15:30:00 -0600
-Subject: Bug 1935474 - BUILD.gn changes to allow building all of
- absl_component_deps. r?ng!
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Sun, 23 Aug 2026 13:55:28 -0400
+Subject: Bug 2038068 - make abseil-cpp use the Win32 path on mingw.
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9cf7afd94407318bb1c39b801d3523db532232e1
 ---
- abseil-cpp/BUILD.gn                      | 13 +++++++++++++
- abseil-cpp/absl/random/internal/BUILD.gn |  5 +++++
- 2 files changed, 18 insertions(+)
+ abseil-cpp/absl/base/internal/thread_identity.cc          | 8 ++++----
+ abseil-cpp/absl/base/internal/thread_identity.h           | 2 +-
+ abseil-cpp/absl/synchronization/internal/pthread_waiter.h | 4 ++--
+ abseil-cpp/absl/synchronization/internal/win32_waiter.h   | 4 ++--
+ 4 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/abseil-cpp/BUILD.gn b/abseil-cpp/BUILD.gn
-index 8da448e6e68..07432235612 100644
---- a/abseil-cpp/BUILD.gn
-+++ b/abseil-cpp/BUILD.gn
-@@ -142,6 +142,19 @@ group("absl_component_deps") {
-   }
+diff --git a/abseil-cpp/absl/base/internal/thread_identity.cc b/abseil-cpp/absl/base/internal/thread_identity.cc
+index 27b5816394a..07352dee4e9 100644
+--- a/abseil-cpp/absl/base/internal/thread_identity.cc
++++ b/abseil-cpp/absl/base/internal/thread_identity.cc
+@@ -23,7 +23,7 @@
+ #include "absl/base/internal/raw_logging.h"
+ #include "absl/base/internal/spinlock.h"
  
-   visibility = [ ":absl" ]
-+
-+  if (moz_webrtc_build) {
-+    # rewrite deps for our new abseil-cpp location
-+    if (defined(public_deps)) {
-+      modified_deps = []
-+      foreach (dep, public_deps) {
-+        newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+        modified_deps += [ newdep ]
-+      }
-+      public_deps = []
-+      public_deps = modified_deps
-+    }
-+  }
- }
+-#if !defined(_WIN32) || defined(__MINGW32__)
++#if !defined(_WIN32)
+ #include <pthread.h>
+ #ifndef __wasi__
+ // WASI does not provide this header, either way we disable use
+@@ -84,9 +84,9 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
+   absl::call_once(init_thread_identity_key_once, AllocateThreadIdentityKey,
+                   reclaimer);
  
- # Abseil testing utilities should only be included in test binaries.
-diff --git a/abseil-cpp/absl/random/internal/BUILD.gn b/abseil-cpp/absl/random/internal/BUILD.gn
-index 1a0775f74f7..04d3d2c0b49 100644
---- a/abseil-cpp/absl/random/internal/BUILD.gn
-+++ b/abseil-cpp/absl/random/internal/BUILD.gn
-@@ -188,6 +188,11 @@ absl_source_set("platform") {
-     "//third_party/abseil-cpp/absl/base:config",
-   ]
-   visibility = [ "//third_party/abseil-cpp/absl/random/*" ]
-+
-+  if (moz_webrtc_build) {
-+    # We don't really want to run Google's scripting to generate build flags
-+    deps -= [ "//build:chromeos_buildflags" ]
-+  }
- }
+-#if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
++#if defined(__wasi__) || defined(__EMSCRIPTEN__) || \
+     defined(__hexagon__)
+-  // Emscripten, WASI and MinGW pthread implementations does not support
++  // Emscripten and WASI pthread implementations does not support
+   // signals. See
+   // https://kripken.github.io/emscripten-site/docs/porting/pthreads.html for
+   // more information.
+@@ -106,7 +106,7 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
+   pthread_setspecific(thread_identity_pthread_key,
+                       reinterpret_cast<void*>(identity));
+   pthread_sigmask(SIG_SETMASK, &curr_signals, nullptr);
+-#endif  // !__EMSCRIPTEN__ && !__MINGW32__
++#endif  // !__EMSCRIPTEN__
  
- absl_source_set("randen") {
+ #elif ABSL_THREAD_IDENTITY_MODE == ABSL_THREAD_IDENTITY_MODE_USE_TLS
+   // NOTE: Not async-safe.  But can be open-coded.
+diff --git a/abseil-cpp/absl/base/internal/thread_identity.h b/abseil-cpp/absl/base/internal/thread_identity.h
+index a9f26d06557..86fad8ceaa7 100644
+--- a/abseil-cpp/absl/base/internal/thread_identity.h
++++ b/abseil-cpp/absl/base/internal/thread_identity.h
+@@ -271,7 +271,7 @@ void ClearCurrentThreadIdentity();
+ #error ABSL_THREAD_IDENTITY_MODE cannot be directly set
+ #elif defined(ABSL_FORCE_THREAD_IDENTITY_MODE)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_FORCE_THREAD_IDENTITY_MODE
+-#elif defined(_WIN32) && !defined(__MINGW32__)
++#elif defined(_WIN32)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
+ #elif defined(__APPLE__) && defined(ABSL_HAVE_THREAD_LOCAL)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
+diff --git a/abseil-cpp/absl/synchronization/internal/pthread_waiter.h b/abseil-cpp/absl/synchronization/internal/pthread_waiter.h
+index 23db76ad442..eb30b24d0e3 100644
+--- a/abseil-cpp/absl/synchronization/internal/pthread_waiter.h
++++ b/abseil-cpp/absl/synchronization/internal/pthread_waiter.h
+@@ -16,7 +16,7 @@
+ #ifndef ABSL_SYNCHRONIZATION_INTERNAL_PTHREAD_WAITER_H_
+ #define ABSL_SYNCHRONIZATION_INTERNAL_PTHREAD_WAITER_H_
+ 
+-#if !defined(_WIN32) && !defined(__MINGW32__)
++#if !defined(_WIN32)
+ #include <pthread.h>
+ 
+ #include "absl/base/config.h"
+@@ -55,6 +55,6 @@ class PthreadWaiter : public WaiterCrtp<PthreadWaiter> {
+ ABSL_NAMESPACE_END
+ }  // namespace absl
+ 
+-#endif  // !defined(_WIN32) && !defined(__MINGW32__)
++#endif  // !defined(_WIN32)
+ 
+ #endif  // ABSL_SYNCHRONIZATION_INTERNAL_PTHREAD_WAITER_H_
+diff --git a/abseil-cpp/absl/synchronization/internal/win32_waiter.h b/abseil-cpp/absl/synchronization/internal/win32_waiter.h
+index fdab264e8cb..cba1c9d8834 100644
+--- a/abseil-cpp/absl/synchronization/internal/win32_waiter.h
++++ b/abseil-cpp/absl/synchronization/internal/win32_waiter.h
+@@ -20,7 +20,7 @@
+ #include <sdkddkver.h>
+ #endif
+ 
+-#if defined(_WIN32) && !defined(__MINGW32__) && \
++#if defined(_WIN32) && \
+     _WIN32_WINNT >= _WIN32_WINNT_VISTA
+ 
+ #include "absl/base/config.h"
+@@ -66,7 +66,7 @@ class Win32Waiter : public WaiterCrtp<Win32Waiter> {
+ ABSL_NAMESPACE_END
+ }  // namespace absl
+ 
+-#endif  // defined(_WIN32) && !defined(__MINGW32__) &&
++#endif  // defined(_WIN32) &&
+         // _WIN32_WINNT >= _WIN32_WINNT_VISTA
+ 
+ #endif  // ABSL_SYNCHRONIZATION_INTERNAL_WIN32_WAITER_H_

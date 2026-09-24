@@ -27,6 +27,7 @@
 #include "nsArrayUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
+#include "nsCopySupport.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIClipboard.h"
 #include "nsIInputStream.h"
@@ -959,10 +960,13 @@ already_AddRefed<Promise> Clipboard::Write(
     return p.forget();
   }
 
+  nsString sourceURL = nsCopySupport::GetDocumentSourceURL(*doc);
+
   GetClipboardNativeItem(aData[0])->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [owner, request, context, principal = RefPtr{&aSubjectPrincipal}](
-          const nsTArray<NativeEntry>& aEntries) {
+      [owner, request, context, sourceURL,
+       principal =
+           RefPtr{&aSubjectPrincipal}](const nsTArray<NativeEntry>& aEntries) {
         RefPtr<DataTransfer> dataTransfer =
             new DataTransfer(ToSupports(owner), eCopy,
                              /* is external */ true,
@@ -983,6 +987,12 @@ already_AddRefed<Promise> Clipboard::Write(
             dataTransfer->GetTransferable(0, context);
         if (!transferable) {
           request->Abort(NS_ERROR_FAILURE);
+          return;
+        }
+
+        nsresult rv = nsCopySupport::AppendSourceURL(*transferable, sourceURL);
+        if (NS_FAILED(rv)) {
+          request->Abort(rv);
           return;
         }
 

@@ -87,4 +87,6 @@ support-files = ["../schemas/*.schema.json"]
 ["test_WallpaperFeed.js"]
 tags = "remote-settings"
 
+["test_WallpaperFileNames.js"]
+
 ["test_WeatherFeed.js"]

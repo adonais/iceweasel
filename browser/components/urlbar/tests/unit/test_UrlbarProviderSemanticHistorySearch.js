@@ -102,10 +102,10 @@ add_task(async function test_startQuery_adds_results() {
   Assert.ok(added[0].payload.isBlockable, "Result should be blockable");
   Assert.equal(added[0].payload.frecency, 100, "Frecency is returned");
 
-  let controller = UrlbarTestUtils.newMockController();
-  let stub = sinon.stub(controller, "removeResult");
+  let parentController = UrlbarTestUtils.mockChildController().parentController;
+  let stub = sinon.stub(parentController, "removeResult");
   let promiseRemoved = PlacesTestUtils.waitForNotification("page-removed");
-  await provider.onEngagement(queryContext, controller, {
+  await provider.onEngagement(queryContext, parentController, {
     selType: "dismiss",
     result: { payload: { url } },
   });

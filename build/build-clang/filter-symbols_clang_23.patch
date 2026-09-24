@@ -1,0 +1,94 @@
+diff --git a/llvm/utils/extract_symbols.py b/llvm/utils/extract_symbols.py
+index 40a43d365555..5d5d131dedd5 100755
+--- a/llvm/utils/extract_symbols.py
++++ b/llvm/utils/extract_symbols.py
+@@ -106,6 +106,12 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+         # instantiated locally. Pattern: ??$getAs@<template_arg>@Type@clang@@...
+         if symbol.startswith("??$getAs@") and "@Type@clang@@" in symbol:
+             return symbol
++        # Keep llvm::detail::getRegistryLinkListInstance<Registry<T>>()
++        # explicit specializations, which are defined out-of-line by
++        # LLVM_DEFINE_REGISTRY and are what Registry<T>::add_node() and
++        # Registry<T>::begin() call into.
++        if symbol.startswith("??$getRegistryLinkListInstance@"):
++            return symbol
+         return None
+     # Delete lambda object constructors and operator() functions. These start
+     # with ??R<lambda_ or ??0<lambda_ and can be discarded because lambdas are
+@@ -120,12 +126,14 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+     # Skip X86GenMnemonicTables functions, they are not exposed from llvm/include/.
+     elif re.match(r"\?is[A-Z0-9]*@X86@llvm", symbol):
+         return None
+-    # Keep Registry<T>::Head and Registry<T>::Tail static members for plugin support.
+-    # Pattern matches: ?Head@?$Registry@<template_args>@llvm@@ or ?Tail@?$Registry@...
++    # Keep members of llvm::Registry<T> and of its nested classes (node,
++    # iterator) for plugin support. Registry<T>::add_node() is the interface
++    # between a plugin and the executable: plugins compiled against a
++    # dllimport-ed explicit instantiation declaration of Registry<T> import
++    # it, but nothing in the executable itself references it.
+     elif (
+-        "?$Registry@" in symbol
++        re.match(r"\?(\?_?[0-9A-Z]|\w+@)(\w+@)?\?\$Registry@", symbol)
+         and "@llvm@@" in symbol
+-        and (symbol.startswith("?Head@") or symbol.startswith("?Tail@"))
+     ):
+         return symbol
+     # Skip symbols added by the compiler with -fprofile-generate.
+@@ -155,6 +163,44 @@ def should_keep_microsoft_symbol(symbol, calling_convention_decoration):
+         # because they are used for debugging only.
+         if symbol.startswith(("?dump@", "?dumpColor@", "?printPretty@")):
+             return None
++        # clang::interp is the constant expression bytecode interpreter, an
++        # implementation detail of clang/lib/AST/ByteCode. Nothing from it is
++        # declared in public headers (ASTContext.h only forward-declares
++        # interp::Context), so plugins cannot reference any of its symbols.
++        if re.search(r"(^\?\?_?[0-9A-Z]|@)interp@clang@@", symbol):
++            return None
++        # anchor(): empty virtual functions whose only purpose is to anchor a
++        # class's vtable to a single TU; never called by name from elsewhere.
++        # Exception: base classes that are directly subclassed or instantiated
++        # outside the DLL need anchor() exported so the linker can fill in the
++        # inherited vtable slot in plugins (raw_ostream and raw_pwrite_stream are
++        # needed because raw_string_ostream / raw_svector_ostream subclasses are
++        # created in the plugin and don't override anchor()).
++        if symbol.startswith("?anchor@") and not symbol.startswith(
++            (
++                "?anchor@PluginASTAction@clang@@",
++                "?anchor@raw_ostream@llvm@@",
++                "?anchor@raw_pwrite_stream@llvm@@",
++            )
++        ):
++            return None
++        # Profile(): FoldingSetTrait / FoldingSetNode hash methods, used only
++        # by LLVM's internal hash-consing machinery.
++        if symbol.startswith("?Profile@"):
++            return None
++        # cloneImpl(): private virtual on llvm::MDNode subclasses; only the
++        # public clone() entry point needs to be reachable.
++        if symbol.startswith("?cloneImpl@"):
++            return None
++        # getAnalysisUsage()/releaseMemory(): LLVM Pass virtual overrides
++        # dispatched through the legacy pass manager's vtables.
++        if symbol.startswith(("?getAnalysisUsage@", "?releaseMemory@")):
++            return None
++        # Virtual overrides on cl::parser / cl::opt / cl::OptionValue template
++        # instantiations are invoked by the CommandLine library through the
++        # generic_parser_base / Option vtables, never imported by name.
++        if re.search(r"@\?\$(parser|opt|OptionValue)@.+@cl@llvm@@", symbol):
++            return None
+         return symbol
+     # Keep mangled global variables and static class members in llvm:: namespace.
+     # These have a type mangling that looks like (this is derived from
+@@ -531,5 +577,11 @@ if __name__ == "__main__":
+         if platform.system() == "AIX" and k.startswith("."):
+             continue
+         template = get_template_name(k, args.mangling)
+-        if v == 1 and (not template or template in template_instantiation_refs):
++        # llvm::Registry<T> is only ever used from plugins, so don't require its
++        # explicit instantiations to be referenced from the executable.
++        if v == 1 and (
++            not template
++            or template in template_instantiation_refs
++            or template in ("Registry", "getRegistryLinkListInstance")
++        ):
+             print(k, file=outfile)

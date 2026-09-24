@@ -94,6 +94,9 @@ interface FeatureSettingsHelper {
     /** Whether trending and recent searches are shown on the Homepage search. */
     var isHomepageTrendingRecentSearchEnabled: Boolean
 
+    /** Whether the current URL is shown separate from the addressbar when tapped. */
+    var showAddressBarInFocusMode: Boolean
+
     /** Enable or disable the translations prompt after a page that can be translated is loaded. */
     fun enableOrDisablePageLoadTranslationsPrompt(enableTranslationsPrompt: Boolean) {
         if (enableTranslationsPrompt) {

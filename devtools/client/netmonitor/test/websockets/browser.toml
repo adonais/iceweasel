@@ -40,6 +40,8 @@ skip-if = [
 
 ["browser_net_ws-json-stomp-payload.js"]
 
+["browser_net_ws-jsonl-payload.js"]
+
 ["browser_net_ws-keep-future-frames.js"]
 
 ["browser_net_ws-limit-frames.js"]

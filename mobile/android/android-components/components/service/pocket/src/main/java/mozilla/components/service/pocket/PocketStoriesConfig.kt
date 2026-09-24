@@ -4,6 +4,7 @@
 
 package mozilla.components.service.pocket
 
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.pocket.mars.api.MarsSpocsRequestConfig
@@ -49,14 +50,18 @@ class PocketStoriesConfig(
 /**
  * Configuration for content recommendations request.
  *
- * @property locale Optional locale to specify the language of the recommendations to return.
+ * @property locale Optional [Locale] to specify the language of the recommendations to return.
  * @property region Optional country-level region to improve the recommendations to return.
  * @property count Optional number of recommendations to return.
  * @property topics Optional list to specify the preferred topics to return for the content recommendations.
+ * @property userAgent Optional user agent to send with the content recommendations request.
+ * @property useMerinoClient Whether to fetch the content recommendations with the Merino client.
  */
 data class ContentRecommendationsRequestConfig(
-    val locale: String = "",
+    val locale: Locale = Locale.getDefault(),
     val region: String = "",
     val count: Int = DEFAULT_CONTENT_RECOMMENDATIONS_COUNT,
     val topics: List<String> = listOf(),
+    val userAgent: String = "",
+    val useMerinoClient: Boolean = false,
 )

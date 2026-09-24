@@ -201,8 +201,7 @@ template <typename storage_type>
 struct MapSorterIt {
   storage_type* ptr;
   MapSorterIt(storage_type* ptr) : ptr(ptr) {}
-  bool operator==(const MapSorterIt& other) const { return ptr == other.ptr; }
-  bool operator!=(const MapSorterIt& other) const { return !(*this == other); }
+  bool operator==(const MapSorterIt& other) const = default;
   MapSorterIt& operator++() {
     ++ptr;
     return *this;

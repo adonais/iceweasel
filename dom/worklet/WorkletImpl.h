@@ -109,6 +109,14 @@ class WorkletImpl {
   virtual already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope(
       JSContext* aCx) = 0;
 
+  /**
+   * Called on the execution thread from NotifyWorkletFinished(), after the
+   * global scope has been released and so once GetGlobalScope() can no longer
+   * construct another one. Subclasses may release state that
+   * ConstructGlobalScope() would otherwise have consumed.
+   */
+  virtual void OnFinishedOnExecutionThread() {}
+
   // Modified only in constructor.
   ipc::PrincipalInfo mPrincipalInfo;
   nsCOMPtr<nsIPrincipal> mPrincipal;

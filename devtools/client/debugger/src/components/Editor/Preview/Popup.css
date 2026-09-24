@@ -174,7 +174,7 @@
 /* Use a color other than yellow to highlight the hovered token on the paused line
    as the paused line is already yellow */
 .paused-line .preview-token {
-  background-color: light-dark(rgba(202, 227, 255, 0.5), rgba(202, 227, 255, 0.3));
+  background-color: light-dark(rgb(202 227 255 / 0.5), rgb(202 227 255 / 0.3));
 }
 
 /* This rule only make sure the text remains readable when hovering a token on the paused line. */
@@ -262,5 +262,5 @@
 }
 
 .theme-dark .exception-stacktrace .line {
-  color: hsl(210, 40%, 60%);
+  color: hsl(210 40% 60%);
 }

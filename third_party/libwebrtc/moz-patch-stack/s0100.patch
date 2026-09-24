@@ -16,7 +16,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c
  4 files changed, 21 insertions(+), 9 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 98a359ccd2..8140c795b6 100644
+index 4f97d8df91..a37d3086f8 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -536,6 +536,9 @@ if (!rtc_build_ssl) {
@@ -38,7 +38,7 @@ index 98a359ccd2..8140c795b6 100644
        ]
        # Added when we removed deps in other places to avoid building
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index b648193d82..2705286963 100644
+index a3072febba..b120c705b2 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -12,9 +12,7 @@ import("../webrtc.gni")
@@ -52,7 +52,7 @@ index b648193d82..2705286963 100644
  }
  
  config("rtc_media_defines_config") {
-@@ -110,6 +108,9 @@ rtc_library("media_engine") {
+@@ -95,6 +93,9 @@ rtc_library("media_engine") {
        "base/media_engine.cc",
        "base/media_engine.h",
      ]
@@ -62,7 +62,7 @@ index b648193d82..2705286963 100644
    }
  }
  
-@@ -265,6 +266,7 @@ rtc_library("codec_list") {
+@@ -250,6 +251,7 @@ rtc_library("codec_list") {
    ]
  }
  
@@ -70,7 +70,7 @@ index b648193d82..2705286963 100644
  rtc_library("rtp_utils") {
  if (!build_with_mozilla) {
    sources = [
-@@ -313,7 +315,6 @@ rtc_library("media_constants") {
+@@ -298,7 +300,6 @@ rtc_library("media_constants") {
  }
  
  rtc_library("turn_utils") {
@@ -78,7 +78,7 @@ index b648193d82..2705286963 100644
    sources = [
      "base/turn_utils.cc",
      "base/turn_utils.h",
-@@ -324,10 +325,8 @@ if (!build_with_mozilla) {
+@@ -309,10 +310,8 @@ if (!build_with_mozilla) {
      "../rtc_base/system:rtc_export",
    ]
  }
@@ -89,7 +89,7 @@ index b648193d82..2705286963 100644
    sources = [
      "base/rid_description.cc",
      "base/rid_description.h",
-@@ -337,7 +336,6 @@ if (!build_with_mozilla) {
+@@ -322,7 +321,6 @@ if (!build_with_mozilla) {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  }
@@ -97,7 +97,7 @@ index b648193d82..2705286963 100644
  
  rtc_library("rtc_simulcast_encoder_adapter") {
    visibility = [ "*" ]
-@@ -564,6 +562,12 @@ rtc_library("rtc_audio_video") {
+@@ -549,6 +547,12 @@ rtc_library("rtc_audio_video") {
      "engine/webrtc_voice_engine.cc",
      "engine/webrtc_voice_engine.h",
    ]

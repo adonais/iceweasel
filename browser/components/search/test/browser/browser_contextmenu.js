@@ -38,10 +38,6 @@ let oldDefaultEngine;
 let oldDefaultPrivateEngine;
 
 add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
-  });
-
   await SearchService.init();
 
   for (let [name, search_url] of ENGINE_DATA) {
@@ -266,9 +262,9 @@ add_task(async function test() {
  * @param {object} options
  *   Options object.
  * @param {boolean} options.separatePrivateDefault
- *   The value to set for the `separatePrivateDefault` pref.
+ *   The value to set for the `separatePrivateDefault.enabled` pref.
  * @param {boolean} options.separatePrivateDefaultUiEnabled
- *   The value to set for the `separatePrivateDefault.ui.enabled` pref.
+ *   The value to set for the `separatePrivateDefault.featureGate` pref.
  * @param {SearchEngine} options.defaultPrivateEngine
  *   The engine to set as the default private engine.
  * @param {boolean} options.inPrivateWindow
@@ -284,7 +280,7 @@ async function computeExpectedAndDoTest({
   inPrivateWindow,
   checkPrivateItem,
 }) {
-  // When `separatePrivateDefault.ui.enabled` is false, `setDefaultPrivate()`
+  // When `separatePrivateDefault.featureGate` is false, `setDefaultPrivate()`
   // will set the non-private default, which would make this test more complex
   // and isn't the point anyway, so avoid that by just not setting the default
   // private engine in that case.
@@ -346,9 +342,9 @@ async function computeExpectedAndDoTest({
  * @param {object} options
  *   Options object.
  * @param {boolean} options.separatePrivateDefault
- *   The value to set for the `separatePrivateDefault` pref.
+ *   The value to set for the `separatePrivateDefault.enabled` pref.
  * @param {boolean} options.separatePrivateDefaultUiEnabled
- *   The value to set for the `separatePrivateDefault.ui.enabled` pref.
+ *   The value to set for the `separatePrivateDefault.featureGate` pref.
  * @param {SearchEngine} options.defaultPrivateEngine
  *   The engine to set as the default private engine.
  * @param {boolean} options.inPrivateWindow
@@ -396,9 +392,9 @@ async function doTest({
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.search.separatePrivateDefault", separatePrivateDefault],
+      ["browser.search.separatePrivateDefault.enabled", separatePrivateDefault],
       [
-        "browser.search.separatePrivateDefault.ui.enabled",
+        "browser.search.separatePrivateDefault.featureGate",
         separatePrivateDefaultUiEnabled,
       ],
     ],

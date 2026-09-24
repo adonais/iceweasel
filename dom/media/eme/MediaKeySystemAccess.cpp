@@ -606,10 +606,7 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     const nsString& contentTypeString = capabilities.mContentType;
     // Let robustness be requested media capability's robustness member.
     const nsString& robustness = capabilities.mRobustness;
-    // Optional encryption scheme extension, see
-    // https://github.com/WICG/encrypted-media-encryption-scheme/blob/master/explainer.md
-    // This will only be exposed to JS if
-    // media.eme.encrypted-media-encryption-scheme.enabled is preffed on.
+    // Expose EME Encrypted Media Encryption Scheme to JS.
     const nsString encryptionScheme = capabilities.mEncryptionScheme;
     // If content type is the empty string, return null.
     if (contentTypeString.IsEmpty()) {

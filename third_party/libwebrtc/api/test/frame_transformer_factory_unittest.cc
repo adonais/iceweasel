@@ -22,7 +22,10 @@
 #include "api/payload_type.h"
 #include "api/test/mock_transformable_audio_frame.h"
 #include "api/test/mock_transformable_video_frame.h"
+#include "api/units/timestamp.h"
+#include "api/video/video_codec_type.h"
 #include "api/video/video_frame_metadata.h"
+#include "api/video/video_frame_type.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -89,6 +92,30 @@ TEST(FrameTransformerFactory, CreateOutgoingAudioFrame) {
       frame->GetRtpTimestampInfo()));
   EXPECT_EQ(std::get<RtpTimestampWithoutOffset>(frame->GetRtpTimestampInfo()),
             222u);
+}
+
+TEST(FrameTransformerFactory, CreateOutgoingVideoFrame) {
+  uint8_t data[] = {1, 2, 3, 4};
+  std::vector<uint32_t> csrcs{123, 321};
+  auto frame = CreateOutgoingVideoFrame(
+      VideoFrameType::kVideoFrameKey, PayloadType(111),
+      /*rtp_timestamp_without_offset=*/222, data,
+      /*absolute_capture_timestamp_ms=*/333, csrcs,
+      VideoCodecType::kVideoCodecVP8,
+      /*presentation_timestamp=*/Timestamp::Micros(444));
+
+  ASSERT_TRUE(frame);
+  EXPECT_TRUE(frame->IsKeyFrame());
+  EXPECT_EQ(frame->GetPayloadType(), 111u);
+  EXPECT_THAT(frame->GetData(), ElementsAreArray(data));
+  EXPECT_EQ(frame->GetSsrc(), 0u);
+  EXPECT_STRCASEEQ("video/VP8", frame->GetMimeType().c_str());
+  auto rtp_timestamp_info = frame->GetRtpTimestampInfo();
+  ASSERT_TRUE(
+      std::holds_alternative<RtpTimestampWithoutOffset>(rtp_timestamp_info));
+  EXPECT_EQ(std::get<RtpTimestampWithoutOffset>(rtp_timestamp_info).value,
+            222u);
+  EXPECT_EQ(frame->GetPresentationTimestamp(), Timestamp::Micros(444));
 }
 
 }  // namespace

@@ -35,15 +35,9 @@
 #include "mozilla/dom/LocalStorageCommon.h"
 #include "mozilla/dom/LocalStorageManager.h"
 #include "mozilla/dom/LocalStorageManager2.h"
+#include "mozilla/dom/PushNotifier.h"
 #include "mozilla/dom/SessionStorageManager.h"
 #include "nsContentCreatorFunctions.h"
-
-#ifdef MOZ_WEBSPEECH
-#  include "mozilla/dom/OnlineSpeechRecognitionService.h"
-#  include "mozilla/dom/nsSynthVoiceRegistry.h"
-#endif
-
-#include "mozilla/dom/PushNotifier.h"
 using mozilla::dom::PushNotifier;
 #define PUSHNOTIFIER_CID \
   {0x2fc2d3e3, 0x020f, 0x404e, {0xb0, 0x6a, 0x6e, 0xcf, 0x3e, 0xa2, 0x33, 0x4a}}

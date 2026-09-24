@@ -146,7 +146,7 @@ button:disabled {
 /* Search call-to-action on the online dnsNotFound error page (bug 2055637). */
 /* Not moz-button-group: it reorders its slotted children by moving them in the
    light DOM, which breaks Lit's markers for the button slot this page swaps
-   between a spinner, the Search button, and an offline message. */
+   between the Search button and an offline message. */
 .search-cta-buttons {
   display: flex;
   flex-flow: row wrap;
@@ -154,25 +154,6 @@ button:disabled {
   align-items: center;
   gap: var(--space-small);
   margin-block: var(--space-large) var(--space-xxlarge);
-}
-
-.search-cta-loading {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xsmall);
-  min-width: 2.5em;
-  min-height: 2em;
-}
-
-/* loading.svg owns its own rotation and its own prefers-reduced-motion
-   fallback, and tracks the text color, so it stays visible in High Contrast
-   Mode without a forced-colors override of our own. */
-.search-cta-loading-icon {
-  width: 1em;
-  height: 1em;
-  -moz-context-properties: fill;
-  fill: currentColor;
 }
 
 .search-cta-offline {

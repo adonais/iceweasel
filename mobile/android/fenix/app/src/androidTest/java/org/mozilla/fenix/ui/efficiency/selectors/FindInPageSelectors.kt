@@ -4,10 +4,16 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
-object FindInPageSelectors {
+object FindInPageSelectors : SelectorContainer {
+    enum class Group : SelectorGroup {
+        FIND_IN_PAGE
+    }
 
     // The bar container itself — used to assert find-in-page is gone after it is closed.
     val FIND_IN_PAGE_BAR =
@@ -15,7 +21,6 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "findInPageView",
             description = "Find in page bar",
-            groups = listOf(),
         )
 
     val FIND_IN_PAGE_CLOSE_BUTTON =
@@ -23,7 +28,7 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "find_in_page_close_btn",
             description = "Find in page close button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
         )
 
     val FIND_IN_PAGE_QUERY =
@@ -31,7 +36,7 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.ESPRESSO_BY_RES_NAME,
             value = "find_in_page_query_text",
             description = "Find in page query input",
-            groups = listOf("findInPage"),
+            groups = setOf(Group.FIND_IN_PAGE),
         )
 
     val FIND_IN_PAGE_NEXT_BUTTON =
@@ -39,7 +44,7 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "find_in_page_next_btn",
             description = "Find in page next result button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     val FIND_IN_PAGE_PREV_BUTTON =
@@ -47,7 +52,7 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_RES_ID,
             value = "find_in_page_prev_btn",
             description = "Find in page previous result button",
-            groups = listOf("requiredForPage"),
+            readiness = PageReadinessProfiles.READY_CONTENT,
         )
 
     @Suppress("FunctionName")
@@ -56,16 +61,6 @@ object FindInPageSelectors {
             strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
             value = text,
             description = "Find in page result counter '$text'",
-            groups = listOf("findInPage"),
-        )
-
-    val all =
-        listOf(
-            FIND_IN_PAGE_BAR,
-            FIND_IN_PAGE_CLOSE_BUTTON,
-            FIND_IN_PAGE_QUERY,
-            FIND_IN_PAGE_NEXT_BUTTON,
-            FIND_IN_PAGE_PREV_BUTTON,
-            RESULT_COUNTER(),
+            groups = setOf(Group.FIND_IN_PAGE),
         )
 }

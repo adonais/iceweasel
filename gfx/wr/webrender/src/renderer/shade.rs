@@ -17,8 +17,6 @@ use crate::renderer::{
 };
 use crate::profiler::{self, RenderCommandLog, TransactionProfile, ns_to_ms};
 
-use gleam::gl::GlType;
-
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -46,14 +44,12 @@ fn get_feature_string(kind: ImageBufferKind, texture_external_version: TextureEx
 }
 
 fn has_platform_support(kind: ImageBufferKind, device: &Device) -> bool {
-    match (kind, device.gl().get_type()) {
-        (ImageBufferKind::Texture2D, _) => true,
-        (ImageBufferKind::TextureRect, GlType::Gles) => false,
-        (ImageBufferKind::TextureRect, GlType::Gl) => true,
-        (ImageBufferKind::TextureExternal, GlType::Gles) => true,
-        (ImageBufferKind::TextureExternal, GlType::Gl) => false,
-        (ImageBufferKind::TextureExternalBT709, GlType::Gles) => device.supports_extension("GL_EXT_YUV_target"),
-        (ImageBufferKind::TextureExternalBT709, GlType::Gl) => false,
+    let caps = device.get_capabilities();
+    match kind {
+        ImageBufferKind::Texture2D => true,
+        ImageBufferKind::TextureRect => caps.supports_texture_rect,
+        ImageBufferKind::TextureExternal => caps.supports_texture_external,
+        ImageBufferKind::TextureExternalBT709 => caps.supports_texture_external_bt709,
     }
 }
 
@@ -470,7 +466,6 @@ pub struct PendingShadersToPrecache {
 impl Shaders {
     pub fn new(
         device: &mut Device,
-        gl_type: GlType,
         options: &WebRenderOptions,
     ) -> Result<Self, ShaderError> {
         let use_dual_source_blending =
@@ -485,7 +480,7 @@ impl Shaders {
         } else {
             TextureExternalVersion::ESSL1
         };
-        let mut shader_flags = get_shader_feature_flags(gl_type, texture_external_version, device);
+        let mut shader_flags = device.shader_feature_flags();
         shader_flags.set(ShaderFeatureFlags::ADVANCED_BLEND_EQUATION, use_advanced_blend_equation);
         shader_flags.set(ShaderFeatureFlags::DUAL_SOURCE_BLENDING, use_dual_source_blending);
         shader_flags.set(ShaderFeatureFlags::DITHERING, options.enable_dithering);
@@ -792,7 +787,7 @@ impl Shaders {
             &shader_list,
         )?;
 
-        let composite = CompositorShaders::new(device, gl_type, &mut loader)?;
+        let composite = CompositorShaders::new(device, &mut loader)?;
 
         Ok(Shaders {
             loader,
@@ -1042,7 +1037,6 @@ pub struct CompositorShaders {
 impl CompositorShaders {
     pub fn new(
         device: &mut Device,
-        gl_type: GlType,
         loader: &mut ShaderLoader,
     )  -> Result<Self, ShaderError>  {
         let mut yuv_clip_features = Vec::new();
@@ -1060,7 +1054,7 @@ impl CompositorShaders {
             TextureExternalVersion::ESSL1
         };
 
-        let feature_flags = get_shader_feature_flags(gl_type, texture_external_version, device);
+        let feature_flags = device.shader_feature_flags();
         let shader_list = get_shader_features(feature_flags);
 
         for _ in 0..IMAGE_BUFFER_KINDS.len() {
@@ -1176,26 +1170,5 @@ impl CompositorShaders {
 
     fn get_shader_index(buffer_kind: ImageBufferKind) -> usize {
         buffer_kind as usize
-    }
-}
-
-fn get_shader_feature_flags(
-    gl_type: GlType,
-    texture_external_version: TextureExternalVersion,
-    device: &Device
-) -> ShaderFeatureFlags {
-    match gl_type {
-        GlType::Gl => ShaderFeatureFlags::GL,
-        GlType::Gles => {
-            let mut flags = ShaderFeatureFlags::GLES;
-            flags |= match texture_external_version {
-                TextureExternalVersion::ESSL3 => ShaderFeatureFlags::TEXTURE_EXTERNAL,
-                TextureExternalVersion::ESSL1 => ShaderFeatureFlags::TEXTURE_EXTERNAL_ESSL1,
-            };
-            if device.supports_extension("GL_EXT_YUV_target") {
-                flags |= ShaderFeatureFlags::TEXTURE_EXTERNAL_BT709;
-            }
-            flags
-        }
     }
 }

@@ -26,11 +26,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FormData} FormData */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FocusedForm} FocusedForm */
 /** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FieldOutcomes} FieldOutcomes */
+/** @typedef {import("moz-src:///browser/components/aiwindow/ui/modules/SmartFormFillDocument.sys.mjs").FillFormOperationResult} FillFormOperationResult */
 
 /**
  * @typedef {{
  *   data: FillFormResult,
  *   name: "SmartFormFill:FillForm",
+ * } |
+ * {
+ *  data?: undefined,
+ *  name: "SmartFormFill:StopFilling"
  * } |
  * {
  *  data?: undefined,
@@ -175,7 +180,8 @@ export class SmartFormFillChild extends JSWindowActorChild {
    * Forwards parent messages to the document manager.
    *
    * @param {SmartFormFillMessage} message
-   * @returns {Promise<FocusedForm | null | undefined>}
+   * @returns {Promise<FocusedForm | FillFormOperationResult | null |
+   * undefined>}
    */
   async receiveMessage({ data, name }) {
     if (
@@ -191,7 +197,10 @@ export class SmartFormFillChild extends JSWindowActorChild {
 
     switch (name) {
       case "SmartFormFill:FillForm":
-        this.#smartFormFillDocument.fillForm(data);
+        return this.#smartFormFillDocument.fillForm(data);
+
+      case "SmartFormFill:StopFilling":
+        this.#smartFormFillDocument.stopFilling();
         return undefined;
 
       case "SmartFormFill:GetFocusedForm":

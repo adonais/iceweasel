@@ -337,8 +337,8 @@ const kEventConstructors = {
   ScrollAreaEvent:                           { create: null
                                                // Cannot create untrusted event from JS
                                              },
-  SpeechRecognitionError:                    { create (aName, aProps) {
-                                                         return new SpeechRecognitionError(aName, aProps);
+  SpeechRecognitionErrorEvent:               { create (aName, aProps) {
+                                                         return new SpeechRecognitionErrorEvent(aName, { error: "no-speech", ...aProps });
                                                        },
                                              },
   SpeechRecognitionEvent:                    { create (aName, aProps) {

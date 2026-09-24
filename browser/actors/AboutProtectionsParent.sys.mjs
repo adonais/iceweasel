@@ -10,7 +10,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.sys.mjs",
   FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.sys.mjs",
-  LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
+  LoginBreaches:
+    "moz-src:///browser/components/aboutlogins/LoginBreaches.sys.mjs",
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   PrivacyMetricsService:
     "moz-src:///browser/components/protections/PrivacyMetricsService.sys.mjs",

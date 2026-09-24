@@ -13,10 +13,11 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import partial
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Callable
 
 from .._path import StrPath
 from ..errors import FileError, InvalidConfigError
@@ -133,6 +134,15 @@ def read_configuration(
     if "ext-modules" in setuptools_table:
         _ExperimentalConfiguration.emit(subject="[tool.setuptools.ext-modules]")
 
+    fields = ("import-names", "import-namespaces")
+    places = (project_table, project_table.get("dynamic", []))
+    if any(field in place for field in fields for place in places):
+        raise NotImplementedError(
+            "Setuptools does not support `import-names` and `import-namespaces`"
+            " in `pyproject.toml` yet. If your are interested in this feature, "
+            " please consider submitting a contribution via pull requests."
+        )
+
     with _ignore_errors(ignore_option_errors):
         # Don't complain about unrelated errors (e.g. tools not using the "tool" table)
         subset = {"project": project_table, "tool": {"setuptools": setuptools_table}}
@@ -175,7 +185,7 @@ class _ConfigExpander:
         root_dir: StrPath | None = None,
         ignore_option_errors: bool = False,
         dist: Distribution | None = None,
-    ):
+    ) -> None:
         self.config = config
         self.root_dir = root_dir or os.getcwd()
         self.project_cfg = config.get("project", {})
@@ -184,7 +194,7 @@ class _ConfigExpander:
         self.dynamic_cfg = self.setuptools_cfg.get("dynamic", {})
         self.ignore_option_errors = ignore_option_errors
         self._dist = dist
-        self._referenced_files: set[str] = set()
+        self._referenced_files = set[str]()
 
     def _ensure_dist(self) -> Distribution:
         from setuptools.dist import Distribution
@@ -330,7 +340,7 @@ class _ConfigExpander:
 
     def _obtain_entry_points(
         self, dist: Distribution, package_dir: Mapping[str, str]
-    ) -> dict[str, dict] | None:
+    ) -> dict[str, dict[str, Any]] | None:
         fields = ("entry-points", "scripts", "gui-scripts")
         if not any(field in self.dynamic for field in fields):
             return None
@@ -340,7 +350,8 @@ class _ConfigExpander:
             return None
 
         groups = _expand.entry_points(text)
-        expanded = {"entry-points": groups}
+        # Any is str | dict[str, str], but causes variance issues
+        expanded: dict[str, dict[str, Any]] = {"entry-points": groups}
 
         def _set_scripts(field: str, group: str):
             if group in groups:
@@ -411,7 +422,7 @@ def _ignore_errors(ignore_option_errors: bool):
 class _EnsurePackagesDiscovered(_expand.EnsurePackagesDiscovered):
     def __init__(
         self, distribution: Distribution, project_cfg: dict, setuptools_cfg: dict
-    ):
+    ) -> None:
         super().__init__(distribution)
         self._project_cfg = project_cfg
         self._setuptools_cfg = setuptools_cfg

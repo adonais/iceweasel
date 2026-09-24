@@ -209,14 +209,12 @@ def get_vc_paths(host, topsrcdir):
         return json.loads(check_cmd_output(vswhere, "-format", "json", *args))
 
     variant = "arm64" if host.cpu == "aarch64" else "x86.x64"
-    for install in vswhere(
-        [
-            "-products",
-            "*",
-            "-requires",
-            f"Microsoft.VisualStudio.Component.VC.Tools.{variant}",
-        ]
-    ):
+    for install in vswhere([
+        "-products",
+        "*",
+        "-requires",
+        f"Microsoft.VisualStudio.Component.VC.Tools.{variant}",
+    ]):
         path = install["installationPath"]
         tools_version = (
             open(

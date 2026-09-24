@@ -114,9 +114,10 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
   if (!appStartup) return NS_ERROR_FAILURE;
 
   nsCOMPtr<mozIDOMWindowProxy> progressWindow;
-  rv = windowWatcher->OpenWindow(nullptr, nsDependentCString(kResetProgressURL),
-                                 "_blank"_ns, "centerscreen,chrome,titlebar"_ns,
-                                 nullptr, getter_AddRefs(progressWindow));
+  rv =
+      windowWatcher->OpenWindow(nullptr, nsDependentCString(kResetProgressURL),
+                                u"_blank"_ns, "centerscreen,chrome,titlebar"_ns,
+                                nullptr, getter_AddRefs(progressWindow));
   if (NS_FAILED(rv)) return rv;
 
   // Create a new thread to do the bulk of profile cleanup to stay responsive.

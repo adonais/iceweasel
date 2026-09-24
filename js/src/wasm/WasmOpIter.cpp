@@ -22,7 +22,7 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
-#ifdef ENABLE_WASM_SIMD
+#ifdef ENABLE_JIT_SIMD
 #  define WASM_SIMD_OP(code) return code
 #else
 #  define WASM_SIMD_OP(code) break

@@ -479,13 +479,6 @@ ABSL_LOG_INTERNAL_DEFINE_MAKE_CHECK_OP_STRING_EXTERN(const void* absl_nonnull);
   MakeCheckOpString<U1, U2>(v1, v2, exprtext)
 #endif
 
-// Comparing mixed signed/unsigned values is intentional in CHECK_OP. A
-// push/pop pragma does not interact correctly with macro definitions, so
-// suppress without restoring. This header is transitively included by all
-// protobuf-generated headers, so this pragma affects entire translation
-// units that include any .pb.h file.
-#pragma GCC diagnostic ignored "-Wsign-compare"
-
 // Helper functions for `ABSL_LOG_INTERNAL_CHECK_OP` macro family.  The
 // `(int, int)` override works around the issue that the compiler will not
 // instantiate the template version of the function on values of unnamed enum
@@ -537,29 +530,20 @@ const char* absl_nullable CheckstrcasecmpfalseImpl(
 // NOLINTBEGIN(runtime/int)
 // NOLINTBEGIN(google-runtime-int)
 template <typename T>
-inline constexpr const T& GetReferenceableValue(const T& t) {
+constexpr const T& GetReferenceableValue(const T& t) {
   return t;
 }
-inline constexpr char GetReferenceableValue(char t) { return t; }
-inline constexpr unsigned char GetReferenceableValue(unsigned char t) {
-  return t;
-}
-inline constexpr signed char GetReferenceableValue(signed char t) { return t; }
-inline constexpr short GetReferenceableValue(short t) { return t; }
-inline constexpr unsigned short GetReferenceableValue(unsigned short t) {
-  return t;
-}
-inline constexpr int GetReferenceableValue(int t) { return t; }
-inline constexpr unsigned int GetReferenceableValue(unsigned int t) {
-  return t;
-}
-inline constexpr long GetReferenceableValue(long t) { return t; }
-inline constexpr unsigned long GetReferenceableValue(unsigned long t) {
-  return t;
-}
-inline constexpr long long GetReferenceableValue(long long t) { return t; }
-inline constexpr unsigned long long GetReferenceableValue(
-    unsigned long long t) {
+constexpr char GetReferenceableValue(char t) { return t; }
+constexpr unsigned char GetReferenceableValue(unsigned char t) { return t; }
+constexpr signed char GetReferenceableValue(signed char t) { return t; }
+constexpr short GetReferenceableValue(short t) { return t; }
+constexpr unsigned short GetReferenceableValue(unsigned short t) { return t; }
+constexpr int GetReferenceableValue(int t) { return t; }
+constexpr unsigned int GetReferenceableValue(unsigned int t) { return t; }
+constexpr long GetReferenceableValue(long t) { return t; }
+constexpr unsigned long GetReferenceableValue(unsigned long t) { return t; }
+constexpr long long GetReferenceableValue(long long t) { return t; }
+constexpr unsigned long long GetReferenceableValue(unsigned long long t) {
   return t;
 }
 // NOLINTEND(google-runtime-int)

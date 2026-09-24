@@ -7,9 +7,11 @@
 #include <functional>
 
 #include "GPUVideoImage.h"
+#include "MediaCodecsSupport.h"
 #include "PDMFactory.h"
 #include "PlatformEncoderModule.h"
 #include "ipc/EnumSerializer.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PRemoteMediaManagerChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
@@ -62,6 +64,11 @@ class RemoteMediaManagerChild final
   static void SetSupported(RemoteMediaIn aLocation,
                            const media::MediaCodecsSupported& aSupported);
 
+  // Resolves with true once codec support for a location is known. The actual
+  // MediaCodecsSupported snapshot is read separately via the synchronous
+  // Supports() once this has resolved.
+  using CodecSupportPromise = GenericNonExclusivePromise;
+
   // Can be called from any thread.
   static media::DecodeSupportSet Supports(
       RemoteMediaIn aLocation, const SupportDecoderParams& aParams,
@@ -78,6 +85,14 @@ class RemoteMediaManagerChild final
 
   static media::EncodeSupportSet Supports(RemoteMediaIn aLocation,
                                           CodecType aCodec);
+
+  // Resolves immediately if codec support for aLocation is already cached;
+  // otherwise resolves once SetSupported() fires for that location.
+  // Pass aForceRefresh=true to wait for the next update even when the cache
+  // is populated (the cache itself is not cleared, so sync callers are
+  // unaffected).
+  static RefPtr<CodecSupportPromise> EnsureCodecSupportFor(
+      RemoteMediaIn aLocation, bool aForceRefresh = false);
   static RefPtr<PlatformEncoderModule::CreateEncoderPromise> InitializeEncoder(
       RefPtr<RemoteMediaDataEncoder>&& aEncoder, const EncoderConfig& aConfig);
 

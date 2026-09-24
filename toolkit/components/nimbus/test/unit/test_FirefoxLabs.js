@@ -57,10 +57,9 @@ add_task(async function test_all() {
       {
         ...NimbusTestUtils.factories.recipe("opt-in-experiment", {
           branches: [
-            {
-              ...NimbusTestUtils.factories.recipe.branches[0],
+            NimbusTestUtils.factories.branch("control", {
               firefoxLabsTitle: "title",
-            },
+            }),
           ],
         }),
         isFirefoxLabsOptIn: true,
@@ -76,10 +75,9 @@ add_task(async function test_all() {
         targeting: "false",
       }),
       NimbusTestUtils.factories.recipe("bucketing-fail", {
-        bucketConfig: {
-          ...NimbusTestUtils.factories.recipe.bucketConfig,
+        bucketConfig: NimbusTestUtils.factories.bucketConfig({
           count: 0,
-        },
+        }),
         isFirefoxLabsOptIn: true,
         isRollout: true,
       }),

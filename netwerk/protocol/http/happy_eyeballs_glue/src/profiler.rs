@@ -397,14 +397,17 @@ impl Profiler {
         if !gecko_profiler::is_active() {
             return;
         }
+        let Some(address) = endpoint.address() else {
+            return;
+        };
         self.conn_infos.insert(
             id,
             ConnInfo {
                 start: ProfilerTime::now(),
                 http_version: endpoint.http_version,
-                ip_version: endpoint.address.into(),
+                ip_version: address.into(),
                 has_ech: endpoint.ech_config.is_some(),
-                address: endpoint.address.to_string(),
+                address: address.to_string(),
             },
         );
     }

@@ -83,6 +83,12 @@ add_task(async function test_SelectableProfileLifecycle() {
     "Service should now be enabled"
   );
 
+  Assert.equal(
+    Glean.profiles.active.testGetValue(),
+    false,
+    "profiles.active should be false before profiles are created"
+  );
+
   let profiles = await SelectableProfileService.getAllProfiles();
 
   Assert.ok(!profiles.length, "No selectable profiles exist yet");
@@ -118,6 +124,12 @@ add_task(async function test_SelectableProfileLifecycle() {
   profiles = await SelectableProfileService.getAllProfiles();
 
   Assert.equal(profiles.length, 1, "One selectable profile exists");
+
+  Assert.equal(
+    Glean.profiles.active.testGetValue(),
+    true,
+    "profiles.active should be true after profile creation"
+  );
 
   let selectableProfile = profiles[0];
 
@@ -243,6 +255,12 @@ add_task(async function test_SelectableProfileLifecycle() {
   profiles = await SelectableProfileService.getAllProfiles();
   Assert.equal(profiles.length, 2, "Should now be two profiles.");
 
+  Assert.equal(
+    Glean.profiles.profileCount.testGetValue(),
+    2,
+    "profiles.profile_count should be 2 after adding a profile"
+  );
+
   badgingService.assertBadged("#e2e1e3", "010203");
 
   await SelectableProfileService.deleteProfile(newProfile);
@@ -250,6 +268,12 @@ add_task(async function test_SelectableProfileLifecycle() {
 
   profiles = await SelectableProfileService.getAllProfiles();
   Assert.equal(profiles.length, 1, "Should now be one profiles.");
+
+  Assert.equal(
+    Glean.profiles.profileCount.testGetValue(),
+    1,
+    "profiles.profile_count should be 1 after deleting a profile"
+  );
 
   badgingService.assertNotBadged();
 

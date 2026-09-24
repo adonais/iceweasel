@@ -5,8 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 
-#include "mozilla/UniquePtr.h"
-#include "sdp/SdpAttributeList.h"
+#include "sdp/SdpAttributeListImpl.h"
 #include "sdp/SdpParser.h"
 
 extern "C" {
@@ -18,7 +17,7 @@ namespace mozilla {
 class SipccSdp;
 class SipccSdpMediaSection;
 
-class SipccSdpAttributeList : public SdpAttributeList {
+class SipccSdpAttributeList : public SdpAttributeListImpl {
   friend class SipccSdpMediaSection;
   friend class SipccSdp;
 
@@ -27,66 +26,12 @@ class SipccSdpAttributeList : public SdpAttributeList {
   using SdpAttributeList::GetAttribute;
   using SdpAttributeList::HasAttribute;
 
-  virtual bool HasAttribute(const AttributeType type,
-                            const bool sessionFallback) const override;
-  virtual const SdpAttribute* GetAttribute(
-      const AttributeType type, const bool sessionFallback) const override;
-  virtual void SetAttribute(UniquePtr<SdpAttribute>&& attr) override;
-  virtual void RemoveAttribute(const AttributeType type) override;
-  virtual void Clear() override;
-  virtual uint32_t Count() const override;
-
-  virtual const SdpConnectionAttribute& GetConnection() const override;
-  virtual const SdpFingerprintAttributeList& GetFingerprint() const override;
-  virtual const SdpGroupAttributeList& GetGroup() const override;
-  virtual const SdpOptionsAttribute& GetIceOptions() const override;
-  virtual const SdpRtcpAttribute& GetRtcp() const override;
-  virtual const SdpRemoteCandidatesAttribute& GetRemoteCandidates()
-      const override;
-  virtual const SdpSetupAttribute& GetSetup() const override;
-  virtual const SdpSsrcAttributeList& GetSsrc() const override;
-  virtual const SdpSsrcGroupAttributeList& GetSsrcGroup() const override;
-  virtual const SdpDtlsMessageAttribute& GetDtlsMessage() const override;
-
-  // These attributes can appear multiple times, so the returned
-  // classes actually represent a collection of values.
-  virtual const std::vector<std::string>& GetCandidate() const override;
-  virtual const SdpExtmapAttributeList& GetExtmap() const override;
-  virtual const SdpFmtpAttributeList& GetFmtp() const override;
-  virtual const SdpImageattrAttributeList& GetImageattr() const override;
-  const SdpSimulcastAttribute& GetSimulcast() const override;
-  virtual const SdpMsidAttributeList& GetMsid() const override;
-  virtual const SdpMsidSemanticAttributeList& GetMsidSemantic() const override;
-  const SdpRidAttributeList& GetRid() const override;
-  virtual const SdpRtcpFbAttributeList& GetRtcpFb() const override;
-  virtual const SdpRtpmapAttributeList& GetRtpmap() const override;
-  virtual const SdpSctpmapAttributeList& GetSctpmap() const override;
-  virtual uint32_t GetSctpPort() const override;
-  virtual uint32_t GetMaxMessageSize() const override;
-
-  // These attributes are effectively simple types, so we'll make life
-  // easy by just returning their value.
-  virtual const std::string& GetIcePwd() const override;
-  virtual const std::string& GetIceUfrag() const override;
-  virtual const std::string& GetIdentity() const override;
-  virtual const std::string& GetLabel() const override;
-  virtual unsigned int GetMaxptime() const override;
-  virtual const std::string& GetMid() const override;
-  virtual unsigned int GetPtime() const override;
-
-  virtual SdpDirectionAttribute::Direction GetDirection() const override;
-
-  virtual void Serialize(std::ostream&) const override;
-
   virtual ~SipccSdpAttributeList() = default;
 
   SipccSdpAttributeList(const SipccSdpAttributeList& orig) = delete;
   SipccSdpAttributeList& operator=(const SipccSdpAttributeList& rhs) = delete;
 
  private:
-  static const std::string kEmptyString;
-  static const size_t kNumAttributeTypes = SdpAttribute::kLastAttribute + 1;
-
   // Pass a session-level attribute list if constructing a media-level one,
   // otherwise pass nullptr
   explicit SipccSdpAttributeList(const SipccSdpAttributeList* sessionLevel);
@@ -137,15 +82,9 @@ class SipccSdpAttributeList : public SdpAttributeList {
   void LoadRtcp(sdp_t* sdp, const uint16_t level, InternalResults& results);
   static SdpRtpmapAttributeList::CodecType GetCodecType(const rtp_ptype type);
 
-  bool AtSessionLevel() const { return !mSessionLevel; }
-  bool IsAllowedHere(const SdpAttribute::AttributeType type) const;
   void WarnAboutMisplacedAttribute(const SdpAttribute::AttributeType type,
                                    const uint32_t lineNumber,
                                    InternalResults& results);
-
-  const SipccSdpAttributeList* mSessionLevel;
-
-  mozilla::UniquePtr<SdpAttribute> mAttributes[kNumAttributeTypes];
 };
 
 }  // namespace mozilla

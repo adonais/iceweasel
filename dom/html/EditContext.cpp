@@ -172,12 +172,21 @@ EditContext::EditContext(nsIGlobalObject* aGlobalObject,
   MOZ_ASSERT(mTextContainer);
   mText = document->CreateTextNode(u""_ns);
   mText->MarkAsMaybeModifiedFrequently();
-  mTextContainer->AppendChild(*mText, IgnoreErrors());
-  anonymousContent->Root()->AppendChild(*mTextContainer, IgnoreErrors());
+  mTextContainer->AppendChild(*mText, aRv);
+  anonymousContent->Root()->AppendChild(*mTextContainer, aRv);
   mText->SetEditableFlag(true);
   mTextContainer->SetEditableFlag(true);
   mTextContainer->Style()->SetProperty("visibility"_ns, "hidden"_ns, ""_ns,
-                                       IgnoreErrors());
+                                       aRv);
+  // For computing target ranges for backspace, etc.,
+  // we shouldn't treat consecutive spaces as collapsed.
+  mTextContainer->Style()->SetProperty("white-space"_ns, "pre"_ns, ""_ns, aRv);
+  // Document-level anonymous content (created with InsertAnonymousContent)
+  // all lives in the same container. So we need to set position: absolute
+  // on all of them to prevent them from being positioned relative to
+  // each other.
+  mTextContainer->Style()->SetProperty("position"_ns, "absolute"_ns, ""_ns,
+                                       aRv);
   mSelectionStart = aInit.mSelectionStart;
   mSelectionEnd = aInit.mSelectionEnd;
   UpdateTextInternal(0, 0, aInit.mText, aRv);
@@ -917,6 +926,7 @@ nsresult EditContext::GetCharacterBounds(
               static_cast<const void*>(this), aStart, aEnd,
               mCodepointRectsStartIndex, CodepointRectsEndIndex());
   MOZ_ASSERT(aRects.IsEmpty());
+  MOZ_ASSERT(aStart <= aEnd);
   aStart = std::min(aStart, TextLength());
   aEnd = std::min(aEnd, TextLength());
   enum class CollapseDirection {

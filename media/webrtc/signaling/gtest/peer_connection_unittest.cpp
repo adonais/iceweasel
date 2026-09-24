@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <compare>
+
 #include "MockJsepCodecPreferences.h"
 #include "PeerConnectionImpl.h"
 #include "api/rtp_parameters.h"
@@ -9,12 +11,9 @@
 
 namespace mozilla {
 
-static int RtpExtensionHeaderUriComparator(
+static std::strong_ordering RtpExtensionHeaderUriComparator(
     const PeerConnectionImpl::RtpExtensionHeader& aHeader, const char* aUri) {
-  // TODO bug 2051688, bug 2051711: use operator<=>.
-  std::strong_ordering ord =
-      std::string_view(aHeader.extensionname.get()) <=> std::string_view(aUri);
-  return ord == 0 ? 0 : ord < 0 ? -1 : 1;
+  return aHeader.extensionname <=> nsDependentCString(aUri);
 }
 
 static const PeerConnectionImpl::RtpExtensionHeader* FindExtension(

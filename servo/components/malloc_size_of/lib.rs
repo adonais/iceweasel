@@ -78,14 +78,14 @@ pub struct MallocSizeOfOps {
 
 impl MallocSizeOfOps {
     pub fn new(
-        size_of: VoidPtrToSizeFn,
-        malloc_enclosing_size_of: Option<VoidPtrToSizeFn>,
-        have_seen_ptr: Option<Box<VoidPtrToBoolFnMut>>,
+        size_of_op: VoidPtrToSizeFn,
+        enclosing_size_of_op: Option<VoidPtrToSizeFn>,
+        have_seen_ptr_op: Option<Box<VoidPtrToBoolFnMut>>,
     ) -> Self {
         MallocSizeOfOps {
-            size_of_op: size_of,
-            enclosing_size_of_op: malloc_enclosing_size_of,
-            have_seen_ptr_op: have_seen_ptr,
+            size_of_op,
+            enclosing_size_of_op,
+            have_seen_ptr_op,
         }
     }
 
@@ -99,16 +99,20 @@ impl MallocSizeOfOps {
         // larger than the required alignment, but small enough that it is
         // always in the first page of memory and therefore not a legitimate
         // address.
-        return ptr as *const usize as usize <= 256;
+        ptr as *const usize as usize <= 256
     }
 
-    /// Call `size_of_op` on `ptr`, first checking that the allocation isn't
-    /// empty, because some types (such as `Vec`) utilize empty allocations.
+    /// Call `size_of_op` on `ptr`, first checking that the allocation isn't empty, because some
+    /// types (such as `Vec`) utilize empty allocations.
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must point to a heap pointer, or be an "empty" pointer (pointing to the 0 page).
     pub unsafe fn malloc_size_of<T: ?Sized>(&self, ptr: *const T) -> usize {
         if MallocSizeOfOps::is_empty(ptr) {
             0
         } else {
-            (self.size_of_op)(ptr as *const c_void)
+            unsafe { (self.size_of_op)(ptr as *const c_void) }
         }
     }
 
@@ -117,11 +121,14 @@ impl MallocSizeOfOps {
         self.enclosing_size_of_op.is_some()
     }
 
-    /// Call `enclosing_size_of_op`, which must be available, on `ptr`, which
-    /// must not be empty.
+    /// Call `enclosing_size_of_op`, which must be available, on `ptr`, which must not be empty.
+    ///
+    /// # Safety
+    ///
+    /// Must point to a non-empty heap pointer.
     pub unsafe fn malloc_enclosing_size_of<T>(&self, ptr: *const T) -> usize {
         assert!(!MallocSizeOfOps::is_empty(ptr));
-        (self.enclosing_size_of_op.unwrap())(ptr as *const c_void)
+        unsafe { (self.enclosing_size_of_op.unwrap())(ptr as *const c_void) }
     }
 
     /// Call `have_seen_ptr_op` on `ptr`.
@@ -188,7 +195,7 @@ impl MallocSizeOf for String {
     }
 }
 
-impl<'a, T: ?Sized> MallocSizeOf for &'a T {
+impl<T: ?Sized> MallocSizeOf for &T {
     fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
         // Zero makes sense for a non-owning reference.
         0
@@ -328,7 +335,7 @@ impl<T> MallocShallowSizeOf for std::collections::VecDeque<T> {
         if ops.has_malloc_enclosing_size_of() {
             if let Some(front) = self.front() {
                 // The front element is an interior pointer.
-                unsafe { ops.malloc_enclosing_size_of(&*front) }
+                unsafe { ops.malloc_enclosing_size_of(front) }
             } else {
                 // This assumes that no memory is allocated when the VecDeque is empty.
                 0
@@ -439,6 +446,7 @@ macro_rules! malloc_size_of_hash_set {
 }
 
 malloc_size_of_hash_set!(std::collections::HashSet<T, S>);
+malloc_size_of_hash_set!(hashbrown::HashSet<T, S>);
 
 macro_rules! malloc_size_of_hash_map {
     ($ty:ty) => {
@@ -478,6 +486,7 @@ macro_rules! malloc_size_of_hash_map {
 }
 
 malloc_size_of_hash_map!(std::collections::HashMap<K, V, S>);
+malloc_size_of_hash_map!(hashbrown::HashMap<K, V, S>);
 
 impl<K, V> MallocShallowSizeOf for std::collections::BTreeMap<K, V>
 where
@@ -522,6 +531,12 @@ impl<T> MallocSizeOf for std::marker::PhantomData<T> {
 // rc_arc_must_not_derive_malloc_size_of.rs)
 //impl<T> !MallocSizeOf for Arc<T> { }
 //impl<T> !MallocShallowSizeOf for Arc<T> { }
+
+impl<T> MallocSizeOf for servo_arc::ArcBorrow<'_, T> {
+    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
+        0
+    }
+}
 
 impl<T> MallocUnconditionalShallowSizeOf for servo_arc::Arc<T> {
     fn unconditional_shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
@@ -713,16 +728,16 @@ where
         use selectors::parser::Component;
 
         match self {
-            Component::AttributeOther(ref attr_selector) => attr_selector.size_of(ops),
-            Component::Negation(ref components) => components.unconditional_size_of(ops),
-            Component::NonTSPseudoClass(ref pseudo) => (*pseudo).size_of(ops),
-            Component::Slotted(ref selector) | Component::Host(Some(ref selector)) => {
+            Component::AttributeOther(attr_selector) => attr_selector.size_of(ops),
+            Component::Negation(components) => components.unconditional_size_of(ops),
+            Component::NonTSPseudoClass(pseudo) => (*pseudo).size_of(ops),
+            Component::Slotted(selector) | Component::Host(Some(selector)) => {
                 selector.unconditional_size_of(ops)
             },
-            Component::Is(ref list) | Component::Where(ref list) => list.unconditional_size_of(ops),
-            Component::Has(ref relative_selectors) => relative_selectors.size_of(ops),
-            Component::NthOf(ref nth_of_data) => nth_of_data.size_of(ops),
-            Component::PseudoElement(ref pseudo) => (*pseudo).size_of(ops),
+            Component::Is(list) | Component::Where(list) => list.unconditional_size_of(ops),
+            Component::Has(relative_selectors) => relative_selectors.size_of(ops),
+            Component::NthOf(nth_of_data) => nth_of_data.size_of(ops),
+            Component::PseudoElement(pseudo) => (*pseudo).size_of(ops),
             Component::Combinator(..)
             | Component::ExplicitAnyNamespace
             | Component::ExplicitNoNamespace

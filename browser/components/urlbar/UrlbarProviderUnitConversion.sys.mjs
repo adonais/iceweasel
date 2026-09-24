@@ -149,6 +149,11 @@ export class UrlbarProviderUnitConversion extends UrlbarProvider {
     addCallback(this, result);
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     lazy.ClipboardHelper.copyString(details.result.payload.output);
   }

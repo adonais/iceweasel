@@ -171,7 +171,7 @@
   <!-- Content description for collapsing the saved address options in the select address prompt. -->
   <string name="mozac_feature_prompts_collapse_address_content_description_2">摺疊儲存的地址資訊</string>
   <!-- Text for the manage addresses button. -->
-  <string name="mozac_feature_prompts_manage_address">管理已存地址</string>
+  <string name="mozac_feature_prompts_manage_address">管理已儲存的地址</string>
   <!-- Text for the title of a save address dialog. -->
   <string name="mozac_feature_prompts_save_address_prompt_title">要儲存地址嗎？</string>
   <!-- Text for the title of an update address dialog, shown when the address adds information to an already saved address. -->

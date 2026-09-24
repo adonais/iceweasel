@@ -23,7 +23,7 @@ enable output     dump
 
 AsIs
 
-: This mode notes all the nodes in the AST, even if they are not explicitly spelled out in the source. This will include nodes you have never seen and probably don't immediately understand, for example `ExprWithCleanups` and `MaterializeTemporaryExpr`. In this mode, it is necessary to write matchers that expliticly match or otherwise traverse these potentially unexpected nodes.
+: This mode notes all the nodes in the AST, even if they are not explicitly spelled out in the source. This will include nodes you have never seen and probably don't immediately understand, for example `ExprWithCleanups` and `MaterializeTemporaryExpr`. In this mode, it is necessary to write matchers that explicitly match or otherwise traverse these potentially unexpected nodes.
 
 IgnoreUnlessSpelledInSource
 
@@ -106,7 +106,7 @@ int main(int, char**)
 
 ### set print-matcher
 
-`set print-matcher true` will print a header line of the form 'Matcher: \<foo>' where foo is the matcher you have written. It is helpful when debugging multiple matchers at the same time, and no inconvience otherwise.
+`set print-matcher true` will print a header line of the form 'Matcher: \<foo>' where foo is the matcher you have written. It is helpful when debugging multiple matchers at the same time, and no inconvenience otherwise.
 
 ### enable/disable/set output \<foo>
 

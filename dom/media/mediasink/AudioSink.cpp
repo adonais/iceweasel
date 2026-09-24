@@ -351,9 +351,14 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
   mLastProcessedPacket = Nothing();
   mConverter = nullptr;
 
-  // Resuming into a playing state; bring the stream's logical state back in
-  // sync with the sink.
+  // Resuming into a playing state. A pause taken before the seek leaves the
+  // backend stopped, in which case this restarts it for real.
   mAudioStream->Resume();
+
+  // Must precede ConnectAudioQueues() and NotifyAudioNeeded(); see
+  // AudioClock::Rebase.
+  mAudioStream->RebaseLive();
+
   ConnectAudioQueues();
 
   // Ensure at least one post-seek packet is converted and ready to play.
@@ -361,9 +366,6 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
 
   mStoppedForSeek = false;
 
-  // The stream was never stopped, so there is no cubeb_stream_start; rebase the
-  // still-running clock and re-arm the ended promise for the reused stream.
-  mAudioStream->RebaseLive();
   return mAudioStream->ReinitEndedPromise();
 }
 
@@ -462,7 +464,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
     } else if (IsIntentionallySilent()) {
       SINK_LOG_V("Stopped for a seek, outputting silence.");
     } else {
-      NS_WARNING("Underrun when popping samples from audiosink ring buffer.");
+      SINK_LOG("Underrun when popping samples from audiosink ring buffer.");
       TRACE_COMMENT("AudioSink::PopFrames", "Underrun %u frames missing",
                     SampleToFrame(samplesToPop - samplesRead));
     }

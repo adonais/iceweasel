@@ -46,6 +46,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   void Invalidate(ImageSizeChanged aImageSizeChanged,
                   const Maybe<nsIntSize>& aNewIntrinsicSize,
+                  const Maybe<VideoRotation>& aNewRotation,
                   ForceInvalidate aForceInvalidate) override;
 
   bool IsVideo() const override { return true; }
@@ -54,7 +55,7 @@ class HTMLVideoElement final : public HTMLMediaElement {
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
-  NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
+  bool IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const override;
 
   void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
@@ -71,7 +72,8 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   mozilla::Maybe<mozilla::CSSIntSize> GetVideoSize() const;
 
-  void UpdateMediaSize(const nsIntSize& aSize) override;
+  void UpdateMediaSize(const nsIntSize& aSize,
+                       VideoRotation aRotation) override;
 
   nsresult SetAcceptHeader(nsIHttpChannel* aChannel) override;
 

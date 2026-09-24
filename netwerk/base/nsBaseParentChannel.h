@@ -5,6 +5,7 @@
 #ifndef nsBaseParentChannel_h
 #define nsBaseParentChannel_h
 
+#include "mozilla/dom/RemoteType.h"
 #include "nsIParentChannel.h"
 
 // Basic type which implements a no-op nsIParentChannel instance.
@@ -24,13 +25,13 @@ class nsBaseParentChannel : public nsIParentChannel {
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
-  explicit nsBaseParentChannel(const nsACString& aRemoteType)
+  explicit nsBaseParentChannel(const mozilla::dom::RemoteType& aRemoteType)
       : mRemoteType(aRemoteType) {}
 
  protected:
   virtual ~nsBaseParentChannel() = default;
 
-  nsCString mRemoteType;
+  mozilla::dom::RemoteType mRemoteType;
 };
 
 #endif  // nsBaseParentChannel_h

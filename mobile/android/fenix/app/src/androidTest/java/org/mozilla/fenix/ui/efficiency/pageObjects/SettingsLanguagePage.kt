@@ -12,7 +12,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
-import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
+import org.mozilla.fenix.ui.efficiency.navigation.NavigationGraph
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.HomeSelectors
 import org.mozilla.fenix.ui.efficiency.selectors.MainMenuSelectors
@@ -22,8 +22,8 @@ import org.mozilla.fenix.ui.efficiency.selectors.SettingsSelectors
 class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule, *>) : BasePage(composeRule) {
     override val pageName = "SettingsLanguagePage"
 
-    init {
-        NavigationRegistry.register(
+    internal override fun registerNavigation(builder: NavigationGraph.Builder) {
+        builder.register(
             from = "HomePage",
             to = pageName,
             steps =
@@ -36,9 +36,7 @@ class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
         )
     }
 
-    override fun mozGetSelectorsByGroup(group: String): List<Selector> {
-        return SettingsLanguageSelectors.all.filter { it.groups.contains(group) }
-    }
+    override val selectorCatalog = SettingsLanguageSelectors
 
     fun selectLanguage(language: String): SettingsLanguagePage {
         languagesList().getChildByText(UiSelector().text(language), language).click()
@@ -52,7 +50,6 @@ class SettingsLanguagePage(composeRule: AndroidComposeTestRule<HomeActivityInten
                 strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
                 value = translatedLanguage,
                 description = "Translated language setting header",
-                groups = listOf(),
             )
         )
         return this

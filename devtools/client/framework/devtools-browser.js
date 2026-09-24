@@ -116,22 +116,14 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       }
     }
 
-    // Enable Browser Toolbox?
-    const chromeEnabled = Services.prefs.getBoolPref("devtools.chrome.enabled");
-    const devtoolsRemoteEnabled = Services.prefs.getBoolPref(
-      "devtools.debugger.remote-enabled"
+    const disabledByPolicy = Services.prefs.getBoolPref(
+      "devtools.policy.disabled",
+      false
     );
-    const remoteEnabled = chromeEnabled && devtoolsRemoteEnabled;
-    toggleMenuItem("menu_browserToolbox", remoteEnabled);
 
-    if (Services.prefs.getBoolPref("devtools.policy.disabled", false)) {
-      toggleMenuItem("menu_devToolbox", false);
-      toggleMenuItem("menu_devtools_remotedebugging", false);
-      toggleMenuItem("menu_browserToolbox", false);
-      toggleMenuItem("menu_browserConsole", false);
-      toggleMenuItem("menu_responsiveUI", false);
-      toggleMenuItem("menu_eyedropper", false);
-      toggleMenuItem("extensionsForDevelopers", false);
+    const { menuitems } = require("resource://devtools/client/menus.js");
+    for (const item of menuitems) {
+      toggleMenuItem(item.id, !disabledByPolicy && !item.disabled);
     }
   },
 
@@ -156,7 +148,10 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
         this._registerBrowserWindow(subject);
         break;
       case "nsPref:changed":
-        if (prefName.endsWith("enabled")) {
+        if (
+          prefName.endsWith("enabled") ||
+          prefName == "devtools.policy.disabled"
+        ) {
           for (const win of this._trackedBrowserWindows) {
             this.updateCommandAvailability(win);
           }

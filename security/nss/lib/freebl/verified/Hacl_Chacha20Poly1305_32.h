@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+
 #ifndef __Hacl_Chacha20Poly1305_32_H
 #define __Hacl_Chacha20Poly1305_32_H
 
@@ -55,14 +56,15 @@ Note: Encryption and decryption can be executed in-place, i.e., `m` and `cipher`
 */
 void
 Hacl_Chacha20Poly1305_32_aead_encrypt(
-    uint8_t *k,
-    uint8_t *n,
-    uint32_t aadlen,
-    uint8_t *aad,
-    uint32_t mlen,
-    uint8_t *m,
-    uint8_t *cipher,
-    uint8_t *mac);
+  uint8_t *k,
+  uint8_t *n,
+  uint32_t aadlen,
+  uint8_t *aad,
+  uint32_t mlen,
+  uint8_t *m,
+  uint8_t *cipher,
+  uint8_t *mac
+);
 
 /**
 Decrypt a ciphertext `cipher` with key `k`.
@@ -87,14 +89,15 @@ If decryption fails, the array `m` remains unchanged and the function returns th
 */
 uint32_t
 Hacl_Chacha20Poly1305_32_aead_decrypt(
-    uint8_t *k,
-    uint8_t *n,
-    uint32_t aadlen,
-    uint8_t *aad,
-    uint32_t mlen,
-    uint8_t *m,
-    uint8_t *cipher,
-    uint8_t *mac);
+  uint8_t *k,
+  uint8_t *n,
+  uint32_t aadlen,
+  uint8_t *aad,
+  uint32_t mlen,
+  uint8_t *m,
+  uint8_t *cipher,
+  uint8_t *mac
+);
 
 #if defined(__cplusplus)
 }

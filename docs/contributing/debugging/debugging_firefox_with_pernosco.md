@@ -20,8 +20,8 @@ the trace for processing.
 
 ### Install your Pernosco configuration
 
-If you are using your own Pernoso account, follow the instructions
-[here](https://pernos.co/account) to install your credentials.
+If you are using your own Pernosco account, follow the setup instructions
+[on the account page](https://pernos.co/account) to install your credentials.
 
 Mozilla employees, see the [Pernosco install and configuration doc](https://docs.google.com/document/d/1cb-mkNyJYMudpS0a-R6zxy0kOMIRUSKrxxL-E9zFGKE/edit)
 for credentials.

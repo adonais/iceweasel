@@ -30,7 +30,7 @@ async function validateSchema(paramList, nameOfList) {
           type: "array",
           items: { type: "string" },
         },
-        origins: {
+        hosts: {
           type: "array",
           items: { type: "string" },
         },
@@ -45,7 +45,7 @@ async function validateSchema(paramList, nameOfList) {
       additionalProperties: false,
       anyOf: [
         { properties: { isGlobal: { const: true } }, required: ["isGlobal"] },
-        { required: ["origins"] },
+        { required: ["hosts"] },
         { required: ["schemelessSites"] },
       ],
       required: ["queryParams"],

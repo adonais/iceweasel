@@ -996,6 +996,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
 
   void loadConstantDouble(double d, FloatRegister dest);
   void loadConstantFloat32(float f, FloatRegister dest);
+  void loadConstantDoubleZeroHighWord(double d, FloatRegister dest);
 
   void loadConstantSimd128Int(const SimdConstant& v, FloatRegister dest);
   void loadConstantSimd128Float(const SimdConstant& v, FloatRegister dest);
@@ -1156,11 +1157,12 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   template <typename T>
   inline void loadUnboxedValue(const T& src, MIRType type, AnyRegister dest);
 
-  // Note: this function clobbers the source register.
   inline void convertUInt32ToDouble(Register src, FloatRegister dest);
+  inline void convertUInt32ToFloat32(Register src, FloatRegister dest);
 
   // Note: this function clobbers the source register.
-  inline void convertUInt32ToFloat32(Register src, FloatRegister dest);
+  inline void convertUInt32ToDouble(Register src,
+                                    const ScratchDoubleScope& dest);
 
   void incrementInt32Value(const Address& addr) {
     addl(Imm32(1), payloadOf(addr));

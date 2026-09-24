@@ -176,6 +176,20 @@ In order to disable the `moz-input-search`, add `disabled=""` or `disabled` to t
 </div>
 ```
 
+### Setting the `required` state
+
+If the `moz-input-search` needs to be required, add `required` to the markup.
+
+```html
+<moz-input-search label="Search" required></moz-input-search>
+```
+
+```html story
+<div style={{width: '500px'}}>
+<moz-input-search label="Search" required></moz-input-search>
+</div>
+```
+
 ### Fluent usage
 
 The `label`, `aria-label`, `description`, `placeholder`, and `accesskey` attributes of `moz-input-search` will generally be provided via [Fluent attributes](https://mozilla-l10n.github.io/localizer-documentation/tools/fluent/basic_syntax.html#attributes).

@@ -108,12 +108,7 @@ struct EndpointProcInfo {
   base::ProcessId mPid = base::kInvalidProcessId;
   GeckoChildID mChildID = kInvalidGeckoChildID;
 
-  bool operator==(const EndpointProcInfo& aOther) const {
-    return mPid == aOther.mPid && mChildID == aOther.mChildID;
-  }
-  bool operator!=(const EndpointProcInfo& aOther) const {
-    return !operator==(aOther);
-  }
+  bool operator==(const EndpointProcInfo& aOther) const = default;
 
   static EndpointProcInfo Invalid() { return {}; }
   static EndpointProcInfo Current();

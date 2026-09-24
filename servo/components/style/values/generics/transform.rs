@@ -17,7 +17,7 @@ use crate::values::specified::angle::Angle as SpecifiedAngle;
 use crate::values::specified::length::Length as SpecifiedLength;
 use crate::values::specified::length::LengthPercentage as SpecifiedLengthPercentage;
 use crate::values::specified::number::Number as SpecifiedNumber;
-use crate::values::{computed, CSSFloat};
+use crate::values::{CSSFloat, computed};
 use crate::{One, Zero, ZeroNoPercent};
 use euclid::default::{Rect, Transform3D};
 use std::fmt::{self, Write};
@@ -56,7 +56,7 @@ pub struct GenericMatrix<T> {
 pub use self::GenericMatrix as Matrix;
 
 #[allow(missing_docs)]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[derive(
     Clone,
     Copy,
@@ -83,7 +83,7 @@ pub struct GenericMatrix3D<T> {
 
 pub use self::GenericMatrix3D as Matrix3D;
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 impl<T: ToFloat> TryFrom<Matrix<T>> for Transform3D<f64> {
     type Error = ();
 
@@ -98,7 +98,7 @@ impl<T: ToFloat> TryFrom<Matrix<T>> for Transform3D<f64> {
     }
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 impl<T: ToFloat> TryFrom<Matrix3D<T>> for Transform3D<f64> {
     type Error = ();
 
@@ -349,7 +349,7 @@ where
         // https://drafts.css-houdini.org/css-typed-om-1/#reify-a-transform-function
         let component = match *self {
             Matrix(ref m) => TransformComponent::Matrix(MatrixComponent {
-                #[cfg_attr(rustfmt, rustfmt_skip)]
+                #[rustfmt::skip]
                 matrix: ComputedMatrix3D {
                     m11: m.a.to_f32()?, m12: m.b.to_f32()?, m13: 0.0, m14: 0.0,
                     m21: m.c.to_f32()?, m22: m.d.to_f32()?, m23: 0.0, m24: 0.0,
@@ -359,7 +359,7 @@ where
                 is_2d: true,
             }),
             Matrix3D(ref m) => TransformComponent::Matrix(MatrixComponent {
-                #[cfg_attr(rustfmt, rustfmt_skip)]
+                #[rustfmt::skip]
                 matrix: ComputedMatrix3D {
                     m11: m.m11.to_f32()?, m12: m.m12.to_f32()?, m13: m.m13.to_f32()?, m14: m.m14.to_f32()?,
                     m21: m.m21.to_f32()?, m22: m.m22.to_f32()?, m23: m.m23.to_f32()?, m24: m.m24.to_f32()?,
@@ -742,7 +742,7 @@ where
             Perspective(ref p) => {
                 let px = match p {
                     PerspectiveFunction::None => f32::INFINITY,
-                    PerspectiveFunction::Length(ref p) => p.to_pixel_length(None)?,
+                    PerspectiveFunction::Length(p) => p.to_pixel_length(None)?,
                 };
                 create_perspective_matrix(px).cast()
             },
@@ -812,7 +812,7 @@ impl<T: ToMatrix> Transform<T> {
     ///
     /// We return a pair: the first one is the transform matrix, and the second one
     /// indicates if there is any 3d transform function in this transform list.
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     pub fn to_transform_3d_matrix(
         &self,
         reference_box: Option<&Rect<ComputedLength>>
@@ -821,13 +821,12 @@ impl<T: ToMatrix> Transform<T> {
     }
 
     /// Converts a series of components to a 3d matrix.
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     pub fn components_to_transform_3d_matrix(
         ops: &[T],
         reference_box: Option<&Rect<ComputedLength>>,
     ) -> Result<(Transform3D<CSSFloat>, bool), ()> {
         let cast_3d_transform = |m: Transform3D<f64>| -> Transform3D<CSSFloat> {
-            use std::{f32, f64};
             let cast = |v: f64| v.min(f32::MAX as f64).max(f32::MIN as f64) as f32;
             Transform3D::new(
                 cast(m.m11), cast(m.m12), cast(m.m13), cast(m.m14),

@@ -4,6 +4,7 @@
 
 //! Code for invalidations due to state or attribute changes.
 
+use crate::AllocErr;
 use crate::context::QuirksMode;
 use crate::derives::*;
 use crate::selector_map::{
@@ -11,7 +12,6 @@ use crate::selector_map::{
 };
 use crate::selector_parser::{NonTSPseudoClass, SelectorImpl};
 use crate::values::AtomIdent;
-use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded};
 use dom::{DocumentState, ElementState};
 use selectors::attr::NamespaceConstraint;
@@ -401,6 +401,12 @@ pub struct AdditionalRelativeSelectorInvalidationMap {
     pub needs_ancestors_traversal: bool,
 }
 
+impl Default for AdditionalRelativeSelectorInvalidationMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AdditionalRelativeSelectorInvalidationMap {
     /// Creates an empty `InvalidationMap`.
     pub fn new() -> Self {
@@ -427,6 +433,12 @@ impl AdditionalRelativeSelectorInvalidationMap {
     }
 }
 
+impl Default for InvalidationMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InvalidationMap {
     /// Creates an empty `InvalidationMap`.
     pub fn new() -> Self {
@@ -447,19 +459,19 @@ impl InvalidationMap {
             + self
                 .other_attribute_affecting_selectors
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len())
+                .fold(0, |accum, (_, v)| accum + v.len())
             + self
                 .id_to_selector
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len())
+                .fold(0, |accum, (_, v)| accum + v.len())
             + self
                 .class_to_selector
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len())
+                .fold(0, |accum, (_, v)| accum + v.len())
             + self
                 .custom_state_affecting_selectors
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len())
+                .fold(0, |accum, (_, v)| accum + v.len())
     }
 
     /// Clears this map, leaving it empty.
@@ -611,9 +623,9 @@ fn on_attribute<C: Collector>(
     local_name_lower: &LocalName,
     collector: &mut C,
 ) -> Result<(), AllocErr> {
-    add_attr_dependency(local_name.clone(), collector)?;
+    add_attr_dependency(local_name, collector)?;
     if local_name != local_name_lower {
-        add_attr_dependency(local_name_lower.clone(), collector)?;
+        add_attr_dependency(local_name_lower, collector)?;
     }
     Ok(())
 }
@@ -630,8 +642,7 @@ fn on_id_or_class<C: Collector>(
         Component::Class(ref atom) => (atom, collector.class_map()),
         _ => unreachable!(),
     };
-    let entry = map.try_entry(atom.0.clone(), quirks_mode)?;
-    let vec = entry.or_insert_with(SmallVec::new);
+    let vec = map.try_get_or_insert_with(&atom.0, quirks_mode, SmallVec::new)?;
     vec.try_reserve(1)?;
     vec.push(dependency);
     Ok(())
@@ -648,32 +659,32 @@ fn on_scope<C: Collector>(collector: &mut C) -> Result<(), AllocErr> {
     Ok(())
 }
 
-fn add_attr_dependency<C: Collector>(name: LocalName, collector: &mut C) -> Result<(), AllocErr> {
+fn add_attr_dependency<C: Collector>(name: &LocalName, collector: &mut C) -> Result<(), AllocErr> {
     let dependency = collector.dependency();
     let map = collector.attribute_map();
     add_local_name(name, dependency, map)
 }
 
 fn add_custom_state_dependency<C: Collector>(
-    name: AtomIdent,
+    name: &AtomIdent,
     collector: &mut C,
 ) -> Result<(), AllocErr> {
     let dependency = collector.dependency();
     let map = collector.custom_state_map();
     map.try_reserve(1)?;
-    let vec = map.entry(name).or_default();
+    let vec = map.entry_ref(name).or_default();
     vec.try_reserve(1)?;
     vec.push(dependency);
     Ok(())
 }
 
 fn add_local_name(
-    name: LocalName,
+    name: &LocalName,
     dependency: Dependency,
     map: &mut LocalNameDependencyMap,
 ) -> Result<(), AllocErr> {
     map.try_reserve(1)?;
-    let vec = map.entry(name).or_default();
+    let vec = map.entry_ref(name).or_default();
     vec.try_reserve(1)?;
     vec.push(dependency);
     Ok(())
@@ -688,17 +699,17 @@ fn on_pseudo_class<C: Collector>(pc: &NonTSPseudoClass, collector: &mut C) -> Re
         #[cfg(feature = "gecko")]
         NonTSPseudoClass::MozSelectListBox => {
             // This depends on two attributes.
-            add_attr_dependency(local_name!("multiple"), collector)?;
-            return add_attr_dependency(local_name!("size"), collector);
+            add_attr_dependency(&local_name!("multiple"), collector)?;
+            return add_attr_dependency(&local_name!("size"), collector);
         },
         NonTSPseudoClass::Lang(..) => local_name!("lang"),
         NonTSPseudoClass::CustomState(ref name) => {
-            return add_custom_state_dependency(name.0.clone(), collector);
+            return add_custom_state_dependency(&name.0, collector);
         },
         _ => return Ok(()),
     };
 
-    add_attr_dependency(attr_name, collector)
+    add_attr_dependency(&attr_name, collector)
 }
 
 fn add_pseudo_class_dependency<C: Collector>(
@@ -823,7 +834,7 @@ fn next_dependency(
                 selector_offset,
                 next_scope_dependencies
                     .is_some()
-                    .then(|| scope_kind)
+                    .then_some(scope_kind)
                     .flatten(),
             ),
         };
@@ -864,13 +875,13 @@ impl<'a, 'b, 'c> Collector for SelectorDependencyCollector<'a, 'b, 'c> {
         Dependency {
             selector: self.selector.clone(),
             selector_offset: offset,
-            next: next,
+            next,
             kind: get_non_relative_invalidation_kind(
                 self.selector,
                 offset,
                 scope_dependencies
                     .is_some()
-                    .then(|| self.scope_dependencies.scope_kind)
+                    .then_some(self.scope_dependencies.scope_kind)
                     .flatten(),
             ),
         }
@@ -1017,7 +1028,7 @@ impl<'a, 'b, 'c> SelectorDependencyCollector<'a, 'b, 'c> {
                 if !state.added_entry {
                     // Not great - we didn't add any uniquely identifiable information.
                     if let Err(err) =
-                        add_non_unique_info(&self.selector, self.compound_state.offset, self)
+                        add_non_unique_info(self.selector, self.compound_state.offset, self)
                     {
                         *self.alloc_error = Some(err);
                         return false;
@@ -1079,7 +1090,7 @@ impl<'a, 'b, 'c> SelectorVisitor for SelectorDependencyCollector<'a, 'b, 'c> {
             if self.relative_inner_collector.is_none() {
                 self.next_selectors.push(NextDependencyEntry {
                     selector: self.selector.clone(),
-                    offset: offset,
+                    offset,
                     cached_dependency: None,
                 });
             }
@@ -1103,7 +1114,7 @@ impl<'a, 'b, 'c> SelectorVisitor for SelectorDependencyCollector<'a, 'b, 'c> {
                         relative_compound_state: RelativeSelectorCompoundStateAttributes::new(),
                     },
                 ),
-                scope_dependencies: &mut self.scope_dependencies,
+                scope_dependencies: self.scope_dependencies,
                 alloc_error: &mut *self.alloc_error,
             };
             if !nested.visit_whole_selector_from(iter, index) {
@@ -1138,13 +1149,13 @@ impl<'a, 'b, 'c> SelectorVisitor for SelectorDependencyCollector<'a, 'b, 'c> {
                 additional_relative_selector_invalidation_map: &mut *self
                     .additional_relative_selector_invalidation_map,
                 document_state: &mut *self.document_state,
-                selector: &relative_selector,
+                selector: relative_selector,
                 combinator_count: RelativeSelectorCombinatorCount::new(relative_selector),
                 next_selectors: &mut *self.next_selectors,
                 quirks_mode: self.quirks_mode,
                 compound_state: PerCompoundState::new(0),
                 compound_state_attributes: RelativeSelectorCompoundStateAttributes::new(),
-                scope_dependencies: &mut self.scope_dependencies,
+                scope_dependencies: self.scope_dependencies,
                 alloc_error: &mut *self.alloc_error,
             };
             if !nested.visit_whole_selector() {
@@ -1158,19 +1169,19 @@ impl<'a, 'b, 'c> SelectorVisitor for SelectorDependencyCollector<'a, 'b, 'c> {
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
         match on_simple_selector(s, self.quirks_mode, self) {
             Ok(result) => {
-                if let ComponentVisitResult::Handled(state) = result {
-                    if let Some(inner_collector_state) = self.relative_inner_collector.as_mut() {
-                        inner_collector_state.relative_compound_state.added_entry = true;
-                        inner_collector_state
-                            .relative_compound_state
-                            .ts_state
-                            .insert(state);
-                    }
+                if let ComponentVisitResult::Handled(state) = result
+                    && let Some(inner_collector_state) = self.relative_inner_collector.as_mut()
+                {
+                    inner_collector_state.relative_compound_state.added_entry = true;
+                    inner_collector_state
+                        .relative_compound_state
+                        .ts_state
+                        .insert(state);
                 }
                 true
             },
             Err(err) => {
-                *self.alloc_error = Some(err.into());
+                *self.alloc_error = Some(err);
                 false
             },
         }
@@ -1255,21 +1266,14 @@ fn add_non_unique_info<C: Collector>(
 ) -> Result<(), AllocErr> {
     // Go through this compound again.
     for ss in selector.iter_from(offset) {
-        match ss {
-            Component::LocalName(ref name) => {
+        if let Component::LocalName(name) = ss {
+            let dependency = collector.dependency();
+            add_local_name(&name.name, dependency, collector.type_map())?;
+            if name.name != name.lower_name {
                 let dependency = collector.dependency();
-                add_local_name(name.name.clone(), dependency, &mut collector.type_map())?;
-                if name.name != name.lower_name {
-                    let dependency = collector.dependency();
-                    add_local_name(
-                        name.lower_name.clone(),
-                        dependency,
-                        &mut collector.type_map(),
-                    )?;
-                }
-                return Ok(());
-            },
-            _ => (),
+                add_local_name(&name.lower_name, dependency, collector.type_map())?;
+            }
+            return Ok(());
         };
     }
     // Ouch. Add one for *.
@@ -1416,7 +1420,7 @@ impl<'a, 'b> Collector for RelativeSelectorDependencyCollector<'a, 'b> {
                     },
                 },
             ),
-            next: next,
+            next,
         }
     }
 
@@ -1576,7 +1580,7 @@ impl<'a, 'b> SelectorVisitor for RelativeSelectorDependencyCollector<'a, 'b> {
                     next_dependency: &next_dependency,
                     relative_compound_state: RelativeSelectorCompoundStateAttributes::new(),
                 }),
-                scope_dependencies: &mut self.scope_dependencies,
+                scope_dependencies: self.scope_dependencies,
                 alloc_error: &mut *self.alloc_error,
             };
             if !nested.visit_whole_selector_from(iter, index) {
@@ -1604,7 +1608,7 @@ impl<'a, 'b> SelectorVisitor for RelativeSelectorDependencyCollector<'a, 'b> {
                 true
             },
             Err(err) => {
-                *self.alloc_error = Some(err.into());
+                *self.alloc_error = Some(err);
                 false
             },
         }

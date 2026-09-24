@@ -6,7 +6,8 @@
 #include "CustomMatchers.h"
 
 void NonTrivialTypeInFfiChecker::registerMatchers(MatchFinder *AstMatcher) {
-  AstMatcher->addMatcher(functionDecl(isExternC(), isFirstParty()).bind("func"), this);
+  AstMatcher->addMatcher(functionDecl(isExternC(), isFirstParty()).bind("func"),
+                         this);
 }
 
 void NonTrivialTypeInFfiChecker::check(const MatchFinder::MatchResult &Result) {

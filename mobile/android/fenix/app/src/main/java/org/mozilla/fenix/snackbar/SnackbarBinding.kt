@@ -10,9 +10,8 @@ import androidx.navigation.NavController
 import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -58,6 +57,8 @@ import org.mozilla.fenix.utils.getSnackbarTimeout
  * @param sendTabUseCases [SendTabUseCases] used to send tabs to other devices.
  * @param customTabSessionId Optional custom tab session ID if navigating from a custom tab or null if the selected
  *   session should be used.
+ * @param applicationScope [CoroutineScope] tied to the application lifetime, used for retry operations that must
+ *   outlive the current UI component (e.g. retrying a failed send-tab-to-device action).
  * @param viewHasFocus Whether the host view is currently focused. Used to determine if the binding should consume the
  *   snackbar in case there are multiple bindings active (e.g., menu is shown on top of the home fragment, and both host
  *   snackbar bindings).
@@ -77,6 +78,7 @@ class SnackbarBinding(
     private val tabsUseCases: TabsUseCases,
     private val sendTabUseCases: SendTabUseCases?,
     private val customTabSessionId: String?,
+    private val applicationScope: CoroutineScope,
     private val viewHasFocus: () -> Boolean = { true },
     private val downloadFileUtils: DownloadFileUtils =
         DefaultDownloadFileUtils(
@@ -224,7 +226,6 @@ class SnackbarBinding(
                     }
 
                     is SnackbarState.ShareTabsFailed -> {
-                        @OptIn(DelicateCoroutinesApi::class)
                         snackbarDelegate.show(
                             text = R.string.sync_sent_tab_error_snackbar,
                             duration = Snackbar.LENGTH_LONG,
@@ -233,7 +234,7 @@ class SnackbarBinding(
                         ) {
                             sendTabUseCases ?: return@show
 
-                            GlobalScope.launch(ioDispatcher) {
+                            applicationScope.launch(ioDispatcher) {
                                 val operation =
                                     when (state.destination.size) {
                                         1 ->
@@ -371,8 +372,7 @@ class SnackbarBinding(
 
                     is SnackbarState.None -> Unit
 
-                    is SnackbarState.IPProtectionDataLimitReached ->
-                        handleIPProtectionDataLimitReachedSnackbarState(state)
+                    is SnackbarState.IPProtectionShowActionSettingsSnackbar -> showActionSettingsSnackbar(state.title)
 
                     is SnackbarState.IPProtectionShowSnackbar -> showIPProtectionSnackBar(state.title)
                 }
@@ -435,12 +435,12 @@ class SnackbarBinding(
      * The state could be consumed by [IPProtectionSnackbarBinding] as well (e.g. three dot menu or trust panel opened),
      * in which case, to avoid showing snackbar twice, we only show it here if the view is active.
      */
-    private fun handleIPProtectionDataLimitReachedSnackbarState(state: SnackbarState.IPProtectionDataLimitReached) {
+    private fun showActionSettingsSnackbar(title: String) {
         if (viewHasFocus()) {
             snackbarDelegate.show(
-                text = state.title,
-                duration = Snackbar.LENGTH_LONG,
-                action = context.getString(R.string.ip_protection_data_limit_reached_snackbar_action),
+                text = title,
+                duration = context.components.settings.getSnackbarTimeout(hasAction = true).value.toInt(),
+                action = context.getString(R.string.ip_protection_open_settings_snackbar_action),
             ) {
                 navController.navigate(
                     BrowserFragmentDirections.actionGlobalIpProtectionFragment(
@@ -461,7 +461,7 @@ class SnackbarBinding(
         if (viewHasFocus()) {
             snackbarDelegate.show(
                 text = title,
-                duration = Snackbar.LENGTH_SHORT,
+                duration = context.components.settings.getSnackbarTimeout().value.toInt(),
             )
 
             appStore.dispatch(SnackbarAction.SnackbarShown)

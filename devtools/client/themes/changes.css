@@ -19,9 +19,9 @@
 }
 
 :root.theme-dark {
-  --diff-add-background-color: rgba(18, 188, 0, 0.15);
+  --diff-add-background-color: rgb(18 188 0 / 0.15);
   --diff-add-text-color: #12bc00;
-  --diff-remove-background-color: rgba(255, 0, 57, 0.15);
+  --diff-remove-background-color: rgb(255 0 57 / 0.15);
   --diff-remove-text-color: #ff0039;
   --diff-source-background: #222225;
 }

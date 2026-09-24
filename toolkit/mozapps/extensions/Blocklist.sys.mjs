@@ -531,6 +531,7 @@ const GfxBlocklistRS = {
 
     entries = entries.map(entry => {
       let props = [
+        "adapterMatch",
         "blockID",
         "devices",
         "driverVendor",
@@ -597,6 +598,7 @@ const GfxBlocklistRS = {
     });
     if (entries.length) {
       let sortedProps = [
+        "adapterMatch",
         "blockID",
         "devices",
         "driverVendor",

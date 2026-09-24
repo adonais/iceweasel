@@ -172,7 +172,7 @@ add_setup(async function setup() {
   libraryFile.append("pkcs11testmodule");
   libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
   await loadPKCS11Module(libraryFile, "PKCS11 Test Module");
-  Cc["@mozilla.org/security/x509certdb;1"]
+  await Cc["@mozilla.org/security/x509certdb;1"]
     .getService(Ci.nsIX509CertDB)
     .getCerts();
 

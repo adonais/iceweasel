@@ -39,17 +39,15 @@ shadow_dom = """
     </script>"""
 
 
-globals = set(
-    [
-        "atob",
-        "Audio",
-        "btoa",
-        "document",
-        "navigator",
-        "URL",
-        "window",
-    ]
-)
+globals = set([
+    "atob",
+    "Audio",
+    "btoa",
+    "document",
+    "navigator",
+    "URL",
+    "window",
+])
 
 
 class TestExecuteContent(MarionetteTestCase):

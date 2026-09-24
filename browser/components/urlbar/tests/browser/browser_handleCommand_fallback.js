@@ -53,7 +53,7 @@ add_task(async function () {
   async function promiseLoadURL() {
     return new Promise(resolve => {
       sandbox
-        .stub(gURLBar.controller, "loadURL")
+        .stub(gURLBar.parentController, "loadURL")
         .callsFake(({ loadRequest, where }) => {
           sandbox.restore();
           // The remaining options are optional and apply only to some cases, so
@@ -117,9 +117,9 @@ add_task(async function no_heuristic_test() {
   async function promiseLoadURL() {
     return new Promise(resolve => {
       sinon
-        .stub(gURLBar.controller, "loadURL")
+        .stub(gURLBar.parentController, "loadURL")
         .callsFake(({ loadRequest, where }) => {
-          gURLBar.controller.loadURL.restore();
+          gURLBar.parentController.loadURL.restore();
           // The remaining options are optional and apply only to some cases, so
           // we could not use deepEqual with them.
           resolve([loadRequest, where]);

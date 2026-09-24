@@ -134,7 +134,7 @@ ssl_init()
   # in fips mode, turn off curve25519 until it's NIST approved
   FIPS_OPTIONS=""
   # in fips mode, turn off curve25519 until it's NIST approved
-  ALL_GROUPS="P256,P384,P521,x25519,FF2048,FF3072,FF4096,FF6144,FF8192,xyber768d00,x25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
+  ALL_GROUPS="P256,P384,P521,x25519,FF2048,FF3072,FF4096,FF6144,FF8192,x25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
   NON_PQ_GROUPS="P256,P384,P521,x25519,FF2048,FF3072,FF4096,FF6144,FF8192"
   FIPS_GROUPS="P256,P384,P521,FF2048,FF3072,FF4096,FF6144,FF8192,x25519mlkem768,secp256r1mlkem768,secp384r1mlkem1024"
   FIPS_NON_PQ_GROUPS="P256,P384,P521,FF2048,FF3072,FF4096,FF6144,FF8192"
@@ -389,9 +389,7 @@ ssl_cov()
       fi
 
       TLS_GROUPS=${CLIENT_GROUPS}
-      if [ "$ectype" = "XYBER" ]; then
-          TLS_GROUPS="xyber768d00"
-      elif [ "$ectype" = "MLKEM219" ]; then
+      if [ "$ectype" = "MLKEM219" ]; then
           TLS_GROUPS="x25519mlkem768"
       elif [ "$ectype" = "MLKEM256" ]; then
           TLS_GROUPS="secp256r1mlkem768"

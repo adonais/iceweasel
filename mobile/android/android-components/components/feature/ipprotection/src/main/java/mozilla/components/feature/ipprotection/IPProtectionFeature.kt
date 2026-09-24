@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -30,6 +31,7 @@ import mozilla.components.feature.ipprotection.store.IPProtectionStore
 import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
+import mozilla.components.feature.ipprotection.store.state.LocationListUpdateState
 import mozilla.components.feature.ipprotection.store.state.PendingActivationRequest
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.flowScoped
@@ -70,6 +72,9 @@ class IPProtectionFeature(
         }
         mainScope.launch {
             observeAccount(store, mainDispatcher)
+        }
+        mainScope.launch {
+            observeLocationUpdates(store, mainDispatcher)
         }
     }
 
@@ -160,6 +165,24 @@ class IPProtectionFeature(
         }
     }
 
+    private fun observeLocationUpdates(store: IPProtectionStore, mainDispatcher: CoroutineDispatcher) {
+        store.flowScoped(dispatcher = mainDispatcher) { flow ->
+            flow
+                .map { it.serviceStatus to it.locationState.updateState }
+                .distinctUntilChanged()
+                .filter { (service, update) ->
+                    service == ServiceState.Ready && update == LocationListUpdateState.Requested
+                }
+                .collect {
+                    handler?.updateCountryList { error ->
+                        if (error != null) {
+                            store.dispatch(IPProtectionAction.LocationUpdateFailed(error))
+                        }
+                    }
+                }
+        }
+    }
+
     private suspend fun registerAndInit() =
         withContext(mainDispatcher) {
             handler =
@@ -206,8 +229,6 @@ class IPProtectionFeature(
                 // as a side effect, the init call triggers `IPProtectionController#onServiceStateChanged`
                 // that can trigger the account manager that leads to `AuthProvider#getToken`.
                 init()
-
-                updateCountryList()
             }
         }
 
@@ -239,22 +260,22 @@ class IPProtectionFeature(
                 }
         }
 
+    // A pending request is normally cleared when the engine reports the new proxy state. Changing country while
+    // the VPN is on does not change that state, so no report arrives and nothing else would clear it.
     private fun handleActivationResult(request: PendingActivationRequest, error: Throwable?) {
-        if (error == null) {
-            return
-        }
-
-        store.dispatch(
-            when (request) {
-                is PendingActivationRequest.Activate ->
-                    if (request.isLocationSwitch) {
-                        IPProtectionAction.LocationSwitchFailed(error)
-                    } else {
-                        IPProtectionAction.ToggleFailed(ActivationOperation.Activate, error)
-                    }
-                is PendingActivationRequest.Deactivate ->
-                    IPProtectionAction.ToggleFailed(ActivationOperation.Deactivate, error)
+        when (request) {
+            is PendingActivationRequest.Activate -> {
+                when {
+                    error == null -> store.dispatch(IPProtectionAction.ActivationRequestCompleted(request))
+                    request.isLocationSwitch -> store.dispatch(IPProtectionAction.LocationSwitchFailed(error))
+                    else -> store.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Activate, error))
+                }
             }
-        )
+            is PendingActivationRequest.Deactivate -> {
+                if (error != null) {
+                    store.dispatch(IPProtectionAction.ToggleFailed(ActivationOperation.Deactivate, error))
+                }
+            }
+        }
     }
 }

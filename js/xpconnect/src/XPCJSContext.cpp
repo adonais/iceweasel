@@ -1017,12 +1017,6 @@ static void ReloadPrefsCallback(const char* pref, void* aXpccx) {
   auto& contextOptions = JS::ContextOptionsRef(cx);
   SetPrefableContextOptions(contextOptions);
 
-#ifdef NIGHTLY_BUILD
-  JS_SetGlobalJitCompilerOption(
-      cx, JSJITCOMPILER_REGEXP_BUFFER_BOUNDARIES,
-      StaticPrefs::javascript_options_experimental_regexp_buffer_boundaries());
-#endif
-
   // Set options not shared with workers.
   contextOptions
       .setThrowOnDebuggeeWouldRun(Preferences::GetBool(

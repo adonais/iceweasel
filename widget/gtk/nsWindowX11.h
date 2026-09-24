@@ -20,6 +20,7 @@ class nsWindowX11 final : public nsWindow {
   void DestroyNative() override;
 
   bool ConfigureX11GLVisual();
+  void ConfigureToplevelWindowNative() override;
 
   void SetProgress(unsigned long progressPercent) override;
 

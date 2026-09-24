@@ -316,6 +316,9 @@ class DOMMatrix : public DOMMatrixReadOnly {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
+  // These methods primarily correspond to the DOMMatrix WebIDL API.
+  // Additional helpers may be declared here for CSS Typed OM implementation
+  // and are not Web-exposed.
   DOMMatrix* MultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* PreMultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* TranslateSelf(double aTx, double aTy, double aTz = 0);
@@ -329,8 +332,12 @@ class DOMMatrix : public DOMMatrixReadOnly {
   DOMMatrix* RotateFromVectorSelf(double aX, double aY);
   DOMMatrix* RotateAxisAngleSelf(double aX, double aY, double aZ,
                                  double aAngle);
+  // Apply both skews in a single matrix multiplication. Calling SkewXSelf()
+  // and SkewYSelf() separately produces a different transformation.
+  DOMMatrix* SkewSelf(double aSx, double aSy);
   DOMMatrix* SkewXSelf(double aSx);
   DOMMatrix* SkewYSelf(double aSy);
+  DOMMatrix* PerspectiveSelf(double aDepth);
   DOMMatrix* InvertSelf();
   DOMMatrix* SetMatrixValue(const nsACString&, ErrorResult&);
 

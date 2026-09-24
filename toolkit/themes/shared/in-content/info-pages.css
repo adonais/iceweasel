@@ -7,8 +7,8 @@
 :root {
   --in-content-container-min-width: 13em;
   --in-content-container-max-width: 52em;
-  --info-pages-body-space-padding: var(--dimension-40) var(--dimension-48);
-  --info-pages-list-space-column-gap: var(--dimension-80);
+  --info-pages-body-space-padding: 40px 48px;
+  --info-pages-list-space-column-gap: 80px;
   --info-pages-title-space-image-offset: calc(2.5 * var(--space-xxlarge));
 }
 
@@ -18,6 +18,7 @@ body {
   flex-direction: column;
   box-sizing: border-box;
   min-height: 100vh;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--info-pages-body-space-padding);
   align-items: center;
   justify-content: center;
@@ -94,6 +95,7 @@ dt {
 
 ul.columns {
   column-count: 2;
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   column-gap: var(--info-pages-list-space-column-gap);
 }
 

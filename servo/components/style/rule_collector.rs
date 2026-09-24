@@ -7,11 +7,11 @@
 use crate::applicable_declarations::{ApplicableDeclarationBlock, ApplicableDeclarationList};
 use crate::dom::{TElement, TNode, TShadowRoot};
 use crate::properties::{AnimationDeclarations, PropertyDeclarationBlock};
-use crate::rule_tree::{CascadeLevel, CascadeOrigin, ShadowCascadeOrder};
+use crate::rule_tree::{CascadeLevel, CascadeOrigin, ShadowCascadeOrder, StyleSourceBorrow};
 use crate::selector_map::SelectorMap;
 use crate::selector_parser::PseudoElement;
 use crate::shared_lock::Locked;
-use crate::stylesheets::{layer_rule::LayerOrder, Origin};
+use crate::stylesheets::{Origin, layer_rule::LayerOrder};
 use crate::stylist::{AuthorStylesEnabled, CascadeData, Rule, RuleInclusion, Stylist};
 use selectors::matching::MatchingContext;
 use servo_arc::ArcBorrow;
@@ -59,7 +59,7 @@ pub fn containing_shadow_ignoring_svg_use<E: TElement>(
 ///
 /// This is done basically to be able to organize the cascade in smaller
 /// functions, and be able to reason about it easily.
-pub struct RuleCollector<'a, 'b: 'a, E>
+pub struct RuleCollector<'a, 'b, 'c, E>
 where
     E: TElement,
 {
@@ -69,34 +69,34 @@ where
     // NOTE: The pseudo-elements are in reverse order from what you'd see in a selector. E.g. for
     // details::details-content::marker, the list is [::marker, ::details-content], and `element` is
     // the `::marker`.
-    pseudo_elements: &'a [PseudoElement],
+    pseudo_elements: &'c [PseudoElement],
     style_attribute: Option<ArcBorrow<'a, Locked<PropertyDeclarationBlock>>>,
     smil_override: Option<ArcBorrow<'a, Locked<PropertyDeclarationBlock>>>,
-    animation_declarations: AnimationDeclarations,
+    animation_declarations: &'a AnimationDeclarations,
     rule_inclusion: RuleInclusion,
-    rules: &'a mut ApplicableDeclarationList,
-    context: &'a mut MatchingContext<'b, E::Impl>,
+    rules: &'c mut ApplicableDeclarationList<'a>,
+    context: &'c mut MatchingContext<'b, E::Impl>,
     matches_user_and_content_rules: bool,
     matches_document_author_rules: bool,
     in_sort_scope: bool,
 }
 
-impl<'a, 'b: 'a, E> RuleCollector<'a, 'b, E>
+impl<'a, 'b, 'c, E> RuleCollector<'a, 'b, 'c, E>
 where
-    E: TElement,
+    E: TElement + 'a,
 {
     /// Trivially construct a new collector.
     pub fn new(
         stylist: &'a Stylist,
         element: E,
         rule_hash_target: E,
-        pseudo_elements: &'a [PseudoElement],
+        pseudo_elements: &'c [PseudoElement],
         style_attribute: Option<ArcBorrow<'a, Locked<PropertyDeclarationBlock>>>,
         smil_override: Option<ArcBorrow<'a, Locked<PropertyDeclarationBlock>>>,
-        animation_declarations: AnimationDeclarations,
+        animation_declarations: &'a AnimationDeclarations,
         rule_inclusion: RuleInclusion,
-        rules: &'a mut ApplicableDeclarationList,
-        context: &'a mut MatchingContext<'b, E::Impl>,
+        rules: &'c mut ApplicableDeclarationList<'a>,
+        context: &'c mut MatchingContext<'b, E::Impl>,
     ) -> Self {
         debug_assert_eq!(rule_hash_target, element.ultimate_originating_element());
         debug_assert!(pseudo_elements.iter().all(|p| !p.is_precomputed()));
@@ -155,17 +155,18 @@ where
             let cascade_data = collector.stylist.cascade_data().borrow_for_origin(origin);
             // Element-backed pseudo-elements (e.g. ::picker), also apply UA rules that target
             // underlying element directly (like [popover] rules).
-            if origin == Origin::UserAgent && collector.is_element_backed_pseudo_element() {
-                if let Some(map) = cascade_data.normal_rules(&[]) {
-                    collector.collect_rules_in_map_with_target(
-                        map,
-                        cascade_level,
-                        cascade_data,
-                        collector.element,
-                    );
-                }
+            if origin == Origin::UserAgent
+                && collector.is_element_backed_pseudo_element()
+                && let Some(map) = cascade_data.normal_rules(&[])
+            {
+                collector.collect_rules_in_map_with_target(
+                    map,
+                    cascade_level,
+                    cascade_data,
+                    collector.element,
+                );
             }
-            if let Some(map) = cascade_data.normal_rules(&collector.pseudo_elements) {
+            if let Some(map) = cascade_data.normal_rules(collector.pseudo_elements) {
                 collector.collect_rules_in_map(map, cascade_level, cascade_data);
             }
         });
@@ -232,28 +233,28 @@ where
     #[inline]
     fn collect_rules_in_list(
         &mut self,
-        part_rules: &[Rule],
+        part_rules: &'a [Rule],
         cascade_level: CascadeLevel,
-        cascade_data: &CascadeData,
+        cascade_data: &'a CascadeData,
     ) {
         debug_assert!(self.in_sort_scope, "Rules gotta be sorted");
         SelectorMap::get_matching_rules(
             self.element,
             part_rules,
-            &mut self.rules,
-            &mut self.context,
+            self.rules,
+            self.context,
             cascade_level,
             cascade_data,
-            &self.stylist,
+            self.stylist,
         );
     }
 
     #[inline]
     fn collect_rules_in_map(
         &mut self,
-        map: &SelectorMap<Rule>,
+        map: &'a SelectorMap<Rule>,
         cascade_level: CascadeLevel,
-        cascade_data: &CascadeData,
+        cascade_data: &'a CascadeData,
     ) {
         self.collect_rules_in_map_with_target(
             map,
@@ -266,20 +267,20 @@ where
     #[inline]
     fn collect_rules_in_map_with_target(
         &mut self,
-        map: &SelectorMap<Rule>,
+        map: &'a SelectorMap<Rule>,
         cascade_level: CascadeLevel,
-        cascade_data: &CascadeData,
+        cascade_data: &'a CascadeData,
         rule_hash_target: E,
     ) {
         debug_assert!(self.in_sort_scope, "Rules gotta be sorted");
         map.get_all_matching_rules(
             self.element,
             rule_hash_target,
-            &mut self.rules,
-            &mut self.context,
+            self.rules,
+            self.context,
             cascade_level,
             cascade_data,
-            &self.stylist,
+            self.stylist,
         );
     }
 
@@ -322,7 +323,8 @@ where
                 Some(d) => d,
                 None => continue,
             };
-            let slotted_rules = match data.slotted_rules(&self.pseudo_elements) {
+
+            let slotted_rules = match data.slotted_rules(self.pseudo_elements) {
                 Some(r) => r,
                 None => continue,
             };
@@ -354,7 +356,7 @@ where
 
         let cascade_level = CascadeLevel::same_tree_author_normal();
         self.in_shadow_tree(containing_shadow.host(), |collector| {
-            if let Some(map) = cascade_data.normal_rules(&collector.pseudo_elements) {
+            if let Some(map) = cascade_data.normal_rules(collector.pseudo_elements) {
                 collector.collect_rules_in_map(map, cascade_level, cascade_data);
             }
 
@@ -364,7 +366,7 @@ where
                 return;
             }
 
-            let part_rules = match cascade_data.part_rules(&collector.pseudo_elements) {
+            let part_rules = match cascade_data.part_rules(collector.pseudo_elements) {
                 Some(p) => p,
                 None => return,
             };
@@ -388,8 +390,7 @@ where
         let rule_hash_target = self.rule_hash_target;
         let cascade_level = CascadeLevel::author_normal(shadow_cascade_order);
         self.in_shadow_tree(rule_hash_target, |collector| {
-            if let Some(host_rules) =
-                cascade_data.featureless_host_rules(&collector.pseudo_elements)
+            if let Some(host_rules) = cascade_data.featureless_host_rules(collector.pseudo_elements)
             {
                 debug_assert!(!collector.context.featureless(), "How?");
                 collector.context.featureless = true;
@@ -398,15 +399,15 @@ where
             }
             // We allow stylesheets in the UA tree style the pseudo-element as the real element as
             // well.
-            if collector.is_element_backed_pseudo_element() {
-                if let Some(map) = cascade_data.normal_rules(&[]) {
-                    collector.collect_rules_in_map_with_target(
-                        map,
-                        cascade_level,
-                        cascade_data,
-                        collector.element,
-                    );
-                }
+            if collector.is_element_backed_pseudo_element()
+                && let Some(map) = cascade_data.normal_rules(&[])
+            {
+                collector.collect_rules_in_map_with_target(
+                    map,
+                    cascade_level,
+                    cascade_data,
+                    collector.element,
+                );
             }
         });
     }
@@ -450,23 +451,23 @@ where
                 ),
             };
 
-            if let Some(cascade_data) = cascade_data {
-                if let Some(part_rules) = cascade_data.part_rules(&self.pseudo_elements) {
-                    let containing_host = outer_shadow.map(|s| s.host());
-                    let cascade_level = CascadeLevel::author_normal(shadow_cascade_order);
-                    self.in_tree(containing_host, |collector| {
-                        for p in &parts {
-                            if let Some(part_rules) = part_rules.get(&p.0) {
-                                collector.collect_rules_in_list(
-                                    part_rules,
-                                    cascade_level,
-                                    cascade_data,
-                                );
-                            }
+            if let Some(cascade_data) = cascade_data
+                && let Some(part_rules) = cascade_data.part_rules(self.pseudo_elements)
+            {
+                let containing_host = outer_shadow.map(|s| s.host());
+                let cascade_level = CascadeLevel::author_normal(shadow_cascade_order);
+                self.in_tree(containing_host, |collector| {
+                    for p in &parts {
+                        if let Some(part_rules) = part_rules.get(&p.0) {
+                            collector.collect_rules_in_list(
+                                part_rules,
+                                cascade_level,
+                                cascade_data,
+                            );
                         }
-                    });
-                    shadow_cascade_order.inc();
-                }
+                    }
+                });
+                shadow_cascade_order.inc();
             }
 
             inner_shadow = match outer_shadow {
@@ -488,7 +489,7 @@ where
         if let Some(sa) = self.style_attribute {
             self.rules
                 .push(ApplicableDeclarationBlock::from_declarations(
-                    sa.clone_arc(),
+                    StyleSourceBorrow::from_declarations(sa),
                     CascadeLevel::same_tree_author_normal(),
                     LayerOrder::style_attribute(),
                 ));
@@ -499,7 +500,7 @@ where
         if let Some(so) = self.smil_override {
             self.rules
                 .push(ApplicableDeclarationBlock::from_declarations(
-                    so.clone_arc(),
+                    StyleSourceBorrow::from_declarations(so),
                     CascadeLevel::new(CascadeOrigin::SMILOverride),
                     LayerOrder::root(),
                 ));
@@ -508,10 +509,10 @@ where
         // The animations sheet (CSS animations, script-generated
         // animations, and CSS transitions that are no longer tied to CSS
         // markup).
-        if let Some(anim) = self.animation_declarations.animations.take() {
+        if let Some(ref anim) = self.animation_declarations.animations {
             self.rules
                 .push(ApplicableDeclarationBlock::from_declarations(
-                    anim,
+                    StyleSourceBorrow::from_declarations(anim.borrow_arc()),
                     CascadeLevel::new(CascadeOrigin::Animations),
                     LayerOrder::root(),
                 ));
@@ -519,10 +520,10 @@ where
 
         // The transitions sheet (CSS transitions that are tied to CSS
         // markup).
-        if let Some(anim) = self.animation_declarations.transitions.take() {
+        if let Some(ref anim) = self.animation_declarations.transitions {
             self.rules
                 .push(ApplicableDeclarationBlock::from_declarations(
-                    anim,
+                    StyleSourceBorrow::from_declarations(anim.borrow_arc()),
                     CascadeLevel::new(CascadeOrigin::Transitions),
                     LayerOrder::root(),
                 ));

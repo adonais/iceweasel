@@ -28,10 +28,7 @@
  */
 add_task(async function test_fail_closed_default() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.ml.security.enabled", true],
-    ],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -111,10 +108,7 @@ add_task(async function test_fail_closed_default() {
  */
 add_task(async function test_trusted_and_untrusted_links() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.ml.security.enabled", true],
-    ],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -211,10 +205,7 @@ add_task(async function test_trusted_and_untrusted_links() {
  */
 add_task(async function test_trust_update_triggers_rerender() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.ml.security.enabled", true],
-    ],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(
@@ -317,10 +308,7 @@ add_task(async function test_trust_update_triggers_rerender() {
  */
 add_task(async function test_aiwindow_component_trust_smoke() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.ml.security.enabled", true],
-    ],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   const restoreSignIn = skipSignIn();
@@ -510,10 +498,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
  */
 add_task(async function test_malformed_url_does_not_throw() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.enabled", true],
-      ["browser.ml.security.enabled", true],
-    ],
+    set: [["browser.smartwindow.enabled", true]],
   });
   const { restore } = await stubEngineNetworkBoundaries({
     serverOptions: { streamChunks: ["Oops: [click](http://[unclosed)"] },

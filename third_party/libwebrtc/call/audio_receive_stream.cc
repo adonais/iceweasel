@@ -16,6 +16,10 @@ AudioReceiveStreamInterface::Stats::Stats() = default;
 AudioReceiveStreamInterface::Stats::~Stats() = default;
 
 AudioReceiveStreamInterface::Config::Config() = default;
+AudioReceiveStreamInterface::Config::Config(const Config&) = default;
+AudioReceiveStreamInterface::Config::Config(Config&&) = default;
+AudioReceiveStreamInterface::Config&
+AudioReceiveStreamInterface::Config::operator=(Config&&) = default;
 AudioReceiveStreamInterface::Config::~Config() = default;
 
 AudioReceiveStreamInterface::Config::Rtp::Rtp() = default;

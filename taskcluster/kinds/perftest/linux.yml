@@ -221,7 +221,7 @@ busy-trr:
             xpcshell/tests/netwerk/test/unit/test_trr_bench.js
             --flavor xpcshell
             --perfherder
-            --perfherder-metrics name:average,unit:ms
+            --perfherder-metrics name:average,unit:ms,shouldAlert:True
             --output $MOZ_FETCHES_DIR/../artifacts
             --xpcshell-binary ${MOZ_FETCHES_DIR}/bin/xpcshell
             --xpcshell-mozinfo ${MOZ_FETCHES_DIR}/target.mozinfo.json
@@ -527,30 +527,6 @@ ml-llama-smollm2-smoke:
             toolkit/components/ml/tests/browser/browser_ml_llama_smollm2_smoke.js
 
 
-ml-security-perf:
-    fetches:
-        fetch:
-            - smollm2-360-instruct-gguf
-    description: Run ML Security Performance Tests
-    treeherder:
-        symbol: perftest(ml-security-perf)
-        tier: 2
-    attributes:
-        batch: false
-        cron: false
-    run-on-projects: [mozilla-central]
-    run:
-        command: >-
-            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
-            cd $MOZ_FETCHES_DIR &&
-            python3 python/mozperftest/mozperftest/runner.py
-            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox-bin
-            --flavor mochitest
-            --mochitest-name-change
-            --output $MOZ_FETCHES_DIR/../artifacts
-            --hooks toolkit/components/ml/tests/tools/hooks_local_hub.py
-            toolkit/components/ml/tests/browser/browser_ml_security_perf.js
-
 ml-multi-perf-wasm: &ml-multi-perf
     fetches:
         fetch:
@@ -558,6 +534,7 @@ ml-multi-perf-wasm: &ml-multi-perf
             - xenova-all-minilm-l6-v2
             - mozilla-ner
             - mozilla-intent
+            - mozilla-smart-intent
     description: Run ML Models Perf Tests (wasm onnx backend)
     treeherder:
         symbol: perftest(ml-multi-perf-w)
@@ -932,3 +909,29 @@ perftest-places:
             --flavor mochitest
             --output $MOZ_FETCHES_DIR/../artifacts
             toolkit/components/places/tests/browser/performance/browser_calculate_frecency_speed.js
+
+smartwindow-perf:
+    fetches:
+        fetch:
+            - ort.jsep.wasm
+            - xenova-all-minilm-l6-v2
+            - mozilla-query-intent
+    description: Run Smart Window end-to-end responsiveness performance tests
+    treeherder:
+        symbol: perftest(smartwindow)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [mozilla-central]
+    run:
+        clone-with: hg
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox-bin
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            --hooks toolkit/components/ml/tests/tools/hooks_local_hub.py
+            browser/components/aiwindow/ui/test/browser_perf/browser_smartwindow_perf.js

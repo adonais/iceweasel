@@ -129,6 +129,45 @@ describe("privacy widget on a profile with no history", () => {
   });
 });
 
+// Bug 2063718: the recent searches widget requires Firefox 157, so the widget is
+// hidden outright when newtab train-hops onto an older host.
+describe("recent searches widget on a host that predates its search access point", () => {
+  const recentSearches = WIDGET_REGISTRY.find(w => w.id === "recentSearches");
+  const everythingOn = {
+    "widgets.enabled": true,
+    "widgets.recentSearches.enabled": true,
+    "widgets.system.recentSearches.enabled": true,
+    widgetsConfig: { recentSearchesEnabled: true },
+    trainhopConfig: {
+      widgets: { recentSearchesEnabled: true },
+      widgetsSettings: { recentSearchesVisible: true },
+    },
+  };
+
+  it("is not addable, visible or enabled on an older host", () => {
+    const prefs = { ...everythingOn, supportsWidgetSearchSap: false };
+    expect(isWidgetAddable(recentSearches, prefs)).toBe(false);
+    expect(isWidgetToggleVisible(recentSearches, prefs)).toBe(false);
+    expect(isWidgetEnabled(recentSearches, prefs, true)).toBe(false);
+  });
+
+  it("is unaffected on a host that knows the access point", () => {
+    const prefs = { ...everythingOn, supportsWidgetSearchSap: true };
+    expect(isWidgetAddable(recentSearches, prefs)).toBe(true);
+    expect(isWidgetToggleVisible(recentSearches, prefs)).toBe(true);
+    expect(isWidgetEnabled(recentSearches, prefs, true)).toBe(true);
+  });
+
+  it("leaves widgets that do not search alone", () => {
+    expect(
+      isWidgetAddable(listsWidget, {
+        "widgets.system.lists.enabled": true,
+        supportsWidgetSearchSap: false,
+      })
+    ).toBe(true);
+  });
+});
+
 describe("isWidgetsContainerVisible", () => {
   it("is false when nothing enables it", () => {
     expect(isWidgetsContainerVisible({})).toBe(false);

@@ -137,6 +137,9 @@ bitflags! {
 
         /// Whether this style uses `sibling-index()`.
         const USES_SIBLING_INDEX = 1 << 27;
+
+        /// Whether this style uses any visited-dependent properties.
+        const USES_VISITED_DEPENDENT_PROPERTIES = 1 << 28;
     }
 }
 

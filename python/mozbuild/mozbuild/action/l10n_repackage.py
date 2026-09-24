@@ -16,8 +16,9 @@ Re-packs the en-US dist as a single-locale package. Orchestrates:
 Invoked in make via $(call py_action,l10n_repackage,...).
 """
 
+from __future__ import annotations
+
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -207,21 +208,20 @@ def _build_helper_exe(
 ) -> int:
     # NSIS compilation isn't ported to Python yet, so shell out to make
     # for now. Porting it will move this to a py_action in a follow-up.
-    env = {
-        **os.environ,
-        "AB_CD": locale,
-        "REAL_LOCALE_MERGEDIR": str(real_locale_mergedir),
-        "IS_LANGUAGE_REPACK": "1",
-    }
+    # AB_CD has to arrive as a command line variable: `config.mk` assigns it, and
+    # a makefile assignment overrides the environment while a command line one
+    # wins.
     result = subprocess.run(
         [
             make,
             "-C",
             installer_dir,
             "CONFIG_DIR=l10ngen",
+            f"AB_CD={locale}",
+            f"REAL_LOCALE_MERGEDIR={real_locale_mergedir}",
+            "IS_LANGUAGE_REPACK=1",
             "l10ngen/helper.exe",
         ],
-        env=env,
         check=False,
     )
     if result.returncode:

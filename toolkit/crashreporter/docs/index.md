@@ -198,6 +198,8 @@ information about previous and submitted crashes.
 
 It is also possible to submit crashes from *about:crashes*.
 
+(environment-variables-affecting-crash-reporting)=
+
 ## Environment variables affecting crash reporting
 
 The exception handler and crash reporter client behavior can be altered by

@@ -523,6 +523,15 @@ def setup_autoland_retriggers(config, tasks):
 
 
 @task_transforms.add
+def set_task_label_env(config, tasks):
+    """Tell the harness which task it is running as."""
+    for task in tasks:
+        env = task.setdefault("worker", {}).setdefault("env", {})
+        env["RAPTOR_TASK_LABEL"] = task["label"]
+        yield task
+
+
+@task_transforms.add
 def setup_internal_artifacts(config, tasks):
     for task in tasks:
         if (

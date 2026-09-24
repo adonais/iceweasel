@@ -63,8 +63,6 @@ JSObject* CSSMatrixComponent::WrapObject(JSContext* aCx,
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssmatrixcomponent-cssmatrixcomponent
 //
-// XXX This is not yet fully implemented!
-//
 //  static
 already_AddRefed<CSSMatrixComponent> CSSMatrixComponent::Constructor(
     const GlobalObject& aGlobal, DOMMatrixReadOnly& aMatrix,
@@ -86,9 +84,27 @@ already_AddRefed<CSSMatrixComponent> CSSMatrixComponent::Constructor(
 
 DOMMatrix* CSSMatrixComponent::Matrix() const { return mMatrix; }
 
-void CSSMatrixComponent::SetMatrix(DOMMatrix& aArg) {}
+void CSSMatrixComponent::SetMatrix(DOMMatrix& aArg) { mMatrix = &aArg; }
 
 // end of CSSMatrixComponent Web IDL implementation
+
+already_AddRefed<DOMMatrix> CSSMatrixComponent::ToMatrix(ErrorResult& aRv) {
+  if (Is2D() && !mMatrix->Is2D()) {
+    auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+    matrix->SetA(mMatrix->M11());
+    matrix->SetB(mMatrix->M12());
+    matrix->SetC(mMatrix->M21());
+    matrix->SetD(mMatrix->M22());
+    matrix->SetE(mMatrix->M41());
+    matrix->SetF(mMatrix->M42());
+
+    return matrix.forget();
+  }
+
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent, *mMatrix);
+  return matrix.forget();
+}
 
 void CSSMatrixComponent::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                                nsACString& aDest) const {

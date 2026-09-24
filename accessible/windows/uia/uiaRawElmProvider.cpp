@@ -11,6 +11,7 @@
 #include "AccAttributes.h"
 #include "AccessibleWrap.h"
 #include "ApplicationAccessible.h"
+#include "DocAccessible.h"
 #include "LocalAccessible-inl.h"
 #include "MsaaAccessible.h"
 #include "MsaaRootAccessible.h"
@@ -22,7 +23,10 @@
 #include "UiaTextRange.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/a11y/Compatibility.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/RemoteAccessible.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/Document.h"
 #include "nsAccUtils.h"
 #include "nsAccessibilityService.h"
 #include "nsIAccessibleAnnouncementEvent.h"
@@ -866,6 +870,12 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
         aPropertyValue->parray = AccRelationsToUiaArray({RelationType::ACTION});
         return S_OK;
       }
+      if (aPropertyId == registrations.mIsWebContentRoot) {
+        aPropertyValue->vt = VT_BOOL;
+        aPropertyValue->boolVal =
+            IsWebContentRoot() ? VARIANT_TRUE : VARIANT_FALSE;
+        return S_OK;
+      }
     }
   }
 
@@ -1643,6 +1653,21 @@ long uiaRawElmProvider::GetLiveSetting() const {
   return LiveSetting::Off;
 }
 
+bool uiaRawElmProvider::IsWebContentRoot() const {
+  Accessible* acc = Acc();
+  MOZ_ASSERT(acc);
+  if (!acc->IsDoc()) {
+    return false;
+  }
+  dom::BrowsingContext* bc;
+  if (LocalAccessible* localAcc = acc->AsLocal()) {
+    bc = localAcc->AsDoc()->DocumentNode()->GetBrowsingContext();
+  } else {
+    bc = acc->AsRemote()->AsDoc()->GetBrowsingContext();
+  }
+  return bc && bc->IsTopContent();
+}
+
 SAFEARRAY* a11y::AccessibleArrayToUiaArray(const nsTArray<Accessible*>& aAccs) {
   // The UIA client framework seems to treat a null value the same as an empty
   // array most of the time, but not always. In particular, Narrator breaks if
@@ -1682,6 +1707,17 @@ const UiaRegistrations& a11y::GetUiaRegistrations() {
       L"AccessibleActions",
       UIAutomationType_ElementArray};
   registrar->RegisterProperty(&actionsInfo, &sRegistrations.mAccessibleActions);
+  UIAutomationPropertyInfo isWebContentRootInfo = {
+      // https://source.chromium.org/chromium/chromium/src/+/main:docs/accessibility/browser/custom_uia_properties.md;l=13
+      // {C5FDC049-4EEC-4299-87BB-CA9FC718A681}
+      {0xC5FDC049,
+       0x4EEC,
+       0x4299,
+       {0x87, 0xBB, 0xCA, 0x9F, 0xC7, 0x18, 0xA6, 0x81}},
+      L"IsWebContentRoot",
+      UIAutomationType_Bool};
+  registrar->RegisterProperty(&isWebContentRootInfo,
+                              &sRegistrations.mIsWebContentRoot);
   sRegistered = true;
   return sRegistrations;
 }

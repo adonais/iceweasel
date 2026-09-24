@@ -9,7 +9,7 @@ const { AboutPrivateBrowsingParent } = ChromeUtils.importESModule(
   "resource:///actors/AboutPrivateBrowsingParent.sys.mjs"
 );
 
-const PREF_UI_ENABLED = "browser.search.separatePrivateDefault.ui.enabled";
+const PREF_UI_ENABLED = "browser.search.separatePrivateDefault.featureGate";
 const PREF_BANNER_SHOWN =
   "browser.search.separatePrivateDefault.ui.banner.shown";
 const PREF_MAX_SEARCH_BANNER_SHOW_COUNT =

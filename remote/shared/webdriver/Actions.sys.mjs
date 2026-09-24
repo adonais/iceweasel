@@ -20,7 +20,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   keyData: "chrome://remote/content/shared/webdriver/KeyData.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
-  Sleep: "chrome://remote/content/marionette/sync.sys.mjs",
+  Sleep: "chrome://remote/content/shared/Sync.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());

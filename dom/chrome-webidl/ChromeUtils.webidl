@@ -449,6 +449,14 @@ namespace ChromeUtils {
   double now();
 
   /**
+   * Return a fractional number of milliseconds measured with a monotonic
+   * clock that only advances while the system is awake, so time spent
+   * suspended is not counted. The origin is unspecified; only differences
+   * between two values are meaningful.
+   */
+  double awakeNow();
+
+  /**
    * Defines a getter on a specified object that will be created upon first
    * use.
    *

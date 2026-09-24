@@ -148,8 +148,6 @@ class ReceiveStatisticsProxy : public VideoStreamBufferControllerStatsObserver,
     ContentSpecificStats();
     ~ContentSpecificStats();
 
-    void Add(const ContentSpecificStats& other);
-
     SampleCounter e2e_delay_counter;
     SampleCounter interframe_delay_counter;
     int64_t flow_duration_ms = 0;

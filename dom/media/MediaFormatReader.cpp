@@ -901,7 +901,7 @@ MediaFormatReader::MediaFormatReader(MediaFormatReaderInit& aInit,
     : mTaskQueue(
           TaskQueue::Create(GetMediaThreadPool(MediaThreadType::SUPERVISOR),
                             "MediaFormatReader::mTaskQueue",
-                            /* aSupportsTailDispatch = */ true)),
+                            TailDispatchPolicy::ConsistentOrdering)),
       mAudio(this, MediaData::Type::AUDIO_DATA,
              StaticPrefs::media_audio_max_decode_error()),
       mVideo(this, MediaData::Type::VIDEO_DATA,

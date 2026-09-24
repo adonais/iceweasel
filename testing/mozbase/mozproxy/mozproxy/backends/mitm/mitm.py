@@ -28,6 +28,9 @@ mitm_folder = os.path.dirname(os.path.realpath(__file__))
 # maximal allowed runtime of a mitmproxy command
 MITMDUMP_COMMAND_TIMEOUT = 30
 
+# maximal wait for mitmproxy to write its CA certificate
+MITMPROXY_CERT_TIMEOUT = 60
+
 
 class Mitmproxy(Playback):
     def __init__(self, config):
@@ -583,6 +586,19 @@ class Mitmproxy(Playback):
             log_func(f"Mitmproxy exited with error code {exit_code}")
         else:
             LOG.info("Successfully killed the mitmproxy playback process")
+
+    def wait_for_ca_cert(self, cert_path):
+        """mitmproxy writes the cert only after loading all recordings, long
+        after the listen socket we otherwise wait on starts accepting."""
+        end_time = time.time() + MITMPROXY_CERT_TIMEOUT
+        while time.time() < end_time:
+            if os.path.exists(cert_path):
+                return
+            time.sleep(0.25)
+        raise Exception(
+            f"mitmproxy did not write its CA certificate to {cert_path} within "
+            f"{MITMPROXY_CERT_TIMEOUT}s"
+        )
 
     def check_proxy(self, host, port):
         """Check that mitmproxy process is working by doing a socket call using the proxy settings

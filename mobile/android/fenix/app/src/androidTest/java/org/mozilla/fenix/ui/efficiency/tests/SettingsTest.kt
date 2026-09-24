@@ -21,6 +21,6 @@ class SettingsTest : BaseTest() {
         on.settings.navigateToPage()
 
         // Then: all elements should load
-        // by default navigateToPage() asserts all 'requiredForPage' elements are present
+        // By default navigateToPage() asserts the page's interactive readiness profile.
     }
 }

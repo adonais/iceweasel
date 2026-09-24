@@ -43,8 +43,6 @@ class SMILMilestone {
 
   bool operator==(const SMILMilestone& aOther) const = default;
 
-  bool operator!=(const SMILMilestone& aOther) const = default;
-
   bool operator<(const SMILMilestone& aOther) const {
     // Earlier times sort first, and for equal times end milestones sort first
     return mTime < aOther.mTime ||

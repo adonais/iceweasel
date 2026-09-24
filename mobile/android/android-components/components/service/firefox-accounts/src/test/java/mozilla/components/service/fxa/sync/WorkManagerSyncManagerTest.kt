@@ -17,9 +17,7 @@ import mozilla.components.service.fxa.sync.WorkManagerSyncWorker.Companion.SYNC_
 import mozilla.components.service.fxa.sync.WorkManagerSyncWorker.Companion.engineSyncTimestamp
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -46,28 +44,6 @@ class WorkManagerSyncManagerTest {
             testContext,
             Configuration.Builder().build(),
         )
-    }
-
-    @Test
-    fun `sync state access`() {
-        assertNull(getSyncState(testContext))
-        assertEquals(0L, getLastSynced(testContext))
-
-        // 'clear' doesn't blow up for empty state
-        clearSyncState(testContext)
-        // ... and doesn't affect anything, either
-        assertNull(getSyncState(testContext))
-        assertEquals(0L, getLastSynced(testContext))
-
-        setSyncState(testContext, "some state")
-        assertEquals("some state", getSyncState(testContext))
-
-        setLastSynced(testContext, 123L)
-        assertEquals(123L, getLastSynced(testContext))
-
-        clearSyncState(testContext)
-        assertNull(getSyncState(testContext))
-        assertEquals(0L, getLastSynced(testContext))
     }
 
     @Test

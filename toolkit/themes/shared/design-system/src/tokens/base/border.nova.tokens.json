@@ -1,38 +1,9 @@
 {
   "color": {
-    "@base": {
-      "value": {
-        "light": "{color.gray.30}",
-        "dark": "{color.gray.40}",
-        "forcedColors": "CanvasText"
-      }
-    },
-    "transparent": {
-      "value": {
-        "default": "transparent",
-        "forcedColors": "CanvasText"
-      }
-    },
-    "deemphasized": {
-      "@base": {
-        "value": {
-          "light": "{color.gray.20}",
-          "dark": "{color.gray.50}",
-          "forcedColors": "CanvasText"
-        }
-      }
-    },
     "interactive": {
-      "@base": {
-        "value": {
-          "light": "{color.gray.35}",
-          "dark": "{color.gray.40}",
-          "forcedColors": "ButtonText"
-        }
-      },
       "hover": {
         "value": {
-          "light": "{color.gray.45}",
+          "light": "{color.gray.50}",
           "dark": "{color.gray.20}",
           "forcedColors": "SelectedItem"
         }
@@ -50,13 +21,6 @@
           "dark": "{color.gray.55}",
           "forcedColors": "GrayText"
         }
-      }
-    },
-    "error": {
-      "value": {
-        "light": "{color.red.50}",
-        "dark": "{color.red.20}",
-        "forcedColors": "{border.color.@base}"
       }
     }
   },

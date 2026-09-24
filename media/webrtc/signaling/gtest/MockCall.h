@@ -205,6 +205,8 @@ class MockVideoReceiveStream : public webrtc::VideoReceiveStreamInterface {
   virtual void SetAssociatedPayloadTypes(
       std::map<int, int> associated_payload_types) override {}
 
+  virtual void SetRawPayloadTypes(std::set<int> raw_payload_types) override {}
+
   virtual void UpdateRtxSsrc(uint32_t ssrc) override {};
 
   virtual ~MockVideoReceiveStream() {}
@@ -231,9 +233,9 @@ class MockCall : public webrtc::Call {
   }
 
   webrtc::AudioReceiveStreamInterface* CreateAudioReceiveStream(
-      const webrtc::AudioReceiveStreamInterface::Config& config) override {
+      webrtc::AudioReceiveStreamInterface::Config config) override {
     MOZ_RELEASE_ASSERT(!mAudioReceiveConfig);
-    mAudioReceiveConfig = mozilla::Some(config);
+    mAudioReceiveConfig = mozilla::Some(std::move(config));
     return new MockAudioReceiveStream(mCallWrapper);
   }
   void DestroyAudioReceiveStream(

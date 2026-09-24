@@ -107,7 +107,8 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
         if kwargs["symbols_path"] is None:
             kwargs["symbols_path"] = os.path.join(self.distdir, "crashreporter-symbols")
 
-        kwargs["gmp_path"] = os.pathsep.join(
+        # Allow the user to override using the fake plugins using MOZ_GMP_PATH.
+        kwargs["gmp_path"] = os.environ.get("MOZ_GMP_PATH") or os.pathsep.join(
             os.path.join(self.distdir, "bin", p, "1.0")
             for p in ("gmp-fake", "gmp-fakeopenh264")
         )

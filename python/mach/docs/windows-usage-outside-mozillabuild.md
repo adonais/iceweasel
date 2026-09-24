@@ -48,7 +48,7 @@ Download Python from the [the official website](https://www.python.org/downloads
 :::{note}
 To avoid Mach compatibility issues with recent Python releases, it's recommended to install
 the 2nd-most recent "major version". For example, at time of writing, the current modern Python
-version is 3.10.1, so a safe version to install would be the most recent 3.9 release.
+version is 3.14.0, so a safe version to install would be the most recent 3.13 release.
 :::
 
 You'll want to download the "Windows installer (64-bit)" associated with the release you've chosen.

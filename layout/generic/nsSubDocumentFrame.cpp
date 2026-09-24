@@ -177,6 +177,7 @@ void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
   }
   MaybeUpdateRemoteStyle();
   MaybeUpdateEmbedderColorScheme();
+  MaybeUpdateEmbedderScrollbarInset();
   MaybeUpdateEmbedderZoom();
   PropagateIsUnderHiddenEmbedderElement(
       PresShell()->IsUnderHiddenEmbedderElement() ||
@@ -281,27 +282,22 @@ LayoutDeviceIntSize nsSubDocumentFrame::GetInitialSubdocumentSize() const {
     for (const auto& detachedShell : frameloader->GetDetachedSubdocs()) {
       if (RefPtr<mozilla::PresShell> ps = do_QueryReferent(detachedShell)) {
         if (nsPresContext* pc = ps->GetPresContext()) {
-          return LayoutDeviceIntSize(
-              pc->AppUnitsToDevPixels(pc->GetVisibleArea().width),
-              pc->AppUnitsToDevPixels(pc->GetVisibleArea().height));
+          return LayoutDeviceIntSize::FromAppUnitsRounded(
+              pc->GetVisibleArea().Size(), pc->AppUnitsPerDevPixel());
         }
       }
     }
   }
-  // Pick some default size for now.  Using 10x10 because that's what the
-  // code used to do.
-  return LayoutDeviceIntSize(10, 10);
+  return LayoutDeviceIntSize::FromAppUnitsRounded(
+      kFallbackIntrinsicSize, PresContext()->AppUnitsPerDevPixel());
 }
 
 LayoutDeviceIntSize nsSubDocumentFrame::GetSubdocumentSize() const {
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     return GetInitialSubdocumentSize();
   }
-
-  nsSize docSizeAppUnits = GetDestRect().Size();
-  nsPresContext* pc = PresContext();
-  return LayoutDeviceIntSize(pc->AppUnitsToDevPixels(docSizeAppUnits.width),
-                             pc->AppUnitsToDevPixels(docSizeAppUnits.height));
+  return LayoutDeviceIntSize::FromAppUnitsRounded(
+      GetDestRect().Size(), PresContext()->AppUnitsPerDevPixel());
 }
 
 static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
@@ -775,6 +771,36 @@ void nsSubDocumentFrame::MaybeUpdateEmbedderColorScheme() {
   (void)bc->SetEmbedderColorSchemes(schemes);
 }
 
+void nsSubDocumentFrame::MaybeUpdateEmbedderScrollbarInset() {
+  nsFrameLoader* fl = mFrameLoader.get();
+  if (!fl) {
+    return;
+  }
+
+  BrowsingContext* bc = fl->GetExtantBrowsingContext();
+  if (!bc) {
+    return;
+  }
+
+  // The content document can't express this in CSS: its viewport scroll frame's
+  // style is a non-inheriting anonymous box. Forward our own
+  // -moz-scrollbar-inset-{block,inline} instead, resolved to physical sides in
+  // our writing mode and converted to device pixels, since the subdocument's
+  // writing mode and zoom are both its own.
+  const WritingMode wm = GetWritingMode();
+  nsPresContext* pc = PresContext();
+  const nsMargin physical =
+      StyleDisplay()->GetScrollbarInset(wm).GetPhysicalMargin(wm);
+
+  const LayoutDeviceIntMargin inset = LayoutDevicePixel::FromAppUnitsRounded(
+      physical, pc->AppUnitsPerDevPixel());
+  if (bc->GetEmbedderScrollbarInset() == inset) {
+    return;
+  }
+
+  (void)bc->SetEmbedderScrollbarInset(inset);
+}
+
 void nsSubDocumentFrame::MaybeUpdateEmbedderZoom() {
   nsFrameLoader* fl = mFrameLoader.get();
   if (!fl) {
@@ -850,6 +876,7 @@ void nsSubDocumentFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     // If there's no old style, the call in Init() or ShowViewer() should have
     // us covered.
     MaybeUpdateEmbedderColorScheme();
+    MaybeUpdateEmbedderScrollbarInset();
     MaybeUpdateRemoteStyle(aOldComputedStyle);
     if (aOldComputedStyle->EffectiveZoom() != Style()->EffectiveZoom()) {
       MaybeUpdateEmbedderZoom();
@@ -1242,14 +1269,14 @@ void nsDisplayRemote::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
   target->DrawDependentSurface(mPaintData.mTabId, destRect);
 }
 
-bool nsDisplayRemote::CreateWebRenderCommands(
+WebRenderCommandsResult nsDisplayRemote::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   if (!mPaintData.mLayersId.IsValid()) {
-    return true;
+    return Ok();
   }
 
   auto* subDocFrame = static_cast<nsSubDocumentFrame*>(mFrame);
@@ -1277,7 +1304,7 @@ bool nsDisplayRemote::CreateWebRenderCommands(
                       mozilla::wr::AsPipelineId(mPaintData.mLayersId),
                       /*ignoreMissingPipelines*/ true);
 
-  return true;
+  return Ok();
 }
 
 bool nsDisplayRemote::UpdateScrollData(

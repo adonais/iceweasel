@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1922677
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for Bug 1922677</title>
+  <script type="application/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+  <script type="application/javascript">
+
+  /** Test for Bug 1922677 */
+
+  const RATE_LIMIT_COUNT = 5;
+  // Long enough that the rate limit never resets on its own during the test.
+  const RATE_LIMIT_TIME_SPAN = 100;
+
+  // Time to wait for a hashchange event that we expect to never be fired.
+  const NO_HASH_CHANGE_TIMEOUT = 500;
+
+  SimpleTest.waitForExplicitFinish();
+  SimpleTest.requestFlakyTimeout(
+    "Waiting for a hashchange event that should not be fired.");
+
+  async function setup() {
+    await SpecialPowers.pushPrefEnv({set: [
+      ["dom.navigation.navigationRateLimit.count", RATE_LIMIT_COUNT],
+      ["dom.navigation.navigationRateLimit.timespan", RATE_LIMIT_TIME_SPAN]]});
+  }
+
+  function nextHashChange(aWin) {
+    return new Promise((resolve) => {
+      aWin.addEventListener("hashchange", resolve, {once: true});
+    });
+  }
+
+  // Resolves to false if no hashchange event was fired in aWin within
+  // NO_HASH_CHANGE_TIMEOUT, and to true if one was fired.
+  function noHashChange(aWin) {
+    return new Promise((resolve) => {
+      const listener = () => {
+        clearTimeout(timer);
+        resolve(true);
+      };
+      aWin.addEventListener("hashchange", listener, {once: true});
+      const timer = setTimeout(() => {
+        aWin.removeEventListener("hashchange", listener);
+        resolve(false);
+      }, NO_HASH_CHANGE_TIMEOUT);
+    });
+  }
+
+  async function test() {
+    await setup();
+
+    const iframe = document.getElementById("iframe");
+    await new Promise((resolve) => {
+      iframe.addEventListener("load", resolve, {once: true});
+      iframe.src = "blank.html";
+    });
+
+    const win = iframe.contentWindow;
+    const link = win.document.createElement("a");
+    win.document.body.appendChild(link);
+
+    const clickFragment = (aFragment) => {
+      link.setAttribute("href", `#${aFragment}`);
+      link.click();
+    };
+
+    // Loading the iframe counted towards the rate limit.
+    SpecialPowers.wrap(win).browsingContext.resetNavigationRateLimit();
+
+    for (let i = 1; i <= RATE_LIMIT_COUNT; ++i) {
+      const hashChanged = nextHashChange(win);
+      clickFragment(i);
+      await hashChanged;
+      is(win.location.hash, `#${i}`, `Fragment navigation #${i} to #${i}.`);
+    }
+
+    const noHashChanged = noHashChange(win);
+    clickFragment("blocked");
+    ok(!await noHashChanged,
+       "Fragment navigation above the rate limit should not be performed.");
+    is(win.location.hash, `#${RATE_LIMIT_COUNT}`,
+       "Fragment should be left untouched by the rate limited navigation.");
+
+    // Once the rate limit is reset, fragment navigations should work again.
+    SpecialPowers.wrap(win).browsingContext.resetNavigationRateLimit();
+
+    const hashChangedAgain = nextHashChange(win);
+    clickFragment("allowed");
+    await hashChangedAgain;
+    is(win.location.hash, "#allowed",
+       "Fragment navigation should be performed after resetting the limit.");
+
+    SpecialPowers.wrap(win).browsingContext.resetNavigationRateLimit();
+    SimpleTest.finish();
+  }
+
+  </script>
+</head>
+<body onload="setTimeout(test, 0);">
+<a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=1922677">Mozilla Bug 1922677</a>
+<iframe id="iframe"></iframe>
+</body>
+</html>

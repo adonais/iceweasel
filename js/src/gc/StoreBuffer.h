@@ -240,7 +240,6 @@ class StoreBuffer {
     CellPtrEdge() = default;
     explicit CellPtrEdge(T** v) : edge(v) {}
     bool operator==(const CellPtrEdge& other) const = default;
-    bool operator!=(const CellPtrEdge& other) const = default;
 
     bool maybeInRememberedSet(const Nursery& nursery) const {
       MOZ_ASSERT(IsInsideNursery(*edge));
@@ -265,7 +264,6 @@ class StoreBuffer {
     ValueEdge() : edge(nullptr) {}
     explicit ValueEdge(JS::Value* v) : edge(v) {}
     bool operator==(const ValueEdge& other) const = default;
-    bool operator!=(const ValueEdge& other) const = default;
 
     bool isGCThing() const { return edge->isGCThing(); }
 
@@ -311,7 +309,6 @@ class StoreBuffer {
     int kind() const { return (int)(objectAndKind_ & 1); }
 
     bool operator==(const SlotsEdge& other) const = default;
-    bool operator!=(const SlotsEdge& other) const = default;
 
     // True if this SlotsEdge range is adjacent to or overlaps with the other
     // SlotsEdge range. The adjacency case will coalesce a series of increasing
@@ -368,7 +365,6 @@ class StoreBuffer {
     WasmAnyRefEdge() : edge(nullptr) {}
     explicit WasmAnyRefEdge(wasm::AnyRef* v) : edge(v) {}
     bool operator==(const WasmAnyRefEdge& other) const = default;
-    bool operator!=(const WasmAnyRefEdge& other) const = default;
 
     bool isGCThing() const { return edge->isGCThing(); }
 

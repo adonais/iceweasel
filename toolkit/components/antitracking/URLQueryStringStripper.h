@@ -70,7 +70,7 @@ class URLQueryStringStripper final : public nsIObserver,
   nsTHashSet<nsCString> mList;
   nsTHashSet<nsCString> mAllowList;
   nsCOMPtr<nsIURLQueryStrippingListService> mListService;
-  nsTHashMap<nsCString, dom::StripRule> mStripOnShareOriginMap;
+  nsTHashMap<nsCString, dom::StripRule> mStripOnShareHostMap;
   nsTHashMap<nsCString, dom::StripRule> mStripOnShareSchemelessSiteMap;
   Maybe<dom::StripRule> mStripOnShareGlobal;
   bool mIsInitialized;
