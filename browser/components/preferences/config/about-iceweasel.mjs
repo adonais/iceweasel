@@ -89,13 +89,18 @@ function showIceMessage(n) {
 
 function upChromeChild() {
   const mbox = "iceweasel-libportable-mousegestures-checkbox";
+  const lbox = "iceweasel-libportable-multiline-checkbox";
   const ubox = "iceweasel-libportable-ucaddons-checkbox";
   const dbox = "iceweasel-libportable-download-checkbox";
   const mousegestures = document.getElementById(mbox);
+  const multiline = document.getElementById(lbox);
   const ucaddons = document.getElementById(ubox);
   const download = document.getElementById(dbox);
   if (mousegestures) {
     mousegestures.checked = existScript("MouseGestures.uc.js");
+  }
+  if (multiline) {
+    multiline.checked = existScript("MultiRowTabLiteforFx.uc.js");
   }
   if (ucaddons) {
     ucaddons.checked = existScript("AddonsPage.uc.js");
@@ -396,17 +401,6 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
-  id: "iceweasel-tabcompactmode-checkbox",
-  pref: "browser.compactmode.show",
-  get: prefVal => {
-    return prefVal === true;
-  },
-  set: checked => {
-    return checked ? true : false;
-  },
-});
-
-Preferences.addSetting({
   id: "iceweasel-lastclose-checkbox",
   pref: "browser.tabs.closeWindowWithLastTab",
   get: prefVal => {
@@ -603,6 +597,16 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "iceweasel-libportable-multiline-checkbox",
+  get: e => {
+    return existScript("MultiRowTabLiteforFx.uc.js");
+  },
+  onUserChange: () => {
+    onDownloadSyncListeners("iceweasel-libportable-multiline-checkbox", "-multiline-uncheck", "-multiline-install");
+  },
+});
+
+Preferences.addSetting({
   id: "iceweasel-libportable-ucaddons-checkbox",
   get: e => {
     return existScript("AddonsPage.uc.js");
@@ -693,7 +697,6 @@ SettingGroupManager.registerGroups({
       { id: "iceweasel-javascript-checkbox", l10nId: "iceweasel-javascript-checkbox2" },
       { id: "iceweasel-taskbartabs-checkbox", l10nId: "iceweasel-taskbartabs-checkbox2" },
       { id: "iceweasel-searchhand-checkbox", l10nId: "iceweasel-searchhand-checkbox2" },
-      { id: "iceweasel-tabcompactmode-checkbox", l10nId: "iceweasel-tabcompactmode-checkbox2" },
       { id: "iceweasel-lastclose-checkbox", l10nId: "iceweasel-lastclose-checkbox2" },
       { id: "iceweasel-tips-checkbox", l10nId: "iceweasel-tips-checkbox2" },
       { id: "iceweasel-styling-checkbox", l10nId: "iceweasel-styling-checkbox2" },
@@ -751,6 +754,10 @@ SettingGroupManager.registerGroups({
             l10nId: "iceweasel-libportable-mousegestures-checkbox2",
           },
           {
+            id: "iceweasel-libportable-multiline-checkbox",
+            l10nId: "iceweasel-libportable-multiline-checkbox2",
+          },
+          {
             id: "iceweasel-libportable-ucaddons-checkbox",
             l10nId: "iceweasel-libportable-ucaddons-checkbox2",
           },
@@ -791,6 +798,10 @@ SettingGroupManager.registerGroups({
                 l10nId: "iceweasel-right-click-close2",
               },
             ],
+          },
+          {
+            id: "iceweasel-libportable-multiline-checkbox",
+            l10nId: "iceweasel-libportable-multiline-checkbox2",
           },
           {
             id: "iceweasel-libportable-ucaddons-checkbox",
