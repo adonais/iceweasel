@@ -3796,6 +3796,8 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
     fontFaceSetImpl->FlushUserFontSet();
   }
 
+  auto& state = CurrentState();
+
   // In the OffscreenCanvas case we don't have the context necessary to call
   // GetFontStyleForServo(), as we do in the main-thread canvas context, so
   // instead we borrow ParseFontShorthandForMatching to parse the attribute.
@@ -3814,7 +3816,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   // Set the kerning feature, if required by the fontKerning attribute.
   gfxFontFeature setting{TRUETYPE_TAG('k', 'e', 'r', 'n'), 0};
-  switch (CurrentState().fontKerning) {
+  switch (state.fontKerning) {
     case FontKerning::NONE:
       setting.mValue = 0;
       fontStyle.featureSettings.AppendElement(setting);
@@ -3855,12 +3857,12 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
                        fontFaceSetImpl,   // aUserFontSet
                        1.0,               // aDevToCssSize
                        StyleFontVariantEmoji::Normal);
-  CurrentState().fontGroup = fontGroup;
-  SerializeFontForCanvas(list, fontStyle, CurrentState().font);
-  CurrentState().fontFont = nsFont(StyleFontFamily{list, false, false},
+  state.fontGroup = fontGroup;
+  SerializeFontForCanvas(list, fontStyle, state.font);
+  state.fontFont = nsFont(StyleFontFamily{list, false, false},
                                    StyleCSSPixelLength::FromPixels(size));
-  CurrentState().fontLanguage = nullptr;
-  CurrentState().fontExplicitLanguage = false;
+  state.fontLanguage = nullptr;
+  state.fontExplicitLanguage = false;
   return true;
 }
 

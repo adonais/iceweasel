@@ -1207,6 +1207,7 @@ NS_DECLARE_FRAME_PROPERTY_RELEASABLE(BackgroundClipObserverProperty,
 template <class T>
 static T* GetEffectProperty(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
                             const FramePropertyDescriptor<T>* aProperty) {
+  MOZ_ASSERT(!aFrame->GetPrevContinuation(), "Require first continuation");
   if (!aURI) {
     return nullptr;
   }
@@ -1538,6 +1539,9 @@ void SVGObserverUtils::RemoveTemplateObserver(nsIFrame* aFrame) {
 
 Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
                                                         const nsAtom* aHref) {
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   bool found;
   URIObserverHashtable* hashtable =
       aFrame->GetProperty(BackgroundImageProperty(), &found);
@@ -1575,6 +1579,9 @@ Element* SVGObserverUtils::GetAndObserveBackgroundImage(nsIFrame* aFrame,
 }
 
 Element* SVGObserverUtils::GetAndObserveBackgroundClip(nsIFrame* aFrame) {
+  // Continuations can come and go during reflow, and we don't need to observe
+  // the referenced element more than once for a given node.
+  aFrame = aFrame->FirstContinuation();
   bool found;
   BackgroundClipRenderingObserver* obs =
       aFrame->GetProperty(BackgroundClipObserverProperty(), &found);

@@ -12,6 +12,7 @@
 #define API_FRAME_TRANSFORMER_INTERFACE_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/scoped_refptr.h"
@@ -53,6 +54,11 @@ class TransformableFrameInterface {
   // sender frames to allow received frames to be directly re-transmitted on
   // other PeerConnectionss.
   virtual Direction GetDirection() const { return Direction::kUnknown; }
+  virtual std::string GetMimeType() const {
+    // TODO(bugs.webrtc.org/15579): Change this to pure virtual after it
+    // is implemented everywhere.
+    return "unknown/unknown";
+  }
 };
 
 class TransformableVideoFrameInterface : public TransformableFrameInterface {
@@ -71,10 +77,6 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
  public:
   virtual ~TransformableAudioFrameInterface() = default;
 
-  // TODO(crbug.com/1453226): Remove after a few weeks.
-  [[deprecated("Use specific getters instead.")]] virtual const RTPHeader&
-  GetHeader() const = 0;
-
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
 
   // TODO(crbug.com/1453226): Change this to pure virtual after it
@@ -83,11 +85,7 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
     return absl::nullopt;
   }
 
-  // TODO(crbug.com/1456628): Change this to pure virtual after it
-  // is implemented everywhere.
-  virtual absl::optional<uint64_t> AbsoluteCaptureTimestamp() const {
-    return absl::nullopt;
-  }
+  virtual absl::optional<uint64_t> AbsoluteCaptureTimestamp() const = 0;
 
   enum class FrameType { kEmptyFrame, kAudioFrameSpeech, kAudioFrameCN };
 

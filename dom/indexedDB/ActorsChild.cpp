@@ -2397,8 +2397,14 @@ void BackgroundCursorChild<CursorType>::SendContinueInternal(
 template <IDBCursorType CursorType>
 void BackgroundCursorChild<CursorType>::CompleteContinueRequestFromCache() {
   AssertIsOnOwningThread();
+
+  if (!mCursor) {
+    mStrongCursor = nullptr;
+    mDelayedResponses.clear();
+    return;
+  }
+
   MOZ_ASSERT(mTransaction);
-  MOZ_ASSERT(mCursor);
   MOZ_ASSERT(mStrongCursor);
   MOZ_ASSERT(!mDelayedResponses.empty());
   MOZ_ASSERT(mCursor->GetType() == CursorType);
@@ -2700,9 +2706,7 @@ void BackgroundCursorChild<CursorType>::ActorDestroy(ActorDestroyReason aWhy) {
 
   if (mCursor) {
     mCursor->ClearBackgroundActor();
-#ifdef DEBUG
     mCursor = nullptr;
-#endif
   }
 
 #ifdef DEBUG

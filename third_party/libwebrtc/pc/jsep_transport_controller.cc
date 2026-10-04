@@ -360,11 +360,6 @@ bool JsepTransportController::GetStats(const std::string& transport_name,
 
 void JsepTransportController::SetActiveResetSrtpParams(
     bool active_reset_srtp_params) {
-  if (!network_thread_->IsCurrent()) {
-    network_thread_->BlockingCall(
-        [=] { SetActiveResetSrtpParams(active_reset_srtp_params); });
-    return;
-  }
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_LOG(LS_INFO)
       << "Updating the active_reset_srtp_params for JsepTransportController: "
@@ -641,7 +636,12 @@ RTCError JsepTransportController::ApplyDescription_n(
 
     cricket::JsepTransport* transport =
         GetJsepTransportForMid(content_info.name);
-    RTC_DCHECK(transport);
+    if (!transport) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::INVALID_PARAMETER,
+          "Could not find transport for m= section with mid='" +
+              content_info.name + "'");
+    }
 
     SetIceRole_n(DetermineIceRole(transport, transport_info, type, local));
 
@@ -1090,10 +1090,16 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
             UpdateAggregateStates_n();
           });
 
-  jsep_transport->rtp_transport()->SignalRtcpPacketReceived.connect(
-      this, &JsepTransportController::OnRtcpPacketReceived_n);
-  jsep_transport->rtp_transport()->SignalUnDemuxableRtpPacketReceived.connect(
-      this, &JsepTransportController::OnUnDemuxableRtpPacketReceived_n);
+  jsep_transport->rtp_transport()->SubscribeRtcpPacketReceived(
+      this, [this](rtc::CopyOnWriteBuffer* buffer, int64_t packet_time_ms) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnRtcpPacketReceived_n(buffer, packet_time_ms);
+      });
+  jsep_transport->rtp_transport()->SetUnDemuxableRtpPacketReceivedHandler(
+      [this](webrtc::RtpPacketReceived& packet) {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        OnUnDemuxableRtpPacketReceived_n(packet);
+      });
 
   transports_.RegisterTransport(content_info.name, std::move(jsep_transport));
   UpdateAggregateStates_n();

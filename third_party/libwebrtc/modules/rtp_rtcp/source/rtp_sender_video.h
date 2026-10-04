@@ -211,7 +211,8 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
       RTC_GUARDED_BY(send_checker_);
 
   // Current target playout delay.
-  VideoPlayoutDelay current_playout_delay_ RTC_GUARDED_BY(send_checker_);
+  absl::optional<VideoPlayoutDelay> current_playout_delay_
+      RTC_GUARDED_BY(send_checker_);
   // Flag indicating if we need to send `current_playout_delay_` in order
   // to guarantee it gets delivered.
   bool playout_delay_pending_;
@@ -243,7 +244,8 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
   // Set to true if the generic descriptor should be authenticated.
   const bool generic_descriptor_auth_experiment_;
 
-  AbsoluteCaptureTimeSender absolute_capture_time_sender_;
+  AbsoluteCaptureTimeSender absolute_capture_time_sender_
+      RTC_GUARDED_BY(send_checker_);
   // Tracks updates to the active decode targets and decides when active decode
   // targets bitmask should be attached to the dependency descriptor.
   ActiveDecodeTargetsHelper active_decode_targets_tracker_;

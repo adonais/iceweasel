@@ -60,6 +60,7 @@
 #include "pc/rtp_transport_internal.h"
 #include "pc/sdp_utils.h"
 #include "pc/session_description.h"
+#include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -89,8 +90,6 @@ using ::testing::Combine;
 using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 using ::testing::Values;
-
-constexpr int kDefaultTimeout = 10000;
 
 // TODO(steveanton): These tests should be rewritten to use the standard
 // RtpSenderInterface/DtlsTransportInterface objects once they're available in
@@ -213,6 +212,7 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
 
   explicit PeerConnectionBundleBaseTest(SdpSemantics sdp_semantics)
       : vss_(new rtc::VirtualSocketServer()),
+        socket_factory_(new rtc::BasicPacketSocketFactory(vss_.get())),
         main_(vss_.get()),
         sdp_semantics_(sdp_semantics) {
 #ifdef WEBRTC_ANDROID
@@ -238,8 +238,7 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
     auto* fake_network = NewFakeNetwork();
     auto port_allocator = std::make_unique<cricket::BasicPortAllocator>(
-        fake_network,
-        std::make_unique<rtc::BasicPacketSocketFactory>(vss_.get()));
+        fake_network, socket_factory_.get());
     port_allocator->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                               cricket::PORTALLOCATOR_DISABLE_RELAY);
     port_allocator->set_step_delay(cricket::kMinimumStepDelay);
@@ -297,6 +296,7 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
   }
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
+  std::unique_ptr<rtc::BasicPacketSocketFactory> socket_factory_;
   rtc::AutoSocketServerThread main_;
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   std::vector<std::unique_ptr<rtc::FakeNetworkManager>> fake_networks_;
@@ -742,18 +742,18 @@ TEST_P(PeerConnectionBundleTest, ApplyDescriptionWithSameSsrcsBundledFails) {
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   // Modify the remote SDP to make two m= sections have the same SSRC.
   ASSERT_GE(offer->description()->contents().size(), 2U);
-  offer->description()
-      ->contents()[0]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  offer->description()
-      ->contents()[1]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[0]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[1]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
 
+  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
   // When BUNDLE is enabled, applying the description is expected to fail
   // because the demuxing criteria can not be satisfied.
   auto answer = callee->CreateAnswer(options);
@@ -773,16 +773,16 @@ TEST_P(PeerConnectionBundleTest,
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   // Modify the remote SDP to make two m= sections have the same SSRC.
   ASSERT_GE(offer->description()->contents().size(), 2U);
-  offer->description()
-      ->contents()[0]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
-  offer->description()
-      ->contents()[1]
-      .media_description()
-      ->mutable_streams()[0]
-      .ssrcs[0] = 1111222;
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[0]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
+  ReplaceFirstSsrc(offer->description()
+                       ->contents()[1]
+                       .media_description()
+                       ->mutable_streams()[0],
+                   1111222);
   EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
 
   // Without BUNDLE, demuxing is done per-transport.

@@ -115,6 +115,7 @@ rtc_library("rtc_p2p") {
     "../api/units:time_delta",
     "../api/units:timestamp",
     "../logging:ice_log",
+    "../rtc_base:async_dns_resolver",
     "../rtc_base:async_packet_socket",
     "../rtc_base:async_resolver_interface",
     "../rtc_base:async_tcp_socket",
@@ -160,6 +161,7 @@ rtc_library("rtc_p2p") {
     "../api/task_queue:pending_task_safety_flag",
     "../rtc_base:safe_minmax",
     "../rtc_base:weak_ptr",
+    "../rtc_base/network:received_packet",
     "../rtc_base/network:sent_packet",
     "../rtc_base/synchronization:mutex",
     "../rtc_base/system:rtc_export",
@@ -392,6 +394,7 @@ rtc_library("libstunprober") {
 
   deps = [
     ":rtc_p2p",
+    "../api:async_dns_resolver",
     "../api:packet_socket_factory",
     "../api:sequence_checker",
     "../api/task_queue:pending_task_safety_flag",

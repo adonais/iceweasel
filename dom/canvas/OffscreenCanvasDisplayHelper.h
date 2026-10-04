@@ -22,6 +22,7 @@ namespace mozilla::dom {
 class HTMLCanvasElement;
 class OffscreenCanvas;
 class ThreadSafeWorkerRef;
+class WorkerPrivate;
 
 struct OffscreenCanvasDisplayData final {
   mozilla::gfx::IntSize mSize = {0, 0};
@@ -43,6 +44,7 @@ class OffscreenCanvasDisplayHelper final {
 
   RefPtr<layers::ImageContainer> GetImageContainer() const;
 
+  bool MayUpdateContext(WorkerPrivate* aWorker, ErrorResult& aRv);
   void UpdateContext(OffscreenCanvas* aOffscreenCanvas,
                      RefPtr<ThreadSafeWorkerRef>&& aWorkerRef,
                      CanvasContextType aType, const Maybe<int32_t>& aChildId);

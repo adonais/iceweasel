@@ -1085,7 +1085,7 @@ void BrowsingContext::PrepareForProcessChange() {
 }
 
 bool BrowsingContext::IsTargetable() const {
-  return !GetClosed() && AncestorsAreCurrent();
+  return !GetClosed() && AncestorsAreCurrent() && !Top()->GetIsPrinting();
 }
 
 bool BrowsingContext::HasOpener() const {

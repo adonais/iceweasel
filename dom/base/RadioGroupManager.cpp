@@ -131,7 +131,11 @@ void RadioGroupManager::RemoveFromRadioGroup(const nsAString& aName,
   if (!radioGroup) {
     return;
   }
-  radioGroup->mRadioButtons.RemoveElement(aRadio);
+  // This might also be false if the form has been unlinked,
+  // since other things can reinsert the hash table entry.
+  if (!radioGroup->mRadioButtons.RemoveElement(aRadio)) {
+    return;
+  }
 
   if (aRadio->IsRequired()) {
     MOZ_ASSERT(radioGroup->mRequiredRadioCount != 0,

@@ -1312,6 +1312,7 @@ static bool DelazifyCanonicalScriptedFunctionImpl(
       .setNoScriptRval(false)
       .setSelfHostingMode(false)
       .setEagerDelazificationStrategy(lazy->delazificationMode());
+  options.allowHTMLComments = !lazy->hasModuleGoal();
 
   Rooted<CompilationInput> input(cx, CompilationInput(options));
   input.get().initFromLazy(cx, lazy, ss);
@@ -1392,6 +1393,7 @@ DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, FrontendContext* fc,
       .setScriptSourceOffset(sourceStart)
       .setNoScriptRval(false)
       .setSelfHostingMode(false);
+  options.allowHTMLComments = !extra.hasModuleGoal();
 
   Rooted<CompilationInput> input(cx, CompilationInput(options));
   input.get().initFromStencil(context, scriptIndex, ss);

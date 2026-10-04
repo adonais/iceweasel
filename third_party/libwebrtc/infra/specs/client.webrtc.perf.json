@@ -14,20 +14,19 @@
           ],
           "script": "//tools_webrtc/perf/process_perf_results.py"
         },
+        "name": "video_codec_perf_tests",
         "resultdb": {
           "enable": true,
           "has_native_resultdb_integration": true
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "android_devices": "1",
-              "device_type": "redfin",
-              "gce": "0",
-              "os": "Android",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "android_devices": "1",
+            "device_type": "redfin",
+            "gce": "0",
+            "os": "Android",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
@@ -49,20 +48,19 @@
           ],
           "script": "//tools_webrtc/perf/process_perf_results.py"
         },
+        "name": "webrtc_perf_tests",
         "resultdb": {
           "enable": true,
           "has_native_resultdb_integration": true
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "android_devices": "1",
-              "device_type": "redfin",
-              "gce": "0",
-              "os": "Android",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "android_devices": "1",
+            "device_type": "redfin",
+            "gce": "0",
+            "os": "Android",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
@@ -87,20 +85,19 @@
           ],
           "script": "//tools_webrtc/perf/process_perf_results.py"
         },
+        "name": "video_codec_perf_tests",
         "resultdb": {
           "enable": true,
           "has_native_resultdb_integration": true
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "android_devices": "1",
-              "device_type": "redfin",
-              "gce": "0",
-              "os": "Android",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "android_devices": "1",
+            "device_type": "redfin",
+            "gce": "0",
+            "os": "Android",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
@@ -122,20 +119,19 @@
           ],
           "script": "//tools_webrtc/perf/process_perf_results.py"
         },
+        "name": "webrtc_perf_tests",
         "resultdb": {
           "enable": true,
           "has_native_resultdb_integration": true
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "android_devices": "1",
-              "device_type": "redfin",
-              "gce": "0",
-              "os": "Android",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "android_devices": "1",
+            "device_type": "redfin",
+            "gce": "0",
+            "os": "Android",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
@@ -157,7 +153,6 @@
           "--test-arg=--undefok=test_launcher_summary_output",
           "--isolated-script-test-perf-output=${ISOLATED_OUTDIR}/perftest-output.pb"
         ],
-        "isolate_name": "video_codec_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -171,19 +166,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "x86-64",
-              "gce": "1",
-              "os": "Ubuntu-18.04",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "x86-64",
+            "gce": "1",
+            "os": "Ubuntu-18.04",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "video_codec_perf_tests",
         "test_id_prefix": "ninja://modules/video_coding:video_codec_perf_tests/"
       },
       {
@@ -195,7 +189,6 @@
           "--isolated-script-test-perf-output=${ISOLATED_OUTDIR}/perftest-output.pb",
           "--nologs"
         ],
-        "isolate_name": "webrtc_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -209,19 +202,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "x86-64",
-              "gce": "1",
-              "os": "Ubuntu-18.04",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "x86-64",
+            "gce": "1",
+            "os": "Ubuntu-18.04",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "webrtc_perf_tests",
         "test_id_prefix": "ninja://:webrtc_perf_tests/"
       }
     ]
@@ -232,7 +224,6 @@
         "args": [
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json"
         ],
-        "isolate_name": "video_codec_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -246,18 +237,17 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "gce": "0",
-              "os": "Ubuntu-18.04",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "gce": "0",
+            "os": "Ubuntu-18.04",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "video_codec_perf_tests",
         "test_id_prefix": "ninja://modules/video_coding:video_codec_perf_tests/"
       },
       {
@@ -267,7 +257,6 @@
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json",
           "--nologs"
         ],
-        "isolate_name": "webrtc_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -281,18 +270,17 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "gce": "0",
-              "os": "Ubuntu-18.04",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "gce": "0",
+            "os": "Ubuntu-18.04",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "webrtc_perf_tests",
         "test_id_prefix": "ninja://:webrtc_perf_tests/"
       }
     ]
@@ -303,7 +291,6 @@
         "args": [
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json"
         ],
-        "isolate_name": "video_codec_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -317,19 +304,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "x86-64",
-              "gce": "0",
-              "os": "Mac-11",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "x86-64",
+            "gce": "0",
+            "os": "Mac-11",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "video_codec_perf_tests",
         "test_id_prefix": "ninja://modules/video_coding:video_codec_perf_tests/"
       },
       {
@@ -339,7 +325,6 @@
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json",
           "--nologs"
         ],
-        "isolate_name": "webrtc_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -353,19 +338,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "x86-64",
-              "gce": "0",
-              "os": "Mac-11",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "x86-64",
+            "gce": "0",
+            "os": "Mac-11",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "webrtc_perf_tests",
         "test_id_prefix": "ninja://:webrtc_perf_tests/"
       }
     ]
@@ -376,7 +360,6 @@
         "args": [
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json"
         ],
-        "isolate_name": "video_codec_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -390,19 +373,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "arm64-64-Apple_M1",
-              "gce": "0",
-              "os": "Mac-12",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "arm64-64-Apple_M1",
+            "gce": "0",
+            "os": "Mac-12",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "video_codec_perf_tests",
         "test_id_prefix": "ninja://modules/video_coding:video_codec_perf_tests/"
       },
       {
@@ -412,7 +394,6 @@
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json",
           "--nologs"
         ],
-        "isolate_name": "webrtc_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -426,19 +407,18 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "cpu": "arm64-64-Apple_M1",
-              "gce": "0",
-              "os": "Mac-12",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "cpu": "arm64-64-Apple_M1",
+            "gce": "0",
+            "os": "Mac-12",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "webrtc_perf_tests",
         "test_id_prefix": "ninja://:webrtc_perf_tests/"
       }
     ]
@@ -449,7 +429,6 @@
         "args": [
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json"
         ],
-        "isolate_name": "video_codec_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -463,18 +442,17 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "gce": "0",
-              "os": "Windows-10",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "gce": "0",
+            "os": "Windows-10",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "video_codec_perf_tests",
         "test_id_prefix": "ninja://modules/video_coding:video_codec_perf_tests/"
       },
       {
@@ -484,7 +462,6 @@
           "--gtest_output=json:${ISOLATED_OUTDIR}/gtest_output.json",
           "--nologs"
         ],
-        "isolate_name": "webrtc_perf_tests",
         "merge": {
           "args": [
             "--test-suite",
@@ -498,18 +475,17 @@
           "result_format": "gtest_json"
         },
         "swarming": {
-          "dimension_sets": [
-            {
-              "gce": "0",
-              "os": "Windows-10",
-              "pool": "WebRTC-perf"
-            }
-          ],
+          "dimensions": {
+            "gce": "0",
+            "os": "Windows-10",
+            "pool": "WebRTC-perf"
+          },
           "expiration": 10800,
           "hard_timeout": 10800,
           "idempotent": false,
           "io_timeout": 10800
         },
+        "test": "webrtc_perf_tests",
         "test_id_prefix": "ninja://:webrtc_perf_tests/"
       }
     ]
