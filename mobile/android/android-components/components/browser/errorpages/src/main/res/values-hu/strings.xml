@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Engedélyezte a Csak-HTTPS módot a fokozott biztonság érdekében, és a <em>%1$s</em> HTTPS verziója nem érhető el.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Tovább a HTTP oldalra</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Visszalépés (ajánlott)</string>
 </resources>

@@ -42,7 +42,7 @@ class UtilityProcessParent final
 
 #if defined(XP_WIN)
   mozilla::ipc::IPCResult RecvGetModulesTrust(
-      ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority,
+      ModulePaths&& aModPaths, bool aRunAtNormalPriority,
       GetModulesTrustResolver&& aResolver);
 #endif  // defined(XP_WIN)
 

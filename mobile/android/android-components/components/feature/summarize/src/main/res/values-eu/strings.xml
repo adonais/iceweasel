@@ -88,7 +88,7 @@
   <!-- High option label for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity_high">Handia</string>
   <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
-  <string name="mozac_feature_summarize_summary_model">%1$s modeloak laburbilduta</string>
+  <string name="mozac_feature_summarize_summary_model">%1$s ereduak laburbilduta</string>
   <!-- Disclaimer message -->
   <string name="mozac_feature_summarize_disclaimer_message">AAk akatsak egin ditzake</string>
   <!-- Content description for the thumbs up button used to rate a generated summary as helpful -->

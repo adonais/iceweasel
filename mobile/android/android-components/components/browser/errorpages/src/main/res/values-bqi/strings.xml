@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[هالت تینا-HTTPS سی ٱمنیت قلوه فعال وابیڌه وو نوسخه HTTPS ز <em>%1$s</em> من دسرس نؽ.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">رئڌن وا پؽش من ای سایت وا و کار گرؽڌن HTTP</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">وورگرت (پؽشنهاڌ ابۊ)</string>
 </resources>

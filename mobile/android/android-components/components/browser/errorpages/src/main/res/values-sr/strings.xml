@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Омогућили сте „Само HTTPS” режим ради веће безбедности, али HTTPS верзија сајта <em>%1$s</em> није доступна.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Настави на HTTP сајт</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Иди назад (препоручено)</string>
 </resources>

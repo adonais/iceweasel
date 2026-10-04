@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <plurals name="mozac_feature_listentopage_notification_skip_back">
+    <!--
+      Content description of the playback notification control that moves the
+      reading backwards. %1$d is how many seconds it moves by.
+    -->
+    <item quantity="one">Zpět %1$d sekunda</item>
+    <item quantity="few">Zpět %1$d sekundy</item>
+    <item quantity="other">Zpět %1$d sekund</item>
+  </plurals>
+  <plurals name="mozac_feature_listentopage_notification_skip_forward">
+    <!--
+      Content description of the playback notification control that moves the
+      reading forwards. %1$d is how many seconds it moves by.
+    -->
+    <item quantity="one">Vpřed o %1$d sekundu</item>
+    <item quantity="few">Vpřed o %1$d sekundy</item>
+    <item quantity="other">Vpřed o %1$d sekund</item>
+  </plurals>
+</resources>

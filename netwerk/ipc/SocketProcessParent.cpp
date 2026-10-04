@@ -363,10 +363,10 @@ mozilla::ipc::IPCResult SocketProcessParent::RecvSSLTokensCacheData(
 
 #if defined(XP_WIN)
 mozilla::ipc::IPCResult SocketProcessParent::RecvGetModulesTrust(
-    ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority,
+    ModulePaths&& aModPaths, bool aRunAtNormalPriority,
     GetModulesTrustResolver&& aResolver) {
   RefPtr<DllServices> dllSvc(DllServices::Get());
-  dllSvc->GetModulesTrust(std::move(aModIdents), aRunAtNormalPriority)
+  dllSvc->GetModulesTrust(std::move(aModPaths), aRunAtNormalPriority)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [aResolver](ModulesMapResult&& aResult) {

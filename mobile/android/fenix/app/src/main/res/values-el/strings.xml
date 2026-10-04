@@ -4574,4 +4574,12 @@
   <string name="pdf_tools_signature_clear_button">Απαλοιφή</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">Προσθήκη</string>
+  <!--
+    Listen to page
+
+    Content description for the reader mode panel: a group of buttons floating over the content
+  -->
+  <string name="reader_mode_panel_content_description">Επιλογές λειτουργίας ανάγνωσης</string>
+  <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+  <string name="reader_mode_panel_listen_content_description">Εκφώνηση</string>
 </resources>

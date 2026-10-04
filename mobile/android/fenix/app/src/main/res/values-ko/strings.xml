@@ -246,13 +246,13 @@
   -->
   <string name="browser_menu_powered_by2">%1$s 제공</string>
   <!-- Browser menu button to put the current page in reader mode -->
-  <string name="browser_menu_read">리더뷰</string>
+  <string name="browser_menu_read">읽기 모드</string>
   <!-- Browser menu button content description to close reader mode and return the user to the regular browser -->
-  <string name="browser_menu_read_close">리더뷰 닫기</string>
+  <string name="browser_menu_read_close">읽기 모드 닫기</string>
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">앱에서 열기</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view_2">리더뷰 사용자 지정</string>
+  <string name="browser_menu_customize_reader_view_2">읽기 모드 사용자 지정</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">로그인</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -273,6 +273,10 @@
   <string name="browser_main_menu_content_description_navigation_header">네비게이션</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">사용자 지정 탭 메뉴 시트 닫기</string>
+  <!-- URL bar indicator shown on a cached version of the website, when the tab is reloading, but the content is not live yet -->
+  <string name="browser_toolbar_cached_page_indicator">캐시됨</string>
+  <!-- Message shown when a cached website has finished reloading and the tab is now showing the live version of the page -->
+  <string name="browser_toolbar_live_page_toast">실시간 페이지</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">페이지 북마크</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -4559,4 +4563,12 @@
   <string name="pdf_tools_signature_clear_button">지우기</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">추가</string>
+  <!--
+    Listen to page
+
+    Content description for the reader mode panel: a group of buttons floating over the content
+  -->
+  <string name="reader_mode_panel_content_description">읽기 모드 옵션</string>
+  <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+  <string name="reader_mode_panel_listen_content_description">소리내어 읽기</string>
 </resources>

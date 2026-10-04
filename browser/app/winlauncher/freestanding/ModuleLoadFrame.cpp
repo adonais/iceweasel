@@ -24,9 +24,7 @@ ModuleLoadFrame::ModuleLoadFrame(PCUNICODE_STRING aRequestedDllName)
 ModuleLoadFrame::ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
                                  const void* aMapBaseAddr, NTSTATUS aNtStatus,
                                  ModuleLoadInfo::Status aLoadStatus,
-                                 bool aIsDependent,
-                                 nt::AutoHandle&& aSectionHandle,
-                                 bool aSectionHandleUnavailable)
+                                 bool aIsDependent)
     : mPrev(sTopFrame.get()),
       mContext(nullptr),
       mLSPSubstitutionRequired(false),
@@ -34,11 +32,6 @@ ModuleLoadFrame::ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
       mLoadInfo(std::move(aSectionName), aMapBaseAddr, aLoadStatus,
                 aIsDependent) {
   sTopFrame.set(this);
-
-  // This constructor serves a mapping that did not pass through LdrLoadDll, so
-  // OnSectionMap never runs for it and the section handle has to be taken here.
-  mLoadInfo.mSectionHandle = std::move(aSectionHandle);
-  mLoadInfo.mSectionHandleUnavailable = aSectionHandleUnavailable;
 
   gLoaderPrivateAPI.NotifyBeginDllLoad(&mContext, mLoadInfo.mSectionName);
 }
@@ -78,8 +71,7 @@ void ModuleLoadFrame::SetLSPSubstitutionRequired(PCUNICODE_STRING aLeafName) {
 void ModuleLoadFrame::NotifySectionMap(
     nt::AllocatedUnicodeString&& aSectionName, const void* aMapBaseAddr,
     NTSTATUS aMapNtStatus, ModuleLoadInfo::Status aLoadStatus,
-    bool aIsDependent, nt::AutoHandle&& aSectionHandle,
-    bool aSectionHandleUnavailable) {
+    bool aIsDependent) {
   ModuleLoadFrame* topFrame = sTopFrame.get();
   if (!topFrame) {
     // The only time that this data is useful is during initial mapping of
@@ -88,15 +80,13 @@ void ModuleLoadFrame::NotifySectionMap(
     // initial process startup.
     if (gLoaderPrivateAPI.IsDefaultObserver()) {
       OnBareSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                       aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                       aSectionHandleUnavailable);
+                       aLoadStatus, aIsDependent);
     }
     return;
   }
 
   topFrame->OnSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                         aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                         aSectionHandleUnavailable);
+                         aLoadStatus, aIsDependent);
 }
 
 /* static */
@@ -106,35 +96,28 @@ void ModuleLoadFrame::OnSectionMap(nt::AllocatedUnicodeString&& aSectionName,
                                    const void* aMapBaseAddr,
                                    NTSTATUS aMapNtStatus,
                                    ModuleLoadInfo::Status aLoadStatus,
-                                   bool aIsDependent,
-                                   nt::AutoHandle&& aSectionHandle,
-                                   bool aSectionHandleUnavailable) {
+                                   bool aIsDependent) {
   if (mLoadInfo.mBaseAddr) {
     // If mBaseAddr is not null then |this| has already seen a module load. This
     // means that we are witnessing a bare section map.
     OnBareSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                     aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                     aSectionHandleUnavailable);
+                     aLoadStatus, aIsDependent);
     return;
   }
 
   mLoadInfo.mSectionName = std::move(aSectionName);
   mLoadInfo.mBaseAddr = aMapBaseAddr;
   mLoadInfo.mStatus = aLoadStatus;
-  mLoadInfo.mSectionHandle = std::move(aSectionHandle);
-  mLoadInfo.mSectionHandleUnavailable = aSectionHandleUnavailable;
 }
 
 /* static */
 void ModuleLoadFrame::OnBareSectionMap(
     nt::AllocatedUnicodeString&& aSectionName, const void* aMapBaseAddr,
     NTSTATUS aMapNtStatus, ModuleLoadInfo::Status aLoadStatus,
-    bool aIsDependent, nt::AutoHandle&& aSectionHandle,
-    bool aSectionHandleUnavailable) {
+    bool aIsDependent) {
   // We call the special constructor variant that is used for bare mappings.
   ModuleLoadFrame frame(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                        aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                        aSectionHandleUnavailable);
+                        aLoadStatus, aIsDependent);
 }
 
 NTSTATUS ModuleLoadFrame::SetLoadStatus(NTSTATUS aNtStatus,

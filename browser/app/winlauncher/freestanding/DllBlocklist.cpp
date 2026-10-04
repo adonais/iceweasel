@@ -405,9 +405,8 @@ CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
 // All the code for patched_NtMapViewOfSection that relies on checked stack
 // buffers (e.g. mbi, sectionFileName) should be put in this helper function
 // (see bug 1733532).
-MOZ_NEVER_INLINE NTSTATUS
-AfterMapViewOfExecutableSection(HANDLE aSection, HANDLE aProcess,
-                                PVOID* aBaseAddress, NTSTATUS aStubStatus) {
+MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
+    HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
   // We don't care about mappings that aren't MEM_IMAGE.
   MEMORY_BASIC_INFORMATION mbi;
   NTSTATUS ntStatus =
@@ -528,30 +527,9 @@ AfterMapViewOfExecutableSection(HANDLE aSection, HANDLE aProcess,
   }
 
   if (nt::RtlGetProcessHeap()) {
-    // Make a read-only duplicate of the section for the parent process.  Only
-    // child processes need this.
-    // DuplicateHandle is in kernel32 and this intercepted function can run
-    // before that is loaded, so use ntdll's equivalent.
-    nt::AutoHandle sectionForParent;
-    bool sectionForParentUnavailable = false;
-    if (gBlocklistInitFlags & eDllBlocklistInitFlagIsChildProcess) {
-      HANDLE duplicate = nullptr;
-      if (NT_SUCCESS(::NtDuplicateObject(
-              nt::kCurrentProcess, aSection, nt::kCurrentProcess, &duplicate,
-              SECTION_QUERY | SECTION_MAP_READ, 0, 0)) &&
-          duplicate) {
-        sectionForParent = nt::AutoHandle(duplicate);
-      } else {
-        // Not fatal: the load proceeds and the parent simply cannot evaluate
-        // this module.
-        sectionForParentUnavailable = true;
-      }
-    }
-
     ModuleLoadFrame::NotifySectionMap(
         nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, aStubStatus,
-        loadStatus, isInjectedDependent, std::move(sectionForParent),
-        sectionForParentUnavailable);
+        loadStatus, isInjectedDependent);
   }
 
   if (loadStatus == ModuleLoadInfo::Status::Loaded ||
@@ -628,8 +606,8 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  NTSTATUS rv = AfterMapViewOfExecutableSection(aSection, aProcess,
-                                                aBaseAddress, stubStatus);
+  NTSTATUS rv =
+      AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
   if (FAILED(rv)) {
     rollback();
   }

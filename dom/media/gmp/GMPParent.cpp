@@ -497,22 +497,21 @@ mozilla::ipc::IPCResult GMPParent::RecvFOGData(ByteBuf&& aBuf) {
 
 #if defined(XP_WIN)
 mozilla::ipc::IPCResult GMPParent::RecvGetModulesTrust(
-    ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority,
+    ModulePaths&& aModPaths, bool aRunAtNormalPriority,
     GetModulesTrustResolver&& aResolver) {
   class ModulesTrustRunnable final : public Runnable {
    public:
-    ModulesTrustRunnable(ModuleIdentifiers&& aModIdents,
-                         bool aRunAtNormalPriority,
+    ModulesTrustRunnable(ModulePaths&& aModPaths, bool aRunAtNormalPriority,
                          GetModulesTrustResolver&& aResolver)
         : Runnable("GMPParent::RecvGetModulesTrust::ModulesTrustRunnable"),
-          mModIdents(std::move(aModIdents)),
+          mModPaths(std::move(aModPaths)),
           mResolver(std::move(aResolver)),
           mEventTarget(GetCurrentSerialEventTarget()),
           mRunAtNormalPriority(aRunAtNormalPriority) {}
 
     NS_IMETHOD Run() override {
       RefPtr<DllServices> dllSvc(DllServices::Get());
-      dllSvc->GetModulesTrust(std::move(mModIdents), mRunAtNormalPriority)
+      dllSvc->GetModulesTrust(std::move(mModPaths), mRunAtNormalPriority)
           ->Then(
               mEventTarget, __func__,
               [self = RefPtr{this}](ModulesMapResult&& aResult) {
@@ -527,14 +526,14 @@ mozilla::ipc::IPCResult GMPParent::RecvGetModulesTrust(
    private:
     ~ModulesTrustRunnable() override = default;
 
-    ModuleIdentifiers mModIdents;
+    ModulePaths mModPaths;
     GetModulesTrustResolver mResolver;
     nsCOMPtr<nsISerialEventTarget> mEventTarget;
     bool mRunAtNormalPriority;
   };
 
   NS_DispatchToMainThread(MakeAndAddRef<ModulesTrustRunnable>(
-      std::move(aModIdents), aRunAtNormalPriority, std::move(aResolver)));
+      std::move(aModPaths), aRunAtNormalPriority, std::move(aResolver)));
   return IPC_OK();
 }
 #endif  // defined(XP_WIN)

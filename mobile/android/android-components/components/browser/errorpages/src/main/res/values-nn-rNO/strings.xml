@@ -48,7 +48,7 @@
   <!-- The advanced certificate information shown when a website sends has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Nokon prøver å etterlikne nettsida, og du bør ikkje fortsetje.</label> <br><br>\n<label>Nettstadar beviser identiteten sin via sertifikat. %1$s stolar ikkje på <b>%2$s</b> fordi sertifikatutskrivaren er ukjend, sertifikatet er sjølvsignert, eller fordi serveren ikkje sender dei rette mellomsertifikata.</label>]]></string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_back">Gå tilbake (Tilrådd)</string>
+  <string name="mozac_browser_errorpages_security_bad_cert_back">Gå tilbake (tilrådd)</string>
   <!-- The text shown inside the advanced options button used to bypass the invalid SSL certificate. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">Godta risikoen og fortset</string>
   <!-- The document title and heading of the error page shown when a website uses HSTS. -->
@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Du har aktivert modusen berre-HTTPS for å auke sikkerheita, og ein HTTPS-versjon av <em>%1$s</em> er ikkje tilgjengeleg.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Fortset til HTTP-nettstaden</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Gå tilbake (tilrådd)</string>
 </resources>

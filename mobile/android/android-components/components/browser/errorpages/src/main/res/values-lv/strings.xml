@@ -49,4 +49,6 @@
   <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>Pārlūks ir konfigurēts izmantot starpniekserveri, bet to nevarēja atrast.</p>\n<ul>\n<li>Vai pārlūka starpniekservera konfigurācija ir pareiza? Jāpārbauda iestatījumi un jāmēģina vēlreiz.</li>\n<li>Vai ierīce ir savienota ar darbīgu tīklu?</li>\n<li>Joprojām ir sarežģījumi? Jāsazinās ar tīkla pārvaldītāju vai interneta pakalpojuma sniedzēju, lai iegūtu palīdzību.</li>\n</ul>]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Doties uz HTTP vietni</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Doties atpakaļ (ieteicams)</string>
 </resources>

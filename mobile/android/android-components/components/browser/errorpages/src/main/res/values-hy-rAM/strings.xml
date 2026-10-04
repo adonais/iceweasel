@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Դուք ակտիվացրել եք միայն HTTPS ռեժիմը ուժեղացված անվտանգության համար, և <em>%1$s</em>-ի HTTPS տարբերակը հասանելի չէ:]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Շարունակել HTTP կայքում</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Գնալ ետ (խորհուրդ է տրվում)</string>
 </resources>

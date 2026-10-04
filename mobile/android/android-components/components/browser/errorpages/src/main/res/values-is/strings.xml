@@ -167,4 +167,6 @@
   <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Þú hefur virkjað Einungis-HTTPS-ham til að auka öryggi en HTTPS-útgáfa af <em>%1$s</em> er ekki tiltæk.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">Halda áfram á HTTP-vefsvæði</string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on.  Clicking the button allows the user to go back. -->
+  <string name="mozac_browser_errorpages_httpsonly_back">Fara til baka (ráðlagt)</string>
 </resources>

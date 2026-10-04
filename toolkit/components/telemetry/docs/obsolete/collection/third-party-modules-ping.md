@@ -43,11 +43,6 @@ were loaded into Firefox processes.
         "sanitizationFailures": <int>,
         // Number of dropped events due to failures computing trust levels.
         "trustTestFailures": <int>,
-        // Number of child process module loads where the DLL blocklist hook reached
-        // the load but could not duplicate the module's section.
-        "unverifiableLoads": <int>,
-        // Number of sections a child process sent that the parent refused as invalid.
-        "rejectedSections": <int>,
         // Array of module load events for this process. The entries of this array are ordered to be in sync with the combinedStacks.stacks array (see below)
         "events": [
           {
