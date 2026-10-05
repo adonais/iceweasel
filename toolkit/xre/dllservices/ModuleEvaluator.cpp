@@ -164,7 +164,7 @@ Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
           VendorInfo::Source::Signature) {
     const nsString& signedBy = aModuleRecord.mVendorInfo.ref().mVendor;
 
-    if (signedBy.EqualsLiteral("Microsoft Windows")) {
+    if (signedBy.EqualsLiteral("Microsoft Windows") || signedBy.EqualsLiteral("Microsoft Windows Software Compatibility Publisher")) {
       return Some(ModuleTrustFlags::MicrosoftWindowsSignature);
     } else if (signedBy.EqualsLiteral("Microsoft Corporation")) {
       return Some(ModuleTrustFlags::MicrosoftWindowsSignature);
