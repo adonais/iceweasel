@@ -305,7 +305,8 @@ mozilla::ipc::IPCResult FilePickerParent::RecvOpen(
     nsCOMPtr<nsIFile> localFile;
     if (NS_SUCCEEDED(
             NS_NewLocalFile(aDisplayDirectory, getter_AddRefs(localFile))) &&
-        localFile && nsBaseFilePicker::IsReadableDirectory(*localFile)) {
+        localFile &&
+        nsBaseFilePicker::IsPotentiallyReadableDirectory(*localFile)) {
       mFilePicker->SetDisplayDirectory(localFile);
     }
   } else if (!aDisplaySpecialDirectory.IsEmpty()) {

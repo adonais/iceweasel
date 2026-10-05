@@ -13,6 +13,11 @@
 const TEST_VALUE = "example.com";
 
 add_setup(async function () {
+  // Turn off suggestions as they aren't needed here.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.suggest.enabled", false]],
+  });
+
   // A local engine, so typing doesn't reach for suggestions over the network.
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 });

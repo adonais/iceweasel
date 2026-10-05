@@ -8,7 +8,15 @@ add_setup(async function () {
   // provider, which can't run on the Urlbar actor's message path, so keep it on
   // the direct path even under the pref-on variant.
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.ipc.chromeMessagePassing", false]],
+    set: [
+      ["browser.urlbar.ipc.chromeMessagePassing", false],
+      // Tests get no default Top Sites, but this test opens the view on an
+      // empty string and expects a result even when the opt-in is hidden.
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
   });
   registerCleanupFunction(async () => {
     UrlbarPrefs.clear("quicksuggest.online.enabled");

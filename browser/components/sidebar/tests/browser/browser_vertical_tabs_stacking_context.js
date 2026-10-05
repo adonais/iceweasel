@@ -3,6 +3,19 @@
 
 "use strict";
 
+const { TopSites } = ChromeUtils.importESModule(
+  "resource:///modules/topsites/TopSites.sys.mjs"
+);
+
+// Mirrors UrlbarProviderTopSites, which reads the row from whichever
+// implementation is enabled.
+async function getTopSites() {
+  if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
+    return TopSites.getSites();
+  }
+  return AboutNewTab.getTopSites();
+}
+
 /**
  * Check that when enabling vertical tabs, we can still receive a click on the urlbar results view
  */
@@ -11,8 +24,22 @@ add_task(async function test_click_urlbar_results() {
     set: [
       [VERTICAL_TABS_PREF, true],
       [SIDEBAR_VISIBILITY_PREF, "always-show"],
+      // Tests get no default Top Sites, and the view is opened on an empty
+      // string here, which would otherwise leave it closed with no results.
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
     ],
   });
+
+  // The row is filled asynchronously from the pref above, and the urlbar only
+  // opens on an empty input once it has results, so wait for it before
+  // clicking rather than racing the feed.
+  await TestUtils.waitForCondition(
+    async () => (await getTopSites()).length,
+    "Waiting for the Top Sites row to be populated"
+  );
 
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(document.querySelector("sidebar-main"));
@@ -30,9 +57,10 @@ add_task(async function test_click_urlbar_results() {
         document.querySelector("#urlbar .urlbar-input-box"),
         {}
       );
-      await TestUtils.waitForCondition(() => {
-        return BrowserTestUtils.isVisible(urlbarResultsElem);
-      });
+      await TestUtils.waitForCondition(
+        () => BrowserTestUtils.isVisible(urlbarResultsElem),
+        "Waiting for the urlbar results view to be shown"
+      );
 
       let promiseClicked = BrowserTestUtils.waitForEvent(
         urlbarResultsElem,
