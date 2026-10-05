@@ -443,6 +443,55 @@ add_task(
   }
 );
 
+/**
+ * Test MR template restore-from-backup CTA - Browser is not pinned but is on
+ * Windows, where the OS-level prompt handles pinning, and is already the
+ * default browser, so AW_EASY_SETUP has no checkbox left to offer and is
+ * skipped. The restore-from-backup CTA it normally includes should fall
+ * through to AW_IMPORT_SETTINGS_EMBEDDED so it stays reachable in the flow.
+ */
+add_task(
+  async function test_aboutwelcome_mr_template_restore_cta_when_easy_setup_skipped() {
+    const sandbox = sinon.createSandbox();
+    await pushPrefs(
+      ["browser.shell.checkDefaultBrowser", true],
+      ["browser.bypassAutoTriggerActions", false],
+      ["browser.backup.restore.enabled", true]
+    );
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+    sandbox.stub(ShellService, "isOneClickSetDefaultEnabled").returns(true);
+    sandbox.stub(ClientEnvironmentBase, "os").get(() => OS_WITH_WIN_PIN_PROMPT);
+    sandbox
+      .stub(ASRouterTargeting.Environment, "backupRestoreEnabled")
+      .get(() => true);
+    // Keep the AW_BACKUP_RESTORE_EMBEDDED_* screens out of the flow
+    sandbox
+      .stub(ASRouterTargeting.Environment, "backupsInfo")
+      .get(() => Promise.resolve({ found: false }));
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    await test_screen_content(
+      browser,
+      "renders the restore from backup CTA on the import screen when easy setup is skipped",
+      //Expected selectors:
+      [
+        "main.AW_IMPORT_SETTINGS_EMBEDDED",
+        "button[data-l10n-id='restore-from-backup-secondary-top-button']",
+      ],
+      //Unexpected selectors:
+      ["main.AW_EASY_SETUP"]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
 add_task(
   async function test_splash_screen_removed_when_experiments_gate_disabled() {
     await SpecialPowers.pushPrefEnv({

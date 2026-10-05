@@ -172,6 +172,55 @@ add_task(async function test_sidebar_onboarding() {
   await SidebarController.hide();
 });
 
+add_task(async function test_switch_from_chat_onboarding() {
+  // Bug 2076296 - Ensure that the revamped sidebar switcher works during onboarding.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", true],
+      ["sidebar.verticalTabs", false],
+      ["sidebar.visibility", "hide-launcher"],
+      ["sidebar.main.tools", "aichat,history"],
+      ["browser.ml.chat.provider", ""],
+    ],
+  });
+
+  await SidebarTestUtils.showPanel(window, "viewGenaiChatSidebar");
+  const chatWindow = SidebarController.browser.contentWindow;
+  await BrowserTestUtils.waitForMutationCondition(
+    chatWindow.document.body,
+    { childList: true },
+    () => chatWindow.document.getElementById("multi-stage-message-root"),
+    { msg: "Chatbot onboarding is visible" }
+  );
+  const switcher = chatWindow.document.querySelector("sidebar-panel-switcher");
+  await switcher.updateComplete;
+  Assert.ok(BrowserTestUtils.isVisible(switcher), "Panel switcher is visible");
+
+  const listShown = BrowserTestUtils.waitForEvent(switcher.panelList, "shown");
+  EventUtils.synthesizeMouseAtCenter(switcher.button, {}, chatWindow);
+  await listShown;
+  await switcher.updateComplete;
+
+  const { label } = (await SidebarController.getRevampSwitcherItems()).find(
+    ({ view }) => view === "viewHistorySidebar"
+  );
+  const historyItem = [...switcher.panelItems].find(({ textContent }) =>
+    textContent.includes(label)
+  );
+  Assert.ok(historyItem, "History is available in the switcher");
+  const sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
+  EventUtils.synthesizeMouseAtCenter(historyItem, {}, chatWindow);
+  await sidebarShown;
+  Assert.equal(
+    SidebarController.currentID,
+    "viewHistorySidebar",
+    "History panel opened from chatbot onboarding"
+  );
+
+  SidebarTestUtils.closePanel(window);
+  await SpecialPowers.popPrefEnv();
+});
+
 /**
  * Check that custom onboarding can be configured
  */

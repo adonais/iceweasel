@@ -365,6 +365,11 @@ class AccessibilityTest : BaseSessionTest() {
                         node.text.toString(),
                         equalTo("All of the "),
                     )
+                    assertThat(
+                        "Text leaf has no contentDescription",
+                        node.contentDescription.toString(),
+                        equalTo(""),
+                    )
                 }
             }
         )

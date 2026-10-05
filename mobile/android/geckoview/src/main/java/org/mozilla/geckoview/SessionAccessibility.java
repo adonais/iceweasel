@@ -791,11 +791,11 @@ public class SessionAccessibility {
       node.setText(addSpansToText(text, language));
 
       final List<String> contentDescription = new ArrayList<String>();
-      if (description != null) {
+      if (description != null && !description.isEmpty()) {
         contentDescription.add(description);
       }
 
-      if (containerTitle != null) {
+      if (containerTitle != null && !containerTitle.isEmpty()) {
         if (Build.VERSION.SDK_INT >= 34) {
           node.setContainerTitle(addSpansToText(containerTitle, language));
         } else {

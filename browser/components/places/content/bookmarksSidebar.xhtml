@@ -19,6 +19,7 @@
   <script src="chrome://browser/content/contentTheme.js"/>
   <script src="chrome://browser/content/places/places-tree.js"/>
   <script src="chrome://global/content/editMenuOverlay.js"/>
+  <html:script type="module" src="chrome://browser/content/sidebar/sidebar-panel-switcher.mjs"></html:script>
 
   <linkset>
     <html:link
@@ -50,6 +51,7 @@
 #include bookmarksHistoryTooltip.inc.xhtml
   <box id="sidebar-panel-header" align="center">
     <html:h4 data-l10n-id="sidebar-menu-bookmarks-2"></html:h4>
+    <html:sidebar-panel-switcher view="viewBookmarksSidebar"/>
     <html:moz-button
         id="sidebar-panel-close"
         type="icon ghost"

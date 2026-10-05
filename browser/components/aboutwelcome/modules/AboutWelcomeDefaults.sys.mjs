@@ -33,6 +33,10 @@ const isMSIX =
   AppConstants.platform === "win" &&
   Services.sysinfo.getProperty("hasWinPackageId", false);
 
+export const PIN_CHECKBOX_TARGETING = `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`;
+export const SET_DEFAULT_CHECKBOX_TARGETING = `!${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`;
+export const EASY_SETUP_TARGETING = `${PIN_CHECKBOX_TARGETING} || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && ${SET_DEFAULT_CHECKBOX_TARGETING})`;
+
 // Message to be updated based on finalized MR designs
 const MR_ABOUT_WELCOME_DEFAULT = {
   id: "MR_WELCOME_DEFAULT",
@@ -367,7 +371,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
     },
     {
       id: "AW_EASY_SETUP",
-      targeting: `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`,
+      targeting: EASY_SETUP_TARGETING,
       content: {
         fullscreen: true,
         position: "split",
@@ -392,7 +396,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
             {
               id: "checkbox-1",
               defaultValue: true,
-              targeting: `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`,
+              targeting: PIN_CHECKBOX_TARGETING,
               label: {
                 string_id: isMSIX
                   ? "mr2022-onboarding-pin-primary-button-label-msix"
@@ -415,7 +419,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
             {
               id: "checkbox-2",
               defaultValue: true,
-              targeting: `!${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`,
+              targeting: SET_DEFAULT_CHECKBOX_TARGETING,
               label: {
                 string_id:
                   "mr2022-onboarding-easy-setup-set-default-checkbox-label",
@@ -601,8 +605,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
               },
               navigate: true,
             },
-            targeting:
-              "backupRestoreEnabled && isDefaultBrowser && !doesAppNeedPin",
+            targeting: `backupRestoreEnabled && !(${EASY_SETUP_TARGETING})`,
           },
           {
             label: {

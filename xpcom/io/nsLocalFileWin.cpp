@@ -3049,15 +3049,9 @@ nsresult nsLocalFile::LookupExtensionIn(const char* const* aExtensionsArray,
   // Get extension.
   int32_t dotIdx = path.RFindChar(char16_t('.'));
   if (dotIdx != kNotFound) {
-    // Convert extension to lower case.
-    char16_t* p = path.BeginWriting();
-    for (p += dotIdx + 1; *p; ++p) {
-      *p += (*p >= L'A' && *p <= L'Z') ? 'a' - 'A' : 0;
-    }
-
     nsDependentSubstring ext = Substring(path, dotIdx);
     for (size_t i = 0; i < aArrayLength; ++i) {
-      if (ext.EqualsASCII(aExtensionsArray[i])) {
+      if (ext.EqualsIgnoreCase(aExtensionsArray[i])) {
         // Found a match.  Set result and quit.
         *aResult = true;
         break;

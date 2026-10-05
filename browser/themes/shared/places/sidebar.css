@@ -13,13 +13,17 @@
 
 #sidebar-panel-header {
   justify-content: space-between;
+  /* Use the same font size as set in browser/components/sidebar/sidebar-panel-header.css */
+  font-size: 15px;
   padding-inline: var(--space-large);
   padding-block-start: var(--space-large);
 
   > h4 {
     margin-block: var(--space-large);
     font-weight: var(--font-weight-heading);
-    font-size: 15px;
+    @media -moz-pref("sidebar.visibility", "hide-launcher") {
+      display: none;
+    }
   }
 
   @media not -moz-pref("sidebar.revamp") {

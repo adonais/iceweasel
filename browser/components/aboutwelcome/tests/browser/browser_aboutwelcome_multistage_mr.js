@@ -13,10 +13,13 @@ const { ASRouterScreenUtils } = ChromeUtils.importESModule(
 const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
   "resource:///modules/InternalTestingProfileMigrator.sys.mjs"
 );
-const { WIN_OS_PIN_PROMPT_ENABLED, SET_DEFAULT_OS_PROMPT_ENABLED } =
-  ChromeUtils.importESModule(
-    "resource:///modules/asrouter/MessagingTargetingConstants.sys.mjs"
-  );
+const {
+  EASY_SETUP_TARGETING,
+  PIN_CHECKBOX_TARGETING,
+  SET_DEFAULT_CHECKBOX_TARGETING,
+} = ChromeUtils.importESModule(
+  "resource:///modules/aboutwelcome/AboutWelcomeDefaults.sys.mjs"
+);
 
 async function clickVisibleButton(browser, selector) {
   // eslint-disable-next-line no-shadow
@@ -97,17 +100,11 @@ add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
   sandbox
     .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`
-    )
+    .withArgs(EASY_SETUP_TARGETING)
     .resolves(true)
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT')`
-    )
+    .withArgs(PIN_CHECKBOX_TARGETING)
     .resolves(true)
-    .withArgs(
-      `!${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser`
-    )
+    .withArgs(SET_DEFAULT_CHECKBOX_TARGETING)
     .resolves(true)
     .withArgs("isDeviceMigration")
     .resolves(false)
@@ -988,9 +985,7 @@ add_task(async function test_aboutwelcome_no_backups() {
     )
     .resolves(false)
     // Easy setup for secondary top button
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`
-    )
+    .withArgs(EASY_SETUP_TARGETING)
     .resolves(true)
     // Restore from backup pref gating
     .withArgs("backupRestoreEnabled")
@@ -1037,9 +1032,7 @@ add_task(async function test_aboutwelcome_secondary_top_signin_only() {
     .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`
-    )
+    .withArgs(EASY_SETUP_TARGETING)
     .resolves(true)
     // Sign in button targeting
     .withArgs("!isFxASignedIn")
@@ -1086,9 +1079,7 @@ add_task(async function test_aboutwelcome_secondary_top_backup_restore_only() {
     .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`
-    )
+    .withArgs(EASY_SETUP_TARGETING)
     .resolves(true)
     // Show Restore Backup top button
     .withArgs("backupRestoreEnabled")
@@ -1137,7 +1128,7 @@ add_task(
       .resolves(false)
       .withArgs("useEmbeddedMigrationWizard")
       .resolves(true)
-      .withArgs("backupRestoreEnabled && isDefaultBrowser && !doesAppNeedPin")
+      .withArgs(`backupRestoreEnabled && !(${EASY_SETUP_TARGETING})`)
       .resolves(true);
 
     let { browser, cleanup } = await openMRAboutWelcome();
@@ -1162,9 +1153,7 @@ add_task(async function test_aboutwelcome_both_secondary_top_buttons() {
   sandbox
     .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     // Mock Easy Setup for secondary button top testing
-    .withArgs(
-      `doesAppNeedPin && !${WIN_OS_PIN_PROMPT_ENABLED} && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') || ((!doesAppNeedPin || ${WIN_OS_PIN_PROMPT_ENABLED}) && !${SET_DEFAULT_OS_PROMPT_ENABLED} && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser)`
-    )
+    .withArgs(EASY_SETUP_TARGETING)
     .resolves(true)
     // Show Sign-in top button
     .withArgs("!isFxASignedIn")

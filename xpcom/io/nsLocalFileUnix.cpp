@@ -2019,12 +2019,6 @@ nsLocalFile::IsExecutable(bool* aResult) {
 
   int32_t dotIdx = path.RFindChar(char16_t('.'));
   if (dotIdx != kNotFound) {
-    // Convert extension to lower case.
-    char16_t* p = path.BeginWriting();
-    for (p += dotIdx + 1; *p; ++p) {
-      *p += (*p >= L'A' && *p <= L'Z') ? 'a' - 'A' : 0;
-    }
-
     // Search for any of the set of executable extensions.
     static const char* const executableExts[] = {
 #ifdef MOZ_WIDGET_COCOA
@@ -2045,7 +2039,7 @@ nsLocalFile::IsExecutable(bool* aResult) {
     };
     nsDependentSubstring ext = Substring(path, dotIdx);
     for (auto executableExt : executableExts) {
-      if (ext.EqualsASCII(executableExt)) {
+      if (ext.EqualsIgnoreCase(executableExt)) {
         // Found a match.  Set result and quit.
         *aResult = true;
         return NS_OK;
