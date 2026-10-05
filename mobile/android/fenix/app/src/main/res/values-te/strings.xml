@@ -558,16 +558,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d ఎంచుకున్నారు</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ఈరోజు</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">నిన్న</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">గత 7 రోజులు</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">గత 30 రోజులు</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">పాతవి</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ఇక్కడ చరిత్రేమీ లేదు</string>
   <!--

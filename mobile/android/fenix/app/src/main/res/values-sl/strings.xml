@@ -804,6 +804,8 @@
   <string name="preferences_override_sync_tokenserver">Sinhronizacijski strežnik po meri</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Račun</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Sync</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Mesto naslovne vrstice</string>
   <!-- Preference for changing toolbar layout -->
@@ -860,6 +862,8 @@
   <string name="preferences_search_synced_tabs">Iskanje po sinhroniziranih zavihkih</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Nastavitve računa</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Račun in sinhronizacija</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Samodokončaj spletne naslove</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1137,6 +1141,12 @@
   <string name="preferences_sync_now">Sinhroniziraj zdaj</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Izberite, kaj želite sinhronizirati</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Sinhronizirani podatki</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Upravljajte, kaj se sinhronizira med povezanimi napravami</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Trenutno ne sinhronizirate ničesar. Izberite, kaj želite sinhronizirati med napravami.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Zgodovina</string>
   <!-- Preference for syncing bookmarks -->
@@ -1149,6 +1159,10 @@
   <string name="preferences_sign_out">Odjava</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Ime naprave</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Ime naprave</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Spremeni ime naprave</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Ime naprave ne sme ostati prazno.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1401,6 +1415,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Zavihki</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Postavitev zavihkov</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Pogled zavihkov</string>
   <!-- Option for a list tab view -->
@@ -1449,14 +1465,20 @@
   <string name="opening_screen_last_tab_summary">Odpri na zadnjem zavihku</string>
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Po štirih urah odpri na domači strani</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Nedejavni zavihki</string>
   <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Premakni stare zavihke med nedejavne</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Zavihki, ki jih dva tedna niste odprli, se premaknejo v razdelek nedejavnih.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Skupine zavihkov</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Razporedite si zavihke po skupinah, ki jih lahko poimenujete in shranite.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Omogoči skupine zavihkov</string>
   <!--
@@ -1749,16 +1771,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d izbranih</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Danes</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Včeraj</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Zadnjih 7 dni</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Zadnjih 30 dni</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Starejše</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ni zgodovine</string>
   <!--
@@ -2389,12 +2401,12 @@
   <string name="sync_sign_in">Prijava v Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Pošlji na vse naprave</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Nobena naprava ni na voljo</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Vse naprave, ki so prijavljene in sinhronizirane s tem računom, bodo prikazane tukaj.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Ponovno se poveži v Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Pošlji</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Izbrano</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Brez povezave</string>
   <!-- An option to connect additional devices -->
@@ -2431,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Preverite svojo povezavo z internetom</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Nato poskusite zavihek znova poslati.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Poskusi znova</string>
   <!--
     Notifications
 
@@ -2613,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Nimate računa? <u>Ustvarite ga</u> za sinhronizacijo Firefoxa med napravami.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s se bo prenehal sinhronizirati z vašim računom, vendar ne bo izbrisal podatkov o brskanju na tej napravi.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Se želite odjaviti iz računa?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Sinhronizirani podatki ostanejo shranjeni v vašem računu.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Odjava</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Prekini povezavo</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3035,8 +3055,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Vgrajeni VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3131,8 +3149,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Porabili ste %1$d GB podatkov VPN. Dostop bo ponovno omogočen prihodnji mesec.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Nastavitve</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Nastavitve</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Vklopite VPN, da bo vaše brskanje bolj zasebno in težje sledljivo.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4602,4 +4618,8 @@
   <string name="pdf_tools_signature_clear_button">Izbriši</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">Dodaj</string>
+  <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+  <string name="reader_mode_panel_listen_content_description">Preberi naglas</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Predvajalnik predstavnosti</string>
 </resources>

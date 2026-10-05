@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Aangepaste Synchronisatieserver</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Account</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Synchronisatie</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Locatie adresbalk</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Gesynchroniseerde tabbladen doorzoeken</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Accountinstellingen</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Account en synchronisatie</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">URL’s automatisch aanvullen</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">Nu synchroniseren</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Kies wat u wilt synchroniseren</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Gesynchroniseerde gegevens</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Beheren wat wordt gesynchroniseerd op al uw verbonden apparaten</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">U synchroniseert niets. Kies wat u op al uw apparaten gesynchroniseerd wilt houden.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Geschiedenis</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">Afmelden</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Apparaatnaam</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Apparaatnaam</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Apparaatnaam wijzigen</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Apparaatnaam mag niet leeg zijn.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Tabbladen</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Tabbladindeling</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Tabbladweergave</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Op startpagina openen na vier uur</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Tabbladordening</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Inactieve tabbladen</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Oude tabbladen naar inactief verplaatsen</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Tabbladen die u twee weken niet hebt bekeken, worden verplaatst naar de sectie Inactief.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Tabbladgroepen</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Orden uw tabbladen in groepen die u kunt benoemen en opslaan.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Tabbladgroepen inschakelen</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d geselecteerd</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Vandaag</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Gisteren</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Afgelopen 7 dagen</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Afgelopen 30 dagen</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Ouder</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Geen geschiedenis hier</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">Aanmelden om te synchroniseren</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Verzenden naar alle apparaten</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Geen apparaten beschikbaar</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Alle apparaten die zijn aangemeld en worden gesynchroniseerd met deze account, verschijnen hier.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Opnieuw verbinden met Synchronisatie</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Verzenden</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Geselecteerd</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Offline</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Controleer uw internetverbinding</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Probeer daarna uw tabblad opnieuw te verzenden.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Opnieuw proberen</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Geen account? <u>Maak er een aan</u> om Firefox tussen apparaten te synchroniseren.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s stopt de synchronisatie met uw account, maar zal geen surfgegevens op dit apparaat verwijderen.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Afmelden bij uw account?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Gesynchroniseerde gegevens blijven in uw account opgeslagen.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Afmelden</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Verbinding verbreken</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Ingebouwde VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB aan VPN-gegevens gebruikt. Toegang wordt volgende maand opnieuw ingesteld.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Instellingen</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Instellingen</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Schakel VPN in om uw navigatie persoonlijker en moeilijker te volgen te maken.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">Lezermodusopties</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Hardop voorlezen</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Mediaspeler</string>
 </resources>

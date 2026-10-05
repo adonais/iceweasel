@@ -717,16 +717,6 @@
   <string name="history_delete_single_item_snackbar">mi weka e lipu %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">o weka</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">sike suno ni</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">sike suno pini 1</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">sike suno pini 7</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">sike suno pini 30</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">sike weka</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">sina lukin ala e lipu</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->

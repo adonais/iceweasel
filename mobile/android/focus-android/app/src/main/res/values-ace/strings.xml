@@ -41,6 +41,7 @@
   <string name="menu_settings">Atô</string>
   <string name="menu_about">Bhaih</string>
   <string name="menu_help">Beunantu</string>
+  <string name="menu_terms_of_use">Charat Ngui</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -52,6 +53,12 @@
     sharing an URL.
   -->
   <string name="share_dialog_title">Bulueng röt</string>
+  <string name="notification_erase_title_android_14">Sampôh riwayat pumeuhah?</string>
+  <!--
+    Text shown in the notification description that pops up to remind the user that a browsing session is active
+    for Android 14+.
+  -->
+  <string name="notification_erase_text_android_14_1">Thèp atawa gèsè peuneugah nyoe keu neusampôh riwayat pumeuhah droeneuh ngön aman.</string>
   <string name="notification_erase_text">Sampôh riwayat pumeuhah</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Peuhah</string>
@@ -108,6 +115,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="BrandUsage,IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s peuduek droeneuh lam keumudoe.</p>\n<p>Ngui sibagoe browser rahsia:\n<ul>\n<li>Mita ngön lop lam aplikasi</li>\n<li>Tham ureueng seutöt (atawa pubarô seuneuatô keu peuidin ureueng seutöt)</li>\n<li>Lhi keu sampôh cookies lagèe riwayat mita ngön seumeulop</li>\n</ul> </p>\n<p>%1$s geupeugöt lé Mozilla. Misi kamoe nakeuh keu meusatoh internet nyang sihat ngön teuhah.<br/>\n<a href=\"%2$s\">Learn more</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Meurunoe lom</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privasi &amp; Keuamanan</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -258,12 +267,17 @@
   <string name="preference_mozilla_telemetry_summary">Meurunoë lom</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">Mozilla geuôseuha keu geupeusaho nyang geupeureulèe mantöng keu geuseudiya dan geupeujroh %1$s keu bandum ureueng.</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">Ping neungui tiep uroe</string>
+  <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">Nyoe geubantu Mozilla keu geukira ureueng ngui aktif.</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">Reusam Privasi</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
   <string name="preference_licensing_info">Keutrangan lisènsi</string>
   <!-- Link to Focus licensing information from other libraries that we use. -->
   <string name="preference_libraries_we_use">Pustaka nyang meungui</string>
+  <!-- Link to Focus Crash reports list. -->
+  <string name="preference_crashes">Lapôran Teudong</string>
   <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="open_source_licenses_title">%s | Pustaka OSS</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
@@ -324,6 +338,18 @@
   <string name="onboarding_first_screen_title">Neupiyôh bak %1$s</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">Bagah. Rahsia. Hana karu.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Ngön neulanjut, droeneuh sipakat ngön %1$s.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Charat Ngui Firefox</string>
   <!--
     Onboarding second screen: Title
 

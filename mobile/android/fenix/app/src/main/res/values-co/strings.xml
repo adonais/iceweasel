@@ -1455,7 +1455,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Dispiazzà e vechje unghjette in a sezzione inattiva</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">L’unghjette chì vo ùn avete micca viste dapoi duie settimane sò dispiazzate in a sezzione inattiva.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Attivà i gruppi d’unghjette</string>
@@ -1741,16 +1741,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d selezziunatu(i)</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Oghje</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Eri</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">L’ultimi 7 ghjorni</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">L’ultimi 30 ghjorni</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Nanzu u mese scorsu</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Alcuna cronolugia</string>
   <!--
@@ -2379,10 +2369,6 @@
   <string name="sync_sign_in">Cunnettesi à Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Mandà à tutti l’apparechji</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Nisunu apparechju dispunibule</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Tutti l’apparechji cunnessi è sincrunizati cù stu contu seranu affissati quì.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Ricunnettesi à Sync</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3023,8 +3009,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">VPN integrata</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3119,8 +3103,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Avete impiegatu %1$d Go di dati VPN. L’accessu serà ristabilitu u mese chì vene.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Parametri</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Parametri</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Attivà a VPN per rinfurzà a cunfidenzialità di a vostra navigazione è rendela più difficiule à frattighjà.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

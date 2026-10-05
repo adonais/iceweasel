@@ -1459,7 +1459,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Alde ljepblêden nei ynaktyf ferpleatse</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Ljepblêden dy’t jo twa wiken net besjoen hawwe, wurde ferpleatst nei de seksje Ynaktyf.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Ljepblêdgroepen ynskeakelje</string>
@@ -1745,16 +1745,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d selektearre</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Hjoed</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Juster</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Ofrûne 7 dagen</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Ofrûne 30 dagen</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Alder</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Gjin skiednis hjir</string>
   <!--
@@ -2383,10 +2373,6 @@
   <string name="sync_sign_in">Oanmelde by Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Ferstjoere nei alle apparaten</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Gjin apparaten beskikber</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Alle apparaten dy’t oanmeld binne en mei dizze account syngronisearje, ferskine hjir.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Opnij ferbine mei Sync</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3027,8 +3013,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Ynboude VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3107,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB oan VPN-gegevens brûkt. Tagong wurdt folgjende moanne opnij ynsteld.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Ynstellingen</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Ynstellingen</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Skeakelje VPN yn om jo navigaasje persoanliker en dreger te folgjen te meitsjen.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

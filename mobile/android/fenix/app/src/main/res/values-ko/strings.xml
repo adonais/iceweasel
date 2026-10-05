@@ -150,7 +150,7 @@
 
     Header text on the homescreen for continuing to browse the most recent browser tab
   -->
-  <string name="recent_tabs_header_2">계속</string>
+  <string name="recent_tabs_header_2">이어하기</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">모두 표시</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -805,6 +805,8 @@
   <string name="preferences_override_sync_tokenserver">사용자 지정 동기화 서버</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">계정</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">동기화</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">주소 표시줄 위치</string>
   <!-- Preference for changing toolbar layout -->
@@ -861,6 +863,8 @@
   <string name="preferences_search_synced_tabs">동기화된 탭 검색</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">계정 설정</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">계정 및 동기화</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">URL 자동 완성</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1140,6 +1144,12 @@
   <string name="preferences_sync_now">지금 동기화</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">동기화할 대상 선택</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">동기화된 데이터</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">연결된 모든 기기에서 동기화 할 항목 관리</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">동기화 중인 항목이 없습니다. 기기 간에 동기화를 유지할 항목을 선택하세요.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">기록</string>
   <!-- Preference for syncing bookmarks -->
@@ -1152,6 +1162,10 @@
   <string name="preferences_sign_out">로그아웃</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">기기 이름</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">기기 이름</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">기기 이름 변경</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">기기 이름은 비워둘 수 없습니다.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1404,6 +1418,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">탭</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">탭 레이아웃</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">탭 보기</string>
   <!-- Option for a list tab view -->
@@ -1453,13 +1469,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">4시간 후에는 홈페이지 열기</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">탭 구성</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">비활성 탭</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">이전 탭을 비활성으로 이동</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">2주 동안 보지 않은 탭은 비활동 섹션으로 이동</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">탭 그룹</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">이름을 지정하고 저장할 수 있는 그룹으로 탭을 구성합니다.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">탭 그룹 활성화</string>
   <!--
@@ -1740,16 +1768,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d개 선택됨</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">오늘</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">어제</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">최근 7일</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">최근 30일</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">이전</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">기록 없음</string>
   <!--
@@ -2377,12 +2395,12 @@
   <string name="sync_sign_in">Sync에 로그인</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">모든 기기에 보내기</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">기기 없음</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">이 계정에 로그인하고 동기화한 모든 기기가 여기에 나타납니다.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Sync에 다시 연결</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">보내기</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">선택됨</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">오프라인</string>
   <!-- An option to connect additional devices -->
@@ -2419,6 +2437,8 @@
   <string name="sync_send_tab_error_connection_title">인터넷 연결을 확인하세요</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">그리고 탭을 다시 전송해 보세요.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">다시 시도</string>
   <!--
     Notifications
 
@@ -2601,6 +2621,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[계정이 없습니까? 여러 기기 간에 Firefox를 동기화하려면 <u>계정을 만드세요</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s가 계정과의 동기화를 중단하지만 이 기기의 사용자 탐색 데이터는 삭제하지 않습니다.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">계정에서 로그아웃하시겠습니까?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">동기화된 데이터는 계정에 저장된 상태로 유지됩니다.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">로그아웃</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">연결 끊기</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3020,8 +3046,6 @@
   <string name="preferences_ip_protection_beta_badge_label">베타</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">내장 VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3116,8 +3140,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB의 VPN 데이터가 사용되었습니다. 다음 달에 초기화됩니다.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">설정</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">설정</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">탐색을 더 안전하고 추적하기 어렵게 만들려면 VPN을 켜세요.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4571,4 +4593,6 @@
   <string name="reader_mode_panel_content_description">읽기 모드 옵션</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">소리내어 읽기</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">미디어 플레이어</string>
 </resources>

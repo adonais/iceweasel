@@ -810,6 +810,8 @@
   <string name="preferences_override_sync_tokenserver">Gweinydd Sync Cyfaddas</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Cyfrif</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Cydweddu</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Lleoliad y bar cyfeiriad</string>
   <!-- Preference for changing toolbar layout -->
@@ -866,6 +868,8 @@
   <string name="preferences_search_synced_tabs">Chwilio tabiau wedi’u cydweddu</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Gosodiadau cyfrif</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Cyfrif a chydweddu</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Awtogwblhau URLau</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1145,6 +1149,12 @@
   <string name="preferences_sync_now">Cydweddu nawr</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Dewis beth i gydweddu</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Data wedi\'i gydweddu</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Rheoli\'r hyn sy\'n cydweddu ar eich holl ddyfeisiau cysylltiedig</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Dydych chi ddim yn cydweddu dim. Dewiswch beth i\'w gydweddu ar draws eich dyfeisiau.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Hanes</string>
   <!-- Preference for syncing bookmarks -->
@@ -1157,6 +1167,10 @@
   <string name="preferences_sign_out">Allgofnodi</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Enw dyfais</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Enw dyfais</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Newid enw dyfais</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Nid oes modd i’r enw dyfais fod yn wag.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1409,6 +1423,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Tabiau</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Cynllun tabiau</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Golwg tabiau</string>
   <!-- Option for a list tab view -->
@@ -1458,13 +1474,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Agor ar y dudalen cartref ar ôl pedair awr</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Trefnu tabiau</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Tabiau anweithredol</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Symud hen dabiau i anweithredol</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Mae tabiau dydych chi heb edrych arnyn nhw ers pythefnos yn cael eu symud i’r adran anweithredol.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Grwpiau tabiau</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Trefnwch eich tabiau yn grwpiau y mae modd chi eu henwi a\'u cadw.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Galluogi Grwpiau Tabiau</string>
   <!--
@@ -1765,16 +1793,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d wedi’u dewis</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Heddiw</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Ddoe</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 diwrnod diwethaf</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 diwrnod diwethaf</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Hŷn</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Dim hanes yma</string>
   <!--
@@ -2407,12 +2425,12 @@
   <string name="sync_sign_in">Mewngofnodi i Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Anfon at bob dyfais</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Dim dyfeisiau ar gael</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Bydd unrhyw ddyfeisiau sydd wedi mewngofnodi ac yn cysoni i\'r cyfrif hwn yn ymddangos yma.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Ailgysylltu â Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Anfon</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Dewiswyd</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">All-lein</string>
   <!-- An option to connect additional devices -->
@@ -2449,6 +2467,8 @@
   <string name="sync_send_tab_error_connection_title">Gwiriwch eich cysylltiad rhyngrwyd</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Yna ceisiwch ail-anfon eich tab.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Ceisio eto</string>
   <!--
     Notifications
 
@@ -2631,6 +2651,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Dim cyfrif? <u>Crëwch un</u> i gydweddu Firefox rhwng dyfeisiau.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">Bydd %s yn peidio â chydweddu eich cyfrif ond ni fydd yn dileu eich data pori ar y ddyfais hon.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Allgofnodi o\'ch cyfrif?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Mae data sydd wedi\'u cydweddu\'n aros yn eich cyfrif.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Allgofnodi</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Datgysylltu</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3055,8 +3081,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">VPN cynhenid</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3151,8 +3175,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Defnyddiwyd %1$d GB o ddata VPN. Bydd mynediad yn ailgychwyn mis nesaf.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Gosodiadau</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Gosodiadau</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Trowch VPN ymlaen i wneud eich pori yn fwy preifat ac yn anoddach ei olrhain.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4646,4 +4668,6 @@
   <string name="reader_mode_panel_content_description">Dewisiadau Modd Darllenydd</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Darllen yn Uchel</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Chwaraewr Cyfryngau</string>
 </resources>

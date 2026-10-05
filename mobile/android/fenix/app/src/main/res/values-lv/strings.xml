@@ -71,6 +71,8 @@
   <string name="nova_onboarding_marketing_body_link_text_1">Uzzināt vairāk</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Pievienot Firefox logrīku</string>
+  <!-- Preference for settings related to Search engines -->
+  <string name="preferences_search_engines">Meklētāji</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Ieteikumi no meklētājiem</string>
   <!-- Preference for settings related to changing the default browser -->
@@ -81,6 +83,8 @@
   <string name="preferences_http_only_learn_more">Uzzināt vairāk</string>
   <!-- Preference for accessibility -->
   <string name="preferences_accessibility">Piekļūstamība</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Vienādošana</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Adrešu joslas atrašanās vieta</string>
   <!-- Preference for customizing the home screen -->
@@ -91,6 +95,8 @@
   <string name="preferences_customize">Pielāgot</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Meklēt vienādotajās cilnēs</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Konts un vienādošana</string>
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">Vienmēr</string>
   <!-- Preference title for choosing an app to handle downloads -->
@@ -121,6 +127,16 @@
   <string name="extension_process_crash_dialog_disable_extensions_button_text">Turpināt ar atspējotiem paplašinājumiem</string>
   <!-- Text shown in the snackbar action button that lets the user retry an add-on operation that just failed. -->
   <string name="addon_failure_retry_action">Atkārtot</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Vienādotie dati</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Pārvaldīt, kas tiek vienādots visās savienotājās ierīcēs</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Pašlaik nekas netiek vienādots. Jāizvēlas, ko vienādot starp ierīcēm.</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Ierīces nosaukums</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Mainīt ierīces nosaukumu</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Uzzināt vairāk</string>
   <!-- Add bookmark shortcut in toolbar customization -->
@@ -146,6 +162,8 @@
     Option in Library to open Downloads page
   -->
   <string name="library_downloads">Lejupielādes</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Ciļņu izkārtojums</string>
   <!-- Content description for the media playback indicator in the tabs tray. -->
   <string name="tab_indicator_media_playing">Atskaņo informācijas nesēju</string>
   <!-- Option for always opening the homepage when re-opening the app -->
@@ -154,6 +172,18 @@
   <string name="opening_screen_homepage_summary">Atvērt sākumlapā</string>
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Atvērt sākumlapā pēc četrām stundām</string>
+  <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Ciļņu kārtošana</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Neizmantotās cilnes</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Ciļņu kopas</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Kārto savas cilnes kopās, kurām var piešķirt nosaukumu, un saglabā!</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Iespējot ciļņu kopas</string>
   <!--
@@ -204,6 +234,8 @@
   <string name="download_rename_error_case_only_error">Ievadītajā nosaukumā ir mainīti tikai lielie vai mazie burti. Jāmēģina cits datnes nosaukums.</string>
   <!-- Placeholder text to indicate that users can use the search bar to search for a download. -->
   <string name="download_search_placeholder">Meklēt lejupielādes</string>
+  <!-- Text to indicate that no downloads match the search query. -->
+  <string name="download_search_no_results_found">Nekas netika atrasts</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">Uzzināt vairāk</string>
   <string name="unsubmitted_crash_dialog_learn_more">Uzzināt vairāk</string>
@@ -235,6 +267,10 @@
   <string name="create_collection_add_new_collection">Pievienot jaunu krājumu</string>
   <!-- Toast shown when the QR code is successfully saved to Downloads -->
   <string name="qr_code_download_success">Kvadrātkods saglabāts lejupielāžu mapē</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Nosūtīt</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Atlasīta</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Bezsaistē</string>
   <!-- Confirmation dialog button -->
@@ -253,6 +289,8 @@
   <string name="sync_send_tab_error_connection_title">Jāpārbauda savienojums ar internetu</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Tad cilni jāmēģina nosūtīt atkārtoti.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Mēģināt vēlreiz</string>
   <!--
     Text shown in the notification that pops up to remind the user to set fenix as default browser.
     The app name is in the text, due to limitations with localizing Nimbus experiments
@@ -274,6 +312,12 @@
   <string name="tab_collection_dialog_message">Vai tiešām izdzēst %1$s?</string>
   <!-- Title for the downloads item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_downloads">Lejupielādes</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Izrakstīties no sava konta?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Vienādotie dati paliek Tavā kontā.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Izrakstīties</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Uzzināt vairāk</string>
   <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
@@ -494,4 +538,6 @@
   <string name="reader_mode_panel_content_description">Lasītāja režīma iespējas</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Lasīt skaļi</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Informācijas nesēju atskaņotājs</string>
 </resources>

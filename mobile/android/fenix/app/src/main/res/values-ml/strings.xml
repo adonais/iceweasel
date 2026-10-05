@@ -1226,7 +1226,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">പഴയ ടാബുകൾ നിഷ്ക്രിയത അറായിലേക്കു് മാറ്റുക</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">രണ്ടാഴ്ചയായി താങ്ങൾ കാണാത്ത ടാബുകൾ നിഷ്ക്രിയ വിഭാഗത്തിലേക്കു് മാറ്റും.</string>
   <!--
     Studies
@@ -1436,16 +1436,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d തിരഞ്ഞെടുത്തിരിക്കുന്നു</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ഇന്ന്</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ഇന്നലെ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">കഴിഞ്ഞ 7 ദിവസം</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">കഴിഞ്ഞ 30 ദിവസം</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">പഴയത്</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ഇവിടെ നാൾവഴിയൊന്നുമില്ല</string>
   <!--
@@ -2603,8 +2593,6 @@
   <string name="preferences_ip_protection_title_2">ഉൾപ്പണിഞ്ഞ വി.പി.എൻ</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">ബീറ്റ</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">വി.പി.എൻ</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">വി.പി.എൻ</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -2659,8 +2647,6 @@
   <string name="ip_protection_onboarding_body_link_promo">കൂടുതലറിയുക</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">ഇപ്പോഴല്ല</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">ക്രമീകരണങ്ങള്‍</string>
   <!--
     Autofill
 

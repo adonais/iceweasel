@@ -369,12 +369,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d mír roghnaithe</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Na 7 lá is déanaí</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Na 30 lá is déanaí</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Nios sine</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Níl aon stair anseo</string>
   <!--
@@ -747,8 +741,6 @@
   <string name="preference_accessibility_force_enable_zoom_summary">Cumasaigh chun pinseáil agus zúmáil a cheadú, fiú ar shuímh a chuireann cosc ar na gothaí seo.</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
   <string name="ip_protection_onboarding_body_link_promo">Tuilleadh eolais</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Socruithe</string>
   <!-- Title of the Add search engine screen -->
   <string name="search_engine_add_custom_search_engine_title">Cuir inneall cuardaigh leis</string>
   <!-- Title of the Edit search engine screen -->

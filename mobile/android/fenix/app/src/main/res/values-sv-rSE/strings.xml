@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Anpassad synkroniseringsserver</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Konto</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Synkronisera</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Adressfältets placering</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Sök i synkroniserade flikar</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Kontoinställningar</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Konto och synkronisering</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Autokomplettera URL:ar</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">Synkronisera nu</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Välj vad som ska synkas</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Synkroniserad data</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Hantera vad som synkroniseras på alla dina anslutna enheter</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Du synkroniserar inget. Välj vad som ska hållas synkroniserat mellan dina enheter.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Historik</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">Logga ut</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Enhetsnamn</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Enhetsnamn</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Ändra enhetsnamn</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Enhetsnamnet kan inte vara tomt.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Flikar</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Fliklayout</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Flikvy</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Öppnar på hemsidan efter fyra timmar</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Organisation av flikar</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Inaktiva flikar</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Flytta gamla flikar till inaktiva</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Flikar som du inte har besökt på två veckor flyttas till inaktiva.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Flikgrupper</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Ordna dina flikar i grupper som du kan namnge och spara.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Aktivera flikgrupper</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d markerade</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Idag</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Igår</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Senaste 7 dagarna</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Senaste 30 dagarna</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Äldre</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ingen historik här</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">Logga in till Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Skicka till alla enheter</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Inga enheter tillgängliga</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Alla enheter som är inloggade och synkroniserar med det här kontot visas här.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Återanslut till Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Skicka</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Markerad</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Offline</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Kontrollera din internetanslutning</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Testa sedan att skicka din flik igen.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Försök igen</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Ha du inget konto? <u>Skapa ett</u> för att synkronisera Firefox mellan enheter.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s kommer att sluta synkronisera med ditt konto, men tar inte bort någon av dina surfdata på den här enheten.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Logga ut från ditt konto?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Synkroniserad data sparas på ditt konto.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Logga ut</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Koppla från</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Inbyggt VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB VPN-data använd. Åtkomst återställs nästa månad.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Inställningar</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Inställningar</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Aktivera VPN för att göra din surfning mer privat och svårare att spåra.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">Alternativ för läsläge</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Läs högt</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Mediaspelare</string>
 </resources>

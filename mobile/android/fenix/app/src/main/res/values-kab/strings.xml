@@ -1109,7 +1109,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Senkez accaren iqburen ɣer irurmiden</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Accaren ur tesneqdeḍ ara snat ledwaṛ ad ttusnekzen ɣer teggayt tarurmidt.</string>
   <!--
     Studies
@@ -1196,16 +1196,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d yettwafren (ttwafernen)</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Ass-a</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Iḍelli</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 n wussan ineggura</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 n wussan ineggura</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Iqbuṛen</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ulac amazray dagi</string>
   <!--

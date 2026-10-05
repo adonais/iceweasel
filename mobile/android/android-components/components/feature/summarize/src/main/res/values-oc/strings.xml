@@ -65,4 +65,6 @@
   <string name="mozac_ai_controls_page_summary_title">Resumits de paginas</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Las paginas e los resumits son pas jamai emmagazinats.</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Utilizatz vòstre compte Mozilla per contunhar o creatz-ne un per començar.</string>
 </resources>

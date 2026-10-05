@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <plurals name="mozac_feature_listentopage_notification_skip_back">
+    <!--
+      Content description of the playback notification control that moves the
+      reading backwards. %1$d is how many seconds it moves by.
+    -->
+    <item quantity="one">Nazaj za %1$d sekundo</item>
+    <item quantity="two">Nazaj za %1$d sekundi</item>
+    <item quantity="few">Nazaj za %1$d sekunde</item>
+    <item quantity="other">Nazaj za %1$d sekund</item>
+  </plurals>
+  <plurals name="mozac_feature_listentopage_notification_skip_forward">
+    <!--
+      Content description of the playback notification control that moves the
+      reading forwards. %1$d is how many seconds it moves by.
+    -->
+    <item quantity="one">Naprej za %1$d sekundo</item>
+    <item quantity="two">Naprej za %1$d sekundi</item>
+    <item quantity="few">Naprej za %1$d sekunde</item>
+    <item quantity="other">Naprej za %1$d sekund</item>
+  </plurals>
+  <!-- Content description of the playback control notification, when the playback is set to normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_1">Običajna hitrost predvajanja</string>
+  <!-- Content description of the playback control notification, when the playback is set to 2 times (double) the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_2">Predvajanje nastavljeno na dvojno hitrost</string>
+  <!-- Listen to Page media player: content description for the button that closes the player. -->
+  <string name="mozac_feature_listentopage_close">Zapri</string>
+  <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->
+  <string name="mozac_feature_listentopage_audio">Zvok</string>
+  <!-- Listen to Page media player: content description for the button that rewinds 10 seconds. -->
+  <string name="mozac_feature_listentopage_back_10_sec">Nazaj za 10 sekund</string>
+  <!-- Listen to Page media player: content description for play/pause button when the player is paused - tapping restarts playback. -->
+  <string name="mozac_feature_listentopage_play">Predvajaj</string>
+  <!-- Listen to Page media player: content description for play/pause button when the player is playing - tapping pauses playback. -->
+  <string name="mozac_feature_listentopage_pause">Premor</string>
+  <!-- Listen to Page media player: content description for the button that Fast-forwards 30 seconds. -->
+  <string name="mozac_feature_listentopage_forward_30_sec">Naprej za 30 sekund</string>
+  <!-- Listen to Page media player: accessibility playback control notification that announces playback is set to normal reading speed. -->
+  <string name="mozac_feature_listentopage_playback_speed_1">Običajna hitrost predvajanja</string>
+</resources>

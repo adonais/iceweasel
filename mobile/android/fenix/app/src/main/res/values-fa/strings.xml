@@ -273,6 +273,8 @@
   <string name="browser_main_menu_content_description_navigation_header">ناوبری</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">بستن برگهٔ منوی زبانهٔ سفارشی</string>
+  <!-- Message shown when a cached website has finished reloading and the tab is now showing the live version of the page -->
+  <string name="browser_toolbar_live_page_toast">صفحه زنده</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">نشانک‌گذاری صفحه</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -287,8 +289,12 @@
   <string name="browser_menu_summarize_page">خلاصه‌سازی صفحه</string>
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">جدید</string>
+  <!-- Browser menu badge text for new, highlighted feature -->
+  <string name="browser_menu_page_badge_text">جدید</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter_2">گزارش خرابی سایت</string>
+  <!-- Browser menu label for adding a tab to a tab group -->
+  <string name="browser_menu_add_to_tab_group">افزودن به گروه</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">ترجمه‌شده</string>
   <!-- Browser menu label for the print feature -->
@@ -798,6 +804,8 @@
   <string name="preferences_override_sync_tokenserver">سرور سفارشی Sync</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">حساب کاربری</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">همگام‌سازی</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">مکان نوار نشانی</string>
   <!-- Preference for changing toolbar layout -->
@@ -807,7 +815,7 @@
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">صفحهٔ اصلی</string>
   <!-- Preference for customizing the app icon -->
-  <string name="preferences_app_icon">آیکون برنامه</string>
+  <string name="preferences_app_icon">نقشک برنامه</string>
   <!-- Preference for showing the tab strip -->
   <string name="preferences_tab_strip">نمایش نوار زبانه‌ها</string>
   <!-- Preference for gestures based actions -->
@@ -854,6 +862,8 @@
   <string name="preferences_search_synced_tabs">جست‌وجو در زبانه‌های همگام‌سازی‌شده</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">تنظیمات حساب</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">حساب کاربری و همگام‌سازی</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">تکمیل خودکار نشانی‌ها</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1082,13 +1092,13 @@
   <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_featured">ویژه</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
-  <string name="restart_warning_dialog_title">آیکون برنامه تغییر کند؟</string>
+  <string name="restart_warning_dialog_title">نقشک برنامه تغییر کند؟</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">برنامه ممکن است بسته شود. برای باز کردن مجدد %1$s کافی است روی آیکون درخشان و جدید خود ضربه بزنید.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_and_shortcuts_removal_warning_dialog_body">تغییر آیکون باعث حذف تمام سایت‌ها و میان‌برهایی می‌شود که در صفحهٔ اصلی خود ذخیره کرده‌اید.\n\n‏%1$s ممکن است بسته شود. برای باز کردن مجدد روی آیکون جدید ضربه بزنید.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
-  <string name="restart_warning_dialog_button_positive_2">تغییر آیکون</string>
+  <string name="restart_warning_dialog_button_positive_2">تغییر نقشک</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">لغو</string>
   <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
@@ -1133,6 +1143,8 @@
   <string name="preferences_sync_now">همین حالا همگام‌سازی شود</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">انتخاب موارد همگام‌سازی</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">داده‌های همگام‌سازی شده</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">تاریخچه</string>
   <!-- Preference for syncing bookmarks -->
@@ -1145,6 +1157,10 @@
   <string name="preferences_sign_out">خروج</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">نام دستگاه</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">نام دستگاه</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">تغییر نام دستگاه</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">نام دستگاه نمی‌تواند خالی باشد.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1285,7 +1301,7 @@
 
     Title for the preference that lets the user pick a new app icon
   -->
-  <string name="preference_select_app_icon_title">انتخاب آیکون برنامه</string>
+  <string name="preference_select_app_icon_title">انتخاب نقشک برنامه</string>
   <!--
     Theme Preferences
 
@@ -1309,6 +1325,10 @@
     Preferences for showing tab strip
   -->
   <string name="preference_tab_strip_show">نمایش نوار زبانه‌ها</string>
+  <!-- Preference for using top tab strip -->
+  <string name="preference_top_tab_strip">بالا</string>
+  <!-- Preference for using bottom tab strip -->
+  <string name="preference_bottom_tab_strip">پایین</string>
   <!--
     Gestures Preferences
 
@@ -1437,14 +1457,18 @@
   <string name="opening_screen_last_tab_summary">باز کردن در آخرین زبانه</string>
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">باز کردن در صفحهٔ اصلی پس از چهار ساعت</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">زبانه‌های ازکار افتاده</string>
   <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">انتقال زبانه‌های قدیمی به بخش غیرفعال</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">زبانه‌هایی که دو هفته مشاهده نشده‌اند به بخش غیرفعال منتقل می‌شوند.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">گروه‌های زبانه</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">فعال‌سازی گروه‌های زبانه</string>
   <!--
@@ -1729,16 +1753,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d مورد انتخاب شد</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">امروز</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">دیروز</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">۷ روز گذشته</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">۳۰ روز گذشته</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">قدیمی‌تر</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">هیچ تاریخچه‌ای در اینجا نیست</string>
   <!--
@@ -2367,12 +2381,12 @@
   <string name="sync_sign_in">ورود به همگام‌سازی</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ارسال به تمام دستگاه‌ها</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">هیچ دستگاهی موجود نیست</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">هر دستگاهی که با این حساب وارد شده و همگام‌سازی شود، در اینجا نمایش خواهد یافت.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">اتصال مجدد به همگام‌سازی</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">ارسال</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">انتخاب شده</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">آفلاین</string>
   <!-- An option to connect additional devices -->
@@ -2409,6 +2423,8 @@
   <string name="sync_send_tab_error_connection_title">اتصال اینترنت خود را بررسی کنید</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">سپس ارسال مجدد زبانه را امتحان کنید.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">تلاش دوباره</string>
   <!--
     Notifications
 
@@ -2591,6 +2607,10 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[حساب کاربری ندارید؟ برای همگام‌سازی Firefox بین دستگاه‌ها <u>یکی ایجاد کنید</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">‏%s همگام‌سازی با حساب شما را متوقف خواهد کرد، اما هیچ‌یک از داده‌های وب‌گردی شما در این دستگاه حذف نخواهد شد.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">از حساب کاربریتان خارج شوید؟</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">خروج</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">قطع ارتباط</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3009,8 +3029,6 @@
   <string name="preferences_ip_protection_title_2">VPN توکار</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3105,8 +3123,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d گیگابایت دادهٔ VPN مصرف شد. دسترسی ماه آینده بازنشانی می‌شود.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">تنظیمات</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">تنظیمات</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">‏VPN را روشن کنید تا وب‌گردی شما خصوصی‌تر شده و ردگیری‌اش دشوارتر گردد.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4560,4 +4576,6 @@
   <string name="pdf_tools_signature_clear_button">پاک کردن</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">افزودن</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">پخش کننده رسانه</string>
 </resources>

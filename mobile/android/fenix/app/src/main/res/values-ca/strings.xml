@@ -1416,7 +1416,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Mou les pestanyes antigues a inactives</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Les pestanyes que no hàgiu vist des de fa dues setmanes es mouran a la secció d’inactives.</string>
   <!--
     Studies
@@ -1662,16 +1662,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d seleccionats</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Avui</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Ahir</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Darrers 7 dies</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Darrers 30 dies</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Més antic</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">No hi ha informació d’historial</string>
   <!--
@@ -2910,8 +2900,6 @@
   <string name="preferences_ip_protection_title_2">VPN integrada</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -2996,8 +2984,6 @@
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">S’han utilitzat %1$d GB de dades de la VPN. L’accés es restablirà el mes que ve.</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Paràmetres</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Activeu la VPN perquè la navegació sigui més privada i més difícil de fer-ne el seguiment.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

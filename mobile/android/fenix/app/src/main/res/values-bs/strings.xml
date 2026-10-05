@@ -1129,7 +1129,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Premjestite stare tabove u neaktivne</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Tabovi koje niste pogledali dvije sedmice se premještaju u neaktivan odjeljak.</string>
   <!--
     Studies
@@ -1225,16 +1225,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d označeno</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Danas</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Jučer</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Zadnjih 7 dana</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Zadnjih 30 dana</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Starije</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Nema historije</string>
   <!--

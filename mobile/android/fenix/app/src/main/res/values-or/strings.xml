@@ -106,14 +106,6 @@
   <string name="add_tab">ଟ୍ୟାବ ଯୋଡ଼ନ୍ତୁ</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">ବ୍ୟକ୍ତିଗତ ଟ୍ୟାବ୍ ଯୋଡ଼ନ୍ତୁ</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ଆଜି</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ଗତକାଲି</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">ଗତ ୭ ଦିନ</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">ଗତ ୩୦ ଦିନ</string>
   <!-- Bookmark overflow menu open in new tab button -->
   <string name="bookmark_menu_open_in_new_tab_button">ନୂଆ ଟ୍ୟାବରେ ଖୋଲନ୍ତୁ</string>
   <!-- Button to add new collection for the "select collection" step of the collection creator -->

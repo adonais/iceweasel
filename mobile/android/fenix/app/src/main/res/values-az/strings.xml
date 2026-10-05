@@ -273,12 +273,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d seçilib</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Son 7 gün</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Son 30 gün</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Daha əvvəl</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Burda tarixçə yoxdur</string>
   <!-- Close tab button text on the tab crash page -->

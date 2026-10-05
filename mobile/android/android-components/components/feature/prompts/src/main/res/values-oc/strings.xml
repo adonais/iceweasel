@@ -67,6 +67,8 @@
   <string name="mozac_feature_prompts_before_unload_stay">Demorar</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">Quitar</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Contunhar</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">Causir un mes</string>
   <!-- January (short description), used on the month chooser dialog. -->

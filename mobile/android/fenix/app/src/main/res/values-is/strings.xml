@@ -1459,7 +1459,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Færa gamla flipa í óvirka</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Flipar sem þú hefur ekki skoðað í tvær vikur verða færðir í óvirka hlutann.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Virkja flipahópa</string>
@@ -1745,16 +1745,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d valið</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Í dag</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Í gær</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Síðustu 7 daga</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Síðustu 30 daga</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Eldri</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ekkert ferli hér</string>
   <!--
@@ -2383,10 +2373,6 @@
   <string name="sync_sign_in">Skráðu þig inn til að samstilla</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Senda í öll tæki</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Engin tæki tiltæk</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Öll tæki sem eru innskráð og samstilla við þennan reikning birtast hér.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Tengdu aftur til að samstilla</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3027,8 +3013,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA-prófun</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Innbyggt VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3107,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB af VPN-gögnum notað. Aðgangur verður endurstilltur í næsta mánuði.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Stillingar</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Stillingar</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Kveiktu á VPN til að gera vafrann þinn minna áberandi og erfiðari að rekja.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

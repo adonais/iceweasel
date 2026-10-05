@@ -802,6 +802,8 @@
   <string name="preferences_override_sync_tokenserver">Özel Sync sunucusu</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Hesap</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Eşitleme</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Adres çubuğu konumu</string>
   <!-- Preference for changing toolbar layout -->
@@ -858,6 +860,8 @@
   <string name="preferences_search_synced_tabs">Eşitlenmiş sekmelerde ara</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Hesap ayarları</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Hesap ve eşitleme</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Adresleri otomatik tamamla</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1137,6 +1141,8 @@
   <string name="preferences_sync_now">Şimdi eşitle</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Nelerin eşitleneceğini seçin</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Bağlı tüm cihazlarınızda nelerin eşitleneceğini yönetin</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Geçmiş</string>
   <!-- Preference for syncing bookmarks -->
@@ -1149,6 +1155,10 @@
   <string name="preferences_sign_out">Çıkış yap</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Cihaz adı</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Cihaz adı</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Cihaz adını değiştir</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Cihaz adı boş olamaz.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1401,6 +1411,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Sekmeler</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Sekme düzeni</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Sekme görünümü</string>
   <!-- Option for a list tab view -->
@@ -1455,8 +1467,10 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Eski sekmeleri pasife taşı</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">İki haftadır bakmadığınız sekmeler pasif bölümüne taşınır.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Sekme grupları</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Sekme gruplarını etkinleştir</string>
   <!--
@@ -1741,16 +1755,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d yer imi seçildi</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Bugün</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Dün</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Son 7 gün</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Son 30 gün</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Daha eski</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Geçmiş yok</string>
   <!--
@@ -2379,12 +2383,12 @@
   <string name="sync_sign_in">Sync’e giriş yap</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Tüm cihazlara gönder</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Kullanılabilir cihaz yok</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Bu hesaba giriş yapan ve hesapla eşitlenen cihazlar burada görünecektir.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Sync’e yeniden bağlan</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Gönder</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Seçildi</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Çevrimdışı</string>
   <!-- An option to connect additional devices -->
@@ -2421,6 +2425,8 @@
   <string name="sync_send_tab_error_connection_title">İnternet bağlantınızı kontrol edin</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Ardından sekmenizi yeniden göndermeyi deneyin.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Yeniden dene</string>
   <!--
     Notifications
 
@@ -2603,6 +2609,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Hesabınız yok mu? Firefox’u cihazlar arasında eşitlemek için <u>hesap açın</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s artık hesabınızla eşitlenmeyecek ama bu cihazdaki gezinti geçmişiniz silinmeyecek.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Hesabınızdan çıkış yapılsın mı?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Eşitlenmiş veriler hesabınızda saklanmaya devam eder.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Çıkış yap</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Bağlantıyı kes</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3023,8 +3035,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Yerleşik VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3119,8 +3129,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d GB VPN kotası kullanıldı. Erişiminiz gelecek ay sıfırlanacak.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Ayarlar</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Ayarlar</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Daha gizli ve izlenmesi zor bir gezinti için VPN’i açın.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

@@ -497,14 +497,6 @@
   <string name="close_tab_title">%s ٹیب اے بند کبو</string>
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">تاریخچہ مٹائفبو</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">اینو</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">درو</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">گدرینگوکا 7 دے</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">متکن</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ہچو تاریخچہ اف</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->

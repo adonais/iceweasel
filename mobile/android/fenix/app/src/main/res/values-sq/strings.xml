@@ -1290,7 +1290,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Skedat e vjetra kaloji te joaktivet</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Skedat që s’i keni parë gjatë dy javësh, kalohen te ndarja joaktive.</string>
   <!--
     Studies
@@ -1450,16 +1450,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d të përzgjedhura</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Sot</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Dje</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 ditët e fundit</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 ditët e fundit</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Më i vjetër</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">S’ka historik këtu</string>
   <!--

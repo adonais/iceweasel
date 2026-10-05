@@ -1443,7 +1443,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">كونا بەتكۈچنى ئاكتىپسىز ھالەتكە يۆتكەيدۇ</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">سىز ئىككى ھەپتە كۆرمىگەن بەتكۈچلەر ئاكتىپسىز بۆلەككە يۆتكىلىدۇ.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">بەتكۈچ گۇرۇپپىسىنى قوزغات</string>
@@ -1729,16 +1729,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d تاللاندى</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">بۈگۈن</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">تۈنۈگۈن</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">ئاخىرقى 7 كۈن</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">ئاخىرقى 30 كۈن</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">تېخىمۇ بۇرۇن</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ھېچقانداق تارىخ خاتىرىسى يوق</string>
   <!--
@@ -2367,10 +2357,6 @@
   <string name="sync_sign_in">قەدەمداشلاشتا تىزىمغا كىرىڭ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ھەممە ئۈسكۈنىگە يوللا</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">ھېچقانداق ئۈسكۈنە يوق</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">بۇ ھېسابتا ھەر قانداق ئۈسكۈنە تىزىمغا كىرسە ۋە قەدەمداشلىسا بۇ جايدا كۆرۈنىدۇ.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">قەدەمداشقا قايتا باغلىنىدۇ</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3011,8 +2997,6 @@
   <string name="preferences_ip_protection_beta_badge_label">سىناق نەشرى</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">ئىچىدىكى VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3107,8 +3091,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">مەۋھۇم شەخسىي تور ئېقىم سانلىق مەلۇماتىدىن %1$d GB ئىشلەتتى. زىيارەت ئىجازىتىڭىز كېيىنكى ئايدا ئەسلىگە قايتۇرۇلىدۇ.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">تەڭشەك</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">تەڭشەك</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">ئىزلاشنى قىيىنلاشتۇرۇپ ۋە تور زىيارىتىنى تېخىمۇ مەخپىي قىلىش ئۈچۈن VPN نى ئېچىڭ.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

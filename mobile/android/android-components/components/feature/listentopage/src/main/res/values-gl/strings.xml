@@ -23,4 +23,40 @@
     <item quantity="one">Adiante %1$d segundo</item>
     <item quantity="other">Adiante %1$d segundos</item>
   </plurals>
+  <!-- Content description of the playback control notification, when the playback is set to 0.25 times the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_0_25">Taxa de reprodución un 75 por cento máis lenta</string>
+  <!-- Content description of the playback control notification, when the playback is set to 0.5 times (half) the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_0_5">A reprodución definida a media velocidade</string>
+  <!-- Content description of the playback control notification, when the playback is set to 0.75 times the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_0_75">Taxa de reprodución un 25\u00a0% máis lenta</string>
+  <!-- Content description of the playback control notification, when the playback is set to normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_1">Velocidade de reprodución normal</string>
+  <!-- Content description of the playback control notification, when the playback is set to 1.25 times the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_1_25">Taxa de reprodución un 25 por cento máis rápida</string>
+  <!-- Content description of the playback control notification, when the playback is set to 1.5 times the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_1_5">Taxa de reprodución un 50 por cento máis rápida</string>
+  <!-- Content description of the playback control notification, when the playback is set to 1.75 times the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_1_75">Taxa de reprodución un 75 por cento máis rápida</string>
+  <!-- Content description of the playback control notification, when the playback is set to 2 times (double) the normal reading speed. -->
+  <string name="mozac_feature_listentopage_notification_playback_speed_2">A reprodución configurada a velocidade dobre</string>
+  <!-- Listen to Page media player: content description for the button that closes the player. -->
+  <string name="mozac_feature_listentopage_close">Pechar</string>
+  <!-- Listen to Page media player: content description for the button that opens the list of available voices. -->
+  <string name="mozac_feature_listentopage_audio">Audio</string>
+  <!-- Listen to Page media player: content description for the button that rewinds 10 seconds. -->
+  <string name="mozac_feature_listentopage_back_10_sec">Atrás 10 segundos</string>
+  <!-- Listen to Page media player: content description for play/pause button when the player is paused - tapping restarts playback. -->
+  <string name="mozac_feature_listentopage_play">Reproducir</string>
+  <!-- Listen to Page media player: content description for play/pause button when the player is playing - tapping pauses playback. -->
+  <string name="mozac_feature_listentopage_pause">Pausa</string>
+  <!-- Listen to Page media player: content description for the button that Fast-forwards 30 seconds. -->
+  <string name="mozac_feature_listentopage_forward_30_sec">Adiante 30 segundos</string>
+  <!-- Listen to Page media player: accessibility playback control notification that announces playback is set to normal reading speed. -->
+  <string name="mozac_feature_listentopage_playback_speed_1">Velocidade de reprodución normal</string>
+  <!--
+    Listen to Page media player: content description for the playback speed button. Pressing it cycles through available playback speeds.
+    This string will be interpolated into a longer message, equivalent to "Double tap to [change playback speed]" in English.
+    Structure and phrasing vary by target language: using an infinitive/dictionary form of the verb is recommended.
+  -->
+  <string name="mozac_feature_listentopage_change_speed">cambiar a velocidade de reprodución</string>
 </resources>

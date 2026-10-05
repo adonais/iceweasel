@@ -11,7 +11,7 @@
   <string name="action_cancel">لغو</string>
   <string name="action_save">ذخیره</string>
   <!-- This text is shown in the URL bar when it's empty -->
-  <string name="urlbar_hint">جست‌وجو کنید یا آدرسی را وارد کنید</string>
+  <string name="urlbar_hint">جست‌وجو کنید یا نشانیی را وارد کنید</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">تاریخچهٔ مرور، پاک شد</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
@@ -41,6 +41,7 @@
   <string name="menu_settings">تنظیمات</string>
   <string name="menu_about">درباره</string>
   <string name="menu_help">راهنما</string>
+  <string name="menu_terms_of_use">شرایط استفاده</string>
   <!--
     This is a small text at the bottom of the menu shown in a "custom tab" for branding purposes.
     See https://github.com/mozilla-mobile/focus-android/issues/2106
@@ -52,6 +53,12 @@
     sharing an URL.
   -->
   <string name="share_dialog_title">هم‌رسانی از طریق</string>
+  <string name="notification_erase_title_android_14">تاریخچه مرور پاک شود؟</string>
+  <!--
+    Text shown in the notification description that pops up to remind the user that a browsing session is active
+    for Android 14+.
+  -->
+  <string name="notification_erase_text_android_14_1">برای پاک کردن ایمن تاریخچه مرور خود، روی این آگاهی ضربه بزنید یا آن را بکشید.</string>
   <string name="notification_erase_text">پاک کردن تاریخچهٔ مرورگر</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">باز کردن</string>
@@ -84,19 +91,25 @@
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
   -->
-  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">جستجو در فوکوس</string>
+  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">جست‌و‌جو در فوکوس</string>
+  <!--
+    This is the label of an action we offer when the user selects text in other third-party apps.
+    Klar is hard coded since we can't use variables in this context.
+    Do not translate or transliterate Klar.
+  -->
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">جست‌و‌جو در Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">جستجو در فوکوس بتا</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">جست‌و‌جو در Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">جستجو در Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">جست‌و‌جو در Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -138,7 +151,7 @@
     Description of the preference that enables/disables search suggestions
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
-  <string name="preference_show_search_suggestions_summary">%1$s چیزی که شما در نوار آدرس وارد می‌کنید را برای موتور جست‌وجو شما ارسال خواهد کرد</string>
+  <string name="preference_show_search_suggestions_summary">%1$s چیزی که شما در نوار نشانی وارد می‌کنید را برای موتور جست‌وجو شما ارسال خواهد کرد</string>
   <!-- This label is shown above the currently selected search engine in settings -->
   <string name="preference_search_engine_label">موتور جست‌وجو</string>
   <!-- Text that is shown below a "switch" preference that is enabled. -->
@@ -153,7 +166,7 @@
     Summary for the toggle to enable autocomplete for the topsites list
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
-  <string name="preference_autocomplete_topsite_summary2">فعال کردن %s برای تکمیل خودکار بیش از ۴۵۰ URL محبوب در نوار آدرس.</string>
+  <string name="preference_autocomplete_topsite_summary2">فعال کردن %s برای تکمیل خودکار بیش از ۴۵۰ URL محبوب در نوار نشانی.</string>
   <!-- Title of "switch" preference that enables/disables autocomplete for the user-defined list -->
   <string name="preference_switch_autocomplete_user_list">برای سایت‌هایی که شما اضافه می‌کنید</string>
   <!--
@@ -254,10 +267,17 @@
   <string name="preference_mozilla_telemetry_summary">اطلاعات بیشتر</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2" tools:ignore="BrandUsage">موزیلا تلاش می‌کند تنها اطلاعاتی که برای بهینه‌سازی %1$s برای همه به آنها نیاز دارد را جمع‌آوری کند.</string>
+  <string name="preference_daily_usage_ping_description" tools:ignore="BrandUsage">این گزینه به Mozilla کمک می‌کند تا تعداد کاربران فعال را برآورد کند.</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">نکات حریم‌خصوصی</string>
+  <!-- In-app link (in settings) to Focus licensing information. -->
+  <string name="preference_licensing_info">اطلاعات پروانه</string>
+  <!-- Link to Focus licensing information from other libraries that we use. -->
+  <string name="preference_libraries_we_use">کتابخانه‌هایی که ما استفاده می‌کنیم</string>
   <!-- Link to Focus Crash reports list. -->
   <string name="preference_crashes">ازکارافتادگی‌ها</string>
+  <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
+  <string name="open_source_licenses_title">%s | کتابخانه‌های متن‌باز</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="preference_about">درباره %1$s</string>
   <!-- Header for the list of installed search engines -->
@@ -278,8 +298,8 @@
   <!-- Example of search engine url. %s represents the search query and should be kept as-is. -->
   <string name="search_add_manually_example">مثال: example.com/search/?q=%s</string>
   <string name="search_add_confirmation">موتور جست‌وجو جدید اضافه شد.</string>
-  <string name="search_add_error_empty_name">نام موتور جست‌وجو را وارد کنید</string>
-  <string name="search_add_error_duplicate_name">پیش از این یک موتور جستجوی نصب شده از این نام استفاده می‌کند.</string>
+  <string name="search_add_error_empty_name">نام موتور جست‌‌وجو را وارد کنید</string>
+  <string name="search_add_error_duplicate_name">پیش از این یک موتور جست‌و‌جوی نصب شده از این نام استفاده می‌کند.</string>
   <string name="search_add_error_empty_search">رشتهٔ جست‌وجو را وارد کنید</string>
   <string name="search_add_error_format">بررسی کنید که رشته جست‌وجو با شکل و قالب نمونهٔ ارائه شده مطابقت دارد</string>
   <!--
@@ -305,6 +325,8 @@
   <string name="download_snackbar_finished">%1$s پایان‌یافته است</string>
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
   <string name="download_snackbar_open">باز کردن</string>
+  <!-- Snackbar that will be displayed after a website has been added to shortcuts. -->
+  <string name="snackbar_added_to_shortcuts">به میان‌برها اضافه شد!</string>
   <string name="error_hostLookup_title">کارگزار پیدا نشد</string>
   <!--
     New Onboarding flow first screen title
@@ -314,6 +336,26 @@
   <string name="onboarding_first_screen_title">به %1$s خوش‌ آمدید</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">سریع. خصوصی. بدون حواس پرتی.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">با ادامه دادن، شما با %1$s موافقت می‌کنید.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">شرایط استفاده از Firefox</string>
+  <!--
+    New Onboarding flow first screen 'privacy notice' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
+  -->
+  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox به حریم خصوصی شما اهمیت می‌دهد. بیشتر در %1$s بیاموزید.</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link_2">نکات حفظ حریم خصوصی</string>
   <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">ادامه</string>
   <!--
@@ -327,7 +369,7 @@
   <!-- First run tour (Default browser): Title -->
   <string name="firstrun_defaultbrowser_title">قدرت حریم‌شخصی خود را افزایش دهید</string>
   <!-- First run tour (Search): Title -->
-  <string name="firstrun_search_title">جستجوی شما، به روش شما</string>
+  <string name="firstrun_search_title">جست‌و‌جوی شما، به روش شما</string>
   <!-- First run tour (Shortcut): Title -->
   <string name="firstrun_shortcut_title">میان‌برها را به صفحه خانگی خود اضافه کنید</string>
   <!-- First run tour (Privacy): Title -->
@@ -362,15 +404,15 @@
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">دریافت فایرفاکس</string>
-  <string name="preference_autocomplete_duplicate_url_error">نشانی قبلاً وجود دارد</string>
+  <string name="preference_autocomplete_duplicate_url_error">نشانی اینترنتی قبلاً وجود دارد</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">یافتن در صفحه</string>
   <!-- Checkbox menu item text to request desktop site -->
   <string name="preference_performance_request_desktop_site2">نسخه‌ی میزکار پایگاه اینترنتی</string>
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
-  <string name="custom_tab_copy_url_action">برداشتURL</string>
+  <string name="custom_tab_copy_url_action">برداشتن نشانی اینترنتی</string>
   <!-- Description of what a user may find in the Advanced Setting category, used for debugging -->
-  <string name="preference_advanced_summary">ابزارهای توسعه دهنده</string>
+  <string name="preference_advanced_summary">ابزارهای توسعه‌دهنده</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">باز کردن پیوندها در برنامه‌ها</string>
   <!-- Title of Advanced Setting category -->
@@ -384,16 +426,16 @@
   <!-- Preference for altering the notification access for all websites -->
   <string name="preference_phone_feature_notification">آگاه‌سازی</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
-  <string name="preference_remote_debugging">اشکال زدایی از طریق USB/Wi-Fi</string>
+  <string name="preference_remote_debugging">اشکال‌زدایی از طریق USB/Wi-Fi</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
-  <string name="biometric_auth_image_description">نشانه اثرانگشت</string>
+  <string name="biometric_auth_image_description">نقشک اثرانگشت</string>
   <!-- Title for the prompt to enable search suggestions -->
-  <string name="enable_search_suggestion_title2">پیشنهادهای جست‌وجو نمایش داده شوند؟</string>
+  <string name="enable_search_suggestion_title2">پیشنهادهای جست‌‌وجو نمایش داده شوند؟</string>
   <!--
     Description for the prompt to enable search suggestions
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
-  <string name="enable_search_suggestion_description">برای دریافت پیشنهادات، %1$s نیاز دارد تا چیزی که در نوار آدرس می‌نویسید را به موتور جست‌وجو ارسال کند.</string>
+  <string name="enable_search_suggestion_description">برای دریافت پیشنهادات، %1$s نیاز دارد تا چیزی که در نوار نشانی می‌نویسید را به موتور جست‌وجو ارسال کند.</string>
   <!-- Label used for the "NO button" for the prompt to enable search suggestions -->
   <string name="enable_search_suggestions_no">خیر</string>
   <!-- Label used for the "YES button" for the prompt to enable search suggestions -->
@@ -405,11 +447,11 @@
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
   <string name="preference_safe_browsing_title">مسدود سازی خطرات بالقوه و سایت‌های فریبنده</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
-  <string name="preference_safe_browsing_summary">مسدود کردن گزارش های فریبنده و حملات سایت‌ها،‌ بدافزارهای سایت‌ها و نرم افزارهای ناخواسته سایت‌ها.</string>
+  <string name="preference_safe_browsing_summary">مسدود کردن گزارش‌های فریبنده و حملات سایت‌ها،‌ بدافزارهای سایت‌ها و نرم‌افزارهای ناخواسته سایت‌ها.</string>
   <!-- Title of the preference to enable "HTTPS-Only" mode -->
   <string name="preference_https_only_title">حالت فقط HTTPS</string>
   <!-- Preference for exceptions tracking protection -->
-  <string name="preference_exceptions">استثناعات</string>
+  <string name="preference_exceptions">استثناها</string>
   <!-- Description for the exceptions preference screen -->
   <string name="preference_exceptions_description">شما مسدود سازی محتوا برای این سایت را غیرفعال کرده‌اید.</string>
   <!-- Menu item to remove existing exceptions. -->
@@ -433,7 +475,7 @@
   <!-- Category of trackers (advertising) that can be blocked by Enhanced Tracking Protection. -->
   <string name="advertising">تبلیغات</string>
   <!-- Category of trackers (social media) that can be blocked by Enhanced Tracking Protection. -->
-  <string name="social">اجتماعی</string>
+  <string name="social">شبکه‌های اجتماعی</string>
   <!-- Category of trackers (analytics) that can be blocked by Enhanced Tracking Protection. -->
   <string name="analytics">تجزیه و تحلیل</string>
   <!-- Preference title for enhanced tracking protection settings. -->
@@ -476,7 +518,7 @@
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">تاریک</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
-  <string name="preference_auto_battery_theme">تنظیم شده توسط ذخیره کننده باتری</string>
+  <string name="preference_auto_battery_theme">تنظیم شده توسط ذخیره‌کننده باتری</string>
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">پیروی از تم دستگاه</string>
   <!--

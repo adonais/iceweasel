@@ -281,12 +281,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d seƚesionà</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Ùltimi 7 dì</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Ùltimi 30 dì</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Pì veci</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Nisuna cronoƚogìa disponibiƚe.</string>
   <!--

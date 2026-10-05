@@ -1212,7 +1212,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">ຍ້າຍແຖບເກົ່າໄປເປັນແຖບທີບໍ່ມີການເຄື່ອນໄຫວ</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">ແຖບທີ່ທ່ານບໍ່ໄດ້ເບິ່ງເປັນເວລາສອງອາທິດຈະຖືກຍ້າຍໄປພາກສ່ວນທີ່ບໍ່ເຄື່ອນໄຫວ.</string>
   <!--
     Studies
@@ -1308,16 +1308,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">ເລືອກ %1$d ແລ້ວ</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ມື້ນີ້</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ມື້ວານ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 ມື້ທີ່ຜ່ານມາ</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 ມື້ທີ່ຜ່ານມາ</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">ເກົ່າກວ່າ</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ບໍ່ມີປະຫວັດການໃຊ້ງານຢູ່ນີ້</string>
   <!--

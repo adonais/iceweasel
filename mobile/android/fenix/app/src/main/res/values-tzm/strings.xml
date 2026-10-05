@@ -183,16 +183,6 @@
   <string name="remove_top_site">Kkes</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Kkes</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Ass-a</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Assennaṭ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 n wussan imeggura</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 n wussan imeggura</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Iqburen</string>
   <!-- Close tab button text on the tab crash page -->
   <string name="tab_crash_close">Mdel aseksel</string>
   <!-- Screen title for adding a bookmarks folder -->

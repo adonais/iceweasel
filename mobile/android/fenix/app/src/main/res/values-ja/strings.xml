@@ -273,6 +273,10 @@
   <string name="browser_main_menu_content_description_navigation_header">ナビゲーション</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">カスタムタブメニューシートを閉じます</string>
+  <!-- URL bar indicator shown on a cached version of the website, when the tab is reloading, but the content is not live yet -->
+  <string name="browser_toolbar_cached_page_indicator">キャッシュ済み</string>
+  <!-- Message shown when a cached website has finished reloading and the tab is now showing the live version of the page -->
+  <string name="browser_toolbar_live_page_toast">最新のページ</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">ページをブックマークに追加</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -801,6 +805,8 @@
   <string name="preferences_override_sync_tokenserver">カスタム Sync サーバー</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">アカウント</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">同期</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">アドレスバーの配置</string>
   <!-- Preference for changing toolbar layout -->
@@ -857,6 +863,8 @@
   <string name="preferences_search_synced_tabs">同期したタブを検索する</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">アカウント設定</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">アカウントと同期</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">自動補完 URL</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1136,6 +1144,12 @@
   <string name="preferences_sync_now">今すぐ同期</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">同期するデータの選択</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">同期済みデータ</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">接続したすべての端末で同期するものを管理します</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">まだ何も同期していません。端末間で同期する項目を選択してください。</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">表示履歴</string>
   <!-- Preference for syncing bookmarks -->
@@ -1148,6 +1162,10 @@
   <string name="preferences_sign_out">ログアウト</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">端末名</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">端末名</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">端末名を変更</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">端末名を空欄にすることはできません。</string>
   <!-- Label indicating that sync is in progress -->
@@ -1400,6 +1418,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">タブ</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">タブの配置</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">タブ表示</string>
   <!-- Option for a list tab view -->
@@ -1449,13 +1469,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">4 時間経過後、ホームページを開きます</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">タブの整理</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">休止中のタブ</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">古いタブを休止中に移動する</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">2 週間以上表示していないタブを休止中セクションに移動します。</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">タブグループ</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">タブを名前付きのグループに整理して保存できます。</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">タブグループを有効にする</string>
   <!--
@@ -1736,16 +1768,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d 件選択</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">今日</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">昨日</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 日以内</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 日以内</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">古い</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">履歴はありません</string>
   <!--
@@ -2374,12 +2396,12 @@
   <string name="sync_sign_in">Sync にログイン</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">すべての端末へ送信</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">利用可能な端末がありません</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">このアカウントにログインして同期しているすべての端末がここに表示されます。</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Sync へ再接続</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">送信</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">選択中</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">オフライン</string>
   <!-- An option to connect additional devices -->
@@ -3017,8 +3039,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">組み込み VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3113,8 +3133,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">VPN データが %1$d GB 使用されました。アクセスは来月リセットされます。</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">設定</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">設定</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">VPN をオンにすると、閲覧中のプライバシーが保護され、追跡されにくくなります。</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4560,4 +4578,14 @@
   <string name="pdf_tools_signature_clear_button">消去</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">追加</string>
+  <!--
+    Listen to page
+
+    Content description for the reader mode panel: a group of buttons floating over the content
+  -->
+  <string name="reader_mode_panel_content_description">リーダーモードのオプション</string>
+  <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+  <string name="reader_mode_panel_listen_content_description">読み上げ</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">メディアプレーヤー</string>
 </resources>

@@ -808,6 +808,8 @@
   <string name="preferences_override_sync_tokenserver">Vlastní server pro synchronizaci</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Účet</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Synchronizace</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Umístění adresního řádku</string>
   <!-- Preference for changing toolbar layout -->
@@ -864,6 +866,8 @@
   <string name="preferences_search_synced_tabs">Hledat v synchronizovaných panelech</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Nastavení účtu</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Účet a synchronizace</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Automaticky doplňovat adresy URL</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1143,6 +1147,8 @@
   <string name="preferences_sync_now">Synchronizovat</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Vyberte, co chcete synchronizovat</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Synchronizované údaje</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Historii</string>
   <!-- Preference for syncing bookmarks -->
@@ -1155,6 +1161,10 @@
   <string name="preferences_sign_out">Odhlásit</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Název zařízení</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Název zařízení</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Změnit název zařízení</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Název zařízení nemůže být prázdný.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1407,6 +1417,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Panely</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Rozložení panelů</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Zobrazení panelů</string>
   <!-- Option for a list tab view -->
@@ -1456,12 +1468,18 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Otevře domovskou stránku po 4 hodinách</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Organizace panelů</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Přesun neaktivních panelů</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Panely, které jste dva týdny neotevřeli, budou přesunuty do sekce pro neaktivní panely.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Povolit skupiny panelů</string>
@@ -1755,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">Vybráno položek: %1$d</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Dnes</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Včera</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Posledních 7 dnů</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Posledních 30 dnů</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Starší</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Zatím nemáte žádnou historii prohlížení</string>
   <!--
@@ -2395,10 +2403,6 @@
   <string name="sync_sign_in">Přihlásit ke službě Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Poslat do všech zařízení</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">K dispozici nejsou žádné zařízení</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Zde se zobrazí všechna zařízení, která jsou přihlášena k tomuto účtu a synchronizují se s ním.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Znovu se připojit k synchronizaci</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
@@ -3041,8 +3045,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Vestavěná VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3137,8 +3139,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Bylo využito %1$d GB dat přes VPN. Příští měsíc se limit vynuluje.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Nastavení</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Nastavení</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Zapněte VPN, aby bylo vaše prohlížení soukromější a obtížněji vysledovatelné.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->

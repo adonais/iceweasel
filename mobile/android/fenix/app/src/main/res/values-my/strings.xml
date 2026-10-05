@@ -487,16 +487,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d ရွေးထားပြီး</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ဒီနေ့</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">မနေ့က</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">လွန်ခဲ့သော 7 ရက်က</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">ပြီးခဲ့သည့်ရက်ပေါင်း 30</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">အဟောင်းတွေ</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">မှတ်တမ်းများ ဒီမှာ မရှိပါ</string>
   <!--

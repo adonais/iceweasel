@@ -1423,7 +1423,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">ย้ายแท็บเก่าไปยังส่วนที่ไม่ได้ใช้งาน</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">แท็บที่คุณไม่ได้ดูเป็นเวลา 2 สัปดาห์จะถูกย้ายไปยังส่วนที่ไม่ได้ใช้งาน</string>
   <!--
     Privacy report
@@ -1693,16 +1693,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">เลือกอยู่ %1$d</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">วันนี้</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">เมื่อวาน</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 วันที่ผ่านมา</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 วันที่ผ่านมา</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">เก่ากว่า</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ไม่มีประวัติที่นี่</string>
   <!--
@@ -2939,8 +2929,6 @@
   <string name="preferences_ip_protection_title_2">VPN ในตัว</string>
   <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3021,8 +3009,6 @@
     %1$d is the total monthly allowance in GB (for example "50").
   -->
   <string name="ip_protection_data_limit_reached_snackbar">ใช้ข้อมูล VPN ครบ %1$d GB แล้ว การเข้าถึงจะถูกรีเซ็ตในเดือนหน้า</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">การตั้งค่า</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
   <string name="ip_protection_location_title" tools:ignore="UnusedResources">ตำแหน่งที่ตั้ง</string>
   <!-- Label for the Recommended server location option which is automatically selected by the browser. -->

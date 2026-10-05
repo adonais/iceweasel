@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Ընտրովի համաժամեցման սերվեր</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Հաշիվ</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Համաժամեցում</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Հասցեագոտու տեղադրություն</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Որոնել համաժամեցված ներդիրներում</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Հաշվի կարգավորումներ</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Հաշիվ և համաժամեցում</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">URL-ների ինքնալրացում</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">Համաժամեցնել</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Ընտրեք, թե ինչը համաժամեցնել</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Համաժամեցված տվյալներ</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Կառավարեք թե ինչ է համաժամեցվում ձեր բոլոր միացված սարքերում</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Դուք ոչինչ չեք համաժամեցնում։ Ընտրեք, թե ինչը համաժամեցնել ձեր սարքերում։</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Պատմություն</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">Դուրս գրվել</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Սարքի անունը</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Սարքի անունը</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Փոխել սարքի անունը</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Սարքի անունը չի կարող դատարկ լինել:</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Ներդիրներ</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Ներդիրի դասավորություն</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Ներդիրի տեսք</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Բացել տնէջում չորս ժամ անց</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Ներդիրի կազմակերպում</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Ոչ ակտիվ ներդիրներ</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Տեղափոխել հին ներդիրները անգործուն</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Ներդիրները, որոնք չեք դիտել երկու շաբաթ, տեղափոխվել են անգործուն հատված:</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Ներդիրների խմբեր</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Կազմակերպեք ձեր ներդիրները խմբերի, որոնք կարող եք անվանել և պահպանել։</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Միացնել ներդիրների խմբերը</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">Ընտրված է %1$d-ը</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Այսօր</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Երեկ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Վերջին 7 օրում</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Վերջին 30 օրում</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Ավելի հին</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Այստեղ պատմություն չկա</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">Մուտք գործել համաժամեցում</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Ուղարկել բոլոր սարքերին</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Սարքեր չկան</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Այս հաշվի հետ մուտք գործած և համաժամեցված բոլոր սարքերը կհայտնվեն այստեղ։</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Վերամիացնել համաժամեցումը</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Ուղարկել</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Նշված</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Անցանց</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Ստուգեք ձեր համացանցային կապը</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Ապա փորձեք վերուղարկել ձեր ներդիրը։</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Կրկնել</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Չունե՞ք հաշիվ: <u>Ստեղծեք նորը</u>՝ Firefox-ը տարբեր սարքերի միջև համաժամեցնելու համար:]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s-ը կդադարեցնի համաժամացումը ձեր հաշվի հետ, բայց չի ջնջի այս սարքի ձեր դիտարկման որևէ տվյալ։</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Դո՞ւրս գրվել հաշվից:</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Համաժամեցված տվյալները կմնան Ձեր հաշվում։</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Դուրս գրվել</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Անջատել</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Ներկառուցված VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Օգտագործվել է %1$d ԳԲ VPN տվյալներ։ Հասանելիությունը կվերակայվի հաջորդ ամիս։</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Կարգավորումներ</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Կարգավորումներ</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Միացրեք VPN-ը՝ ձեր դիտարկիչն ավելի գաղտնի և դժվար հետագծվող դարձնելու համար։</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">Ընթերցողի ռեժիմի ընտրանքներ</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Բարձրաձայն կարդացեք</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Մեդիա նվագարկիչ</string>
 </resources>

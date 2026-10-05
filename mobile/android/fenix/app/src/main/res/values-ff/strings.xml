@@ -446,7 +446,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Dirtin tabbe ɓooyɗe to dooyiiɗe</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Tabbe ɗe a yillaaki e nder jonte ɗiɗi maa ndirtine to lowre dooyorde toh.</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Ena hurmi</string>
@@ -489,12 +489,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">suɓaama %1$d</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Balɗe 7 ɓennuɗe ɗee</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Balɗe 30 ɓennuɗe ɗee</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Ɓooyɗo</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ɗoo alaa aslol</string>
   <!--

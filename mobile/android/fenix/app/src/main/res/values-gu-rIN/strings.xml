@@ -295,12 +295,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d પસંદ કરેલ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">છેલ્લા 7 દિવસો</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">છેલ્લા 30 દિવસો</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">જૂનું</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">અહીં કોઈ ઇતિહાસ નથી</string>
   <!--

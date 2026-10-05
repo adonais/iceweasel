@@ -273,6 +273,10 @@
   <string name="browser_main_menu_content_description_navigation_header">Навигация</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Таңдауыңызша бет мәзір парағын жабу</string>
+  <!-- URL bar indicator shown on a cached version of the website, when the tab is reloading, but the content is not live yet -->
+  <string name="browser_toolbar_cached_page_indicator">Кэштелген</string>
+  <!-- Message shown when a cached website has finished reloading and the tab is now showing the live version of the page -->
+  <string name="browser_toolbar_live_page_toast">Беттің нақты нұсқасы</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">Бетті бетбелгілерге қосу</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -802,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Таңдауыңызша синхрондау сервері</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Тіркелгі</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Синхрондау</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Алрестік жолақтың орны</string>
   <!-- Preference for changing toolbar layout -->
@@ -858,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Синхрондалған беттерден іздеу</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Тіркелгі баптаулары</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Тіркелгі және синхрондау</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">URL адрестерін автотолықтыру</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1137,6 +1145,12 @@
   <string name="preferences_sync_now">Қазір синхрондау</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Нені синхрондауды таңдаңыз</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Синхрондалған деректер</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Барлық қосылған құрылғыларда синхрондалатын деректерді басқарыңыз</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Сіз ештеңені синхрондап жатқан жоқсыз. Құрылғыларыңызда синхрондалатын нәрсені таңдаңыз.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Шолу тарихы</string>
   <!-- Preference for syncing bookmarks -->
@@ -1149,6 +1163,10 @@
   <string name="preferences_sign_out">Шығу</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Құрылғы атауы</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Құрылғы атауы</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Құрылғы атауын өзгерту</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Құрылғы атауы бос болмауы тиіс.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1401,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Беттер</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Беттер жаймасы</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Бет көрінісі</string>
   <!-- Option for a list tab view -->
@@ -1450,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Үй бетінде төрт сағаттан кейін ашу</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Беттерді ұйымдастыру</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Белсенді емес беттер</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Ескі беттерді белсенді емес күйге жылжыту</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Сіз екі апта бойы қарамаған беттер белсенді емес топқа жылжытылады.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Беттер топтары</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Беттеріңізді атау беріп, сақтай алатын топтарға ұйымдастырыңыз.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Беттер топтарын іске қосу</string>
   <!--
@@ -1741,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d таңдалды</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Бүгін</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Кеше</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Соңғы 7 күн</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Соңғы 30 күн</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Ескілеу</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Осында тарих жоқ</string>
   <!--
@@ -2379,12 +2401,12 @@
   <string name="sync_sign_in">Синхрондау ішіне кіру</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Барлық құрылғыларға жіберу</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Қолжетімді құрылғылар жоқ</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Осы тіркелгіге кірген және синхрондалған кез келген құрылғы осында көрсетіледі.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Синхрондауға қайта байланысу</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Жіберу</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Таңдалған</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Желіде емес</string>
   <!-- An option to connect additional devices -->
@@ -2421,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Интернетпен байланысын тексеріңіз</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Одан кейін бетті қайта жіберіп көріңіз.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Қайталау</string>
   <!--
     Notifications
 
@@ -2603,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Тіркелгіңіз жоқ па? Firefox-ты құрылғылар арасында синхрондау үшін, <u>тіркелгі жасаңыз</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%sтіркелгіңізбен синхрондауды тоқтатады, бірақ, бұл құрылғыда барлық шолу деректері қалады.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Тіркелгіңізден шығу керек пе?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Синхрондалған деректер сіздің тіркелгіңізде сақталады.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Шығу</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Байланысты үзу</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3023,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Кірістірілген VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3119,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d ГБ VPN деректері пайдаланылды. Кіру мүмкіндігі келесі айда қалпына келтіріледі.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Баптаулар</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Баптаулар</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Шолуды құпиялырақ ету және бақылауды қиындату үшін VPN іске қосыңыз.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4574,4 +4600,14 @@
   <string name="pdf_tools_signature_clear_button">Тазарту</string>
   <!-- The text for the button that adds the signature the user has typed to the PDF. -->
   <string name="pdf_tools_signature_add_button">Қосу</string>
+  <!--
+    Listen to page
+
+    Content description for the reader mode panel: a group of buttons floating over the content
+  -->
+  <string name="reader_mode_panel_content_description">Оқу режимінің параметрлері</string>
+  <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
+  <string name="reader_mode_panel_listen_content_description">Дауыстап оқу</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Медиа ойнатқышы</string>
 </resources>

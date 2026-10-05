@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">ਪਸੰਦੀਦਾ ਸਿੰਕ ਸਰਵਰ</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">ਖਾਤਾ</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">ਸਿੰਕ</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਦਾ ਟਿਕਾਣਾ</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">ਸਿੰਕ ਕੀਤੀਆਂ ਟੈਬਾਂ ਨੂੰ ਖੋਲ੍ਹੋ</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">ਖਾਤਾ ਸੈਟਿੰਗਾਂ</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">ਖਾਤਾ ਅਤੇ ਸਿੰਕ</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">ਆਪੇ-ਪੂਰਨ URL</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -909,6 +913,8 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ਤੁਹਾਨੂੰ ਇਹ ਫੋਲਡਰ ਵਰਤਣ ਲਈ ਇਜਾਜ਼ਤ ਨਹੀਂ ਹੈ। ਵੱਖਰੇ ਨੂੰ ਚੁਣਨ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">ਹੋਰ ਐਪ ਨਾਲ ਡਾਊਨਲੋਡਾਂ ਦਾ ਇੰਤਜ਼ਾਮ ਕਰੋ</string>
+  <!-- Message shown when no app is available to let the user pick a download folder. -->
+  <string name="preferences_downloads_no_folder_picker_available">ਇਸ ਡਿਵਾਈਸ ਉੱਤੇ ਚੋਣਕਾਰ ਫੋਲਡਰ ਖੋਲ੍ਹਣ ਲਈ ਅਸਮਰੱਥ ਹੈ।</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">ਡਾਊਨਲੋਡ ਨੂੰ ਹਟਾਓ ਜਾਂ ਮਿਟਾਓ</string>
   <string name="preferences_downloads_delete_from_device">ਡਿਵਾਈਸ ਤੋਂ ਹਟਾਓ</string>
@@ -1139,6 +1145,12 @@
   <string name="preferences_sync_now">ਹੁਣੇ ਸਿੰਕ ਕਰੋ</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">ਚੁਣੋ ਕਿ ਕੀ ਸਿੰਕ ਕਰਨਾ ਹੈ</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">ਸਿੰਕ ਕੀਤਾ ਡਾਟਾ</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">ਆਪਣੇ ਸਾਰੇ ਡਿਵਾਈਸਾਂ ਵਿਚਾਲੇ ਹੋਣ ਵਾਲੇ ਸਿੰਕ ਦਾ ਇੰਤਜ਼ਾਮ ਕਰੋ</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">ਤੁਸੀਂ ਕੁਝ ਵੀ ਸਿੰਕ ਨਹੀਂ ਕਰ ਰਹੇ ਹੋ। ਚੋਣ ਕਰੋ ਕਿ ਕਿਹੜੀਆਂ ਚੀਜ਼ਾਂ ਨੂੰ ਤੁਹਾਡੇ ਡਿਵਾਈਸਾਂ ਵਿੱਚ ਸਿੰਕ ਰੱਖਣਾ ਹੈ।</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">ਅਤੀਤ</string>
   <!-- Preference for syncing bookmarks -->
@@ -1151,6 +1163,10 @@
   <string name="preferences_sign_out">ਸਾਈਨ ਆਉਟ</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">ਡਿਵਾਈਸ ਦਾ ਨਾਂ</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">ਡਿਵਾਈਸ ਦਾ ਨਾਂ</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">ਡਿਵਾਈਸ ਦਾ ਨਾਂ ਬਦਲੋ</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">ਡਿਵਾਈਸ ਦਾ ਨਾਂ ਖਾਲੀ ਨਹੀਂ ਹੋ ਸਕਦਾ।</string>
   <!-- Label indicating that sync is in progress -->
@@ -1403,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">ਟੈਬਾਂ</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">ਟੈਬ ਖਾਕਾ</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">ਟੈਬ ਵੇਖੋ</string>
   <!-- Option for a list tab view -->
@@ -1452,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">ਚਾਰ ਘੰਟਿਆਂ ਬਾਅਦ ਮੁੱਖ-ਸਫ਼਼ੇ ਉੱਤੇ ਖੋਲ੍ਹੋ</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">ਟੈਬ ਪ੍ਰਬੰਧ</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">ਨਾ-ਸਰਗਰਮ ਟੈਬਾਂ</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">ਪੁਰਾਣੀਆਂ ਟੈਬਾਂ ਨੂੰ ਨਾ-ਸਰਗਰਮ ਵਿੱਚ ਭੇਜੋ</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">ਪਿਛਲੇ ਦੋ ਹਫ਼ਤਿਆਂ ਵਿੱਚ ਤੁਹਾਡੇ ਵਲੋਂ ਨਾ ਵੇਖੀਆਂ ਟੈਬਾਂ ਨੂੰ ਨਾ-ਸਰਗਰਮ ਭਾਗ ਵਿੱਚ ਭੇਜਿਆ ਜਾਂਦਾ ਹੈ।</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">ਟੈਬ ਗਰੁੱਪ</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">ਆਪਣੀਆਂ ਟੈਬਾਂ ਦਾ ਗਰੁੱਪ ਵਿੱਚ ਪ੍ਰਬੰਧ ਕਰੋ ਤਾਂ ਤੁਸੀਂ ਉਹਨਾਂ ਨੂੰ ਨਾਂ ਦੇ ਕੇ ਸੰਭਾਲ ਸਕੋ।</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">ਟੈਬ ਗਰੁੱਪ ਨੂੰ ਸਮਰੱਥ ਕਰੋ</string>
   <!--
@@ -1743,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d ਚੁਣੇ</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ਅੱਜ</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ਕੱਲ੍ਹ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">ਪਿਛਲੇ 7 ਦਿਨ</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">ਪਿਛਲੇ 30 ਦਿਨ</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">ਹੋਰ ਪੁਰਾਣੇ</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ਇ਼ੱਥੇ ਕੋਈ ਅਤੀਤ ਨਹੀਂ ਹੈ</string>
   <!--
@@ -2381,12 +2401,12 @@
   <string name="sync_sign_in">ਸਿੰਕ ਕਰਨ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ਸਾਰੇ ਡਿਵਾਈਸਾਂ ‘ਤੇ ਭੇਜੋ</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">ਕੋਈ ਡਿਵਾਈਸ ਮੌਜੂਦ ਨਹੀਂ ਹੈ</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">ਇਸ ਖਾਤੇ ਨਾਲ ਕੋਈ ਵੀ ਸਾਈਨ ਇਨ ਹੋਇਆ ਅਤੇ ਸਿੰਕ ਕੀਤੇ ਡਿਵਾਈਸ ਨੁੰ ਇੱਥੇ ਦਿਖਾਇਆ ਜਾਵੇਗਾ।</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">ਸਿੰਕ ਕਰਨ ਲਈ ਮੁੜ-ਕਨੈਕਟ ਕਰੋ</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">ਭੇਜੋ</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">ਚੁਣਿਆ</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">ਆਫਲਾਈਨ</string>
   <!-- An option to connect additional devices -->
@@ -3025,8 +3045,6 @@
   <string name="preferences_ip_protection_beta_badge_label">ਬੀਟਾ</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">ਵਿੱਚੇ ਮੌਜੂਦ VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3121,8 +3139,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">VPN ਦੇ %1$d GB ਨੂੰ ਵਰਤਿਆ ਗਿਆ ਹੈ। ਪਹੁੰਚ ਅਗਲੇ ਮਹੀਨੇ ਮੁੜ-ਸੈੱਟ ਹੋਵੇਗੀ।</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">ਸੈਟਿੰਗਾਂ</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">ਸੈਟਿੰਗਾਂ</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">ਆਪਣੀ ਬਰਾਊਜ਼ਿੰਗ ਨੂੰ ਵੱਧ ਪ੍ਰਾਈਵੇਟ ਅਤੇ ਸੂਹ ਲੈਣਾ ਔਖਾ ਬਣਾਉਣ ਵਾਸਤੇ VPN ਨੂੰ ਚਾਲੂ ਕਰੋ।</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4584,4 +4600,6 @@
   <string name="reader_mode_panel_content_description">ਪੜ੍ਹਨ ਢੰਗ ਚੋਣਾਂ</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">ਉੱਚੀ ਪੜ੍ਹੋ</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">ਮੀਡੀਆ ਪਲੇਅਰ</string>
 </resources>

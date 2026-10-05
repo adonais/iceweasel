@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">سرور هوم گوم کردن سفارشی</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">هساو منتوری</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">هوم گوم کردن</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">جاگه نوار نشۊوی</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">پیتینیڌن من بلگه یل هوم گوم وابیڌه</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">سامووا هساو</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">هساو وو هوم گوم کردن</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">کامل کردن خوتکار نشۊوی اینترنتی</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">سکو هوم گوم کوݩ</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">پسند چیایی ک اخۊین هوم گوم بۊن</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">داده یل هوم گوم وابیڌه</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">دؽوۉداری هوم گوم کردنا من پوی دسگایل منپیز وابیڌه ایسا</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">ایسا هیچی ن هوم گوم نکردینه. پسند کۊنین چ چیه ن منجا دسگایل تووݩ هوم گوم اکۊنین.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">ویرگار</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">و در زیڌن</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">نوم دسگا</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">نوم دسگا</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">آلشت نوم دسگا</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">نوم دسگا نتره پتی بۊ.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">بلگه یل</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">تئر بندی بلگه</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">نما بلگه یل</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">گۊشیڌن من بلگه هووه ای بئڌ چار ساعت</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">سازمووݩ دهی بلگه</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">بلگه یل قیر فعال</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">جا گورو بلگه یل قڌیمی و بشن قیر فعال</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">بلگه یلی ک بیشتر ز دو هفته ننیشتینه، و بشن قیر فعال جا گورو ابۊن.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">بونکۊیل بلگه</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">بلگه یل خوتووݩ ن من بونکۊیلی ک ترین نوم بنین وو زفت کۊنین، سازمووݩ دهی کۊنین.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">فعال کردن بونکۊ یل بلگه</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d پسند وابی</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ٱمرۊز</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">دۊش</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 رۊز گوڌشته</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 رۊز گوڌشته</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">قڌیمی تر</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">ویرگاری من ایچو نؽ</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">سی هوم گوم کردن و من بیاین</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">فشناڌن و پوی دسگا یل</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">هیچ دسگایی من دسرس نؽ</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">هر دسگایی ک و من ای هساو ٱووڌه وو وا هو هوم گوم ابۊ، ایچونا نشووݩ داڌه ابۊ.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">منپیز دووارته سی هوم گوم کردن</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">فشناڌن</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">پسند وابیڌه</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">لمتور</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">منپیز اینترنت خوتووݩ ن واجۊری کۊنین</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">دیندا قپ ریت کۊنین بلگه خوتووݩ ن دووارته بفشنین.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">قپ ریت دووارته</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[هساوی نڌارین؟ سی هوم گوم وابیڌن منجا دسگایل خوت <u>یکی وورکل کوݩ</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s هوم گوم وابیڌن وا هساو ایسا ن اواڌارنه، ولی هیچ کویکی ز داده یل گشتن ایسا ری ای دسگا پاک نؽبۊن.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">ز من هساو منتوری خوتووݩ ازنین و در؟</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">داده یل هوم گوم وابیڌه من هساو ایسا زفت ابۊن.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">و در زیڌن</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">قت کردن منپیز</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">آزمایشی</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">VPN منی</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d گیگابایت داده VPN و کار گرؽڌه وابی. دسرسی ما پؽش ری وورنشۊوی ابۊ.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">سامووا</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">سامووا</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">VPN ن رۊشن کۊنین تا گشتن ایسا سیخومی تر وو رڌجۊری هو سخت تر ابۊ.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">گۊزینه یل هالت خوندن</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">وا دونگ بولند بخۊوین</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">پشک کوننده وارسگر</string>
 </resources>

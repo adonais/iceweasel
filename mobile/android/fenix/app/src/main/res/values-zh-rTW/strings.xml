@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">自訂同步伺服器</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">帳號</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Sync</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">網址列位置</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">搜尋同步的分頁</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">帳號設定</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">帳號與同步</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">自動完成網址</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">立即同步</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">選擇要同步的內容</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">同步資料</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">管理要在您連結的裝置間同步哪些資料</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">您目前未同步任何項目。請選擇要在各裝置間同步的內容。</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">瀏覽紀錄</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">登出</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">裝置名稱</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">裝置名稱</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">更改裝置名稱</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">裝置名稱不得為空白。</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">分頁</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">分頁版面</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">分頁檢視</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">關閉超過四小時後開啟首頁</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">分頁管理方式</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">閒置分頁</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">將舊分頁移動到獨立區塊</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">將超過兩週沒有檢視過的分頁，移動至「閒置分頁」區塊。</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">分頁群組</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">將分頁放入可命名並儲存的群組來整理。</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">開啟分頁群組功能</string>
   <!--
@@ -1741,16 +1769,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">已選擇 %1$d 筆瀏覽紀錄</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">今天</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">昨天</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 天內</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 天內</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">更久之前</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">沒有紀錄</string>
   <!--
@@ -2379,12 +2397,12 @@
   <string name="sync_sign_in">登入 Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">傳送到所有裝置</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">無裝置可用</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">所有已登入並與此帳號同步的裝置，顯示於此處。</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">重新連線到 Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">傳送</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">已選擇</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">離線</string>
   <!-- An option to connect additional devices -->
@@ -2421,6 +2439,8 @@
   <string name="sync_send_tab_error_connection_title">請檢查您的網際網路連線是否正常</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">然後試著重新傳送一次分頁。</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">重試</string>
   <!--
     Notifications
 
@@ -2603,6 +2623,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[沒有帳號嗎？<u>註冊一組</u>就能在不同裝置間同步 Firefox。]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s 將會停止與您帳號間的同步，但不會刪除此裝置上的任何瀏覽資料。</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">要登出帳號嗎？</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">已同步的資料將保留在您的帳號中。</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">登出</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">取消連線</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3022,8 +3048,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA 測試</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">內建 VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3041,7 +3065,7 @@
     %1$.1f is the data remaining in GB (for example "8.3").
     %2$.1f is the total monthly allowance in GB (for example "50.0").
   -->
-  <string name="ip_protection_data_limit_value">已用 %1$.1f GB，剩餘 %2$.1f GB</string>
+  <string name="ip_protection_data_limit_value">可用 %2$.1f GB，剩餘 %1$.1f GB</string>
   <!--
     Text shown below the data usage bar describing when the monthly allowance resets.
     %1$.0f is the total monthly data allowance in GB (for example "50").
@@ -3118,8 +3142,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">已使用 %1$d GB VPN 流量。將於下個月重設存取權限。</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">設定</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">設定</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">開啟 VPN，讓您的上網過程更有隱私、更難被追蹤。</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4573,4 +4595,6 @@
   <string name="reader_mode_panel_content_description">閱讀模式選項</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">大聲朗讀</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">媒體播放器</string>
 </resources>

@@ -1018,7 +1018,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Movi i schedi vecchi nnâ sizzioni Fermi</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">I schedi chi nun taliasti pi du’ simani vennu muvuti nnâ sizzioni Fermi.</string>
   <!--
     Studies
@@ -1106,16 +1106,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d scartati</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Oji</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Ajeri</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Ùrtimi 7 jorna</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Ùrtimi 30 jorna</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Cchiù vecchi</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Nun cc’è nuḍḍa crunuluggìa dispunìbbili</string>
   <!--

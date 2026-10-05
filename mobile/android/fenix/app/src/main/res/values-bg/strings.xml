@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Личен сървър за Sync</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Профил</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Sync</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Местоположение на адресната лента</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">В синхронизираните раздели</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Настройки на профил</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Профил и синхронизиране</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Автоматично довършване на адреси</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">Синхронизиране</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Изберете какво да бъде синхронизирано</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Синхронизирани данни</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Управлявайте какво се синхронизира на всички свързани устройства</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Нищо не се синхронизира. Изберете какво да остане синхронизирано между устройствата си.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">История</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">Изход</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Име на устройството</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Име на устройството</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Промяна на името на устройството</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Името не може да е празно.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Раздели</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Оформление на разделите</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Изглед на раздели</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Отваряне на началната страница след четири часа</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Организация на разделите</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Неактивни раздели</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Преместване на старите раздели в неактивни</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Разделите, които не сте преглеждали последните две седмици, се преместват в секцията за неактивни.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Групи раздели</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Организирайте разделите в групи, на които можете да именувате и да запазвате.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Включване на Групи раздели</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d избрани</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Днес</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Вчера</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Последните 7 дни</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Последните 30 дни</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">По-стари</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Липсва история</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">Вписване в Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Изпращане до всички устройства</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Няма налични устройства</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Всички устройства, на които сте влезли и синхронизирани с този профил, ще се покажат тук.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Повторно свързване със Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Изпращане</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Избрано</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Без мрежа</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Проверете връзката с интернет</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">След това опитайте да изпратите отново своя раздел.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Повторен опит</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Нямате акаунт? <u>Създайте такъв,</u> за да синхронизирате Firefox между различни устройства.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s ще спре да се синхронизира с вашия профил, но няма да изтрива данни от разглеждане от устройството.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Излизане от вашия профил?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Синхронизираните данни остават запазени в профила ви.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Изход</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Изключване</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Вграден VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Използвани %1$d GB VPN данни. Достъпът ще бъде нулиран следващия месец.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Настройки</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Настройки</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Включете VPN, за да направите сърфирането си по-поверително и по-трудно за проследяване.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">Опции за режима за четене</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Четене на глас</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Меден плейър</string>
 </resources>

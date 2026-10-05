@@ -453,7 +453,7 @@
   <string name="close_tabs_after_one_week_summary">Tancar dimpués d’una semana</string>
   <!-- Summary for tabs preference when auto closing tabs setting is set to auto close tabs after one month -->
   <string name="close_tabs_after_one_month_summary">Tancar dimpués d’un mes</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Las pestanyas que no has visto dende fa dos semanas se mueven ta la sección inactiva.</string>
   <!--
     Studies
@@ -522,16 +522,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d triau(s)</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Hue</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Ahiere</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Zaguers 7 días</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Zaguers 30 días</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Mas antigo</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">No i hai garra historial</string>
   <!--

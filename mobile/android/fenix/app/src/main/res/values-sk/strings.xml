@@ -808,6 +808,8 @@
   <string name="preferences_override_sync_tokenserver">Vlastný server pre synchronizáciu</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Účet</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Synchronizácia</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Umiestnenie panela s adresou</string>
   <!-- Preference for changing toolbar layout -->
@@ -864,6 +866,8 @@
   <string name="preferences_search_synced_tabs">Hľadať v synchronizovaných kartách</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Nastavenia účtu</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Účet a synchronizácia</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Automaticky dokončovať URL adresy</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1143,6 +1147,12 @@
   <string name="preferences_sync_now">Synchronizovať</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Vyberte si, čo chcete synchronizovať</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Synchronizované údaje</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Spravujte, čo sa synchronizuje na všetkých vašich pripojených zariadeniach</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Momentálne sa nič nesynchronizuje. Vyberte, čo chcete synchronizovať vo svojich zariadeniach.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">História</string>
   <!-- Preference for syncing bookmarks -->
@@ -1155,6 +1165,10 @@
   <string name="preferences_sign_out">Odhlásiť sa</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Názov zariadenia</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Názov zariadenia</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Zmeniť názov zariadenia</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Názov zariadenia nemôže byť prázdny.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1407,6 +1421,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Karty</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Rozloženie kariet</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Zobrazenie kariet</string>
   <!-- Option for a list tab view -->
@@ -1456,13 +1472,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Po štyroch hodinách otvoriť na domovskej stránke</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Organizácia kariet</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Neaktívne karty</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Presúvať staré karty medzi neaktívne</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Karty, ktoré ste dva týždne nevideli, sa presunú do neaktívnej sekcie.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Skupiny kariet</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Usporiadajte si karty do skupín, ktoré môžete pomenovať a uložiť.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Povoliť skupiny kariet</string>
   <!--
@@ -1755,16 +1783,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">Počet vybraných položiek: %1$d</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Dnes</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Včera</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Posledných 7 dní</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Posledných 30 dní</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Staršia</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Nemáte žiadnu históriu prehliadania</string>
   <!--
@@ -2395,12 +2413,12 @@
   <string name="sync_sign_in">Prihlásiť sa k službe Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Odoslať do všetkých zariadení</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">K dispozícii nie sú žiadne zariadenia</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Tu sa zobrazia všetky zariadenia prihlásené a synchronizované s týmto účtom.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Znovu sa pripojiť k synchronizácii</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Odoslať</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Vybraté</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Offline</string>
   <!-- An option to connect additional devices -->
@@ -2437,6 +2455,8 @@
   <string name="sync_send_tab_error_connection_title">Skontrolujte svoje internetové pripojenie</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Potom skúste kartu odoslať znova.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Znova</string>
   <!--
     Notifications
 
@@ -2619,6 +2639,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Ešte nemáte účet? <u>Vytvorte si ho</u> a synchronizujte svoj Firefox medzi zariadeniami.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">Aplikácia %s sa už viac nebude synchronizovať s vašim účtom, ale neodstráni z toho zariadenia žiadne z údajov prehliadania.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Chcete sa odhlásiť z účtu?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Synchronizované údaje zostanú uložené vo vašom účte.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Odhlásiť sa</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Odpojiť</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3041,8 +3067,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">Vstavaná VPN</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3137,8 +3161,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">Využili ste %1$d GB dát VPN. Prístup sa obnoví budúci mesiac.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Nastavenia</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Nastavenia</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Zapnite VPN, aby bolo vaše prehliadanie súkromnejšie a bolo ťažšie ho sledovať.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4616,4 +4638,6 @@
   <string name="reader_mode_panel_content_description">Možnosti režimu Čítačka</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Čítať nahlas</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Prehrávač médií</string>
 </resources>

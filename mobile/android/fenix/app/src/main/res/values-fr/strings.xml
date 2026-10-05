@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Serveur de synchronisation personnalisé</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Compte</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Synchronisation</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Emplacement de la barre d’adresse</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Rechercher dans les onglets synchronisés</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Paramètres du compte</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Compte et synchronisation</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Compléter automatiquement les URL</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,12 @@
   <string name="preferences_sync_now">Synchroniser maintenant</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Choisir les informations à synchroniser</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Données synchronisées</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Gérer les données à synchroniser sur tous vos appareils connectés</string>
+  <!-- Summary for the sync preference category, when user has disabled all synchronisation items. -->
+  <string name="preferences_sync_category_no_engine_selected_summary">Aucun élément n’est synchronisé. Choisissez les données à synchroniser entre vos appareils.</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Historique</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1163,10 @@
   <string name="preferences_sign_out">Déconnexion</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Nom de l’appareil</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Nom de l’appareil</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Changer le nom de l’appareil</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Le nom de l’appareil ne peut pas être vide.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1419,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Onglets</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Disposition des onglets</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Affichage des onglets</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1470,25 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Ouvrir la page d’accueil après quatre heures</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Organisation des onglets</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Onglets inactifs</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Déplacer les onglets inactifs</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Les onglets que vous n’avez pas consultés depuis deux semaines sont déplacés vers la section «\u00a0Onglets inactifs\u00a0».</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Groupes d’onglets</string>
+  <!-- Summary of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_description">Organisez vos onglets en groupes que vous pouvez nommer et enregistrer.</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Activer les groupes d’onglets</string>
   <!--
@@ -1745,16 +1773,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d sélectionné(s)</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Aujourd’hui</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Hier</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Les 7 derniers jours</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">Les 30 derniers jours</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Avant le mois dernier</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Pas d’historique</string>
   <!--
@@ -2383,12 +2401,12 @@
   <string name="sync_sign_in">Se connecter à Sync</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Envoyer à tous les appareils</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Aucun appareil disponible</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Tous les appareils connectés et synchronisés avec ce compte apparaîtront ici.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Se reconnecter à Sync</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Envoyer</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Sélectionné</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Hors connexion</string>
   <!-- An option to connect additional devices -->
@@ -2425,6 +2443,8 @@
   <string name="sync_send_tab_error_connection_title">Vérifiez votre connexion à Internet</string>
   <!-- Send tab to synced devices: Connectivity Error message - Suggested user action after internet connection has been established -->
   <string name="sync_send_tab_error_connection_text">Essayez ensuite de renvoyer votre onglet.</string>
+  <!-- Send tab to synced devices: Connectivity Error button - When tapped, refreshes the list of connected devices. -->
+  <string name="sync_send_tab_error_connection_button">Réessayer</string>
   <!--
     Notifications
 
@@ -2607,6 +2627,12 @@
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[Vous n’avez pas de compte ? <u>Créez-en un</u> pour synchroniser Firefox entre vos appareils.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s ne se synchronisera plus avec votre compte, mais ne supprimera aucune donnée de navigation sur cet appareil.</string>
+  <!-- Title of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_title">Se déconnecter de votre compte\u00a0?</string>
+  <!-- Body of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_message">Les données synchronisées restent enregistrées dans votre compte.</string>
+  <!-- Text for the primary action button of the confirmation dialog shown when the user signs out of their account -->
+  <string name="sign_out_dialog_confirm_button">Déconnexion</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">Se déconnecter</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -3027,8 +3053,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BÊTA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">VPN intégré</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3147,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d\u00a0Go de données VPN utilisés. L’accès sera rétabli le mois prochain.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Paramètres</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Paramètres</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Activez le VPN pour renforcer la confidentialité de votre navigation et la rendre plus difficile à pister.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4608,6 @@
   <string name="reader_mode_panel_content_description">Options du mode lecture</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Lire à haute voix</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Lecteur multimédia</string>
 </resources>

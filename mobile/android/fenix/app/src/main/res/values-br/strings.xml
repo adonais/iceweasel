@@ -935,7 +935,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Dilec’hiañ an ivinelloù kozh dioberiant</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">An ivinelloù n’ho peus ket gwelet e-pad div sizhun a vo dilec’hiet er lodenn dioberiant.</string>
   <!--
     Studies
@@ -1006,16 +1006,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d diuzet</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Hiziv</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Dec’h</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">Ar 7 deiz diwezhañ</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">An 30 deiz diwezhañ</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Koshocʼh</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Roll istor ebet amañ</string>
   <!-- Title for the dialog that prompts the user to choose an app for downloading a file. -->

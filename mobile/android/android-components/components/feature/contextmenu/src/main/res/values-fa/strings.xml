@@ -21,6 +21,8 @@
   <string name="mozac_feature_contextmenu_share_image">هم‌رسانی تصویر</string>
   <!-- Text for context menu item to copy the link to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_link">رونوشت از پیوند</string>
+  <!-- Text for context menu item to copy the link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_copy_link_text">متن پیوند را رونوشت کنید</string>
   <!-- Text for context menu item to copy the URL pointing to the image to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_image_location">رونوشت از مکان تصویر</string>
   <!-- Text for context menu item to save / download the image. -->
@@ -35,6 +37,8 @@
   <string name="mozac_feature_contextmenu_snackbar_new_private_tab_opened">زبانهٔ خصوصی جدید باز شد</string>
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_copied">پیوند به تخته‌گیره رونوشت شد</string>
+  <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">پیوند متن رونوشت شده در تخته‌گیره</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
   <string name="mozac_feature_contextmenu_snackbar_action_switch">تعویض</string>
   <!-- Text for context menu item to open the link in an external app. -->

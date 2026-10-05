@@ -1134,16 +1134,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">បានជ្រើសរើស %1$d</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">ថ្ងៃ​នេះ</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ម្សិលមិញ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 ថ្ងៃចុងក្រោយ</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 ថ្ងៃចុងក្រោយ</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">ចាស់ជាង</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">គ្មានប្រវត្តិនៅទីនេះទេ</string>
   <!--

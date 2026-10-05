@@ -144,7 +144,7 @@
   <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">未検証のサードパーティースクリプトにユーザーデータへのアクセスを許可。</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_devtools_description_for_update">開発者ツールで開いているタブのユーザーデータにアクセス。</string>
+  <string name="mozac_feature_addons_permissions_devtools_description_for_update">開いているタブのユーザーデータへアクセスするため、開発ツールを展開します。</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description_for_update">%1$s のユーザーデータへのアクセス。</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->

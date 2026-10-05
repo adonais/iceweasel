@@ -791,7 +791,7 @@
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">පරණ පටිති අක්‍රිය වෙත දමන්න</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">ඔබ සති දෙකක් තුළ නොබැලූ පටිති අක්‍රිය කොටස වෙත ගෙන යනු ලැබේ.</string>
   <!--
     Studies
@@ -860,16 +860,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d ක් තෝරා ඇත</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">අද</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">ඊයේ</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">පසුගිය දවස් 7</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">පසුගිය දවස් 30</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">පරණ</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">මෙහි ඉතිහාසයක් නැත</string>
   <!--

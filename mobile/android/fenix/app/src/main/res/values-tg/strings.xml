@@ -806,6 +806,8 @@
   <string name="preferences_override_sync_tokenserver">Сервери ҳамоҳангсозии фармоишӣ</string>
   <!-- Preference category for account information -->
   <string name="preferences_category_account">Ҳисоб</string>
+  <!-- Preference category for sync controls. Sync can be translated, it's just short for ”Synchronization” in English. -->
+  <string name="preferences_category_sync_controls">Ҳамоҳангсозӣ</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Ҷойгиршавии навори нишонӣ</string>
   <!-- Preference for changing toolbar layout -->
@@ -862,6 +864,8 @@
   <string name="preferences_search_synced_tabs">Ҷустуҷӯи варақаҳои ҳамоҳангшуда</string>
   <!-- Preference for account settings -->
   <string name="preferences_account_settings">Танзимоти ҳисоб</string>
+  <!-- Preference for account and sync settings -->
+  <string name="preferences_account_and_sync_settings">Ҳисоб ва ҳамоҳангсозӣ</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Пуркунии худкори нишонаҳои URL</string>
   <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
@@ -1141,6 +1145,10 @@
   <string name="preferences_sync_now">Ҳозир ҳамоҳанг кунед</string>
   <!-- Preference category for sync -->
   <string name="preferences_sync_category">Интихоб кунед, ки чӣ ҳамоҳанг карда мешавад</string>
+  <!-- Preference category for sync controls -->
+  <string name="preferences_category_sync">Маълумоти ҳамоҳангшуда</string>
+  <!-- Summary for the sync preference category. -->
+  <string name="preferences_sync_category_summary">Он чизҳоеро, ки дар ҳамаи дастгоҳҳои пайвастшудаи шумо ҳамоҳанг мешаванд, идора намоед</string>
   <!-- Preference for syncing history -->
   <string name="preferences_sync_history">Таърих</string>
   <!-- Preference for syncing bookmarks -->
@@ -1153,6 +1161,10 @@
   <string name="preferences_sign_out">Баромад</string>
   <!-- Preference displays and allows changing current FxA device name -->
   <string name="preferences_sync_device_name">Номи дастгоҳ</string>
+  <!-- Preference category for Device name -->
+  <string name="preferences_device_name_category">Номи дастгоҳ</string>
+  <!-- Label for the Preference that displays and allows changing current device name on Mozilla Account -->
+  <string name="preferences_sync_change_device_name">Иваз кардани номи дастгоҳ</string>
   <!-- Text shown when user enters empty device name -->
   <string name="empty_device_name_error">Номи дастгоҳ наметавонад холӣ бошад.</string>
   <!-- Label indicating that sync is in progress -->
@@ -1405,6 +1417,8 @@
     Title of preference for tabs management
   -->
   <string name="preferences_tabs">Варақаҳо</string>
+  <!-- Title of preference that allows a user to specify the tab layout -->
+  <string name="preferences_tab_layout">Тарҳи варақаҳо</string>
   <!-- Title of preference that allows a user to specify the tab view -->
   <string name="preferences_tab_view">Намоиши варақаҳо</string>
   <!-- Option for a list tab view -->
@@ -1454,13 +1468,23 @@
   <!-- Summary for homepage preference indicating opening the homepage when re-opening the app after four hours of inactivity -->
   <string name="opening_screen_after_four_hours_of_inactivity_summary">Кушодан дар саҳифаи асосӣ пас аз чор соат</string>
   <!--
+    Tab organization
+
+    Category header for the preferences that control how tabs are organized
+  -->
+  <string name="preferences_tab_organization">Ташкили варақаҳо</string>
+  <!-- Title of the preference that allows a user to enable or disable the inactive tabs feature -->
+  <string name="preferences_inactive_tabs_toggle_title">Варақаҳои ғайрифаъол</string>
+  <!--
     Inactive tabs
 
     Category header of a preference that allows a user to enable or disable the inactive tabs feature
   -->
   <string name="preferences_inactive_tabs">Варақаҳои куҳнаро ба ғайрифаъол интиқол диҳед</string>
-  <!-- Title of inactive tabs preference -->
+  <!-- Summary of the preference that allows a user to enable or disable the inactive tabs feature. -->
   <string name="preferences_inactive_tabs_title">Варақаҳое, ки шумо ду ҳафта такроран надидаед, ба қисмати ғайрифаъол интиқол дода мешаванд.</string>
+  <!-- Title of the preference that allows a user to enable or disable the tab groups feature -->
+  <string name="preferences_tab_groups_title">Гурӯҳҳои варақаҳо</string>
   <!-- Title for the preference to enable or disable the tab groups feature -->
   <string name="preferences_tab_groups_feature">Фаъол кардани гурӯҳҳои варақаҳо</string>
   <!--
@@ -1745,16 +1769,6 @@
     %1$d is the number of bookmarks selected
   -->
   <string name="history_multi_select_title">%1$d интихоб шуд</string>
-  <!-- Text for the header that groups the history for today -->
-  <string name="history_today">Имрӯз</string>
-  <!-- Text for the header that groups the history for yesterday -->
-  <string name="history_yesterday">Дирӯз</string>
-  <!-- Text for the header that groups the history the past 7 days -->
-  <string name="history_7_days">7 рӯзи охир</string>
-  <!-- Text for the header that groups the history the past 30 days -->
-  <string name="history_30_days">30 рӯзи охир</string>
-  <!-- Text for the header that groups the history older than the last month -->
-  <string name="history_older">Пештар</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Ягон таърих нест</string>
   <!--
@@ -2383,12 +2397,12 @@
   <string name="sync_sign_in">Барои ҳамоҳангсозӣ ворид шавед</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Фиристодан ба ҳамаи дастгоҳҳо</string>
-  <!-- Text displayed when no other sync devices are available for link sharing -->
-  <string name="sync_no_devices_available">Ягон дастгоҳи дастрас нест</string>
-  <!-- Text displayed when no other sync devices are available for link sharing. -->
-  <string name="sync_no_devices_available_description">Ҳамаи дастгоҳҳое, ки бо ин ҳисоб ворид шудаанд ва ҳамоҳанг карда шудаанд, дар ин ҷой пайдо мешаванд.</string>
   <!-- An option from the share dialog to reconnect to sync -->
   <string name="sync_reconnect">Барои ҳамоҳангсозӣ аз нав пайваст шавед</string>
+  <!-- Label for the button in the share dialog that sends the tab to the selected sync devices -->
+  <string name="sync_send_to_selected_devices">Фиристодан</string>
+  <!-- Content description announced when a device is selected in the share dialog -->
+  <string name="send_to_devices_device_selected_content_description">Интихоб шуд</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">Офлайн</string>
   <!-- An option to connect additional devices -->
@@ -3027,8 +3041,6 @@
   <string name="preferences_ip_protection_beta_badge_label">BETA</string>
   <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
   <string name="ip_protection_settings_title">«VPN»-и дарунсохт</string>
-  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
-  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Content description for the browser VPN settings screen top bar back button -->
@@ -3123,8 +3135,6 @@
   <string name="ip_protection_data_limit_reached_snackbar">%1$d ГБ-и маълумоти «VPN» истифода шуд. Дастрасӣ дар моҳи оянда аз нав танзим карда мешавад.</string>
   <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
   <string name="ip_protection_open_settings_snackbar_action">Танзимот</string>
-  <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
-  <string name="ip_protection_data_limit_reached_snackbar_action">Танзимот</string>
   <!-- Description shown on the browser VPN settings screen prompting the user to turn the VPN on. -->
   <string name="ip_protection_settings_description" tools:ignore="UnusedResources">Барои татбиқи махфияти бештар ҳангоми паймоиш ва мушкилтар гардонидани пайгирии шумо дар Интернет, «VPN»-ро фаъол созед.</string>
   <!-- Title shown on the browser VPN settings screen for location selection section. -->
@@ -4586,4 +4596,6 @@
   <string name="reader_mode_panel_content_description">Имконоти реҷаи «Намоиши хонанда»</string>
   <!-- Content description for the button in reader mode panel that turns on the read aloud feature (playback of content begins when button is pressed) -->
   <string name="reader_mode_panel_listen_content_description">Бо овози баланд хонед</string>
+  <!-- Content description for media player displayed in Reader Mode when the Listen to Page (Read Aloud) feature is selected -->
+  <string name="reader_mode_panel_media_player_content_description">Плеери расонаӣ</string>
 </resources>
