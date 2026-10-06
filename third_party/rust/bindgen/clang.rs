@@ -1117,11 +1117,11 @@ impl Type {
 
     /// Get a cursor pointing to this type's declaration.
     pub fn declaration(&self) -> Cursor {
-        unsafe {
-            Cursor {
-                x: clang_getTypeDeclaration(self.x),
-            }
-        }
+        let decl = Cursor {
+            x: unsafe { clang_getTypeDeclaration(self.x) },
+        };
+        // Prior to clang 22, the declaration pointed to the definition.
+        decl.definition().unwrap_or(decl)
     }
 
     /// Get the canonical declaration of this type, if it is available.
@@ -1515,7 +1515,7 @@ impl SourceLocation {
             let mut line = 0;
             let mut col = 0;
             let mut off = 0;
-            clang_getSpellingLocation(
+            clang_getFileLocation(
                 self.x, &mut file, &mut line, &mut col, &mut off,
             );
             (File { x: file }, line as usize, col as usize, off as usize)

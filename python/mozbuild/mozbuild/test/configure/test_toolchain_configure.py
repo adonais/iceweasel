@@ -1857,6 +1857,15 @@ def gen_invoke_rustc(version, rustup_wrapper=False):
                 rust_targets.remove("armv7-wrs-vxworks")
                 rust_targets.remove("i586-wrs-vxworks")
 
+            # Additional targets from 1.98
+            if Version(version) >= "1.98.0":
+                rust_targets += [
+                    "aarch64-oe-linux-gnu",
+                    "armv7-oe-linux-gnueabihf",
+                    "i686-oe-linux-gnu",
+                    "riscv64-oe-linux-gnu",
+                    "x86_64-oe-linux-gnu",
+                ]
             return 0, "\n".join(sorted(rust_targets)), ""
         if (
             len(args) == 6
@@ -2050,6 +2059,11 @@ class RustTest(BaseConfigureTest):
             ),
             "armv4t-unknown-linux-gnueabi",
         )
+
+
+# Exercises the vendor-specific *-oe-linux-* targets added in rust 1.98.
+class Rust198Test(RustTest):
+    VERSION = "1.98.0"
 
 
 if __name__ == "__main__":

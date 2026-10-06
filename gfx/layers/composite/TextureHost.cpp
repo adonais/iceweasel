@@ -298,8 +298,8 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
             // but the resulting object will have a null shmem and can't ever be
             // locked or mapped -- it's not useful at all. We just return
             // nullptr instead.
-            gfxCriticalError() << "Failed texture host with unmappable shmem.";
-            return nullptr;
+            gfxCriticalNote << "Failed texture host with unmappable shmem.";
+            return CreateDummyBufferTextureHost(aBackend, aFlags);
           }
 
           size_t bufSize = shmem.Size<char>();

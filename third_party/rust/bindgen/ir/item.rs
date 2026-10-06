@@ -1427,8 +1427,11 @@ impl Item {
             }
         }
 
-        // Guess how does clang treat extern "C" blocks?
-        if cursor.kind() == CXCursor_UnexposedDecl {
+        // On Clang 18+, extern "C" is reported accurately as a LinkageSpec.
+        // Older LLVM treat it as UnexposedDecl.
+        if cursor.kind() == CXCursor_LinkageSpec ||
+            cursor.kind() == CXCursor_UnexposedDecl
+        {
             Err(ParseError::Recurse)
         } else {
             // We allowlist cursors here known to be unhandled, to prevent being

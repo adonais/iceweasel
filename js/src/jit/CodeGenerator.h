@@ -399,6 +399,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 #define LIR_OP(op) void visit##op(L##op* ins);
   LIR_OPCODE_LIST(LIR_OP)
 #undef LIR_OP
+
+  void maybeEmitSetInPureCall(MInstruction* mir, bool value, Register scratch);
 };
 
 class OutOfLineResumableWasmTrap : public OutOfLineCodeBase<CodeGenerator> {

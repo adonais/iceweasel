@@ -15,6 +15,7 @@
 
 #include "gc/MaybeRooted.h"
 #include "gc/StableCellHasher.h"
+#include "jit/JitRuntime.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
 #include "js/Value.h"
@@ -292,6 +293,12 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
                    MemoryUse::ObjectSlots);
   AddCellMemory(this, ObjectSlots::allocSize(newCapacity),
                 MemoryUse::ObjectSlots);
+
+  if (cx->runtime()->hasJitRuntime() &&
+      MOZ_UNLIKELY(cx->runtime()->jitRuntime()->inPureCall()) &&
+      is<GlobalObject>()) {
+    cx->runtime()->jitRuntime()->handleGrowSlotsForPureCall(cx);
+  }
 
   MOZ_ASSERT(hasDynamicSlots());
   return true;

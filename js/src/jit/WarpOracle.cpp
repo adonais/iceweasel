@@ -438,14 +438,22 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       }
 
       case JSOp::Rest: {
-        if (Shape* shape =
-                script_->global().maybeArrayShapeWithDefaultProto()) {
-          if (!AddOpSnapshot<WarpRest>(alloc_, opSnapshots, offset, shape)) {
-            return abort(AbortReason::Alloc);
-          }
+        Shape* shape = GlobalObject::getArrayShapeWithDefaultProto(cx_);
+        if (!shape) {
+          return abort(AbortReason::Error);
+        }
+        if (!AddOpSnapshot<WarpRest>(alloc_, opSnapshots, offset, shape)) {
+          return abort(AbortReason::Alloc);
         }
         break;
       }
+
+      case JSOp::NewArray:
+        if (!GlobalObject::getArrayShapeWithDefaultProto(cx_)) {
+          return abort(AbortReason::Error);
+        }
+        MOZ_TRY(maybeInlineIC(opSnapshots, loc));
+        break;
 
       case JSOp::BindGName: {
         Rooted<GlobalObject*> global(cx_, &script_->global());
@@ -586,7 +594,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::TypeofExpr:
       case JSOp::NewObject:
       case JSOp::NewInit:
-      case JSOp::NewArray:
       case JSOp::JumpIfFalse:
       case JSOp::JumpIfTrue:
       case JSOp::And:

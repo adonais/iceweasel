@@ -125,7 +125,9 @@ base64 = { path = "build/rust/base64" }
 wasi = { path = "build/rust/wasi" }
 
 # Patch bindgen 0.63 to 0.64
-bindgen = { path = "build/rust/bindgen" }
+bindgen_0_63 = { package = "bindgen", path = "build/rust/bindgen" }
+# Locally patch bindgen 0.64 to work with newer clang, see bug 2078149 and bug 1894093.
+bindgen = { path = "third_party/rust/bindgen" }
 
 # Patch ntapi 0.3 to 0.4
 ntapi = { path = "build/rust/ntapi" }
