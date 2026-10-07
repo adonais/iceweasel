@@ -1915,6 +1915,23 @@
   value: false
   mirror: always
 
+# Whether to enable honoring the XUL window position.
+#
+# Historically, GTK has ignored it, but doing so causes some interesting edge
+# cases on multi-monitor situations which Windows suffers from. It seems Linux
+# WMs are better at auto-positioning the windows than Windows, tho.
+#
+# This still allows toggling it at runtime, both for testing and for users that
+# care more about avoiding things like session restore flicker.
+- name: browser.load-xul-position.enabled
+  type: bool
+#ifdef MOZ_WIDGET_GTK
+  value: false
+#else
+  value: true
+#endif
+  mirror: always
+
 # Disable state restoration, allowing the kiosk desktop environment to manage state and position.
 - name: browser.restoreWindowState.disabled
   type: bool
